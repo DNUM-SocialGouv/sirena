@@ -1,89 +1,114 @@
 import { type Prisma, prisma } from '../../../libs/prisma.js';
 import { getEntiteDescendantIds } from '../../entites/entites.service.js';
 import { buildExportRequetesCsvFromRecords } from './exportRequetesCsv.js';
+import { deriveDepartmentCodeFromPostalCode } from './exportRequetesFormatters.js';
 import type { ExportRequeteRecord } from './exportRequetesRows.js';
 
-const exportRequetesInclude = {
+const exportRequetesSelect = {
+  id: true,
+  createdAt: true,
+  receptionDate: true,
+  dateDemandeDeclarant: true,
   declarant: {
-    include: {
-      adresse: true,
-      lienVictime: true,
+    select: {
+      estVictime: true,
+      lienVictime: { select: { label: true } },
+      lienAutrePrecision: true,
+      isTuteur: true,
+      adresse: { select: { codePostal: true, ville: true } },
+      veutGarderAnonymat: true,
+      estSignalementProfessionnel: true,
     },
   },
   participant: {
-    include: {
-      adresse: true,
-      age: true,
-      identite: {
-        include: {
-          civilite: true,
-        },
-      },
+    select: {
+      identite: { select: { civilite: { select: { label: true } } } },
+      age: { select: { label: true } },
+      dateNaissance: true,
+      adresse: { select: { codePostal: true, ville: true } },
+      veutGarderAnonymat: true,
+      estVictimeInformee: true,
+      mesureProtection: true,
+      estHandicapee: true,
+      aAutrePersonnes: true,
     },
   },
-  provenance: true,
-  receptionType: true,
+  provenance: { select: { label: true } },
+  receptionType: { select: { label: true } },
   etapes: {
-    include: {
-      clotureReason: true,
-      notes: true,
+    select: {
+      entiteId: true,
+      statutId: true,
+      createdAt: true,
+      clotureEffectiveDate: true,
+      clotureReason: { select: { label: true } },
     },
   },
   requeteEntites: {
-    include: {
-      entite: true,
-      priorite: true,
-      statut: true,
+    select: {
+      entiteId: true,
+      entite: {
+        select: {
+          label: true,
+          nomComplet: true,
+          entiteTypeId: true,
+          entiteMere: { select: { label: true } },
+        },
+      },
+      priorite: { select: { label: true } },
+      statut: { select: { label: true } },
     },
   },
   situations: {
-    include: {
+    select: {
       lieuDeSurvenue: {
-        include: {
-          adresse: true,
-          lieuType: true,
-          transportType: true,
+        select: {
+          lieuTypeId: true,
+          lieuPrecision: true,
+          codePostal: true,
+          adresse: { select: { codePostal: true, ville: true } },
+          lieuType: { select: { label: true } },
+          transportType: { select: { label: true } },
         },
       },
       misEnCause: {
-        include: {
-          misEnCauseType: true,
-          misEnCauseTypePrecision: true,
+        select: {
+          codePostal: true,
+          misEnCauseType: { select: { label: true } },
+          misEnCauseTypePrecision: { select: { label: true } },
         },
       },
       faits: {
-        include: {
-          motifs: {
-            include: {
-              motif: true,
-            },
-          },
-          motifsDeclaratifs: {
-            include: {
-              motifDeclaratif: true,
-            },
-          },
-          consequences: {
-            include: {
-              consequence: true,
-            },
-          },
+        select: {
+          dateDebut: true,
+          dateFin: true,
+          motifs: { select: { motifId: true, motif: { select: { label: true } } } },
+          motifsDeclaratifs: { select: { motifDeclaratif: { select: { label: true } } } },
+          consequences: { select: { consequence: { select: { label: true } } } },
         },
       },
-      domainesFonctionnels: true,
+      domainesFonctionnels: { select: { label: true } },
       demarchesEngagees: {
-        include: {
-          autoriteType: true,
-          demarches: true,
+        select: {
+          dateContactEtablissement: true,
+          etablissementARepondu: true,
+          organisme: true,
+          datePlainte: true,
+          autoriteType: { select: { label: true } },
+          demarches: { select: { label: true } },
         },
       },
       situationEntites: {
-        include: {
+        select: {
           entite: {
-            include: {
+            select: {
+              label: true,
+              nomComplet: true,
               entiteMere: {
-                include: {
-                  entiteMere: true,
+                select: {
+                  label: true,
+                  nomComplet: true,
+                  entiteMere: { select: { label: true, nomComplet: true } },
                 },
               },
             },
@@ -92,10 +117,10 @@ const exportRequetesInclude = {
       },
     },
   },
-} satisfies Prisma.RequeteInclude;
+} satisfies Prisma.RequeteSelect;
 
 type ExportRequetePrismaPayload = Prisma.RequeteGetPayload<{
-  include: typeof exportRequetesInclude;
+  select: typeof exportRequetesSelect;
 }>;
 
 export async function generateExportRequetesCsv(topEntiteId: string): Promise<string> {
@@ -108,43 +133,72 @@ export async function generateExportRequetesCsv(topEntiteId: string): Promise<st
         },
       },
     },
-    include: exportRequetesInclude,
+    select: exportRequetesSelect,
   });
-  const categorieFinessLieuSurvenueByCode = await getCategorieFinessLieuSurvenueByCode(requetes);
+  const { departmentCodesByPostalCode, departementNamesByCode } = await getDepartmentReferences(requetes);
 
   return buildExportRequetesCsvFromRecords(requetes.map(toExportRequeteRecord), {
     topEntiteId,
-    categorieFinessLieuSurvenueByCode,
+    departmentCodesByPostalCode,
+    departementNamesByCode,
   });
 }
 
-async function getCategorieFinessLieuSurvenueByCode(
-  requetes: ExportRequetePrismaPayload[],
-): Promise<Map<string, string>> {
-  const categCodes = Array.from(
+async function getDepartmentReferences(requetes: ExportRequetePrismaPayload[]): Promise<{
+  departmentCodesByPostalCode: Map<string, string>;
+  departementNamesByCode: Map<string, string>;
+}> {
+  const codePostaux = Array.from(
     new Set(
-      requetes.flatMap((requete) =>
-        requete.situations
-          .map((situation) => situation.lieuDeSurvenue?.categCode)
-          .filter((code): code is string => !!code),
-      ),
+      requetes
+        .flatMap((requete) => [
+          requete.declarant?.adresse?.codePostal,
+          requete.participant?.adresse?.codePostal,
+          ...requete.situations.flatMap((situation) => [
+            situation.lieuDeSurvenue?.adresse?.codePostal || situation.lieuDeSurvenue?.codePostal,
+            situation.misEnCause?.codePostal,
+          ]),
+        ])
+        .filter((codePostal): codePostal is string => !!codePostal),
     ),
   );
 
-  if (categCodes.length === 0) {
-    return new Map();
+  if (codePostaux.length === 0) {
+    return { departmentCodesByPostalCode: new Map(), departementNamesByCode: new Map() };
   }
 
-  const referentielRows = await prisma.autoriteCompetenteReferentiel.findMany({
-    where: { categCode: { in: categCodes } },
-    select: { categCode: true, categLib: true },
+  const inseePostalRows = await prisma.inseePostal.findMany({
+    where: { codePostal: { in: codePostaux } },
+    select: { codePostal: true, commune: { select: { dptCodeActuel: true } } },
+    distinct: ['codePostal'],
+  });
+  const departmentCodesByPostalCode = new Map(
+    inseePostalRows
+      .filter((row): row is { codePostal: string; commune: { dptCodeActuel: string } } => row.commune != null)
+      .map((row) => [row.codePostal, row.commune.dptCodeActuel]),
+  );
+  const departmentCodes = Array.from(
+    new Set(
+      codePostaux.map(
+        (codePostal) => departmentCodesByPostalCode.get(codePostal) ?? deriveDepartmentCodeFromPostalCode(codePostal),
+      ),
+    ),
+  ).filter((departmentCode) => departmentCode !== '');
+
+  if (departmentCodes.length === 0) {
+    return { departmentCodesByPostalCode, departementNamesByCode: new Map() };
+  }
+
+  const communeRows = await prisma.commune.findMany({
+    where: { dptCodeActuel: { in: departmentCodes } },
+    select: { dptCodeActuel: true, dptLibActuel: true },
+    distinct: ['dptCodeActuel'],
   });
 
-  return new Map(
-    referentielRows
-      .filter((row): row is { categCode: string; categLib: string } => row.categLib != null && row.categLib !== '')
-      .map((row) => [row.categCode, row.categLib]),
-  );
+  return {
+    departmentCodesByPostalCode,
+    departementNamesByCode: new Map(communeRows.map((row) => [row.dptCodeActuel, row.dptLibActuel])),
+  };
 }
 
 function toExportRequeteRecord(requete: ExportRequetePrismaPayload): ExportRequeteRecord {

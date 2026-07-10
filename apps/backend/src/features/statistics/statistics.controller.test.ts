@@ -12,6 +12,10 @@ const entitesMiddlewareState = vi.hoisted(() => ({
   topEntiteId: null as string | null,
 }));
 
+const authMiddlewareState = vi.hoisted(() => ({
+  roleId: 'READER',
+}));
+
 const logger = vi.hoisted(() => ({
   info: vi.fn(),
   error: vi.fn(),
@@ -44,7 +48,7 @@ vi.mock('../../middlewares/userStatus.middleware.js', () => ({
 vi.mock('../../middlewares/auth.middleware.js', () => ({
   default: (c: Context, next: Next) => {
     c.set('userId', 'test-user-id');
-    c.set('roleId', 'READER');
+    c.set('roleId', authMiddlewareState.roleId);
     return next();
   },
 }));
@@ -78,6 +82,7 @@ describe('statistics.controller.ts', () => {
     vi.clearAllMocks();
     entitesMiddlewareState.entiteIds = ['root-entite'];
     entitesMiddlewareState.topEntiteId = null;
+    authMiddlewareState.roleId = 'READER';
   });
 
   afterEach(() => {
@@ -85,6 +90,16 @@ describe('statistics.controller.ts', () => {
   });
 
   describe('GET /export-requetes', () => {
+    it('rejects export for a role without statistics read access', async () => {
+      authMiddlewareState.roleId = 'PENDING';
+      entitesMiddlewareState.topEntiteId = 'root-entite';
+
+      const response = await client['export-requetes'].$get();
+
+      expect(response.status).toBe(403);
+      expect(generateExportRequetesCsv).not.toHaveBeenCalled();
+    });
+
     it('rejects export when the user has no root entity', async () => {
       const response = await client['export-requetes'].$get();
 

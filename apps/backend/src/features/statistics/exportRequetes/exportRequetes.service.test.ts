@@ -8,6 +8,12 @@ vi.mock('../../../libs/prisma.js', () => ({
     requete: {
       findMany: vi.fn(),
     },
+    inseePostal: {
+      findMany: vi.fn(),
+    },
+    commune: {
+      findMany: vi.fn(),
+    },
   },
 }));
 
@@ -44,8 +50,216 @@ describe('generateExportRequetesCsv', () => {
         },
       }),
     );
+    expect(vi.mocked(prisma.requete.findMany).mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({
+        select: expect.objectContaining({
+          id: true,
+          createdAt: true,
+          receptionDate: true,
+          dateDemandeDeclarant: true,
+          etapes: {
+            select: {
+              entiteId: true,
+              statutId: true,
+              createdAt: true,
+              clotureEffectiveDate: true,
+              clotureReason: { select: { label: true } },
+            },
+          },
+          situations: expect.objectContaining({
+            select: expect.objectContaining({
+              lieuDeSurvenue: {
+                select: {
+                  lieuTypeId: true,
+                  lieuPrecision: true,
+                  codePostal: true,
+                  adresse: { select: { codePostal: true, ville: true } },
+                  lieuType: { select: { label: true } },
+                  transportType: { select: { label: true } },
+                },
+              },
+              misEnCause: {
+                select: {
+                  codePostal: true,
+                  misEnCauseType: { select: { label: true } },
+                  misEnCauseTypePrecision: { select: { label: true } },
+                },
+              },
+            }),
+          }),
+        }),
+      }),
+    );
     expect(csv).toContain('REQ-2026-0001');
     expect(csv).toContain('18/06/2026');
+  });
+
+  it('selects only exported declarant and participant fields', async () => {
+    vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
+    vi.mocked(prisma.requete.findMany).mockResolvedValueOnce([]);
+
+    await generateExportRequetesCsv('root-entite');
+
+    expect(vi.mocked(prisma.requete.findMany).mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({
+        select: expect.objectContaining({
+          declarant: {
+            select: {
+              estVictime: true,
+              lienVictime: { select: { label: true } },
+              lienAutrePrecision: true,
+              isTuteur: true,
+              adresse: { select: { codePostal: true, ville: true } },
+              veutGarderAnonymat: true,
+              estSignalementProfessionnel: true,
+            },
+          },
+          participant: {
+            select: {
+              identite: { select: { civilite: { select: { label: true } } } },
+              age: { select: { label: true } },
+              dateNaissance: true,
+              adresse: { select: { codePostal: true, ville: true } },
+              veutGarderAnonymat: true,
+              estVictimeInformee: true,
+              mesureProtection: true,
+              estHandicapee: true,
+              aAutrePersonnes: true,
+            },
+          },
+        }),
+      }),
+    );
+  });
+
+  it('wires department names for all exported department sources', async () => {
+    vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
+    vi.mocked(prisma.requete.findMany).mockResolvedValueOnce([
+      {
+        id: 'REQ-2026-0021',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        declarant: {
+          estVictime: false,
+          isTuteur: false,
+          adresse: { codePostal: '75001' },
+          veutGarderAnonymat: false,
+          estSignalementProfessionnel: false,
+        },
+        participant: {
+          adresse: { codePostal: '69002' },
+          veutGarderAnonymat: false,
+          estVictimeInformee: false,
+          estHandicapee: false,
+          aAutrePersonnes: false,
+        },
+        requeteEntites: [
+          {
+            entiteId: 'root-entite',
+            entite: { label: 'Agence régionale', entiteTypeId: 'ARS' },
+            statut: { label: 'En cours' },
+          },
+        ],
+        etapes: [],
+        situations: [
+          {
+            lieuDeSurvenue: {
+              codePostal: '33000',
+              adresse: { codePostal: '63000' },
+            },
+            misEnCause: { codePostal: '98000' },
+          },
+        ],
+      },
+    ] as unknown as Awaited<ReturnType<typeof prisma.requete.findMany>>);
+    vi.mocked(prisma.inseePostal.findMany).mockResolvedValueOnce([
+      {
+        codePostal: '75001',
+        commune: { dptCodeActuel: '75' },
+      },
+      {
+        codePostal: '69002',
+        commune: { dptCodeActuel: '69' },
+      },
+      {
+        codePostal: '63000',
+        commune: { dptCodeActuel: '63' },
+      },
+      {
+        codePostal: '98000',
+        commune: { dptCodeActuel: '980' },
+      },
+    ] as unknown as Awaited<ReturnType<typeof prisma.inseePostal.findMany>>);
+    vi.mocked(prisma.commune.findMany).mockResolvedValueOnce([
+      {
+        dptCodeActuel: '75',
+        dptLibActuel: 'Paris',
+      },
+      {
+        dptCodeActuel: '69',
+        dptLibActuel: 'Rhône',
+      },
+      {
+        dptCodeActuel: '63',
+        dptLibActuel: 'Puy-de-Dôme',
+      },
+      {
+        dptCodeActuel: '980',
+        dptLibActuel: 'Monaco',
+      },
+    ] as unknown as Awaited<ReturnType<typeof prisma.commune.findMany>>);
+
+    const csv = await generateExportRequetesCsv('root-entite');
+
+    expect(prisma.inseePostal.findMany).toHaveBeenCalledWith({
+      where: { codePostal: { in: ['75001', '69002', '63000', '98000'] } },
+      select: { codePostal: true, commune: { select: { dptCodeActuel: true } } },
+      distinct: ['codePostal'],
+    });
+    expect(prisma.commune.findMany).toHaveBeenCalledWith({
+      where: { dptCodeActuel: { in: ['75', '69', '63', '980'] } },
+      select: { dptCodeActuel: true, dptLibActuel: true },
+      distinct: ['dptCodeActuel'],
+    });
+    expect(csv).toContain('Paris (75)');
+    expect(csv).toContain('Rhône (69)');
+    expect(csv).toContain('Puy-de-Dôme (63)');
+    expect(csv).toContain('Monaco (980)');
+    expect(csv).not.toContain('Gironde (33)');
+  });
+
+  it('exports the authoritative department mapping for a lieu de survenue postal code', async () => {
+    vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
+    vi.mocked(prisma.requete.findMany).mockResolvedValueOnce([
+      {
+        id: 'REQ-2026-0035',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        requeteEntites: [
+          {
+            entiteId: 'root-entite',
+            entite: { label: 'Agence régionale', entiteTypeId: 'ARS' },
+            statut: { label: 'En cours' },
+          },
+        ],
+        etapes: [],
+        situations: [{ lieuDeSurvenue: { codePostal: '20000' } }],
+      },
+    ] as unknown as Awaited<ReturnType<typeof prisma.requete.findMany>>);
+    vi.mocked(prisma.inseePostal.findMany).mockResolvedValueOnce([
+      {
+        codePostal: '20000',
+        commune: { dptCodeActuel: '2A' },
+      },
+    ] as unknown as Awaited<ReturnType<typeof prisma.inseePostal.findMany>>);
+    vi.mocked(prisma.commune.findMany).mockResolvedValueOnce([
+      {
+        dptCodeActuel: '2A',
+        dptLibActuel: 'Corse-du-Sud',
+      },
+    ] as unknown as Awaited<ReturnType<typeof prisma.commune.findMany>>);
+
+    const csv = await generateExportRequetesCsv('root-entite');
+
+    expect(csv).toContain('Corse-du-Sud (2A)');
   });
 
   it('passes the root entity scope to row building for root-scoped fields', async () => {

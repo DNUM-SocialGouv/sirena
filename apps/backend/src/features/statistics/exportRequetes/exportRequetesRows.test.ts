@@ -5,22 +5,6 @@ import type { ExportRequetesCsvRow } from './exportRequetesCsv.js';
 import { buildExportRequetesRows } from './exportRequetesRows.js';
 
 describe('buildExportRequetesRows', () => {
-  it('builds one CSV row for one requête with one situation', () => {
-    const rows = buildExportRequetesRows([
-      {
-        id: 'REQ-2026-0001',
-        createdAt: new Date('2026-06-18T10:00:00.000Z'),
-        situations: [{}],
-      },
-    ]);
-
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toHaveLength(EXPORT_REQUETES_COLUMNS.length);
-    expect(cell(rows[0], 'numeroRequete')).toBe('REQ-2026-0001');
-    expect(cell(rows[0], 'numeroSituation')).toBe(1);
-    expect(cell(rows[0], 'dateCreationRequeteSirena')).toBe('18/06/2026');
-  });
-
   it('populates request, declarant, personne concernée, reception and provenance fields', () => {
     const rows = buildExportRequetesRows([
       {
@@ -67,9 +51,6 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'codePostalPersonneConcernee')).toBe('69002');
     expect(cell(rows[0], 'personneConcerneeConsentIdentiteCommuniquee')).toBe('Non');
     expect(cell(rows[0], 'personneConcerneeInformeeDemarche')).toBe('Non');
-    expect(EXPORT_REQUETES_COLUMNS.find((column) => column.key === 'mesureProtectionPersonneConcernee')?.header).toBe(
-      'Mesure de protection de la personne concernée',
-    );
     expect(cell(rows[0], 'mesureProtectionPersonneConcernee')).toBe('mandataire familial');
     expect(cell(rows[0], 'personneConcerneeHandicap')).toBe('Oui');
     expect(cell(rows[0], 'autrePersonneConcernee')).toBe('Oui');
@@ -79,53 +60,98 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'provenance')).toBe('Demat.social');
   });
 
-  it('populates situation entity hierarchy fields', () => {
+  it('exports cities and authoritative departments for every allowed postal source', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-002A',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          declarant: {
+            estVictime: false,
+            isTuteur: false,
+            adresse: { codePostal: '20000', ville: 'Ajaccio' },
+            veutGarderAnonymat: false,
+            estSignalementProfessionnel: false,
+          },
+          participant: {
+            adresse: { codePostal: '20200', ville: 'Bastia' },
+            veutGarderAnonymat: false,
+            estVictimeInformee: false,
+            estHandicapee: false,
+            aAutrePersonnes: false,
+          },
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'ARS Corse', entiteTypeId: 'ARS' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          situations: [
+            {
+              lieuDeSurvenue: { adresse: { codePostal: '63000', ville: 'Clermont-Ferrand' } },
+              misEnCause: { codePostal: '98000' },
+            },
+          ],
+        },
+      ],
+      {
+        topEntiteId: 'root-entite',
+        departmentCodesByPostalCode: new Map([
+          ['20000', '2A'],
+          ['20200', '2B'],
+          ['63000', '63'],
+          ['98000', '980'],
+        ]),
+        departementNamesByCode: new Map([
+          ['2A', 'Corse-du-Sud'],
+          ['2B', 'Haute-Corse'],
+          ['63', 'Puy-de-Dôme'],
+          ['980', 'Monaco'],
+        ]),
+      },
+    );
+
+    expect(cell(rows[0], 'villeDeclarant')).toBe('Ajaccio');
+    expect(cell(rows[0], 'departementDeclarant')).toBe('Corse-du-Sud (2A)');
+    expect(cell(rows[0], 'villePersonneConcernee')).toBe('Bastia');
+    expect(cell(rows[0], 'departementPersonneConcernee')).toBe('Haute-Corse (2B)');
+    expect(cell(rows[0], 'villeLieuSurvenue')).toBe('Clermont-Ferrand');
+    expect(cell(rows[0], 'departementLieuSurvenue')).toBe('Puy-de-Dôme (63)');
+    expect(cell(rows[0], 'departementMisEnCause')).toBe('Monaco (980)');
+  });
+
+  it('formats and de-duplicates the complete Situation entity hierarchy', () => {
+    const rootEntite = {
+      label: 'ARS NOR',
+      nomComplet: 'Agence régionale de santé de Normandie',
+      entiteMere: null,
+    };
+    const direction = {
+      label: 'DIR AUTO',
+      nomComplet: 'Direction de l’autonomie',
+      entiteMere: rootEntite,
+    };
+    const service = {
+      label: 'SVC PA',
+      nomComplet: 'Service personnes âgées',
+      entiteMere: direction,
+    };
     const rows = buildExportRequetesRows([
       {
-        id: 'REQ-2026-0009',
+        id: 'REQ-2026-0038',
         createdAt: new Date('2026-06-18T10:00:00.000Z'),
         situations: [
           {
-            situationEntites: [
-              {
-                entite: {
-                  label: 'ARS Île-de-France',
-                  entiteMere: null,
-                },
-              },
-              {
-                entite: {
-                  label: 'Direction Autonomie',
-                  entiteMere: { label: 'ARS Île-de-France', entiteMere: null },
-                },
-              },
-              {
-                entite: {
-                  label: 'Service PA',
-                  entiteMere: {
-                    label: 'Direction Autonomie',
-                    entiteMere: { label: 'ARS Île-de-France', entiteMere: null },
-                  },
-                },
-              },
-              {
-                entite: {
-                  label: 'Service PA',
-                  entiteMere: {
-                    label: 'Direction Autonomie',
-                    entiteMere: { label: 'ARS Île-de-France', entiteMere: null },
-                  },
-                },
-              },
-            ],
+            situationEntites: [{ entite: rootEntite }, { entite: direction }, { entite: service }, { entite: service }],
           },
         ],
       },
     ]);
 
-    expect(cell(rows[0], 'entitesAdministrativesSituation')).toBe('ARS Île-de-France');
-    expect(cell(rows[0], 'directionsSituation')).toBe('Direction Autonomie');
-    expect(cell(rows[0], 'servicesSituation')).toBe('Service PA');
+    expect(cell(rows[0], 'entitesAdministrativesSituation')).toBe('Agence régionale de santé de Normandie');
+    expect(cell(rows[0], 'directionsSituation')).toBe('Direction de l’autonomie (ARS NOR)');
+    expect(cell(rows[0], 'servicesSituation')).toBe('Service personnes âgées (DIR AUTO)');
   });
 
   it('populates démarches fields and maps contact presence to Oui/Non', () => {
@@ -140,7 +166,10 @@ describe('buildExportRequetesRows', () => {
               etablissementARepondu: true,
               datePlainte: new Date('2026-06-12T00:00:00.000Z'),
               autoriteType: { label: 'Gendarmerie' },
-              demarches: [{ label: 'Conseil départemental' }, { label: 'Défenseur des droits' }],
+              demarches: [
+                { label: "Démarches engagées auprès d'autres organismes" },
+                { label: 'Défenseur des droits' },
+              ],
             },
           },
         ],
@@ -154,6 +183,60 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'dateDepotPlainte')).toBe('12/06/2026');
     expect(cell(rows[0], 'lieuDepotPlainte')).toBe('Gendarmerie');
     expect(cell(rows[0], 'demarchesAutresOrganismes')).toBe('Oui');
+  });
+
+  it('exports Oui when the responsible-contact démarche is selected without a contact date', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0030',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            demarchesEngagees: {
+              demarches: [{ label: "L'établissement ou le responsables des faits a été contacté" }],
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'misEnCauseContacte')).toBe('Oui');
+  });
+
+  it('exports Oui when the complaint démarche is selected without a complaint date or place', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0031',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            demarchesEngagees: {
+              demarches: [{ label: 'Une plainte a été déposée auprès des autorités judiciaires' }],
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'plainteDeposee')).toBe('Oui');
+  });
+
+  it('exports Non for other organizations when only an unrelated démarche is selected', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0032',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            demarchesEngagees: {
+              demarches: [{ label: "L'établissement ou le responsables des faits a été contacté" }],
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'demarchesAutresOrganismes')).toBe('Non');
   });
 
   it('exports Non for démarches booleans when the démarches record exists without related data', () => {
@@ -176,6 +259,25 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'declarantRecuReponse')).toBe('Non');
     expect(cell(rows[0], 'plainteDeposee')).toBe('Non');
     expect(cell(rows[0], 'demarchesAutresOrganismes')).toBe('Non');
+  });
+
+  it('exports an empty declarant-response value when the stored response is unknown', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0033',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            demarchesEngagees: {
+              etablissementARepondu: null,
+              demarches: [],
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'declarantRecuReponse')).toBe('');
   });
 
   it('populates facts motifs, consequences, dates and functional domain', () => {
@@ -225,63 +327,83 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'domaineFonctionnel')).toBe('Santé');
   });
 
-  it('falls back to transport company for lieu de survenue name when address label is absent', () => {
+  it('exports visible lieu precision and demat.social transport type for a trajet', () => {
     const rows = buildExportRequetesRows([
       {
-        id: 'REQ-2026-0013',
+        id: 'REQ-2026-0028',
         createdAt: new Date('2026-06-18T10:00:00.000Z'),
         situations: [
           {
             lieuDeSurvenue: {
-              societeTransport: 'Ambulances Dupont',
+              lieuTypeId: 'TRAJET',
+              lieuPrecision: 'INTER_ETABLISSEMENT',
+              transportType: { label: 'Ambulance' },
             },
           },
         ],
       },
     ]);
 
-    expect(cell(rows[0], 'nomLieuSurvenue')).toBe('Ambulances Dupont');
+    expect(cell(rows[0], 'precisionTypeLieuSurvenue')).toBe('INTER_ETABLISSEMENT, Ambulance');
   });
 
-  it('falls back to the category-code referential for lieu de survenue FINESS category', () => {
-    const rows = buildExportRequetesRows(
-      [
-        {
-          id: 'REQ-2026-0019',
-          createdAt: new Date('2026-06-18T10:00:00.000Z'),
-          situations: [
-            {
-              lieuDeSurvenue: {
-                finess: '750000001',
-                categCode: '355',
-                categLib: '',
-              },
-            },
-          ],
-        },
-      ],
-      { categorieFinessLieuSurvenueByCode: new Map([['355', 'Centre hospitalier régional']]) },
-    );
-
-    expect(cell(rows[0], 'categorieFinessLieuSurvenue')).toBe('Centre hospitalier régional');
-  });
-
-  it('populates lieu de survenue name from the address label', () => {
+  it('prefers the qualified SIRENA postal code for lieu de survenue', () => {
     const rows = buildExportRequetesRows([
       {
-        id: 'REQ-2026-0012',
+        id: 'REQ-2026-0020',
         createdAt: new Date('2026-06-18T10:00:00.000Z'),
         situations: [
           {
             lieuDeSurvenue: {
-              adresse: { codePostal: '75013', label: 'Hôpital Pitié-Salpêtrière' },
+              codePostal: '33000',
+              adresse: { codePostal: '63000' },
             },
           },
         ],
       },
     ]);
 
-    expect(cell(rows[0], 'nomLieuSurvenue')).toBe('Hôpital Pitié-Salpêtrière');
+    expect(cell(rows[0], 'codePostalLieuSurvenue')).toBe('63000');
+  });
+
+  it('keeps the fallback lieu de survenue postal code and city on the declarant source', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0034',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            lieuDeSurvenue: {
+              codePostal: '33000',
+              adresse: { codePostal: '', ville: 'Clermont-Ferrand' },
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'codePostalLieuSurvenue')).toBe('33000');
+    expect(cell(rows[0], 'villeLieuSurvenue')).toBe('');
+  });
+
+  it('exports the structured lieu de survenue postal code and city together', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0022',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            lieuDeSurvenue: {
+              codePostal: '33000',
+              adresse: { codePostal: '63000', ville: 'Clermont-Ferrand' },
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'codePostalLieuSurvenue')).toBe('63000');
+    expect(cell(rows[0], 'villeLieuSurvenue')).toBe('Clermont-Ferrand');
   });
 
   it('populates lieu de survenue and non-sensitive mis en cause fields', () => {
@@ -295,22 +417,13 @@ describe('buildExportRequetesRows', () => {
               lieuTypeId: 'ETABLISSEMENT_SANTE',
               lieuType: { label: 'Établissement de santé' },
               lieuPrecision: 'CH',
-              transportType: { label: 'Ambulance' },
-              finess: '750000001',
-              categLib: 'Centre hospitalier',
               codePostal: '',
               adresse: { codePostal: '75013' },
             },
             misEnCause: {
               misEnCauseType: { label: 'Établissement' },
               misEnCauseTypePrecision: { label: 'Service hospitalier' },
-              autrePrecision: 'Autre précision',
-              finess: '750000002',
-              nomService: 'Urgences',
               codePostal: '75014',
-              rpps: '12345678901',
-              nom: 'Donnée sensible',
-              prenom: 'Donnée sensible',
             },
           },
         ],
@@ -318,16 +431,10 @@ describe('buildExportRequetesRows', () => {
     ]);
 
     expect(cell(rows[0], 'typeLieuSurvenue')).toBe('Établissement de santé');
-    expect(cell(rows[0], 'precisionTypeLieuSurvenue')).toBe('CH, Ambulance');
-    expect(cell(rows[0], 'finessLieuSurvenue')).toBe('750000001');
-    expect(cell(rows[0], 'categorieFinessLieuSurvenue')).toBe('Centre hospitalier');
-    expect(cell(rows[0], 'nomLieuSurvenue')).toBe('');
+    expect(cell(rows[0], 'precisionTypeLieuSurvenue')).toBe('CH');
     expect(cell(rows[0], 'codePostalLieuSurvenue')).toBe('75013');
     expect(cell(rows[0], 'typeMisEnCause')).toBe('Établissement');
     expect(cell(rows[0], 'precisionTypeMisEnCause')).toBe('Service hospitalier');
-    expect(cell(rows[0], 'finessMisEnCause')).toBe('750000002');
-    expect(cell(rows[0], 'categorieFinessMisEnCause')).toBe('');
-    expect(cell(rows[0], 'nomService')).toBe('Urgences');
   });
 
   it('populates department columns for ARS exports from their matching postal-code columns', () => {
@@ -418,106 +525,42 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'departementMisEnCause')).toBe('');
   });
 
-  it('places department columns immediately after their source/location columns', () => {
-    expect(columnAfter('codePostalDeclarant')).toEqual({
-      key: 'departementDeclarant',
-      header: 'Département déclarant',
-    });
-    expect(columnAfter('codePostalPersonneConcernee')).toEqual({
-      key: 'departementPersonneConcernee',
-      header: 'Département personne concernée',
-    });
-    expect(columnAfter('codePostalLieuSurvenue')).toEqual({
-      key: 'departementLieuSurvenue',
-      header: 'Département lieu de survenue',
-    });
-    expect(columnAfter('nomService')).toEqual({
-      key: 'departementMisEnCause',
-      header: 'Département mis en cause',
-    });
-  });
+  it('formats and de-duplicates request-level affected entities while preserving first-seen order', () => {
+    const direction = {
+      entiteId: 'direction-1',
+      entite: {
+        label: 'DIR AUTO',
+        nomComplet: 'Direction de l’autonomie',
+        entiteTypeId: 'DIRECTION',
+        entiteMere: { label: 'ARS NOR' },
+      },
+      statut: { label: 'Clôturée' },
+    };
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0043',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        requeteEntites: [
+          direction,
+          direction,
+          {
+            entiteId: 'service-1',
+            entite: {
+              label: 'SVC PA',
+              nomComplet: 'Service personnes âgées',
+              entiteTypeId: 'SERVICE',
+              entiteMere: { label: 'DIR AUTO' },
+            },
+            statut: { label: 'En cours' },
+          },
+        ],
+        situations: [{}],
+      },
+    ]);
 
-  it('exports the root-scoped request status as the first column', () => {
-    const rows = buildExportRequetesRows(
-      [
-        {
-          id: 'REQ-2026-0010',
-          createdAt: new Date('2026-06-18T10:00:00.000Z'),
-          requeteEntites: [
-            {
-              entiteId: 'root-entite',
-              entite: { label: 'ARS Île-de-France' },
-              statut: { label: 'Clôturée' },
-            },
-            {
-              entiteId: 'other-root',
-              entite: { label: 'ARS Normandie' },
-              statut: { label: 'En cours' },
-            },
-          ],
-          situations: [{}],
-        },
-      ],
-      { topEntiteId: 'root-entite' },
+    expect(cell(rows[0], 'entitesStatutsRequete')).toBe(
+      'Direction de l’autonomie (ARS NOR) (Clôturée), Service personnes âgées (DIR AUTO) (En cours)',
     );
-
-    expect(EXPORT_REQUETES_COLUMNS[0]).toEqual({
-      key: 'statutRequeteEntiteAdministrative',
-      header: 'Statut de la requête pour mon entité administrative',
-    });
-    expect(rows[0][0]).toBe('Clôturée');
-  });
-
-  it('populates root-scoped acknowledgment email date and type from an auto-note', () => {
-    const rows = buildExportRequetesRows(
-      [
-        {
-          id: 'REQ-2026-0016',
-          createdAt: new Date('2026-06-18T10:00:00.000Z'),
-          etapes: [
-            {
-              entiteId: 'root-entite',
-              type: 'ACKNOWLEDGMENT',
-              statutId: 'EN_COURS',
-              createdAt: new Date('2026-06-15T15:06:57.000Z'),
-              clotureReason: [],
-              notes: [{ texte: "Email d'accusé de réception envoyé le 15/06/2026 15:06:57" }],
-            },
-          ],
-          situations: [{}],
-        },
-      ],
-      { topEntiteId: 'root-entite' },
-    );
-
-    expect(cell(rows[0], 'dateEnvoiAccuseReceptionEntiteAdministrative')).toBe('15/06/2026');
-    expect(cell(rows[0], 'typeEnvoiAccuseReception')).toBe('Email');
-  });
-
-  it('populates migrated acknowledgment date without inventing the send type', () => {
-    const rows = buildExportRequetesRows(
-      [
-        {
-          id: 'REQ-2026-0017',
-          createdAt: new Date('2026-06-18T10:00:00.000Z'),
-          etapes: [
-            {
-              entiteId: 'root-entite',
-              type: 'ACKNOWLEDGMENT',
-              statutId: 'EN_COURS',
-              createdAt: new Date('2026-06-15T15:06:57.000Z'),
-              clotureReason: [],
-              notes: [{ texte: "Date d'envoi de l'accusé de réception au requérant : 16/06/2026" }],
-            },
-          ],
-          situations: [{}],
-        },
-      ],
-      { topEntiteId: 'root-entite' },
-    );
-
-    expect(cell(rows[0], 'dateEnvoiAccuseReceptionEntiteAdministrative')).toBe('16/06/2026');
-    expect(cell(rows[0], 'typeEnvoiAccuseReception')).toBe('');
   });
 
   it('populates request entity status, root-scoped priority and latest root-scoped closure fields', () => {
@@ -569,6 +612,7 @@ describe('buildExportRequetesRows', () => {
       { topEntiteId: 'root-entite' },
     );
 
+    expect(cell(rows[0], 'statutRequeteEntiteAdministrative')).toBe('Clôturée');
     expect(cell(rows[0], 'entitesStatutsRequete')).toBe('ARS Île-de-France (Clôturée), ARS Normandie (En cours)');
     expect(cell(rows[0], 'prioriteRequeteEntiteAdministrative')).toBe('Haute');
     expect(cell(rows[0], 'derniereDateClotureEntiteAdministrative')).toBe('18/06/2026');
@@ -585,6 +629,8 @@ describe('buildExportRequetesRows', () => {
     ]);
 
     expect(rows).toHaveLength(2);
+    expect(rows[0]).toHaveLength(EXPORT_REQUETES_COLUMNS.length);
+    expect(rows[1]).toHaveLength(EXPORT_REQUETES_COLUMNS.length);
     expect(cell(rows[0], 'numeroRequete')).toBe('REQ-2026-0002');
     expect(cell(rows[0], 'numeroSituation')).toBe(1);
     expect(cell(rows[0], 'dateCreationRequeteSirena')).toBe('18/06/2026');
@@ -614,10 +660,4 @@ function cell(row: ExportRequetesCsvRow, key: ExportRequetesColumnKey): ExportRe
   const index = EXPORT_REQUETES_COLUMNS.findIndex((column) => column.key === key);
 
   return row[index];
-}
-
-function columnAfter(key: ExportRequetesColumnKey): (typeof EXPORT_REQUETES_COLUMNS)[number] | undefined {
-  const index = EXPORT_REQUETES_COLUMNS.findIndex((column) => column.key === key);
-
-  return EXPORT_REQUETES_COLUMNS[index + 1];
 }

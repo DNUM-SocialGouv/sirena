@@ -126,7 +126,7 @@ function ChartCard({ card }: { card: StatisticsCard }) {
   );
 }
 
-function RouteComponent() {
+export function RouteComponent() {
   const resolvedFlagsQuery = useResolvedFeatureFlags();
   const { data: profile, isPending: isProfilePending } = useProfile();
   const search = useSearch({ from: '/_auth/_user/statistiques' });
