@@ -976,6 +976,37 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'entitesStatutsRequete')).toBe('Direction de l’autonomie (ARS NOR) (Clôturée)');
   });
 
+  it('de-duplicates request-level affected entities while preserving first-seen order', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0043',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        requeteEntites: [
+          {
+            entiteId: 'direction-1',
+            entite: { label: 'Direction autonomie' },
+            statut: { label: 'En cours' },
+          },
+          {
+            entiteId: 'direction-1',
+            entite: { label: 'Direction autonomie' },
+            statut: { label: 'En cours' },
+          },
+          {
+            entiteId: 'service-1',
+            entite: { label: 'Service personnes âgées' },
+            statut: { label: 'Clôturée' },
+          },
+        ],
+        situations: [{}],
+      },
+    ]);
+
+    expect(cell(rows[0], 'entitesStatutsRequete')).toBe(
+      'Direction autonomie (En cours), Service personnes âgées (Clôturée)',
+    );
+  });
+
   it('populates request entity status, root-scoped priority and latest root-scoped closure fields', () => {
     const rows = buildExportRequetesRows(
       [

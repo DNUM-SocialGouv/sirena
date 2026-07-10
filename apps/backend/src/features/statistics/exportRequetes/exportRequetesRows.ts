@@ -461,7 +461,7 @@ function formatLieuSurvenuePrecision(lieuDeSurvenue: ExportLieuDeSurvenueRecord 
 }
 
 function formatRequeteEntites(requeteEntites: ExportRequeteEntiteRecord[] | undefined): string {
-  return formatExportList(
+  return formatUniqueLabels(
     requeteEntites?.map((requeteEntite) => {
       const entite = requeteEntite.entite;
       const entiteName = entite ? formatEntiteWithParentLabel(entite) : null;
