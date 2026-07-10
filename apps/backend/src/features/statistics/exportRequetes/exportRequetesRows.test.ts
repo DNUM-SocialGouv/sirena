@@ -608,6 +608,53 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'departementLieuSurvenue')).toBe('Puy-de-Dôme (63)');
   });
 
+  it('derives the lieu de survenue department from its postal code when the referential has no mapping', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0036',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'Agence régionale', entiteTypeId: 'ARS' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          situations: [{ lieuDeSurvenue: { codePostal: '97199' } }],
+        },
+      ],
+      {
+        topEntiteId: 'root-entite',
+        departmentCodesByPostalCode: new Map(),
+      },
+    );
+
+    expect(cell(rows[0], 'departementLieuSurvenue')).toBe('971');
+  });
+
+  it('leaves the lieu de survenue department empty for an invalid postal code', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0037',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'Agence régionale', entiteTypeId: 'ARS' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          situations: [{ lieuDeSurvenue: { codePostal: 'Clermont-Ferrand' } }],
+        },
+      ],
+      { topEntiteId: 'root-entite' },
+    );
+
+    expect(cell(rows[0], 'departementLieuSurvenue')).toBe('');
+  });
+
   it('exports département mis en cause as name and code', () => {
     const rows = buildExportRequetesRows(
       [

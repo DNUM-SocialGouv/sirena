@@ -117,15 +117,19 @@ export async function generateExportRequetesCsv(topEntiteId: string): Promise<st
     },
     include: exportRequetesInclude,
   });
-  const departementNamesByCode = await getDepartementNamesByCode(requetes);
+  const { departmentCodesByPostalCode, departementNamesByCode } = await getDepartmentReferences(requetes);
 
   return buildExportRequetesCsvFromRecords(requetes.map(toExportRequeteRecord), {
     topEntiteId,
+    departmentCodesByPostalCode,
     departementNamesByCode,
   });
 }
 
-async function getDepartementNamesByCode(requetes: ExportRequetePrismaPayload[]): Promise<Map<string, string>> {
+async function getDepartmentReferences(requetes: ExportRequetePrismaPayload[]): Promise<{
+  departmentCodesByPostalCode: Map<string, string>;
+  departementNamesByCode: Map<string, string>;
+}> {
   const codePostaux = Array.from(
     new Set(
       requetes
@@ -142,7 +146,7 @@ async function getDepartementNamesByCode(requetes: ExportRequetePrismaPayload[])
   );
 
   if (codePostaux.length === 0) {
-    return new Map();
+    return { departmentCodesByPostalCode: new Map(), departementNamesByCode: new Map() };
   }
 
   const inseePostalRows = await prisma.inseePostal.findMany({
@@ -162,7 +166,7 @@ async function getDepartementNamesByCode(requetes: ExportRequetePrismaPayload[])
   ).filter((departmentCode) => departmentCode !== '');
 
   if (departmentCodes.length === 0) {
-    return new Map();
+    return { departmentCodesByPostalCode, departementNamesByCode: new Map() };
   }
 
   const communeRows = await prisma.commune.findMany({
@@ -171,7 +175,10 @@ async function getDepartementNamesByCode(requetes: ExportRequetePrismaPayload[])
     distinct: ['dptCodeActuel'],
   });
 
-  return new Map(communeRows.map((row) => [row.dptCodeActuel, row.dptLibActuel]));
+  return {
+    departmentCodesByPostalCode,
+    departementNamesByCode: new Map(communeRows.map((row) => [row.dptCodeActuel, row.dptLibActuel])),
+  };
 }
 
 function extractDepartmentCode(codePostal: string): string {

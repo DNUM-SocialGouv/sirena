@@ -128,6 +128,7 @@ type ExportRequeteKeyedRow = Partial<Record<ExportRequetesColumnKey, ExportReque
 
 export type BuildExportRequetesRowsOptions = {
   topEntiteId?: string;
+  departmentCodesByPostalCode?: Map<string, string>;
   departementNamesByCode?: Map<string, string>;
 };
 
@@ -157,7 +158,13 @@ function buildExportRequeteRow(
     ...buildRequeteFields(requete),
     ...buildDeclarantFields(requete.declarant, shouldExportDepartements, options.departementNamesByCode),
     ...buildPersonneConcerneeFields(requete.participant, shouldExportDepartements, options.departementNamesByCode),
-    ...buildSituationFields(situation, situationIndex, shouldExportDepartements, options.departementNamesByCode),
+    ...buildSituationFields(
+      situation,
+      situationIndex,
+      shouldExportDepartements,
+      options.departmentCodesByPostalCode,
+      options.departementNamesByCode,
+    ),
     ...buildFaitsFields(situation?.faits ?? []),
     ...buildDemarchesFields(situation?.demarchesEngagees),
     ...buildWorkflowFields(requete, options, requeteEntiteRacine),
@@ -226,6 +233,7 @@ function buildSituationFields(
   situation: ExportSituationRecord | null,
   situationIndex: number | undefined,
   shouldExportDepartements: boolean,
+  departmentCodesByPostalCode: Map<string, string> | undefined,
   departementNamesByCode: Map<string, string> | undefined,
 ): ExportRequeteKeyedRow {
   const lieuDeSurvenue = situation?.lieuDeSurvenue;
@@ -234,7 +242,8 @@ function buildSituationFields(
   const codePostalLieuSurvenueQualifie = lieuDeSurvenue?.adresse?.codePostal;
   const codePostalLieuSurvenue = codePostalLieuSurvenueQualifie || lieuDeSurvenue?.codePostal || '';
   const villeLieuSurvenue = codePostalLieuSurvenueQualifie ? (lieuDeSurvenue?.adresse?.ville ?? '') : '';
-  const departementLieuSurvenue = formatDepartementFromCodePostal(codePostalLieuSurvenue);
+  const departementLieuSurvenue =
+    departmentCodesByPostalCode?.get(codePostalLieuSurvenue) ?? formatDepartementFromCodePostal(codePostalLieuSurvenue);
   const codePostalMisEnCause = misEnCause?.codePostal ?? '';
   const departementMisEnCause = formatDepartementFromCodePostal(codePostalMisEnCause);
 

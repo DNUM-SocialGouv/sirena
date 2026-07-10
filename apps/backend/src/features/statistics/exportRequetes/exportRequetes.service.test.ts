@@ -185,6 +185,41 @@ describe('generateExportRequetesCsv', () => {
     expect(csv).not.toContain('Gironde (33)');
   });
 
+  it('exports the authoritative department mapping for a lieu de survenue postal code', async () => {
+    vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
+    vi.mocked(prisma.requete.findMany).mockResolvedValueOnce([
+      {
+        id: 'REQ-2026-0035',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        requeteEntites: [
+          {
+            entiteId: 'root-entite',
+            entite: { label: 'Agence régionale', entiteTypeId: 'ARS' },
+            statut: { label: 'En cours' },
+          },
+        ],
+        etapes: [],
+        situations: [{ lieuDeSurvenue: { codePostal: '20000' } }],
+      },
+    ] as unknown as Awaited<ReturnType<typeof prisma.requete.findMany>>);
+    vi.mocked(prisma.inseePostal.findMany).mockResolvedValueOnce([
+      {
+        codePostal: '20000',
+        commune: { dptCodeActuel: '2A' },
+      },
+    ] as unknown as Awaited<ReturnType<typeof prisma.inseePostal.findMany>>);
+    vi.mocked(prisma.commune.findMany).mockResolvedValueOnce([
+      {
+        dptCodeActuel: '2A',
+        dptLibActuel: 'Corse-du-Sud',
+      },
+    ] as unknown as Awaited<ReturnType<typeof prisma.commune.findMany>>);
+
+    const csv = await generateExportRequetesCsv('root-entite');
+
+    expect(csv).toContain('Corse-du-Sud (2A)');
+  });
+
   it('passes the root entity scope to row building for root-scoped fields', async () => {
     vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
     vi.mocked(prisma.requete.findMany).mockResolvedValueOnce([
