@@ -46,7 +46,14 @@ const exportRequetesSelect = {
   requeteEntites: {
     select: {
       entiteId: true,
-      entite: { select: { label: true, nomComplet: true, entiteTypeId: true } },
+      entite: {
+        select: {
+          label: true,
+          nomComplet: true,
+          entiteTypeId: true,
+          entiteMere: { select: { label: true } },
+        },
+      },
       priorite: { select: { label: true } },
       statut: { select: { label: true } },
     },

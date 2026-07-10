@@ -30,6 +30,7 @@ type ExportLabelRecord = {
 type ExportEntiteReferenceRecord = ExportLabelRecord & {
   nomComplet?: string | null;
   entiteTypeId?: string | null;
+  entiteMere?: ExportLabelRecord | null;
 };
 
 type ExportAdresseRecord = {
@@ -468,7 +469,8 @@ function formatLieuSurvenuePrecision(lieuDeSurvenue: ExportLieuDeSurvenueRecord 
 function formatRequeteEntites(requeteEntites: ExportRequeteEntiteRecord[] | undefined): string {
   return formatExportList(
     requeteEntites?.map((requeteEntite) => {
-      const entiteName = requeteEntite.entite?.nomComplet ?? requeteEntite.entite?.label;
+      const entite = requeteEntite.entite;
+      const entiteName = entite ? formatEntiteWithParentLabel(entite) : null;
       const statutLabel = requeteEntite.statut?.label;
 
       if (!entiteName) {

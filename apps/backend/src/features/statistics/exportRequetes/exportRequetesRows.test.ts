@@ -951,7 +951,7 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'statutRequeteEntiteAdministrative')).toBe('Clôturée');
   });
 
-  it('exports a request-level affected entity with its full name and request status', () => {
+  it('exports a request-level Direction with its full name, parent short label, and request status', () => {
     const rows = buildExportRequetesRows([
       {
         id: 'REQ-2026-0042',
@@ -960,8 +960,13 @@ describe('buildExportRequetesRows', () => {
           {
             entiteId: 'root-entite',
             entite: {
-              label: 'ARS NOR',
-              nomComplet: 'Agence régionale de santé de Normandie',
+              label: 'DIR AUTO',
+              nomComplet: 'Direction de l’autonomie',
+              entiteTypeId: 'DIRECTION',
+              entiteMere: {
+                label: 'ARS NOR',
+                nomComplet: 'Agence régionale de santé de Normandie',
+              },
             },
             statut: { label: 'Clôturée' },
           },
@@ -970,7 +975,7 @@ describe('buildExportRequetesRows', () => {
       },
     ]);
 
-    expect(cell(rows[0], 'entitesStatutsRequete')).toBe('Agence régionale de santé de Normandie (Clôturée)');
+    expect(cell(rows[0], 'entitesStatutsRequete')).toBe('Direction de l’autonomie (ARS NOR) (Clôturée)');
   });
 
   it('populates request entity status, root-scoped priority and latest root-scoped closure fields', () => {
