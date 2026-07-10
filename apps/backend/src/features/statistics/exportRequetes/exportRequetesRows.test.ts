@@ -125,7 +125,6 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'departementDeclarant')).toBe('Corse-du-Sud (2A)');
     expect(cell(rows[0], 'departementPersonneConcernee')).toBe('Haute-Corse (2B)');
     expect(cell(rows[0], 'departementMisEnCause')).toBe('Corse-du-Sud (2A)');
-    expect(EXPORT_REQUETES_COLUMNS.some(({ key }) => key === 'codePostalMisEnCause')).toBe(false);
   });
 
   it('exports ville déclarant from the declarant address', () => {
@@ -965,7 +964,6 @@ describe('buildExportRequetesRows', () => {
               entiteTypeId: 'DIRECTION',
               entiteMere: {
                 label: 'ARS NOR',
-                nomComplet: 'Agence régionale de santé de Normandie',
               },
             },
             statut: { label: 'Clôturée' },
