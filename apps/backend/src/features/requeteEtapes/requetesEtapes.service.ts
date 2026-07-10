@@ -304,7 +304,7 @@ export const updateRequeteEtapeStatut = async (
   }
 
   let dateRealisation: Date | null | undefined;
-  if (requeteEtape.type === REQUETE_ETAPE_TYPES.MANUAL || requeteEtape.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
+  if (requeteEtape.type === REQUETE_ETAPE_TYPES.MANUAL) {
     if (data.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT) {
       dateRealisation = requeteEtape.dateRealisation ?? new Date();
     } else {
@@ -401,7 +401,6 @@ export const updateAcknowledgmentStep = async (requeteId: string, entiteIds: str
           where: { id: etape.id },
           data: {
             statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-            dateRealisation: etape.dateRealisation ?? new Date(),
           },
         });
 

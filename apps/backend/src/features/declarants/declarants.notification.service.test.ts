@@ -423,11 +423,7 @@ describe('sendManualAcknowledgmentEmail()', () => {
     vi.clearAllMocks();
   });
 
-  it('stores the manual SIRENA send date as acknowledgment dateRealisation when claiming the step', async () => {
-    const sentDate = new Date('2026-07-09T11:00:00.000Z');
-    vi.useFakeTimers();
-    vi.setSystemTime(sentDate);
-
+  it('claims the acknowledgment step as FAIT before sending the manual email', async () => {
     mockedPrismaRequeteEtape.updateMany.mockResolvedValueOnce({ count: 1 } as any);
     mockedPrismaRequete.findUnique.mockResolvedValueOnce({
       declarant: { identite: { email: 'john@example.com', prenom: 'John', nom: 'Doe' } },
@@ -454,10 +450,7 @@ describe('sendManualAcknowledgmentEmail()', () => {
       where: { id: 'etapeId', statutId: 'A_FAIRE' },
       data: {
         statutId: 'FAIT',
-        dateRealisation: sentDate,
       },
     });
-
-    vi.useRealTimers();
   });
 });

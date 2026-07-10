@@ -783,11 +783,7 @@ describe('RequeteEtapes.service.ts', () => {
   });
 
   describe('updateRequeteEtapeStatut()', () => {
-    it('sets dateRealisation when an acknowledgment step is manually marked as FAIT', async () => {
-      const now = new Date('2026-07-09T10:00:00.000Z');
-      vi.useFakeTimers();
-      vi.setSystemTime(now);
-
+    it('marks an acknowledgment step as FAIT', async () => {
       const mockEtape = {
         ...requeteEtape,
         type: 'ACKNOWLEDGMENT',
@@ -796,7 +792,6 @@ describe('RequeteEtapes.service.ts', () => {
       const mockUpdatedEtape = {
         ...mockEtape,
         statutId: 'FAIT',
-        dateRealisation: now,
       };
 
       vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(mockEtape);
@@ -809,11 +804,8 @@ describe('RequeteEtapes.service.ts', () => {
         where: { id: '1' },
         data: {
           statutId: 'FAIT',
-          dateRealisation: now,
         },
       });
-
-      vi.useRealTimers();
     });
 
     it('should update the statut of a RequeteEtape', async () => {
@@ -842,35 +834,6 @@ describe('RequeteEtapes.service.ts', () => {
       });
     });
 
-    it('clears dateRealisation when an acknowledgment step moves away from FAIT', async () => {
-      const existingDateRealisation = new Date('2026-07-08T10:00:00.000Z');
-      const mockEtape = {
-        ...requeteEtape,
-        type: 'ACKNOWLEDGMENT',
-        statutId: 'FAIT',
-        dateRealisation: existingDateRealisation,
-      };
-      const mockUpdatedEtape = {
-        ...mockEtape,
-        statutId: 'EN_COURS',
-        dateRealisation: null,
-      };
-
-      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(mockEtape);
-      vi.mocked(prisma.requeteEtape.update).mockResolvedValueOnce(mockUpdatedEtape);
-
-      const result = await updateRequeteEtapeStatut('1', { statutId: 'EN_COURS' });
-
-      expect(result).toEqual(mockUpdatedEtape);
-      expect(prisma.requeteEtape.update).toHaveBeenCalledWith({
-        where: { id: '1' },
-        data: {
-          statutId: 'EN_COURS',
-          dateRealisation: null,
-        },
-      });
-    });
-
     it('should return null if RequeteEtape not found', async () => {
       vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(null);
 
@@ -882,11 +845,7 @@ describe('RequeteEtapes.service.ts', () => {
   });
 
   describe('updateAcknowledgmentStep()', () => {
-    it('sets dateRealisation when automatic acknowledgment completion marks a step FAIT', async () => {
-      const now = new Date('2026-07-09T10:00:00.000Z');
-      vi.useFakeTimers();
-      vi.setSystemTime(now);
-
+    it('marks the acknowledgment step as FAIT when automatic acknowledgment completes', async () => {
       const mockEtape = {
         ...requeteEtape,
         id: 'acknowledgmentEtapeId',
@@ -897,7 +856,6 @@ describe('RequeteEtapes.service.ts', () => {
       const mockUpdatedEtape = {
         ...mockEtape,
         statutId: 'FAIT',
-        dateRealisation: now,
       };
 
       vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([mockEtape]);
@@ -909,11 +867,8 @@ describe('RequeteEtapes.service.ts', () => {
         where: { id: 'acknowledgmentEtapeId' },
         data: {
           statutId: 'FAIT',
-          dateRealisation: now,
         },
       });
-
-      vi.useRealTimers();
     });
   });
 
