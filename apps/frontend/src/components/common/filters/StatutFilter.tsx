@@ -16,9 +16,9 @@ const BASE_STATUTS = [REQUETE_STATUT_TYPES.NOUVEAU, REQUETE_STATUT_TYPES.EN_COUR
 
 export function StatutFilter({ selectedIds, counts, onChange, onOpen, onClose }: Props) {
   const options = useMemo(() => {
-    const traiteeCount = counts?.[REQUETE_STATUT_TYPES.TRAITEE];
-    const showTraitee = (traiteeCount ?? 0) > 0 || selectedIds.includes(REQUETE_STATUT_TYPES.TRAITEE);
-    const statuts = showTraitee ? [...BASE_STATUTS, REQUETE_STATUT_TYPES.TRAITEE] : BASE_STATUTS;
+    const requetesTraiteeCount = counts?.[REQUETE_STATUT_TYPES.TRAITEE];
+    const showRequeteTraitee = (requetesTraiteeCount ?? 0) > 0 || selectedIds.includes(REQUETE_STATUT_TYPES.TRAITEE);
+    const statuts = showRequeteTraitee ? [...BASE_STATUTS, REQUETE_STATUT_TYPES.TRAITEE] : BASE_STATUTS;
 
     return statuts.map((id) => {
       const count = counts?.[id];
