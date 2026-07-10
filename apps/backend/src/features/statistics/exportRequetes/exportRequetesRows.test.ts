@@ -912,32 +912,6 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'typeEnvoiAccuseReception')).toBe('Autre');
   });
 
-  it('falls back to the completed acknowledgment update date when stronger date evidence is absent', () => {
-    const rows = buildExportRequetesRows(
-      [
-        {
-          id: 'REQ-2026-0034',
-          createdAt: new Date('2026-06-18T10:00:00.000Z'),
-          etapes: [
-            {
-              entiteId: 'root-entite',
-              type: 'ACKNOWLEDGMENT',
-              statutId: 'FAIT',
-              createdAt: new Date('2026-06-15T15:06:57.000Z'),
-              updatedAt: new Date('2026-06-17T12:00:00.000Z'),
-              clotureReason: [],
-            },
-          ],
-          situations: [{}],
-        },
-      ],
-      { topEntiteId: 'root-entite' },
-    );
-
-    expect(cell(rows[0], 'dateEnvoiAccuseReceptionEntiteAdministrative')).toBe('17/06/2026');
-    expect(cell(rows[0], 'typeEnvoiAccuseReception')).toBe('Autre');
-  });
-
   it('populates migrated acknowledgment date without inventing the send type', () => {
     const rows = buildExportRequetesRows(
       [

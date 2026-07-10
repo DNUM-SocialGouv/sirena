@@ -583,10 +583,6 @@ function getAccuseReceptionEnvoi(
     if (etape.dateRealisation && etape.statutId === 'FAIT') {
       return { date: etape.dateRealisation, type: 'Autre' };
     }
-
-    if (etape.updatedAt && etape.statutId === 'FAIT') {
-      return { date: etape.updatedAt, type: 'Autre' };
-    }
   }
 
   return undefined;
