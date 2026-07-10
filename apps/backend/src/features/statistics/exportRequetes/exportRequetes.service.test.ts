@@ -52,7 +52,11 @@ describe('generateExportRequetesCsv', () => {
     );
     expect(vi.mocked(prisma.requete.findMany).mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({
-        include: expect.objectContaining({
+        select: expect.objectContaining({
+          id: true,
+          createdAt: true,
+          receptionDate: true,
+          dateDemandeDeclarant: true,
           etapes: {
             select: {
               entiteId: true,
@@ -63,7 +67,7 @@ describe('generateExportRequetesCsv', () => {
             },
           },
           situations: expect.objectContaining({
-            include: expect.objectContaining({
+            select: expect.objectContaining({
               lieuDeSurvenue: {
                 select: {
                   lieuTypeId: true,
@@ -88,6 +92,44 @@ describe('generateExportRequetesCsv', () => {
     );
     expect(csv).toContain('REQ-2026-0001');
     expect(csv).toContain('18/06/2026');
+  });
+
+  it('selects only exported declarant and participant fields', async () => {
+    vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
+    vi.mocked(prisma.requete.findMany).mockResolvedValueOnce([]);
+
+    await generateExportRequetesCsv('root-entite');
+
+    expect(vi.mocked(prisma.requete.findMany).mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({
+        select: expect.objectContaining({
+          declarant: {
+            select: {
+              estVictime: true,
+              lienVictime: { select: { label: true } },
+              lienAutrePrecision: true,
+              isTuteur: true,
+              adresse: { select: { codePostal: true, ville: true } },
+              veutGarderAnonymat: true,
+              estSignalementProfessionnel: true,
+            },
+          },
+          participant: {
+            select: {
+              identite: { select: { civilite: { select: { label: true } } } },
+              age: { select: { label: true } },
+              dateNaissance: true,
+              adresse: { select: { codePostal: true, ville: true } },
+              veutGarderAnonymat: true,
+              estVictimeInformee: true,
+              mesureProtection: true,
+              estHandicapee: true,
+              aAutrePersonnes: true,
+            },
+          },
+        }),
+      }),
+    );
   });
 
   it('wires department names for all exported department sources', async () => {

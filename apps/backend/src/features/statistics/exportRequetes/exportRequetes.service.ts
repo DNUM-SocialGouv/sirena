@@ -3,26 +3,37 @@ import { getEntiteDescendantIds } from '../../entites/entites.service.js';
 import { buildExportRequetesCsvFromRecords } from './exportRequetesCsv.js';
 import type { ExportRequeteRecord } from './exportRequetesRows.js';
 
-const exportRequetesInclude = {
+const exportRequetesSelect = {
+  id: true,
+  createdAt: true,
+  receptionDate: true,
+  dateDemandeDeclarant: true,
   declarant: {
-    include: {
-      adresse: true,
-      lienVictime: true,
+    select: {
+      estVictime: true,
+      lienVictime: { select: { label: true } },
+      lienAutrePrecision: true,
+      isTuteur: true,
+      adresse: { select: { codePostal: true, ville: true } },
+      veutGarderAnonymat: true,
+      estSignalementProfessionnel: true,
     },
   },
   participant: {
-    include: {
-      adresse: true,
-      age: true,
-      identite: {
-        include: {
-          civilite: true,
-        },
-      },
+    select: {
+      identite: { select: { civilite: { select: { label: true } } } },
+      age: { select: { label: true } },
+      dateNaissance: true,
+      adresse: { select: { codePostal: true, ville: true } },
+      veutGarderAnonymat: true,
+      estVictimeInformee: true,
+      mesureProtection: true,
+      estHandicapee: true,
+      aAutrePersonnes: true,
     },
   },
-  provenance: true,
-  receptionType: true,
+  provenance: { select: { label: true } },
+  receptionType: { select: { label: true } },
   etapes: {
     select: {
       entiteId: true,
@@ -33,14 +44,15 @@ const exportRequetesInclude = {
     },
   },
   requeteEntites: {
-    include: {
-      entite: true,
-      priorite: true,
-      statut: true,
+    select: {
+      entiteId: true,
+      entite: { select: { label: true, nomComplet: true, entiteTypeId: true } },
+      priorite: { select: { label: true } },
+      statut: { select: { label: true } },
     },
   },
   situations: {
-    include: {
+    select: {
       lieuDeSurvenue: {
         select: {
           lieuTypeId: true,
@@ -59,38 +71,36 @@ const exportRequetesInclude = {
         },
       },
       faits: {
-        include: {
-          motifs: {
-            include: {
-              motif: true,
-            },
-          },
-          motifsDeclaratifs: {
-            include: {
-              motifDeclaratif: true,
-            },
-          },
-          consequences: {
-            include: {
-              consequence: true,
-            },
-          },
+        select: {
+          dateDebut: true,
+          dateFin: true,
+          motifs: { select: { motifId: true, motif: { select: { label: true } } } },
+          motifsDeclaratifs: { select: { motifDeclaratif: { select: { label: true } } } },
+          consequences: { select: { consequence: { select: { label: true } } } },
         },
       },
-      domainesFonctionnels: true,
+      domainesFonctionnels: { select: { label: true } },
       demarchesEngagees: {
-        include: {
-          autoriteType: true,
-          demarches: true,
+        select: {
+          dateContactEtablissement: true,
+          etablissementARepondu: true,
+          organisme: true,
+          datePlainte: true,
+          autoriteType: { select: { label: true } },
+          demarches: { select: { label: true } },
         },
       },
       situationEntites: {
-        include: {
+        select: {
           entite: {
-            include: {
+            select: {
+              label: true,
+              nomComplet: true,
               entiteMere: {
-                include: {
-                  entiteMere: true,
+                select: {
+                  label: true,
+                  nomComplet: true,
+                  entiteMere: { select: { label: true, nomComplet: true } },
                 },
               },
             },
@@ -102,7 +112,7 @@ const exportRequetesInclude = {
 } satisfies Prisma.RequeteInclude;
 
 type ExportRequetePrismaPayload = Prisma.RequeteGetPayload<{
-  include: typeof exportRequetesInclude;
+  select: typeof exportRequetesSelect;
 }>;
 
 export async function generateExportRequetesCsv(topEntiteId: string): Promise<string> {
@@ -115,7 +125,7 @@ export async function generateExportRequetesCsv(topEntiteId: string): Promise<st
         },
       },
     },
-    include: exportRequetesInclude,
+    select: exportRequetesSelect,
   });
   const { departmentCodesByPostalCode, departementNamesByCode } = await getDepartmentReferences(requetes);
 
