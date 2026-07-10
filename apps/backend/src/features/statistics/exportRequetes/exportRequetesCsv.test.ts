@@ -19,15 +19,27 @@ describe('buildExportRequetesCsv', () => {
     expect(headerCell(columns, 'numeroRequete')).toBe('Numéro de requête');
     expect(headerCell(columns, 'dateDepotPlainte')).toBe('Date de dépôt de plainte');
     expect(headerCell(columns, 'declarantRecuReponse')).toBe('Le déclarant a reçu une réponse');
-    expect(headerCell(columns, 'villeDeclarant')).toBe('Ville déclarant');
-    expect(headerCell(columns, 'departementDeclarant')).toBe('Département déclarant');
-    expect(headerCell(columns, 'villePersonneConcernee')).toBe('Ville personne concernée');
-    expect(headerCell(columns, 'departementPersonneConcernee')).toBe('Département personne concernée');
-    expect(columns).toContain('Département mis en cause');
+    expect(headerCell(columns, 'mesureProtectionPersonneConcernee')).toBe(
+      'Mesure de protection de la personne concernée',
+    );
     expect(headerCell(columns, 'numeroSituation')).toBe('Numéro de situation');
-    expect(headerCell(columns, 'villeLieuSurvenue')).toBe('Ville lieu de survenue');
-    expect(headerCell(columns, 'departementLieuSurvenue')).toBe('Département lieu de survenue');
-    expect(headerCell(columns, 'departementMisEnCause')).toBe('Département mis en cause');
+    expect(columns.slice(columnIndex('codePostalDeclarant'), columnIndex('departementDeclarant') + 1)).toEqual([
+      'Code Postal déclarant',
+      'Ville déclarant',
+      'Département déclarant',
+    ]);
+    expect(
+      columns.slice(columnIndex('codePostalPersonneConcernee'), columnIndex('departementPersonneConcernee') + 1),
+    ).toEqual(['Code Postal personne concernée', 'Ville personne concernée', 'Département personne concernée']);
+    expect(columns.slice(columnIndex('codePostalLieuSurvenue'), columnIndex('departementLieuSurvenue') + 1)).toEqual([
+      'Code postal lieu de survenue',
+      'Ville lieu de survenue',
+      'Département lieu de survenue',
+    ]);
+    expect(columns.slice(columnIndex('precisionTypeMisEnCause'), columnIndex('departementMisEnCause') + 1)).toEqual([
+      'Précision type de mis en cause',
+      'Département mis en cause',
+    ]);
     expect(headerCell(columns, 'raisonsClotureEntiteAdministrative')).toBe(
       'Raison(s) clôture de la requête pour mon entité administrative',
     );
