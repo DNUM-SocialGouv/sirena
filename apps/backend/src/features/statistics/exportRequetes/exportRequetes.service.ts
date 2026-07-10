@@ -109,7 +109,7 @@ const exportRequetesSelect = {
       },
     },
   },
-} satisfies Prisma.RequeteInclude;
+} satisfies Prisma.RequeteSelect;
 
 type ExportRequetePrismaPayload = Prisma.RequeteGetPayload<{
   select: typeof exportRequetesSelect;
