@@ -1,9 +1,9 @@
 export const EXPORT_REQUETES_COLUMNS = [
+  { key: 'numeroRequete', header: 'Numéro de requête' },
   {
     key: 'statutRequeteEntiteAdministrative',
     header: 'Statut de la requête pour mon entité administrative',
   },
-  { key: 'numeroRequete', header: 'Numéro de requête' },
   { key: 'declarantEstPersonneConcernee', header: 'Le déclarant est la personne concernée' },
   { key: 'lienPersonneConcernee', header: 'Lien avec la personne concernée' },
   {
@@ -11,6 +11,7 @@ export const EXPORT_REQUETES_COLUMNS = [
     header: 'Le déclarant est tuteur/curateur de la personne concernée',
   },
   { key: 'codePostalDeclarant', header: 'Code Postal déclarant' },
+  { key: 'villeDeclarant', header: 'Ville déclarant' },
   { key: 'departementDeclarant', header: 'Département déclarant' },
   {
     key: 'declarantConsentIdentiteCommuniquee',
@@ -24,6 +25,7 @@ export const EXPORT_REQUETES_COLUMNS = [
     header: 'Si tranche non renseignée : Année de naissance personne concernée',
   },
   { key: 'codePostalPersonneConcernee', header: 'Code Postal personne concernée' },
+  { key: 'villePersonneConcernee', header: 'Ville personne concernée' },
   { key: 'departementPersonneConcernee', header: 'Département personne concernée' },
   {
     key: 'personneConcerneeConsentIdentiteCommuniquee',
@@ -39,19 +41,11 @@ export const EXPORT_REQUETES_COLUMNS = [
   { key: 'numeroSituation', header: 'Numéro de situation' },
   { key: 'typeLieuSurvenue', header: 'Type de lieu de survenue' },
   { key: 'precisionTypeLieuSurvenue', header: 'Précision type de lieu de survenue' },
-  { key: 'finessLieuSurvenue', header: 'Numéro FINESS du lieu de survenue' },
-  { key: 'categorieFinessLieuSurvenue', header: 'Catégorie établissement du FINESS du lieu de survenue' },
-  {
-    key: 'nomLieuSurvenue',
-    header: "Nom de l'établissement / Nom du lieu de survenue / Société de transport concernée",
-  },
   { key: 'codePostalLieuSurvenue', header: 'Code postal lieu de survenue' },
+  { key: 'villeLieuSurvenue', header: 'Ville lieu de survenue' },
   { key: 'departementLieuSurvenue', header: 'Département lieu de survenue' },
   { key: 'typeMisEnCause', header: 'Type de mis en cause' },
   { key: 'precisionTypeMisEnCause', header: 'Précision type de mis en cause' },
-  { key: 'finessMisEnCause', header: 'FINESS mis en cause' },
-  { key: 'categorieFinessMisEnCause', header: 'Catégorie établissement du FINESS mis en cause' },
-  { key: 'nomService', header: 'Nom du service' },
   { key: 'departementMisEnCause', header: 'Département mis en cause' },
   {
     key: 'motifsDeclaratifs',
@@ -64,9 +58,9 @@ export const EXPORT_REQUETES_COLUMNS = [
   { key: 'domaineFonctionnel', header: 'Domaine fonctionnel' },
   { key: 'misEnCauseContacte', header: 'Le mis en cause a été contacté' },
   { key: 'datePriseContact', header: 'Date de prise de contact' },
-  { key: 'declarantRecuReponse', header: 'Le déclarant a réçu une réponse' },
+  { key: 'declarantRecuReponse', header: 'Le déclarant a reçu une réponse' },
   { key: 'plainteDeposee', header: 'Une plainte a été déposée auprès des autorités judiciaires' },
-  { key: 'dateDepotPlainte', header: 'Date de dépot de plate' },
+  { key: 'dateDepotPlainte', header: 'Date de dépôt de plainte' },
   { key: 'lieuDepotPlainte', header: 'Lieu de dépot de plainte' },
   { key: 'demarchesAutresOrganismes', header: "Des démarches ont été engagées auprès d'autres organismes" },
   { key: 'entitesAdministrativesSituation', header: 'Entités administratives affectées à la situation' },
@@ -79,11 +73,6 @@ export const EXPORT_REQUETES_COLUMNS = [
   { key: 'modeReception', header: 'Mode de réception' },
   { key: 'dateDemandeDeclarant', header: 'Date demande par le déclarant' },
   { key: 'provenance', header: 'Provenance' },
-  {
-    key: 'dateEnvoiAccuseReceptionEntiteAdministrative',
-    header: "Date envoi de l'accusé de réception pour mon entité administrative",
-  },
-  { key: 'typeEnvoiAccuseReception', header: "Type d'envoi de l'accusé de réception" },
   {
     key: 'derniereDateClotureEntiteAdministrative',
     header: 'Dernière date de clôture de la requête pour mon entité administrative',

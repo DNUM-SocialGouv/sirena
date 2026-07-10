@@ -1,8 +1,9 @@
-import { MOTIFS_HIERARCHICAL_DATA } from '@sirena/common/constants';
+import { demarcheEngageeLabels, MOTIFS_HIERARCHICAL_DATA } from '@sirena/common/constants';
 import { getLieuPrecisionLabel, getMesureProtectionShortLabel } from '@sirena/common/utils';
 import { EXPORT_REQUETES_COLUMNS, type ExportRequetesColumnKey } from './exportRequetesColumns.js';
 import type { ExportRequetesCsvRow } from './exportRequetesCsv.js';
 import {
+  deriveDepartmentCodeFromPostalCode,
   formatExportBoolean,
   formatExportDate,
   formatExportList,
@@ -28,12 +29,14 @@ type ExportLabelRecord = {
 };
 
 type ExportEntiteReferenceRecord = ExportLabelRecord & {
+  nomComplet?: string | null;
   entiteTypeId?: string | null;
+  entiteMere?: ExportLabelRecord | null;
 };
 
 type ExportAdresseRecord = {
   codePostal: string | null;
-  label?: string | null;
+  ville?: string | null;
 };
 
 type ExportDeclarantRecord = {
@@ -68,12 +71,10 @@ type ExportRequeteEntiteRecord = {
 
 type ExportRequeteEtapeRecord = {
   entiteId: string;
-  type?: string | null;
   statutId: string;
   createdAt: Date;
   clotureEffectiveDate?: Date | null;
   clotureReason: ExportLabelRecord[];
-  notes?: Array<{ texte: string | null }>;
 };
 
 type ExportLieuDeSurvenueRecord = {
@@ -81,10 +82,6 @@ type ExportLieuDeSurvenueRecord = {
   lieuType?: ExportLabelRecord | null;
   lieuPrecision?: string | null;
   transportType?: ExportLabelRecord | null;
-  societeTransport?: string | null;
-  finess?: string | null;
-  categCode?: string | null;
-  categLib?: string | null;
   codePostal?: string | null;
   adresse?: ExportAdresseRecord | null;
 };
@@ -92,13 +89,7 @@ type ExportLieuDeSurvenueRecord = {
 type ExportMisEnCauseRecord = {
   misEnCauseType?: ExportLabelRecord | null;
   misEnCauseTypePrecision?: ExportLabelRecord | null;
-  autrePrecision?: string | null;
-  finess?: string | null;
-  nomService?: string | null;
   codePostal?: string | null;
-  rpps?: string | null;
-  nom?: string | null;
-  prenom?: string | null;
 };
 
 type ExportFaitRecord = {
@@ -124,6 +115,7 @@ type ExportSituationEntiteRecord = {
 
 type ExportEntiteRecord = {
   label: string | null;
+  nomComplet?: string | null;
   entiteMere?: ExportEntiteRecord | null;
 };
 
@@ -138,9 +130,15 @@ type ExportSituationRecord = {
 
 type ExportRequeteKeyedRow = Partial<Record<ExportRequetesColumnKey, ExportRequetesCsvRow[number]>>;
 
+type DepartmentReferences = {
+  codesByPostalCode?: Map<string, string>;
+  namesByCode?: Map<string, string>;
+};
+
 export type BuildExportRequetesRowsOptions = {
   topEntiteId?: string;
-  categorieFinessLieuSurvenueByCode?: Map<string, string>;
+  departmentCodesByPostalCode?: Map<string, string>;
+  departementNamesByCode?: Map<string, string>;
 };
 
 export function buildExportRequetesRows(
@@ -165,16 +163,16 @@ function buildExportRequeteRow(
   const requeteEntiteRacine = getRequeteEntiteRacine(requete, options.topEntiteId);
   const shouldExportDepartements = requeteEntiteRacine?.entite?.entiteTypeId === 'ARS';
 
+  const departmentReferences = {
+    codesByPostalCode: options.departmentCodesByPostalCode,
+    namesByCode: options.departementNamesByCode,
+  };
+
   return toExportRequetesCsvRow({
     ...buildRequeteFields(requete),
-    ...buildDeclarantFields(requete.declarant, shouldExportDepartements),
-    ...buildPersonneConcerneeFields(requete.participant, shouldExportDepartements),
-    ...buildSituationFields(
-      situation,
-      situationIndex,
-      shouldExportDepartements,
-      options.categorieFinessLieuSurvenueByCode,
-    ),
+    ...buildDeclarantFields(requete.declarant, shouldExportDepartements, departmentReferences),
+    ...buildPersonneConcerneeFields(requete.participant, shouldExportDepartements, departmentReferences),
+    ...buildSituationFields(situation, situationIndex, shouldExportDepartements, departmentReferences),
     ...buildFaitsFields(situation?.faits ?? []),
     ...buildDemarchesFields(situation?.demarchesEngagees),
     ...buildWorkflowFields(requete, options, requeteEntiteRacine),
@@ -195,15 +193,22 @@ function buildRequeteFields(requete: ExportRequeteRecord): ExportRequeteKeyedRow
 function buildDeclarantFields(
   declarant: ExportDeclarantRecord | null | undefined,
   shouldExportDepartements: boolean,
+  departmentReferences: DepartmentReferences,
 ): ExportRequeteKeyedRow {
   const codePostalDeclarant = declarant?.adresse?.codePostal ?? '';
+  const departementDeclarant =
+    departmentReferences.codesByPostalCode?.get(codePostalDeclarant) ??
+    deriveDepartmentCodeFromPostalCode(codePostalDeclarant);
 
   return {
     declarantEstPersonneConcernee: formatExportBoolean(declarant?.estVictime),
     lienPersonneConcernee: formatLienVictime(declarant),
     declarantEstTuteurCurateur: formatExportBoolean(declarant?.isTuteur),
     codePostalDeclarant,
-    departementDeclarant: shouldExportDepartements ? formatDepartementFromCodePostal(codePostalDeclarant) : '',
+    villeDeclarant: declarant?.adresse?.ville ?? '',
+    departementDeclarant: shouldExportDepartements
+      ? formatDepartementWithName(departementDeclarant, departmentReferences.namesByCode)
+      : '',
     declarantConsentIdentiteCommuniquee: formatConsentIdentite(declarant?.veutGarderAnonymat),
     declarantProfessionnelEig: formatExportBoolean(declarant?.estSignalementProfessionnel),
   };
@@ -212,16 +217,21 @@ function buildDeclarantFields(
 function buildPersonneConcerneeFields(
   participant: ExportParticipantRecord | null | undefined,
   shouldExportDepartements: boolean,
+  departmentReferences: DepartmentReferences,
 ): ExportRequeteKeyedRow {
   const codePostalPersonneConcernee = participant?.adresse?.codePostal ?? '';
+  const departementPersonneConcernee =
+    departmentReferences.codesByPostalCode?.get(codePostalPersonneConcernee) ??
+    deriveDepartmentCodeFromPostalCode(codePostalPersonneConcernee);
 
   return {
     civilitePersonneConcernee: participant?.identite?.civilite?.label ?? '',
     trancheAgePersonneConcernee: participant?.age?.label ?? '',
     anneeNaissancePersonneConcernee: participant?.age?.label ? '' : formatExportYear(participant?.dateNaissance),
     codePostalPersonneConcernee,
+    villePersonneConcernee: participant?.adresse?.ville ?? '',
     departementPersonneConcernee: shouldExportDepartements
-      ? formatDepartementFromCodePostal(codePostalPersonneConcernee)
+      ? formatDepartementWithName(departementPersonneConcernee, departmentReferences.namesByCode)
       : '',
     personneConcerneeConsentIdentiteCommuniquee: formatConsentIdentite(participant?.veutGarderAnonymat),
     personneConcerneeInformeeDemarche: formatExportBoolean(participant?.estVictimeInformee),
@@ -235,28 +245,36 @@ function buildSituationFields(
   situation: ExportSituationRecord | null,
   situationIndex: number | undefined,
   shouldExportDepartements: boolean,
-  categorieFinessLieuSurvenueByCode: Map<string, string> | undefined,
+  departmentReferences: DepartmentReferences,
 ): ExportRequeteKeyedRow {
   const lieuDeSurvenue = situation?.lieuDeSurvenue;
   const misEnCause = situation?.misEnCause;
 
-  const codePostalLieuSurvenue = lieuDeSurvenue?.codePostal || lieuDeSurvenue?.adresse?.codePostal || '';
+  const codePostalLieuSurvenueQualifie = lieuDeSurvenue?.adresse?.codePostal;
+  const codePostalLieuSurvenue = codePostalLieuSurvenueQualifie || lieuDeSurvenue?.codePostal || '';
+  const villeLieuSurvenue = codePostalLieuSurvenueQualifie ? (lieuDeSurvenue?.adresse?.ville ?? '') : '';
+  const departementLieuSurvenue =
+    departmentReferences.codesByPostalCode?.get(codePostalLieuSurvenue) ??
+    deriveDepartmentCodeFromPostalCode(codePostalLieuSurvenue);
   const codePostalMisEnCause = misEnCause?.codePostal ?? '';
+  const departementMisEnCause =
+    departmentReferences.codesByPostalCode?.get(codePostalMisEnCause) ??
+    deriveDepartmentCodeFromPostalCode(codePostalMisEnCause);
 
   return {
     numeroSituation: situation ? (situationIndex ?? 0) + 1 : '',
     typeLieuSurvenue: lieuDeSurvenue?.lieuType?.label ?? '',
     precisionTypeLieuSurvenue: formatLieuSurvenuePrecision(lieuDeSurvenue),
-    finessLieuSurvenue: lieuDeSurvenue?.finess ?? '',
-    categorieFinessLieuSurvenue: formatCategorieFinessLieuSurvenue(lieuDeSurvenue, categorieFinessLieuSurvenueByCode),
-    nomLieuSurvenue: lieuDeSurvenue?.adresse?.label || lieuDeSurvenue?.societeTransport || '',
     codePostalLieuSurvenue,
-    departementLieuSurvenue: shouldExportDepartements ? formatDepartementFromCodePostal(codePostalLieuSurvenue) : '',
+    villeLieuSurvenue,
+    departementLieuSurvenue: shouldExportDepartements
+      ? formatDepartementWithName(departementLieuSurvenue, departmentReferences.namesByCode)
+      : '',
     typeMisEnCause: misEnCause?.misEnCauseType?.label ?? '',
     precisionTypeMisEnCause: misEnCause?.misEnCauseTypePrecision?.label ?? '',
-    finessMisEnCause: misEnCause?.finess ?? '',
-    nomService: misEnCause?.nomService ?? '',
-    departementMisEnCause: shouldExportDepartements ? formatDepartementFromCodePostal(codePostalMisEnCause) : '',
+    departementMisEnCause: shouldExportDepartements
+      ? formatDepartementWithName(departementMisEnCause, departmentReferences.namesByCode)
+      : '',
     domaineFonctionnel: situation?.domainesFonctionnels?.label ?? '',
     entitesAdministrativesSituation: formatSituationRootEntites(situation?.situationEntites),
     directionsSituation: formatSituationDirections(situation?.situationEntites),
@@ -283,12 +301,21 @@ function buildDemarchesFields(
 ): ExportRequeteKeyedRow {
   return {
     misEnCauseContacte: demarchesEngagees
-      ? formatExportBoolean(demarchesEngagees.dateContactEtablissement != null)
+      ? formatExportBoolean(
+          demarchesEngagees.dateContactEtablissement != null ||
+            demarchesEngagees.demarches.some(
+              (demarche) => demarche.label === demarcheEngageeLabels.CONTACT_RESPONSABLES,
+            ),
+        )
       : '',
     datePriseContact: formatExportDate(demarchesEngagees?.dateContactEtablissement),
     declarantRecuReponse: formatExportBoolean(demarchesEngagees?.etablissementARepondu),
     plainteDeposee: demarchesEngagees
-      ? formatExportBoolean(demarchesEngagees.datePlainte != null || demarchesEngagees.autoriteType?.label != null)
+      ? formatExportBoolean(
+          demarchesEngagees.datePlainte != null ||
+            demarchesEngagees.autoriteType?.label != null ||
+            demarchesEngagees.demarches.some((demarche) => demarche.label === demarcheEngageeLabels.PLAINTE),
+        )
       : '',
     dateDepotPlainte: formatExportDate(demarchesEngagees?.datePlainte),
     lieuDepotPlainte: demarchesEngagees?.autoriteType?.label ?? '',
@@ -300,7 +327,7 @@ function buildDemarchesFields(
 
 function hasDemarchesAutresOrganismes(demarchesEngagees: ExportDemarchesEngageesRecord): boolean {
   return (
-    demarchesEngagees.demarches.some((demarche) => demarche.label != null) ||
+    demarchesEngagees.demarches.some((demarche) => demarche.label === demarcheEngageeLabels.CONTACT_ORGANISME) ||
     (demarchesEngagees.organisme?.trim() ?? '') !== ''
   );
 }
@@ -311,14 +338,11 @@ function buildWorkflowFields(
   requeteEntiteRacine: ExportRequeteEntiteRecord | undefined,
 ): ExportRequeteKeyedRow {
   const etapeCloturee = getLatestEtapeCloturee(requete.etapes, options.topEntiteId);
-  const accuseReception = getAccuseReceptionEnvoi(requete.etapes, options.topEntiteId);
 
   return {
     statutRequeteEntiteAdministrative: requeteEntiteRacine?.statut?.label ?? '',
     entitesStatutsRequete: formatRequeteEntites(requete.requeteEntites),
     prioriteRequeteEntiteAdministrative: requeteEntiteRacine?.priorite?.label ?? '',
-    dateEnvoiAccuseReceptionEntiteAdministrative: formatExportDate(accuseReception?.date),
-    typeEnvoiAccuseReception: accuseReception?.type ?? '',
     derniereDateClotureEntiteAdministrative: formatExportDate(etapeCloturee?.clotureEffectiveDate),
     raisonsClotureEntiteAdministrative: formatExportList(
       etapeCloturee?.clotureReason.map((reason) => reason.label) ?? [],
@@ -328,7 +352,11 @@ function buildWorkflowFields(
 
 function formatSituationRootEntites(situationEntites: ExportSituationEntiteRecord[] | undefined): string {
   return formatUniqueLabels(
-    situationEntites?.map((situationEntite) => getEntiteRacine(situationEntite.entite)?.label) ?? [],
+    situationEntites?.map((situationEntite) => {
+      const entiteRacine = getEntiteRacine(situationEntite.entite);
+
+      return entiteRacine?.nomComplet ?? entiteRacine?.label;
+    }) ?? [],
   );
 }
 
@@ -338,11 +366,11 @@ function formatSituationDirections(situationEntites: ExportSituationEntiteRecord
       const entite = situationEntite.entite;
 
       if (entite && isDirection(entite)) {
-        return [entite.label];
+        return [formatEntiteWithParentLabel(entite)];
       }
 
-      if (entite && isService(entite)) {
-        return [entite.entiteMere?.label];
+      if (entite && isService(entite) && entite.entiteMere) {
+        return [formatEntiteWithParentLabel(entite.entiteMere)];
       }
 
       return [];
@@ -350,12 +378,20 @@ function formatSituationDirections(situationEntites: ExportSituationEntiteRecord
   );
 }
 
+function formatEntiteWithParentLabel(entite: ExportEntiteRecord): string | null {
+  if (!entite.nomComplet) {
+    return entite.label;
+  }
+
+  return entite.entiteMere?.label ? `${entite.nomComplet} (${entite.entiteMere.label})` : entite.nomComplet;
+}
+
 function formatSituationServices(situationEntites: ExportSituationEntiteRecord[] | undefined): string {
   return formatUniqueLabels(
     situationEntites?.map((situationEntite) => {
       const entite = situationEntite.entite;
 
-      return entite && isService(entite) ? entite.label : null;
+      return entite && isService(entite) ? formatEntiteWithParentLabel(entite) : null;
     }) ?? [],
   );
 }
@@ -425,32 +461,18 @@ function formatLieuSurvenuePrecision(lieuDeSurvenue: ExportLieuDeSurvenueRecord 
   ]);
 }
 
-function formatCategorieFinessLieuSurvenue(
-  lieuDeSurvenue: ExportLieuDeSurvenueRecord | null | undefined,
-  categorieFinessLieuSurvenueByCode: Map<string, string> | undefined,
-): string {
-  if (lieuDeSurvenue?.categLib) {
-    return lieuDeSurvenue.categLib;
-  }
-
-  if (!lieuDeSurvenue?.categCode) {
-    return '';
-  }
-
-  return categorieFinessLieuSurvenueByCode?.get(lieuDeSurvenue.categCode) ?? '';
-}
-
 function formatRequeteEntites(requeteEntites: ExportRequeteEntiteRecord[] | undefined): string {
-  return formatExportList(
+  return formatUniqueLabels(
     requeteEntites?.map((requeteEntite) => {
-      const entiteLabel = requeteEntite.entite?.label;
+      const entite = requeteEntite.entite;
+      const entiteName = entite ? formatEntiteWithParentLabel(entite) : null;
       const statutLabel = requeteEntite.statut?.label;
 
-      if (!entiteLabel) {
+      if (!entiteName) {
         return null;
       }
 
-      return statutLabel ? `${entiteLabel} (${statutLabel})` : entiteLabel;
+      return statutLabel ? `${entiteName} (${statutLabel})` : entiteName;
     }) ?? [],
   );
 }
@@ -462,55 +484,17 @@ function getRequeteEntiteRacine(
   return requete.requeteEntites?.find((requeteEntite) => requeteEntite.entiteId === topEntiteId);
 }
 
-function formatDepartementFromCodePostal(codePostal: string): string {
-  if (!/^\d{5}$/.test(codePostal)) {
+function formatDepartementWithName(
+  departementCode: string,
+  departementNamesByCode: Map<string, string> | undefined,
+): string {
+  if (!departementCode) {
     return '';
   }
 
-  if (codePostal.startsWith('20')) {
-    return '20';
-  }
+  const departementName = departementNamesByCode?.get(departementCode);
 
-  if (codePostal.startsWith('97') || codePostal.startsWith('98')) {
-    return codePostal.slice(0, 3);
-  }
-
-  return codePostal.slice(0, 2);
-}
-
-function getAccuseReceptionEnvoi(
-  etapes: ExportRequeteEtapeRecord[] | undefined,
-  topEntiteId: string | undefined,
-): { date: Date; type: string } | undefined {
-  if (!topEntiteId) {
-    return undefined;
-  }
-
-  for (const etape of etapes ?? []) {
-    if (etape.entiteId !== topEntiteId || etape.type !== 'ACKNOWLEDGMENT') {
-      continue;
-    }
-
-    for (const note of etape.notes ?? []) {
-      const emailMatch = note.texte?.match(/Email d'accusé de réception envoyé le (\d{2})\/(\d{2})\/(\d{4})/);
-
-      if (emailMatch) {
-        const [, day, month, year] = emailMatch;
-        return { date: new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))), type: 'Email' };
-      }
-
-      const migratedMatch = note.texte?.match(
-        /Date d'envoi de l'accusé de réception au requérant : (\d{2})\/(\d{2})\/(\d{4})/,
-      );
-
-      if (migratedMatch) {
-        const [, day, month, year] = migratedMatch;
-        return { date: new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))), type: '' };
-      }
-    }
-  }
-
-  return undefined;
+  return departementName ? `${departementName} (${departementCode})` : departementCode;
 }
 
 function getLatestEtapeCloturee(
