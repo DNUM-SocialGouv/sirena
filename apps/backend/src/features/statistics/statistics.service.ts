@@ -139,8 +139,8 @@ const fetchJson = async (url: string, logContext: Record<string, unknown>): Prom
 type RawDashcard = {
   id?: unknown;
   card_id?: unknown;
-  card?: { id?: unknown; name?: unknown; display?: unknown } | null;
-  visualization_settings?: { visualization?: { display?: unknown } | null } | null;
+  card?: { id?: unknown; name?: unknown; display?: unknown; visualization_settings?: unknown } | null;
+  visualization_settings?: { visualization?: { display?: unknown } | null; column_settings?: unknown } | null;
   col?: unknown;
   row?: unknown;
   size_x?: unknown;
@@ -169,6 +169,7 @@ type DashcardDescriptor = {
   name: string;
   display: string | null;
   layout: CardLayout | null;
+  columnTitles: Map<string, string>;
 };
 
 const extractDashcards = (payload: unknown): RawDashcard[] => {
@@ -195,6 +196,42 @@ const extractLayout = (raw: RawDashcard): CardLayout | null => {
   return { col, row, sizeX, sizeY };
 };
 
+const parseColumnSettingKey = (rawKey: string): string | null => {
+  try {
+    const parsed: unknown = JSON.parse(rawKey);
+    if (!Array.isArray(parsed)) return null;
+    const [kind, value] = parsed;
+    if (kind === 'name' && typeof value === 'string') return value;
+    if (kind === 'ref' && Array.isArray(value)) {
+      const [refType, fieldName] = value;
+      if (refType === 'field' && typeof fieldName === 'string') return fieldName;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+const readColumnTitles = (settings: unknown, titles: Map<string, string>): void => {
+  if (!settings || typeof settings !== 'object') return;
+  const { column_settings: columnSettings } = settings as { column_settings?: unknown };
+  if (!columnSettings || typeof columnSettings !== 'object') return;
+  for (const [rawKey, rawValue] of Object.entries(columnSettings)) {
+    const columnName = parseColumnSettingKey(rawKey);
+    if (!columnName) continue;
+    const rawTitle = (rawValue as { column_title?: unknown })?.column_title;
+    const title = typeof rawTitle === 'string' ? rawTitle.trim() : '';
+    if (title !== '') titles.set(columnName, title);
+  }
+};
+
+const extractColumnTitles = (raw: RawDashcard): Map<string, string> => {
+  const titles = new Map<string, string>();
+  readColumnTitles(raw.card?.visualization_settings, titles);
+  readColumnTitles(raw.visualization_settings, titles);
+  return titles;
+};
+
 const toDashcardDescriptor = (raw: RawDashcard): DashcardDescriptor | null => {
   const cardId = typeof raw.card?.id === 'number' ? raw.card.id : typeof raw.card_id === 'number' ? raw.card_id : null;
   const dashcardId = typeof raw.id === 'number' ? raw.id : null;
@@ -202,7 +239,8 @@ const toDashcardDescriptor = (raw: RawDashcard): DashcardDescriptor | null => {
   const name = typeof raw.card?.name === 'string' ? raw.card.name : `Carte ${cardId}`;
   const display = extractDisplay(raw);
   const layout = extractLayout(raw);
-  return { dashcardId, cardId, name, display, layout };
+  const columnTitles = extractColumnTitles(raw);
+  return { dashcardId, cardId, name, display, layout, columnTitles };
 };
 
 type RawMetabaseColumn = {
@@ -237,6 +275,17 @@ const extractCardData = (payload: unknown): CardData => {
   return {
     cols: cols.map(toMetabaseColumn).filter((col): col is MetabaseColumn => col !== null),
     rows: rows.filter((row): row is unknown[] => Array.isArray(row)),
+  };
+};
+
+const applyColumnTitles = (data: CardData, titles: Map<string, string>): CardData => {
+  if (titles.size === 0) return data;
+  return {
+    ...data,
+    cols: data.cols.map((col) => {
+      const title = titles.get(col.name);
+      return title ? { ...col, display_name: title } : col;
+    }),
   };
 };
 
@@ -275,10 +324,10 @@ export const fetchDashboardCardsData = async (
   // allSettled (et non all) : une dashcard en échec ne doit pas rendre tout le dashboard
   // inaccessible. La carte fautive est renvoyée avec des données vides et le reste s'affiche.
   const settled = await Promise.allSettled(
-    dashcards.map(async ({ dashcardId, cardId, name, display, layout }) => {
+    dashcards.map(async ({ dashcardId, cardId, name, display, layout, columnTitles }) => {
       const cardUrl = `${base}/api/embed/dashboard/${token}/dashcard/${dashcardId}/card/${cardId}${filterSuffix}`;
       const payload = await fetchJson(cardUrl, { dashboardId, dashcardId, cardId, step: 'card-data' });
-      const data = extractCardData(payload);
+      const data = applyColumnTitles(extractCardData(payload), columnTitles);
 
       if (data.cols.length === 0) {
         logger.warn(
