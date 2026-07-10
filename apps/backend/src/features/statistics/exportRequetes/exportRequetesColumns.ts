@@ -58,7 +58,7 @@ export const EXPORT_REQUETES_COLUMNS = [
   { key: 'domaineFonctionnel', header: 'Domaine fonctionnel' },
   { key: 'misEnCauseContacte', header: 'Le mis en cause a été contacté' },
   { key: 'datePriseContact', header: 'Date de prise de contact' },
-  { key: 'declarantRecuReponse', header: 'Le déclarant a réçu une réponse' },
+  { key: 'declarantRecuReponse', header: 'Le déclarant a reçu une réponse' },
   { key: 'plainteDeposee', header: 'Une plainte a été déposée auprès des autorités judiciaires' },
   { key: 'dateDepotPlainte', header: 'Date de dépôt de plainte' },
   { key: 'lieuDepotPlainte', header: 'Lieu de dépot de plainte' },

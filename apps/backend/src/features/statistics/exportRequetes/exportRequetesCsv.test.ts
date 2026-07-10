@@ -18,6 +18,7 @@ describe('buildExportRequetesCsv', () => {
     );
     expect(headerCell(columns, 'numeroRequete')).toBe('Numéro de requête');
     expect(headerCell(columns, 'dateDepotPlainte')).toBe('Date de dépôt de plainte');
+    expect(headerCell(columns, 'declarantRecuReponse')).toBe('Le déclarant a reçu une réponse');
     expect(headerCell(columns, 'villeDeclarant')).toBe('Ville déclarant');
     expect(headerCell(columns, 'departementDeclarant')).toBe('Département déclarant');
     expect(headerCell(columns, 'villePersonneConcernee')).toBe('Ville personne concernée');
