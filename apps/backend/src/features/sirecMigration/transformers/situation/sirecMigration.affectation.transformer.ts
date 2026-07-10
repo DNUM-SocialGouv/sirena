@@ -22,7 +22,6 @@ export function transformSirecAffectation(sirecData: SirecReclamationData): Sire
   const situationIds = new Set<string>();
 
   const allIds: (number | null)[] = [
-    sirecData.reclamation.service_recepteur_niv1,
     sirecData.reclamation.service_gestionnaire,
     ...sirecData.groupIds,
     ...sirecData.mainCourantes.flatMap((mc) => mc.groupIds),
