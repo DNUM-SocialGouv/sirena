@@ -15,7 +15,6 @@ const uploadedFileTrackedFields: (keyof UploadedFile)[] = [
   'metadata',
   'entiteId',
   'uploadedById',
-  'requeteEtapeNoteId',
   'requeteId',
   'faitSituationId',
   'demarchesEngageesId',

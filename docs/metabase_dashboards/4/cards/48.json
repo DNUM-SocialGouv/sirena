@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 213.05833333333334,
+  "average_query_time": 294.3130841121495,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -72,12 +72,12 @@
   "entity_id": "iB2FCamFXsLUqH2gYr9AC",
   "id": 48,
   "is_remote_synced": false,
-  "last_query_start": "2026-06-19T14:16:12.198574Z",
+  "last_query_start": "2026-07-03T13:53:54.889906Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.60.4.4 (65c9d32)",
   "moderation_reviews": [],
-  "name": "Nombre de nouvelles requêtes",
+  "name": "nouvelles requêtes",
   "param_fields": {},
   "parameter_mappings": [],
   "parameter_usage_count": 0,
@@ -145,6 +145,7 @@
       "base_type": "type/BigInteger",
       "database_type": "int8",
       "display_name": "nombre_requetes",
+      "effective_type": "type/BigInteger",
       "field_ref": [
         "field",
         "nombre_requetes",
@@ -152,7 +153,35 @@
           "base-type": "type/BigInteger"
         }
       ],
-      "name": "nombre_requetes"
+      "fingerprint": {
+        "global": {
+          "distinct-count": 1,
+          "nil%": 0
+        },
+        "type": {
+          "type/Number": {
+            "avg": 109,
+            "excess-kurtosis": null,
+            "max": 109,
+            "min": 109,
+            "mode-fraction": 1,
+            "q1": 109,
+            "q3": 109,
+            "sd": 0,
+            "skewness": null,
+            "top-3-fraction": 1,
+            "zero-fraction": 0
+          }
+        }
+      },
+      "lib/deduplicated-name": "nombre_requetes",
+      "lib/desired-column-alias": "nombre_requetes",
+      "lib/original-name": "nombre_requetes",
+      "lib/source": "source/native",
+      "lib/source-column-alias": "nombre_requetes",
+      "name": "nombre_requetes",
+      "semantic_type": null,
+      "source": "native"
     }
   ],
   "source_card_id": null,

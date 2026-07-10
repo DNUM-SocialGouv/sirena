@@ -6,6 +6,7 @@ import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useUsers } from '@/hooks/queries/users.hook';
 import { useUserListSSE } from '@/hooks/useUserListSSE';
+import { useListStateStore } from '@/stores/listStateStore';
 import { TableSearchBar } from './TableSearchBar';
 
 type User = NonNullable<Awaited<ReturnType<typeof useUsers>>['data']>['data'][number];
@@ -50,6 +51,11 @@ export function PendingUsersTab() {
 
   const queries = useSearch({ from: '/_auth/admin/users' });
   const navigate = useNavigate({ from: '/admin/users' });
+  const setListState = useListStateStore((s) => s.setListState);
+
+  useEffect(() => {
+    setListState('users', { to: '/admin/users', search: queries });
+  }, [queries, setListState]);
 
   const limit = queries.limit ?? DEFAULT_PAGE_SIZE;
   const offset = queries.offset ?? 0;

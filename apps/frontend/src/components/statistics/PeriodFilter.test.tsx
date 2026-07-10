@@ -1,7 +1,18 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useHasFeature } from '@/hooks/useHasFeature';
 import { PeriodFilter } from './PeriodFilter';
+
+vi.mock('@/hooks/useHasFeature', () => ({
+  useHasFeature: vi.fn(),
+}));
+
+const mockedUseHasFeature = vi.mocked(useHasFeature);
+
+beforeEach(() => {
+  mockedUseHasFeature.mockReturnValue(true);
+});
 
 afterEach(() => {
   cleanup();
@@ -192,5 +203,45 @@ describe('PeriodFilter', () => {
     fireEvent.focusOut(firstRadio, { relatedTarget: trigger });
 
     await waitFor(() => expect(screen.getByRole('radio', { name: 'Semaine courante' })).toBeInTheDocument());
+  });
+
+  describe('when the predefined-periods feature flag is disabled', () => {
+    beforeEach(() => {
+      mockedUseHasFeature.mockReturnValue(false);
+    });
+
+    it('hides the predefined periods but keeps the custom range', async () => {
+      render(<PeriodFilter value={{}} onChange={vi.fn()} />);
+
+      await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+
+      expect(screen.queryByRole('radio', { name: 'Semaine courante' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('group', { name: 'Période prédéfinie' })).not.toBeInTheDocument();
+      expect(screen.getByLabelText(/Date de début/)).toBeInTheDocument();
+    });
+
+    it('applies a custom range like before', async () => {
+      const onChange = vi.fn();
+      render(<PeriodFilter value={{}} onChange={onChange} />);
+
+      await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+      fireEvent.change(screen.getByLabelText(/Date de début/), { target: { value: '2026-01-01' } });
+      fireEvent.change(screen.getByLabelText(/Date de fin/), { target: { value: '2026-01-31' } });
+      await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+
+      expect(onChange).toHaveBeenCalledWith({ period: undefined, startDate: '2026-01-01', endDate: '2026-01-31' });
+    });
+
+    it('shows a custom-range-only empty error and focuses the start date', async () => {
+      const onChange = vi.fn();
+      render(<PeriodFilter value={{}} onChange={onChange} />);
+
+      await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+      await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+
+      expect(onChange).not.toHaveBeenCalled();
+      expect(screen.getByText('Renseignez une période personnalisée.')).toBeInTheDocument();
+      expect(screen.getByLabelText(/Date de début/)).toHaveFocus();
+    });
   });
 });

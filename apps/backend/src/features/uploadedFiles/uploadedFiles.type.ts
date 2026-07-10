@@ -1,6 +1,4 @@
-import type { z } from 'zod';
 import type { UploadedFile } from '../../libs/prisma.js';
-import type { GetUploadedFilesQuerySchema } from './uploadedFiles.schema.js';
 
 export type CreateUploadedFileDto = Omit<
   UploadedFile,
@@ -12,5 +10,3 @@ export type CreateUploadedFileDto = Omit<
   scanResult?: unknown;
   processingError?: string | null;
 };
-
-export type GetUploadedFilesQuery = z.infer<typeof GetUploadedFilesQuerySchema>;

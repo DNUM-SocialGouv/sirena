@@ -5,7 +5,7 @@ import {
   openApiResponses,
 } from '@sirena/backend-utils/helpers';
 import { z } from 'zod';
-import { RequeteEtapeNoteSchema, RequeteEtapeSchema } from './requetesEtapes.schema.js';
+import { RequeteEtapeSchema, RequeteEtapeWithDetailsSchema } from './requetesEtapes.schema.js';
 
 export const addProcessingStepRoute = openApiProtectedRoute({
   description: 'Add a processing step to a request',
@@ -17,33 +17,19 @@ export const addProcessingStepRoute = openApiProtectedRoute({
 export const getProcessingStepsRoute = openApiProtectedRoute({
   description: 'Get processing steps for a request',
   responses: {
-    ...openApiResponses(RequeteEtapeSchema),
+    ...openApiResponses(RequeteEtapeWithDetailsSchema),
   },
 });
 
-export const addProcessingStepNoteRoute = openApiProtectedRoute({
-  description: 'Add a processing note to a step of a request',
-  responses: {
-    ...openApiResponse(RequeteEtapeNoteSchema),
-  },
-});
-
-export const updateRequeteEtapeStatutRoute = openApiProtectedRoute({
-  description: 'Update the statut of a RequeteEtape',
+export const updateProcessingStepRoute = openApiProtectedRoute({
+  description: 'Update a processing step (name, status, date, notes and files)',
   responses: {
     ...openApiResponse(RequeteEtapeSchema),
   },
 });
 
-export const updateRequeteEtapeNomRoute = openApiProtectedRoute({
-  description: 'Update the "nom" of a RequeteEtape',
-  responses: {
-    ...openApiResponse(RequeteEtapeSchema),
-  },
-});
-
-export const updateRequeteEtapeDateRealisationRoute = openApiProtectedRoute({
-  description: 'Update the "dateRealisation" of a RequeteEtape',
+export const addClotureFilesRoute = openApiProtectedRoute({
+  description: 'Attach uploaded files to a CLOTUREE (closure) step.',
   responses: {
     ...openApiResponse(RequeteEtapeSchema),
   },

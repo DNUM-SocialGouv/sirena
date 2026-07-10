@@ -2,7 +2,11 @@ import { type Job, UnrecoverableError, Worker } from 'bullmq';
 import { ZodError } from 'zod';
 import { connection } from '../../config/redis.js';
 import { fetchSirecData } from '../../features/sirecMigration/sirecMigration.repository.js';
-import { getRequeteIdFromSirecId, saveFromSirec } from '../../features/sirecMigration/sirecMigration.service.js';
+import {
+  deleteRequeteWithRelatedData,
+  getRequeteIdFromSirecId,
+  saveFromSirec,
+} from '../../features/sirecMigration/sirecMigration.service.js';
 import { initAffectationTransco } from '../../features/sirecMigration/transco/affectation/affectation.transco.js';
 import { SirecDataError, SirecTranscoError } from '../../features/sirecMigration/transco/sirecTransco.error.js';
 import { transformSirecReclamation } from '../../features/sirecMigration/transformers/sirecMigration.transformer.js';
@@ -17,7 +21,7 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
     transcoInitPromise = initAffectationTransco();
   }
   await transcoInitPromise;
-  const { sirecId } = job.data;
+  const { sirecId, deleteIfExists } = job.data;
 
   return loggerStorage.run(
     createDefaultLogger().child({ context: 'sirec-migration-worker', sirecId, jobId: job.id }),
@@ -33,8 +37,15 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
 
       const existingRequeteId = await getRequeteIdFromSirecId(sirecId);
       if (existingRequeteId !== null) {
-        logger.info({ requeteId: existingRequeteId, sirecId }, 'SIREC record already migrated, skipping');
-        return;
+        if (!deleteIfExists) {
+          logger.info({ requeteId: existingRequeteId, sirecId }, 'SIREC record already migrated, skipping');
+          return;
+        }
+        logger.debug(
+          { requeteId: existingRequeteId, sirecId },
+          'SIREC record already migrated, deleting existing data before re-migrating',
+        );
+        await deleteRequeteWithRelatedData(existingRequeteId);
       }
 
       let data: ReturnType<typeof transformSirecReclamation>;
@@ -43,13 +54,13 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
       } catch (err) {
         if (err instanceof SirecTranscoError) {
           logger.error(
-            { sirecId, idDico: err.idDico, tableName: err.tableName },
+            { sirecId, idDico: err.idDico, tableName: err.tableName, stackTrace: err.stack },
             'Unknown SIREC id_dico in transco table',
           );
           throw new UnrecoverableError(err.message);
         }
         if (err instanceof SirecDataError) {
-          logger.error({ sirecId }, err.message);
+          logger.error({ sirecId, stackTrace: err.stack }, err.message);
           throw new UnrecoverableError(err.message);
         }
         throw err;

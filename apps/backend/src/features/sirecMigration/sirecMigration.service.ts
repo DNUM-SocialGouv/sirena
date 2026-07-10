@@ -13,6 +13,34 @@ export async function getRequeteIdFromSirecId(sirecId: number): Promise<string |
   return requete ? requete.id : null;
 }
 
+export async function deleteRequeteWithRelatedData(requeteId: string): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const situations = await tx.situation.findMany({
+      where: { requeteId },
+      select: { misEnCauseId: true, lieuDeSurvenueId: true, demarchesEngageesId: true },
+    });
+
+    const misEnCauseIds = situations.map((s) => s.misEnCauseId);
+    const lieuDeSurvenueIds = situations.map((s) => s.lieuDeSurvenueId);
+    const demarchesEngageesIds = situations.map((s) => s.demarchesEngageesId);
+
+    // Non cascadé depuis DemarchesEngagees : fichiers de réponse d'établissement
+    await tx.uploadedFile.deleteMany({ where: { demarchesEngageesId: { in: demarchesEngageesIds } } });
+
+    // Ces 3 tables sont référencées PAR Situation (relations 1-1, cf. @unique) :
+    // les supprimer cascade la Situation elle-même (et ses dépendances : Fait,
+    // SituationEntite, Adresse de LieuDeSurvenue)
+    await tx.misEnCause.deleteMany({ where: { id: { in: misEnCauseIds } } });
+    await tx.lieuDeSurvenue.deleteMany({ where: { id: { in: lieuDeSurvenueIds } } });
+    await tx.demarchesEngagees.deleteMany({ where: { id: { in: demarchesEngageesIds } } });
+
+    // Cascade : RequeteEntite, RequeteEtape (+ notes, motifs de clôture),
+    // PersonneConcernee déclarant/participant (+ Identite/Adresse),
+    // UploadedFile rattachés directement à la requête
+    await tx.requete.delete({ where: { id: requeteId } });
+  });
+}
+
 export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
   const logger = getLoggerStore();
   for (const situation of data.situations) {

@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 180.31804281345566,
+  "average_query_time": 267.30236220472443,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -72,12 +72,12 @@
   "entity_id": "_9ybydYPyhKzf76tn1pu5",
   "id": 45,
   "is_remote_synced": false,
-  "last_query_start": "2026-06-19T14:19:10.193637Z",
+  "last_query_start": "2026-07-03T13:53:54.787537Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.60.4.4 (65c9d32)",
   "moderation_reviews": [],
-  "name": "Nombre de requêtes cloturées",
+  "name": "requêtes cloturées",
   "param_fields": {},
   "parameter_mappings": [],
   "parameter_usage_count": 0,
@@ -140,7 +140,50 @@
   ],
   "public_uuid": null,
   "query_type": "native",
-  "result_metadata": null,
+  "result_metadata": [
+    {
+      "base_type": "type/BigInteger",
+      "database_type": "int8",
+      "display_name": "nombre_requetes",
+      "effective_type": "type/BigInteger",
+      "field_ref": [
+        "field",
+        "nombre_requetes",
+        {
+          "base-type": "type/BigInteger"
+        }
+      ],
+      "fingerprint": {
+        "global": {
+          "distinct-count": 1,
+          "nil%": 0
+        },
+        "type": {
+          "type/Number": {
+            "avg": 29,
+            "excess-kurtosis": null,
+            "max": 29,
+            "min": 29,
+            "mode-fraction": 1,
+            "q1": 29,
+            "q3": 29,
+            "sd": 0,
+            "skewness": null,
+            "top-3-fraction": 1,
+            "zero-fraction": 0
+          }
+        }
+      },
+      "lib/deduplicated-name": "nombre_requetes",
+      "lib/desired-column-alias": "nombre_requetes",
+      "lib/original-name": "nombre_requetes",
+      "lib/source": "source/native",
+      "lib/source-column-alias": "nombre_requetes",
+      "name": "nombre_requetes",
+      "semantic_type": null,
+      "source": "native"
+    }
+  ],
   "source_card_id": null,
   "table_id": null,
   "type": "question",

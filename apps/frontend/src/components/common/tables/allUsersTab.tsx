@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import { useUsers } from '@/hooks/queries/users.hook';
 import { useUserListSSE } from '@/hooks/useUserListSSE';
+import { useListStateStore } from '@/stores/listStateStore';
 import { TableSearchBar } from './TableSearchBar';
 
 type User = NonNullable<Awaited<ReturnType<typeof useUsers>>['data']>['data'][number];
@@ -55,6 +56,11 @@ export function AllUsersTab() {
 
   const queries = useSearch({ from: '/_auth/admin/users' });
   const navigate = useNavigate({ from: '/admin/users/all' });
+  const setListState = useListStateStore((s) => s.setListState);
+
+  useEffect(() => {
+    setListState('users', { to: '/admin/users/all', search: queries });
+  }, [queries, setListState]);
 
   const rolesToFilter: Role[] =
     data?.role?.id === ROLES.ENTITY_ADMIN ? [ROLES.SUPER_ADMIN, ROLES.PENDING] : [ROLES.PENDING];

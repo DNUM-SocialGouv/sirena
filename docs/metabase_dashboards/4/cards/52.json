@@ -1,0 +1,153 @@
+{
+  "archived": false,
+  "archived_directly": false,
+  "average_query_time": 417.55172413793105,
+  "cache_ttl": null,
+  "can_delete": false,
+  "can_manage_db": true,
+  "can_restore": false,
+  "can_run_adhoc_query": true,
+  "can_write": true,
+  "card_schema": 23,
+  "collection": {
+    "authority_level": null,
+    "can_write": true,
+    "id": "root",
+    "is_personal": false,
+    "is_remote_synced": false,
+    "metabase.collections.models.collection.root/is-root?": true,
+    "name": "Our analytics"
+  },
+  "collection_id": null,
+  "collection_position": null,
+  "collection_preview": true,
+  "creator_id": 3,
+  "dashboard": {
+    "id": 4,
+    "moderation_status": null,
+    "name": "[integrated] Sirena"
+  },
+  "dashboard_count": 1,
+  "dashboard_id": 4,
+  "database_id": 4,
+  "dataset_query": {
+    "database": 4,
+    "lib/type": "mbql/query",
+    "stages": [
+      {
+        "lib/type": "mbql.stage/native",
+        "native": "-- Carte : « Répartition du nombre de requêtes par motif (qualifié, dernier niveau) »\n-- + ligne « Aucun motif » pour les requêtes sans motif qualifié.\n-- entity_label = paramètre Metabase Locked, cf. docs/metabase_dashboards/FILTERS.md\nWITH requetes_entite AS (\n  SELECT DISTINCT r.id AS requete_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE e.label = {{entity_label}}\n    [[ AND r.\"receptionDate\" >= {{start_date}} ]]\n    [[ AND r.\"receptionDate\" <= {{end_date}} ]]\n),\ntotal AS (\n  SELECT COUNT(*) AS nb_total FROM requetes_entite\n),\nrequete_motif AS (\n  -- 1 ligne par (requête, motif qualifié dernier niveau)\n  SELECT DISTINCT re.requete_id, m.label AS motif\n  FROM requetes_entite re\n  JOIN \"Situation\" s  ON s.\"requeteId\"    = re.requete_id\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  JOIN \"MotifEnum\" m  ON m.id             = fm.\"motifId\"\n),\npar_motif AS (\n  SELECT motif, COUNT(*) AS nb_requetes\n  FROM requete_motif\n  GROUP BY motif\n\n  UNION ALL\n\n  -- Requêtes de l'entité sans aucun motif qualifié\n  SELECT 'Aucun motif' AS motif, COUNT(*) AS nb_requetes\n  FROM requetes_entite re\n  WHERE NOT EXISTS (\n    SELECT 1 FROM requete_motif rm WHERE rm.requete_id = re.requete_id\n  )\n)\nSELECT\n  pm.motif                                                 AS \"Motif\",\n  pm.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * pm.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part (%)\"\nFROM par_motif pm\nCROSS JOIN total t\nWHERE pm.nb_requetes > 0\nORDER BY pm.nb_requetes DESC",
+        "template-tags": {
+          "end_date": {
+            "display-name": "End Date",
+            "id": "b0523a73-b7ca-4593-8c70-cdcadff8cc6c",
+            "name": "end_date",
+            "type": "date"
+          },
+          "entity_label": {
+            "display-name": "Entity Label",
+            "id": "60af393b-c4ce-49eb-b2f3-2d9cae5e35b1",
+            "name": "entity_label",
+            "type": "text"
+          },
+          "start_date": {
+            "display-name": "Start Date",
+            "id": "aa7e985e-ef83-4a8e-9ea9-c3256778f674",
+            "name": "start_date",
+            "type": "date"
+          }
+        }
+      }
+    ]
+  },
+  "description": null,
+  "dimension_mappings": null,
+  "dimensions": null,
+  "display": "table",
+  "document_id": null,
+  "embedding_params": null,
+  "embedding_type": null,
+  "enable_embedding": false,
+  "entity_id": "MmxPkcVOEKaX9pyTrPVfM",
+  "id": 52,
+  "is_remote_synced": false,
+  "last_query_start": "2026-07-03T13:53:54.790115Z",
+  "legacy_query": null,
+  "made_public_by_id": null,
+  "metabase_version": "v0.62.3.3 (686cac9)",
+  "moderation_reviews": [],
+  "name": "Répartition des requêtes par motifs",
+  "param_fields": {},
+  "parameter_mappings": [],
+  "parameter_usage_count": 0,
+  "parameters": [
+    {
+      "id": "60af393b-c4ce-49eb-b2f3-2d9cae5e35b1",
+      "isMultiSelect": false,
+      "name": "Entity Label",
+      "slug": "entity_label",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "entity_label"
+        ]
+      ],
+      "type": "string/=",
+      "values_query_type": "list",
+      "values_source_config": {
+        "card_id": 46,
+        "label_field": [
+          "field",
+          "nomComplet",
+          {
+            "base-type": "type/Text"
+          }
+        ],
+        "value_field": [
+          "field",
+          "label",
+          {
+            "base-type": "type/Text"
+          }
+        ]
+      },
+      "values_source_type": "card"
+    },
+    {
+      "id": "aa7e985e-ef83-4a8e-9ea9-c3256778f674",
+      "isMultiSelect": false,
+      "name": "Start Date",
+      "slug": "start_date",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "start_date"
+        ]
+      ],
+      "type": "date/single"
+    },
+    {
+      "id": "b0523a73-b7ca-4593-8c70-cdcadff8cc6c",
+      "isMultiSelect": false,
+      "name": "End Date",
+      "slug": "end_date",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "end_date"
+        ]
+      ],
+      "type": "date/single"
+    }
+  ],
+  "public_uuid": null,
+  "query_type": "native",
+  "result_metadata": null,
+  "source_card_id": null,
+  "table_id": null,
+  "type": "question",
+  "visualization_settings": {}
+}

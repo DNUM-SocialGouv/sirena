@@ -19,13 +19,26 @@ export const StatisticsDashboardCardLayoutSchema = z.object({
   sizeY: z.number().int(),
 });
 
+export const MetabaseColumnSchema = z.object({
+  name: z.string(),
+  display_name: z.string(),
+  base_type: z.string(),
+  semantic_type: z.string().nullable(),
+  source: z.string().nullable(),
+});
+
+export const MetabaseCardDataSchema = z.object({
+  cols: z.array(MetabaseColumnSchema),
+  rows: z.array(z.array(z.unknown())),
+});
+
 export const StatisticsDashboardCardSchema = z.object({
   id: z.number().int(),
   dashcardId: z.number().int(),
   name: z.string(),
   display: z.string().nullable(),
   layout: StatisticsDashboardCardLayoutSchema.nullable(),
-  data: z.array(z.record(z.string(), z.unknown())),
+  data: MetabaseCardDataSchema,
 });
 
 export const StatisticsDashboardPayloadSchema = z.object({
