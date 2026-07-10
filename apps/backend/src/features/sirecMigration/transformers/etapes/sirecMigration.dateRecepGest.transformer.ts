@@ -14,7 +14,7 @@ export function transformSirecDateRecepGest(
 
   const noteParts = [`Date de réception au service de premier niveau : ${formatSirecDate(date_recep_gest)}`];
   let serviceLabel: string | null;
-  if (service_recepteur_niv1 !== SIREC_NATIONAL_ENTITE_ID) {
+  if (service_recepteur_niv1 === SIREC_NATIONAL_ENTITE_ID) {
     serviceLabel = 'National';
   } else {
     serviceLabel = getAffectationLabel(service_recepteur_niv1);
