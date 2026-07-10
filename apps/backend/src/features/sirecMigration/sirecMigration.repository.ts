@@ -118,6 +118,11 @@ export interface SirecFinessData {
   voie: string | null;
 }
 
+export interface SirecMcIgasMotif {
+  id_igas: number;
+  igas_type: 'in' | 'out';
+}
+
 export interface SirecMisEnCause {
   id_data: number;
   type: number | null;
@@ -128,6 +133,7 @@ export interface SirecMisEnCause {
   groupIds: number[];
   rppsData: SirecRppsData | null;
   finessData: SirecFinessData | null;
+  motifsIgas: SirecMcIgasMotif[];
 }
 
 export interface SirecMainCourante {
@@ -262,9 +268,34 @@ type MisEnCauseRow = {
   finess_voie: string | null;
 };
 
+type McIgasRow = {
+  id_mc: number;
+  id_igas: number;
+  igas_type: 'in' | 'out';
+};
+
+export async function fetchSirecMcIgasMotifs(sirecId: number): Promise<Map<number, SirecMcIgasMotif[]>> {
+  const rows = await mariadbPool.query<McIgasRow[]>(
+    `SELECT i.id_mc, i.id_igas, i.igas_type
+     FROM sire_mc_igas_data i
+              INNER JOIN sire_misencause_data m ON m.id_data = i.id_mc
+     WHERE m.id_reclamation = ?`,
+    [sirecId],
+  );
+
+  const map = new Map<number, SirecMcIgasMotif[]>();
+  for (const row of rows) {
+    const list = map.get(row.id_mc) ?? [];
+    list.push({ id_igas: row.id_igas, igas_type: row.igas_type });
+    map.set(row.id_mc, list);
+  }
+  return map;
+}
+
 export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEnCause[]> {
-  const rows = await mariadbPool.query<MisEnCauseRow[]>(
-    `SELECT m.id_data,
+  const [rows, motifsIgasByMc] = await Promise.all([
+    mariadbPool.query<MisEnCauseRow[]>(
+      `SELECT m.id_data,
             m.type,
             m.identifiant,
             m.autres_mc_type,
@@ -297,8 +328,10 @@ export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEn
               LEFT JOIN sire_finess_data f ON f.id_data = m.identifiant AND m.type = 64
      WHERE m.id_reclamation = ?
        and m.identifiant != 0`,
-    [sirecId],
-  );
+      [sirecId],
+    ),
+    fetchSirecMcIgasMotifs(sirecId),
+  ]);
 
   const map = new Map<number, SirecMisEnCause>();
   for (const row of rows) {
@@ -341,6 +374,7 @@ export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEn
         groupIds: [],
         rppsData,
         finessData,
+        motifsIgas: motifsIgasByMc.get(row.id_data) ?? [],
       });
     }
     if (row.id_group !== null) {

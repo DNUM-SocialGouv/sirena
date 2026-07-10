@@ -145,6 +145,7 @@ describe('sirecMigration.transformer.ts', () => {
             commentaire: 'Précision prioritaire',
             autresPrecisions: 'Ma réclamation',
             motifsDeclaratifs: ['PROBLEME_FACTURATION'],
+            motifs: [],
           },
           entiteIds: [],
           demarchesIds: [],

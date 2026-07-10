@@ -22,11 +22,25 @@ vi.mock('./sirecMigration.affectation.transformer.js', () => ({
 
 vi.mock('./sirecMigration.situation.transformer.js', () => ({
   transformSirecSituation: vi.fn((_sirecData: unknown, entiteIds: string[]) => ({
-    fait: { commentaire: 'Commentaire', autresPrecisions: 'Description', motifsDeclaratifs: ['MOTIF_A'] },
+    fait: { commentaire: 'Commentaire', autresPrecisions: 'Description', motifsDeclaratifs: ['MOTIF_A'], motifs: [] },
     entiteIds,
     demarchesIds: [],
     misEnCauseData: null,
   })),
+}));
+
+vi.mock('./sirecMigration.motifsIgas.transformer.js', () => ({
+  resolveMotifsIgas: vi.fn((motifsIgas: { id_igas: number; igas_type: 'in' | 'out' }[]) => {
+    const outIds = motifsIgas.filter((m) => m.igas_type === 'out').map((m) => `MOTIF_OUT_${m.id_igas}`);
+    const inIds = motifsIgas.filter((m) => m.igas_type === 'in').map((m) => `MOTIF_IN_${m.id_igas}`);
+    if (outIds.length > 0) {
+      return {
+        motifs: outIds,
+        commentaireSuffix: inIds.length > 0 ? `Motifs IGAS d'entrée :\n- ${inIds.join('\n- ')}` : null,
+      };
+    }
+    return { motifs: inIds, commentaireSuffix: null };
+  }),
 }));
 
 vi.mock('./sirecMigration.rpps.transformer.js', () => ({
@@ -104,6 +118,7 @@ const makeMisEnCause = (
     groupIds: number[];
     rppsData: SirecRppsData | null;
     finessData: SirecFinessData | null;
+    motifsIgas: { id_igas: number; igas_type: 'in' | 'out' }[];
   }> = {},
 ) => ({
   id_data: 10,
@@ -115,6 +130,7 @@ const makeMisEnCause = (
   groupIds: [],
   rppsData: null,
   finessData: null,
+  motifsIgas: [],
   ...overrides,
 });
 
@@ -568,6 +584,59 @@ describe('sirecMigration.misEnCause.transformer.ts', () => {
       expect(() => transformSirecMisEnCauseSituations(makeData([], [], null, null, 999), [])).toThrow(
         SirecTranscoError,
       );
+    });
+  });
+
+  describe('motifs IGAS', () => {
+    it('should default fait.motifs to an empty array when the mis en cause has no IGAS motifs', () => {
+      const result = transformSirecMisEnCauseSituations(makeData([], [makeMisEnCause({ id_data: 10 })]), []);
+
+      expect(result[0].fait.motifs).toEqual([]);
+    });
+
+    it('should set fait.motifs from the resolved IGAS motifs of the mis en cause', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [makeMisEnCause({ id_data: 10, motifsIgas: [{ id_igas: 153, igas_type: 'out' }] })]),
+        [],
+      );
+
+      expect(result[0].fait.motifs).toEqual(['MOTIF_OUT_153']);
+    });
+
+    it('should append the entry motifs commentaire suffix to the base commentaire', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [
+            makeMisEnCause({
+              id_data: 10,
+              motifsIgas: [
+                { id_igas: 153, igas_type: 'out' },
+                { id_igas: 122, igas_type: 'in' },
+              ],
+            }),
+          ],
+        ),
+        [],
+      );
+
+      expect(result[0].fait.commentaire).toBe("Commentaire\nMotifs IGAS d'entrée :\n- MOTIF_IN_122");
+    });
+
+    it('should resolve motifs independently for each mis en cause', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [
+            makeMisEnCause({ id_data: 10, motifsIgas: [{ id_igas: 153, igas_type: 'out' }] }),
+            makeMisEnCause({ id_data: 20, motifsIgas: [{ id_igas: 122, igas_type: 'in' }] }),
+          ],
+        ),
+        [],
+      );
+
+      expect(result[0].fait.motifs).toEqual(['MOTIF_OUT_153']);
+      expect(result[1].fait.motifs).toEqual(['MOTIF_IN_122']);
     });
   });
 });

@@ -156,6 +156,13 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
         })),
       });
 
+      await tx.faitMotif.createMany({
+        data: situationData.fait.motifs.map((motifId) => ({
+          situationId: situation.id,
+          motifId,
+        })),
+      });
+
       await tx.situationEntite.createMany({
         data: situationData.entiteIds.map((entiteId) => ({
           situationId: situation.id,

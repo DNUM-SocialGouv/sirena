@@ -13,6 +13,7 @@ import {
   type SirenaLieuDeSurvenueData,
   transformSirecFiness,
 } from './sirecMigration.finess.transformer.js';
+import { resolveMotifsIgas } from './sirecMigration.motifsIgas.transformer.js';
 import { transformSirecRpps } from './sirecMigration.rpps.transformer.js';
 import {
   type SirenaMisEnCauseData,
@@ -112,11 +113,19 @@ export function transformSirecMisEnCauseSituations(
     const misEnCauseEntiteIds = computeSituationEntiteIds(misEnCause.groupIds);
     const entiteIds = [...new Set([...orphanEntiteIds, ...misEnCauseEntiteIds])];
     const { misEnCauseData, lieuDeSurvenueData } = resolveMisEnCause(misEnCause);
+    const { motifs, commentaireSuffix } = resolveMotifsIgas(misEnCause.motifsIgas);
     return {
       ...baseSituation,
       entiteIds,
       misEnCauseData: applyMisEnCauseAnnotations(misEnCauseData, reclamation),
       lieuDeSurvenueData,
+      fait: {
+        ...baseSituation.fait,
+        motifs,
+        commentaire: commentaireSuffix
+          ? [baseSituation.fait.commentaire, commentaireSuffix].filter(Boolean).join('\n')
+          : baseSituation.fait.commentaire,
+      },
     };
   });
 }

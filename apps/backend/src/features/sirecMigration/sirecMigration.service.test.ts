@@ -19,6 +19,7 @@ vi.mock('@sirena/db', () => ({
     situation: { create: vi.fn() },
     fait: { create: vi.fn() },
     faitMotifDeclaratif: { createMany: vi.fn() },
+    faitMotif: { createMany: vi.fn() },
     requeteEntite: { createMany: vi.fn() },
     requeteEtape: { create: vi.fn() },
     situationEntite: { createMany: vi.fn() },
@@ -114,6 +115,7 @@ describe('sirecMigration.service.ts', () => {
             commentaire: 'Précision prioritaire',
             autresPrecisions: 'Ma réclamation',
             motifsDeclaratifs: ['PROBLEME_FACTURATION', 'AUTRE'],
+            motifs: ['QUALITE_SOINS/AUTRES'],
           },
           entiteIds: ['service-1', 'ars-1'],
           demarchesIds: [] as string[],
@@ -134,6 +136,7 @@ describe('sirecMigration.service.ts', () => {
       vi.mocked(prisma.situation.create).mockResolvedValue({ id: 'sit-1' } as any);
       vi.mocked(prisma.fait.create).mockResolvedValue({} as any);
       vi.mocked(prisma.faitMotifDeclaratif.createMany).mockResolvedValue({ count: 2 } as any);
+      vi.mocked(prisma.faitMotif.createMany).mockResolvedValue({ count: 1 } as any);
       vi.mocked(prisma.requeteEntite.createMany).mockResolvedValue({ count: 2 } as any);
       vi.mocked(prisma.requeteEtape.create).mockResolvedValue({} as any);
       vi.mocked(prisma.situationEntite.createMany).mockResolvedValue({ count: 2 } as any);
@@ -193,11 +196,36 @@ describe('sirecMigration.service.ts', () => {
       await saveFromSirec({
         ...data,
         situations: [
-          { ...data.situations[0], fait: { commentaire: '', autresPrecisions: 'Test', motifsDeclaratifs: [] } },
+          {
+            ...data.situations[0],
+            fait: { commentaire: '', autresPrecisions: 'Test', motifsDeclaratifs: [], motifs: [] },
+          },
         ],
       });
 
       expect(prisma.faitMotifDeclaratif.createMany).toHaveBeenCalledWith({ data: [] });
+    });
+
+    it('should create FaitMotif for each motif', async () => {
+      await saveFromSirec(data);
+
+      expect(prisma.faitMotif.createMany).toHaveBeenCalledWith({
+        data: [{ situationId: 'sit-1', motifId: 'QUALITE_SOINS/AUTRES' }],
+      });
+    });
+
+    it('should not call faitMotif.createMany when motifs list is empty', async () => {
+      await saveFromSirec({
+        ...data,
+        situations: [
+          {
+            ...data.situations[0],
+            fait: { commentaire: '', autresPrecisions: 'Test', motifsDeclaratifs: [], motifs: [] },
+          },
+        ],
+      });
+
+      expect(prisma.faitMotif.createMany).toHaveBeenCalledWith({ data: [] });
     });
 
     it('should throw a ZodError if the situation does not match SituationDataSchema', async () => {
