@@ -456,7 +456,7 @@ function getLatestDate(dates: Array<Date | null | undefined>): Date | null {
 function formatLieuSurvenuePrecision(lieuDeSurvenue: ExportLieuDeSurvenueRecord | null | undefined): string {
   return formatExportList([
     getLieuPrecisionLabel(lieuDeSurvenue?.lieuTypeId ?? undefined, lieuDeSurvenue?.lieuPrecision ?? undefined),
-    lieuDeSurvenue?.lieuTypeId === 'TRAJET' ? undefined : lieuDeSurvenue?.transportType?.label,
+    lieuDeSurvenue?.transportType?.label,
   ]);
 }
 

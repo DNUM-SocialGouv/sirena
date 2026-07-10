@@ -586,7 +586,7 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'precisionTypeLieuSurvenue')).toBe('INTER_ETABLISSEMENT');
   });
 
-  it('does not export transport type for trajet because SIRENA detail does not display it', () => {
+  it('exports the demat.social transport type for a trajet', () => {
     const rows = buildExportRequetesRows([
       {
         id: 'REQ-2026-0029',
@@ -602,7 +602,7 @@ describe('buildExportRequetesRows', () => {
       },
     ]);
 
-    expect(cell(rows[0], 'precisionTypeLieuSurvenue')).toBe('');
+    expect(cell(rows[0], 'precisionTypeLieuSurvenue')).toBe('Ambulance');
   });
 
   it('prefers the qualified SIRENA postal code for lieu de survenue', () => {
