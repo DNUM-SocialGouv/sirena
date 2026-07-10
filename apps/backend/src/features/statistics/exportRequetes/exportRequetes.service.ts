@@ -24,14 +24,12 @@ const exportRequetesInclude = {
   provenance: true,
   receptionType: true,
   etapes: {
-    include: {
-      clotureReason: true,
-      notes: {
-        select: {
-          texte: true,
-          authorId: true,
-        },
-      },
+    select: {
+      entiteId: true,
+      statutId: true,
+      createdAt: true,
+      clotureEffectiveDate: true,
+      clotureReason: { select: { label: true } },
     },
   },
   requeteEntites: {
@@ -44,16 +42,20 @@ const exportRequetesInclude = {
   situations: {
     include: {
       lieuDeSurvenue: {
-        include: {
-          adresse: true,
-          lieuType: true,
-          transportType: true,
+        select: {
+          lieuTypeId: true,
+          lieuPrecision: true,
+          codePostal: true,
+          adresse: { select: { codePostal: true, ville: true } },
+          lieuType: { select: { label: true } },
+          transportType: { select: { label: true } },
         },
       },
       misEnCause: {
-        include: {
-          misEnCauseType: true,
-          misEnCauseTypePrecision: true,
+        select: {
+          codePostal: true,
+          misEnCauseType: { select: { label: true } },
+          misEnCauseTypePrecision: { select: { label: true } },
         },
       },
       faits: {
@@ -115,45 +117,12 @@ export async function generateExportRequetesCsv(topEntiteId: string): Promise<st
     },
     include: exportRequetesInclude,
   });
-  const [categorieFinessLieuSurvenueByCode, departementNamesByCode] = await Promise.all([
-    getCategorieFinessLieuSurvenueByCode(requetes),
-    getDepartementNamesByCode(requetes),
-  ]);
+  const departementNamesByCode = await getDepartementNamesByCode(requetes);
 
   return buildExportRequetesCsvFromRecords(requetes.map(toExportRequeteRecord), {
     topEntiteId,
-    categorieFinessLieuSurvenueByCode,
     departementNamesByCode,
   });
-}
-
-async function getCategorieFinessLieuSurvenueByCode(
-  requetes: ExportRequetePrismaPayload[],
-): Promise<Map<string, string>> {
-  const categCodes = Array.from(
-    new Set(
-      requetes.flatMap((requete) =>
-        requete.situations
-          .map((situation) => situation.lieuDeSurvenue?.categCode)
-          .filter((code): code is string => !!code),
-      ),
-    ),
-  );
-
-  if (categCodes.length === 0) {
-    return new Map();
-  }
-
-  const referentielRows = await prisma.autoriteCompetenteReferentiel.findMany({
-    where: { categCode: { in: categCodes } },
-    select: { categCode: true, categLib: true },
-  });
-
-  return new Map(
-    referentielRows
-      .filter((row): row is { categCode: string; categLib: string } => row.categLib != null && row.categLib !== '')
-      .map((row) => [row.categCode, row.categLib]),
-  );
 }
 
 async function getDepartementNamesByCode(requetes: ExportRequetePrismaPayload[]): Promise<Map<string, string>> {

@@ -441,109 +441,6 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'precisionTypeLieuSurvenue')).toBe('');
   });
 
-  it('falls back to transport company for lieu de survenue name when address label is absent', () => {
-    const rows = buildExportRequetesRows([
-      {
-        id: 'REQ-2026-0013',
-        createdAt: new Date('2026-06-18T10:00:00.000Z'),
-        situations: [
-          {
-            lieuDeSurvenue: {
-              societeTransport: 'Ambulances Dupont',
-            },
-          },
-        ],
-      },
-    ]);
-
-    expect(cell(rows[0], 'nomLieuSurvenue')).toBe('Ambulances Dupont');
-  });
-
-  it('falls back to the category-code referential for lieu de survenue FINESS category', () => {
-    const rows = buildExportRequetesRows(
-      [
-        {
-          id: 'REQ-2026-0019',
-          createdAt: new Date('2026-06-18T10:00:00.000Z'),
-          situations: [
-            {
-              lieuDeSurvenue: {
-                finess: '750000001',
-                categCode: '355',
-                categLib: '',
-              },
-            },
-          ],
-        },
-      ],
-      { categorieFinessLieuSurvenueByCode: new Map([['355', 'Centre hospitalier régional']]) },
-    );
-
-    expect(cell(rows[0], 'categorieFinessLieuSurvenue')).toBe('Centre hospitalier régional');
-  });
-
-  it('populates lieu de survenue name from an establishment address label', () => {
-    const rows = buildExportRequetesRows([
-      {
-        id: 'REQ-2026-0012',
-        createdAt: new Date('2026-06-18T10:00:00.000Z'),
-        situations: [
-          {
-            lieuDeSurvenue: {
-              lieuTypeId: 'ETABLISSEMENT_SANTE',
-              adresse: { codePostal: '75013', label: 'Hôpital Pitié-Salpêtrière' },
-            },
-          },
-        ],
-      },
-    ]);
-
-    expect(cell(rows[0], 'nomLieuSurvenue')).toBe('Hôpital Pitié-Salpêtrière');
-  });
-
-  it('does not export trajet address label as lieu de survenue name', () => {
-    const rows = buildExportRequetesRows([
-      {
-        id: 'REQ-2026-0030',
-        createdAt: new Date('2026-06-18T10:00:00.000Z'),
-        situations: [
-          {
-            lieuDeSurvenue: {
-              lieuTypeId: 'TRAJET',
-              adresse: { label: '12 rue du Départ 63000 Clermont-Ferrand' },
-            },
-          },
-        ],
-      },
-    ]);
-
-    expect(cell(rows[0], 'nomLieuSurvenue')).toBe('');
-  });
-
-  it('does not export domicile address data as lieu de survenue name', () => {
-    const rows = buildExportRequetesRows([
-      {
-        id: 'REQ-2026-0020',
-        createdAt: new Date('2026-06-18T10:00:00.000Z'),
-        situations: [
-          {
-            lieuDeSurvenue: {
-              lieuTypeId: 'DOMICILE',
-              adresse: {
-                label: '12 rue des Lilas 63000 Clermont-Ferrand',
-                rue: '12 rue des Lilas',
-                codePostal: '63000',
-                ville: 'Clermont-Ferrand',
-              },
-            },
-          },
-        ],
-      },
-    ]);
-
-    expect(cell(rows[0], 'nomLieuSurvenue')).toBe('');
-  });
-
   it('prefers the qualified SIRENA postal code for lieu de survenue', () => {
     const rows = buildExportRequetesRows([
       {
@@ -593,21 +490,13 @@ describe('buildExportRequetesRows', () => {
               lieuType: { label: 'Établissement de santé' },
               lieuPrecision: 'CH',
               transportType: { label: 'Ambulance' },
-              finess: '750000001',
-              categLib: 'Centre hospitalier',
               codePostal: '',
               adresse: { codePostal: '75013' },
             },
             misEnCause: {
               misEnCauseType: { label: 'Établissement' },
               misEnCauseTypePrecision: { label: 'Service hospitalier' },
-              autrePrecision: 'Autre précision',
-              finess: '750000002',
-              nomService: 'Urgences',
               codePostal: '75014',
-              rpps: '12345678901',
-              nom: 'Donnée sensible',
-              prenom: 'Donnée sensible',
             },
           },
         ],
@@ -616,15 +505,9 @@ describe('buildExportRequetesRows', () => {
 
     expect(cell(rows[0], 'typeLieuSurvenue')).toBe('Établissement de santé');
     expect(cell(rows[0], 'precisionTypeLieuSurvenue')).toBe('CH, Ambulance');
-    expect(cell(rows[0], 'finessLieuSurvenue')).toBe('750000001');
-    expect(cell(rows[0], 'categorieFinessLieuSurvenue')).toBe('Centre hospitalier');
-    expect(cell(rows[0], 'nomLieuSurvenue')).toBe('');
     expect(cell(rows[0], 'codePostalLieuSurvenue')).toBe('75013');
     expect(cell(rows[0], 'typeMisEnCause')).toBe('Établissement');
     expect(cell(rows[0], 'precisionTypeMisEnCause')).toBe('Service hospitalier');
-    expect(cell(rows[0], 'finessMisEnCause')).toBe('750000002');
-    expect(cell(rows[0], 'categorieFinessMisEnCause')).toBe('');
-    expect(cell(rows[0], 'nomService')).toBe('Urgences');
   });
 
   it('populates department columns for ARS exports from their matching postal-code columns', () => {
@@ -801,7 +684,7 @@ describe('buildExportRequetesRows', () => {
       key: 'departementLieuSurvenue',
       header: 'Département lieu de survenue',
     });
-    expect(columnAfter('nomService')).toEqual({
+    expect(columnAfter('precisionTypeMisEnCause')).toEqual({
       key: 'departementMisEnCause',
       header: 'Département mis en cause',
     });
@@ -832,110 +715,6 @@ describe('buildExportRequetesRows', () => {
     );
 
     expect(cell(rows[0], 'statutRequeteEntiteAdministrative')).toBe('Clôturée');
-  });
-
-  it('populates root-scoped acknowledgment email date and automatic type from an auto-note', () => {
-    const rows = buildExportRequetesRows(
-      [
-        {
-          id: 'REQ-2026-0016',
-          createdAt: new Date('2026-06-18T10:00:00.000Z'),
-          etapes: [
-            {
-              entiteId: 'root-entite',
-              type: 'ACKNOWLEDGMENT',
-              statutId: 'EN_COURS',
-              createdAt: new Date('2026-06-15T15:06:57.000Z'),
-              clotureReason: [],
-              notes: [{ texte: "Email d'accusé de réception envoyé le 15/06/2026 15:06:57" }],
-            },
-          ],
-          situations: [{}],
-        },
-      ],
-      { topEntiteId: 'root-entite' },
-    );
-
-    expect(cell(rows[0], 'dateEnvoiAccuseReceptionEntiteAdministrative')).toBe('15/06/2026');
-    expect(cell(rows[0], 'typeEnvoiAccuseReception')).toBe('Email automatique');
-  });
-
-  it('exports manual SIRENA acknowledgment email type from an authored email note', () => {
-    const rows = buildExportRequetesRows(
-      [
-        {
-          id: 'REQ-2026-0019',
-          createdAt: new Date('2026-06-18T10:00:00.000Z'),
-          etapes: [
-            {
-              entiteId: 'root-entite',
-              type: 'ACKNOWLEDGMENT',
-              statutId: 'FAIT',
-              createdAt: new Date('2026-06-15T15:06:57.000Z'),
-              clotureReason: [],
-              notes: [{ texte: "Email d'accusé de réception envoyé le 17/06/2026 11:00:00", authorId: 'userId' }],
-            },
-          ],
-          situations: [{}],
-        },
-      ],
-      { topEntiteId: 'root-entite' },
-    );
-
-    expect(cell(rows[0], 'dateEnvoiAccuseReceptionEntiteAdministrative')).toBe('17/06/2026');
-    expect(cell(rows[0], 'typeEnvoiAccuseReception')).toBe('Email manuel depuis SIRENA');
-  });
-
-  it('exports completed acknowledgment dateRealisation as Autre when no SIRENA email send is proven', () => {
-    const rows = buildExportRequetesRows(
-      [
-        {
-          id: 'REQ-2026-0018',
-          createdAt: new Date('2026-06-18T10:00:00.000Z'),
-          etapes: [
-            {
-              entiteId: 'root-entite',
-              type: 'ACKNOWLEDGMENT',
-              statutId: 'FAIT',
-              dateRealisation: new Date('2026-06-17T12:00:00.000Z'),
-              createdAt: new Date('2026-06-15T15:06:57.000Z'),
-              clotureReason: [],
-            },
-          ],
-          situations: [{}],
-        },
-      ],
-      { topEntiteId: 'root-entite' },
-    );
-
-    expect(cell(rows[0], 'dateEnvoiAccuseReceptionEntiteAdministrative')).toBe('17/06/2026');
-    expect(cell(rows[0], 'typeEnvoiAccuseReception')).toBe('Autre');
-  });
-
-  it('populates migrated acknowledgment date without inventing the send type', () => {
-    const rows = buildExportRequetesRows(
-      [
-        {
-          id: 'REQ-2026-0017',
-          createdAt: new Date('2026-06-18T10:00:00.000Z'),
-          etapes: [
-            {
-              entiteId: 'root-entite',
-              type: 'ACKNOWLEDGMENT',
-              statutId: 'EN_COURS',
-              createdAt: new Date('2026-06-15T15:06:57.000Z'),
-              clotureReason: [],
-              notes: [{ texte: "Date d'envoi de l'accusé de réception au requérant : 16/06/2026" }],
-            },
-          ],
-          situations: [{}],
-        },
-      ],
-      { topEntiteId: 'root-entite' },
-    );
-
-    expect(cell(rows[0], 'dateEnvoiAccuseReceptionEntiteAdministrative')).toBe('16/06/2026');
-    expect(cell(rows[0], 'typeEnvoiAccuseReception')).toBe('Autre');
   });
 
   it('populates request entity status, root-scoped priority and latest root-scoped closure fields', () => {

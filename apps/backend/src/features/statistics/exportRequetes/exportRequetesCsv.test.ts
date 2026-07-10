@@ -4,14 +4,14 @@ import { EXPORT_REQUETES_COLUMNS, type ExportRequetesColumnKey } from './exportR
 import { buildExportRequetesCsv, buildExportRequetesCsvFromRecords } from './exportRequetesCsv.js';
 
 describe('buildExportRequetesCsv', () => {
-  it('exports the stable 63-column business header when there are no rows', () => {
+  it('exports the stable 55-column business header when there are no rows', () => {
     const csv = buildExportRequetesCsv([]);
     const header = csv.replace(/^\uFEFF/, '');
     const columns = header.split(';');
 
     expect(csv).toMatch(/^\uFEFF/);
     expect(header).not.toContain('\n');
-    expect(columns).toHaveLength(63);
+    expect(columns).toHaveLength(55);
     expect(columns[0]).toBe('Numéro de requête');
     expect(headerCell(columns, 'statutRequeteEntiteAdministrative')).toBe(
       'Statut de la requête pour mon entité administrative',
@@ -78,7 +78,7 @@ describe('buildExportRequetesCsv', () => {
       .split('\n')[1]
       .split(';');
 
-    expect(row).toHaveLength(63);
+    expect(row).toHaveLength(55);
     expect(csvCell(row, 'codePostalDeclarant')).toBe('75001');
     expect(csvCell(row, 'villeDeclarant')).toBe('');
     expect(csvCell(row, 'departementDeclarant')).toBe('');
@@ -112,16 +112,6 @@ describe('buildExportRequetesCsv', () => {
             aAutrePersonnes: true,
             autrePersonnes: 'Free text must not be exported',
           },
-          etapes: [
-            {
-              entiteId: 'root-entite',
-              type: 'ACKNOWLEDGMENT',
-              statutId: 'EN_COURS',
-              createdAt: new Date('2026-06-15T15:06:57.000Z'),
-              clotureReason: [],
-              notes: [{ texte: "Email d'accusé de réception envoyé le 15/06/2026 15:06:57" }],
-            },
-          ],
           requeteEntites: [
             {
               entiteId: 'root-entite',
@@ -133,9 +123,7 @@ describe('buildExportRequetesCsv', () => {
             {
               lieuDeSurvenue: {
                 lieuTypeId: 'ETABLISSEMENT_SANTE',
-                finess: '750000001',
-                categCode: '355',
-                adresse: { codePostal: '69002', label: 'IFSI AP-HP DU CH AMBROISE PARÉ' },
+                adresse: { codePostal: '69002' },
               },
               misEnCause: { codePostal: '98000' },
               demarchesEngagees: {
@@ -158,10 +146,7 @@ describe('buildExportRequetesCsv', () => {
           ],
         },
       ],
-      {
-        topEntiteId: 'root-entite',
-        categorieFinessLieuSurvenueByCode: new Map([['355', 'Centre hospitalier régional']]),
-      },
+      { topEntiteId: 'root-entite' },
     );
     const [headerLine, rowLine] = csv.replace(/^\uFEFF/, '').split('\n');
     const header = headerLine.split(';');
@@ -175,7 +160,6 @@ describe('buildExportRequetesCsv', () => {
     expect(csvCell(row, 'statutRequeteEntiteAdministrative')).toBe('Clôturée');
     expect(csvCell(row, 'departementDeclarant')).toBe('75');
     expect(csvCell(row, 'departementPersonneConcernee')).toBe('971');
-    expect(csvCell(row, 'nomLieuSurvenue')).toBe('IFSI AP-HP DU CH AMBROISE PARÉ');
     expect(csvCell(row, 'departementLieuSurvenue')).toBe('69');
     expect(csvCell(row, 'autrePersonneConcernee')).toBe('Oui');
     expect(csvCell(row, 'misEnCauseContacte')).toBe('Oui');
@@ -186,9 +170,6 @@ describe('buildExportRequetesCsv', () => {
     expect(csvCell(row, 'lieuDepotPlainte')).toBe('Gendarmerie');
     expect(csvCell(row, 'demarchesAutresOrganismes')).toBe('Oui');
     expect(csvCell(row, 'motifsQualifies')).toBe('Délais de prise en charge (Qualité des soins)');
-    expect(csvCell(row, 'dateEnvoiAccuseReceptionEntiteAdministrative')).toBe('15/06/2026');
-    expect(csvCell(row, 'typeEnvoiAccuseReception')).toBe('Email automatique');
-    expect(csvCell(row, 'categorieFinessLieuSurvenue')).toBe('Centre hospitalier régional');
     expect(csvCell(row, 'departementMisEnCause')).toBe('980');
   });
 

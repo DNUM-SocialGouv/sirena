@@ -53,13 +53,33 @@ describe('generateExportRequetesCsv', () => {
     expect(vi.mocked(prisma.requete.findMany).mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({
         include: expect.objectContaining({
-          etapes: expect.objectContaining({
+          etapes: {
+            select: {
+              entiteId: true,
+              statutId: true,
+              createdAt: true,
+              clotureEffectiveDate: true,
+              clotureReason: { select: { label: true } },
+            },
+          },
+          situations: expect.objectContaining({
             include: expect.objectContaining({
-              notes: {
-                select: expect.objectContaining({
-                  texte: true,
-                  authorId: true,
-                }),
+              lieuDeSurvenue: {
+                select: {
+                  lieuTypeId: true,
+                  lieuPrecision: true,
+                  codePostal: true,
+                  adresse: { select: { codePostal: true, ville: true } },
+                  lieuType: { select: { label: true } },
+                  transportType: { select: { label: true } },
+                },
+              },
+              misEnCause: {
+                select: {
+                  codePostal: true,
+                  misEnCauseType: { select: { label: true } },
+                  misEnCauseTypePrecision: { select: { label: true } },
+                },
               },
             }),
           }),

@@ -33,7 +33,6 @@ type ExportEntiteReferenceRecord = ExportLabelRecord & {
 
 type ExportAdresseRecord = {
   codePostal: string | null;
-  label?: string | null;
   ville?: string | null;
 };
 
@@ -69,14 +68,10 @@ type ExportRequeteEntiteRecord = {
 
 type ExportRequeteEtapeRecord = {
   entiteId: string;
-  type?: string | null;
   statutId: string;
   createdAt: Date;
-  updatedAt?: Date;
-  dateRealisation?: Date | null;
   clotureEffectiveDate?: Date | null;
   clotureReason: ExportLabelRecord[];
-  notes?: Array<{ texte: string | null; authorId?: string | null }>;
 };
 
 type ExportLieuDeSurvenueRecord = {
@@ -84,10 +79,6 @@ type ExportLieuDeSurvenueRecord = {
   lieuType?: ExportLabelRecord | null;
   lieuPrecision?: string | null;
   transportType?: ExportLabelRecord | null;
-  societeTransport?: string | null;
-  finess?: string | null;
-  categCode?: string | null;
-  categLib?: string | null;
   codePostal?: string | null;
   adresse?: ExportAdresseRecord | null;
 };
@@ -95,13 +86,7 @@ type ExportLieuDeSurvenueRecord = {
 type ExportMisEnCauseRecord = {
   misEnCauseType?: ExportLabelRecord | null;
   misEnCauseTypePrecision?: ExportLabelRecord | null;
-  autrePrecision?: string | null;
-  finess?: string | null;
-  nomService?: string | null;
   codePostal?: string | null;
-  rpps?: string | null;
-  nom?: string | null;
-  prenom?: string | null;
 };
 
 type ExportFaitRecord = {
@@ -143,7 +128,6 @@ type ExportRequeteKeyedRow = Partial<Record<ExportRequetesColumnKey, ExportReque
 
 export type BuildExportRequetesRowsOptions = {
   topEntiteId?: string;
-  categorieFinessLieuSurvenueByCode?: Map<string, string>;
   departementNamesByCode?: Map<string, string>;
 };
 
@@ -173,13 +157,7 @@ function buildExportRequeteRow(
     ...buildRequeteFields(requete),
     ...buildDeclarantFields(requete.declarant, shouldExportDepartements, options.departementNamesByCode),
     ...buildPersonneConcerneeFields(requete.participant, shouldExportDepartements, options.departementNamesByCode),
-    ...buildSituationFields(
-      situation,
-      situationIndex,
-      shouldExportDepartements,
-      options.categorieFinessLieuSurvenueByCode,
-      options.departementNamesByCode,
-    ),
+    ...buildSituationFields(situation, situationIndex, shouldExportDepartements, options.departementNamesByCode),
     ...buildFaitsFields(situation?.faits ?? []),
     ...buildDemarchesFields(situation?.demarchesEngagees),
     ...buildWorkflowFields(requete, options, requeteEntiteRacine),
@@ -248,7 +226,6 @@ function buildSituationFields(
   situation: ExportSituationRecord | null,
   situationIndex: number | undefined,
   shouldExportDepartements: boolean,
-  categorieFinessLieuSurvenueByCode: Map<string, string> | undefined,
   departementNamesByCode: Map<string, string> | undefined,
 ): ExportRequeteKeyedRow {
   const lieuDeSurvenue = situation?.lieuDeSurvenue;
@@ -263,9 +240,6 @@ function buildSituationFields(
     numeroSituation: situation ? (situationIndex ?? 0) + 1 : '',
     typeLieuSurvenue: lieuDeSurvenue?.lieuType?.label ?? '',
     precisionTypeLieuSurvenue: formatLieuSurvenuePrecision(lieuDeSurvenue),
-    finessLieuSurvenue: lieuDeSurvenue?.finess ?? '',
-    categorieFinessLieuSurvenue: formatCategorieFinessLieuSurvenue(lieuDeSurvenue, categorieFinessLieuSurvenueByCode),
-    nomLieuSurvenue: formatNomLieuSurvenue(lieuDeSurvenue),
     codePostalLieuSurvenue,
     villeLieuSurvenue: lieuDeSurvenue?.adresse?.ville ?? '',
     departementLieuSurvenue: shouldExportDepartements
@@ -273,8 +247,6 @@ function buildSituationFields(
       : '',
     typeMisEnCause: misEnCause?.misEnCauseType?.label ?? '',
     precisionTypeMisEnCause: misEnCause?.misEnCauseTypePrecision?.label ?? '',
-    finessMisEnCause: misEnCause?.finess ?? '',
-    nomService: misEnCause?.nomService ?? '',
     departementMisEnCause: shouldExportDepartements
       ? formatDepartementWithName(departementMisEnCause, departementNamesByCode)
       : '',
@@ -341,14 +313,11 @@ function buildWorkflowFields(
   requeteEntiteRacine: ExportRequeteEntiteRecord | undefined,
 ): ExportRequeteKeyedRow {
   const etapeCloturee = getLatestEtapeCloturee(requete.etapes, options.topEntiteId);
-  const accuseReception = getAccuseReceptionEnvoi(requete.etapes, options.topEntiteId);
 
   return {
     statutRequeteEntiteAdministrative: requeteEntiteRacine?.statut?.label ?? '',
     entitesStatutsRequete: formatRequeteEntites(requete.requeteEntites),
     prioriteRequeteEntiteAdministrative: requeteEntiteRacine?.priorite?.label ?? '',
-    dateEnvoiAccuseReceptionEntiteAdministrative: formatExportDate(accuseReception?.date),
-    typeEnvoiAccuseReception: accuseReception?.type ?? '',
     derniereDateClotureEntiteAdministrative: formatExportDate(etapeCloturee?.clotureEffectiveDate),
     raisonsClotureEntiteAdministrative: formatExportList(
       etapeCloturee?.clotureReason.map((reason) => reason.label) ?? [],
@@ -455,43 +424,6 @@ function formatLieuSurvenuePrecision(lieuDeSurvenue: ExportLieuDeSurvenueRecord 
   ]);
 }
 
-function formatNomLieuSurvenue(lieuDeSurvenue: ExportLieuDeSurvenueRecord | null | undefined): string {
-  if (lieuDeSurvenue?.societeTransport) {
-    return lieuDeSurvenue.societeTransport;
-  }
-
-  if (!isEtablissementLieuType(lieuDeSurvenue?.lieuTypeId)) {
-    return '';
-  }
-
-  return lieuDeSurvenue?.adresse?.label ?? '';
-}
-
-function isEtablissementLieuType(lieuTypeId: string | null | undefined): boolean {
-  return (
-    lieuTypeId === 'ETABLISSEMENT_SANTE' ||
-    lieuTypeId === 'ETABLISSEMENT_PERSONNES_AGEES' ||
-    lieuTypeId === 'ETABLISSEMENT_HANDICAP' ||
-    lieuTypeId === 'ETABLISSEMENT_SOCIAL' ||
-    lieuTypeId === 'AUTRES_ETABLISSEMENTS'
-  );
-}
-
-function formatCategorieFinessLieuSurvenue(
-  lieuDeSurvenue: ExportLieuDeSurvenueRecord | null | undefined,
-  categorieFinessLieuSurvenueByCode: Map<string, string> | undefined,
-): string {
-  if (lieuDeSurvenue?.categLib) {
-    return lieuDeSurvenue.categLib;
-  }
-
-  if (!lieuDeSurvenue?.categCode) {
-    return '';
-  }
-
-  return categorieFinessLieuSurvenueByCode?.get(lieuDeSurvenue.categCode) ?? '';
-}
-
 function formatRequeteEntites(requeteEntites: ExportRequeteEntiteRecord[] | undefined): string {
   return formatExportList(
     requeteEntites?.map((requeteEntite) => {
@@ -541,51 +473,6 @@ function formatDepartementWithName(
   const departementName = departementNamesByCode?.get(departementCode);
 
   return departementName ? `${departementName} (${departementCode})` : departementCode;
-}
-
-function getAccuseReceptionEnvoi(
-  etapes: ExportRequeteEtapeRecord[] | undefined,
-  topEntiteId: string | undefined,
-): { date: Date; type: string } | undefined {
-  if (!topEntiteId) {
-    return undefined;
-  }
-
-  for (const etape of etapes ?? []) {
-    if (etape.entiteId !== topEntiteId || etape.type !== 'ACKNOWLEDGMENT') {
-      continue;
-    }
-
-    for (const note of etape.notes ?? []) {
-      const emailMatch = note.texte?.match(/Email d'accusé de réception envoyé le (\d{2})\/(\d{2})\/(\d{4})/);
-
-      if (emailMatch) {
-        const [, day, month, year] = emailMatch;
-        return {
-          date: etape.dateRealisation ?? new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))),
-          type: note.authorId ? 'Email manuel depuis SIRENA' : 'Email automatique',
-        };
-      }
-
-      const migratedMatch = note.texte?.match(
-        /Date d'envoi de l'accusé de réception au requérant : (\d{2})\/(\d{2})\/(\d{4})/,
-      );
-
-      if (migratedMatch) {
-        const [, day, month, year] = migratedMatch;
-        return {
-          date: etape.dateRealisation ?? new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))),
-          type: 'Autre',
-        };
-      }
-    }
-
-    if (etape.dateRealisation && etape.statutId === 'FAIT') {
-      return { date: etape.dateRealisation, type: 'Autre' };
-    }
-  }
-
-  return undefined;
 }
 
 function getLatestEtapeCloturee(

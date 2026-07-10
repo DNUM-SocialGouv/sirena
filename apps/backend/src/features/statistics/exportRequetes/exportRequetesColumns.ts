@@ -41,20 +41,11 @@ export const EXPORT_REQUETES_COLUMNS = [
   { key: 'numeroSituation', header: 'Numéro de situation' },
   { key: 'typeLieuSurvenue', header: 'Type de lieu de survenue' },
   { key: 'precisionTypeLieuSurvenue', header: 'Précision type de lieu de survenue' },
-  { key: 'finessLieuSurvenue', header: 'Numéro FINESS du lieu de survenue' },
-  { key: 'categorieFinessLieuSurvenue', header: 'Catégorie établissement du FINESS du lieu de survenue' },
-  {
-    key: 'nomLieuSurvenue',
-    header: "Nom de l'établissement / Nom du lieu de survenue / Société de transport concernée",
-  },
   { key: 'codePostalLieuSurvenue', header: 'Code postal lieu de survenue' },
   { key: 'villeLieuSurvenue', header: 'Ville lieu de survenue' },
   { key: 'departementLieuSurvenue', header: 'Département lieu de survenue' },
   { key: 'typeMisEnCause', header: 'Type de mis en cause' },
   { key: 'precisionTypeMisEnCause', header: 'Précision type de mis en cause' },
-  { key: 'finessMisEnCause', header: 'FINESS mis en cause' },
-  { key: 'categorieFinessMisEnCause', header: 'Catégorie établissement du FINESS mis en cause' },
-  { key: 'nomService', header: 'Nom du service' },
   { key: 'departementMisEnCause', header: 'Département mis en cause' },
   {
     key: 'motifsDeclaratifs',
@@ -82,11 +73,6 @@ export const EXPORT_REQUETES_COLUMNS = [
   { key: 'modeReception', header: 'Mode de réception' },
   { key: 'dateDemandeDeclarant', header: 'Date demande par le déclarant' },
   { key: 'provenance', header: 'Provenance' },
-  {
-    key: 'dateEnvoiAccuseReceptionEntiteAdministrative',
-    header: "Date envoi de l'accusé de réception pour mon entité administrative",
-  },
-  { key: 'typeEnvoiAccuseReception', header: "Type d'envoi de l'accusé de réception" },
   {
     key: 'derniereDateClotureEntiteAdministrative',
     header: 'Dernière date de clôture de la requête pour mon entité administrative',
