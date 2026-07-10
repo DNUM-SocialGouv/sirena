@@ -49,6 +49,7 @@ import {
   getRequetesDepartementCountsRoute,
   getRequetesDomaineCountsRoute,
   getRequetesEntiteRoute,
+  getRequetesStatutCountsRoute,
   reopenRequeteRoute,
   updateStatutRoute,
 } from './requetesEntite.route.js';
@@ -58,6 +59,7 @@ import {
   GetDepartementCountsQuerySchema,
   GetDomaineCountsQuerySchema,
   GetRequetesEntiteQuerySchema,
+  GetStatutCountsQuerySchema,
   UpdateDeclarantBodySchema,
   UpdateParticipantBodySchema,
   UpdatePrioriteBodySchema,
@@ -78,6 +80,7 @@ import {
   getRequeteEntiteById,
   getRequetesCountsByDepartement,
   getRequetesCountsByDomaine,
+  getRequetesCountsByStatut,
   getRequetesEntite,
   hasAccessToRequete,
   reopenRequeteForEntite,
@@ -144,6 +147,26 @@ const app = factoryWithLogs
       return c.json({ data });
     },
   )
+
+  .get('/statut-counts', getRequetesStatutCountsRoute, zValidator('query', GetStatutCountsQuerySchema), async (c) => {
+    const query = c.req.valid('query');
+    const topEntiteId = c.get('topEntiteId');
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
+    }
+    const ids = query.statutIds
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean);
+    const data = await getRequetesCountsByStatut([topEntiteId], ids, {
+      search: query.search,
+      entiteId: query.entiteId,
+    });
+    return c.json({ data });
+  })
 
   .get('/', getRequetesEntiteRoute, zValidator('query', GetRequetesEntiteQuerySchema), async (c) => {
     const logger = c.get('logger');
