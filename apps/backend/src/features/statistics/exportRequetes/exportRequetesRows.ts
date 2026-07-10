@@ -72,6 +72,7 @@ type ExportRequeteEtapeRecord = {
   type?: string | null;
   statutId: string;
   createdAt: Date;
+  updatedAt?: Date;
   dateRealisation?: Date | null;
   clotureEffectiveDate?: Date | null;
   clotureReason: ExportLabelRecord[];
@@ -581,6 +582,10 @@ function getAccuseReceptionEnvoi(
 
     if (etape.dateRealisation && etape.statutId === 'FAIT') {
       return { date: etape.dateRealisation, type: 'Autre' };
+    }
+
+    if (etape.updatedAt && etape.statutId === 'FAIT') {
+      return { date: etape.updatedAt, type: 'Autre' };
     }
   }
 
