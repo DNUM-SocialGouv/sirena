@@ -79,6 +79,55 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'provenance')).toBe('Demat.social');
   });
 
+  it('uses authoritative departments for declarant and concerned-person postal codes', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-002A',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          declarant: {
+            estVictime: false,
+            isTuteur: false,
+            adresse: { codePostal: '20000' },
+            veutGarderAnonymat: false,
+            estSignalementProfessionnel: false,
+          },
+          participant: {
+            adresse: { codePostal: '20200' },
+            veutGarderAnonymat: false,
+            estVictimeInformee: false,
+            estHandicapee: false,
+            aAutrePersonnes: false,
+          },
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'ARS Corse', entiteTypeId: 'ARS' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          situations: [{ misEnCause: { codePostal: '20000' } }],
+        },
+      ],
+      {
+        topEntiteId: 'root-entite',
+        departmentCodesByPostalCode: new Map([
+          ['20000', '2A'],
+          ['20200', '2B'],
+        ]),
+        departementNamesByCode: new Map([
+          ['2A', 'Corse-du-Sud'],
+          ['2B', 'Haute-Corse'],
+        ]),
+      },
+    );
+
+    expect(cell(rows[0], 'departementDeclarant')).toBe('Corse-du-Sud (2A)');
+    expect(cell(rows[0], 'departementPersonneConcernee')).toBe('Haute-Corse (2B)');
+    expect(cell(rows[0], 'departementMisEnCause')).toBe('Corse-du-Sud (2A)');
+    expect(EXPORT_REQUETES_COLUMNS.some(({ key }) => key === 'codePostalMisEnCause')).toBe(false);
+  });
+
   it('exports ville déclarant from the declarant address', () => {
     const rows = buildExportRequetesRows([
       {

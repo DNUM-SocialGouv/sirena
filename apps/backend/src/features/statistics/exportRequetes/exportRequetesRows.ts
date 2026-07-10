@@ -158,8 +158,18 @@ function buildExportRequeteRow(
 
   return toExportRequetesCsvRow({
     ...buildRequeteFields(requete),
-    ...buildDeclarantFields(requete.declarant, shouldExportDepartements, options.departementNamesByCode),
-    ...buildPersonneConcerneeFields(requete.participant, shouldExportDepartements, options.departementNamesByCode),
+    ...buildDeclarantFields(
+      requete.declarant,
+      shouldExportDepartements,
+      options.departmentCodesByPostalCode,
+      options.departementNamesByCode,
+    ),
+    ...buildPersonneConcerneeFields(
+      requete.participant,
+      shouldExportDepartements,
+      options.departmentCodesByPostalCode,
+      options.departementNamesByCode,
+    ),
     ...buildSituationFields(
       situation,
       situationIndex,
@@ -187,10 +197,12 @@ function buildRequeteFields(requete: ExportRequeteRecord): ExportRequeteKeyedRow
 function buildDeclarantFields(
   declarant: ExportDeclarantRecord | null | undefined,
   shouldExportDepartements: boolean,
+  departmentCodesByPostalCode: Map<string, string> | undefined,
   departementNamesByCode: Map<string, string> | undefined,
 ): ExportRequeteKeyedRow {
   const codePostalDeclarant = declarant?.adresse?.codePostal ?? '';
-  const departementDeclarant = formatDepartementFromCodePostal(codePostalDeclarant);
+  const departementDeclarant =
+    departmentCodesByPostalCode?.get(codePostalDeclarant) ?? formatDepartementFromCodePostal(codePostalDeclarant);
 
   return {
     declarantEstPersonneConcernee: formatExportBoolean(declarant?.estVictime),
@@ -209,10 +221,13 @@ function buildDeclarantFields(
 function buildPersonneConcerneeFields(
   participant: ExportParticipantRecord | null | undefined,
   shouldExportDepartements: boolean,
+  departmentCodesByPostalCode: Map<string, string> | undefined,
   departementNamesByCode: Map<string, string> | undefined,
 ): ExportRequeteKeyedRow {
   const codePostalPersonneConcernee = participant?.adresse?.codePostal ?? '';
-  const departementPersonneConcernee = formatDepartementFromCodePostal(codePostalPersonneConcernee);
+  const departementPersonneConcernee =
+    departmentCodesByPostalCode?.get(codePostalPersonneConcernee) ??
+    formatDepartementFromCodePostal(codePostalPersonneConcernee);
 
   return {
     civilitePersonneConcernee: participant?.identite?.civilite?.label ?? '',
@@ -247,7 +262,8 @@ function buildSituationFields(
   const departementLieuSurvenue =
     departmentCodesByPostalCode?.get(codePostalLieuSurvenue) ?? formatDepartementFromCodePostal(codePostalLieuSurvenue);
   const codePostalMisEnCause = misEnCause?.codePostal ?? '';
-  const departementMisEnCause = formatDepartementFromCodePostal(codePostalMisEnCause);
+  const departementMisEnCause =
+    departmentCodesByPostalCode?.get(codePostalMisEnCause) ?? formatDepartementFromCodePostal(codePostalMisEnCause);
 
   return {
     numeroSituation: situation ? (situationIndex ?? 0) + 1 : '',
