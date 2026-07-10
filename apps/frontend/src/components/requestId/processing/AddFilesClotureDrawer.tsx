@@ -6,7 +6,7 @@ import { useParams } from '@tanstack/react-router';
 import { forwardRef, useId, useImperativeHandle, useState } from 'react';
 import { FileDropZone } from '@/components/common/FileDropZone';
 import { SelectedFilesList } from '@/components/common/SelectedFilesList';
-import { useUpdateProcessingStepNote } from '@/hooks/mutations/updateProcessingStep.hook';
+import { useAddClotureFiles } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import { HttpError } from '@/lib/api/tanstackQuery';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
@@ -18,12 +18,11 @@ export type AddFilesClotureDrawerRef = {
 };
 
 export type AddFilesClotureDrawerProps = {
-  noteId: string;
-  noteTexte: string;
+  stepId: string;
 };
 
 export const AddFilesClotureDrawer = forwardRef<AddFilesClotureDrawerRef, AddFilesClotureDrawerProps>(
-  ({ noteId, noteTexte }, ref) => {
+  ({ stepId }, ref) => {
     const { requestId } = useParams({
       from: '/_auth/_user/request/$requestId',
     });
@@ -34,7 +33,7 @@ export const AddFilesClotureDrawer = forwardRef<AddFilesClotureDrawerRef, AddFil
     const [fileErrors, setFileErrors] = useState<Record<string, FileValidationError[]>>({});
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    const updateNoteMutation = useUpdateProcessingStepNote(requestId);
+    const addFilesMutation = useAddClotureFiles(requestId);
     const uploadFileMutation = useUploadFile({ silentToastError: true });
 
     const generatedId = useId();
@@ -88,7 +87,7 @@ export const AddFilesClotureDrawer = forwardRef<AddFilesClotureDrawerRef, AddFil
         const data = await Promise.all(files.map((file) => uploadFileMutation.mutateAsync(file)));
         const fileIds = data.map((f) => f.id);
 
-        await updateNoteMutation.mutateAsync({ noteId, texte: noteTexte, fileIds });
+        await addFilesMutation.mutateAsync({ stepId, fileIds });
 
         handleCancel();
         setIsOpen(false);

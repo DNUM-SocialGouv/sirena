@@ -381,6 +381,75 @@ describe('statistics.service.ts', () => {
       expect(result.map((card) => card.display)).toEqual(['pie', 'scalar']);
     });
 
+    it('overrides display_name with the Visualization tab column_title (card and dashcard levels)', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            dashcards: [
+              {
+                id: 100,
+                card_id: 42,
+                card: {
+                  id: 42,
+                  name: 'Répartition',
+                  display: 'table',
+                  visualization_settings: {
+                    column_settings: {
+                      '["name","raison"]': { column_title: 'Motif du signalement' },
+                      '["ref",["field","nb",{"base-type":"type/Integer"}]]': { column_title: 'Volume' },
+                    },
+                  },
+                },
+                // Override au niveau dashcard : prime sur la card pour la colonne "raison".
+                visualization_settings: {
+                  column_settings: {
+                    '["name","raison"]': { column_title: 'Motif (dashcard)' },
+                  },
+                },
+              },
+            ],
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () =>
+            cardResult(
+              [
+                { name: 'raison', display_name: 'raison', source: 'breakout' },
+                { name: 'nb', display_name: 'nb', base_type: 'type/Integer', source: 'aggregation' },
+              ],
+              [['A', 3]],
+            ),
+        });
+
+      const { fetchDashboardCardsData } = await import('./statistics.service.js');
+      const [card] = await fetchDashboardCardsData();
+
+      expect(card.data.cols.map((col) => col.display_name)).toEqual(['Motif (dashcard)', 'Volume']);
+    });
+
+    it('leaves display_name untouched when no column_settings are present', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ dashcards: [{ id: 100, card_id: 42, card: { id: 42, name: 'Card' } }] }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => cardResult([{ name: 'raison', display_name: 'Raison', source: 'breakout' }], [['A']]),
+        });
+
+      const { fetchDashboardCardsData } = await import('./statistics.service.js');
+      const [card] = await fetchDashboardCardsData();
+
+      expect(card.data.cols.map((col) => col.display_name)).toEqual(['Raison']);
+    });
+
     it('forwards params into the dashboard JWT so they reach Metabase locked filters', async () => {
       fetchMock
         .mockResolvedValueOnce({

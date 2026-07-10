@@ -1,16 +1,13 @@
-import type { RequeteEtapeStatutType } from '@sirena/common/constants';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
+  type AddClotureFilesData,
   type AddProcessingStepData,
-  type AddProcessingStepNoteData,
+  addClotureFiles,
   addProcessingStep,
-  addProcessingStepNote,
   deleteProcessingStep,
-  deleteProcessingStepNote,
   sendAcknowledgment,
-  type UpdateProcessingStepNoteData,
-  updateProcessingStepNote,
-  updateProcessingStepStatus,
+  type UpdateProcessingStepData,
+  updateProcessingStep,
 } from '@/lib/api/processingSteps';
 
 export const useAddProcessingStep = (requestId: string) => {
@@ -24,66 +21,30 @@ export const useAddProcessingStep = (requestId: string) => {
   });
 };
 
-type AddProcessingStepNoteDataParams = {
+type UpdateProcessingStepParams = {
   id: string;
-} & AddProcessingStepNoteData;
+} & UpdateProcessingStepData;
 
-export const useAddProcessingStepNote = (requestId: string) => {
+export const useUpdateProcessingStep = (requestId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, texte, fileIds }: AddProcessingStepNoteDataParams) =>
-      addProcessingStepNote(id, { texte, fileIds }),
+    mutationFn: ({ id, ...data }: UpdateProcessingStepParams) => updateProcessingStep(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['processingSteps', requestId] });
     },
   });
 };
 
-type UpdateProcessingStepNoteDataParams = {
-  noteId: string;
-} & UpdateProcessingStepNoteData;
+type AddClotureFilesDataParams = {
+  stepId: string;
+} & AddClotureFilesData;
 
-export const useUpdateProcessingStepNote = (requestId: string) => {
+export const useAddClotureFiles = (requestId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ noteId, texte, fileIds }: UpdateProcessingStepNoteDataParams) =>
-      updateProcessingStepNote(noteId, { texte, fileIds }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['processingSteps', requestId] });
-    },
-  });
-};
-
-type DeleteProcessingStepNoteDataParams = {
-  id: string;
-  noteId: string;
-};
-
-export const useDeleteProcessingStepNote = (requestId: string) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ noteId }: DeleteProcessingStepNoteDataParams) => deleteProcessingStepNote(noteId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['processingSteps', requestId] });
-    },
-  });
-};
-
-type UpdateProcessingStepStatusParams = {
-  id: string;
-  statutId: Exclude<RequeteEtapeStatutType, 'CLOTUREE'>;
-};
-
-export const useUpdateProcessingStepStatus = (requestId: string) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, statutId }: UpdateProcessingStepStatusParams) => {
-      return updateProcessingStepStatus(id, { statutId });
-    },
+    mutationFn: ({ stepId, fileIds }: AddClotureFilesDataParams) => addClotureFiles(stepId, { fileIds }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['processingSteps', requestId] });
     },

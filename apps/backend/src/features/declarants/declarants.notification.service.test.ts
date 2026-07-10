@@ -3,9 +3,11 @@ import { RECEPTION_TYPE } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ACKNOWLEDGMENT_EMAIL_SUBJECT } from '../../config/tipimail.constant.js';
 import { sendTipimailEmail } from '../../libs/mail/tipimail.js';
+import { uploadFileToMinio } from '../../libs/minio.js';
 import { prisma } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
-import { sendDeclarantAcknowledgmentEmail } from './declarants.notification.service.js';
+import { createUploadedFile } from '../uploadedFiles/uploadedFiles.service.js';
+import { sendDeclarantAcknowledgmentEmail, sendManualAcknowledgmentEmail } from './declarants.notification.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
@@ -14,6 +16,14 @@ vi.mock('../../libs/prisma.js', () => ({
     },
     entite: {
       findMany: vi.fn(),
+      findUnique: vi.fn(),
+    },
+    requeteEtape: {
+      updateMany: vi.fn(),
+      findFirst: vi.fn(),
+    },
+    requeteEtapeNote: {
+      create: vi.fn(),
     },
   },
 }));
@@ -408,5 +418,61 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
     expect(call?.text).toContain('ARS Normandie');
     expect(call?.text).toContain('Adresse e-mail : contact@ars.fr');
     expect(call?.text).toContain('CD Calvados');
+  });
+});
+
+describe('sendManualAcknowledgmentEmail() — PDF attachment', () => {
+  const mockedRequeteEtape = vi.mocked(prisma.requeteEtape);
+  const mockedRequeteEtapeNote = vi.mocked(prisma.requeteEtapeNote);
+  const mockedEntiteFindUnique = vi.mocked(prisma.entite.findUnique);
+  const mockedUploadFileToMinio = vi.mocked(uploadFileToMinio);
+  const mockedCreateUploadedFile = vi.mocked(createUploadedFile);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    mockedRequeteEtape.updateMany.mockResolvedValue({ count: 1 } as any);
+    mockedRequeteEtape.findFirst.mockResolvedValue({ id: 'etapeAck' } as any);
+
+    mockedPrismaRequete.findUnique.mockResolvedValue({
+      id: 'req1',
+      declarant: { identite: { email: 'john@example.com', prenom: 'John', nom: 'Doe' } },
+    } as any);
+    mockedEntiteFindUnique.mockResolvedValue({
+      id: 'ent1',
+      nomComplet: 'ARS Normandie',
+      email: '',
+      emailContactUsager: 'contact@ars.fr',
+      telContactUsager: '',
+      adresseContactUsager: '',
+      entiteMereId: null,
+    } as any);
+    mockedSendTipimailEmail.mockResolvedValue({ status: 'success' } as any);
+
+    mockedUploadFileToMinio.mockResolvedValue({
+      objectPath: 'acr/file123.pdf',
+      rollback: vi.fn(),
+      encryptionMetadata: null,
+    } as any);
+    mockedCreateUploadedFile.mockResolvedValue({ id: 'file123', fileName: 'AR_req1.pdf' } as any);
+  });
+
+  it('attaches the AR PDF directly to the étape with the sender as uploadedById and creates no system note', async () => {
+    await sendManualAcknowledgmentEmail({
+      etapeId: 'etapeAck',
+      requeteId: 'req1',
+      entiteId: 'ent1',
+      userId: 'user123',
+    });
+
+    expect(mockedCreateUploadedFile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requeteEtapeId: 'etapeAck',
+        uploadedById: 'user123',
+        canDelete: false,
+      }),
+    );
+
+    expect(mockedRequeteEtapeNote.create).not.toHaveBeenCalled();
   });
 });

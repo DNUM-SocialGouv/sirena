@@ -71,7 +71,8 @@ type ExportRequeteEntiteRecord = {
 
 type ExportRequeteEtapeRecord = {
   entiteId: string;
-  statutId: string;
+  type?: string | null;
+  statutId: string | null;
   createdAt: Date;
   clotureEffectiveDate?: Date | null;
   clotureReason: ExportLabelRecord[];
