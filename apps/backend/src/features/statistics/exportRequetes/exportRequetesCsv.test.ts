@@ -143,7 +143,7 @@ describe('buildExportRequetesCsv', () => {
                 etablissementARepondu: true,
                 datePlainte: new Date('2026-06-12T00:00:00.000Z'),
                 autoriteType: { label: 'Gendarmerie' },
-                demarches: [{ label: 'Conseil départemental' }],
+                demarches: [{ label: "Démarches engagées auprès d'autres organismes" }],
               },
               faits: [
                 {
