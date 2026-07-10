@@ -9,6 +9,7 @@ import { AFFECTATION_ENTITES_ILE_DE_FRANCE } from './entitesIleDeFrance.js';
 import { AFFECTATION_ENTITES_NORMANDIE } from './entitesNormandie.js';
 import { AFFECTATION_ENTITES_NOUVELLE_AQUITAINE } from './entitesNouvelleAquitaine.js';
 import { AFFECTATION_ENTITES_OCCITANIE } from './entitesOccitanie.js';
+import { AFFECTATION_ENTITES_PACA } from './entitesPACA.js';
 import { AFFECTATION_ENTITES_PAYS_DE_LA_LOIRE } from './entitesPaysDeLaLoire.js';
 import { AFFECTATION_ENTITES_TOP_LEVEL } from './entitesTopLevel.js';
 
@@ -27,6 +28,7 @@ const ALL_AFFECTATION_ENTITES = {
   ...AFFECTATION_ENTITES_PAYS_DE_LA_LOIRE,
   ...AFFECTATION_ENTITES_NOUVELLE_AQUITAINE,
   ...AFFECTATION_ENTITES_CENTRE_VAL_DE_LOIRE,
+  ...AFFECTATION_ENTITES_PACA,
 };
 
 export function getAffectationLabel(sirecId: number | null): string | null {
