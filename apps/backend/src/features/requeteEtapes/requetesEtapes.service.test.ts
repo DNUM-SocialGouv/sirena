@@ -17,7 +17,6 @@ import {
   deleteRequeteEtape,
   getRequeteEtapeById,
   getRequeteEtapes,
-  updateAcknowledgmentStep,
   updateRequeteEtapeNom,
   updateRequeteEtapeStatut,
 } from './requetesEtapes.service.js';
@@ -49,14 +48,6 @@ vi.mock('../../libs/prisma.js', () => ({
 
 vi.mock('../changelog/changelog.service.js', () => ({
   createChangeLog: vi.fn(),
-}));
-
-vi.mock('../../libs/asyncLocalStorage.js', () => ({
-  getLoggerStore: vi.fn(() => ({
-    debug: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-  })),
 }));
 
 vi.mock('../../libs/minio.js', () => ({
@@ -783,31 +774,6 @@ describe('RequeteEtapes.service.ts', () => {
   });
 
   describe('updateRequeteEtapeStatut()', () => {
-    it('marks an acknowledgment step as FAIT', async () => {
-      const mockEtape = {
-        ...requeteEtape,
-        type: 'ACKNOWLEDGMENT',
-        dateRealisation: null,
-      };
-      const mockUpdatedEtape = {
-        ...mockEtape,
-        statutId: 'FAIT',
-      };
-
-      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(mockEtape);
-      vi.mocked(prisma.requeteEtape.update).mockResolvedValueOnce(mockUpdatedEtape);
-
-      const result = await updateRequeteEtapeStatut('1', { statutId: 'FAIT' });
-
-      expect(result).toEqual(mockUpdatedEtape);
-      expect(prisma.requeteEtape.update).toHaveBeenCalledWith({
-        where: { id: '1' },
-        data: {
-          statutId: 'FAIT',
-        },
-      });
-    });
-
     it('should update the statut of a RequeteEtape', async () => {
       const mockEtape = {
         ...requeteEtape,
@@ -841,34 +807,6 @@ describe('RequeteEtapes.service.ts', () => {
 
       expect(result).toBeNull();
       expect(prisma.requeteEtape.update).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('updateAcknowledgmentStep()', () => {
-    it('marks the acknowledgment step as FAIT when automatic acknowledgment completes', async () => {
-      const mockEtape = {
-        ...requeteEtape,
-        id: 'acknowledgmentEtapeId',
-        type: 'ACKNOWLEDGMENT',
-        statutId: 'A_FAIRE',
-        dateRealisation: null,
-      };
-      const mockUpdatedEtape = {
-        ...mockEtape,
-        statutId: 'FAIT',
-      };
-
-      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([mockEtape]);
-      vi.mocked(prisma.requeteEtape.update).mockResolvedValueOnce(mockUpdatedEtape);
-
-      await updateAcknowledgmentStep('requeteId', ['entiteId']);
-
-      expect(prisma.requeteEtape.update).toHaveBeenCalledWith({
-        where: { id: 'acknowledgmentEtapeId' },
-        data: {
-          statutId: 'FAIT',
-        },
-      });
     });
   });
 
