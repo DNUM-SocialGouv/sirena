@@ -1,3 +1,7 @@
+.container {
+  min-width: 0;
+}
+
 .scroll {
   overflow-x: auto;
 }

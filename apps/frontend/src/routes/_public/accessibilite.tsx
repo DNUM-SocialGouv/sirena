@@ -1,6 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_public/accessibilite')({
+  head: () => ({
+    meta: [
+      {
+        title: 'Déclaration d’accessibilité - SIRENA',
+      },
+    ],
+  }),
   component: AccessibilitePage,
 });
 
@@ -92,7 +99,9 @@ export function AccessibilitePage() {
       </ul>
 
       <h2>Établissement de cette déclaration d’accessibilité</h2>
-      <p>Cette déclaration a été établie le 29 mai 2026.</p>
+      <p>
+        Cette déclaration a été établie le <span className="fr-text--bold">29 mai 2026</span>.
+      </p>
 
       <h3>Technologies utilisées</h3>
       <ul className="technical-information technologies-used">

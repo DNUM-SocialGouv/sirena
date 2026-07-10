@@ -32,10 +32,14 @@ const sirecMigrationTab: TabDescriptor = {
   tabId: 'tab-sirec-migration',
 };
 
-export function getTabs(role: Role | null, hasSirecMigration = false): TabDescriptor[] {
+export function getTabs(
+  role: Role | null,
+  hasSirecMigration = false,
+  hasAdminLocalDirectionsServicesFeatureFlag = false,
+): TabDescriptor[] {
   const tabs = role === ROLES.SUPER_ADMIN ? [...baseTabs, entitesTab] : [...baseTabs];
 
-  if (role === ROLES.ENTITY_ADMIN) {
+  if (role === ROLES.ENTITY_ADMIN && hasAdminLocalDirectionsServicesFeatureFlag) {
     tabs.push(directionsServicesTab);
   }
 
@@ -46,14 +50,18 @@ export function getTabs(role: Role | null, hasSirecMigration = false): TabDescri
   return tabs;
 }
 
-export function getTabPaths(role: Role | null, hasSirecMigration = false): string[] {
+export function getTabPaths(
+  role: Role | null,
+  hasSirecMigration = false,
+  hasAdminLocalDirectionsServicesFeatureFlag = false,
+): string[] {
   const paths = ['/admin/users', '/admin/users/all'];
 
   if (role === ROLES.SUPER_ADMIN) {
     paths.push('/admin/entites');
   }
 
-  if (role === ROLES.ENTITY_ADMIN) {
+  if (role === ROLES.ENTITY_ADMIN && hasAdminLocalDirectionsServicesFeatureFlag) {
     paths.push('/admin/directions-services');
   }
 
@@ -64,7 +72,12 @@ export function getTabPaths(role: Role | null, hasSirecMigration = false): strin
   return paths;
 }
 
-export function getActiveTab(pathname: string, role: Role | null, hasSirecMigration = false): number {
+export function getActiveTab(
+  pathname: string,
+  role: Role | null,
+  hasSirecMigration = false,
+  hasAdminLocalDirectionsServicesFeatureFlag = false,
+): number {
   if (pathname === '/admin/users/all') return 1;
 
   if (role === ROLES.SUPER_ADMIN && (pathname === '/admin/entites' || pathname.startsWith('/admin/entites/'))) {
@@ -73,13 +86,14 @@ export function getActiveTab(pathname: string, role: Role | null, hasSirecMigrat
 
   if (
     role === ROLES.ENTITY_ADMIN &&
+    hasAdminLocalDirectionsServicesFeatureFlag &&
     (pathname === '/admin/directions-services' || pathname.startsWith('/admin/directions-services/'))
   ) {
     return 2;
   }
 
   if (hasSirecMigration && pathname === '/admin/sirec-migration') {
-    return role === ROLES.SUPER_ADMIN || role === ROLES.ENTITY_ADMIN ? 3 : 2;
+    return getTabPaths(role, hasSirecMigration, hasAdminLocalDirectionsServicesFeatureFlag).length - 1;
   }
 
   return 0;

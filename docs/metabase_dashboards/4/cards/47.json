@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 172.42456140350876,
+  "average_query_time": 264.20367278797994,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -71,7 +71,7 @@
   "entity_id": "AhmL1ImfBecTkedR2qyJB",
   "id": 47,
   "is_remote_synced": false,
-  "last_query_start": "2026-06-19T14:21:21.207227Z",
+  "last_query_start": "2026-07-03T13:54:59.187947Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.60.4.4 (65c9d32)",

@@ -26,6 +26,28 @@ vi.mock('@sirena/backend-utils/helpers', () => ({
 const fetchMock = vi.fn();
 global.fetch = fetchMock;
 
+// Résultat structuré Metabase (data.cols + data.rows). Le service normalise chaque colonne
+// avec ces cinq champs, donc l'objet produit ici sert aussi de valeur attendue via `.data`.
+type TestCol = {
+  name: string;
+  display_name?: string;
+  base_type?: string;
+  semantic_type?: string | null;
+  source?: string | null;
+};
+const cardResult = (cols: TestCol[], rows: unknown[][]) => ({
+  data: {
+    cols: cols.map((col) => ({
+      name: col.name,
+      display_name: col.display_name ?? col.name,
+      base_type: col.base_type ?? 'type/Text',
+      semantic_type: col.semantic_type ?? null,
+      source: col.source ?? null,
+    })),
+    rows,
+  },
+});
+
 describe('statistics.service.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -85,12 +107,26 @@ describe('statistics.service.ts', () => {
         .mockResolvedValueOnce({
           ok: true,
           status: 200,
-          json: async () => [{ month: '2026-01', total: 12 }],
+          json: async () =>
+            cardResult(
+              [
+                { name: 'month', display_name: 'Month', source: 'breakout' },
+                { name: 'total', display_name: 'Total', base_type: 'type/Integer', source: 'aggregation' },
+              ],
+              [['2026-01', 12]],
+            ),
         })
         .mockResolvedValueOnce({
           ok: true,
           status: 200,
-          json: async () => [{ entite: 'ARS Île-de-France', total: 7 }],
+          json: async () =>
+            cardResult(
+              [
+                { name: 'entite', display_name: 'Entité', source: 'breakout' },
+                { name: 'total', display_name: 'Total', base_type: 'type/Integer', source: 'aggregation' },
+              ],
+              [['ARS Île-de-France', 7]],
+            ),
         });
 
       const { fetchDashboardCardsData } = await import('./statistics.service.js');
@@ -103,7 +139,13 @@ describe('statistics.service.ts', () => {
           name: 'Requêtes par mois',
           display: null,
           layout: null,
-          data: [{ month: '2026-01', total: 12 }],
+          data: cardResult(
+            [
+              { name: 'month', display_name: 'Month', source: 'breakout' },
+              { name: 'total', display_name: 'Total', base_type: 'type/Integer', source: 'aggregation' },
+            ],
+            [['2026-01', 12]],
+          ).data,
         },
         {
           id: 43,
@@ -111,7 +153,13 @@ describe('statistics.service.ts', () => {
           name: 'Top entités',
           display: null,
           layout: null,
-          data: [{ entite: 'ARS Île-de-France', total: 7 }],
+          data: cardResult(
+            [
+              { name: 'entite', display_name: 'Entité', source: 'breakout' },
+              { name: 'total', display_name: 'Total', base_type: 'type/Integer', source: 'aggregation' },
+            ],
+            [['ARS Île-de-France', 7]],
+          ).data,
         },
       ]);
 
@@ -119,10 +167,10 @@ describe('statistics.service.ts', () => {
       const [metadataCall, firstCardCall, secondCardCall] = fetchMock.mock.calls;
       expect(metadataCall[0]).toMatch(/^https:\/\/metabase\.example\.com\/api\/embed\/dashboard\/[^/]+$/);
       expect(firstCardCall[0]).toMatch(
-        /^https:\/\/metabase\.example\.com\/api\/embed\/dashboard\/[^/]+\/dashcard\/100\/card\/42\/json$/,
+        /^https:\/\/metabase\.example\.com\/api\/embed\/dashboard\/[^/]+\/dashcard\/100\/card\/42$/,
       );
       expect(secondCardCall[0]).toMatch(
-        /^https:\/\/metabase\.example\.com\/api\/embed\/dashboard\/[^/]+\/dashcard\/101\/card\/43\/json$/,
+        /^https:\/\/metabase\.example\.com\/api\/embed\/dashboard\/[^/]+\/dashcard\/101\/card\/43$/,
       );
     });
 
@@ -133,13 +181,24 @@ describe('statistics.service.ts', () => {
           status: 200,
           json: async () => ({ ordered_cards: [{ id: 200, card_id: 50, card: { id: 50, name: 'Legacy' } }] }),
         })
-        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ k: 1 }] });
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]),
+        });
 
       const { fetchDashboardCardsData } = await import('./statistics.service.js');
       const result = await fetchDashboardCardsData();
 
       expect(result).toEqual([
-        { id: 50, dashcardId: 200, name: 'Legacy', display: null, layout: null, data: [{ k: 1 }] },
+        {
+          id: 50,
+          dashcardId: 200,
+          name: 'Legacy',
+          display: null,
+          layout: null,
+          data: cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]).data,
+        },
       ]);
     });
 
@@ -176,7 +235,11 @@ describe('statistics.service.ts', () => {
             ],
           }),
         })
-        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ total: 12 }] })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => cardResult([{ name: 'total', base_type: 'type/Integer' }], [[12]]),
+        })
         .mockResolvedValueOnce({
           ok: false,
           status: 500,
@@ -188,12 +251,19 @@ describe('statistics.service.ts', () => {
       const result = await fetchDashboardCardsData();
 
       expect(result).toEqual([
-        { id: 42, dashcardId: 100, name: 'OK', display: null, layout: null, data: [{ total: 12 }] },
-        { id: 43, dashcardId: 101, name: 'KO', display: null, layout: null, data: [] },
+        {
+          id: 42,
+          dashcardId: 100,
+          name: 'OK',
+          display: null,
+          layout: null,
+          data: cardResult([{ name: 'total', base_type: 'type/Integer' }], [[12]]).data,
+        },
+        { id: 43, dashcardId: 101, name: 'KO', display: null, layout: null, data: { cols: [], rows: [] } },
       ]);
     });
 
-    it('returns empty data for a dashcard whose payload is not an array', async () => {
+    it('returns empty data for a dashcard whose payload has no cols/rows', async () => {
       fetchMock
         .mockResolvedValueOnce({
           ok: true,
@@ -205,7 +275,9 @@ describe('statistics.service.ts', () => {
       const { fetchDashboardCardsData } = await import('./statistics.service.js');
       const result = await fetchDashboardCardsData();
 
-      expect(result).toEqual([{ id: 42, dashcardId: 100, name: 'Card', display: null, layout: null, data: [] }]);
+      expect(result).toEqual([
+        { id: 42, dashcardId: 100, name: 'Card', display: null, layout: null, data: { cols: [], rows: [] } },
+      ]);
     });
 
     it('falls back to a generated name when the card has no name', async () => {
@@ -215,13 +287,24 @@ describe('statistics.service.ts', () => {
           status: 200,
           json: async () => ({ dashcards: [{ id: 100, card_id: 42, card: { id: 42 } }] }),
         })
-        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ k: 1 }] });
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]),
+        });
 
       const { fetchDashboardCardsData } = await import('./statistics.service.js');
       const result = await fetchDashboardCardsData();
 
       expect(result).toEqual([
-        { id: 42, dashcardId: 100, name: 'Carte 42', display: null, layout: null, data: [{ k: 1 }] },
+        {
+          id: 42,
+          dashcardId: 100,
+          name: 'Carte 42',
+          display: null,
+          layout: null,
+          data: cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]).data,
+        },
       ]);
     });
 
@@ -238,8 +321,16 @@ describe('statistics.service.ts', () => {
             ],
           }),
         })
-        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ k: 1 }] })
-        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ k: 2 }] });
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[2]]),
+        });
 
       const { fetchDashboardCardsData } = await import('./statistics.service.js');
       const result = await fetchDashboardCardsData();
@@ -266,8 +357,23 @@ describe('statistics.service.ts', () => {
             ],
           }),
         })
-        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ raison: 'A', nb: 3 }] })
-        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ total: 9 }] });
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () =>
+            cardResult(
+              [
+                { name: 'raison', source: 'breakout' },
+                { name: 'nb', base_type: 'type/Integer', source: 'aggregation' },
+              ],
+              [['A', 3]],
+            ),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => cardResult([{ name: 'total', base_type: 'type/Integer' }], [[9]]),
+        });
 
       const { fetchDashboardCardsData } = await import('./statistics.service.js');
       const result = await fetchDashboardCardsData();
@@ -282,7 +388,11 @@ describe('statistics.service.ts', () => {
           status: 200,
           json: async () => ({ dashcards: [{ id: 100, card_id: 42, card: { id: 42, name: 'Card' } }] }),
         })
-        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ k: 1 }] });
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]),
+        });
 
       const { fetchDashboardCardsData } = await import('./statistics.service.js');
       await fetchDashboardCardsData({ entity_label: 'UA 27' });
@@ -306,7 +416,11 @@ describe('statistics.service.ts', () => {
             dashcards: [{ id: 100, card_id: 42, card: { id: 42, name: 'Card' } }],
           }),
         })
-        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ k: 1 }] });
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]),
+        });
 
       const { fetchDashboardCardsData } = await import('./statistics.service.js');
       await fetchDashboardCardsData({ entity_label: 'UA 27' }, { start_date: '2026-01-01', end_date: '2026-03-31' });
@@ -335,7 +449,11 @@ describe('statistics.service.ts', () => {
             dashcards: [{ id: 100, card_id: 42, card: { id: 42, name: 'Card' } }],
           }),
         })
-        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ k: 1 }] });
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]),
+        });
 
       const { fetchDashboardCardsData } = await import('./statistics.service.js');
       await fetchDashboardCardsData({ entity_label: 'UA 27' }, { start_date: '2026-01-01' });

@@ -71,6 +71,17 @@ export const GetDomaineCountsQuerySchema = z.object({
   search: z.string().max(SEARCH_MAX).optional(),
 });
 
+export const GetStatutCountsQuerySchema = z.object({
+  statutIds: z
+    .string()
+    .max(CSV_FILTER_MAX)
+    .refine((value) => splitCsv(value).every((id) => REQUETE_STATUT_IDS.includes(id)), {
+      message: 'Statut(s) invalide(s)',
+    }),
+  entiteId: z.string().optional(),
+  search: z.string().max(SEARCH_MAX).optional(),
+});
+
 export const GetRequeteEntiteResponseSchema = RequeteSchema.extend({
   entite: EntiteSchema,
 });

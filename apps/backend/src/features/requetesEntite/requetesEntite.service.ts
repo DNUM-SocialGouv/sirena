@@ -405,6 +405,21 @@ export const getRequetesCountsByDomaine = async (
   return results;
 };
 
+export const getRequetesCountsByStatut = async (
+  entiteIds: string[] | null,
+  statutIds: string[],
+  baseQuery: { search?: string; entiteId?: string },
+) => {
+  const results = await Promise.all(
+    statutIds.map(async (id) => {
+      const where = await buildRequetesEntiteWhere(entiteIds, { ...baseQuery, statutIds: id });
+      const count = await prisma.requeteEntite.count({ where });
+      return { id, count };
+    }),
+  );
+  return results;
+};
+
 export const hasAccessToRequete = async ({ requeteId, entiteId }: RequeteEntiteKey) => {
   const requete = await prisma.requeteEntite.findUnique({
     where: { requeteId_entiteId: { requeteId, entiteId } },

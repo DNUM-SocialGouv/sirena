@@ -52,13 +52,25 @@ vi.mock('../../middlewares/userStatus.middleware.js', () => {
 const {
   roleMiddlewareSpy,
   currentRole,
+  hasFeatureSpy,
+  getUserByIdSpy,
   patchEntiteAdminByIdSpy: editEntiteAdminSpy,
   postChildEntiteAdminSpy: createChildEntiteAdminSpy,
 } = vi.hoisted(() => ({
   roleMiddlewareSpy: vi.fn(),
   currentRole: { value: 'SUPER_ADMIN' },
+  hasFeatureSpy: vi.fn(),
+  getUserByIdSpy: vi.fn(),
   patchEntiteAdminByIdSpy: vi.fn(),
   postChildEntiteAdminSpy: vi.fn(),
+}));
+
+vi.mock('../featureFlags/featureFlags.service.js', () => ({
+  hasFeature: hasFeatureSpy,
+}));
+
+vi.mock('../users/users.service.js', () => ({
+  getUserById: getUserByIdSpy,
 }));
 
 vi.mock('../../middlewares/role.middleware.js', () => {
@@ -114,6 +126,8 @@ describe('Entites endpoints: /entites', () => {
   beforeEach(() => {
     currentRole.value = ROLES.SUPER_ADMIN;
     vi.clearAllMocks();
+    hasFeatureSpy.mockResolvedValue(true);
+    getUserByIdSpy.mockResolvedValue({ email: 'entity-admin@example.gouv.fr', entiteId: 'dir-autonomie' });
   });
 
   describe('GET /admin', () => {
@@ -203,6 +217,23 @@ describe('Entites endpoints: /entites', () => {
   });
 
   describe('GET /admin/directions-services', () => {
+    it('rejects entity admins when the local directions and services feature flag is disabled', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      hasFeatureSpy.mockResolvedValueOnce(false);
+
+      const res = await app.request('/admin/directions-services');
+
+      expect(res.status).toBe(403);
+      expect(await res.json()).toEqual({ message: 'Forbidden' });
+      expect(hasFeatureSpy).toHaveBeenCalledWith(
+        'ADMIN_LOCAL_DIRECTIONS_SERVICES',
+        false,
+        'entity-admin@example.gouv.fr',
+        'dir-autonomie',
+      );
+      expect(getDirectionsServicesRows).not.toHaveBeenCalled();
+    });
+
     it('scopes local directions and services rows from the assigned entity', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       vi.mocked(getDirectionsServicesRows).mockResolvedValueOnce([

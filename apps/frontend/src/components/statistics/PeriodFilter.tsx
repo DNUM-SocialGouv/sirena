@@ -3,8 +3,10 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import { Tag } from '@codegouvfr/react-dsfr/Tag';
+import { FEATURE_FLAGS } from '@sirena/common/constants';
 import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useDisclosureMenu } from '@/hooks/useDisclosureMenu';
+import { useHasFeature } from '@/hooks/useHasFeature';
 import styles from './PeriodFilter.module.css';
 import {
   describeCreatedPeriod,
@@ -20,6 +22,10 @@ type Props = {
 };
 
 export function PeriodFilter({ value, onChange }: Props) {
+  const showPresets = useHasFeature(FEATURE_FLAGS.STATISTICS_PERIOD_PRESETS, false);
+  const emptyErrorMessage = showPresets
+    ? 'Sélectionnez une période prédéfinie ou renseignez une période personnalisée.'
+    : 'Renseignez une période personnalisée.';
   const [draftPeriod, setDraftPeriod] = useState<PeriodPreset | undefined>(value.period);
   const [start, setStart] = useState(value.startDate ?? '');
   const [end, setEnd] = useState(value.endDate ?? '');
@@ -54,7 +60,7 @@ export function PeriodFilter({ value, onChange }: Props) {
 
     requestAnimationFrame(() => {
       const checked = panel?.querySelector<HTMLInputElement>('input[type="radio"]:checked');
-      const target = checked ?? panel?.querySelector<HTMLInputElement>('input[type="radio"]');
+      const target = checked ?? panel?.querySelector<HTMLInputElement>('input[type="radio"], input[type="date"]');
       target?.focus();
     });
 
@@ -64,8 +70,10 @@ export function PeriodFilter({ value, onChange }: Props) {
   const isInvalid = start !== '' && end !== '' && start > end;
   const activeLabel = describeCreatedPeriod(value);
 
-  const focusFirstPreset = useCallback(() => {
-    panelRef.current?.querySelector<HTMLInputElement>('input[type="radio"]')?.focus();
+  const focusFirstField = useCallback(() => {
+    const panel = panelRef.current;
+    const radio = panel?.querySelector<HTMLInputElement>('input[type="radio"]');
+    (radio ?? panel?.querySelector<HTMLInputElement>('input[type="date"]'))?.focus();
   }, [panelRef]);
 
   const selectPreset = (preset: PeriodPreset) => {
@@ -101,13 +109,13 @@ export function PeriodFilter({ value, onChange }: Props) {
       }
       if (!start && !end) {
         setIsEmptyError(true);
-        focusFirstPreset();
+        focusFirstField();
         return;
       }
       onChange({ period: undefined, startDate: start || undefined, endDate: end || undefined });
       close();
     },
-    [draftPeriod, isInvalid, start, end, onChange, close, focusFirstPreset],
+    [draftPeriod, isInvalid, start, end, onChange, close, focusFirstField],
   );
 
   const reset = useCallback(() => {
@@ -135,27 +143,25 @@ export function PeriodFilter({ value, onChange }: Props) {
         {isOpen ? (
           <div id={menuId} ref={panelRef} className={`${styles.period__panel} fr-card fr-px-3w fr-py-2w`}>
             <form onSubmit={apply}>
-              <RadioButtons
-                className={styles.period__presets}
-                legend={<span className={fr.cx('fr-text--bold')}>Période prédéfinie</span>}
-                name={`period-preset-${menuId}`}
-                state={isEmptyError ? 'error' : 'default'}
-                stateRelatedMessage={
-                  isEmptyError
-                    ? 'Sélectionnez une période prédéfinie ou renseignez une période personnalisée.'
-                    : undefined
-                }
-                options={PERIOD_PRESETS.map((preset) => ({
-                  label: PERIOD_PRESET_LABELS[preset],
-                  nativeInputProps: {
-                    value: preset,
-                    checked: draftPeriod === preset,
-                    onChange: () => selectPreset(preset),
-                  },
-                }))}
-              />
+              {showPresets ? (
+                <RadioButtons
+                  className={styles.period__presets}
+                  legend={<span className={fr.cx('fr-text--bold')}>Période prédéfinie</span>}
+                  name={`period-preset-${menuId}`}
+                  state={isEmptyError ? 'error' : 'default'}
+                  stateRelatedMessage={isEmptyError ? emptyErrorMessage : undefined}
+                  options={PERIOD_PRESETS.map((preset) => ({
+                    label: PERIOD_PRESET_LABELS[preset],
+                    nativeInputProps: {
+                      value: preset,
+                      checked: draftPeriod === preset,
+                      onChange: () => selectPreset(preset),
+                    },
+                  }))}
+                />
+              ) : null}
 
-              <fieldset className={`${styles.period__section} ${styles.period__custom}`}>
+              <fieldset className={`${styles.period__section} ${showPresets ? styles.period__custom : ''}`}>
                 <legend className={fr.cx('fr-fieldset__legend', 'fr-text--regular')}>
                   <span className={fr.cx('fr-text--bold')}>Période personnalisée</span>
                 </legend>
@@ -188,6 +194,7 @@ export function PeriodFilter({ value, onChange }: Props) {
                   }}
                 />
               </fieldset>
+              {!showPresets && isEmptyError ? <p className={fr.cx('fr-error-text')}>{emptyErrorMessage}</p> : null}
               <div className={styles.period__actions}>
                 <Button type="submit" iconId="fr-icon-search-line">
                   Appliquer <span className="fr-sr-only">le filtre de période</span>
