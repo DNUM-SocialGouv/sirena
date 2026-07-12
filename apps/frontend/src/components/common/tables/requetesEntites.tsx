@@ -431,6 +431,7 @@ export function RequetesEntite() {
           isLoading={isFetching}
           sort={currentSort}
           onSortChange={handleSortChange}
+          showColumnScrollControls
         />
       </div>
       {shouldShowPagination && (

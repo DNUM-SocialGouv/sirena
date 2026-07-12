@@ -2,6 +2,7 @@ import { type JSX, memo, useCallback, useEffect, useId, useMemo, useRef } from '
 import { isPrimitive } from '../../utils/guards';
 import type { Primitive } from '../../utils/types';
 import { Loader } from '../Loader/Loader';
+import { ColumnScrollControls } from './ColumnScrollControls/ColumnScrollControls';
 import type { Cells, Column, ColumnKey, OnSortChangeParams, Row, RowWithId } from './DataTable.type';
 import { DataTableHeader } from './DataTableHeader/DataTableHeader';
 import { DataTableRow } from './DataTableRow/DataTableRow';
@@ -25,6 +26,7 @@ export type DataTableProps<K extends string, T extends RowWithId<K>> = {
   onSortChange?: (params: OnSortChangeParams<T>) => void;
   onSelectedValuesChange?: (selectedValues: T[K][]) => void;
   isLoading?: boolean;
+  showColumnScrollControls?: boolean;
 };
 
 function isRow(x: Row | Primitive | unknown[]): x is Row {
@@ -91,9 +93,11 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
   onSortChange = () => {},
   onSelectedValuesChange = () => {},
   isLoading = false,
+  showColumnScrollControls = false,
 }: DataTableProps<RowId, Datum>): JSX.Element => {
   const fallbackId = useId();
   const tableId = id || fallbackId;
+  const containerRef = useRef<HTMLDivElement>(null);
   const getCell = useMemo(() => {
     return (row: Datum, column: ColumnKey<Datum>) =>
       column in cells && cells[column] ? cells[column](row) : getNestedValue(row, column);
@@ -168,8 +172,9 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
 
   return (
     <div className={tableClasses} id={`${tableId}-component`}>
+      {showColumnScrollControls && <ColumnScrollControls containerRef={containerRef} tableId={tableId} />}
       <div className="fr-table__wrapper">
-        <div className="fr-table__container">
+        <div className="fr-table__container" ref={containerRef}>
           <div className="fr-table__content">
             <table id={tableId}>
               <caption>
