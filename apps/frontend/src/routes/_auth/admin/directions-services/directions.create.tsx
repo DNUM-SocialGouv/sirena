@@ -1,10 +1,24 @@
-import { ROLES } from '@sirena/common/constants';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
+import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { useEffect } from 'react';
+import { fetchResolvedFeatureFlags } from '@/lib/api/fetchFeatureFlags';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
+import { queryClient } from '@/lib/queryClient';
+
+const requireEntityAdmin = requireAuthAndRoles([ROLES.ENTITY_ADMIN]);
 
 export const Route = createFileRoute('/_auth/admin/directions-services/directions/create')({
-  beforeLoad: requireAuthAndRoles([ROLES.ENTITY_ADMIN]),
+  beforeLoad: async (ctx) => {
+    requireEntityAdmin(ctx);
+    const flags = await queryClient.ensureQueryData({
+      queryKey: ['featureFlags', 'resolved'],
+      queryFn: fetchResolvedFeatureFlags,
+    });
+
+    if (!flags[FEATURE_FLAGS.ADMIN_LOCAL_DIRECTIONS_SERVICES]) {
+      throw redirect({ to: '/admin/users' });
+    }
+  },
   component: RouteComponent,
 });
 
