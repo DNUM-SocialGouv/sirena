@@ -1,6 +1,6 @@
 .other-entities-affected-container {
   margin: 1rem 0 0;
-  border: 1px solid var(--light-decisions-border-border-default, #e5e5e5);
+  border: 1px solid var(--border-default-grey);
   border-radius: 1px;
   padding: 1rem;
   list-style: none;
