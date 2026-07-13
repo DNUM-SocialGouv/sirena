@@ -260,19 +260,13 @@ export const createDirectionAdminLocal = async (
     nomComplet: string;
     label: string;
     email: string;
+    emailContactUsager: string;
+    adresseContactUsager: string;
+    telContactUsager: string;
     isActive: boolean;
   },
 ) => {
-  return createChildEntiteAdmin(
-    assignedEntiteId,
-    {
-      ...data,
-      emailContactUsager: '',
-      adresseContactUsager: '',
-      telContactUsager: '',
-    },
-    { requireRootParent: true },
-  );
+  return createChildEntiteAdmin(assignedEntiteId, data, { requireRootParent: true });
 };
 
 export const createChildEntiteAdmin = async (

@@ -1057,7 +1057,7 @@ describe('createDirectionAdminLocal()', () => {
     vi.resetAllMocks();
   });
 
-  it('creates a Direction under the assigned entite administrative with hidden contact-usager fields initialized empty', async () => {
+  it('creates a Direction under the assigned entite administrative with contact-usager fields', async () => {
     vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
       entiteTypeId: 'ARS',
       departementCode: '14',
@@ -1073,9 +1073,9 @@ describe('createDirectionAdminLocal()', () => {
       nomComplet: 'Direction Autonomie',
       label: 'DA',
       email: 'direction-autonomie@ars.fr',
-      emailContactUsager: '',
-      adresseContactUsager: '',
-      telContactUsager: '',
+      emailContactUsager: 'contact-usager@direction.fr',
+      adresseContactUsager: '1 rue de la République, 75000 Paris',
+      telContactUsager: '0102030405',
       isActive: false,
     } as never);
 
@@ -1083,6 +1083,9 @@ describe('createDirectionAdminLocal()', () => {
       nomComplet: 'Direction Autonomie',
       label: 'DA',
       email: 'direction-autonomie@ars.fr',
+      emailContactUsager: 'contact-usager@direction.fr',
+      adresseContactUsager: '1 rue de la République, 75000 Paris',
+      telContactUsager: '0102030405',
       isActive: false,
     });
 
@@ -1092,9 +1095,9 @@ describe('createDirectionAdminLocal()', () => {
         label: 'DA',
         email: 'direction-autonomie@ars.fr',
         isActive: false,
-        emailContactUsager: '',
-        adresseContactUsager: '',
-        telContactUsager: '',
+        emailContactUsager: 'contact-usager@direction.fr',
+        adresseContactUsager: '1 rue de la République, 75000 Paris',
+        telContactUsager: '0102030405',
         entiteMereId: 'root-ars',
         entiteTypeId: 'ARS',
         departementCode: '14',
@@ -1119,9 +1122,9 @@ describe('createDirectionAdminLocal()', () => {
       nomComplet: 'Direction Autonomie',
       label: 'DA',
       email: 'direction-autonomie@ars.fr',
-      emailContactUsager: '',
-      adresseContactUsager: '',
-      telContactUsager: '',
+      emailContactUsager: 'contact-usager@direction.fr',
+      adresseContactUsager: '1 rue de la République, 75000 Paris',
+      telContactUsager: '0102030405',
       isActive: false,
     });
   });

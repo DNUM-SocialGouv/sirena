@@ -183,12 +183,18 @@ describe('Admin local Direction create route', () => {
       screen.getByRole('textbox', { name: /Adresse e-mail de notification/ }),
       'reclamations@direction.fr',
     );
+    await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'contact@direction.fr');
+    await user.type(screen.getByRole('textbox', { name: /Numéro de téléphone/ }), '0102030405');
+    await user.type(screen.getByRole('textbox', { name: /Adresse postale/ }), '1 rue de la République, 75000 Paris');
     await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
 
     expect(mutateAsync).toHaveBeenCalledWith({
       nomComplet: 'Direction Autonomie',
       label: 'DA',
       email: 'reclamations@direction.fr',
+      emailContactUsager: 'contact@direction.fr',
+      telContactUsager: '0102030405',
+      adresseContactUsager: '1 rue de la République, 75000 Paris',
       isActive: true,
     });
   });

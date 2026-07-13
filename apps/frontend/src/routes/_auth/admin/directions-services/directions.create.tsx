@@ -103,6 +103,9 @@ export function RouteComponent() {
       nomComplet: result.data.nomComplet,
       label: result.data.label,
       email: result.data.email ?? '',
+      emailContactUsager: result.data.emailContactUsager ?? '',
+      telContactUsager: result.data.telContactUsager ?? '',
+      adresseContactUsager: result.data.adresseContactUsager,
       isActive: true,
     });
   };
