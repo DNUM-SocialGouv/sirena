@@ -3,12 +3,23 @@ import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
 import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { type SubmitEvent, useEffect, useState } from 'react';
+import { z } from 'zod';
 import { fetchResolvedFeatureFlags } from '@/lib/api/fetchFeatureFlags';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { queryClient } from '@/lib/queryClient';
+import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 
 const requireEntityAdmin = requireAuthAndRoles([ROLES.ENTITY_ADMIN]);
+
+const CreateDirectionFormSchema = z.object({
+  nomComplet: z.string().trim().min(1, 'Le champ "Nom de la direction" est vide. Veuillez le renseigner.'),
+  label: z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
+  email: z.string(),
+  emailContactUsager: z.string(),
+  telContactUsager: z.string(),
+  adresseContactUsager: z.string(),
+});
 
 export const Route = createFileRoute('/_auth/admin/directions-services/directions/create')({
   beforeLoad: async (ctx) => {
@@ -26,9 +37,65 @@ export const Route = createFileRoute('/_auth/admin/directions-services/direction
 });
 
 export function RouteComponent() {
+  const [formData, setFormData] = useState({
+    nomComplet: '',
+    label: '',
+    email: '',
+    emailContactUsager: '',
+    telContactUsager: '',
+    adresseContactUsager: '',
+  });
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+
   useEffect(() => {
     document.title = 'Créer une direction - Directions et services - SIRENA';
   }, []);
+
+  const handleInputChange =
+    (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const value = e.target.value;
+
+      setFormData((prev) => {
+        const updatedData = { ...prev, [field]: value };
+
+        if (hasSubmitted && validationErrors[field]) {
+          const fieldError = getFieldError(CreateDirectionFormSchema, updatedData, field);
+
+          setValidationErrors((prevErrors) => {
+            const next = { ...prevErrors };
+
+            if (fieldError) {
+              next[field] = fieldError;
+            } else {
+              delete next[field];
+            }
+
+            return next;
+          });
+        }
+
+        return updatedData;
+      });
+    };
+
+  const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setHasSubmitted(true);
+
+    const result = CreateDirectionFormSchema.safeParse(formData);
+
+    if (!result.success) {
+      const errors = zodIssuesToFieldErrors(result.error);
+      setValidationErrors(errors);
+
+      const firstField = Object.keys(errors)[0];
+      document.querySelector<HTMLElement>(`[name="${firstField}"]`)?.focus();
+      return;
+    }
+
+    setValidationErrors({});
+  };
 
   return (
     <section>
@@ -42,7 +109,7 @@ export function RouteComponent() {
       <h2>Créer une direction</h2>
 
       <div className="fr-card fr-p-3w fr-mt-4w">
-        <form>
+        <form onSubmit={handleSubmit}>
           <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
           <fieldset className="fr-fieldset fr-mb-3w">
@@ -54,7 +121,13 @@ export function RouteComponent() {
                   className="fr-fieldset__content"
                   label="Nom de la direction (obligatoire)"
                   hintText="Nom complet sans abréviation ou acronyme. Exemple : Direction de l’Offre de Soins"
-                  nativeInputProps={{ name: 'nomComplet' }}
+                  state={validationErrors.nomComplet ? 'error' : 'default'}
+                  stateRelatedMessage={validationErrors.nomComplet}
+                  nativeInputProps={{
+                    name: 'nomComplet',
+                    value: formData.nomComplet,
+                    onChange: handleInputChange('nomComplet'),
+                  }}
                 />
               </div>
 
@@ -63,7 +136,9 @@ export function RouteComponent() {
                   className="fr-fieldset__content"
                   label="Abréviation (obligatoire)"
                   hintText="Sigle, acronyme ou forme abrégée du nom. Exemple : DOS"
-                  nativeInputProps={{ name: 'label' }}
+                  state={validationErrors.label ? 'error' : 'default'}
+                  stateRelatedMessage={validationErrors.label}
+                  nativeInputProps={{ name: 'label', value: formData.label, onChange: handleInputChange('label') }}
                 />
               </div>
 
@@ -72,7 +147,7 @@ export function RouteComponent() {
                   className="fr-fieldset__content"
                   label="Adresse e-mail de notification"
                   hintText="Adresse générique pour la notification des nouvelles requêtes. Exemple : reclamations@direction.fr"
-                  nativeInputProps={{ name: 'email' }}
+                  nativeInputProps={{ name: 'email', value: formData.email, onChange: handleInputChange('email') }}
                 />
               </div>
             </div>
@@ -95,7 +170,11 @@ export function RouteComponent() {
                   className="fr-fieldset__content"
                   label="Adresse e-mail de contact"
                   hintText="Adresse transmise à l’usager pour vous contacter. Exemple : contact@direction.fr"
-                  nativeInputProps={{ name: 'emailContactUsager' }}
+                  nativeInputProps={{
+                    name: 'emailContactUsager',
+                    value: formData.emailContactUsager,
+                    onChange: handleInputChange('emailContactUsager'),
+                  }}
                 />
               </div>
 
@@ -104,7 +183,12 @@ export function RouteComponent() {
                   className="fr-fieldset__content"
                   label="Numéro de téléphone"
                   hintText="Format attendu : 10 chiffres ou +31XXXXXXXXXX (international)"
-                  nativeInputProps={{ name: 'telContactUsager', type: 'tel' }}
+                  nativeInputProps={{
+                    name: 'telContactUsager',
+                    type: 'tel',
+                    value: formData.telContactUsager,
+                    onChange: handleInputChange('telContactUsager'),
+                  }}
                 />
               </div>
 
@@ -114,7 +198,12 @@ export function RouteComponent() {
                   label="Adresse postale"
                   hintText="Adresse postale complète : service, numéro et libellé de voie, code postal, ville. Exemple : Sous-direction de l’autonomie, Direction des Solidarités (DSOL), 5 bd Diderot, 75012 Paris."
                   textArea
-                  nativeTextAreaProps={{ name: 'adresseContactUsager', rows: 4 }}
+                  nativeTextAreaProps={{
+                    name: 'adresseContactUsager',
+                    rows: 4,
+                    value: formData.adresseContactUsager,
+                    onChange: handleInputChange('adresseContactUsager'),
+                  }}
                 />
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
 import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fetchResolvedFeatureFlags } from '@/lib/api/fetchFeatureFlags';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
@@ -74,5 +75,33 @@ describe('Admin local Direction create route', () => {
     expect(screen.getByRole('link', { name: 'Annuler' })).toHaveAttribute('href', '/admin/directions-services');
     expect(screen.getByRole('button', { name: 'Ajouter la direction' })).toBeInTheDocument();
     expect(document.title).toBe('Créer une direction - Directions et services - SIRENA');
+  });
+
+  it('shows required-field errors when submitting an empty Direction form', async () => {
+    const user = userEvent.setup();
+    render(<RouteComponent />);
+
+    await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
+
+    expect(screen.getByText('Le champ "Nom de la direction" est vide. Veuillez le renseigner.')).toBeInTheDocument();
+    expect(screen.getByText('Le champ "Abréviation" est vide. Veuillez le renseigner.')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ })).toHaveFocus();
+  });
+
+  it('clears required-field errors as the submitted Direction form is corrected', async () => {
+    const user = userEvent.setup();
+    render(<RouteComponent />);
+
+    await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
+    await user.type(
+      screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ }),
+      'Direction Autonomie',
+    );
+    await user.type(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ }), 'DA');
+
+    expect(
+      screen.queryByText('Le champ "Nom de la direction" est vide. Veuillez le renseigner.'),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('Le champ "Abréviation" est vide. Veuillez le renseigner.')).not.toBeInTheDocument();
   });
 });
