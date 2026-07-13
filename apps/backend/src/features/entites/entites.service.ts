@@ -3,6 +3,7 @@ import { type Entite, prisma } from '../../libs/prisma.js';
 import { buildEntitesListAdmin } from './entites.admin.mapper.js';
 import { buildDirectionsServicesRows as buildDirectionsServicesRowsFromHierarchy } from './entites.directions-services.mapper.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
+import { getAdminLocalAssignmentLevel, groupEntitesByParentId } from './entites.hierarchy.js';
 import type { EntiteChain, EntiteTraitement, EntiteTraitementInput } from './entites.type.js';
 
 const ADMIN_SORT_COLUMNS = [
@@ -188,26 +189,26 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
       isActive: true,
     },
   });
-  const assignedEntite = entites.find((entite) => entite.id === assignedEntiteId);
-  const assignedParent = entites.find((entite) => entite.id === assignedEntite?.entiteMereId);
-  const targetEntite = entites.find((entite) => entite.id === targetEntiteId);
-  const targetParent = entites.find((entite) => entite.id === targetEntite?.entiteMereId);
+  const entitesById = new Map(entites.map((entite) => [entite.id, entite]));
+  const assignedEntite = entitesById.get(assignedEntiteId);
+  const targetEntite = entitesById.get(targetEntiteId);
+  const targetParent = targetEntite?.entiteMereId ? entitesById.get(targetEntite.entiteMereId) : undefined;
 
   if (!assignedEntite || !targetEntite) {
     return null;
   }
 
-  const isAssignedToEntiteAdministrative = assignedEntite.entiteMereId === null;
-  const isAssignedToDirection = assignedParent?.entiteMereId === null;
-  const kind = isAssignedToEntiteAdministrative
-    ? targetEntite.entiteMereId === assignedEntite.id
-      ? ('direction' as const)
-      : targetParent?.entiteMereId === assignedEntite.id
+  const assignmentLevel = getAdminLocalAssignmentLevel(assignedEntite, entitesById);
+  const kind =
+    assignmentLevel === 'entite-administrative'
+      ? targetEntite.entiteMereId === assignedEntite.id
+        ? ('direction' as const)
+        : targetParent?.entiteMereId === assignedEntite.id
+          ? ('service' as const)
+          : null
+      : assignmentLevel === 'direction' && targetEntite.entiteMereId === assignedEntite.id
         ? ('service' as const)
-        : null
-    : isAssignedToDirection && targetEntite.entiteMereId === assignedEntite.id
-      ? ('service' as const)
-      : null;
+        : null;
 
   if (!kind) {
     return null;
@@ -238,20 +239,10 @@ export const getDirectionsServicesList = async (
     },
   });
 
-  const entitesParEntiteMere = new Map<string, typeof entites>();
-
-  for (const entite of entites) {
-    if (entite.entiteMereId === null) {
-      continue;
-    }
-
-    const entitesEnfants = entitesParEntiteMere.get(entite.entiteMereId) ?? [];
-    entitesEnfants.push(entite);
-    entitesParEntiteMere.set(entite.entiteMereId, entitesEnfants);
-  }
-
+  const entitesParEntiteMere = groupEntitesByParentId(entites);
+  const entitesById = new Map(entites.map((entite) => [entite.id, entite]));
   const entitesAdminLocal: typeof entites = [];
-  const entiteAdminLocal = entites.find((entite) => entite.id === entiteAdminLocalId);
+  const entiteAdminLocal = entitesById.get(entiteAdminLocalId);
 
   const emptyCapabilities = {
     canCreateDirection: false,
@@ -262,11 +253,9 @@ export const getDirectionsServicesList = async (
     return { data: [], capabilities: emptyCapabilities };
   }
 
-  const entiteMereAdminLocal = entiteAdminLocal.entiteMereId
-    ? entites.find((entite) => entite.id === entiteAdminLocal.entiteMereId)
-    : undefined;
+  const assignmentLevel = getAdminLocalAssignmentLevel(entiteAdminLocal, entitesById);
 
-  if (entiteMereAdminLocal?.entiteMereId !== null && entiteMereAdminLocal !== undefined) {
+  if (assignmentLevel === 'service' || assignmentLevel === 'invalid-hierarchy') {
     return {
       data: [],
       capabilities: emptyCapabilities,
@@ -282,19 +271,18 @@ export const getDirectionsServicesList = async (
 
   buildEntitesAdminLocal(entiteAdminLocal);
 
-  const isAssignedToEntiteAdministrative = entiteAdminLocal.entiteMereId === null;
   const hasActiveDirection = entitesAdminLocal.some(
     (entite) => entite.entiteMereId === entiteAdminLocal.id && entite.isActive,
   );
-  const isAssignedToDirection = entiteMereAdminLocal?.entiteMereId === null;
-  const canCreateService = isAssignedToEntiteAdministrative
-    ? hasActiveDirection
-    : isAssignedToDirection && entiteAdminLocal.isActive;
+  const canCreateService =
+    assignmentLevel === 'entite-administrative'
+      ? hasActiveDirection
+      : assignmentLevel === 'direction' && entiteAdminLocal.isActive;
 
   return {
     data: buildDirectionsServicesRowsFromHierarchy(entitesAdminLocal, { search }),
     capabilities: {
-      canCreateDirection: isAssignedToEntiteAdministrative,
+      canCreateDirection: assignmentLevel === 'entite-administrative',
       canCreateService,
     },
   };
