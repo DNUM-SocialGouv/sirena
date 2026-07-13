@@ -1,5 +1,5 @@
 import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCreateDirectionAdminLocal } from '@/hooks/queries/entites.hook';
@@ -8,7 +8,8 @@ import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { queryClient } from '@/lib/queryClient';
 import { Route, RouteComponent } from './directions.create';
 
-const { authGuardSpy, redirectSpy } = vi.hoisted(() => ({
+const { addToastSpy, authGuardSpy, redirectSpy } = vi.hoisted(() => ({
+  addToastSpy: vi.fn(),
   authGuardSpy: vi.fn(),
   redirectSpy: vi.fn((args: unknown) => ({ redirect: args })),
 }));
@@ -36,6 +37,19 @@ vi.mock('@/lib/queryClient', () => ({
 vi.mock('@/lib/auth-guards', () => ({
   requireAuthAndRoles: vi.fn(() => authGuardSpy),
 }));
+
+vi.mock('@sirena/ui', async () => {
+  const actual = await vi.importActual<typeof import('@sirena/ui')>('@sirena/ui');
+
+  return {
+    ...actual,
+    Toast: {
+      useToastManager: () => ({
+        add: addToastSpy,
+      }),
+    },
+  };
+});
 
 beforeEach(() => {
   vi.mocked(useCreateDirectionAdminLocal).mockReturnValue({
@@ -196,6 +210,31 @@ describe('Admin local Direction create route', () => {
       telContactUsager: '0102030405',
       adresseContactUsager: '1 rue de la République, 75000 Paris',
       isActive: true,
+    });
+  });
+
+  it('shows a success toast after creating the Direction', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCreateDirectionAdminLocal).mockReturnValue({
+      mutateAsync: vi.fn().mockResolvedValue({ id: 'dir-autonomie' }),
+      isPending: false,
+    } as never);
+    render(<RouteComponent />);
+
+    await user.type(
+      screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ }),
+      'Direction Autonomie',
+    );
+    await user.type(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ }), 'DA');
+    await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
+
+    await waitFor(() => {
+      expect(addToastSpy).toHaveBeenCalledWith({
+        title: 'Direction créée avec succès',
+        description: 'La nouvelle direction a bien été enregistrée.',
+        timeout: 0,
+        data: { icon: 'fr-alert--success' },
+      });
     });
   });
 });

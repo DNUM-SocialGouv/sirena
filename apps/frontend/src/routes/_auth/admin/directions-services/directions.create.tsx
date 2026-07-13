@@ -3,6 +3,7 @@ import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
 import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
 import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
+import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { z } from 'zod';
@@ -48,6 +49,7 @@ export function RouteComponent() {
     adresseContactUsager: '',
   });
   const createDirectionAdminLocal = useCreateDirectionAdminLocal();
+  const toastManager = Toast.useToastManager();
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
@@ -107,6 +109,13 @@ export function RouteComponent() {
       telContactUsager: result.data.telContactUsager ?? '',
       adresseContactUsager: result.data.adresseContactUsager,
       isActive: true,
+    });
+
+    toastManager.add({
+      title: 'Direction créée avec succès',
+      description: 'La nouvelle direction a bien été enregistrée.',
+      timeout: 0,
+      data: { icon: 'fr-alert--success' },
     });
   };
 
