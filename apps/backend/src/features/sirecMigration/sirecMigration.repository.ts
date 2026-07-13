@@ -1,5 +1,6 @@
 import { mariadbPool } from '../../config/mariadb.js';
 import { SIREC_NATIONAL_ENTITE_ID } from './transco/affectation/affectation.transco.js';
+import { MOTIF_IGAS_A_RENSEIGNER, MOTIF_IGAS_HORS_COMPETENCE } from './transco/motifsIgas.transco.js';
 
 export interface SirecReclamationRow {
   id_data: number;
@@ -279,7 +280,8 @@ export async function fetchSirecMcIgasMotifs(sirecId: number): Promise<Map<numbe
     `SELECT i.id_mc, i.id_igas, i.igas_type
      FROM sire_mc_igas_data i
               INNER JOIN sire_misencause_data m ON m.id_data = i.id_mc
-     WHERE m.id_reclamation = ?`,
+     WHERE m.id_reclamation = ?
+       and i.id_igas NOT IN  (${MOTIF_IGAS_A_RENSEIGNER}, ${MOTIF_IGAS_HORS_COMPETENCE})`,
     [sirecId],
   );
 
