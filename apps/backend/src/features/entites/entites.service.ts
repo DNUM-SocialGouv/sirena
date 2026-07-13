@@ -224,6 +224,44 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
   };
 };
 
+export const editDirectionServiceAdminLocal = async (
+  assignedEntiteId: string,
+  targetEntiteId: string,
+  data: {
+    nomComplet: string;
+    label: string;
+    email: string;
+    isActive: boolean;
+  },
+) => {
+  const target = await getDirectionServiceAdminLocal(assignedEntiteId, targetEntiteId);
+
+  if (!target) {
+    return null;
+  }
+
+  const updatedEntite = await prisma.entite.update({
+    where: { id: targetEntiteId },
+    data,
+    select: {
+      id: true,
+      nomComplet: true,
+      label: true,
+      email: true,
+      isActive: true,
+    },
+  });
+
+  return {
+    id: updatedEntite.id,
+    kind: target.kind,
+    nomComplet: updatedEntite.nomComplet,
+    label: updatedEntite.label,
+    email: updatedEntite.email,
+    isActive: updatedEntite.isActive,
+  };
+};
+
 export const getDirectionsServicesList = async (
   entiteAdminLocalId: string,
   { search = '' }: { search?: string } = {},

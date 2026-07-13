@@ -10,6 +10,7 @@ import EntitesController from './entites.controller.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import {
   createDirectionAdminLocal,
+  editDirectionServiceAdminLocal,
   getDirectionServiceAdminLocal,
   getDirectionsServicesList,
   getEditableEntitiesChain,
@@ -29,6 +30,7 @@ vi.mock('./entites.service.js', () => ({
   getEntitesListAdmin: vi.fn(),
   getDirectionsServicesList: vi.fn(),
   getDirectionServiceAdminLocal: vi.fn(),
+  editDirectionServiceAdminLocal: vi.fn(),
   getRootEntitesListAdmin: vi.fn(),
   getEditableEntitiesChain: vi.fn(),
   editEntiteAdmin: editEntiteAdminSpy,
@@ -336,6 +338,40 @@ describe('Entites endpoints: /entites', () => {
       expect(deniedRes.status).toBe(404);
       expect(getDirectionServiceAdminLocal).toHaveBeenNthCalledWith(1, 'dir-autonomie', 'service-pa');
       expect(getDirectionServiceAdminLocal).toHaveBeenNthCalledWith(2, 'dir-autonomie', 'service-outside');
+    });
+  });
+
+  describe('PATCH /admin/directions-services/:id', () => {
+    it('updates an authorized local target and hides a denied target', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      const input = {
+        nomComplet: 'Service Personnes âgées',
+        label: 'PA',
+        email: 'notification-pa@ars.fr',
+        isActive: true,
+      };
+      vi.mocked(editDirectionServiceAdminLocal)
+        .mockResolvedValueOnce({ id: 'service-pa', kind: 'service', ...input })
+        .mockResolvedValueOnce(null);
+
+      const authorizedRes = await app.request('/admin/directions-services/service-pa', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+      const deniedRes = await app.request('/admin/directions-services/service-outside', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+
+      expect(authorizedRes.status).toBe(200);
+      expect(await authorizedRes.json()).toEqual({
+        data: { id: 'service-pa', kind: 'service', ...input },
+      });
+      expect(deniedRes.status).toBe(404);
+      expect(editDirectionServiceAdminLocal).toHaveBeenNthCalledWith(1, 'dir-autonomie', 'service-pa', input);
+      expect(editDirectionServiceAdminLocal).toHaveBeenNthCalledWith(2, 'dir-autonomie', 'service-outside', input);
     });
   });
 

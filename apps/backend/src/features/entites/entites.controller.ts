@@ -12,6 +12,7 @@ import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entite
 import {
   createChildEntiteAdminRoute,
   createDirectionAdminLocalRoute,
+  editDirectionServiceAdminLocalRoute,
   editEntiteAdminRoute,
   getDirectionServiceAdminLocalRoute,
   getDirectionsServicesListRoute,
@@ -24,6 +25,7 @@ import {
 import {
   CreateChildEntiteAdminInputSchema,
   CreateDirectionAdminLocalInputSchema,
+  EditDirectionServiceAdminLocalInputSchema,
   EditEntiteInputSchema,
   GetEntitesListAdminQuerySchema,
   GetEntitiesQuerySchema,
@@ -31,6 +33,7 @@ import {
 import {
   createChildEntiteAdmin,
   createDirectionAdminLocal,
+  editDirectionServiceAdminLocal,
   editEntiteAdmin,
   getDirectionServiceAdminLocal,
   getDirectionsServicesList,
@@ -152,6 +155,30 @@ const app = factoryWithLogs
       const logger = c.get('logger');
 
       const entite = assignedEntiteId ? await getDirectionServiceAdminLocal(assignedEntiteId, targetEntiteId) : null;
+
+      if (!entite) {
+        logger.warn({ assignedEntiteId, targetEntiteId }, 'Local Direction or Service edit target not found');
+        throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+      }
+
+      return c.json({ data: entite });
+    },
+  )
+
+  .patch(
+    '/admin/directions-services/:id',
+    roleMiddleware([ROLES.ENTITY_ADMIN]),
+    adminLocalDirectionsServicesFeatureFlagMiddleware,
+    zValidator('json', EditDirectionServiceAdminLocalInputSchema),
+    editDirectionServiceAdminLocalRoute,
+    async (c) => {
+      const assignedEntiteId = c.get('assignedEntiteId');
+      const targetEntiteId = c.req.param('id');
+      const data = c.req.valid('json');
+      const logger = c.get('logger');
+      const entite = assignedEntiteId
+        ? await editDirectionServiceAdminLocal(assignedEntiteId, targetEntiteId, data)
+        : null;
 
       if (!entite) {
         logger.warn({ assignedEntiteId, targetEntiteId }, 'Local Direction or Service edit target not found');

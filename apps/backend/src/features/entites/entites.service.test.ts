@@ -4,6 +4,7 @@ import { EntiteChildCreationForbiddenError } from './entites.error.js';
 import {
   createChildEntiteAdmin,
   createDirectionAdminLocal,
+  editDirectionServiceAdminLocal,
   editEntiteAdmin,
   getDirectionServiceAdminLocal,
   getDirectionsFromRequeteEntiteId,
@@ -1177,6 +1178,67 @@ describe('getRootEntitesListAdmin()', () => {
       orderBy: [{ entiteTypeId: 'asc' }, { nomComplet: 'asc' }],
     });
     expect(result).toEqual([{ id: 'root-ars', nomComplet: 'ARS Normandie', label: 'ARS NOR' }]);
+  });
+});
+
+describe('editDirectionServiceAdminLocal()', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it('updates an authorized target without overwriting hidden contact-usager fields', async () => {
+    vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
+      { ...fakeEntite('root-ars'), entiteMereId: null },
+      {
+        ...fakeEntite('dir-autonomie'),
+        nomComplet: 'Direction Autonomie',
+        entiteMereId: 'root-ars',
+        emailContactUsager: 'contact@direction.fr',
+        telContactUsager: '0102030405',
+        adresseContactUsager: '1 rue de Paris',
+        isActive: false,
+      },
+    ]);
+    vi.mocked(prisma.entite.update).mockResolvedValueOnce({
+      ...fakeEntite('dir-autonomie'),
+      nomComplet: 'Direction Autonomie et Handicap',
+      label: 'DAH',
+      email: 'notification@direction.fr',
+      entiteMereId: 'root-ars',
+      isActive: true,
+    });
+
+    await expect(
+      editDirectionServiceAdminLocal('root-ars', 'dir-autonomie', {
+        nomComplet: 'Direction Autonomie et Handicap',
+        label: 'DAH',
+        email: 'notification@direction.fr',
+        isActive: true,
+      }),
+    ).resolves.toEqual({
+      id: 'dir-autonomie',
+      kind: 'direction',
+      nomComplet: 'Direction Autonomie et Handicap',
+      label: 'DAH',
+      email: 'notification@direction.fr',
+      isActive: true,
+    });
+    expect(prisma.entite.update).toHaveBeenCalledWith({
+      where: { id: 'dir-autonomie' },
+      data: {
+        nomComplet: 'Direction Autonomie et Handicap',
+        label: 'DAH',
+        email: 'notification@direction.fr',
+        isActive: true,
+      },
+      select: {
+        id: true,
+        nomComplet: true,
+        label: true,
+        email: true,
+        isActive: true,
+      },
+    });
   });
 });
 

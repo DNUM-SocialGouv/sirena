@@ -155,6 +155,13 @@ export const CreateChildEntiteAdminInputSchema = z.object({
   isActive: z.boolean(),
 });
 
+export const EditDirectionServiceAdminLocalInputSchema = CreateChildEntiteAdminInputSchema.pick({
+  nomComplet: true,
+  label: true,
+  email: true,
+  isActive: true,
+}).strict();
+
 export const CreateChildEntiteAdminResponseSchema = CreateChildEntiteAdminInputSchema.extend({
   id: z.string(),
 });
