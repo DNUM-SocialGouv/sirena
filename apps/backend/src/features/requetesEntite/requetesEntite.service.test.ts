@@ -3424,6 +3424,163 @@ describe('requetesEntite.service', () => {
 
       expect(listSpy).toHaveBeenCalledWith(['AR_2026-06-RS9.pdf']);
     });
+
+    it('does not render a phantom note on a closure step without precision', async () => {
+      const paragraphSpy = vi.spyOn(RequetePdfBuilder.prototype, 'paragraph');
+      const fieldSpy = vi.spyOn(RequetePdfBuilder.prototype, 'field');
+      vi.spyOn(RequetePdfBuilder.prototype, 'toBuffer').mockResolvedValue(Buffer.from('%PDF-test'));
+
+      vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statut: { id: 'CLOTUREE', label: 'Clôturée' },
+        priorite: null,
+        requete: {
+          ...mockRequeteEntite.requete,
+          receptionType: null,
+          provenance: null,
+          createdBy: null,
+          declarant: null,
+          participant: null,
+          fichiersRequeteOriginale: [],
+          situations: [],
+        },
+        requeteEtape: [
+          {
+            id: 'etapeCloture',
+            type: REQUETE_ETAPE_TYPES.MANUAL,
+            statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
+            statut: { id: 'CLOTUREE', label: 'Clôturée' },
+            clotureReason: [{ label: 'Requête traitée' }],
+            createdBy: { prenom: 'Alice', nom: 'MARTIN' },
+            nom: 'Clôture',
+            createdAt: new Date('2026-06-20'),
+            updatedAt: new Date('2026-06-20'),
+            clotureEffectiveDate: new Date('2026-06-18'),
+            uploadedFiles: [],
+            notes: [],
+          },
+        ],
+      } as unknown as Awaited<ReturnType<typeof prisma.requeteEntite.findFirst>>);
+
+      await generateRequetePdfBuffer('req123', 'ent123');
+
+      const paragraphs = paragraphSpy.mock.calls.map(([text]) => text);
+      expect(paragraphs.some((text) => typeof text === 'string' && text.startsWith('Note du'))).toBe(false);
+      expect(fieldSpy).not.toHaveBeenCalledWith('Précisions', expect.anything());
+      // The closure date comes from clotureEffectiveDate, not the step createdAt.
+      expect(paragraphs).toContain('Requête clôturée le 18/06/2026 par Alice Martin');
+    });
+
+    it('renders the closure precision as a "Précisions" field, not a note', async () => {
+      const paragraphSpy = vi.spyOn(RequetePdfBuilder.prototype, 'paragraph');
+      const fieldSpy = vi.spyOn(RequetePdfBuilder.prototype, 'field');
+      vi.spyOn(RequetePdfBuilder.prototype, 'toBuffer').mockResolvedValue(Buffer.from('%PDF-test'));
+
+      vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statut: { id: 'CLOTUREE', label: 'Clôturée' },
+        priorite: null,
+        requete: {
+          ...mockRequeteEntite.requete,
+          receptionType: null,
+          provenance: null,
+          createdBy: null,
+          declarant: null,
+          participant: null,
+          fichiersRequeteOriginale: [],
+          situations: [],
+        },
+        requeteEtape: [
+          {
+            id: 'etapeCloture',
+            type: REQUETE_ETAPE_TYPES.MANUAL,
+            statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
+            statut: { id: 'CLOTUREE', label: 'Clôturée' },
+            clotureReason: [],
+            createdBy: { prenom: 'Alice', nom: 'MARTIN' },
+            nom: 'Clôture',
+            createdAt: new Date('2026-06-20'),
+            updatedAt: new Date('2026-06-20'),
+            clotureEffectiveDate: new Date('2026-06-18'),
+            uploadedFiles: [],
+            notes: [{ texte: 'Dossier transmis au parquet', createdAt: new Date('2026-06-20'), author: null }],
+          },
+        ],
+      } as unknown as Awaited<ReturnType<typeof prisma.requeteEntite.findFirst>>);
+
+      await generateRequetePdfBuffer('req123', 'ent123');
+
+      expect(fieldSpy).toHaveBeenCalledWith('Précisions', 'Dossier transmis au parquet');
+      const paragraphs = paragraphSpy.mock.calls.map(([text]) => text);
+      expect(paragraphs.some((text) => typeof text === 'string' && text.startsWith('Note du'))).toBe(false);
+    });
+
+    it('dates the acknowledgment step from the AR file, not the step insertion date', async () => {
+      const paragraphSpy = vi.spyOn(RequetePdfBuilder.prototype, 'paragraph');
+      vi.spyOn(RequetePdfBuilder.prototype, 'toBuffer').mockResolvedValue(Buffer.from('%PDF-test'));
+
+      vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statut: { id: 'EN_COURS', label: 'En cours' },
+        priorite: null,
+        requete: {
+          ...mockRequeteEntite.requete,
+          receptionType: null,
+          provenance: null,
+          createdBy: { prenom: 'Bob', nom: 'DURAND' },
+          declarant: null,
+          participant: null,
+          fichiersRequeteOriginale: [],
+          situations: [],
+        },
+        requeteEtape: [
+          {
+            id: 'etapeCreation',
+            type: REQUETE_ETAPE_TYPES.CREATION,
+            statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+            statut: { id: 'FAIT', label: 'Fait' },
+            clotureReason: [],
+            createdBy: null,
+            nom: 'Création',
+            createdAt: new Date('2026-06-10'),
+            updatedAt: new Date('2026-06-10'),
+            clotureEffectiveDate: null,
+            uploadedFiles: [],
+            notes: [],
+          },
+          {
+            id: 'etapeAck',
+            type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+            statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+            statut: { id: 'FAIT', label: 'Fait' },
+            clotureReason: [],
+            createdBy: null,
+            nom: "Envoi de l'accusé de réception",
+            // Step inserted at request creation, AR actually sent later.
+            createdAt: new Date('2026-06-10'),
+            updatedAt: new Date('2026-06-14'),
+            clotureEffectiveDate: null,
+            uploadedFiles: [
+              {
+                fileName: 'AR.pdf',
+                metadata: null,
+                canDelete: false,
+                createdAt: new Date('2026-06-13'),
+                uploadedBy: { prenom: 'Claire', nom: 'PETIT' },
+              },
+            ],
+            notes: [],
+          },
+        ],
+      } as unknown as Awaited<ReturnType<typeof prisma.requeteEntite.findFirst>>);
+
+      await generateRequetePdfBuffer('req123', 'ent123');
+
+      const paragraphs = paragraphSpy.mock.calls.map(([text]) => text);
+      expect(paragraphs).toContain('Requête créée le 10/06/2026 par Bob Durand');
+      expect(paragraphs).toContain('Envoyé le 13/06/2026 par Claire Petit');
+      expect(paragraphs.some((text) => typeof text === 'string' && text.startsWith('Ajouté le'))).toBe(false);
+    });
   });
 
   describe('createChangeLogForRequeteEntite', () => {

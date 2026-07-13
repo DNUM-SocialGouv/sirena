@@ -2141,6 +2141,68 @@ const getEtapePdfTitle = (type: RequeteEtapeType, statutId: RequeteEtapeStatutTy
   return nom;
 };
 
+type Agent = { prenom: string; nom: string };
+
+const formatAgentPdf = (agent: Agent | null | undefined): string | null =>
+  agent ? `${capitalizeFirst(agent.prenom)} ${capitalizeFirst(agent.nom)}` : null;
+
+type EtapePdfSubtitleInput = {
+  type: string;
+  statutId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  clotureEffectiveDate: Date | null;
+  createdBy: Agent | null;
+  notes: { author: Agent | null }[];
+  uploadedFiles: { canDelete: boolean; createdAt: Date; uploadedBy: Agent | null }[];
+};
+
+const getEtapePdfSubtitle = (
+  etape: EtapePdfSubtitleInput,
+  requeteCreatedBy: Agent | null | undefined,
+): string | null => {
+  const { type, statutId, createdAt, updatedAt, clotureEffectiveDate, createdBy, notes, uploadedFiles } = etape;
+
+  if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
+    const agentName = formatAgentPdf(createdBy ?? notes[0]?.author);
+    const closureDate = formatDateFr(clotureEffectiveDate ?? createdAt);
+    return agentName ? `Requête clôturée le ${closureDate} par ${agentName}` : `Requête clôturée le ${closureDate}`;
+  }
+
+  if (type === REQUETE_ETAPE_TYPES.CREATION) {
+    const agentName = formatAgentPdf(requeteCreatedBy);
+    const date = formatDateFr(createdAt);
+    return agentName ? `Requête créée le ${date} par ${agentName}` : `Requête créée le ${date}`;
+  }
+
+  if (type === REQUETE_ETAPE_TYPES.REOPEN) {
+    const agentName = formatAgentPdf(createdBy);
+    const date = formatDateFr(createdAt);
+    return agentName ? `Requête réouverte le ${date} par ${agentName}` : `Requête réouverte le ${date}`;
+  }
+
+  if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
+    if (statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT) {
+      // The AR PDF is attached to the step and kept non-deletable (canDelete:false); its date is the real send date.
+      const arFile = uploadedFiles.find((file) => !file.canDelete);
+      if (arFile?.uploadedBy) {
+        return `Envoyé le ${formatDateFr(arFile.createdAt)} par ${formatAgentPdf(arFile.uploadedBy)}`;
+      }
+      if (arFile) {
+        return `Envoyé automatiquement le ${formatDateFr(arFile.createdAt)}`;
+      }
+      return requeteCreatedBy
+        ? `Marqué comme fait le ${formatDateFr(updatedAt)}`
+        : `Envoyé automatiquement le ${formatDateFr(updatedAt)}`;
+    }
+    return `Ajouté automatiquement le ${formatDateFr(createdAt)}`;
+  }
+
+  const agentName = formatAgentPdf(createdBy);
+  const date = formatDateFr(createdAt);
+  return agentName ? `Ajouté par ${agentName} le ${date}` : `Ajouté automatiquement le ${date}`;
+};
+
 export const generateRequetePdfBuffer = async (requeteId: string, entiteId: string | null): Promise<Buffer | null> => {
   if (!entiteId) return null;
 
@@ -2180,7 +2242,13 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
           clotureReason: true,
           createdBy: { select: { prenom: true, nom: true } },
           uploadedFiles: {
-            select: { fileName: true, metadata: true },
+            select: {
+              fileName: true,
+              metadata: true,
+              canDelete: true,
+              createdAt: true,
+              uploadedBy: { select: { prenom: true, nom: true } },
+            },
           },
           notes: {
             orderBy: { createdAt: 'asc' },
@@ -2487,17 +2555,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         etape.nom,
       );
 
-      const etapeAgent = etape.type === REQUETE_ETAPE_TYPES.CREATION ? requete.createdBy : etape.createdBy;
-      const etapeAgentName = etapeAgent
-        ? `${capitalizeFirst(etapeAgent.prenom)} ${capitalizeFirst(etapeAgent.nom)}`
-        : null;
-      const etapeDateLabel = formatDateFr(etape.createdAt);
-      const addedByLabel =
-        etapeDateLabel && etapeAgentName
-          ? `Ajouté le ${etapeDateLabel} par ${etapeAgentName}`
-          : etapeDateLabel
-            ? `Ajouté le ${etapeDateLabel}`
-            : null;
+      const subtitle = getEtapePdfSubtitle(etape, requete.createdBy);
 
       pdf.subsection(etapeTitle).field('Statut', etape.statut?.label || etape.statutId);
 
@@ -2505,13 +2563,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         pdf.field('Date de réalisation', formatDateFr(etape.dateRealisation));
       }
 
-      if (addedByLabel) pdf.paragraph(addedByLabel);
-
-      if (etape.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE && etape.clotureReason.length > 0) {
-        pdf.field('Motif(s) de clôture', etape.clotureReason.map((r) => r.label).join(', '));
-      }
-
-      const displayNotes = etape.notes ?? [];
+      if (subtitle) pdf.paragraph(subtitle);
 
       const etapeFileNames = new Set<string>();
       addFileNames(etape.uploadedFiles ?? [], etapeFileNames);
@@ -2520,13 +2572,21 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         pdf.list([...etapeFileNames]);
       }
 
-      for (const note of displayNotes) {
-        const noteAuthor = note.author
-          ? `${capitalizeFirst(note.author.prenom)} ${capitalizeFirst(note.author.nom)}`
-          : 'Système';
-        const noteDate = formatDateFr(note.createdAt);
-        pdf.paragraph(`Note du ${noteDate} par ${noteAuthor} :`, { bold: true });
-        if (note.texte) pdf.paragraph(note.texte);
+      if (etape.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
+        if (etape.clotureReason.length > 0) {
+          pdf.field('Motif(s) de clôture', etape.clotureReason.map((r) => r.label).join(', '));
+        }
+        const precision = etape.notes?.map((note) => note.texte?.trim()).find(Boolean);
+        if (precision) pdf.field('Précisions', precision);
+        continue;
+      }
+
+      for (const note of etape.notes ?? []) {
+        const texte = note.texte?.trim();
+        if (!texte) continue;
+        const noteAuthor = formatAgentPdf(note.author) ?? 'Système';
+        pdf.paragraph(`Note du ${formatDateFr(note.createdAt)} par ${noteAuthor} :`, { bold: true });
+        pdf.paragraph(texte);
       }
     }
   }
