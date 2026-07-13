@@ -2,6 +2,7 @@ import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
 import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
+import { optionalEmailSchema } from '@sirena/common/schemas';
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { z } from 'zod';
@@ -15,8 +16,8 @@ const requireEntityAdmin = requireAuthAndRoles([ROLES.ENTITY_ADMIN]);
 const CreateDirectionFormSchema = z.object({
   nomComplet: z.string().trim().min(1, 'Le champ "Nom de la direction" est vide. Veuillez le renseigner.'),
   label: z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
-  email: z.string(),
-  emailContactUsager: z.string(),
+  email: optionalEmailSchema,
+  emailContactUsager: optionalEmailSchema,
   telContactUsager: z.string(),
   adresseContactUsager: z.string(),
 });
@@ -147,6 +148,8 @@ export function RouteComponent() {
                   className="fr-fieldset__content"
                   label="Adresse e-mail de notification"
                   hintText="Adresse générique pour la notification des nouvelles requêtes. Exemple : reclamations@direction.fr"
+                  state={validationErrors.email ? 'error' : 'default'}
+                  stateRelatedMessage={validationErrors.email}
                   nativeInputProps={{ name: 'email', value: formData.email, onChange: handleInputChange('email') }}
                 />
               </div>
@@ -170,6 +173,8 @@ export function RouteComponent() {
                   className="fr-fieldset__content"
                   label="Adresse e-mail de contact"
                   hintText="Adresse transmise à l’usager pour vous contacter. Exemple : contact@direction.fr"
+                  state={validationErrors.emailContactUsager ? 'error' : 'default'}
+                  stateRelatedMessage={validationErrors.emailContactUsager}
                   nativeInputProps={{
                     name: 'emailContactUsager',
                     value: formData.emailContactUsager,

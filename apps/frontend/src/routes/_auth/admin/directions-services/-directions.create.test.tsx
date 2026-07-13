@@ -104,4 +104,38 @@ describe('Admin local Direction create route', () => {
     ).not.toBeInTheDocument();
     expect(screen.queryByText('Le champ "Abréviation" est vide. Veuillez le renseigner.')).not.toBeInTheDocument();
   });
+
+  it('shows the shared email-format error for an invalid notification email', async () => {
+    const user = userEvent.setup();
+    render(<RouteComponent />);
+
+    await user.type(
+      screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ }),
+      'Direction Autonomie',
+    );
+    await user.type(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ }), 'DA');
+    await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de notification/ }), 'invalid-email');
+    await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
+
+    expect(
+      screen.getByText('L’adresse e-mail est invalide. Merci de saisir une adresse au format prenom.nom@exemple.com.'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows the email-format error for an invalid contact email', async () => {
+    const user = userEvent.setup();
+    render(<RouteComponent />);
+
+    await user.type(
+      screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ }),
+      'Direction Autonomie',
+    );
+    await user.type(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ }), 'DA');
+    await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'invalid-contact-email');
+    await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
+
+    expect(
+      screen.getByText('L’adresse e-mail est invalide. Merci de saisir une adresse au format prenom.nom@exemple.com.'),
+    ).toBeInTheDocument();
+  });
 });
