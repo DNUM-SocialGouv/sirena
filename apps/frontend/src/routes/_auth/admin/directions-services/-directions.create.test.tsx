@@ -8,16 +8,20 @@ import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { queryClient } from '@/lib/queryClient';
 import { Route, RouteComponent } from './directions.create';
 
-const { addToastSpy, authGuardSpy, redirectSpy } = vi.hoisted(() => ({
+const { addToastSpy, authGuardSpy, redirectSpy, routerNavigateSpy } = vi.hoisted(() => ({
   addToastSpy: vi.fn(),
   authGuardSpy: vi.fn(),
   redirectSpy: vi.fn((args: unknown) => ({ redirect: args })),
+  routerNavigateSpy: vi.fn(),
 }));
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => options,
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
   redirect: redirectSpy,
+  useRouter: () => ({
+    navigate: routerNavigateSpy,
+  }),
 }));
 
 vi.mock('@/hooks/queries/entites.hook', () => ({
@@ -235,6 +239,26 @@ describe('Admin local Direction create route', () => {
         timeout: 0,
         data: { icon: 'fr-alert--success' },
       });
+    });
+  });
+
+  it('navigates back to the directions and services list after creating the Direction', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCreateDirectionAdminLocal).mockReturnValue({
+      mutateAsync: vi.fn().mockResolvedValue({ id: 'dir-autonomie' }),
+      isPending: false,
+    } as never);
+    render(<RouteComponent />);
+
+    await user.type(
+      screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ }),
+      'Direction Autonomie',
+    );
+    await user.type(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ }), 'DA');
+    await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
+
+    await waitFor(() => {
+      expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services' });
     });
   });
 });

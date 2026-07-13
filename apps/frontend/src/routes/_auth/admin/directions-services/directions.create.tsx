@@ -4,7 +4,7 @@ import Input from '@codegouvfr/react-dsfr/Input';
 import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
 import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Toast } from '@sirena/ui';
-import { createFileRoute, Link, redirect } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { z } from 'zod';
 import { useCreateDirectionAdminLocal } from '@/hooks/queries/entites.hook';
@@ -48,6 +48,7 @@ export function RouteComponent() {
     telContactUsager: '',
     adresseContactUsager: '',
   });
+  const router = useRouter();
   const createDirectionAdminLocal = useCreateDirectionAdminLocal();
   const toastManager = Toast.useToastManager();
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -117,6 +118,8 @@ export function RouteComponent() {
       timeout: 0,
       data: { icon: 'fr-alert--success' },
     });
+
+    await router.navigate({ to: '/admin/directions-services' });
   };
 
   return (
