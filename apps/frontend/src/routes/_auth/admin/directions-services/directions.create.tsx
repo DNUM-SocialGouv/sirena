@@ -102,24 +102,33 @@ export function RouteComponent() {
 
     setValidationErrors({});
 
-    await createDirectionAdminLocal.mutateAsync({
-      nomComplet: result.data.nomComplet,
-      label: result.data.label,
-      email: result.data.email ?? '',
-      emailContactUsager: result.data.emailContactUsager ?? '',
-      telContactUsager: result.data.telContactUsager ?? '',
-      adresseContactUsager: result.data.adresseContactUsager,
-      isActive: true,
-    });
+    try {
+      await createDirectionAdminLocal.mutateAsync({
+        nomComplet: result.data.nomComplet,
+        label: result.data.label,
+        email: result.data.email ?? '',
+        emailContactUsager: result.data.emailContactUsager ?? '',
+        telContactUsager: result.data.telContactUsager ?? '',
+        adresseContactUsager: result.data.adresseContactUsager,
+        isActive: true,
+      });
 
-    toastManager.add({
-      title: 'Direction créée avec succès',
-      description: 'La nouvelle direction a bien été enregistrée.',
-      timeout: 0,
-      data: { icon: 'fr-alert--success' },
-    });
+      toastManager.add({
+        title: 'Direction créée avec succès',
+        description: 'La nouvelle direction a bien été enregistrée.',
+        timeout: 0,
+        data: { icon: 'fr-alert--success' },
+      });
 
-    await router.navigate({ to: '/admin/directions-services' });
+      await router.navigate({ to: '/admin/directions-services' });
+    } catch {
+      toastManager.add({
+        title: 'Erreur',
+        description: 'Erreur lors de la création de la direction. Veuillez réessayer.',
+        timeout: 0,
+        data: { icon: 'fr-alert--error' },
+      });
+    }
   };
 
   return (

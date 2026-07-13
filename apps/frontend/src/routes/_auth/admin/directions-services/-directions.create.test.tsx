@@ -261,4 +261,30 @@ describe('Admin local Direction create route', () => {
       expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services' });
     });
   });
+
+  it('shows an error toast and stays on the form when Direction creation fails', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCreateDirectionAdminLocal).mockReturnValue({
+      mutateAsync: vi.fn().mockRejectedValue(new Error('Creation failed')),
+      isPending: false,
+    } as never);
+    render(<RouteComponent />);
+
+    await user.type(
+      screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ }),
+      'Direction Autonomie',
+    );
+    await user.type(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ }), 'DA');
+    await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
+
+    await waitFor(() => {
+      expect(addToastSpy).toHaveBeenCalledWith({
+        title: 'Erreur',
+        description: 'Erreur lors de la création de la direction. Veuillez réessayer.',
+        timeout: 0,
+        data: { icon: 'fr-alert--error' },
+      });
+    });
+    expect(routerNavigateSpy).not.toHaveBeenCalled();
+  });
 });
