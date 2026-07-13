@@ -1,32 +1,17 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
-import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
-import { createFileRoute, Link, redirect } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { TableSearchBar } from '@/components/common/tables/TableSearchBar';
 import { useDirectionsServicesList } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
-import { fetchResolvedFeatureFlags } from '@/lib/api/fetchFeatureFlags';
-import { requireAuthAndRoles } from '@/lib/auth-guards';
-import { queryClient } from '@/lib/queryClient';
+import { requireAdminLocalDirectionsServices } from './-route-guard';
 import './index.css';
 
-const requireEntityAdmin = requireAuthAndRoles([ROLES.ENTITY_ADMIN]);
-
 export const Route = createFileRoute('/_auth/admin/directions-services/')({
-  beforeLoad: async (ctx) => {
-    requireEntityAdmin(ctx);
-    const flags = await queryClient.ensureQueryData({
-      queryKey: ['featureFlags', 'resolved'],
-      queryFn: fetchResolvedFeatureFlags,
-    });
-
-    if (!flags[FEATURE_FLAGS.ADMIN_LOCAL_DIRECTIONS_SERVICES]) {
-      throw redirect({ to: '/admin/users' });
-    }
-  },
+  beforeLoad: requireAdminLocalDirectionsServices,
   component: RouteComponent,
 });
 

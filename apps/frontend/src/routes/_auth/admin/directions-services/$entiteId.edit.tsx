@@ -1,30 +1,15 @@
 import Button from '@codegouvfr/react-dsfr/Button';
-import Input from '@codegouvfr/react-dsfr/Input';
 import Select from '@codegouvfr/react-dsfr/Select';
-import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
 import { Loader } from '@sirena/ui';
-import { createFileRoute, Link, redirect } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
 import { useDirectionServiceAdminLocal } from '@/hooks/queries/entites.hook';
-import { fetchResolvedFeatureFlags } from '@/lib/api/fetchFeatureFlags';
-import { requireAuthAndRoles } from '@/lib/auth-guards';
-import { queryClient } from '@/lib/queryClient';
-
-const requireEntityAdmin = requireAuthAndRoles([ROLES.ENTITY_ADMIN]);
+import { LocalDirectionServiceSirenaFields } from './-components/LocalDirectionServiceSirenaFields';
+import { requireAdminLocalDirectionsServices } from './-route-guard';
 
 export const Route = createFileRoute('/_auth/admin/directions-services/$entiteId/edit')({
-  beforeLoad: async (ctx) => {
-    requireEntityAdmin(ctx);
-    const flags = await queryClient.ensureQueryData({
-      queryKey: ['featureFlags', 'resolved'],
-      queryFn: fetchResolvedFeatureFlags,
-    });
-
-    if (!flags[FEATURE_FLAGS.ADMIN_LOCAL_DIRECTIONS_SERVICES]) {
-      throw redirect({ to: '/admin/users' });
-    }
-  },
+  beforeLoad: requireAdminLocalDirectionsServices,
   component: RouteComponent,
 });
 
@@ -79,28 +64,14 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
         <form onSubmit={(event) => event.preventDefault()}>
           <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
-          <fieldset className="fr-fieldset">
-            <legend className="fr-fieldset__legend">Informations utilisées dans SIRENA</legend>
+          <LocalDirectionServiceSirenaFields
+            kind={target.kind}
+            formData={formData}
+            validationErrors={{}}
+            onChange={handleChange}
+          />
 
-            <Input
-              className="fr-fieldset__content"
-              label={`Nom ${target.kind === 'direction' ? 'de la direction' : 'du service'} (obligatoire)`}
-              nativeInputProps={{
-                name: 'nomComplet',
-                value: formData.nomComplet,
-                onChange: handleChange('nomComplet'),
-              }}
-            />
-            <Input
-              className="fr-fieldset__content"
-              label="Abréviation (obligatoire)"
-              nativeInputProps={{ name: 'label', value: formData.label, onChange: handleChange('label') }}
-            />
-            <Input
-              className="fr-fieldset__content"
-              label="Adresse e-mail de notification"
-              nativeInputProps={{ name: 'email', value: formData.email, onChange: handleChange('email') }}
-            />
+          <fieldset className="fr-fieldset">
             <Select
               className="fr-fieldset__content"
               label="Actif dans SIRENA (obligatoire)"
