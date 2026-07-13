@@ -46,6 +46,13 @@ export async function fetchDirectionsServicesList(query: Pick<QueryParams, 'sear
   return { data, capabilities };
 }
 
+export async function fetchDirectionServiceAdminLocal(id: string) {
+  const res = await client.entites.admin['directions-services'][':id'].$get({ param: { id } });
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return data;
+}
+
 export async function fetchEntiteByIdAdmin(id: string) {
   const res = await client.entites.admin[':id'].$get({ param: { id } });
   await handleRequestErrors(res);
@@ -88,6 +95,20 @@ export type CreateChildEntiteAdminInput = {
 };
 
 export type CreateDirectionAdminLocalInput = CreateChildEntiteAdminInput;
+export type EditDirectionServiceAdminLocalInput = Pick<
+  CreateChildEntiteAdminInput,
+  'nomComplet' | 'label' | 'email' | 'isActive'
+>;
+
+export async function editDirectionServiceAdminLocal(id: string, input: EditDirectionServiceAdminLocalInput) {
+  const res = await client.entites.admin['directions-services'][':id'].$patch({
+    param: { id },
+    json: input,
+  });
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return data;
+}
 
 export async function editEntiteAdmin(id: string, input: EditEntiteAdminInput) {
   const res = await client.entites.admin[':id'].$patch({

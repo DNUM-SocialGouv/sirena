@@ -4,8 +4,11 @@ import {
   type CreateDirectionAdminLocalInput,
   createChildEntiteAdmin,
   createDirectionAdminLocal,
+  type EditDirectionServiceAdminLocalInput,
   type EditEntiteAdminInput,
+  editDirectionServiceAdminLocal,
   editEntiteAdmin,
+  fetchDirectionServiceAdminLocal,
   fetchDirectionsServicesList,
   fetchEntiteByIdAdmin,
   fetchEntiteChain,
@@ -55,6 +58,13 @@ export const useDirectionsServicesListQueryOptions = (query: Pick<QueryParams, '
 export const useDirectionsServicesList = (query: Pick<QueryParams, 'search'> = {}) =>
   useQuery(useDirectionsServicesListQueryOptions(query));
 
+export const useDirectionServiceAdminLocal = (entiteId: string) =>
+  useQuery({
+    queryKey: ['entite', 'admin', 'directions-services', entiteId],
+    queryFn: () => fetchDirectionServiceAdminLocal(entiteId),
+    retry: false,
+  });
+
 export const useEntiteByIdAdmin = (entiteId: string) =>
   useQuery({
     queryKey: ['entite', 'admin', entiteId],
@@ -81,6 +91,16 @@ export const useEntiteDescendantsQueryOptions = (id: string | undefined) => ({
 });
 
 export const useEntiteDescendants = (id: string | undefined) => useQuery(useEntiteDescendantsQueryOptions(id));
+
+export const useEditDirectionServiceAdminLocal = () =>
+  useMutation({
+    mutationFn: ({ id, input }: { id: string; input: EditDirectionServiceAdminLocalInput }) =>
+      editDirectionServiceAdminLocal(id, input),
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(['entite', 'admin', 'directions-services', variables.id], data);
+      queryClient.invalidateQueries({ queryKey: ['entites', 'admin', 'directions-services'] });
+    },
+  });
 
 export const useEditEntiteAdmin = () =>
   useMutation({
