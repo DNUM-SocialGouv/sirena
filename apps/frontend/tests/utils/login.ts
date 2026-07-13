@@ -47,9 +47,11 @@ export const loginWithProconnect = async (
   const logButton = page.getByRole('button', { name: /S.identifier/i });
   await logButton.click();
 
-  const locationSelector = page.locator(`[role="button"][aria-label*="${organisation}"]`).first();
+  const locationSelector = page.getByRole('button', { name: organisation }).first();
   await locationSelector.waitFor({ state: 'visible', timeout: 15000 });
-  await locationSelector.click();
 
-  await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 30000 });
+  await expect(async () => {
+    await locationSelector.click();
+    await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 5000 });
+  }).toPass({ timeout: 30000 });
 };
