@@ -106,8 +106,8 @@ export function RouteComponent() {
         small
         description={
           <>
-            dans SIRENA, <i>Direction</i> désigne le premier niveau de votre organisation et <i>Service</i> désigne le
-            second niveau. Un <i>Service</i> est donc toujours rattaché à une <i>Direction</i>.
+            Dans SIRENA, <i>“direction”</i> désigne le premier niveau de votre organisation et <i>“service”</i> désigne
+            le second niveau. Un <i>service</i> est donc toujours rattaché à une <i>direction</i>.
           </>
         }
       />
