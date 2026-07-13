@@ -36,5 +36,24 @@ describe('search helpers', () => {
       const where = serialize(createSearchConditionsForRequeteEntite('750000000'));
       expect(where).toContain('"lieuDeSurvenue":{"finess":{"contains":"750000000","mode":"insensitive"}}');
     });
+
+    it('should compare dematSocialId for a number within the int32 range', () => {
+      const where = serialize(createSearchConditionsForRequeteEntite('123456'));
+      expect(where).toContain('"dematSocialId":123456');
+    });
+
+    it('should NOT compare dematSocialId for a number exceeding the int32 range (RPPS 500 regression)', () => {
+      // A 12-digit RPPS overflows int4 and used to make Postgres throw (out of range) → 500.
+      const where = serialize(createSearchConditionsForRequeteEntite('810103127360'));
+      expect(where).not.toContain('dematSocialId');
+      // The RPPS is still searched as text on misEnCause.rpps.
+      expect(where).toContain('"misEnCause":{"rpps":{"contains":"810103127360","mode":"insensitive"}}');
+    });
+
+    it('should NOT compare dematSocialId for non plain-digit inputs (decimal, negative, scientific)', () => {
+      for (const input of ['12.5', '-5', '1e3']) {
+        expect(serialize(createSearchConditionsForRequeteEntite(input))).not.toContain('dematSocialId');
+      }
+    });
   });
 });

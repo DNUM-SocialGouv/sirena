@@ -18,6 +18,13 @@ import { requireAuthAndRoles } from '@/lib/auth-guards';
 import styles from './statistiques.module.css';
 
 const numberFormatter = new Intl.NumberFormat('fr-FR');
+const dataDateFormatter = new Intl.DateTimeFormat('fr-FR');
+
+function formatDataDate(reference: Date): string {
+  const previousDay = new Date(reference);
+  previousDay.setDate(previousDay.getDate() - 1);
+  return dataDateFormatter.format(previousDay);
+}
 
 const StatisticsSearchSchema = z.object({
   period: z.enum(PERIOD_PRESETS).optional().catch(undefined),
@@ -46,12 +53,11 @@ function formatValue(value: unknown): string {
 }
 
 function getScalarValue(card: StatisticsCard): unknown | undefined {
-  if (card.data.length !== 1) return undefined;
-  const [row] = card.data;
-  const keys = Object.keys(row);
-  if (keys.length !== 1) return undefined;
-  const [key] = keys;
-  return row[key];
+  const { cols, rows } = card.data;
+  if (cols.length !== 1 || rows.length !== 1) return undefined;
+  const [row] = rows;
+  const [value] = row;
+  return value;
 }
 
 function KpiCard({ card }: { card: StatisticsCard }) {
@@ -112,13 +118,15 @@ function ChartCard({ card }: { card: StatisticsCard }) {
         total={parsed.total}
         dimensionLabel={parsed.dimensionLabel}
         metricLabel={parsed.metricLabel}
+        percentLabel={parsed.percentLabel}
+        hasPrecomputedPercent={parsed.hasPrecomputedPercent}
         hideCaption
       />
     </>
   );
 }
 
-function RouteComponent() {
+export function RouteComponent() {
   const resolvedFlagsQuery = useResolvedFeatureFlags();
   const { data: profile, isPending: isProfilePending } = useProfile();
   const search = useSearch({ from: '/_auth/_user/statistiques' });
@@ -134,6 +142,7 @@ function RouteComponent() {
     endDate: search.endDate,
   };
   const range = resolveDateRange(selection, new Date());
+  const dataDate = formatDataDate(new Date());
   const query = useStatisticsDashboard(range, areFlagsReady && isEnabled && hasEntityLink);
 
   const handlePeriodChange = (next: PeriodSelection) => {
@@ -185,6 +194,10 @@ function RouteComponent() {
           );
         }}
       </QueryStateHandler>
+      <p className={`${fr.cx('fr-text--sm', 'fr-mt-6w', 'fr-mb-0')} ${styles['data-note']}`}>
+        <span className={fr.cx('fr-icon-time-line')} aria-hidden="true" />
+        Données du {dataDate}
+      </p>
     </div>
   );
 }

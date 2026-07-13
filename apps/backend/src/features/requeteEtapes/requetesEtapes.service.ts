@@ -1,5 +1,6 @@
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { PinoLogger } from 'hono-pino';
+import { getOriginalFileName } from '../../helpers/file.js';
 import { capitalizeFirst, formatDateFr } from '../../helpers/string.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import { deleteFileFromMinio } from '../../libs/minio.js';
@@ -7,13 +8,8 @@ import type { Prisma } from '../../libs/prisma.js';
 import { prisma, type RequeteEtape } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
-import type {
-  GetRequeteEtapesQuery,
-  RequeteEtapeCreationDto,
-  UpdateRequeteEtapeDateRealisationDto,
-  UpdateRequeteEtapeNomDto,
-  UpdateRequeteEtapeStatutDto,
-} from './requetesEtapes.type.js';
+import { isUserOwner, setEtapeFile } from '../uploadedFiles/uploadedFiles.service.js';
+import type { AddProcessingStepDto, GetRequeteEtapesQuery, UpdateProcessingStepDto } from './requetesEtapes.type.js';
 
 export const CREATION_STEP_NAME_PREFIX = 'Création de la requête';
 export const AUTOMATIC_CREATION_STEP_NAME_PREFIX = 'Création de la requête';
@@ -153,53 +149,321 @@ export const createDefaultRequeteEtapes = async (
   return { etape1, etape2 };
 };
 
-export const addProcessingEtape = async (
+export const getEtapePermissions = (etape: {
+  type: string;
+  statutId: string | null;
+  requete: { createdById: string | null } | null;
+}): { editable: boolean; canOnlyEditNotes: boolean } => {
+  if (etape.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) return { editable: false, canOnlyEditNotes: false };
+  if (etape.type === REQUETE_ETAPE_TYPES.CREATION || etape.type === REQUETE_ETAPE_TYPES.REOPEN) {
+    return { editable: false, canOnlyEditNotes: false };
+  }
+  // Spec: only an ACR sent automatically is locked (status + uploaded files), notes always editable.
+  // Automatic = request not created by an agent (createdById null) ; a manual ACR stays fully editable.
+  const canOnlyEditNotes = etape.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT && etape.requete?.createdById == null;
+  return { editable: true, canOnlyEditNotes };
+};
+
+export class EtapeNotEditableError extends Error {
+  code = 'ETAPE_NOT_EDITABLE' as const;
+}
+
+export class FilesNotOwnedError extends Error {
+  code = 'FILES_NOT_OWNED' as const;
+}
+
+const logNoteChangelog = async (
+  action: ChangeLogAction,
+  noteId: string,
+  before: Prisma.JsonObject | null,
+  after: Prisma.JsonObject | null,
+  changedById: string,
+  logger: Pick<PinoLogger, 'error'>,
+): Promise<void> => {
+  try {
+    await createChangeLog({ entity: 'RequeteEtapeNote', entityId: noteId, action, before, after, changedById });
+  } catch (err) {
+    logger.error({ err, noteId }, 'Failed to create changelog for note');
+  }
+};
+
+export const createProcessingEtape = async (
   requeteId: string,
   entiteId: string | null,
-  data: RequeteEtapeCreationDto,
-  userId?: string,
+  userId: string,
+  data: AddProcessingStepDto,
+  logger: PinoLogger,
 ) => {
   if (!entiteId) {
     return null;
   }
 
-  // First check if the requete exists
-  const requete = await prisma.requete.findUnique({
-    where: { id: requeteId },
-  });
-
+  const requete = await prisma.requete.findUnique({ where: { id: requeteId } });
   if (!requete) {
     return null;
   }
 
-  // Ensure RequeteEntite exists (create if not)
   await prisma.requeteEntite.upsert({
-    where: {
-      requeteId_entiteId: {
-        requeteId,
-        entiteId,
-      },
-    },
-    create: {
-      requeteId,
-      entiteId,
-      statutId: REQUETE_STATUT_TYPES.NOUVEAU,
-    },
+    where: { requeteId_entiteId: { requeteId, entiteId } },
+    create: { requeteId, entiteId, statutId: REQUETE_STATUT_TYPES.NOUVEAU },
     update: {},
   });
 
-  const etape = await prisma.requeteEtape.create({
-    data: {
-      requeteId,
-      entiteId,
-      nom: data.nom,
-      type: REQUETE_ETAPE_TYPES.MANUAL,
-      statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
-      createdById: userId,
-    },
+  const statutId = data.statutId ?? null;
+  const dateRealisation = statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT ? (data.dateRealisation ?? new Date()) : null;
+
+  const createdNotes: { id: string; texte: string; authorId: string | null; requeteEtapeId: string }[] = [];
+
+  const etape = await prisma.$transaction(async (tx) => {
+    const etape = await tx.requeteEtape.create({
+      data: {
+        requeteId,
+        entiteId,
+        nom: data.nom,
+        type: REQUETE_ETAPE_TYPES.MANUAL,
+        statutId,
+        dateRealisation,
+        createdById: userId,
+      },
+    });
+
+    for (const note of data.notes) {
+      const created = await tx.requeteEtapeNote.create({
+        data: { authorId: userId, texte: note.texte, requeteEtapeId: etape.id },
+      });
+      createdNotes.push(created);
+    }
+
+    if (data.fileIds.length > 0) {
+      if (!(await isUserOwner(userId, data.fileIds, tx))) {
+        throw new FilesNotOwnedError('FILES_NOT_OWNED');
+      }
+      await setEtapeFile(etape.id, data.fileIds, entiteId, userId, tx);
+    }
+
+    return etape;
   });
 
+  await Promise.allSettled(
+    createdNotes.map((note) =>
+      logNoteChangelog(
+        ChangeLogAction.CREATED,
+        note.id,
+        null,
+        { id: note.id, texte: note.texte, authorId: note.authorId, requeteEtapeId: note.requeteEtapeId },
+        userId,
+        logger,
+      ),
+    ),
+  );
+
   return etape;
+};
+
+type EtapeNoteRow = { id: string; authorId: string | null; texte: string };
+type EtapeFileRow = { id: string; canDelete: boolean; filePath: string };
+type NoteChangelogEntry = {
+  action: ChangeLogAction;
+  id: string;
+  before: Prisma.JsonObject | null;
+  after: Prisma.JsonObject | null;
+};
+
+// Diff notes — only notes of THIS step and non system (authorId non null) are editable/deletable.
+const diffEtapeNotes = (existingNotes: EtapeNoteRow[], sentNotes: UpdateProcessingStepDto['notes']) => {
+  const editableNoteIds = new Set(existingNotes.filter((n) => n.authorId !== null).map((n) => n.id));
+  const existingNoteById = new Map<string, EtapeNoteRow>(existingNotes.map((n) => [n.id, n]));
+  const sentNoteIds = new Set(sentNotes.filter((n) => n.id).map((n) => n.id as string));
+  const notesToDelete = existingNotes.filter((n) => n.authorId !== null && !sentNoteIds.has(n.id));
+  return { editableNoteIds, existingNoteById, notesToDelete };
+};
+
+// Diff files — only remove those removed AND deletable (canDelete) ; never lose anything else.
+const diffEtapeFiles = (uploadedFiles: EtapeFileRow[], desiredFileIds: string[]) => {
+  const currentFileIds = new Set(uploadedFiles.map((f) => f.id));
+  const desired = new Set(desiredFileIds);
+  const fileIdsToAttach = desiredFileIds.filter((id) => !currentFileIds.has(id));
+  const filesToRemove = uploadedFiles.filter((f) => !desired.has(f.id) && f.canDelete);
+  return { fileIdsToAttach, filesToRemove };
+};
+
+// Applies the desired note state inside the transaction and returns the changelog entries to emit after commit.
+// The panel sends the full desired state of the notes:
+// - note with an id that is editable (of this step, non system) -> update the text;
+// - note with an id that is not editable (system / other entity) -> ignored (read-only);
+// - note without an id -> create.
+// Editable notes missing from the payload are deleted (notesToDelete).
+const applyEtapeNoteChanges = async (
+  tx: Prisma.TransactionClient,
+  stepId: string,
+  userId: string,
+  sentNotes: UpdateProcessingStepDto['notes'],
+  diff: ReturnType<typeof diffEtapeNotes>,
+): Promise<NoteChangelogEntry[]> => {
+  const changelogs: NoteChangelogEntry[] = [];
+  for (const note of sentNotes) {
+    if (note.id) {
+      if (diff.editableNoteIds.has(note.id)) {
+        const before = diff.existingNoteById.get(note.id);
+        await tx.requeteEtapeNote.update({ where: { id: note.id }, data: { texte: note.texte } });
+        if (before && before.texte !== note.texte) {
+          changelogs.push({
+            action: ChangeLogAction.UPDATED,
+            id: note.id,
+            before: { texte: before.texte, authorId: before.authorId },
+            after: { texte: note.texte, authorId: before.authorId },
+          });
+        }
+      }
+    } else {
+      const created = await tx.requeteEtapeNote.create({
+        data: { authorId: userId, texte: note.texte, requeteEtapeId: stepId },
+      });
+      changelogs.push({
+        action: ChangeLogAction.CREATED,
+        id: created.id,
+        before: null,
+        after: { id: created.id, texte: created.texte, authorId: created.authorId, requeteEtapeId: stepId },
+      });
+    }
+  }
+  for (const note of diff.notesToDelete) {
+    await tx.requeteEtapeNote.delete({ where: { id: note.id } });
+    changelogs.push({
+      action: ChangeLogAction.DELETED,
+      id: note.id,
+      before: { id: note.id, texte: note.texte, authorId: note.authorId },
+      after: null,
+    });
+  }
+  return changelogs;
+};
+
+const cleanupRemovedEtapeFiles = async (
+  filesToRemove: EtapeFileRow[],
+  userId: string,
+  logger: PinoLogger,
+): Promise<void> => {
+  await Promise.allSettled(
+    filesToRemove.map(async (f) => {
+      try {
+        await createChangeLog({
+          entity: 'UploadedFile',
+          entityId: f.id,
+          action: ChangeLogAction.DELETED,
+          before: { id: f.id, canDelete: f.canDelete, filePath: f.filePath } as Prisma.JsonObject,
+          after: null,
+          changedById: userId,
+        });
+      } catch (err) {
+        logger.error({ err, fileId: f.id }, 'Failed to create changelog for removed step file');
+      }
+    }),
+  );
+
+  // Delete physical files from MinIO after commit
+  await Promise.allSettled(
+    filesToRemove.map(async (f) => {
+      try {
+        await deleteFileFromMinio(f.filePath);
+      } catch (err) {
+        logger.error({ err, filePath: f.filePath }, 'Failed to delete MinIO file from step');
+      }
+    }),
+  );
+};
+
+export const updateProcessingEtape = async (
+  stepId: string,
+  userId: string,
+  data: UpdateProcessingStepDto,
+  logger: PinoLogger,
+): Promise<RequeteEtape | null> => {
+  const etape = await prisma.requeteEtape.findUnique({
+    where: { id: stepId },
+    include: {
+      notes: { select: { id: true, authorId: true, texte: true } },
+      uploadedFiles: { select: { id: true, canDelete: true, filePath: true } },
+      requete: { select: { createdById: true } },
+    },
+  });
+  if (!etape) {
+    return null;
+  }
+
+  const { editable, canOnlyEditNotes } = getEtapePermissions(etape);
+  if (!editable) {
+    throw new EtapeNotEditableError('ETAPE_NOT_EDITABLE');
+  }
+
+  const notesDiff = diffEtapeNotes(etape.notes, data.notes);
+  const { fileIdsToAttach, filesToRemove } = diffEtapeFiles(etape.uploadedFiles, data.fileIds);
+
+  const statutId = data.statutId ?? null;
+  const dateRealisation = statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT ? (data.dateRealisation ?? new Date()) : null;
+
+  let noteChangelogs: NoteChangelogEntry[] = [];
+
+  await prisma.$transaction(async (tx) => {
+    // canOnlyEditNotes (automatic ACR) only persists notes
+    if (!canOnlyEditNotes) {
+      await tx.requeteEtape.update({
+        where: { id: stepId },
+        data: { nom: data.nom, statutId, dateRealisation },
+      });
+    }
+
+    noteChangelogs = await applyEtapeNoteChanges(tx, stepId, userId, data.notes, notesDiff);
+
+    if (!canOnlyEditNotes) {
+      if (fileIdsToAttach.length > 0) {
+        if (!(await isUserOwner(userId, fileIdsToAttach, tx))) {
+          throw new FilesNotOwnedError('FILES_NOT_OWNED');
+        }
+        await setEtapeFile(stepId, fileIdsToAttach, etape.entiteId, userId, tx);
+      }
+      if (filesToRemove.length > 0) {
+        await tx.uploadedFile.deleteMany({ where: { id: { in: filesToRemove.map((f) => f.id) } } });
+      }
+    }
+  });
+
+  await Promise.allSettled(
+    noteChangelogs.map((ev) => logNoteChangelog(ev.action, ev.id, ev.before, ev.after, userId, logger)),
+  );
+
+  if (!canOnlyEditNotes && filesToRemove.length > 0) {
+    await cleanupRemovedEtapeFiles(filesToRemove, userId, logger);
+  }
+
+  return prisma.requeteEtape.findUnique({ where: { id: stepId } });
+};
+
+/**
+ * Attaches uploaded files to a CLOTUREE (closure) step at the step level (requeteEtapeId).
+ */
+export const addClotureEtapeFiles = async (
+  stepId: string,
+  userId: string,
+  entiteId: string,
+  fileIds: string[],
+): Promise<RequeteEtape | null> => {
+  const etape = await prisma.requeteEtape.findUnique({ where: { id: stepId } });
+  if (!etape) {
+    return null;
+  }
+
+  if (etape.statutId !== REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
+    throw new EtapeNotEditableError('ETAPE_NOT_EDITABLE');
+  }
+
+  if (!(await isUserOwner(userId, fileIds))) {
+    throw new FilesNotOwnedError('FILES_NOT_OWNED');
+  }
+
+  await setEtapeFile(stepId, fileIds, entiteId, userId);
+
+  return prisma.requeteEtape.findUnique({ where: { id: stepId } });
 };
 
 export const getRequeteEtapes = async (requeteId: string, entiteId: string | null, query: GetRequeteEtapesQuery) => {
@@ -245,18 +509,27 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
             id: true,
             texte: true,
             createdAt: true,
-            uploadedFiles: {
+            author: {
               select: {
-                id: true,
-                size: true,
-                metadata: true,
-                status: true,
-                scanStatus: true,
-                sanitizeStatus: true,
-                safeFilePath: true,
+                prenom: true,
+                nom: true,
               },
             },
-            author: {
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+        uploadedFiles: {
+          select: {
+            id: true,
+            fileName: true,
+            metadata: true,
+            size: true,
+            status: true,
+            scanStatus: true,
+            sanitizeStatus: true,
+            canDelete: true,
+            createdAt: true,
+            uploadedBy: {
               select: {
                 prenom: true,
                 nom: true,
@@ -269,6 +542,7 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
         entiteId: true,
         requete: {
           select: {
+            createdById: true,
             createdBy: {
               select: { prenom: true, nom: true },
             },
@@ -283,8 +557,28 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
     }),
   ]);
 
+  const sanitizeFile = <T extends { fileName: string; metadata: Prisma.JsonValue | null }>(file: T) => {
+    const { metadata: _metadata, ...rest } = file;
+    return { ...rest, fileName: getOriginalFileName(file) };
+  };
+
+  // closure / creation = not editable; automatic ACR = statut + files locked but notes OK; manual = full.
+  const data = raw.map((etape) => {
+    const { editable, canOnlyEditNotes } = getEtapePermissions({
+      type: etape.type,
+      statutId: etape.statutId,
+      requete: etape.requete ? { createdById: etape.requete.createdById } : null,
+    });
+    return {
+      ...etape,
+      editable,
+      canOnlyEditNotes,
+      uploadedFiles: etape.uploadedFiles.map(sanitizeFile),
+    };
+  });
+
   return {
-    data: raw,
+    data,
     total,
   };
 };
@@ -293,73 +587,6 @@ export const getRequeteEtapeById = async (id: string) =>
   await prisma.requeteEtape.findUnique({
     where: { id },
   });
-
-export const updateRequeteEtapeStatut = async (
-  id: string,
-  data: UpdateRequeteEtapeStatutDto,
-): Promise<RequeteEtape | null> => {
-  const requeteEtape = await getRequeteEtapeById(id);
-  if (!requeteEtape) {
-    return null;
-  }
-
-  let dateRealisation: Date | null | undefined;
-  if (requeteEtape.type === REQUETE_ETAPE_TYPES.MANUAL) {
-    if (data.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT) {
-      dateRealisation = requeteEtape.dateRealisation ?? new Date();
-    } else {
-      dateRealisation = null;
-    }
-  }
-
-  const updatedRequeteEtape = await prisma.requeteEtape.update({
-    where: { id },
-    data: {
-      statutId: data.statutId,
-      ...(dateRealisation !== undefined ? { dateRealisation } : {}),
-    },
-  });
-
-  return updatedRequeteEtape;
-};
-
-export const updateRequeteEtapeDateRealisation = async (
-  id: string,
-  data: UpdateRequeteEtapeDateRealisationDto,
-): Promise<RequeteEtape | null> => {
-  const requeteEtape = await getRequeteEtapeById(id);
-  if (!requeteEtape) {
-    return null;
-  }
-
-  if (requeteEtape.type !== REQUETE_ETAPE_TYPES.MANUAL || requeteEtape.statutId !== REQUETE_ETAPE_STATUT_TYPES.FAIT) {
-    return null;
-  }
-
-  return prisma.requeteEtape.update({
-    where: { id },
-    data: {
-      dateRealisation: data.dateRealisation,
-    },
-  });
-};
-
-export const updateRequeteEtapeNom = async (
-  id: string,
-  data: UpdateRequeteEtapeNomDto,
-): Promise<RequeteEtape | null> => {
-  const requeteEtape = await getRequeteEtapeById(id);
-  if (!requeteEtape) {
-    return null;
-  }
-
-  return prisma.requeteEtape.update({
-    where: { id },
-    data: {
-      nom: data.nom,
-    },
-  });
-};
 
 /**
  * Updates the acknowledgment step for all entities (when acknowledgment email is sent automatically)
@@ -447,7 +674,8 @@ export const deleteRequeteEtape = async (id: string, logger: PinoLogger, changed
   const requeteEtape = await prisma.requeteEtape.findUnique({
     where: { id },
     include: {
-      notes: { include: { uploadedFiles: true } },
+      notes: true,
+      uploadedFiles: true,
     },
   });
 
@@ -455,8 +683,8 @@ export const deleteRequeteEtape = async (id: string, logger: PinoLogger, changed
     return;
   }
 
-  const notes = requeteEtape.notes.map(({ uploadedFiles, ...note }) => note);
-  const files = requeteEtape.notes.flatMap((n) => n.uploadedFiles);
+  const notes = requeteEtape.notes;
+  const files = requeteEtape.uploadedFiles;
   const filePaths = files.map((f) => f.filePath);
 
   // Delete RequeteEtape (all related entities will be deleted in cascade)

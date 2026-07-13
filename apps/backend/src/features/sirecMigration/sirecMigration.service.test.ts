@@ -3,7 +3,7 @@
 import type { MesureProtection } from '@sirena/db/generated-client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
-import { getRequeteIdFromSirecId, saveFromSirec } from './sirecMigration.service.js';
+import { deleteRequeteWithRelatedData, getRequeteIdFromSirecId, saveFromSirec } from './sirecMigration.service.js';
 
 vi.mock('../../libs/asyncLocalStorage.js', () => ({
   getLoggerStore: vi.fn(() => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() })),
@@ -12,11 +12,11 @@ vi.mock('../../libs/asyncLocalStorage.js', () => ({
 vi.mock('@sirena/db', () => ({
   prisma: {
     $transaction: vi.fn(),
-    requete: { findFirst: vi.fn(), create: vi.fn() },
-    lieuDeSurvenue: { create: vi.fn() },
-    misEnCause: { create: vi.fn() },
-    demarchesEngagees: { create: vi.fn() },
-    situation: { create: vi.fn() },
+    requete: { findFirst: vi.fn(), create: vi.fn(), delete: vi.fn() },
+    lieuDeSurvenue: { create: vi.fn(), deleteMany: vi.fn() },
+    misEnCause: { create: vi.fn(), deleteMany: vi.fn() },
+    demarchesEngagees: { create: vi.fn(), deleteMany: vi.fn() },
+    situation: { create: vi.fn(), findMany: vi.fn() },
     fait: { create: vi.fn() },
     faitMotifDeclaratif: { createMany: vi.fn() },
     requeteEntite: { createMany: vi.fn() },
@@ -24,6 +24,7 @@ vi.mock('@sirena/db', () => ({
     situationEntite: { createMany: vi.fn() },
     personneConcernee: { create: vi.fn() },
     identite: { create: vi.fn() },
+    uploadedFile: { deleteMany: vi.fn() },
   },
 }));
 
@@ -55,6 +56,43 @@ describe('sirecMigration.service.ts', () => {
       const result = await getRequeteIdFromSirecId(42);
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('deleteRequeteWithRelatedData', () => {
+    it('should delete the misEnCause, lieuDeSurvenue, demarchesEngagees, their orphaned uploaded files and the requete', async () => {
+      vi.mocked(prisma.situation.findMany).mockResolvedValueOnce([
+        { misEnCauseId: 'mec-1', lieuDeSurvenueId: 'lieu-1', demarchesEngageesId: 'dem-1' },
+        { misEnCauseId: 'mec-2', lieuDeSurvenueId: 'lieu-2', demarchesEngageesId: 'dem-2' },
+      ]);
+
+      await deleteRequeteWithRelatedData('SIREC-42');
+
+      expect(prisma.situation.findMany).toHaveBeenCalledWith({
+        where: { requeteId: 'SIREC-42' },
+        select: { misEnCauseId: true, lieuDeSurvenueId: true, demarchesEngageesId: true },
+      });
+      expect(prisma.uploadedFile.deleteMany).toHaveBeenCalledWith({
+        where: { demarchesEngageesId: { in: ['dem-1', 'dem-2'] } },
+      });
+      expect(prisma.misEnCause.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ['mec-1', 'mec-2'] } } });
+      expect(prisma.lieuDeSurvenue.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ['lieu-1', 'lieu-2'] } } });
+      expect(prisma.demarchesEngagees.deleteMany).toHaveBeenCalledWith({
+        where: { id: { in: ['dem-1', 'dem-2'] } },
+      });
+      expect(prisma.requete.delete).toHaveBeenCalledWith({ where: { id: 'SIREC-42' } });
+    });
+
+    it('should do nothing extra when the requete has no situation', async () => {
+      vi.mocked(prisma.situation.findMany).mockResolvedValueOnce([]);
+
+      await deleteRequeteWithRelatedData('SIREC-42');
+
+      expect(prisma.uploadedFile.deleteMany).toHaveBeenCalledWith({ where: { demarchesEngageesId: { in: [] } } });
+      expect(prisma.misEnCause.deleteMany).toHaveBeenCalledWith({ where: { id: { in: [] } } });
+      expect(prisma.lieuDeSurvenue.deleteMany).toHaveBeenCalledWith({ where: { id: { in: [] } } });
+      expect(prisma.demarchesEngagees.deleteMany).toHaveBeenCalledWith({ where: { id: { in: [] } } });
+      expect(prisma.requete.delete).toHaveBeenCalledWith({ where: { id: 'SIREC-42' } });
     });
   });
 

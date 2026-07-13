@@ -1,5 +1,6 @@
 import Alert from '@codegouvfr/react-dsfr/Alert';
 import Button from '@codegouvfr/react-dsfr/Button';
+import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
@@ -53,6 +54,7 @@ export function RouteComponent() {
 
   const [mode, setMode] = useState<Mode>('reclamations');
   const [raw, setRaw] = useState('');
+  const [deleteIfExists, setDeleteIfExists] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [systemError, setSystemError] = useState<string | null>(null);
@@ -61,6 +63,7 @@ export function RouteComponent() {
   const handleModeChange = (newMode: Mode) => {
     setMode(newMode);
     setRaw('');
+    setDeleteIfExists(false);
     setResult(null);
     setFieldError(null);
     setSystemError(null);
@@ -81,10 +84,10 @@ export function RouteComponent() {
     setLoading(true);
     try {
       if (mode === 'reclamations') {
-        const { queued } = await migrateByReclamations(ids);
+        const { queued } = await migrateByReclamations(ids, deleteIfExists);
         setResult(`${queued} réclamation${queued > 1 ? 's' : ''} ajoutée${queued > 1 ? 's' : ''} à la queue.`);
       } else {
-        const { queued, found } = await migrateByServices(ids);
+        const { queued, found } = await migrateByServices(ids, deleteIfExists);
         setResult(
           `${found} réclamation${found > 1 ? 's' : ''} trouvée${found > 1 ? 's' : ''}, ${queued} ajoutée${queued > 1 ? 's' : ''} à la queue.`,
         );
@@ -171,6 +174,18 @@ export function RouteComponent() {
                   rows: 6,
                 }}
               />
+              <Checkbox
+                className="fr-mb-4w"
+                options={[
+                  {
+                    label: 'Ecraser les réclamations existantes avec le même identifiant',
+                    nativeInputProps: {
+                      checked: deleteIfExists,
+                      onChange: (e) => setDeleteIfExists(e.target.checked),
+                    },
+                  },
+                ]}
+              />
               <Button type="submit" disabled={loading}>
                 {loading ? 'Envoi en cours…' : 'Ajouter à la queue'}
               </Button>
@@ -197,6 +212,18 @@ export function RouteComponent() {
                   onChange: (e) => setRaw(e.target.value),
                   rows: 6,
                 }}
+              />
+              <Checkbox
+                className="fr-mb-4w"
+                options={[
+                  {
+                    label: 'Ecraser les réclamations existantes avec le même identifiant',
+                    nativeInputProps: {
+                      checked: deleteIfExists,
+                      onChange: (e) => setDeleteIfExists(e.target.checked),
+                    },
+                  },
+                ]}
               />
               <Button type="submit" disabled={loading}>
                 {loading ? 'Recherche en cours…' : 'Rechercher et ajouter à la queue'}

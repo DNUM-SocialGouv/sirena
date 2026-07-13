@@ -70,7 +70,7 @@ function formatEntiteCompleteString(entites: EntiteForMessage[]): string {
 }
 
 /**
- * Attaches an email PDF to the acknowledgment step via RequeteEtapeNote
+ * Attaches an email PDF directly to the acknowledgment step (requeteEtapeId)
  */
 async function attachEmailPdfToStep(
   requeteId: string,
@@ -138,11 +138,11 @@ async function attachEmailPdfToStep(
           emailSubject: emailInfo.subject,
           ...(encryptionMetadata && { encryption: encryptionMetadata }),
         },
-        requeteEtapeNoteId: null,
+        requeteEtapeId: etape.id,
         requeteId: null,
         faitSituationId: null,
         demarchesEngageesId: null,
-        uploadedById: null,
+        uploadedById: authorId ?? null,
         entiteId,
       });
 
@@ -163,7 +163,7 @@ async function attachEmailPdfToStep(
         'metadata',
         'entiteId',
         'uploadedById',
-        'requeteEtapeNoteId',
+        'requeteEtapeId',
         'requeteId',
         'faitSituationId',
         'demarchesEngageesId',
@@ -188,36 +188,6 @@ async function attachEmailPdfToStep(
             error: changelogError,
           },
           'Failed to create changelog entry for uploaded file',
-        );
-      }
-
-      const note = await prisma.requeteEtapeNote.create({
-        data: {
-          texte: `Email d'accusé de réception envoyé le ${emailInfo.sentDate.toLocaleString('fr-FR')}`,
-          authorId: authorId ?? null,
-          requeteEtapeId: etape.id,
-          uploadedFiles: {
-            connect: [{ id: uploadedFile.id }],
-          },
-        },
-      });
-
-      try {
-        await createChangeLog({
-          entity: 'RequeteEtapeNote',
-          entityId: note.id,
-          action: ChangeLogAction.CREATED,
-          before: null,
-          after: {
-            texte: note.texte,
-            authorId: note.authorId,
-          },
-          changedById: null, // System action
-        });
-      } catch (changelogError) {
-        logger.error(
-          { requeteId, entiteId, noteId: note.id, error: changelogError },
-          'Failed to create changelog entry for requete etape note',
         );
       }
 

@@ -8,7 +8,6 @@ import { useSendAcknowledgment } from '@/hooks/mutations/updateProcessingStep.ho
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { fetchAcknowledgmentMessage } from '@/lib/api/processingSteps';
 import { HttpError } from '@/lib/api/tanstackQuery';
-import styles from './CreateNoteDrawer.module.css';
 import drawerStyles from './SendAcknowledgmentDrawer.module.css';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
@@ -142,7 +141,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
             <div className={drawerStyles.layout}>
               <div className={drawerStyles.scrollArea}>
                 <div className="fr-container fr-mt-8w">
-                  <div className={styles.topActions}>
+                  <div className={drawerStyles.topActions}>
                     <Button
                       type="button"
                       priority="tertiary no outline"
@@ -211,7 +210,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                         }}
                       />
 
-                      <div className={styles.footerActions}>
+                      <div className={drawerStyles.footerActions}>
                         <Button
                           type="button"
                           priority="secondary"

@@ -33,28 +33,27 @@ import {
 } from '../requetesEntite/requetesEntite.service.js';
 import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
 import {
+  addClotureFilesRoute,
   addProcessingStepRoute,
   deleteRequeteEtapeRoute,
   sendAcknowledgmentRoute,
-  updateRequeteEtapeDateRealisationRoute,
-  updateRequeteEtapeNomRoute,
-  updateRequeteEtapeStatutRoute,
+  updateProcessingStepRoute,
 } from './requetesEtapes.route.js';
 import {
+  AddClotureFilesSchema,
   AddProcessingStepBodySchema,
   SendAcknowledgmentBodySchema,
-  UpdateRequeteEtapeDateRealisationSchema,
-  UpdateRequeteEtapeNomSchema,
-  UpdateRequeteEtapeStatutSchema,
+  UpdateProcessingStepBodySchema,
 } from './requetesEtapes.schema.js';
 import {
-  addProcessingEtape,
+  addClotureEtapeFiles,
+  createProcessingEtape,
   deleteRequeteEtape,
+  EtapeNotEditableError,
+  FilesNotOwnedError,
   getRequeteEtapeById,
   getRequeteEtapes,
-  updateRequeteEtapeDateRealisation,
-  updateRequeteEtapeNom,
-  updateRequeteEtapeStatut,
+  updateProcessingEtape,
 } from './requetesEtapes.service.js';
 
 const app = factoryWithLogs
@@ -216,14 +215,18 @@ const app = factoryWithLogs
         await updateStatusRequete(requeteId, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
       }
 
-      const step = await addProcessingEtape(
-        requeteId,
-        topEntiteId,
-        {
-          nom: body.nom,
-        },
-        userId,
-      );
+      let step: Awaited<ReturnType<typeof createProcessingEtape>>;
+      try {
+        step = await createProcessingEtape(requeteId, topEntiteId, userId, body, logger);
+      } catch (err) {
+        if (err instanceof FilesNotOwnedError) {
+          throwHTTPException403Forbidden('You are not allowed to add these files', {
+            res: c.res,
+            kind: ERROR_KIND.BUSINESS,
+          });
+        }
+        throw err;
+      }
 
       if (!step) {
         logger.error({ requestId: requeteId, userId }, 'Inconsistent state: step not created');
@@ -241,216 +244,144 @@ const app = factoryWithLogs
     },
   )
   .patch(
-    '/:id/statut',
-    updateRequeteEtapeStatutRoute,
-    zValidator('json', UpdateRequeteEtapeStatutSchema),
+    '/:id',
+    updateProcessingStepRoute,
+    zValidator('json', UpdateProcessingStepBodySchema),
     requeteEtapesChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
     async (c) => {
       const logger = c.get('logger');
-      const { id } = c.req.param();
+      const { id: stepId } = c.req.param();
       const body = c.req.valid('json');
       const userId = c.get('userId');
       const topEntiteId = c.get('topEntiteId');
       if (!topEntiteId) {
-        throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+        throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
           res: c.res,
           kind: ERROR_KIND.BUSINESS,
         });
       }
-      const requeteEtape = await getRequeteEtapeById(id);
 
-      if (!requeteEtape) {
+      const etape = await getRequeteEtapeById(stepId);
+      if (!etape) {
         throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
-
-      const hasAccessToReq = await hasAccessToRequete({
-        requeteId: requeteEtape.requeteId,
-        entiteId: topEntiteId,
-      });
-
-      if (!hasAccessToReq) {
-        throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
-          res: c.res,
-          kind: ERROR_KIND.BUSINESS,
-        });
-      }
-
-      if (topEntiteId !== requeteEtape.entiteId) {
+      if (topEntiteId !== etape.entiteId) {
         throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
           res: c.res,
           kind: ERROR_KIND.BUSINESS,
         });
       }
 
-      const requete = await getRequeteEntiteById(requeteEtape.requeteId, topEntiteId);
+      const hasAccess = await hasAccessToRequete({ requeteId: etape.requeteId, entiteId: topEntiteId });
+      if (!hasAccess) {
+        throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
 
+      // Working on a step moves the requete from NOUVEAU to EN_COURS
+      // (parity with the legacy PATCH /:id/nom and /:id/statut, and with the POST).
+      const requete = await getRequeteEntiteById(etape.requeteId, topEntiteId);
       if (requete?.statutId === REQUETE_STATUT_TYPES.NOUVEAU) {
-        await updateStatusRequete(requeteEtape.requeteId, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+        await updateStatusRequete(etape.requeteId, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
       }
 
-      const updatedRequeteEtape = await updateRequeteEtapeStatut(id, {
-        statutId: body.statutId,
-      });
-
-      if (!updatedRequeteEtape) {
-        throwHTTPException404NotFound('RequeteEtape not found', {
-          res: c.res,
-          kind: ERROR_KIND.BUSINESS,
-        });
+      let updated: Awaited<ReturnType<typeof updateProcessingEtape>>;
+      try {
+        updated = await updateProcessingEtape(stepId, userId, body, logger);
+      } catch (err) {
+        if (err instanceof EtapeNotEditableError) {
+          throwHTTPException403Forbidden("Cette étape n'est pas modifiable.", {
+            res: c.res,
+            kind: ERROR_KIND.BUSINESS,
+          });
+        }
+        if (err instanceof FilesNotOwnedError) {
+          throwHTTPException403Forbidden('You are not allowed to add these files', {
+            res: c.res,
+            kind: ERROR_KIND.BUSINESS,
+          });
+        }
+        throw err;
       }
 
-      c.set('changelogId', updatedRequeteEtape.id);
-
-      logger.info(
-        {
-          requeteEtapeId: id,
-          oldStatutId: requeteEtape.statutId,
-          newStatutId: body.statutId,
-          userId,
-        },
-        'RequeteEtape statut updated successfully',
-      );
-
-      return c.json({ data: updatedRequeteEtape });
-    },
-  )
-
-  .patch(
-    '/:id/nom',
-    updateRequeteEtapeNomRoute,
-    zValidator('json', UpdateRequeteEtapeNomSchema),
-    requeteEtapesChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
-    async (c) => {
-      const logger = c.get('logger');
-      const { id } = c.req.param();
-      const body = c.req.valid('json');
-      const userId = c.get('userId');
-
-      const topEntiteId = c.get('topEntiteId');
-      if (!topEntiteId) {
-        throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
-          res: c.res,
-          kind: ERROR_KIND.BUSINESS,
-        });
-      }
-      const requeteEtape = await getRequeteEtapeById(id);
-
-      if (!requeteEtape) {
+      if (!updated) {
         throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
-      const hasAccessToReq = await hasAccessToRequete({
-        requeteId: requeteEtape.requeteId,
-        entiteId: topEntiteId,
-      });
 
-      if (!hasAccessToReq) {
-        throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
-          res: c.res,
-          kind: ERROR_KIND.BUSINESS,
-        });
-      }
-
-      if (topEntiteId !== requeteEtape.entiteId) {
-        throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
-          res: c.res,
-          kind: ERROR_KIND.BUSINESS,
-        });
-      }
-
-      const requete = await getRequeteEntiteById(requeteEtape.requeteId, topEntiteId);
-
-      if (requete?.statutId === REQUETE_STATUT_TYPES.NOUVEAU) {
-        await updateStatusRequete(requeteEtape.requeteId, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
-      }
-
-      const updatedRequeteEtape = await updateRequeteEtapeNom(id, {
-        nom: body.nom,
-      });
-
-      if (!updatedRequeteEtape) {
-        throwHTTPException404NotFound('RequeteEtape not found', {
-          res: c.res,
-          kind: ERROR_KIND.BUSINESS,
-        });
-      }
-
-      c.set('changelogId', updatedRequeteEtape.id);
-
-      logger.info(
-        {
-          requeteEtapeId: id,
-          oldNom: requeteEtape.nom,
-          newNom: body.nom,
-          userId,
-        },
-        'RequeteEtape nom updated successfully',
-      );
-
-      return c.json({ data: updatedRequeteEtape });
+      c.set('changelogId', stepId);
+      logger.info({ stepId, userId }, 'Processing step updated successfully');
+      return c.json({ data: updated });
     },
   )
-
-  .patch(
-    '/:id/date-realisation',
-    updateRequeteEtapeDateRealisationRoute,
-    zValidator('json', UpdateRequeteEtapeDateRealisationSchema),
-    requeteEtapesChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
-    async (c) => {
-      const logger = c.get('logger');
-      const { id } = c.req.param();
-      const body = c.req.valid('json');
-      const userId = c.get('userId');
-
-      const topEntiteId = c.get('topEntiteId');
-      if (!topEntiteId) {
-        throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
-          res: c.res,
-          kind: ERROR_KIND.BUSINESS,
-        });
-      }
-      const requeteEtape = await getRequeteEtapeById(id);
-
-      if (!requeteEtape) {
-        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
-      }
-      const hasAccessToReq = await hasAccessToRequete({
-        requeteId: requeteEtape.requeteId,
-        entiteId: topEntiteId,
+  .post('/:id/cloture-files', addClotureFilesRoute, zValidator('json', AddClotureFilesSchema), async (c) => {
+    const logger = c.get('logger');
+    const { id } = c.req.param();
+    const body = c.req.valid('json');
+    const userId = c.get('userId');
+    const topEntiteId = c.get('topEntiteId');
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to add files without topEntiteId.', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
+    }
 
-      if (!hasAccessToReq) {
-        throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
-          res: c.res,
-          kind: ERROR_KIND.BUSINESS,
-        });
-      }
+    const requeteEtape = await getRequeteEtapeById(id);
+    if (!requeteEtape) {
+      throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+    }
 
-      if (topEntiteId !== requeteEtape.entiteId) {
-        throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
-          res: c.res,
-          kind: ERROR_KIND.BUSINESS,
-        });
-      }
-
-      const updatedRequeteEtape = await updateRequeteEtapeDateRealisation(id, {
-        dateRealisation: body.dateRealisation,
+    if (topEntiteId !== requeteEtape.entiteId) {
+      throwHTTPException403Forbidden('You are not allowed to add files to this requete etape', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
+    }
 
-      if (!updatedRequeteEtape) {
-        throwHTTPException400BadRequest(
-          'La date de réalisation ne peut être renseignée que pour une étape manuelle au statut « Fait ».',
-          { res: c.res, kind: ERROR_KIND.BUSINESS },
-        );
+    const hasAccessToReq = await hasAccessToRequete({
+      requeteId: requeteEtape.requeteId,
+      entiteId: topEntiteId,
+    });
+
+    if (!hasAccessToReq) {
+      throwHTTPException403Forbidden('You are not allowed to add files to this requete etape', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
+    }
+
+    let updated: Awaited<ReturnType<typeof addClotureEtapeFiles>>;
+    try {
+      updated = await addClotureEtapeFiles(id, userId, topEntiteId, body.fileIds);
+    } catch (err) {
+      if (err instanceof EtapeNotEditableError) {
+        throwHTTPException403Forbidden('Cette étape ne permet pas l’ajout de fichiers.', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
       }
+      if (err instanceof FilesNotOwnedError) {
+        throwHTTPException403Forbidden('You are not allowed to add these files', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+      throw err;
+    }
 
-      c.set('changelogId', updatedRequeteEtape.id);
+    if (!updated) {
+      throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+    }
 
-      logger.info({ requeteEtapeId: id, userId }, 'RequeteEtape dateRealisation updated successfully');
+    logger.info(
+      { requeteEtapeId: id, userId, fileCount: body.fileIds.length },
+      'Closure files attached to requete etape',
+    );
 
-      return c.json({ data: updatedRequeteEtape });
-    },
-  )
-
+    return c.json({ data: updated });
+  })
   .delete(
     '/:id',
     deleteRequeteEtapeRoute,

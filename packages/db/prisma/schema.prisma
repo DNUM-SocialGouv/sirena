@@ -335,12 +335,12 @@ model Situation {
   lieuDeSurvenueId String         @unique
   lieuDeSurvenue   LieuDeSurvenue @relation("SituationLieu", fields: [lieuDeSurvenueId], references: [id], onDelete: Cascade)
 
-  misEnCauseId String
+  misEnCauseId String     @unique
   misEnCause   MisEnCause @relation(fields: [misEnCauseId], references: [id], onDelete: Cascade)
 
   faits Fait[]
 
-  demarchesEngageesId String
+  demarchesEngageesId String            @unique
   demarchesEngagees   DemarchesEngagees @relation(fields: [demarchesEngageesId], references: [id], onDelete: Cascade)
 
   domainesFonctionnelsId String?
@@ -540,8 +540,8 @@ model RequeteEtape {
   type        String  @default("MANUAL")
   estPartagee Boolean @default(false)
 
-  statutId String
-  statut   RequeteEtapeStatutEnum @relation(fields: [statutId], references: [id])
+  statutId String?
+  statut   RequeteEtapeStatutEnum? @relation(fields: [statutId], references: [id])
 
   dateRealisation DateTime?
 
@@ -553,6 +553,8 @@ model RequeteEtape {
   requeteEntite RequeteEntite @relation(fields: [requeteId, entiteId], references: [requeteId, entiteId])
 
   notes RequeteEtapeNote[]
+
+  uploadedFiles UploadedFile[]
 
   clotureReason RequeteClotureReasonEnum[]
 
@@ -581,8 +583,6 @@ model RequeteEtapeNote {
 
   authorId String?
   author   User?   @relation(fields: [authorId], references: [id])
-
-  uploadedFiles UploadedFile[]
 
   requeteEtapeId String
   requeteEtape   RequeteEtape @relation(fields: [requeteEtapeId], references: [id], onDelete: Cascade)
@@ -615,8 +615,8 @@ model UploadedFile {
   uploadedById String?
   uploadedBy   User?   @relation(fields: [uploadedById], references: [id])
 
-  requeteEtapeNoteId String?
-  requeteEtapeNote   RequeteEtapeNote? @relation(fields: [requeteEtapeNoteId], references: [id], onDelete: Cascade)
+  requeteEtapeId String?
+  requeteEtape   RequeteEtape? @relation(fields: [requeteEtapeId], references: [id], onDelete: Cascade)
 
   requeteId String?
   Requete   Requete? @relation(fields: [requeteId], references: [id], onDelete: Cascade)
@@ -631,6 +631,7 @@ model UploadedFile {
   updatedAt DateTime @updatedAt
 
   @@index([entiteId])
+  @@index([requeteEtapeId])
 }
 
 model ChangeLog {

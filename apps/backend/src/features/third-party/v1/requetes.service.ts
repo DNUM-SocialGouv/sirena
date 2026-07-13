@@ -300,7 +300,6 @@ export const addAttachmentToRequete = async (
         },
         entiteId: null,
         uploadedById: null,
-        requeteEtapeNoteId: null,
         requeteId: requete.id,
         demarchesEngageesId: null,
         faitSituationId: null,

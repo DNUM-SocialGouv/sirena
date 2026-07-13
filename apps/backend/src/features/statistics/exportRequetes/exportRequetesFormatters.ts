@@ -1,3 +1,15 @@
+export function deriveDepartmentCodeFromPostalCode(codePostal: string): string {
+  if (!/^\d{5}$/.test(codePostal)) {
+    return '';
+  }
+
+  if (codePostal.startsWith('97') || codePostal.startsWith('98')) {
+    return codePostal.slice(0, 3);
+  }
+
+  return codePostal.slice(0, 2);
+}
+
 export function formatExportDate(date: Date | null | undefined): string {
   if (!date) {
     return '';
