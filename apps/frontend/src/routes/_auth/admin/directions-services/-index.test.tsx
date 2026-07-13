@@ -16,6 +16,11 @@ const { authGuardSpy, redirectSpy } = vi.hoisted(() => ({
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => options,
+  Link: ({ children, className, to }: { children: React.ReactNode; className?: string; to: string }) => (
+    <a className={className} href={to}>
+      {children}
+    </a>
+  ),
   redirect: redirectSpy,
 }));
 
@@ -78,7 +83,7 @@ describe('Admin directions and services route', () => {
       screen.getByRole('heading', { level: 2, name: 'Directions et services (ARS Normandie)' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent(
-      /Direction désigne le premier niveau de votre organisation et Service désigne le second niveau/,
+      /direction” désigne le premier niveau de votre organisation et “service” désigne le second niveau/,
     );
     expect(document.title).toBe('Directions et services (ARS Normandie) - Espace administrateur - SIRENA');
   });
@@ -126,22 +131,25 @@ describe('Admin directions and services route', () => {
     expect(screen.queryByRole('button', { name: 'Ajouter un service' })).not.toBeInTheDocument();
   });
 
-  it('shows add direction and add service controls from backend capabilities', () => {
+  it('links to Direction creation when backend capabilities allow Direction creation', () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
     vi.mocked(useDirectionsServicesList).mockReturnValue({
       data: {
         data: [],
         capabilities: {
           canCreateDirection: true,
-          canCreateService: true,
+          canCreateService: false,
         },
       },
     } as never);
 
     render(<RouteComponent />);
 
-    expect(screen.getByRole('button', { name: 'Ajouter une direction' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Ajouter un service' })).toBeDisabled();
+    expect(screen.getByRole('link', { name: 'Ajouter une direction' })).toHaveAttribute(
+      'href',
+      '/admin/directions-services/directions/create',
+    );
+    expect(screen.queryByRole('button', { name: 'Ajouter un service' })).not.toBeInTheDocument();
   });
 
   it('passes trimmed search to the directions and services list hook', async () => {

@@ -3,7 +3,7 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { TableSearchBar } from '@/components/common/tables/TableSearchBar';
 import { useDirectionsServicesList } from '@/hooks/queries/entites.hook';
@@ -131,9 +131,9 @@ export function RouteComponent() {
         >
           {canCreateDirection ? (
             <div className="fr-col-auto">
-              <Button type="button" disabled>
+              <Link className="fr-btn" to="/admin/directions-services/directions/create">
                 Ajouter une direction
-              </Button>
+              </Link>
             </div>
           ) : null}
           {canCreateService ? (
