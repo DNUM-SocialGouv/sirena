@@ -2,7 +2,7 @@ import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
 import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
-import { optionalEmailSchema } from '@sirena/common/schemas';
+import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { z } from 'zod';
@@ -18,7 +18,7 @@ const CreateDirectionFormSchema = z.object({
   label: z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
   email: optionalEmailSchema,
   emailContactUsager: optionalEmailSchema,
-  telContactUsager: z.string(),
+  telContactUsager: optionalPhoneSchema,
   adresseContactUsager: z.string(),
 });
 
@@ -187,7 +187,9 @@ export function RouteComponent() {
                 <Input
                   className="fr-fieldset__content"
                   label="Numéro de téléphone"
-                  hintText="Format attendu : 10 chiffres ou +31XXXXXXXXXX (international)"
+                  hintText="Format attendu : 10 chiffres ou +33XXXXXXXXXX (international)"
+                  state={validationErrors.telContactUsager ? 'error' : 'default'}
+                  stateRelatedMessage={validationErrors.telContactUsager}
                   nativeInputProps={{
                     name: 'telContactUsager',
                     type: 'tel',

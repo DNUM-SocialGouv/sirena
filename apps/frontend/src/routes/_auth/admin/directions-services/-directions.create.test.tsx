@@ -138,4 +138,21 @@ describe('Admin local Direction create route', () => {
       screen.getByText('L’adresse e-mail est invalide. Merci de saisir une adresse au format prenom.nom@exemple.com.'),
     ).toBeInTheDocument();
   });
+
+  it('shows the shared phone-format error for an invalid contact phone number', async () => {
+    const user = userEvent.setup();
+    render(<RouteComponent />);
+
+    await user.type(
+      screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ }),
+      'Direction Autonomie',
+    );
+    await user.type(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ }), 'DA');
+    await user.type(screen.getByRole('textbox', { name: /Numéro de téléphone/ }), '123');
+    await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
+
+    expect(
+      screen.getByText('Le numéro de téléphone doit être au format national ou international (+33XXXXXXXXXX)'),
+    ).toBeInTheDocument();
+  });
 });
