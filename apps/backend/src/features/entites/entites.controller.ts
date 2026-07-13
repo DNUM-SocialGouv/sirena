@@ -13,6 +13,7 @@ import {
   createChildEntiteAdminRoute,
   createDirectionAdminLocalRoute,
   editEntiteAdminRoute,
+  getDirectionServiceAdminLocalRoute,
   getDirectionsServicesListRoute,
   getEntiteByIdAdminRoute,
   getEntiteChainRoute,
@@ -31,6 +32,7 @@ import {
   createChildEntiteAdmin,
   createDirectionAdminLocal,
   editEntiteAdmin,
+  getDirectionServiceAdminLocal,
   getDirectionsServicesList,
   getEditableEntitiesChain,
   getEntiteById,
@@ -136,6 +138,27 @@ const app = factoryWithLogs
       logger.info({ rowsCount: result.data.length }, 'Local directions and services list retrieved successfully');
 
       return c.json(result);
+    },
+  )
+
+  .get(
+    '/admin/directions-services/:id',
+    roleMiddleware([ROLES.ENTITY_ADMIN]),
+    adminLocalDirectionsServicesFeatureFlagMiddleware,
+    getDirectionServiceAdminLocalRoute,
+    async (c) => {
+      const assignedEntiteId = c.get('assignedEntiteId');
+      const targetEntiteId = c.req.param('id');
+      const logger = c.get('logger');
+
+      const entite = assignedEntiteId ? await getDirectionServiceAdminLocal(assignedEntiteId, targetEntiteId) : null;
+
+      if (!entite) {
+        logger.warn({ assignedEntiteId, targetEntiteId }, 'Local Direction or Service edit target not found');
+        throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+      }
+
+      return c.json({ data: entite });
     },
   )
 

@@ -10,6 +10,7 @@ import EntitesController from './entites.controller.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import {
   createDirectionAdminLocal,
+  getDirectionServiceAdminLocal,
   getDirectionsServicesList,
   getEditableEntitiesChain,
   getEntiteById,
@@ -27,6 +28,7 @@ vi.mock('./entites.service.js', () => ({
   getEntiteById: vi.fn(),
   getEntitesListAdmin: vi.fn(),
   getDirectionsServicesList: vi.fn(),
+  getDirectionServiceAdminLocal: vi.fn(),
   getRootEntitesListAdmin: vi.fn(),
   getEditableEntitiesChain: vi.fn(),
   editEntiteAdmin: editEntiteAdminSpy,
@@ -300,6 +302,40 @@ describe('Entites endpoints: /entites', () => {
 
       expect(res.status).toBe(200);
       expect(getDirectionsServicesList).toHaveBeenCalledWith('dir-autonomie', { search: 'autonomie' });
+    });
+  });
+
+  describe('GET /admin/directions-services/:id', () => {
+    it('returns an authorized local edit target and hides a denied target', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      vi.mocked(getDirectionServiceAdminLocal)
+        .mockResolvedValueOnce({
+          id: 'service-pa',
+          kind: 'service',
+          nomComplet: 'Service PA',
+          label: 'PA',
+          email: 'service-pa@ars.fr',
+          isActive: false,
+        })
+        .mockResolvedValueOnce(null);
+
+      const authorizedRes = await app.request('/admin/directions-services/service-pa');
+      const deniedRes = await app.request('/admin/directions-services/service-outside');
+
+      expect(authorizedRes.status).toBe(200);
+      expect(await authorizedRes.json()).toEqual({
+        data: {
+          id: 'service-pa',
+          kind: 'service',
+          nomComplet: 'Service PA',
+          label: 'PA',
+          email: 'service-pa@ars.fr',
+          isActive: false,
+        },
+      });
+      expect(deniedRes.status).toBe(404);
+      expect(getDirectionServiceAdminLocal).toHaveBeenNthCalledWith(1, 'dir-autonomie', 'service-pa');
+      expect(getDirectionServiceAdminLocal).toHaveBeenNthCalledWith(2, 'dir-autonomie', 'service-outside');
     });
   });
 

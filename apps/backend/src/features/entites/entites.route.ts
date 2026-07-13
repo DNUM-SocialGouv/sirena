@@ -10,6 +10,7 @@ import {
   CreateChildEntiteAdminResponseSchema,
   CreateDirectionAdminLocalResponseSchema,
   EditEntiteAdminResponseSchema,
+  GetDirectionServiceAdminLocalResponseSchema,
   GetDirectionsServicesListResponseSchema,
   GetEntitesByIdAdminResponseSchema,
   GetEntitesListAdminResponseSchema,
@@ -43,6 +44,14 @@ export const getDirectionsServicesListRoute = openApiProtectedRoute({
   description: 'Get local directions and services list for entity admins',
   responses: {
     ...openApiRawResponse(GetDirectionsServicesListResponseSchema),
+  },
+});
+
+export const getDirectionServiceAdminLocalRoute = openApiProtectedRoute({
+  description: 'Get an authorized Direction or Service for local entity admin editing',
+  responses: {
+    ...openApiResponse(GetDirectionServiceAdminLocalResponseSchema),
+    ...openApi404NotFound('Entite not found'),
   },
 });
 

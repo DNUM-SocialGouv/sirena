@@ -103,6 +103,15 @@ export const GetEntitesListAdminResponseSchema = z.array(
   }),
 );
 
+export const GetDirectionServiceAdminLocalResponseSchema = z.object({
+  id: z.string(),
+  kind: z.enum(['direction', 'service']),
+  nomComplet: z.string(),
+  label: z.string(),
+  email: z.string(),
+  isActive: z.boolean(),
+});
+
 export const GetDirectionsServicesListResponseSchema = z.object({
   data: z.array(
     z.object({

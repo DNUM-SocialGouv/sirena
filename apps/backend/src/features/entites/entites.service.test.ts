@@ -5,6 +5,7 @@ import {
   createChildEntiteAdmin,
   createDirectionAdminLocal,
   editEntiteAdmin,
+  getDirectionServiceAdminLocal,
   getDirectionsFromRequeteEntiteId,
   getDirectionsServicesFromRequeteEntiteId,
   getDirectionsServicesList,
@@ -1176,6 +1177,87 @@ describe('getRootEntitesListAdmin()', () => {
       orderBy: [{ entiteTypeId: 'asc' }, { nomComplet: 'asc' }],
     });
     expect(result).toEqual([{ id: 'root-ars', nomComplet: 'ARS Normandie', label: 'ARS NOR' }]);
+  });
+});
+
+describe('getDirectionServiceAdminLocal()', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it('returns a descendant Direction visible edit fields for an Entité administrative assignment', async () => {
+    vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
+      {
+        ...fakeEntite('root-ars'),
+        nomComplet: 'ARS Normandie',
+        entiteMereId: null,
+      },
+      {
+        ...fakeEntite('dir-autonomie'),
+        nomComplet: 'Direction Autonomie',
+        label: 'DA',
+        email: 'direction-autonomie@ars.fr',
+        entiteMereId: 'root-ars',
+        isActive: false,
+      },
+    ]);
+
+    await expect(getDirectionServiceAdminLocal('root-ars', 'dir-autonomie')).resolves.toEqual({
+      id: 'dir-autonomie',
+      kind: 'direction',
+      nomComplet: 'Direction Autonomie',
+      label: 'DA',
+      email: 'direction-autonomie@ars.fr',
+      isActive: false,
+    });
+  });
+
+  it('returns a descendant Service visible edit fields for an Entité administrative assignment', async () => {
+    vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
+      { ...fakeEntite('root-ars'), entiteMereId: null },
+      { ...fakeEntite('dir-autonomie'), entiteMereId: 'root-ars' },
+      {
+        ...fakeEntite('service-pa'),
+        nomComplet: 'Service PA',
+        label: 'PA',
+        email: 'service-pa@ars.fr',
+        entiteMereId: 'dir-autonomie',
+        isActive: true,
+      },
+    ]);
+
+    await expect(getDirectionServiceAdminLocal('root-ars', 'service-pa')).resolves.toEqual({
+      id: 'service-pa',
+      kind: 'service',
+      nomComplet: 'Service PA',
+      label: 'PA',
+      email: 'service-pa@ars.fr',
+      isActive: true,
+    });
+  });
+
+  it('returns a descendant Service visible edit fields for a Direction assignment', async () => {
+    vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
+      { ...fakeEntite('root-ars'), entiteMereId: null },
+      { ...fakeEntite('dir-autonomie'), entiteMereId: 'root-ars' },
+      {
+        ...fakeEntite('service-pa'),
+        nomComplet: 'Service PA',
+        label: 'PA',
+        email: 'service-pa@ars.fr',
+        entiteMereId: 'dir-autonomie',
+        isActive: false,
+      },
+    ]);
+
+    await expect(getDirectionServiceAdminLocal('dir-autonomie', 'service-pa')).resolves.toEqual({
+      id: 'service-pa',
+      kind: 'service',
+      nomComplet: 'Service PA',
+      label: 'PA',
+      email: 'service-pa@ars.fr',
+      isActive: false,
+    });
   });
 });
 

@@ -177,6 +177,52 @@ export const getRootEntitesListAdmin = async () =>
     orderBy: [{ entiteTypeId: 'asc' }, { nomComplet: 'asc' }],
   });
 
+export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, targetEntiteId: string) => {
+  const entites = await prisma.entite.findMany({
+    select: {
+      id: true,
+      nomComplet: true,
+      label: true,
+      email: true,
+      entiteMereId: true,
+      isActive: true,
+    },
+  });
+  const assignedEntite = entites.find((entite) => entite.id === assignedEntiteId);
+  const assignedParent = entites.find((entite) => entite.id === assignedEntite?.entiteMereId);
+  const targetEntite = entites.find((entite) => entite.id === targetEntiteId);
+  const targetParent = entites.find((entite) => entite.id === targetEntite?.entiteMereId);
+
+  if (!assignedEntite || !targetEntite) {
+    return null;
+  }
+
+  const isAssignedToEntiteAdministrative = assignedEntite.entiteMereId === null;
+  const isAssignedToDirection = assignedParent?.entiteMereId === null;
+  const kind = isAssignedToEntiteAdministrative
+    ? targetEntite.entiteMereId === assignedEntite.id
+      ? ('direction' as const)
+      : targetParent?.entiteMereId === assignedEntite.id
+        ? ('service' as const)
+        : null
+    : isAssignedToDirection && targetEntite.entiteMereId === assignedEntite.id
+      ? ('service' as const)
+      : null;
+
+  if (!kind) {
+    return null;
+  }
+
+  return {
+    id: targetEntite.id,
+    kind,
+    nomComplet: targetEntite.nomComplet,
+    label: targetEntite.label,
+    email: targetEntite.email,
+    isActive: targetEntite.isActive,
+  };
+};
+
 export const getDirectionsServicesList = async (
   entiteAdminLocalId: string,
   { search = '' }: { search?: string } = {},
