@@ -54,7 +54,7 @@ describe('Admin local Direction create route', () => {
     expect(fetchResolvedFeatureFlags).not.toHaveBeenCalled();
   });
 
-  it('renders the Direction-specific creation title and local return link', () => {
+  it('renders the local Direction creation form sections from the mockup', () => {
     render(<RouteComponent />);
 
     expect(screen.getByRole('heading', { level: 2, name: 'Créer une direction' })).toBeInTheDocument();
@@ -62,6 +62,17 @@ describe('Admin local Direction create route', () => {
       'href',
       '/admin/directions-services',
     );
+    expect(screen.getByRole('group', { name: 'Informations utilisées dans SIRENA' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /Adresse e-mail de notification/ })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Informations de contact pour l’usager' })).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(/l’adresse e-mail de notification sera transmise au déclarant/);
+    expect(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /Numéro de téléphone/ })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /Adresse postale/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Annuler' })).toHaveAttribute('href', '/admin/directions-services');
+    expect(screen.getByRole('button', { name: 'Ajouter la direction' })).toBeInTheDocument();
     expect(document.title).toBe('Créer une direction - Directions et services - SIRENA');
   });
 });
