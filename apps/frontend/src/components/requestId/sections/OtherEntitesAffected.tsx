@@ -22,15 +22,15 @@ export const OtherEntitiesAffected = () => {
     <div>
       <h2 className="fr-text--lg fr-mb-2w fr-text--bold">Autres entités affectées</h2>
       {hasOtherEntitiesAffected ? (
-        <div className={styles['other-entities-affected-container']}>
+        <ul className={styles['other-entities-affected-container']}>
           {otherEntites.map((entity) => (
-            <div className={styles['other-entities-affected']} key={entity.id}>
+            <li className={styles['other-entities-affected']} key={entity.id}>
               {!!entity && (
                 <EntiteTag label={entity.nomComplet} entiteTypeId={entity.entiteTypeId} statut={entity.statutId} />
               )}
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       ) : (
         <p className="fr-text--sm">Aucune autre entité affectée</p>
       )}

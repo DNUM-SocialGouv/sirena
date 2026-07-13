@@ -1,8 +1,9 @@
 .other-entities-affected-container {
-  margin-top: 1rem;
+  margin: 1rem 0 0;
   border: 1px solid var(--light-decisions-border-border-default, #e5e5e5);
   border-radius: 1px;
   padding: 1rem;
+  list-style: none;
 }
 
 .other-entities-affected:not(:last-child) {
