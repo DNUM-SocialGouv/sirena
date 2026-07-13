@@ -1,7 +1,8 @@
 import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useCreateDirectionAdminLocal } from '@/hooks/queries/entites.hook';
 import { fetchResolvedFeatureFlags } from '@/lib/api/fetchFeatureFlags';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { queryClient } from '@/lib/queryClient';
@@ -18,6 +19,10 @@ vi.mock('@tanstack/react-router', () => ({
   redirect: redirectSpy,
 }));
 
+vi.mock('@/hooks/queries/entites.hook', () => ({
+  useCreateDirectionAdminLocal: vi.fn(),
+}));
+
 vi.mock('@/lib/api/fetchFeatureFlags', () => ({
   fetchResolvedFeatureFlags: vi.fn(),
 }));
@@ -31,6 +36,13 @@ vi.mock('@/lib/queryClient', () => ({
 vi.mock('@/lib/auth-guards', () => ({
   requireAuthAndRoles: vi.fn(() => authGuardSpy),
 }));
+
+beforeEach(() => {
+  vi.mocked(useCreateDirectionAdminLocal).mockReturnValue({
+    mutateAsync: vi.fn().mockResolvedValue({ id: 'dir-autonomie' }),
+    isPending: false,
+  } as never);
+});
 
 afterEach(() => {
   cleanup();
@@ -154,5 +166,30 @@ describe('Admin local Direction create route', () => {
     expect(
       screen.getByText('Le numéro de téléphone doit être au format national ou international (+33XXXXXXXXXX)'),
     ).toBeInTheDocument();
+  });
+
+  it('submits the valid Direction fields to the local create mutation', async () => {
+    const user = userEvent.setup();
+    const mutateAsync = vi.fn().mockResolvedValue({ id: 'dir-autonomie' });
+    vi.mocked(useCreateDirectionAdminLocal).mockReturnValue({ mutateAsync, isPending: false } as never);
+    render(<RouteComponent />);
+
+    await user.type(
+      screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ }),
+      'Direction Autonomie',
+    );
+    await user.type(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ }), 'DA');
+    await user.type(
+      screen.getByRole('textbox', { name: /Adresse e-mail de notification/ }),
+      'reclamations@direction.fr',
+    );
+    await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
+
+    expect(mutateAsync).toHaveBeenCalledWith({
+      nomComplet: 'Direction Autonomie',
+      label: 'DA',
+      email: 'reclamations@direction.fr',
+      isActive: true,
+    });
   });
 });

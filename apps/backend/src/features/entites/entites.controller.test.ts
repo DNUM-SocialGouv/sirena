@@ -332,14 +332,14 @@ describe('Entites endpoints: /entites', () => {
         nomComplet: 'Direction Autonomie',
         label: 'DA',
         email: 'direction-autonomie@ars.fr',
+        emailContactUsager: 'contact-usager@direction.fr',
+        adresseContactUsager: '1 rue de la République, 75000 Paris',
+        telContactUsager: '0102030405',
         isActive: false,
       };
       vi.mocked(createDirectionAdminLocal).mockResolvedValueOnce({
         id: 'dir-autonomie',
         ...createDirectionPayload,
-        emailContactUsager: '',
-        adresseContactUsager: '',
-        telContactUsager: '',
       });
 
       const res = await app.request('/admin/directions-services/directions', {
@@ -355,9 +355,6 @@ describe('Entites endpoints: /entites', () => {
         data: {
           id: 'dir-autonomie',
           ...createDirectionPayload,
-          emailContactUsager: '',
-          adresseContactUsager: '',
-          telContactUsager: '',
         },
       });
       expect(createDirectionAdminLocal).toHaveBeenCalledWith('dir-autonomie', createDirectionPayload);
@@ -386,7 +383,12 @@ describe('Entites endpoints: /entites', () => {
         message: 'Child entite creation is not allowed for this parent',
         cause: { kind: ERROR_KIND.BUSINESS },
       });
-      expect(createDirectionAdminLocal).toHaveBeenCalledWith('dir-autonomie', createDirectionPayload);
+      expect(createDirectionAdminLocal).toHaveBeenCalledWith('dir-autonomie', {
+        ...createDirectionPayload,
+        emailContactUsager: '',
+        adresseContactUsager: '',
+        telContactUsager: '',
+      });
     });
 
     it('returns 400 without calling the service when no assigned entity is available', async () => {

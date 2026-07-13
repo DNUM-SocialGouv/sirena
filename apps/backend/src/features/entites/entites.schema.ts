@@ -150,10 +150,10 @@ export const CreateChildEntiteAdminResponseSchema = CreateChildEntiteAdminInputS
   id: z.string(),
 });
 
-export const CreateDirectionAdminLocalInputSchema = CreateChildEntiteAdminInputSchema.omit({
-  emailContactUsager: true,
-  adresseContactUsager: true,
-  telContactUsager: true,
+export const CreateDirectionAdminLocalInputSchema = CreateChildEntiteAdminInputSchema.extend({
+  emailContactUsager: z.string().default(''),
+  adresseContactUsager: z.string().default(''),
+  telContactUsager: z.string().default(''),
 });
 
 export const CreateDirectionAdminLocalResponseSchema = CreateChildEntiteAdminResponseSchema;

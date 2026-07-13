@@ -6,6 +6,7 @@ import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { z } from 'zod';
+import { useCreateDirectionAdminLocal } from '@/hooks/queries/entites.hook';
 import { fetchResolvedFeatureFlags } from '@/lib/api/fetchFeatureFlags';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { queryClient } from '@/lib/queryClient';
@@ -46,6 +47,7 @@ export function RouteComponent() {
     telContactUsager: '',
     adresseContactUsager: '',
   });
+  const createDirectionAdminLocal = useCreateDirectionAdminLocal();
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
@@ -80,7 +82,7 @@ export function RouteComponent() {
       });
     };
 
-  const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setHasSubmitted(true);
 
@@ -96,6 +98,13 @@ export function RouteComponent() {
     }
 
     setValidationErrors({});
+
+    await createDirectionAdminLocal.mutateAsync({
+      nomComplet: result.data.nomComplet,
+      label: result.data.label,
+      email: result.data.email ?? '',
+      isActive: true,
+    });
   };
 
   return (
@@ -220,7 +229,9 @@ export function RouteComponent() {
             <Link className="fr-btn fr-btn--secondary" to="/admin/directions-services">
               Annuler
             </Link>
-            <Button type="submit">Ajouter la direction</Button>
+            <Button type="submit" disabled={createDirectionAdminLocal.isPending}>
+              Ajouter la direction
+            </Button>
           </div>
         </form>
       </div>
