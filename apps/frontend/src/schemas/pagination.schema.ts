@@ -1,3 +1,4 @@
+import { REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
 import { z } from 'zod';
 
 export const QueryParamsSchema = z.object({
@@ -10,7 +11,9 @@ export const QueryParamsSchema = z.object({
   departementCodes: z.string().optional(),
   domaineIds: z.string().optional(),
   statutIds: z.string().optional(),
-  prioriteId: z.string().optional(),
+  prioriteId: z
+    .enum([REQUETE_PRIORITE_TYPES.BASSE, REQUETE_PRIORITE_TYPES.MOYENNE, REQUETE_PRIORITE_TYPES.HAUTE])
+    .optional(),
   rootEntiteIds: z.string().optional(),
 });
 
