@@ -53,9 +53,11 @@ function formatValue(value: unknown): string {
 }
 
 function getScalarValue(card: StatisticsCard): unknown | undefined {
-  const { cols, rows } = card.data;
+  const { cols, rows } = card.data ?? {};
+  if (!Array.isArray(cols) || !Array.isArray(rows)) return undefined;
   if (cols.length !== 1 || rows.length !== 1) return undefined;
   const [row] = rows;
+  if (!Array.isArray(row)) return undefined;
   const [value] = row;
   return value;
 }
@@ -177,15 +179,16 @@ export function RouteComponent() {
       </p>
       <QueryStateHandler query={query} noDataComponent={<p>Aucune carte configurée dans le dashboard Metabase.</p>}>
         {({ data }) => {
-          if (data.cards.length === 0) {
+          const cards = Array.isArray(data.cards) ? data.cards : [];
+          if (cards.length === 0) {
             return <p>Aucune carte configurée dans le dashboard Metabase.</p>;
           }
 
-          const cards = [...data.cards].sort(byGridPosition);
+          const sortedCards = [...cards].sort(byGridPosition);
 
           return (
             <div className={styles['mb-grid']}>
-              {cards.map((card) => (
+              {sortedCards.map((card) => (
                 <section key={`${card.dashcardId}-${card.id}`} className={styles['mb-cell']} style={cellStyle(card)}>
                   <CardContent card={card} />
                 </section>

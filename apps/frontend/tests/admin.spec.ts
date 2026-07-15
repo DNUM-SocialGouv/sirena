@@ -58,7 +58,7 @@ test.describe('Admin Feature', () => {
     page = await context.newPage();
 
     await page.goto(`${baseUrl}/admin/users`);
-    await expect(page.getByText("Demande d'habilitation en attente")).toBeVisible();
+    await expect(page.getByRole('heading', { name: "Demande d'habilitation en attente", level: 2 })).toBeVisible();
   });
 
   test.afterEach(async () => {
@@ -69,7 +69,7 @@ test.describe('Admin Feature', () => {
 
   test('should display admin users page with tabs', async () => {
     const heading = page.getByRole('heading', {
-      name: 'Gestion des utilisateurs et des habilitations',
+      name: 'Espace administrateur',
       level: 1,
     });
     await expect(heading).toBeVisible();
@@ -91,7 +91,7 @@ test.describe('Admin Feature', () => {
     const pendingTable = page.getByRole('table');
     await expect(pendingTable).toBeVisible();
 
-    const tableCaption = page.getByText("Demande d'habilitation en attente");
+    const tableCaption = page.getByRole('heading', { name: "Demande d'habilitation en attente", level: 2 });
     await expect(tableCaption).toBeVisible();
   });
 
@@ -106,7 +106,7 @@ test.describe('Admin Feature', () => {
     const allUsersTable = page.getByRole('table');
     await expect(allUsersTable).toBeVisible();
 
-    const tableCaption = page.getByText('Liste des utilisateurs');
+    const tableCaption = page.getByRole('heading', { name: 'Liste des utilisateurs', level: 2 });
     await expect(tableCaption).toBeVisible();
   });
 
@@ -131,7 +131,7 @@ test.describe('Admin Feature', () => {
     const oppositeStatus = currentStatus === 'ACTIF' ? 'INACTIF' : 'ACTIF';
 
     await statutSelect.selectOption(oppositeStatus);
-    await page.getByRole('button', { name: 'Valider' }).click();
+    await page.getByRole('button', { name: /Modifier les informations de l.utilisateur/ }).click();
     await expect(page).toHaveURL(`${baseUrl}/admin/users/all`);
 
     const [userResponse] = await Promise.all([
@@ -158,7 +158,7 @@ test.describe('Admin Feature', () => {
 
     // PART 1: Set to opposite role
     await roleSelect.selectOption(oppositeRole);
-    await page.getByRole('button', { name: 'Valider' }).click();
+    await page.getByRole('button', { name: /Modifier les informations de l.utilisateur/ }).click();
     await expect(page).toHaveURL(`${baseUrl}/admin/users/all`);
 
     const [responseAfterChange] = await Promise.all([
@@ -184,7 +184,7 @@ test.describe('Admin Feature', () => {
       await statutSelect.selectOption('ACTIF');
     }
 
-    await page.getByRole('button', { name: 'Valider' }).click();
+    await page.getByRole('button', { name: /Modifier les informations de l.utilisateur/ }).click();
     await expect(page).toHaveURL(`${baseUrl}/admin/users/all`);
 
     const [responseAfterReset] = await Promise.all([

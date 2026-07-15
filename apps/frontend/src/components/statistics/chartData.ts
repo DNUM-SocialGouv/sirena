@@ -47,7 +47,10 @@ const PERCENT_SEMANTIC_TYPE = 'type/Percentage';
 const isPercentByName = (col: MetabaseColumn): boolean =>
   /%|pourcent/i.test(col.display_name) || /%|pourcent/i.test(col.name);
 
-export const parseCard = ({ cols, rows }: CardData): ParsedCard | null => {
+export const parseCard = (data: CardData | undefined | null): ParsedCard | null => {
+  if (!data) return null;
+  const { cols, rows } = data;
+  if (!Array.isArray(cols) || !Array.isArray(rows)) return null;
   if (cols.length < 2 || rows.length === 0) return null;
 
   const percentColumn =
