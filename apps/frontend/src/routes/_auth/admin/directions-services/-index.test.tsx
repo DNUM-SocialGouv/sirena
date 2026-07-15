@@ -112,8 +112,8 @@ describe('Admin directions and services route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.queryByRole('button', { name: 'Ajouter une direction' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Ajouter un service' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Ajouter une direction' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Ajouter un service' })).not.toBeInTheDocument();
   });
 
   it('hides add service when backend capabilities disallow it for a Direction-level affectation', () => {
@@ -137,8 +137,8 @@ describe('Admin directions and services route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.queryByRole('button', { name: 'Ajouter une direction' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Ajouter un service' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Ajouter une direction' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Ajouter un service' })).not.toBeInTheDocument();
   });
 
   it('hides Service creation for a root-level affectation without an available Direction', () => {
@@ -181,7 +181,7 @@ describe('Admin directions and services route', () => {
       'href',
       '/admin/directions-services/directions/create',
     );
-    expect(screen.queryByRole('button', { name: 'Ajouter un service' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Ajouter un service' })).not.toBeInTheDocument();
   });
 
   it('links to Service creation when a Direction-level affectation can create Services', () => {
@@ -323,6 +323,48 @@ describe('Admin directions and services route', () => {
     ).toHaveAttribute('href', '/admin/directions-services/service-pa/edit');
   });
 
+  it('gives each available edit action a unique accessible name', () => {
+    vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
+      data: {
+        data: [
+          {
+            id: 'dir-autonomie',
+            directionNom: 'Direction Autonomie',
+            directionLabel: 'DA',
+            serviceNom: '',
+            serviceLabel: '',
+            email: 'direction-autonomie@ars.fr',
+            editId: 'dir-autonomie',
+            canEdit: true,
+          },
+          {
+            id: 'service-pa',
+            directionNom: 'Direction Autonomie',
+            directionLabel: 'DA',
+            serviceNom: 'Service PA',
+            serviceLabel: 'PA',
+            email: 'service-pa@ars.fr',
+            editId: 'service-pa',
+            canEdit: true,
+          },
+        ],
+      },
+    } as never);
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('link', { name: 'Modifier la direction Direction Autonomie' })).toHaveAttribute(
+      'href',
+      '/admin/directions-services/dir-autonomie/edit',
+    );
+    expect(
+      screen.getByRole('link', {
+        name: 'Modifier le service Service PA de la direction Direction Autonomie',
+      }),
+    ).toHaveAttribute('href', '/admin/directions-services/service-pa/edit');
+  });
+
   it('hides row edit action when backend row capability disallows edit', () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
     vi.mocked(useDirectionsServicesList).mockReturnValue({
@@ -344,7 +386,7 @@ describe('Admin directions and services route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.queryByRole('button', { name: 'Modifier la direction Direction Test' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Modifier la direction Direction Test' })).not.toBeInTheDocument();
   });
 
   it('renders direction and service rows without global admin columns', () => {

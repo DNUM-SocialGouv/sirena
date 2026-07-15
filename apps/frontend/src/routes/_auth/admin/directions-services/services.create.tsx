@@ -73,19 +73,15 @@ export function RouteComponent() {
 
     const result = CreateServiceFormSchema.safeParse(formData);
 
+    const errors = result.success ? {} : zodIssuesToFieldErrors(result.error);
+
     if (requiresDirectionSelection && !formData.directionId) {
-      const errors = {
-        directionId: 'La Direction de rattachement est obligatoire. Veuillez sélectionner une Direction.',
-      };
-      setValidationErrors(errors);
-      document.querySelector<HTMLElement>('[name="directionId"]')?.focus();
-      return;
+      errors.directionId = 'Veuillez sélectionner la direction à laquelle rattacher le service.';
     }
 
-    if (!result.success) {
-      const errors = zodIssuesToFieldErrors(result.error);
+    const firstField = Object.keys(errors)[0];
+    if (firstField) {
       setValidationErrors(errors);
-      const firstField = Object.keys(errors)[0];
       document.querySelector<HTMLElement>(`[name="${firstField}"]`)?.focus();
       return;
     }
@@ -144,7 +140,7 @@ export function RouteComponent() {
             <fieldset className="fr-fieldset fr-mb-3w">
               <Select
                 className="fr-fieldset__content"
-                label="Direction de rattachement (obligatoire)"
+                label="Direction à laquelle rattacher le service (obligatoire)"
                 state={validationErrors.directionId ? 'error' : 'default'}
                 stateRelatedMessage={validationErrors.directionId}
                 nativeSelectProps={{

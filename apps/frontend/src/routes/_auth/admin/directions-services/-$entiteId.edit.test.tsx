@@ -110,7 +110,7 @@ it('validates and saves only visible local fields before returning to the list',
 
   expect(editMutateAsyncSpy).not.toHaveBeenCalled();
   expect(nameInput).toHaveFocus();
-  expect(screen.getByText(/Nom de la direction.*est vide/)).toBeInTheDocument();
+  expect(nameInput).toHaveAccessibleDescription('Le champ "Nom de la direction" est vide. Veuillez le renseigner.');
 
   await user.type(nameInput, 'Direction Autonomie et Handicap');
   await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
@@ -128,6 +128,31 @@ it('validates and saves only visible local fields before returning to the list',
   });
   expect(addToastSpy).toHaveBeenCalledWith(expect.objectContaining({ title: 'Direction modifiée avec succès' }));
   expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services' });
+});
+
+it('renders a local Service edit form without contact-usager fields', () => {
+  vi.mocked(useDirectionServiceAdminLocal).mockReturnValue({
+    data: {
+      id: 'service-pa',
+      kind: 'service',
+      nomComplet: 'Service PA',
+      label: 'PA',
+      email: 'service-pa@ars.fr',
+      isActive: true,
+    },
+    isPending: false,
+    isError: false,
+  } as never);
+
+  render(<RouteComponent />);
+
+  expect(screen.getByRole('heading', { level: 2, name: 'Modifier le service Service PA' })).toBeInTheDocument();
+  expect(screen.getByRole('textbox', { name: /Nom du service \(obligatoire\)/ })).toHaveValue('Service PA');
+  expect(screen.queryByText(/contact pour l’usager/i)).not.toBeInTheDocument();
+  expect(screen.queryByRole('textbox', { name: /Adresse e-mail de contact/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole('textbox', { name: /Numéro de téléphone/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole('textbox', { name: /Adresse postale/ })).not.toBeInTheDocument();
+  expect(document.title).toBe('Modifier le service Service PA - Directions et services - SIRENA');
 });
 
 it('shows an error and stays on the edit form when saving fails', async () => {
