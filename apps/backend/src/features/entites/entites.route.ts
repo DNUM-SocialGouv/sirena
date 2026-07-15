@@ -9,6 +9,7 @@ import {
 import {
   CreateChildEntiteAdminResponseSchema,
   CreateDirectionAdminLocalResponseSchema,
+  CreateServiceAdminLocalResponseSchema,
   EditEntiteAdminResponseSchema,
   GetDirectionServiceAdminLocalResponseSchema,
   GetDirectionsServicesListResponseSchema,
@@ -77,6 +78,14 @@ export const createDirectionAdminLocalRoute = openApiProtectedRoute({
     ...openApiResponse(CreateDirectionAdminLocalResponseSchema),
     ...openApi400BadRequest('Child entite creation is not allowed for this parent'),
     ...openApi404NotFound('Entite not found'),
+  },
+});
+
+export const createServiceAdminLocalRoute = openApiProtectedRoute({
+  description: 'Create Service for entity admins from local directions and services workflow',
+  responses: {
+    ...openApiResponse(CreateServiceAdminLocalResponseSchema),
+    ...openApi400BadRequest('Child entite creation is not allowed for this parent'),
   },
 });
 

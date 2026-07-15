@@ -12,6 +12,7 @@ import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entite
 import {
   createChildEntiteAdminRoute,
   createDirectionAdminLocalRoute,
+  createServiceAdminLocalRoute,
   editDirectionServiceAdminLocalRoute,
   editEntiteAdminRoute,
   getDirectionServiceAdminLocalRoute,
@@ -25,6 +26,7 @@ import {
 import {
   CreateChildEntiteAdminInputSchema,
   CreateDirectionAdminLocalInputSchema,
+  CreateServiceAdminLocalInputSchema,
   EditDirectionServiceAdminLocalInputSchema,
   EditEntiteInputSchema,
   GetEntitesListAdminQuerySchema,
@@ -33,6 +35,7 @@ import {
 import {
   createChildEntiteAdmin,
   createDirectionAdminLocal,
+  createServiceAdminLocal,
   editDirectionServiceAdminLocal,
   editEntiteAdmin,
   getDirectionServiceAdminLocal,
@@ -221,6 +224,39 @@ const app = factoryWithLogs
             { entiteId: assignedEntiteId },
             'Local Direction creation is not allowed for this assigned entity',
           );
+          throwHTTPException400BadRequest('Child entite creation is not allowed for this parent', {
+            res: c.res,
+            kind: ERROR_KIND.BUSINESS,
+          });
+        }
+
+        throw error;
+      }
+    },
+  )
+
+  .post(
+    '/admin/directions-services/services',
+    roleMiddleware([ROLES.ENTITY_ADMIN]),
+    adminLocalDirectionsServicesFeatureFlagMiddleware,
+    zValidator('json', CreateServiceAdminLocalInputSchema),
+    createServiceAdminLocalRoute,
+    async (c) => {
+      const assignedEntiteId = c.get('assignedEntiteId');
+      const data = c.req.valid('json');
+
+      if (!assignedEntiteId) {
+        throwHTTPException400BadRequest('Assigned entite is required to create a Service', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+
+      try {
+        const entite = await createServiceAdminLocal(assignedEntiteId, data);
+        return c.json({ data: entite });
+      } catch (error) {
+        if (error instanceof EntiteChildCreationForbiddenError) {
           throwHTTPException400BadRequest('Child entite creation is not allowed for this parent', {
             res: c.res,
             kind: ERROR_KIND.BUSINESS,

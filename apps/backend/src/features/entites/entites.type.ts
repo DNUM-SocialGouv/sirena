@@ -1,3 +1,8 @@
+import type { z } from 'zod';
+import type { CreateChildEntiteAdminInputSchema } from './entites.schema.js';
+
+export type CreateChildEntiteAdminInput = z.infer<typeof CreateChildEntiteAdminInputSchema>;
+
 export type EntiteChain = {
   id: string;
   nomComplet: string;

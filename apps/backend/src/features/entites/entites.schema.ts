@@ -173,3 +173,12 @@ export const CreateDirectionAdminLocalInputSchema = CreateChildEntiteAdminInputS
 });
 
 export const CreateDirectionAdminLocalResponseSchema = CreateChildEntiteAdminResponseSchema;
+
+export const CreateServiceAdminLocalInputSchema = EditDirectionServiceAdminLocalInputSchema.transform((data) => ({
+  ...data,
+  emailContactUsager: '',
+  adresseContactUsager: '',
+  telContactUsager: '',
+}));
+
+export const CreateServiceAdminLocalResponseSchema = CreateChildEntiteAdminResponseSchema;

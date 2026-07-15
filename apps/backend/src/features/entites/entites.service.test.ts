@@ -4,6 +4,7 @@ import { EntiteChildCreationForbiddenError } from './entites.error.js';
 import {
   createChildEntiteAdmin,
   createDirectionAdminLocal,
+  createServiceAdminLocal,
   editDirectionServiceAdminLocal,
   editEntiteAdmin,
   getDirectionServiceAdminLocal,
@@ -1155,6 +1156,91 @@ describe('createDirectionAdminLocal()', () => {
       }),
     ).rejects.toBeInstanceOf(EntiteChildCreationForbiddenError);
 
+    expect(prisma.entite.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('createServiceAdminLocal()', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it('creates a Service under the assigned active Direction as its implicit parent', async () => {
+    vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
+      entiteTypeId: 'ARS',
+      departementCode: '14',
+      ctcdCode: '14118',
+      regionCode: '28',
+      regLib: 'Normandie',
+      dptLib: 'Calvados',
+      entiteMereId: 'root-ars',
+      entiteMere: { entiteMereId: null },
+      isActive: true,
+    } as never);
+    vi.mocked(prisma.entite.create).mockResolvedValueOnce({
+      id: 'service-autonomie',
+      nomComplet: 'Service Autonomie',
+      label: 'SA',
+      email: 'service-autonomie@ars.fr',
+      emailContactUsager: '',
+      adresseContactUsager: '',
+      telContactUsager: '',
+      isActive: true,
+    } as never);
+
+    await createServiceAdminLocal('dir-autonomie', {
+      nomComplet: 'Service Autonomie',
+      label: 'SA',
+      email: 'service-autonomie@ars.fr',
+      emailContactUsager: '',
+      adresseContactUsager: '',
+      telContactUsager: '',
+      isActive: true,
+    });
+
+    expect(prisma.entite.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ entiteMereId: 'dir-autonomie' }),
+      }),
+    );
+
+    vi.resetAllMocks();
+    vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
+      entiteMereId: 'root-ars',
+      entiteMere: { entiteMereId: null },
+      isActive: false,
+    } as never);
+
+    await expect(
+      createServiceAdminLocal('dir-inactive', {
+        nomComplet: 'Service refusé',
+        label: 'SR',
+        email: '',
+        emailContactUsager: '',
+        adresseContactUsager: '',
+        telContactUsager: '',
+        isActive: true,
+      }),
+    ).rejects.toBeInstanceOf(EntiteChildCreationForbiddenError);
+
+    vi.resetAllMocks();
+    vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
+      entiteMereId: 'dir-autonomie',
+      entiteMere: { entiteMereId: 'root-ars' },
+      isActive: true,
+    } as never);
+
+    await expect(
+      createServiceAdminLocal('service-existing', {
+        nomComplet: 'Sous-service refusé',
+        label: 'SSR',
+        email: '',
+        emailContactUsager: '',
+        adresseContactUsager: '',
+        telContactUsager: '',
+        isActive: true,
+      }),
+    ).rejects.toBeInstanceOf(EntiteChildCreationForbiddenError);
     expect(prisma.entite.create).not.toHaveBeenCalled();
   });
 });

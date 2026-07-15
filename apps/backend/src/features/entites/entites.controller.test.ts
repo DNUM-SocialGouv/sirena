@@ -10,6 +10,7 @@ import EntitesController from './entites.controller.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import {
   createDirectionAdminLocal,
+  createServiceAdminLocal,
   editDirectionServiceAdminLocal,
   getDirectionServiceAdminLocal,
   getDirectionsServicesList,
@@ -36,6 +37,7 @@ vi.mock('./entites.service.js', () => ({
   editEntiteAdmin: editEntiteAdminSpy,
   createChildEntiteAdmin: createChildEntiteAdminSpy,
   createDirectionAdminLocal: createDirectionAdminLocalSpy,
+  createServiceAdminLocal: createServiceAdminLocalSpy,
 }));
 
 vi.mock('../../middlewares/auth.middleware.js', () => {
@@ -63,6 +65,7 @@ const {
   patchEntiteAdminByIdSpy: editEntiteAdminSpy,
   postChildEntiteAdminSpy: createChildEntiteAdminSpy,
   createDirectionAdminLocalSpy,
+  createServiceAdminLocalSpy,
   assignedEntiteIdState,
 } = vi.hoisted(() => ({
   roleMiddlewareSpy: vi.fn(),
@@ -72,6 +75,7 @@ const {
   patchEntiteAdminByIdSpy: vi.fn(),
   postChildEntiteAdminSpy: vi.fn(),
   createDirectionAdminLocalSpy: vi.fn(),
+  createServiceAdminLocalSpy: vi.fn(),
   assignedEntiteIdState: { value: 'dir-autonomie' as string | undefined },
 }));
 
@@ -487,6 +491,70 @@ describe('Entites endpoints: /entites', () => {
         cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(createDirectionAdminLocal).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('POST /admin/directions-services/services', () => {
+    it('creates an inactive Service under the assigned Direction from visible local fields', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      const visiblePayload = {
+        nomComplet: 'Service Autonomie',
+        label: 'SA',
+        email: 'service-autonomie@ars.fr',
+        isActive: false,
+      };
+      vi.mocked(createServiceAdminLocal).mockResolvedValueOnce({
+        id: 'service-autonomie',
+        ...visiblePayload,
+        emailContactUsager: '',
+        adresseContactUsager: '',
+        telContactUsager: '',
+      });
+
+      const res = await app.request('/admin/directions-services/services', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(visiblePayload),
+      });
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        data: {
+          id: 'service-autonomie',
+          ...visiblePayload,
+          emailContactUsager: '',
+          adresseContactUsager: '',
+          telContactUsager: '',
+        },
+      });
+      expect(createServiceAdminLocal).toHaveBeenCalledWith('dir-autonomie', {
+        ...visiblePayload,
+        emailContactUsager: '',
+        adresseContactUsager: '',
+        telContactUsager: '',
+      });
+    });
+
+    it('returns 400 when the assigned entity cannot parent a Service', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      vi.mocked(createServiceAdminLocal).mockRejectedValueOnce(new EntiteChildCreationForbiddenError());
+
+      const res = await app.request('/admin/directions-services/services', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          nomComplet: 'Service refusé',
+          label: 'SR',
+          email: '',
+          isActive: true,
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      expect(await res.json()).toEqual({
+        message: 'Child entite creation is not allowed for this parent',
+        cause: { kind: ERROR_KIND.BUSINESS },
+      });
     });
   });
 

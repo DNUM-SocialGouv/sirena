@@ -4,7 +4,12 @@ import { buildEntitesListAdmin } from './entites.admin.mapper.js';
 import { buildDirectionsServicesRows as buildDirectionsServicesRowsFromHierarchy } from './entites.directions-services.mapper.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import { getAdminLocalAssignmentLevel, groupEntitesByParentId } from './entites.hierarchy.js';
-import type { EntiteChain, EntiteTraitement, EntiteTraitementInput } from './entites.type.js';
+import type {
+  CreateChildEntiteAdminInput,
+  EntiteChain,
+  EntiteTraitement,
+  EntiteTraitementInput,
+} from './entites.type.js';
 
 const ADMIN_SORT_COLUMNS = [
   'entiteNom',
@@ -326,33 +331,21 @@ export const getDirectionsServicesList = async (
   };
 };
 
-export const createDirectionAdminLocal = async (
-  assignedEntiteId: string,
-  data: {
-    nomComplet: string;
-    label: string;
-    email: string;
-    emailContactUsager: string;
-    adresseContactUsager: string;
-    telContactUsager: string;
-    isActive: boolean;
-  },
-) => {
+export const createDirectionAdminLocal = async (assignedEntiteId: string, data: CreateChildEntiteAdminInput) => {
   return createChildEntiteAdmin(assignedEntiteId, data, { requireRootParent: true });
+};
+
+export const createServiceAdminLocal = async (assignedEntiteId: string, data: CreateChildEntiteAdminInput) => {
+  return createChildEntiteAdmin(assignedEntiteId, data, {
+    requireActiveParent: true,
+    requireDirectionParent: true,
+  });
 };
 
 export const createChildEntiteAdmin = async (
   parentId: string,
-  data: {
-    nomComplet: string;
-    label: string;
-    email: string;
-    emailContactUsager: string;
-    adresseContactUsager: string;
-    telContactUsager: string;
-    isActive: boolean;
-  },
-  options: { requireRootParent?: boolean } = {},
+  data: CreateChildEntiteAdminInput,
+  options: { requireActiveParent?: boolean; requireDirectionParent?: boolean; requireRootParent?: boolean } = {},
 ) => {
   const parent = await prisma.entite.findUnique({
     where: { id: parentId },
@@ -364,6 +357,7 @@ export const createChildEntiteAdmin = async (
       regLib: true,
       dptLib: true,
       entiteMereId: true,
+      isActive: true,
       entiteMere: {
         select: { entiteMereId: true },
       },
@@ -375,6 +369,13 @@ export const createChildEntiteAdmin = async (
   }
 
   if (options.requireRootParent && parent.entiteMereId !== null) {
+    throw new EntiteChildCreationForbiddenError();
+  }
+
+  if (
+    (options.requireActiveParent && !parent.isActive) ||
+    (options.requireDirectionParent && (parent.entiteMereId === null || parent.entiteMere?.entiteMereId !== null))
+  ) {
     throw new EntiteChildCreationForbiddenError();
   }
 
