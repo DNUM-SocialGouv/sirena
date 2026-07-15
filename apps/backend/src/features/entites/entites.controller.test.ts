@@ -268,6 +268,7 @@ describe('Entites endpoints: /entites', () => {
           canCreateDirection: false,
           canCreateService: true,
         },
+        serviceParentOptions: [],
       });
 
       const res = await app.request('/admin/directions-services');
@@ -290,8 +291,34 @@ describe('Entites endpoints: /entites', () => {
           canCreateDirection: false,
           canCreateService: true,
         },
+        serviceParentOptions: [],
       });
       expect(getDirectionsServicesList).toHaveBeenCalledWith('dir-autonomie', { search: '' });
+    });
+
+    it('returns active Service parent options for an Entité-administrative assignment', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      assignedEntiteIdState.value = 'root-ars';
+      vi.mocked(getDirectionsServicesList).mockResolvedValueOnce({
+        data: [],
+        capabilities: {
+          canCreateDirection: true,
+          canCreateService: true,
+        },
+        serviceParentOptions: [{ id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' }],
+      });
+
+      const res = await app.request('/admin/directions-services');
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        data: [],
+        capabilities: {
+          canCreateDirection: true,
+          canCreateService: true,
+        },
+        serviceParentOptions: [{ id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' }],
+      });
     });
 
     it('passes search query to local directions and services list service', async () => {
@@ -302,6 +329,7 @@ describe('Entites endpoints: /entites', () => {
           canCreateDirection: false,
           canCreateService: true,
         },
+        serviceParentOptions: [],
       });
 
       const res = await app.request('/admin/directions-services?search=autonomie');
@@ -533,6 +561,49 @@ describe('Entites endpoints: /entites', () => {
         adresseContactUsager: '',
         telContactUsager: '',
       });
+    });
+
+    it('passes a selected parent Direction for an Entité-administrative assignment', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      assignedEntiteIdState.value = 'root-ars';
+      const visiblePayload = {
+        nomComplet: 'Service Enfance',
+        label: 'SE',
+        email: '',
+        isActive: true,
+        parentDirectionId: 'dir-enfance',
+      };
+      vi.mocked(createServiceAdminLocal).mockResolvedValueOnce({
+        id: 'service-enfance',
+        nomComplet: 'Service Enfance',
+        label: 'SE',
+        email: '',
+        isActive: true,
+        emailContactUsager: '',
+        adresseContactUsager: '',
+        telContactUsager: '',
+      });
+
+      const res = await app.request('/admin/directions-services/services', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(visiblePayload),
+      });
+
+      expect(res.status).toBe(200);
+      expect(createServiceAdminLocal).toHaveBeenCalledWith(
+        'root-ars',
+        {
+          nomComplet: 'Service Enfance',
+          label: 'SE',
+          email: '',
+          isActive: true,
+          emailContactUsager: '',
+          adresseContactUsager: '',
+          telContactUsager: '',
+        },
+        'dir-enfance',
+      );
     });
 
     it('returns 400 when the assigned entity cannot parent a Service', async () => {

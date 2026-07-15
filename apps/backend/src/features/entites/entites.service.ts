@@ -293,7 +293,7 @@ export const getDirectionsServicesList = async (
   };
 
   if (!entiteAdminLocal) {
-    return { data: [], capabilities: emptyCapabilities };
+    return { data: [], capabilities: emptyCapabilities, serviceParentOptions: [] };
   }
 
   const assignmentLevel = getAdminLocalAssignmentLevel(entiteAdminLocal, entitesById);
@@ -302,6 +302,7 @@ export const getDirectionsServicesList = async (
     return {
       data: [],
       capabilities: emptyCapabilities,
+      serviceParentOptions: [],
     };
   }
 
@@ -321,6 +322,13 @@ export const getDirectionsServicesList = async (
     assignmentLevel === 'entite-administrative'
       ? hasActiveDirection
       : assignmentLevel === 'direction' && entiteAdminLocal.isActive;
+  const serviceParentOptions =
+    assignmentLevel === 'entite-administrative'
+      ? entitesAdminLocal
+          .filter((entite) => entite.entiteMereId === entiteAdminLocal.id && entite.isActive)
+          .sort((a, b) => a.nomComplet.localeCompare(b.nomComplet))
+          .map(({ id, nomComplet, label }) => ({ id, nomComplet, label }))
+      : [];
 
   return {
     data: buildDirectionsServicesRowsFromHierarchy(entitesAdminLocal, { search }),
@@ -328,6 +336,7 @@ export const getDirectionsServicesList = async (
       canCreateDirection: assignmentLevel === 'entite-administrative',
       canCreateService,
     },
+    serviceParentOptions,
   };
 };
 
@@ -335,8 +344,38 @@ export const createDirectionAdminLocal = async (assignedEntiteId: string, data: 
   return createChildEntiteAdmin(assignedEntiteId, data, { requireRootParent: true });
 };
 
-export const createServiceAdminLocal = async (assignedEntiteId: string, data: CreateChildEntiteAdminInput) => {
-  return createChildEntiteAdmin(assignedEntiteId, data, {
+export const createServiceAdminLocal = async (
+  assignedEntiteId: string,
+  data: CreateChildEntiteAdminInput,
+  parentDirectionId?: string,
+) => {
+  if (!parentDirectionId) {
+    return createChildEntiteAdmin(assignedEntiteId, data, {
+      requireActiveParent: true,
+      requireDirectionParent: true,
+    });
+  }
+
+  const [assignedEntite, parentDirection] = await Promise.all([
+    prisma.entite.findUnique({
+      where: { id: assignedEntiteId },
+      select: { entiteMereId: true },
+    }),
+    prisma.entite.findUnique({
+      where: { id: parentDirectionId },
+      select: { entiteMereId: true, isActive: true },
+    }),
+  ]);
+
+  if (
+    assignedEntite?.entiteMereId !== null ||
+    parentDirection?.entiteMereId !== assignedEntiteId ||
+    !parentDirection?.isActive
+  ) {
+    throw new EntiteChildCreationForbiddenError();
+  }
+
+  return createChildEntiteAdmin(parentDirectionId, data, {
     requireActiveParent: true,
     requireDirectionParent: true,
   });

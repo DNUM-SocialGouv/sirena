@@ -137,6 +137,7 @@ const app = factoryWithLogs
             canCreateDirection: false,
             canCreateService: false,
           },
+          serviceParentOptions: [],
         });
       }
 
@@ -243,7 +244,7 @@ const app = factoryWithLogs
     createServiceAdminLocalRoute,
     async (c) => {
       const assignedEntiteId = c.get('assignedEntiteId');
-      const data = c.req.valid('json');
+      const { parentDirectionId, ...data } = c.req.valid('json');
 
       if (!assignedEntiteId) {
         throwHTTPException400BadRequest('Assigned entite is required to create a Service', {
@@ -253,7 +254,9 @@ const app = factoryWithLogs
       }
 
       try {
-        const entite = await createServiceAdminLocal(assignedEntiteId, data);
+        const entite = parentDirectionId
+          ? await createServiceAdminLocal(assignedEntiteId, data, parentDirectionId)
+          : await createServiceAdminLocal(assignedEntiteId, data);
         return c.json({ data: entite });
       } catch (error) {
         if (error instanceof EntiteChildCreationForbiddenError) {

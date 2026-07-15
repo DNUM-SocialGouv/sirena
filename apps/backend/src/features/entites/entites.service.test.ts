@@ -1245,6 +1245,87 @@ describe('createServiceAdminLocal()', () => {
   });
 });
 
+describe('createServiceAdminLocal() for an Entité administrative assignment', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it('creates a Service beneath the selected active direct-child Direction', async () => {
+    vi.mocked(prisma.entite.findUnique)
+      .mockResolvedValueOnce({ entiteMereId: null } as never)
+      .mockResolvedValueOnce({ entiteMereId: 'root-ars', isActive: true } as never)
+      .mockResolvedValueOnce({
+        entiteTypeId: 'ARS',
+        departementCode: '14',
+        ctcdCode: '14118',
+        regionCode: '28',
+        regLib: 'Normandie',
+        dptLib: 'Calvados',
+        entiteMereId: 'root-ars',
+        entiteMere: { entiteMereId: null },
+        isActive: true,
+      } as never);
+    vi.mocked(prisma.entite.create).mockResolvedValueOnce({
+      id: 'service-autonomie',
+      nomComplet: 'Service Autonomie',
+      label: 'SA',
+      email: '',
+      emailContactUsager: '',
+      adresseContactUsager: '',
+      telContactUsager: '',
+      isActive: true,
+    } as never);
+
+    await createServiceAdminLocal(
+      'root-ars',
+      {
+        nomComplet: 'Service Autonomie',
+        label: 'SA',
+        email: '',
+        emailContactUsager: '',
+        adresseContactUsager: '',
+        telContactUsager: '',
+        isActive: true,
+      },
+      'dir-autonomie',
+    );
+
+    expect(prisma.entite.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ entiteMereId: 'dir-autonomie' }),
+      }),
+    );
+  });
+
+  it('rejects inactive and out-of-perimeter selected Directions', async () => {
+    const input = {
+      nomComplet: 'Service refusé',
+      label: 'SR',
+      email: '',
+      emailContactUsager: '',
+      adresseContactUsager: '',
+      telContactUsager: '',
+      isActive: true,
+    };
+    const deniedParents = [
+      { entiteMereId: 'root-ars', isActive: false },
+      { entiteMereId: 'root-outside', isActive: true },
+    ];
+
+    for (const deniedParent of deniedParents) {
+      vi.resetAllMocks();
+      vi.mocked(prisma.entite.findUnique)
+        .mockResolvedValueOnce({ entiteMereId: null } as never)
+        .mockResolvedValueOnce(deniedParent as never);
+
+      await expect(createServiceAdminLocal('root-ars', input, 'dir-denied')).rejects.toBeInstanceOf(
+        EntiteChildCreationForbiddenError,
+      );
+      expect(prisma.entite.create).not.toHaveBeenCalled();
+    }
+  });
+});
+
 describe('getRootEntitesListAdmin()', () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -1490,6 +1571,7 @@ describe('getDirectionsServicesList()', () => {
         canCreateDirection: false,
         canCreateService: false,
       },
+      serviceParentOptions: [],
     });
   });
 
@@ -1544,6 +1626,43 @@ describe('getDirectionsServicesList()', () => {
         canEdit: true,
       },
     ]);
+  });
+
+  it('returns only active direct Directions as Service parent options while keeping inactive Directions in the list', async () => {
+    vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
+      {
+        ...fakeEntite('root-ars'),
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        entiteMereId: null,
+      },
+      {
+        ...fakeEntite('dir-active'),
+        nomComplet: 'Direction Active',
+        label: 'DA',
+        entiteMereId: 'root-ars',
+        isActive: true,
+      },
+      {
+        ...fakeEntite('dir-inactive'),
+        nomComplet: 'Direction Inactive',
+        label: 'DI',
+        entiteMereId: 'root-ars',
+        isActive: false,
+      },
+      {
+        ...fakeEntite('service-active'),
+        nomComplet: 'Service existant',
+        label: 'SE',
+        entiteMereId: 'dir-active',
+        isActive: true,
+      },
+    ]);
+
+    const result = await getDirectionsServicesList('root-ars');
+
+    expect(result.serviceParentOptions).toEqual([{ id: 'dir-active', nomComplet: 'Direction Active', label: 'DA' }]);
+    expect(result.data.map((row) => row.id)).toContain('dir-inactive');
   });
 
   it('returns only create capability booleans without disabled reason fields', async () => {
