@@ -37,9 +37,13 @@ const cells: Cells<DirectionServiceRow> = {
       : `la direction ${row.directionNom}`;
 
     return (
-      <Button type="button" disabled size="small" priority="secondary">
+      <Link
+        className="fr-btn fr-btn--secondary fr-btn--sm"
+        to="/admin/directions-services/$entiteId/edit"
+        params={{ entiteId: row.editId }}
+      >
         Modifier <span className="fr-sr-only">{editLabel}</span>
-      </Button>
+      </Link>
     );
   },
 };

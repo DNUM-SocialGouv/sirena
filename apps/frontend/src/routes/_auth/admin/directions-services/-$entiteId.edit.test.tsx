@@ -1,7 +1,14 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, expect, it, vi } from 'vitest';
 import { useDirectionServiceAdminLocal } from '@/hooks/queries/entites.hook';
 import { RouteComponent } from './$entiteId.edit';
+
+const { addToastSpy, editMutateAsyncSpy, routerNavigateSpy } = vi.hoisted(() => ({
+  addToastSpy: vi.fn(),
+  editMutateAsyncSpy: vi.fn(),
+  routerNavigateSpy: vi.fn(),
+}));
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => ({
@@ -10,10 +17,15 @@ vi.mock('@tanstack/react-router', () => ({
   }),
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
   redirect: vi.fn(),
+  useRouter: () => ({ navigate: routerNavigateSpy }),
 }));
 
 vi.mock('@/hooks/queries/entites.hook', () => ({
   useDirectionServiceAdminLocal: vi.fn(),
+  useEditDirectionServiceAdminLocal: () => ({
+    mutateAsync: editMutateAsyncSpy,
+    isPending: false,
+  }),
 }));
 
 vi.mock('@/lib/api/fetchFeatureFlags', () => ({
@@ -28,10 +40,20 @@ vi.mock('@/lib/auth-guards', () => ({
   requireAuthAndRoles: vi.fn(() => vi.fn()),
 }));
 
+vi.mock('@sirena/ui', async () => {
+  const actual = await vi.importActual<typeof import('@sirena/ui')>('@sirena/ui');
+  return {
+    ...actual,
+    Toast: { useToastManager: () => ({ add: addToastSpy }) },
+  };
+});
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
   document.title = '';
+  editMutateAsyncSpy.mockReset();
+  routerNavigateSpy.mockReset();
 });
 
 it('renders a prefilled local Direction form without contact-usager fields', () => {
@@ -62,4 +84,48 @@ it('renders a prefilled local Direction form without contact-usager fields', () 
   expect(screen.getByRole('link', { name: 'Annuler' })).toHaveAttribute('href', '/admin/directions-services');
   expect(screen.queryByText(/contact pour l’usager/i)).not.toBeInTheDocument();
   expect(document.title).toBe('Modifier la direction Direction Autonomie - Directions et services - SIRENA');
+});
+
+it('validates and saves only visible local fields before returning to the list', async () => {
+  const user = userEvent.setup();
+  editMutateAsyncSpy.mockResolvedValueOnce({ id: 'dir-autonomie' });
+  vi.mocked(useDirectionServiceAdminLocal).mockReturnValue({
+    data: {
+      id: 'dir-autonomie',
+      kind: 'direction',
+      nomComplet: 'Direction Autonomie',
+      label: 'DA',
+      email: 'direction-autonomie@ars.fr',
+      isActive: false,
+    },
+    isPending: false,
+    isError: false,
+  } as never);
+
+  render(<RouteComponent />);
+
+  const nameInput = screen.getByRole('textbox', { name: /Nom de la direction/ });
+  await user.clear(nameInput);
+  await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
+
+  expect(editMutateAsyncSpy).not.toHaveBeenCalled();
+  expect(nameInput).toHaveFocus();
+  expect(screen.getByText(/Nom de la direction.*est vide/)).toBeInTheDocument();
+
+  await user.type(nameInput, 'Direction Autonomie et Handicap');
+  await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
+
+  await waitFor(() => {
+    expect(editMutateAsyncSpy).toHaveBeenCalledWith({
+      id: 'dir-autonomie',
+      input: {
+        nomComplet: 'Direction Autonomie et Handicap',
+        label: 'DA',
+        email: 'direction-autonomie@ars.fr',
+        isActive: false,
+      },
+    });
+  });
+  expect(addToastSpy).toHaveBeenCalledWith(expect.objectContaining({ title: 'Direction modifiée avec succès' }));
+  expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services' });
 });

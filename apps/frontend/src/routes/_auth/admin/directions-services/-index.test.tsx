@@ -16,8 +16,18 @@ const { authGuardSpy, redirectSpy } = vi.hoisted(() => ({
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => options,
-  Link: ({ children, className, to }: { children: React.ReactNode; className?: string; to: string }) => (
-    <a className={className} href={to}>
+  Link: ({
+    children,
+    className,
+    params,
+    to,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+    params?: { entiteId?: string };
+    to: string;
+  }) => (
+    <a className={className} href={to.replace('$entiteId', params?.entiteId ?? '')}>
       {children}
     </a>
   ),
@@ -233,6 +243,34 @@ describe('Admin directions and services route', () => {
 
     expect(screen.getByRole('row', { name: /Service 11/ })).toBeInTheDocument();
     expect(screen.queryByRole('row', { name: /Service 10/ })).not.toBeInTheDocument();
+  });
+
+  it('links an editable row to its local edit route', () => {
+    vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
+      data: {
+        data: [
+          {
+            id: 'service-pa',
+            directionNom: 'Direction Autonomie',
+            directionLabel: 'DA',
+            serviceNom: 'Service PA',
+            serviceLabel: 'PA',
+            email: 'service-pa@ars.fr',
+            editId: 'service-pa',
+            canEdit: true,
+          },
+        ],
+      },
+    } as never);
+
+    render(<RouteComponent />);
+
+    expect(
+      screen.getByRole('link', {
+        name: 'Modifier le service Service PA de la direction Direction Autonomie',
+      }),
+    ).toHaveAttribute('href', '/admin/directions-services/service-pa/edit');
   });
 
   it('hides row edit action when backend row capability disallows edit', () => {
