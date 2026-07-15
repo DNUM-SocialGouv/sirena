@@ -1,4 +1,6 @@
 import { mariadbPool } from '../../config/mariadb.js';
+import { SIREC_NATIONAL_ENTITE_ID } from './transco/affectation/affectation.transco.js';
+import { MOTIF_IGAS_A_RENSEIGNER, MOTIF_IGAS_HORS_COMPETENCE } from './transco/motifsIgas.transco.js';
 
 export interface SirecReclamationRow {
   id_data: number;
@@ -117,6 +119,11 @@ export interface SirecFinessData {
   voie: string | null;
 }
 
+export interface SirecMcIgasMotif {
+  id_igas: number;
+  igas_type: 'in' | 'out';
+}
+
 export interface SirecMisEnCause {
   id_data: number;
   type: number | null;
@@ -127,6 +134,7 @@ export interface SirecMisEnCause {
   groupIds: number[];
   rppsData: SirecRppsData | null;
   finessData: SirecFinessData | null;
+  motifsIgas: SirecMcIgasMotif[];
 }
 
 export interface SirecMainCourante {
@@ -189,7 +197,11 @@ export async function fetchSirecMotifsDeclaresById(sirecId: number): Promise<num
 
 export async function fetchSirecGroupIds(sirecId: number): Promise<number[]> {
   const rows = await mariadbPool.query<{ id_group: number }[]>(
-    'SELECT id_group FROM sire_reclamation_data_group WHERE id_data = ? AND id_group != 1 and id_group != 3',
+    `SELECT id_group
+     FROM sire_reclamation_data_group
+     WHERE id_data = ?
+       AND id_group != ${SIREC_NATIONAL_ENTITE_ID}
+       and id_group != 3`,
     [sirecId],
   );
   return rows.map((row) => row.id_group);
@@ -199,7 +211,8 @@ export async function fetchSirecProvenances(sirecId: number): Promise<SirecProve
   const rows = await mariadbPool.query<SirecProvenance[]>(
     `SELECT p.id_provenance, pg.id_group, p.date_signalement, p.reponse_attendue
      FROM sire_provenances_data p
-     INNER JOIN sire_provenances_data_group pg ON pg.id_data = p.id_data and pg.id_group != 1
+              INNER JOIN sire_provenances_data_group pg
+                         ON pg.id_data = p.id_data and pg.id_group != ${SIREC_NATIONAL_ENTITE_ID} and pg.id_group != 3
      WHERE p.id_reclamation = ?`,
     [sirecId],
   );
@@ -256,23 +269,71 @@ type MisEnCauseRow = {
   finess_voie: string | null;
 };
 
-export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEnCause[]> {
-  const rows = await mariadbPool.query<MisEnCauseRow[]>(
-    `SELECT m.id_data, m.type, m.identifiant, m.autres_mc_type, m.label, m.adresse, mcg.id_group,
-            r.id_data AS rpps_id_data, r.rpps AS rpps_rpps, r.civilite AS rpps_civilite, r.nom AS rpps_nom,
-            r.prenom AS rpps_prenom, r.code_postal AS rpps_code_postal,
-            r.commune AS rpps_commune, r.libelle_prof AS rpps_libelle_prof,
-            f.id_data AS finess_id_data, f.nofinesset AS finess_nofinesset,
-            f.categetab AS finess_categetab, f.libcategetab AS finess_libcategetab,
-            f.rs AS finess_rs, f.codepostal AS finess_codepostal, f.libcommune AS finess_libcommune,
-            f.numvoie AS finess_numvoie, f.typevoie AS finess_typevoie, f.voie AS finess_voie
-     FROM sire_misencause_data m
-     LEFT JOIN sire_misencause_data_group mcg ON m.id_data = mcg.id_data AND mcg.id_group != 1 AND mcg.id_group != 0
-     LEFT JOIN sire_rpps_data r ON r.id_data = m.identifiant AND m.type = 65
-     LEFT JOIN sire_finess_data f ON f.id_data = m.identifiant AND m.type = 64
-     WHERE m.id_reclamation = ?`,
+type McIgasRow = {
+  id_mc: number;
+  id_igas: number;
+  igas_type: 'in' | 'out';
+};
+
+export async function fetchSirecMcIgasMotifs(sirecId: number): Promise<Map<number, SirecMcIgasMotif[]>> {
+  const rows = await mariadbPool.query<McIgasRow[]>(
+    `SELECT i.id_mc, i.id_igas, i.igas_type
+     FROM sire_mc_igas_data i
+              INNER JOIN sire_misencause_data m ON m.id_data = i.id_mc
+     WHERE m.id_reclamation = ?
+       and i.id_igas NOT IN  (${MOTIF_IGAS_A_RENSEIGNER}, ${MOTIF_IGAS_HORS_COMPETENCE})`,
     [sirecId],
   );
+
+  const map = new Map<number, SirecMcIgasMotif[]>();
+  for (const row of rows) {
+    const list = map.get(row.id_mc) ?? [];
+    list.push({ id_igas: row.id_igas, igas_type: row.igas_type });
+    map.set(row.id_mc, list);
+  }
+  return map;
+}
+
+export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEnCause[]> {
+  const [rows, motifsIgasByMc] = await Promise.all([
+    mariadbPool.query<MisEnCauseRow[]>(
+      `SELECT m.id_data,
+            m.type,
+            m.identifiant,
+            m.autres_mc_type,
+            m.label,
+            m.adresse,
+            mcg.id_group,
+            r.id_data      AS rpps_id_data,
+            r.rpps         AS rpps_rpps,
+            r.civilite     AS rpps_civilite,
+            r.nom          AS rpps_nom,
+            r.prenom       AS rpps_prenom,
+            r.code_postal  AS rpps_code_postal,
+            r.commune      AS rpps_commune,
+            r.libelle_prof AS rpps_libelle_prof,
+            f.id_data      AS finess_id_data,
+            f.nofinesset   AS finess_nofinesset,
+            f.categetab AS finess_categetab,
+            f.libcategetab AS finess_libcategetab,
+            f.rs           AS finess_rs,
+            f.codepostal   AS finess_codepostal,
+            f.libcommune   AS finess_libcommune,
+            f.numvoie      AS finess_numvoie,
+            f.typevoie     AS finess_typevoie,
+            f.voie         AS finess_voie
+     FROM sire_misencause_data m
+              LEFT JOIN sire_misencause_data_group mcg
+                        ON m.id_data = mcg.id_data AND mcg.id_group != ${SIREC_NATIONAL_ENTITE_ID} AND
+                           mcg.id_group != 3 AND mcg.id_group != 0
+              LEFT JOIN sire_rpps_data r ON r.id_data = m.identifiant AND m.type = 65
+              LEFT JOIN sire_finess_data f ON f.id_data = m.identifiant AND m.type = 64
+     WHERE m.id_reclamation = ?
+       and m.identifiant != 0`,
+      [sirecId],
+    ),
+    fetchSirecMcIgasMotifs(sirecId),
+  ]);
 
   const map = new Map<number, SirecMisEnCause>();
   for (const row of rows) {
@@ -315,6 +376,7 @@ export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEn
         groupIds: [],
         rppsData,
         finessData,
+        motifsIgas: motifsIgasByMc.get(row.id_data) ?? [],
       });
     }
     if (row.id_group !== null) {
@@ -338,7 +400,8 @@ export async function fetchSirecMainCourantes(sirecId: number): Promise<SirecMai
   const rows = await mariadbPool.query<MainCouranteRow[]>(
     `SELECT mc.id_data, mc.type_action1, mc.commentaire, mc.date_action, mc.sys_creation_date, dg.id_group
      FROM sire_main_courante_data mc
-              LEFT JOIN sire_main_courante_data_group dg ON mc.id_data = dg.id_data AND dg.id_group != 1
+              LEFT JOIN sire_main_courante_data_group dg
+                        ON mc.id_data = dg.id_data AND dg.id_group != ${SIREC_NATIONAL_ENTITE_ID} and dg.id_group != 3
      WHERE mc.id_reclamation = ?`,
     [sirecId],
   );

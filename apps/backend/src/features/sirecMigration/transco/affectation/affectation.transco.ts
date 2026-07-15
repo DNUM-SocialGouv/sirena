@@ -14,6 +14,8 @@ import { AFFECTATION_ENTITES_TOP_LEVEL } from './entitesTopLevel.js';
 
 const logger = createDefaultLogger();
 
+export const SIREC_NATIONAL_ENTITE_ID = 1;
+
 const ALL_AFFECTATION_ENTITES = {
   ...AFFECTATION_ENTITES_TOP_LEVEL,
   ...AFFECTATION_ENTITES_ILE_DE_FRANCE,

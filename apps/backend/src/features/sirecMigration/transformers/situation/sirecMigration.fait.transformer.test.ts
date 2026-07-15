@@ -171,4 +171,10 @@ describe('sirecMigration.fait.transformer.ts', () => {
 
     expect(transcodeCourrierSignal).toHaveBeenCalledWith(10);
   });
+
+  it('should default motifs to an empty array', () => {
+    const result = transformSirecFait(sirecData);
+
+    expect(result.motifs).toEqual([]);
+  });
 });

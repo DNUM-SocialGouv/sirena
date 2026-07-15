@@ -1,7 +1,7 @@
 import { REQUETE_ETAPE_STATUT_TYPES } from '@sirena/common/constants';
 import { formatSirecDate } from '../../../../helpers/sirecMigration.js';
 import type { SirecReclamationData } from '../../sirecMigration.repository.js';
-import { getAffectationLabel } from '../../transco/affectation/affectation.transco.js';
+import { getAffectationLabel, SIREC_NATIONAL_ENTITE_ID } from '../../transco/affectation/affectation.transco.js';
 import type { SirenaEtapeData } from './sirecMigration.etape.types.js';
 
 export function transformSirecDateRecepGest(
@@ -13,7 +13,12 @@ export function transformSirecDateRecepGest(
   if (date_recep_gest === null) return [];
 
   const noteParts = [`Date de réception au service de premier niveau : ${formatSirecDate(date_recep_gest)}`];
-  const serviceLabel = getAffectationLabel(service_recepteur_niv1);
+  let serviceLabel: string | null;
+  if (service_recepteur_niv1 === SIREC_NATIONAL_ENTITE_ID) {
+    serviceLabel = 'National';
+  } else {
+    serviceLabel = getAffectationLabel(service_recepteur_niv1);
+  }
   if (serviceLabel !== null) {
     noteParts.push(`Service de premier niveau : ${serviceLabel}`);
   }

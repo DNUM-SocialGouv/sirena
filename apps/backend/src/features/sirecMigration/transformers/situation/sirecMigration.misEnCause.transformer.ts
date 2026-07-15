@@ -1,8 +1,10 @@
-import type { SirecMisEnCause, SirecReclamationData } from '../../sirecMigration.repository.js';
+import type { SirecMisEnCause, SirecReclamationData, SirecReclamationRow } from '../../sirecMigration.repository.js';
+import { SIREC_NATIONAL_ENTITE_ID } from '../../transco/affectation/affectation.transco.js';
 import { SIREC_BOOLEAN_TRANSCO } from '../../transco/dictionnaire.transco.js';
 import { SIREC_TYPE_FINESS } from '../../transco/finessCategetab.transco.js';
 import { SIREC_TYPE_AUTRE } from '../../transco/misEnCauseAutre.transco.js';
 import { SIREC_TYPE_RPPS } from '../../transco/misEnCauseRpps.transco.js';
+import { transcodeSignalement } from '../../transco/signalement.transco.js';
 import { SirecDataError, SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import { computeSituationEntiteIds } from './sirecMigration.affectation.transformer.js';
 import { transformSirecAutre } from './sirecMigration.autre.transformer.js';
@@ -11,6 +13,7 @@ import {
   type SirenaLieuDeSurvenueData,
   transformSirecFiness,
 } from './sirecMigration.finess.transformer.js';
+import { resolveMotifsIgas } from './sirecMigration.motifsIgas.transformer.js';
 import { transformSirecRpps } from './sirecMigration.rpps.transformer.js';
 import {
   type SirenaMisEnCauseData,
@@ -25,13 +28,22 @@ const SANS_MEC_DATA = {
   autrePrecision: 'Sans mis en cause',
 };
 
-function applyObservation(data: SirenaMisEnCauseData | null, observation: string | null): SirenaMisEnCauseData | null {
-  if (!observation || data === null) return data;
-  const suffix = `Observations : ${observation}`;
-  if (data.kind === 'autre') {
-    return { ...data, autrePrecision: data.autrePrecision ? `${data.autrePrecision}\n${suffix}` : suffix };
-  }
-  return { ...data, autrePrecision: suffix };
+function appendAutrePrecision(data: SirenaMisEnCauseData | null, suffix: string | null): SirenaMisEnCauseData | null {
+  if (!suffix || data === null) return data;
+  return { ...data, autrePrecision: data.autrePrecision ? `${data.autrePrecision}\n${suffix}` : suffix };
+}
+
+function applyMisEnCauseAnnotations(
+  data: SirenaMisEnCauseData | null,
+  reclamation: SirecReclamationRow,
+): SirenaMisEnCauseData | null {
+  const withObservation = appendAutrePrecision(
+    data,
+    reclamation.observation ? `Observations : ${reclamation.observation}` : null,
+  );
+  return transcodeSignalement(reclamation.signalement) === true
+    ? appendAutrePrecision(withObservation, 'Enregistré en tant que Signalement dans SIREC')
+    : withObservation;
 }
 
 function resolveSansMc(sansMc: number | null): SirenaMisEnCauseData | null {
@@ -82,7 +94,7 @@ export function transformSirecMisEnCauseSituations(
   if (misEnCauses.length === 0) {
     const sansMcData = resolveSansMc(reclamation.sans_mc);
     const baseSituationNoMec = transformSirecSituation(sirecData, situationEntiteIds);
-    return [{ ...baseSituationNoMec, misEnCauseData: applyObservation(sansMcData, reclamation.observation) }];
+    return [{ ...baseSituationNoMec, misEnCauseData: applyMisEnCauseAnnotations(sansMcData, reclamation) }];
   }
 
   const baseSituation = transformSirecSituation(sirecData, []);
@@ -91,8 +103,9 @@ export function transformSirecMisEnCauseSituations(
   const orphanGroupIds = groupIds.filter((id) => !allMisEnCauseGroupIds.has(id));
 
   const orphanEntiteIds = computeSituationEntiteIds([
-    reclamation.service_recepteur_niv1,
-    reclamation.service_gestionnaire,
+    ...[reclamation.service_recepteur_niv1, reclamation.service_gestionnaire].filter(
+      (id) => id !== SIREC_NATIONAL_ENTITE_ID,
+    ),
     ...orphanGroupIds,
   ]);
 
@@ -100,11 +113,19 @@ export function transformSirecMisEnCauseSituations(
     const misEnCauseEntiteIds = computeSituationEntiteIds(misEnCause.groupIds);
     const entiteIds = [...new Set([...orphanEntiteIds, ...misEnCauseEntiteIds])];
     const { misEnCauseData, lieuDeSurvenueData } = resolveMisEnCause(misEnCause);
+    const { motifs, commentaireSuffix } = resolveMotifsIgas(misEnCause.motifsIgas);
     return {
       ...baseSituation,
       entiteIds,
-      misEnCauseData: applyObservation(misEnCauseData, reclamation.observation),
+      misEnCauseData: applyMisEnCauseAnnotations(misEnCauseData, reclamation),
       lieuDeSurvenueData,
+      fait: {
+        ...baseSituation.fait,
+        motifs,
+        commentaire: commentaireSuffix
+          ? [baseSituation.fait.commentaire, commentaireSuffix].filter(Boolean).join('\n')
+          : baseSituation.fait.commentaire,
+      },
     };
   });
 }

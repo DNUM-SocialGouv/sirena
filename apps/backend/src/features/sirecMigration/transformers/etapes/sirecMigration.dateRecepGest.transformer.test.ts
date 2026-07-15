@@ -3,6 +3,7 @@ import type { SirecReclamationData } from '../../sirecMigration.repository.js';
 import { transformSirecDateRecepGest } from './sirecMigration.dateRecepGest.transformer.js';
 
 vi.mock('../../transco/affectation/affectation.transco.js', () => ({
+  SIREC_NATIONAL_ENTITE_ID: 1,
   getAffectationLabel: vi.fn((id: number | null) => {
     if (id === 693) return 'ARS Normandie';
     return null;
@@ -102,6 +103,15 @@ describe('sirecMigration.dateRecepGest.transformer.ts', () => {
       const result = transformSirecDateRecepGest(makeData(date, 9999), [ARS_1]);
 
       expect(result[0].note).toBe('Date de réception au service de premier niveau : 15/03/2024');
+    });
+
+    it('should set service label to "National" when service_recepteur_niv1 is the national id', () => {
+      const date = new Date('2024-03-15');
+      const result = transformSirecDateRecepGest(makeData(date, 1), [ARS_1]);
+
+      expect(result[0].note).toBe(
+        'Date de réception au service de premier niveau : 15/03/2024\nService de premier niveau : National',
+      );
     });
   });
 
