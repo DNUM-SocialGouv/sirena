@@ -268,7 +268,7 @@ describe('Entites endpoints: /entites', () => {
           canCreateDirection: false,
           canCreateService: true,
         },
-        serviceParentOptions: [],
+        availableDirections: [],
       });
 
       const res = await app.request('/admin/directions-services');
@@ -291,12 +291,12 @@ describe('Entites endpoints: /entites', () => {
           canCreateDirection: false,
           canCreateService: true,
         },
-        serviceParentOptions: [],
+        availableDirections: [],
       });
       expect(getDirectionsServicesList).toHaveBeenCalledWith('dir-autonomie', { search: '' });
     });
 
-    it('returns active Service parent options for an Entité-administrative assignment', async () => {
+    it('returns available Directions for an Entité-administrative assignment', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       assignedEntiteIdState.value = 'root-ars';
       vi.mocked(getDirectionsServicesList).mockResolvedValueOnce({
@@ -305,7 +305,7 @@ describe('Entites endpoints: /entites', () => {
           canCreateDirection: true,
           canCreateService: true,
         },
-        serviceParentOptions: [{ id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' }],
+        availableDirections: [{ id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' }],
       });
 
       const res = await app.request('/admin/directions-services');
@@ -317,7 +317,7 @@ describe('Entites endpoints: /entites', () => {
           canCreateDirection: true,
           canCreateService: true,
         },
-        serviceParentOptions: [{ id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' }],
+        availableDirections: [{ id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' }],
       });
     });
 
@@ -329,7 +329,7 @@ describe('Entites endpoints: /entites', () => {
           canCreateDirection: false,
           canCreateService: true,
         },
-        serviceParentOptions: [],
+        availableDirections: [],
       });
 
       const res = await app.request('/admin/directions-services?search=autonomie');

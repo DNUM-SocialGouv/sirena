@@ -293,7 +293,7 @@ export const getDirectionsServicesList = async (
   };
 
   if (!entiteAdminLocal) {
-    return { data: [], capabilities: emptyCapabilities, serviceParentOptions: [] };
+    return { data: [], capabilities: emptyCapabilities, availableDirections: [] };
   }
 
   const assignmentLevel = getAdminLocalAssignmentLevel(entiteAdminLocal, entitesById);
@@ -302,7 +302,7 @@ export const getDirectionsServicesList = async (
     return {
       data: [],
       capabilities: emptyCapabilities,
-      serviceParentOptions: [],
+      availableDirections: [],
     };
   }
 
@@ -322,7 +322,7 @@ export const getDirectionsServicesList = async (
     assignmentLevel === 'entite-administrative'
       ? hasActiveDirection
       : assignmentLevel === 'direction' && entiteAdminLocal.isActive;
-  const serviceParentOptions =
+  const availableDirections =
     assignmentLevel === 'entite-administrative'
       ? entitesAdminLocal
           .filter((entite) => entite.entiteMereId === entiteAdminLocal.id && entite.isActive)
@@ -336,7 +336,7 @@ export const getDirectionsServicesList = async (
       canCreateDirection: assignmentLevel === 'entite-administrative',
       canCreateService,
     },
-    serviceParentOptions,
+    availableDirections,
   };
 };
 

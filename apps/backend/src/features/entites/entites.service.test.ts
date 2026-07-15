@@ -1571,7 +1571,7 @@ describe('getDirectionsServicesList()', () => {
         canCreateDirection: false,
         canCreateService: false,
       },
-      serviceParentOptions: [],
+      availableDirections: [],
     });
   });
 
@@ -1661,7 +1661,7 @@ describe('getDirectionsServicesList()', () => {
 
     const result = await getDirectionsServicesList('root-ars');
 
-    expect(result.serviceParentOptions).toEqual([{ id: 'dir-active', nomComplet: 'Direction Active', label: 'DA' }]);
+    expect(result.availableDirections).toEqual([{ id: 'dir-active', nomComplet: 'Direction Active', label: 'DA' }]);
     expect(result.data.map((row) => row.id)).toContain('dir-inactive');
   });
 

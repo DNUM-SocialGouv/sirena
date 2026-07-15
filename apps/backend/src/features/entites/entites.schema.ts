@@ -129,7 +129,7 @@ export const GetDirectionsServicesListResponseSchema = z.object({
     canCreateDirection: z.boolean(),
     canCreateService: z.boolean(),
   }),
-  serviceParentOptions: z.array(
+  availableDirections: z.array(
     z.object({
       id: z.string(),
       nomComplet: z.string(),
