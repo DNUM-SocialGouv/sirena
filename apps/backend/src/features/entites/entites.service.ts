@@ -6,6 +6,7 @@ import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entite
 import { getAdminLocalAssignmentLevel, groupEntitesByParentId } from './entites.hierarchy.js';
 import type {
   CreateChildEntiteAdminInput,
+  CreateDirectionAdminLocalInput,
   EntiteChain,
   EntiteTraitement,
   EntiteTraitementInput,
@@ -340,8 +341,8 @@ export const getDirectionsServicesList = async (
   };
 };
 
-export const createDirectionAdminLocal = async (assignedEntiteId: string, data: CreateChildEntiteAdminInput) => {
-  return createChildEntiteAdmin(assignedEntiteId, data, { requireRootParent: true });
+export const createDirectionAdminLocal = async (assignedEntiteId: string, data: CreateDirectionAdminLocalInput) => {
+  return createChildEntiteAdmin(assignedEntiteId, { ...data, isActive: true }, { requireRootParent: true });
 };
 
 export const createServiceAdminLocal = async (

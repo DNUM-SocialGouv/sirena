@@ -439,11 +439,11 @@ describe('Entites endpoints: /entites', () => {
         emailContactUsager: 'contact-usager@direction.fr',
         adresseContactUsager: '1 rue de la République, 75000 Paris',
         telContactUsager: '0102030405',
-        isActive: false,
       };
       vi.mocked(createDirectionAdminLocal).mockResolvedValueOnce({
         id: 'dir-autonomie',
         ...createDirectionPayload,
+        isActive: true,
       });
 
       const res = await app.request('/admin/directions-services/directions', {
@@ -459,9 +459,30 @@ describe('Entites endpoints: /entites', () => {
         data: {
           id: 'dir-autonomie',
           ...createDirectionPayload,
+          isActive: true,
         },
       });
       expect(createDirectionAdminLocal).toHaveBeenCalledWith('dir-autonomie', createDirectionPayload);
+    });
+
+    it('rejects caller-controlled active status', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+
+      const res = await app.request('/admin/directions-services/directions', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          nomComplet: 'Direction Autonomie',
+          label: 'DA',
+          email: 'direction-autonomie@ars.fr',
+          isActive: false,
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      expect(createDirectionAdminLocal).not.toHaveBeenCalled();
     });
 
     it('returns 400 when local Direction creation is forbidden for the assigned entity', async () => {
@@ -470,7 +491,6 @@ describe('Entites endpoints: /entites', () => {
         nomComplet: 'Direction Autonomie',
         label: 'DA',
         email: 'direction-autonomie@ars.fr',
-        isActive: true,
       };
       vi.mocked(createDirectionAdminLocal).mockRejectedValueOnce(new EntiteChildCreationForbiddenError());
 
@@ -502,7 +522,6 @@ describe('Entites endpoints: /entites', () => {
         nomComplet: 'Direction Autonomie',
         label: 'DA',
         email: 'direction-autonomie@ars.fr',
-        isActive: true,
       };
 
       const res = await app.request('/admin/directions-services/directions', {

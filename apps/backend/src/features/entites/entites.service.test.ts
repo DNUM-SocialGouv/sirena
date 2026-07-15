@@ -1080,7 +1080,7 @@ describe('createDirectionAdminLocal()', () => {
       emailContactUsager: 'contact-usager@direction.fr',
       adresseContactUsager: '1 rue de la République, 75000 Paris',
       telContactUsager: '0102030405',
-      isActive: false,
+      isActive: true,
     } as never);
 
     const result = await createDirectionAdminLocal('root-ars', {
@@ -1090,7 +1090,6 @@ describe('createDirectionAdminLocal()', () => {
       emailContactUsager: 'contact-usager@direction.fr',
       adresseContactUsager: '1 rue de la République, 75000 Paris',
       telContactUsager: '0102030405',
-      isActive: false,
     });
 
     expect(prisma.entite.create).toHaveBeenCalledWith({
@@ -1098,7 +1097,7 @@ describe('createDirectionAdminLocal()', () => {
         nomComplet: 'Direction Autonomie',
         label: 'DA',
         email: 'direction-autonomie@ars.fr',
-        isActive: false,
+        isActive: true,
         emailContactUsager: 'contact-usager@direction.fr',
         adresseContactUsager: '1 rue de la République, 75000 Paris',
         telContactUsager: '0102030405',
@@ -1129,7 +1128,7 @@ describe('createDirectionAdminLocal()', () => {
       emailContactUsager: 'contact-usager@direction.fr',
       adresseContactUsager: '1 rue de la République, 75000 Paris',
       telContactUsager: '0102030405',
-      isActive: false,
+      isActive: true,
     });
   });
 
@@ -1153,7 +1152,6 @@ describe('createDirectionAdminLocal()', () => {
         emailContactUsager: '',
         adresseContactUsager: '',
         telContactUsager: '',
-        isActive: true,
       }),
     ).rejects.toBeInstanceOf(EntiteChildCreationForbiddenError);
 

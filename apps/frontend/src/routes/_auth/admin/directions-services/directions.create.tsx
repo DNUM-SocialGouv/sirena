@@ -97,7 +97,6 @@ export function RouteComponent() {
         emailContactUsager: result.data.emailContactUsager ?? '',
         telContactUsager: result.data.telContactUsager ?? '',
         adresseContactUsager: result.data.adresseContactUsager,
-        isActive: true,
       });
 
       toastManager.add({

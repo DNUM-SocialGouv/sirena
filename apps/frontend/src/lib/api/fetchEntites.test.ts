@@ -74,7 +74,9 @@ describe('createDirectionAdminLocal', () => {
       nomComplet: 'Direction Autonomie',
       label: 'DA',
       email: 'direction-autonomie@ars.fr',
-      isActive: false,
+      emailContactUsager: 'contact-autonomie@ars.fr',
+      telContactUsager: '0102030405',
+      adresseContactUsager: '1 rue de la Santé, Paris',
     };
     directionsPost.mockResolvedValueOnce({
       json: async () => ({ data: { id: 'dir-autonomie', ...input } }),

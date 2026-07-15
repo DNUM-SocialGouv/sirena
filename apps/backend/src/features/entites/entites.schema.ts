@@ -173,11 +173,15 @@ export const CreateChildEntiteAdminResponseSchema = CreateChildEntiteAdminInputS
   id: z.string(),
 });
 
-export const CreateDirectionAdminLocalInputSchema = CreateChildEntiteAdminInputSchema.extend({
-  emailContactUsager: z.string().default(''),
-  adresseContactUsager: z.string().default(''),
-  telContactUsager: z.string().default(''),
-});
+export const CreateDirectionAdminLocalInputSchema = CreateChildEntiteAdminInputSchema.omit({
+  isActive: true,
+})
+  .extend({
+    emailContactUsager: z.string().default(''),
+    adresseContactUsager: z.string().default(''),
+    telContactUsager: z.string().default(''),
+  })
+  .strict();
 
 export const CreateDirectionAdminLocalResponseSchema = CreateChildEntiteAdminResponseSchema;
 

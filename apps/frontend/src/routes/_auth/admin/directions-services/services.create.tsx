@@ -88,6 +88,8 @@ export function RouteComponent() {
 
     setValidationErrors({});
 
+    if (!result.success) return;
+
     try {
       await createServiceAdminLocal.mutateAsync({
         nomComplet: result.data.nomComplet,

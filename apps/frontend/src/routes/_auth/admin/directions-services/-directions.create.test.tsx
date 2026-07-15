@@ -213,7 +213,6 @@ describe('Admin local Direction create route', () => {
       emailContactUsager: 'contact@direction.fr',
       telContactUsager: '0102030405',
       adresseContactUsager: '1 rue de la République, 75000 Paris',
-      isActive: true,
     });
   });
 

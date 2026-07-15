@@ -94,7 +94,7 @@ export type CreateChildEntiteAdminInput = {
   isActive: boolean;
 };
 
-export type CreateDirectionAdminLocalInput = CreateChildEntiteAdminInput;
+export type CreateDirectionAdminLocalInput = Omit<CreateChildEntiteAdminInput, 'isActive'>;
 export type EditDirectionServiceAdminLocalInput = Pick<
   CreateChildEntiteAdminInput,
   'nomComplet' | 'label' | 'email' | 'isActive'
