@@ -7,6 +7,7 @@ export interface SirenaFaitData {
   commentaire: string;
   autresPrecisions: string;
   motifsDeclaratifs: string[];
+  motifs: string[];
 }
 
 export function transformSirecFait(sirecData: SirecReclamationData): SirenaFaitData {
@@ -24,5 +25,6 @@ export function transformSirecFait(sirecData: SirecReclamationData): SirenaFaitD
     commentaire: commentaireParts.join('\n'),
     autresPrecisions: sirecData.reclamation.description ?? '',
     motifsDeclaratifs: [...new Set(transcodeMotifsDeclaratifs(sirecData.motifsDeclaresIdDicos))],
+    motifs: [],
   };
 }

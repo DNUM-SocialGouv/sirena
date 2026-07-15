@@ -6,6 +6,7 @@ import {
   fetchSirecIdsByServiceIds,
   fetchSirecInstitutionPartenaires,
   fetchSirecMainCourantes,
+  fetchSirecMcIgasMotifs,
   fetchSirecMisEnCauses,
   fetchSirecMotifsDeclaresById,
   fetchSirecProvenances,
@@ -176,6 +177,40 @@ describe('sirecMigration.repository.ts', () => {
     });
   });
 
+  describe('fetchSirecMcIgasMotifs', () => {
+    it('should return a map of id_mc to their IGAS motifs', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([
+        { id_mc: 10, id_igas: 153, igas_type: 'out' },
+        { id_mc: 10, id_igas: 122, igas_type: 'in' },
+        { id_mc: 20, id_igas: 20, igas_type: 'out' },
+      ]);
+
+      const result = await fetchSirecMcIgasMotifs(42);
+
+      expect(result).toEqual(
+        new Map([
+          [
+            10,
+            [
+              { id_igas: 153, igas_type: 'out' },
+              { id_igas: 122, igas_type: 'in' },
+            ],
+          ],
+          [20, [{ id_igas: 20, igas_type: 'out' }]],
+        ]),
+      );
+      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_mc_igas_data'), [42]);
+    });
+
+    it('should return an empty map when no IGAS motifs are found', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
+
+      const result = await fetchSirecMcIgasMotifs(42);
+
+      expect(result).toEqual(new Map());
+    });
+  });
+
   describe('fetchSirecMisEnCauses', () => {
     it('should return mis en cause with their group ids and type', async () => {
       vi.mocked(mariadbPool.query).mockResolvedValueOnce([
@@ -249,12 +284,21 @@ describe('sirecMigration.repository.ts', () => {
           finess_voie: null,
         },
       ]);
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
 
       const result = await fetchSirecMisEnCauses(42);
 
       expect(result).toEqual([
-        { id_data: 10, type: 12, identifiant: null, groupIds: [693, 677], rppsData: null, finessData: null },
-        { id_data: 20, type: 12, identifiant: null, groupIds: [693], rppsData: null, finessData: null },
+        {
+          id_data: 10,
+          type: 12,
+          identifiant: null,
+          groupIds: [693, 677],
+          rppsData: null,
+          finessData: null,
+          motifsIgas: [],
+        },
+        { id_data: 20, type: 12, identifiant: null, groupIds: [693], rppsData: null, finessData: null, motifsIgas: [] },
       ]);
       expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_misencause_data'), [42]);
     });
@@ -286,6 +330,7 @@ describe('sirecMigration.repository.ts', () => {
           finess_voie: null,
         },
       ]);
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
 
       const result = await fetchSirecMisEnCauses(42);
 
@@ -296,6 +341,7 @@ describe('sirecMigration.repository.ts', () => {
           identifiant: 12345678901,
           groupIds: [],
           finessData: null,
+          motifsIgas: [],
           rppsData: {
             id_data: 12345678901,
             rpps: '12345678901',
@@ -336,6 +382,7 @@ describe('sirecMigration.repository.ts', () => {
           finess_voie: null,
         },
       ]);
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
 
       const result = await fetchSirecMisEnCauses(42);
 
@@ -368,16 +415,17 @@ describe('sirecMigration.repository.ts', () => {
           finess_voie: null,
         },
       ]);
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
 
       const result = await fetchSirecMisEnCauses(42);
 
       expect(result).toEqual([
-        { id_data: 10, type: null, identifiant: null, groupIds: [], rppsData: null, finessData: null },
+        { id_data: 10, type: null, identifiant: null, groupIds: [], rppsData: null, finessData: null, motifsIgas: [] },
       ]);
     });
 
     it('should join with sire_rpps_data and sire_finess_data in the query', async () => {
-      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
       await fetchSirecMisEnCauses(42);
 
@@ -412,6 +460,7 @@ describe('sirecMigration.repository.ts', () => {
           finess_voie: 'de la Paix',
         },
       ]);
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
 
       const result = await fetchSirecMisEnCauses(42);
 
@@ -457,6 +506,7 @@ describe('sirecMigration.repository.ts', () => {
           finess_voie: null,
         },
       ]);
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
 
       const result = await fetchSirecMisEnCauses(42);
 
@@ -464,11 +514,58 @@ describe('sirecMigration.repository.ts', () => {
     });
 
     it('should return an empty array when no mis en cause found', async () => {
-      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
       const result = await fetchSirecMisEnCauses(42);
 
       expect(result).toEqual([]);
+    });
+
+    it('should exclude rows with identifiant = 0 in the query', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+
+      await fetchSirecMisEnCauses(42);
+
+      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('m.identifiant != 0'), [42]);
+    });
+
+    it('should populate motifsIgas for each mis en cause from sire_mc_igas_data', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([
+        {
+          id_data: 10,
+          type: null,
+          identifiant: null,
+          id_group: null,
+          rpps_id_data: null,
+          rpps_civilite: null,
+          rpps_nom: null,
+          rpps_prenom: null,
+          rpps_code_postal: null,
+          rpps_commune: null,
+          rpps_libelle_prof: null,
+          finess_id_data: null,
+          finess_nofinesset: null,
+          finess_categetab: null,
+          finess_libcategetab: null,
+          finess_rs: null,
+          finess_codepostal: null,
+          finess_libcommune: null,
+          finess_numvoie: null,
+          finess_typevoie: null,
+          finess_voie: null,
+        },
+      ]);
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([
+        { id_mc: 10, id_igas: 153, igas_type: 'out' },
+        { id_mc: 10, id_igas: 122, igas_type: 'in' },
+      ]);
+
+      const result = await fetchSirecMisEnCauses(42);
+
+      expect(result[0].motifsIgas).toEqual([
+        { id_igas: 153, igas_type: 'out' },
+        { id_igas: 122, igas_type: 'in' },
+      ]);
     });
   });
 
@@ -529,6 +626,7 @@ describe('sirecMigration.repository.ts', () => {
         .mockResolvedValueOnce([{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }])
         .mockResolvedValueOnce([{ id_dico: 344 }])
         .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
         .mockResolvedValueOnce([]);
 
       const result = await fetchSirecData(42);
@@ -558,6 +656,7 @@ describe('sirecMigration.repository.ts', () => {
         ])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
         .mockResolvedValueOnce([]);
 
       const result = await fetchSirecData(42);
@@ -574,12 +673,13 @@ describe('sirecMigration.repository.ts', () => {
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
         .mockResolvedValueOnce([]);
 
       const result = await fetchSirecData(42);
 
       expect(result?.institutionPartenaires).toEqual({});
-      expect(mariadbPool.query).toHaveBeenCalledTimes(7);
+      expect(mariadbPool.query).toHaveBeenCalledTimes(8);
     });
 
     it('should return null when the reclamation is not found', async () => {
