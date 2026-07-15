@@ -11,6 +11,10 @@ backend:
 
     certificateIssuer:
       enable: true
+      name: digicert
+      keyID: _U4hS6F_Iv2cIxdPM6aAiPOmRz5Sn4a5yC4XS4M0zDs
+      server: https://one.nl.digicert.com/mpki/api/v1/acme/v2/directory
+      vaultKeystoreName: certificats-digicert
 
     appVariables:
       DEMAT_SOCIAL_API_DIRECTORY: "923"
@@ -61,6 +65,10 @@ frontend:
 
     certificateIssuer:
       enable: true
+      name: digicert
+      keyID: _U4hS6F_Iv2cIxdPM6aAiPOmRz5Sn4a5yC4XS4M0zDs
+      server: https://one.nl.digicert.com/mpki/api/v1/acme/v2/directory
+      vaultKeystoreName: certificats-digicert
 
     deployment:
       replicas: 2
