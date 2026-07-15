@@ -2,8 +2,10 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   type CreateChildEntiteAdminInput,
   type CreateDirectionAdminLocalInput,
+  type CreateServiceAdminLocalInput,
   createChildEntiteAdmin,
   createDirectionAdminLocal,
+  createServiceAdminLocal,
   type EditDirectionServiceAdminLocalInput,
   type EditEntiteAdminInput,
   editDirectionServiceAdminLocal,
@@ -123,6 +125,14 @@ export const useCreateChildEntiteAdmin = () =>
 export const useCreateDirectionAdminLocal = () =>
   useMutation({
     mutationFn: (input: CreateDirectionAdminLocalInput) => createDirectionAdminLocal(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entites', 'admin', 'directions-services'] });
+    },
+  });
+
+export const useCreateServiceAdminLocal = () =>
+  useMutation({
+    mutationFn: (input: CreateServiceAdminLocalInput) => createServiceAdminLocal(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entites', 'admin', 'directions-services'] });
     },

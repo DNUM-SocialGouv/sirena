@@ -1,5 +1,4 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
-import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { createFileRoute, Link } from '@tanstack/react-router';
@@ -127,9 +126,9 @@ export function RouteComponent() {
           ) : null}
           {canCreateService ? (
             <div className="fr-col-auto">
-              <Button type="button" disabled priority="secondary">
+              <Link className="fr-btn fr-btn--secondary" to="/admin/directions-services/services/create">
                 Ajouter un service
-              </Button>
+              </Link>
             </div>
           ) : null}
         </div>

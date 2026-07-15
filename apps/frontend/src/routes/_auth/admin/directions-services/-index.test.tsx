@@ -162,6 +162,34 @@ describe('Admin directions and services route', () => {
     expect(screen.queryByRole('button', { name: 'Ajouter un service' })).not.toBeInTheDocument();
   });
 
+  it('links to Service creation when a Direction-level affectation can create Services', () => {
+    vi.mocked(useProfile).mockReturnValue({
+      data: {
+        affectationChain: [
+          { id: 'root-ars', nomComplet: 'ARS Normandie' },
+          { id: 'dir-autonomie', nomComplet: 'Direction Autonomie' },
+        ],
+      },
+    } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
+      data: {
+        data: [],
+        capabilities: {
+          canCreateDirection: false,
+          canCreateService: true,
+        },
+        availableDirections: [],
+      },
+    } as never);
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('link', { name: 'Ajouter un service' })).toHaveAttribute(
+      'href',
+      '/admin/directions-services/services/create',
+    );
+  });
+
   it('passes trimmed search to the directions and services list hook', async () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
     vi.mocked(useDirectionsServicesList).mockReturnValue({ data: { data: [] } } as never);

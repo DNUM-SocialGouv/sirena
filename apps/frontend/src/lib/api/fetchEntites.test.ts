@@ -1,17 +1,21 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   createDirectionAdminLocal,
+  createServiceAdminLocal,
   editDirectionServiceAdminLocal,
   fetchDirectionServiceAdminLocal,
   fetchDirectionsServicesList,
 } from './fetchEntites';
 
-const { directionServiceGet, directionServicePatch, directionsServicesGet, directionsPost } = vi.hoisted(() => ({
-  directionServiceGet: vi.fn(),
-  directionServicePatch: vi.fn(),
-  directionsServicesGet: vi.fn(),
-  directionsPost: vi.fn(),
-}));
+const { directionServiceGet, directionServicePatch, directionsServicesGet, directionsPost, servicesPost } = vi.hoisted(
+  () => ({
+    directionServiceGet: vi.fn(),
+    directionServicePatch: vi.fn(),
+    directionsServicesGet: vi.fn(),
+    directionsPost: vi.fn(),
+    servicesPost: vi.fn(),
+  }),
+);
 
 vi.mock('@/lib/api/hc.ts', () => ({
   client: {
@@ -25,6 +29,9 @@ vi.mock('@/lib/api/hc.ts', () => ({
           },
           directions: {
             $post: directionsPost,
+          },
+          services: {
+            $post: servicesPost,
           },
         },
       },
@@ -77,6 +84,25 @@ describe('createDirectionAdminLocal', () => {
 
     expect(directionsPost).toHaveBeenCalledWith({ json: input });
     expect(result).toEqual({ id: 'dir-autonomie', ...input });
+  });
+});
+
+describe('createServiceAdminLocal', () => {
+  it('posts only visible Service fields for an implicit Direction parent', async () => {
+    const input = {
+      nomComplet: 'Service Autonomie',
+      label: 'SA',
+      email: 'service-autonomie@ars.fr',
+      isActive: false,
+    };
+    servicesPost.mockResolvedValueOnce({
+      json: async () => ({ data: { id: 'service-autonomie', ...input } }),
+    });
+
+    const result = await createServiceAdminLocal(input);
+
+    expect(servicesPost).toHaveBeenCalledWith({ json: input });
+    expect(result).toEqual({ id: 'service-autonomie', ...input });
   });
 });
 
