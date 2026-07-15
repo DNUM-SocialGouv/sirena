@@ -185,36 +185,51 @@ export const getRootEntitesListAdmin = async () =>
   });
 
 export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, targetEntiteId: string) => {
-  const entites = await prisma.entite.findMany({
-    select: {
-      id: true,
-      nomComplet: true,
-      label: true,
-      email: true,
-      entiteMereId: true,
-      isActive: true,
-    },
-  });
-  const entitesById = new Map(entites.map((entite) => [entite.id, entite]));
-  const assignedEntite = entitesById.get(assignedEntiteId);
-  const targetEntite = entitesById.get(targetEntiteId);
-  const targetParent = targetEntite?.entiteMereId ? entitesById.get(targetEntite.entiteMereId) : undefined;
+  const [assignedEntite, targetEntite] = await Promise.all([
+    prisma.entite.findUnique({
+      where: { id: assignedEntiteId },
+      select: { id: true, entiteMereId: true },
+    }),
+    prisma.entite.findUnique({
+      where: { id: targetEntiteId },
+      select: {
+        id: true,
+        nomComplet: true,
+        label: true,
+        email: true,
+        entiteMereId: true,
+        isActive: true,
+      },
+    }),
+  ]);
 
   if (!assignedEntite || !targetEntite) {
     return null;
   }
 
-  const assignmentLevel = getAdminLocalAssignmentLevel(assignedEntite, entitesById);
-  const kind =
-    assignmentLevel === 'entite-administrative'
-      ? targetEntite.entiteMereId === assignedEntite.id
-        ? ('direction' as const)
-        : targetParent?.entiteMereId === assignedEntite.id
-          ? ('service' as const)
-          : null
-      : assignmentLevel === 'direction' && targetEntite.entiteMereId === assignedEntite.id
-        ? ('service' as const)
-        : null;
+  let kind: 'direction' | 'service' | null = null;
+
+  if (assignedEntite.entiteMereId === null) {
+    if (targetEntite.entiteMereId === assignedEntite.id) {
+      kind = 'direction';
+    } else if (targetEntite.entiteMereId) {
+      const targetParent = await prisma.entite.findUnique({
+        where: { id: targetEntite.entiteMereId },
+        select: { entiteMereId: true },
+      });
+      if (targetParent?.entiteMereId === assignedEntite.id) {
+        kind = 'service';
+      }
+    }
+  } else {
+    const assignedParent = await prisma.entite.findUnique({
+      where: { id: assignedEntite.entiteMereId },
+      select: { entiteMereId: true },
+    });
+    if (assignedParent?.entiteMereId === null && targetEntite.entiteMereId === assignedEntite.id) {
+      kind = 'service';
+    }
+  }
 
   if (!kind) {
     return null;
