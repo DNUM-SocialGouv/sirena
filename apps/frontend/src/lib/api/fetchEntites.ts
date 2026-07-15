@@ -41,9 +41,9 @@ export async function fetchDirectionsServicesList(query: Pick<QueryParams, 'sear
 
   await handleRequestErrors(res);
 
-  const { data, capabilities } = await res.json();
+  const { data, capabilities, availableDirections = [] } = await res.json();
 
-  return { data, capabilities };
+  return { data, capabilities, availableDirections };
 }
 
 export async function fetchDirectionServiceAdminLocal(id: string) {
@@ -100,7 +100,7 @@ export type EditDirectionServiceAdminLocalInput = Pick<
   'nomComplet' | 'label' | 'email' | 'isActive'
 >;
 export type CreateServiceAdminLocalInput = EditDirectionServiceAdminLocalInput & {
-  parentDirectionId?: string;
+  directionId?: string;
 };
 
 export async function editDirectionServiceAdminLocal(id: string, input: EditDirectionServiceAdminLocalInput) {

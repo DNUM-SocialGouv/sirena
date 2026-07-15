@@ -182,13 +182,13 @@ export const CreateDirectionAdminLocalInputSchema = CreateChildEntiteAdminInputS
 export const CreateDirectionAdminLocalResponseSchema = CreateChildEntiteAdminResponseSchema;
 
 export const CreateServiceAdminLocalInputSchema = EditDirectionServiceAdminLocalInputSchema.extend({
-  parentDirectionId: z.string().optional(),
-}).transform(({ parentDirectionId, ...data }) => ({
+  directionId: z.string().optional(),
+}).transform(({ directionId, ...data }) => ({
   ...data,
   emailContactUsager: '',
   adresseContactUsager: '',
   telContactUsager: '',
-  parentDirectionId,
+  directionId,
 }));
 
 export const CreateServiceAdminLocalResponseSchema = CreateChildEntiteAdminResponseSchema;

@@ -571,7 +571,7 @@ describe('Entites endpoints: /entites', () => {
         label: 'SE',
         email: '',
         isActive: true,
-        parentDirectionId: 'dir-enfance',
+        directionId: 'dir-enfance',
       };
       vi.mocked(createServiceAdminLocal).mockResolvedValueOnce({
         id: 'service-enfance',

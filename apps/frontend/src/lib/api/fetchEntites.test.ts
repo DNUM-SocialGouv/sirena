@@ -119,6 +119,25 @@ describe('fetchDirectionsServicesList', () => {
     });
   });
 
+  it('returns available Directions from the directions and services endpoint', async () => {
+    directionsServicesGet.mockResolvedValueOnce({
+      json: async () => ({
+        data: [],
+        capabilities: {
+          canCreateDirection: true,
+          canCreateService: true,
+        },
+        availableDirections: [{ id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' }],
+      }),
+    });
+
+    const result = await fetchDirectionsServicesList();
+
+    expect(result.availableDirections).toEqual([
+      { id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' },
+    ]);
+  });
+
   it('returns top-level capabilities from the directions and services endpoint', async () => {
     directionsServicesGet.mockResolvedValueOnce({
       json: async () => ({
@@ -138,6 +157,7 @@ describe('fetchDirectionsServicesList', () => {
         canCreateDirection: true,
         canCreateService: false,
       },
+      availableDirections: [],
     });
   });
 });

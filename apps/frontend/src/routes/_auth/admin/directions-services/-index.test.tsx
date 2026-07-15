@@ -141,6 +141,28 @@ describe('Admin directions and services route', () => {
     expect(screen.queryByRole('button', { name: 'Ajouter un service' })).not.toBeInTheDocument();
   });
 
+  it('hides Service creation for a root-level affectation without an available Direction', () => {
+    vi.mocked(useProfile).mockReturnValue({
+      data: {
+        affectationChain: [{ id: 'root-ars', nomComplet: 'ARS Normandie' }],
+      },
+    } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
+      data: {
+        data: [],
+        capabilities: {
+          canCreateDirection: true,
+          canCreateService: false,
+        },
+        availableDirections: [],
+      },
+    } as never);
+
+    render(<RouteComponent />);
+
+    expect(screen.queryByRole('link', { name: 'Ajouter un service' })).not.toBeInTheDocument();
+  });
+
   it('links to Direction creation when backend capabilities allow Direction creation', () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
     vi.mocked(useDirectionsServicesList).mockReturnValue({

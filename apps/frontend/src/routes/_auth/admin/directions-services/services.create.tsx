@@ -5,7 +5,7 @@ import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { z } from 'zod';
-import { useCreateServiceAdminLocal } from '@/hooks/queries/entites.hook';
+import { useCreateServiceAdminLocal, useDirectionsServicesList } from '@/hooks/queries/entites.hook';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 import { LocalDirectionServiceSirenaFields } from './-components/LocalDirectionServiceSirenaFields';
 import { requireAdminLocalDirectionsServices } from './-route-guard';
@@ -15,6 +15,7 @@ const CreateServiceFormSchema = z.object({
   label: z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
   email: optionalEmailSchema,
   isActive: z.enum(['oui', 'non']),
+  directionId: z.string(),
 });
 
 export const Route = createFileRoute('/_auth/admin/directions-services/services/create')({
@@ -28,8 +29,14 @@ export function RouteComponent() {
     label: '',
     email: '',
     isActive: 'oui',
+    directionId: '',
   });
   const createServiceAdminLocal = useCreateServiceAdminLocal();
+  const directionsServicesQuery = useDirectionsServicesList();
+  const capabilities = directionsServicesQuery.data?.capabilities;
+  const availableDirections = directionsServicesQuery.data?.availableDirections ?? [];
+  const requiresDirectionSelection = availableDirections.length > 0;
+  const canCreateService = capabilities?.canCreateService ?? false;
   const router = useRouter();
   const toastManager = Toast.useToastManager();
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -66,6 +73,15 @@ export function RouteComponent() {
 
     const result = CreateServiceFormSchema.safeParse(formData);
 
+    if (requiresDirectionSelection && !formData.directionId) {
+      const errors = {
+        directionId: 'La Direction de rattachement est obligatoire. Veuillez sélectionner une Direction.',
+      };
+      setValidationErrors(errors);
+      document.querySelector<HTMLElement>('[name="directionId"]')?.focus();
+      return;
+    }
+
     if (!result.success) {
       const errors = zodIssuesToFieldErrors(result.error);
       setValidationErrors(errors);
@@ -82,6 +98,7 @@ export function RouteComponent() {
         label: result.data.label,
         email: result.data.email ?? '',
         isActive: result.data.isActive === 'oui',
+        ...(requiresDirectionSelection ? { directionId: result.data.directionId } : {}),
       });
 
       toastManager.add({
@@ -123,6 +140,38 @@ export function RouteComponent() {
             onChange={handleInputChange}
           />
 
+          {requiresDirectionSelection ? (
+            <fieldset className="fr-fieldset fr-mb-3w">
+              <Select
+                className="fr-fieldset__content"
+                label="Direction de rattachement (obligatoire)"
+                state={validationErrors.directionId ? 'error' : 'default'}
+                stateRelatedMessage={validationErrors.directionId}
+                nativeSelectProps={{
+                  name: 'directionId',
+                  value: formData.directionId,
+                  onChange: (event) => {
+                    setFormData((previous) => ({ ...previous, directionId: event.target.value }));
+                    setValidationErrors((previous) => {
+                      const next = { ...previous };
+                      delete next.directionId;
+                      return next;
+                    });
+                  },
+                }}
+              >
+                <option value="" disabled>
+                  Sélectionnez une Direction
+                </option>
+                {availableDirections.map((direction) => (
+                  <option key={direction.id} value={direction.id}>
+                    {direction.nomComplet} ({direction.label})
+                  </option>
+                ))}
+              </Select>
+            </fieldset>
+          ) : null}
+
           <fieldset className="fr-fieldset fr-mb-3w">
             <Select
               className="fr-fieldset__content"
@@ -144,7 +193,7 @@ export function RouteComponent() {
             <Link className="fr-btn fr-btn--secondary" to="/admin/directions-services">
               Annuler
             </Link>
-            <Button type="submit" disabled={createServiceAdminLocal.isPending}>
+            <Button type="submit" disabled={createServiceAdminLocal.isPending || !canCreateService}>
               Ajouter le service
             </Button>
           </div>

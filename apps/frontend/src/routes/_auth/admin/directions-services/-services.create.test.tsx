@@ -1,7 +1,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useCreateServiceAdminLocal } from '@/hooks/queries/entites.hook';
+import { useCreateServiceAdminLocal, useDirectionsServicesList } from '@/hooks/queries/entites.hook';
 import { RouteComponent } from './services.create';
 
 const { addToastSpy, routerNavigateSpy } = vi.hoisted(() => ({
@@ -17,6 +17,7 @@ vi.mock('@tanstack/react-router', () => ({
 
 vi.mock('@/hooks/queries/entites.hook', () => ({
   useCreateServiceAdminLocal: vi.fn(),
+  useDirectionsServicesList: vi.fn(),
 }));
 
 vi.mock('./-route-guard', () => ({
@@ -38,6 +39,16 @@ beforeEach(() => {
   vi.mocked(useCreateServiceAdminLocal).mockReturnValue({
     mutateAsync: vi.fn().mockResolvedValue({ id: 'service-autonomie' }),
     isPending: false,
+  } as never);
+  vi.mocked(useDirectionsServicesList).mockReturnValue({
+    data: {
+      data: [],
+      capabilities: {
+        canCreateDirection: false,
+        canCreateService: true,
+      },
+      availableDirections: [],
+    },
   } as never);
 });
 
@@ -88,6 +99,64 @@ describe('Admin local Service create route', () => {
       expect(addToastSpy).toHaveBeenCalledWith(expect.objectContaining({ title: 'Service créé avec succès' }));
       expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services' });
     });
+  });
+
+  it('creates a Service beneath the available Direction selected by a root-level Admin', async () => {
+    const user = userEvent.setup();
+    const mutateAsync = vi.fn().mockResolvedValue({ id: 'service-autonomie' });
+    vi.mocked(useCreateServiceAdminLocal).mockReturnValue({ mutateAsync, isPending: false } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
+      data: {
+        data: [],
+        capabilities: {
+          canCreateDirection: true,
+          canCreateService: true,
+        },
+        availableDirections: [
+          { id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' },
+          { id: 'dir-enfance', nomComplet: 'Direction Enfance', label: 'DE' },
+        ],
+      },
+    } as never);
+    render(<RouteComponent />);
+
+    await user.type(screen.getByRole('textbox', { name: /Nom du service/ }), 'Service Autonomie');
+    await user.type(screen.getByRole('textbox', { name: /Abréviation/ }), 'SA');
+    await user.selectOptions(screen.getByRole('combobox', { name: /Direction de rattachement/ }), 'dir-autonomie');
+    await user.click(screen.getByRole('button', { name: 'Ajouter le service' }));
+
+    expect(mutateAsync).toHaveBeenCalledWith({
+      nomComplet: 'Service Autonomie',
+      label: 'SA',
+      email: '',
+      isActive: true,
+      directionId: 'dir-autonomie',
+    });
+  });
+
+  it('requires a Direction selection for a root-level Admin', async () => {
+    const user = userEvent.setup();
+    const mutateAsync = vi.fn();
+    vi.mocked(useCreateServiceAdminLocal).mockReturnValue({ mutateAsync, isPending: false } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
+      data: {
+        data: [],
+        capabilities: {
+          canCreateDirection: true,
+          canCreateService: true,
+        },
+        availableDirections: [{ id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' }],
+      },
+    } as never);
+    render(<RouteComponent />);
+
+    await user.type(screen.getByRole('textbox', { name: /Nom du service/ }), 'Service Autonomie');
+    await user.type(screen.getByRole('textbox', { name: /Abréviation/ }), 'SA');
+    await user.click(screen.getByRole('button', { name: 'Ajouter le service' }));
+
+    expect(screen.getByText(/La Direction de rattachement est obligatoire/)).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /Direction de rattachement/ })).toHaveFocus();
+    expect(mutateAsync).not.toHaveBeenCalled();
   });
 
   it('shows an error and stays on the form when Service creation fails', async () => {

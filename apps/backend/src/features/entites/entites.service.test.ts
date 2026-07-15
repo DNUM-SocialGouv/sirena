@@ -1002,6 +1002,7 @@ describe('createChildEntiteAdmin()', () => {
         regLib: true,
         dptLib: true,
         entiteMereId: true,
+        isActive: true,
         entiteMere: {
           select: { entiteMereId: true },
         },

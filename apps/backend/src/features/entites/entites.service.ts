@@ -347,9 +347,9 @@ export const createDirectionAdminLocal = async (assignedEntiteId: string, data: 
 export const createServiceAdminLocal = async (
   assignedEntiteId: string,
   data: CreateChildEntiteAdminInput,
-  parentDirectionId?: string,
+  directionId?: string,
 ) => {
-  if (!parentDirectionId) {
+  if (!directionId) {
     return createChildEntiteAdmin(assignedEntiteId, data, {
       requireActiveParent: true,
       requireDirectionParent: true,
@@ -362,7 +362,7 @@ export const createServiceAdminLocal = async (
       select: { entiteMereId: true },
     }),
     prisma.entite.findUnique({
-      where: { id: parentDirectionId },
+      where: { id: directionId },
       select: { entiteMereId: true, isActive: true },
     }),
   ]);
@@ -375,7 +375,7 @@ export const createServiceAdminLocal = async (
     throw new EntiteChildCreationForbiddenError();
   }
 
-  return createChildEntiteAdmin(parentDirectionId, data, {
+  return createChildEntiteAdmin(directionId, data, {
     requireActiveParent: true,
     requireDirectionParent: true,
   });
