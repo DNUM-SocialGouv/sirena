@@ -1148,6 +1148,9 @@ describe('createDirectionAdminLocal()', () => {
         nomComplet: 'Direction Enfance',
         label: 'DE',
         email: 'direction-enfance@ars.fr',
+        emailContactUsager: '',
+        adresseContactUsager: '',
+        telContactUsager: '',
         isActive: true,
       }),
     ).rejects.toBeInstanceOf(EntiteChildCreationForbiddenError);
@@ -1320,6 +1323,34 @@ describe('getDirectionServiceAdminLocal()', () => {
       email: 'service-pa@ars.fr',
       isActive: false,
     });
+  });
+
+  it('denies assigned nodes, parents, siblings, outside branches, and every Service-level assignment', async () => {
+    const entites = [
+      { ...fakeEntite('root-ars'), entiteMereId: null },
+      { ...fakeEntite('dir-autonomie'), entiteMereId: 'root-ars' },
+      { ...fakeEntite('service-pa'), entiteMereId: 'dir-autonomie' },
+      { ...fakeEntite('dir-enfance'), entiteMereId: 'root-ars' },
+      { ...fakeEntite('service-enfance'), entiteMereId: 'dir-enfance' },
+      { ...fakeEntite('root-other'), entiteMereId: null },
+      { ...fakeEntite('dir-outside'), entiteMereId: 'root-other' },
+    ];
+    vi.mocked(prisma.entite.findMany).mockResolvedValue(entites);
+
+    const deniedAssignments = [
+      ['root-ars', 'root-ars'],
+      ['dir-autonomie', 'root-ars'],
+      ['dir-autonomie', 'dir-autonomie'],
+      ['dir-autonomie', 'dir-enfance'],
+      ['dir-autonomie', 'service-enfance'],
+      ['root-ars', 'dir-outside'],
+      ['service-pa', 'service-pa'],
+      ['service-pa', 'service-enfance'],
+    ] as const;
+
+    for (const [assignedEntiteId, targetEntiteId] of deniedAssignments) {
+      await expect(getDirectionServiceAdminLocal(assignedEntiteId, targetEntiteId)).resolves.toBeNull();
+    }
   });
 });
 

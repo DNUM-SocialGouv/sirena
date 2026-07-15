@@ -129,3 +129,34 @@ it('validates and saves only visible local fields before returning to the list',
   expect(addToastSpy).toHaveBeenCalledWith(expect.objectContaining({ title: 'Direction modifiée avec succès' }));
   expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services' });
 });
+
+it('shows an error and stays on the edit form when saving fails', async () => {
+  const user = userEvent.setup();
+  editMutateAsyncSpy.mockRejectedValueOnce(new Error('Request failed'));
+  vi.mocked(useDirectionServiceAdminLocal).mockReturnValue({
+    data: {
+      id: 'service-pa',
+      kind: 'service',
+      nomComplet: 'Service PA',
+      label: 'PA',
+      email: 'service-pa@ars.fr',
+      isActive: true,
+    },
+    isPending: false,
+    isError: false,
+  } as never);
+
+  render(<RouteComponent />);
+  await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
+
+  await waitFor(() => {
+    expect(addToastSpy).toHaveBeenCalledWith({
+      title: 'Erreur',
+      description: 'Erreur lors de la modification du service. Veuillez réessayer.',
+      timeout: 0,
+      data: { icon: 'fr-alert--error' },
+    });
+  });
+  expect(routerNavigateSpy).not.toHaveBeenCalled();
+  expect(screen.getByRole('heading', { name: 'Modifier le service Service PA' })).toBeInTheDocument();
+});
