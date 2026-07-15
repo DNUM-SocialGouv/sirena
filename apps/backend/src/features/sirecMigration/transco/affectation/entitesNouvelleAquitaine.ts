@@ -18,4 +18,5 @@ export const AFFECTATION_ENTITES_NOUVELLE_AQUITAINE: Record<number, [EntiteSiren
   5066: [{ label: 'DOS-DMSCD (Tatoueurs)', parentLabel: 'ARS Nouvelle-Aquitaine' }],
   957: [{ label: 'DOS-PPSPB (Pharmacie-Produits de santé-Biologie médicale)', parentLabel: 'ARS Nouvelle-Aquitaine' }],
   961: [{ label: 'ARS Nouvelle-Aquitaine' }],
+  5156: [{ label: 'DOS-PTS (Transports sanitaires)', parentLabel: 'ARS Nouvelle-Aquitaine' }],
 };

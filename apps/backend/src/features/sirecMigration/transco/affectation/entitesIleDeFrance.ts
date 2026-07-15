@@ -12,4 +12,8 @@ export const AFFECTATION_ENTITES_ILE_DE_FRANCE: Record<number, [EntiteSirenaLabe
   907: [{ label: 'DREIV 94', parentLabel: 'ARS Île-de-France' }],
   2097: [{ label: 'DREIV 95', parentLabel: 'ARS Île-de-France' }],
   2789: [{ label: 'ADELI', parentLabel: 'ARS Île-de-France' }],
+  2101: [{ label: 'DM AUTONOMIE', parentLabel: 'ARS Île-de-France' }],
+  2099: [{ label: 'IRAS', parentLabel: 'ARS Île-de-France' }],
+  2787: [{ label: 'SDCOVID', parentLabel: 'ARS Île-de-France' }],
+  889: [{ label: 'Siège (SRR et CAR)', parentLabel: 'ARS Île-de-France' }],
 };

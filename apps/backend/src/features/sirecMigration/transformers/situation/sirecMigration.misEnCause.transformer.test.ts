@@ -22,11 +22,25 @@ vi.mock('./sirecMigration.affectation.transformer.js', () => ({
 
 vi.mock('./sirecMigration.situation.transformer.js', () => ({
   transformSirecSituation: vi.fn((_sirecData: unknown, entiteIds: string[]) => ({
-    fait: { commentaire: 'Commentaire', autresPrecisions: 'Description', motifsDeclaratifs: ['MOTIF_A'] },
+    fait: { commentaire: 'Commentaire', autresPrecisions: 'Description', motifsDeclaratifs: ['MOTIF_A'], motifs: [] },
     entiteIds,
     demarchesIds: [],
     misEnCauseData: null,
   })),
+}));
+
+vi.mock('./sirecMigration.motifsIgas.transformer.js', () => ({
+  resolveMotifsIgas: vi.fn((motifsIgas: { id_igas: number; igas_type: 'in' | 'out' }[]) => {
+    const outIds = motifsIgas.filter((m) => m.igas_type === 'out').map((m) => `MOTIF_OUT_${m.id_igas}`);
+    const inIds = motifsIgas.filter((m) => m.igas_type === 'in').map((m) => `MOTIF_IN_${m.id_igas}`);
+    if (outIds.length > 0) {
+      return {
+        motifs: outIds,
+        commentaireSuffix: inIds.length > 0 ? `Motifs IGAS d'entrée :\n- ${inIds.join('\n- ')}` : null,
+      };
+    }
+    return { motifs: inIds, commentaireSuffix: null };
+  }),
 }));
 
 vi.mock('./sirecMigration.rpps.transformer.js', () => ({
@@ -104,6 +118,7 @@ const makeMisEnCause = (
     groupIds: number[];
     rppsData: SirecRppsData | null;
     finessData: SirecFinessData | null;
+    motifsIgas: { id_igas: number; igas_type: 'in' | 'out' }[];
   }> = {},
 ) => ({
   id_data: 10,
@@ -115,6 +130,7 @@ const makeMisEnCause = (
   groupIds: [],
   rppsData: null,
   finessData: null,
+  motifsIgas: [],
   ...overrides,
 });
 
@@ -136,6 +152,7 @@ const makeData = (
   misEnCauses: ReturnType<typeof makeMisEnCause>[] = [],
   sansMc: number | null = null,
   observation: string | null = null,
+  signalement: number | null = null,
 ) =>
   ({
     reclamation: {
@@ -144,6 +161,7 @@ const makeData = (
       service_gestionnaire: null as number | null,
       sans_mc: sansMc,
       observation,
+      signalement,
     },
     motifsDeclaresIdDicos: [],
     groupIds,
@@ -250,6 +268,38 @@ describe('sirecMigration.misEnCause.transformer.ts', () => {
       );
 
       expect(result[0].entiteIds.filter((id) => id === 'ars-normandie')).toHaveLength(1);
+    });
+
+    it('should not include service_recepteur_niv1 in orphanEntiteIds when it is the national id (1)', () => {
+      const sirecData = {
+        ...makeData([], [makeMisEnCause({ id_data: 10 })]),
+        reclamation: {
+          id_data: 42,
+          service_recepteur_niv1: 1,
+          service_gestionnaire: null,
+          sans_mc: null,
+          observation: null,
+          signalement: null,
+        },
+      } as unknown as SirecReclamationData;
+
+      expect(() => transformSirecMisEnCauseSituations(sirecData, [])).not.toThrow();
+    });
+
+    it('should not include service_gestionnaire in orphanEntiteIds when it is the national id (1)', () => {
+      const sirecData = {
+        ...makeData([], [makeMisEnCause({ id_data: 10 })]),
+        reclamation: {
+          id_data: 42,
+          service_recepteur_niv1: null,
+          service_gestionnaire: 1,
+          sans_mc: null,
+          observation: null,
+          signalement: null,
+        },
+      } as unknown as SirecReclamationData;
+
+      expect(() => transformSirecMisEnCauseSituations(sirecData, [])).not.toThrow();
     });
 
     it('should duplicate the fait and demarchesIds for each situation', () => {
@@ -453,6 +503,140 @@ describe('sirecMigration.misEnCause.transformer.ts', () => {
 
       expect((result[0].misEnCauseData as any)?.autrePrecision).toBe('Observations : Obs commune');
       expect((result[1].misEnCauseData as any)?.autrePrecision).toBe('Observations : Obs commune');
+    });
+  });
+
+  describe('signalement', () => {
+    it('should not set autrePrecision on mis en cause when signalement is null', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [makeMisEnCause({ id_data: 10, type: 65, identifiant: 12345678901, rppsData: mockRppsData })]),
+        [],
+      );
+
+      expect((result[0].misEnCauseData as any)?.autrePrecision).toBeUndefined();
+    });
+
+    it('should not set autrePrecision on mis en cause when signalement is false (0)', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [makeMisEnCause({ id_data: 10, type: 65, identifiant: 12345678901, rppsData: mockRppsData })],
+          null,
+          null,
+          0,
+        ),
+        [],
+      );
+
+      expect((result[0].misEnCauseData as any)?.autrePrecision).toBeUndefined();
+    });
+
+    it('should set autrePrecision when signalement is true (1) on RPPS mis en cause', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [makeMisEnCause({ id_data: 10, type: 65, identifiant: 12345678901, rppsData: mockRppsData })],
+          null,
+          null,
+          1,
+        ),
+        [],
+      );
+
+      expect((result[0].misEnCauseData as any)?.autrePrecision).toBe('Enregistré en tant que Signalement dans SIREC');
+    });
+
+    it('should append the signalement line after the observation on the same mis en cause', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [makeMisEnCause({ id_data: 10, type: 65, identifiant: 12345678901, rppsData: mockRppsData })],
+          null,
+          'Texte obs',
+          1,
+        ),
+        [],
+      );
+
+      expect((result[0].misEnCauseData as any)?.autrePrecision).toBe(
+        'Observations : Texte obs\nEnregistré en tant que Signalement dans SIREC',
+      );
+    });
+
+    it('should append the signalement line to "Sans mis en cause" when sans_mc is true', () => {
+      const result = transformSirecMisEnCauseSituations(makeData([], [], 1, null, 1), []);
+
+      expect((result[0].misEnCauseData as any)?.autrePrecision).toBe(
+        'Sans mis en cause\nEnregistré en tant que Signalement dans SIREC',
+      );
+    });
+
+    it('should not set autrePrecision for null misEnCauseData even when signalement is true', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [makeMisEnCause({ id_data: 10, type: null })], null, null, 1),
+        [],
+      );
+
+      expect(result[0].misEnCauseData).toBeNull();
+    });
+
+    it('should throw SirecTranscoError when signalement has an unknown value', () => {
+      expect(() => transformSirecMisEnCauseSituations(makeData([], [], null, null, 999), [])).toThrow(
+        SirecTranscoError,
+      );
+    });
+  });
+
+  describe('motifs IGAS', () => {
+    it('should default fait.motifs to an empty array when the mis en cause has no IGAS motifs', () => {
+      const result = transformSirecMisEnCauseSituations(makeData([], [makeMisEnCause({ id_data: 10 })]), []);
+
+      expect(result[0].fait.motifs).toEqual([]);
+    });
+
+    it('should set fait.motifs from the resolved IGAS motifs of the mis en cause', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [makeMisEnCause({ id_data: 10, motifsIgas: [{ id_igas: 153, igas_type: 'out' }] })]),
+        [],
+      );
+
+      expect(result[0].fait.motifs).toEqual(['MOTIF_OUT_153']);
+    });
+
+    it('should append the entry motifs commentaire suffix to the base commentaire', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [
+            makeMisEnCause({
+              id_data: 10,
+              motifsIgas: [
+                { id_igas: 153, igas_type: 'out' },
+                { id_igas: 122, igas_type: 'in' },
+              ],
+            }),
+          ],
+        ),
+        [],
+      );
+
+      expect(result[0].fait.commentaire).toBe("Commentaire\nMotifs IGAS d'entrée :\n- MOTIF_IN_122");
+    });
+
+    it('should resolve motifs independently for each mis en cause', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [
+            makeMisEnCause({ id_data: 10, motifsIgas: [{ id_igas: 153, igas_type: 'out' }] }),
+            makeMisEnCause({ id_data: 20, motifsIgas: [{ id_igas: 122, igas_type: 'in' }] }),
+          ],
+        ),
+        [],
+      );
+
+      expect(result[0].fait.motifs).toEqual(['MOTIF_OUT_153']);
+      expect(result[1].fait.motifs).toEqual(['MOTIF_IN_122']);
     });
   });
 });
