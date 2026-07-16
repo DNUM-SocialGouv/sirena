@@ -21,7 +21,9 @@
  *   pnpm op:delete-requetes-by-entite --entite-id <id>             # supprime
  */
 
+import { APP_ENVS } from '@sirena/common/constants';
 import { prisma } from '@sirena/db';
+import { envVars } from '../config/env.js';
 
 const BATCH_SIZE = 500;
 
@@ -63,8 +65,8 @@ const isDryRun = args.includes('--dry-run');
 const entiteIdFlagIndex = args.indexOf('--entite-id');
 const entiteId = entiteIdFlagIndex >= 0 ? args[entiteIdFlagIndex + 1] : null;
 
-if (process.env.NODE_ENV === 'production') {
-  console.error("Ce script ne doit pas être lancé dans l'environnement de prod. ");
+if (envVars.APP_ENV === APP_ENVS.INTEGRATION || envVars.APP_ENV === APP_ENVS.LOCAL) {
+  console.error('Ce script ne peut être lancé que sur integ ou sur un poste local. ');
   process.exit(1);
 }
 
