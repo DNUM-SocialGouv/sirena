@@ -570,6 +570,9 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
       ...etape,
       editable,
       canOnlyEditNotes,
+      // Hide empty notes: some legacy notes only held files, which were moved to the step level
+      // (backfill_uploaded_file_requete_etape), leaving a note with no text and nothing to show.
+      notes: etape.notes.filter((note) => Boolean(note.texte?.trim())),
       uploadedFiles: etape.uploadedFiles.map(sanitizeFile),
     };
   });

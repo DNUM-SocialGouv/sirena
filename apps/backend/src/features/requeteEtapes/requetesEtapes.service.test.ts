@@ -536,6 +536,28 @@ describe('RequeteEtapes.service.ts', () => {
       });
     });
 
+    it('filters out empty notes (legacy notes that only held files)', async () => {
+      const makeNote = (id: string, texte: string): RequeteEtapeNote => ({
+        id,
+        texte,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        authorId: 'authorId',
+        requeteEtapeId: 'requeteEtapeId',
+      });
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
+        {
+          ...requeteEtapeWithNotesAndFiles,
+          notes: [makeNote('has-text', 'Real note'), makeNote('empty', ''), makeNote('whitespace', '   ')],
+        },
+      ]);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
+
+      const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0, limit: 10 });
+
+      expect(result.data[0].notes).toEqual([expect.objectContaining({ id: 'has-text', texte: 'Real note' })]);
+    });
+
     it('should retrieve RequeteEtapes for a given RequeteEntite with no limit', async () => {
       vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([requeteEtapeWithNotesAndFiles]);
       vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
