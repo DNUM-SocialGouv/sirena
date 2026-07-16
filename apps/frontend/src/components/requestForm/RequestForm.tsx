@@ -1,6 +1,6 @@
 import { type TabDescriptor, Tabs } from '@sirena/ui';
 import { useQueryClient } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useCallback, useState } from 'react';
 import { Details } from '@/components/requestId/details';
 import { Processing } from '@/components/requestId/processing';
@@ -24,10 +24,13 @@ interface RequestData {
 interface RequestFormProps {
   requestId?: string;
   initialData?: RequestData;
+  activeTab?: number;
 }
 
-export function RequestForm({ requestId }: RequestFormProps) {
-  const [activeTab, setActiveTab] = useState(0);
+export function RequestForm({ requestId, activeTab: activeTabProp = 0 }: RequestFormProps) {
+  const navigate = useNavigate();
+  const [localActiveTab, setLocalActiveTab] = useState(0);
+  const activeTab = requestId ? activeTabProp : localActiveTab;
   const queryClient = useQueryClient();
   const requetesListSearch = useListStateStore((s) => s.states.requetes?.search);
   const requestQuery = useRequeteDetails(requestId);
@@ -88,7 +91,14 @@ export function RequestForm({ requestId }: RequestFormProps) {
   ];
 
   const handleTabChange = (newTabIndex: number) => {
-    setActiveTab(newTabIndex);
+    if (!requestId) {
+      setLocalActiveTab(newTabIndex);
+      return;
+    }
+    navigate({
+      to: newTabIndex === 1 ? '/request/$requestId/processing' : '/request/$requestId',
+      params: { requestId },
+    });
   };
 
   return (
