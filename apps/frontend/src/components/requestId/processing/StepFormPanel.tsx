@@ -172,13 +172,15 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
           : '',
     );
 
+    // Skip empty notes (legacy notes that only held files, since moved to the step level).
+    const nonEmptyNotes = step.notes.filter((note) => note.texte?.trim());
     setNotes(
-      step.notes
+      nonEmptyNotes
         .filter((note) => note.author !== null)
         .map((note) => ({ key: nextNoteKey(), id: note.id, texte: note.texte, createdAt: note.createdAt })),
     );
     setReadOnlyNotes(
-      step.notes
+      nonEmptyNotes
         .filter((note) => note.author === null)
         .map((note) => ({ id: note.id, texte: note.texte, createdAt: note.createdAt })),
     );
