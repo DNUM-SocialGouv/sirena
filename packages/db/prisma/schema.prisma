@@ -589,6 +589,8 @@ model RequeteEtapeNote {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([requeteEtapeId])
 }
 
 model UploadedFile {

@@ -27,6 +27,7 @@
     "op:manage-api-keys": "dotenv -e .env -- pnpm --filter @sirena/backend op:manage-api-keys",
     "op:file-integrity": "dotenv -e .env -- pnpm --filter @sirena/backend op:file-integrity",
     "op:get-load-test-user": "dotenv -e .env -- pnpm --filter @sirena/backend op:get-load-test-user",
+    "op:delete-requetes-by-entite": "dotenv -e .env -- pnpm --filter @sirena/backend op:delete-requetes-by-entite",
     "op:metabase:export-dashboard": "dotenv -e .env -- pnpm --filter @sirena/backend op:metabase:export-dashboard",
     "db:deploy": "dotenv -e .env -- pnpm --filter @sirena/db run deploy",
     "db:generate": "dotenv -e .env -- pnpm --filter @sirena/db generate",

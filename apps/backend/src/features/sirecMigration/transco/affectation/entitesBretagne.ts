@@ -1,0 +1,28 @@
+import type { EntiteSirenaLabels } from './affectation.transco.js';
+
+export const AFFECTATION_ENTITES_BRETAGNE: Record<number, [EntiteSirenaLabels, ...EntiteSirenaLabels[]]> = {
+  767: [{ label: 'DAA', parentLabel: 'ARS Bretagne' }],
+  771: [{ label: 'DAFPSS', parentLabel: 'ARS Bretagne' }],
+  769: [{ label: 'DAH', parentLabel: 'ARS Bretagne' }],
+  777: [{ label: 'DAPPS', parentLabel: 'ARS Bretagne' }],
+  763: [{ label: 'DAQP', parentLabel: 'ARS Bretagne' }],
+  775: [{ label: 'DASE', parentLabel: 'ARS Bretagne' }],
+  765: [{ label: 'DASPF', parentLabel: 'ARS Bretagne' }],
+  773: [{ label: 'DAVSS', parentLabel: 'ARS Bretagne' }],
+  783: [{ label: 'DD22', parentLabel: 'ARS Bretagne' }],
+  785: [{ label: 'DD29', parentLabel: 'ARS Bretagne' }],
+  787: [{ label: 'DD35', parentLabel: 'ARS Bretagne' }],
+  789: [{ label: 'DD56', parentLabel: 'ARS Bretagne' }],
+  781: [{ label: 'DAQP', parentLabel: 'ARS Bretagne' }],
+  757: [{ label: 'DAQP', parentLabel: 'ARS Bretagne' }],
+  753: [{ label: 'DAQP', parentLabel: 'ARS Bretagne' }],
+  779: [{ label: 'ARS Bretagne' }],
+  759: [{ label: 'ARS Bretagne' }],
+  3415: [{ label: 'ARS Bretagne' }],
+  755: [{ label: 'ARS Bretagne' }],
+  761: [{ label: 'ARS Bretagne' }],
+  791: [{ label: 'ARS Bretagne' }],
+  793: [{ label: 'ARS Bretagne' }],
+  795: [{ label: 'ARS Bretagne' }],
+  797: [{ label: 'ARS Bretagne' }],
+};
