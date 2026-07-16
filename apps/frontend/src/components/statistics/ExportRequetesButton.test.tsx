@@ -70,7 +70,11 @@ describe('ExportRequetesButton', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Exporter les requêtes' }));
 
-    expect(browserDownload.createObjectURLSpy).toHaveBeenCalledWith(expect.any(Blob));
+    // Assert on the blob content rather than `expect.any(Blob)`: `response.blob()` returns a
+    // Node/undici Blob that is not an instance of the test-scope global Blob, so a class check flakes.
+    expect(browserDownload.createObjectURLSpy).toHaveBeenCalledOnce();
+    const [blobArg] = browserDownload.createObjectURLSpy.mock.calls[0] as [Blob];
+    await expect(blobArg.text()).resolves.toBe(csv);
     expect(browserDownload.clickSpy).toHaveBeenCalledOnce();
     expect(browserDownload.clickedLink).toMatchObject({
       download: 'export-requetes-sirena-2026-06-18.csv',

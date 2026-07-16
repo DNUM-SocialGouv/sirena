@@ -871,51 +871,33 @@ describe('RequeteEtapes.service.ts', () => {
 
   describe('getEtapePermissions', () => {
     it('MANUAL step is fully editable', () => {
-      expect(getEtapePermissions({ type: 'MANUAL', statutId: 'A_FAIRE', requete: { createdById: 'agent-1' } })).toEqual(
-        {
-          editable: true,
-          canOnlyEditNotes: false,
-        },
-      );
+      expect(getEtapePermissions({ type: 'MANUAL', statutId: 'A_FAIRE' })).toEqual({
+        editable: true,
+        canOnlyEditNotes: false,
+      });
     });
 
     it('CLOTUREE step is not editable', () => {
-      expect(getEtapePermissions({ type: 'MANUAL', statutId: 'CLOTUREE', requete: { createdById: 'a' } })).toEqual({
+      expect(getEtapePermissions({ type: 'MANUAL', statutId: 'CLOTUREE' })).toEqual({
         editable: false,
         canOnlyEditNotes: false,
       });
     });
 
     it('CREATION and REOPEN steps are not editable', () => {
-      expect(getEtapePermissions({ type: 'CREATION', statutId: 'FAIT', requete: { createdById: null } }).editable).toBe(
-        false,
-      );
-      expect(getEtapePermissions({ type: 'REOPEN', statutId: 'FAIT', requete: { createdById: 'a' } }).editable).toBe(
-        false,
-      );
+      expect(getEtapePermissions({ type: 'CREATION', statutId: 'FAIT' }).editable).toBe(false);
+      expect(getEtapePermissions({ type: 'REOPEN', statutId: 'FAIT' }).editable).toBe(false);
     });
 
-    it('automatic ACR (requete without createdById) is notes-only', () => {
-      expect(getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId: 'FAIT', requete: { createdById: null } })).toEqual(
-        {
+    it('ACKNOWLEDGMENT step is always notes-only (automatic and manual behave identically)', () => {
+      // Regardless of statut or who created the request, an ACR is a notes/attachments container:
+      // status, name and date stay locked.
+      for (const statutId of ['FAIT', 'A_FAIRE']) {
+        expect(getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId })).toEqual({
           editable: true,
           canOnlyEditNotes: true,
-        },
-      );
-      // even before being marked FAIT, an automatic ACR stays notes-only
-      expect(
-        getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId: 'A_FAIRE', requete: { createdById: null } }),
-      ).toEqual({ editable: true, canOnlyEditNotes: true });
-    });
-
-    it('manual ACR (requete with createdById) is fully editable', () => {
-      // a manually-sent ACR is not locked: an agent can still edit status/date/files
-      expect(
-        getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId: 'FAIT', requete: { createdById: 'agent-1' } }),
-      ).toEqual({ editable: true, canOnlyEditNotes: false });
-      expect(
-        getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId: 'A_FAIRE', requete: { createdById: 'agent-1' } }),
-      ).toEqual({ editable: true, canOnlyEditNotes: false });
+        });
+      }
     });
   });
 
@@ -1069,7 +1051,7 @@ describe('RequeteEtapes.service.ts', () => {
       expect(deleteFileFromMinio).toHaveBeenCalledWith('b.pdf');
     });
 
-    it('automatic ACR: applies notes only, leaves fields and files untouched', async () => {
+    it('ACR: locks step fields but still applies notes and file changes, preserving the AR PDF', async () => {
       vi.mocked(prisma.requeteEtape.findUnique)
         .mockResolvedValueOnce({
           id: 'ack',
@@ -1077,25 +1059,35 @@ describe('RequeteEtapes.service.ts', () => {
           statutId: 'FAIT',
           entiteId: 'e1',
           notes: [],
-          uploadedFiles: [{ id: 'ar', canDelete: false, filePath: 'ar.pdf' }],
+          uploadedFiles: [
+            { id: 'ar', canDelete: false, filePath: 'ar.pdf' },
+            { id: 'old', canDelete: true, filePath: 'old.pdf' },
+          ],
           requete: { createdById: null },
         } as never)
         .mockResolvedValueOnce({ ...requeteEtape, id: 'ack' });
 
       const tx = makeTx();
+      vi.mocked(isUserOwner).mockResolvedValue(true);
       vi.mocked(prisma.$transaction).mockImplementation((async (cb: (t: unknown) => unknown) => cb(tx)) as never);
+      vi.mocked(deleteFileFromMinio).mockResolvedValue();
 
       await updateProcessingEtape(
         'ack',
         'user-1',
-        { nom: 'Changed', statutId: 'A_FAIRE', notes: [{ texte: 'note added' }], fileIds: [] },
+        { nom: 'Changed', statutId: 'A_FAIRE', notes: [{ texte: 'note added' }], fileIds: ['ar', 'new'] },
         logger,
       );
 
+      // Step metadata stays locked (name/status/date untouched)...
       expect(tx.requeteEtape.update).not.toHaveBeenCalled();
+      // ...but notes and attachments are applied.
       expect(tx.requeteEtapeNote.create).toHaveBeenCalledTimes(1);
-      expect(tx.uploadedFile.deleteMany).not.toHaveBeenCalled();
-      expect(tx.uploadedFile.updateMany).not.toHaveBeenCalled();
+      expect(setEtapeFile).toHaveBeenCalledWith('ack', ['new'], 'e1', 'user-1', tx);
+      // The deletable file is removed; the AR PDF (canDelete === false) is preserved.
+      expect(tx.uploadedFile.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ['old'] } } });
+      expect(deleteFileFromMinio).toHaveBeenCalledWith('old.pdf');
+      expect(deleteFileFromMinio).not.toHaveBeenCalledWith('ar.pdf');
     });
   });
 });

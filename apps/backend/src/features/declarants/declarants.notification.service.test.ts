@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <test purposes> */
-import { RECEPTION_TYPE } from '@sirena/common/constants';
+import { RECEPTION_TYPE, REQUETE_ETAPE_STATUT_TYPES } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ACKNOWLEDGMENT_EMAIL_SUBJECT } from '../../config/tipimail.constant.js';
 import { sendTipimailEmail } from '../../libs/mail/tipimail.js';
@@ -20,6 +20,7 @@ vi.mock('../../libs/prisma.js', () => ({
     },
     requeteEtape: {
       updateMany: vi.fn(),
+      update: vi.fn(),
       findFirst: vi.fn(),
     },
     requeteEtapeNote: {
@@ -474,5 +475,37 @@ describe('sendManualAcknowledgmentEmail() — PDF attachment', () => {
     );
 
     expect(mockedRequeteEtapeNote.create).not.toHaveBeenCalled();
+  });
+
+  it('stamps dateRealisation when claiming the step as FAIT', async () => {
+    await sendManualAcknowledgmentEmail({
+      etapeId: 'etapeAck',
+      requeteId: 'req1',
+      entiteId: 'ent1',
+      userId: 'user123',
+    });
+
+    expect(mockedRequeteEtape.updateMany).toHaveBeenCalledWith({
+      where: { id: 'etapeAck', statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
+      data: { statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT, dateRealisation: expect.any(Date) },
+    });
+  });
+
+  it('clears dateRealisation when rolling back after a send failure', async () => {
+    mockedSendTipimailEmail.mockRejectedValueOnce(new Error('smtp down'));
+
+    await expect(
+      sendManualAcknowledgmentEmail({
+        etapeId: 'etapeAck',
+        requeteId: 'req1',
+        entiteId: 'ent1',
+        userId: 'user123',
+      }),
+    ).rejects.toThrow('smtp down');
+
+    expect(mockedRequeteEtape.update).toHaveBeenCalledWith({
+      where: { id: 'etapeAck' },
+      data: { statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE, dateRealisation: null },
+    });
   });
 });

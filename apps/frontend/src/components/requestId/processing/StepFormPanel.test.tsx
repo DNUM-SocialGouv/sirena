@@ -237,7 +237,7 @@ describe('StepFormPanel', () => {
     expect(deleteMutateAsync).toHaveBeenCalledWith({ id: 'step-1' });
   });
 
-  it('locks status/name/files for an automatic ACR step (canOnlyEditNotes)', () => {
+  it('locks status/name but allows notes and attachments for an ACR step (canOnlyEditNotes)', () => {
     const ref = createRef<StepFormPanelRef>();
     render(<StepFormPanel ref={ref} requestId="REQ-1" />);
 
@@ -252,10 +252,12 @@ describe('StepFormPanel', () => {
       ),
     );
 
+    // Step metadata stays locked...
     expect(screen.getByLabelText("Nom de l'étape (obligatoire)")).toBeDisabled();
     expect(screen.getByLabelText('Fait')).toBeDisabled();
     expect(screen.getByLabelText('À faire')).toBeDisabled();
-    expect(screen.queryByText('Sélectionner un fichier')).not.toBeInTheDocument();
+    // ...but notes and attachments can still be added.
+    expect(screen.getByText('Sélectionner un fichier')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Ajouter une note' })).toBeInTheDocument();
   });
 });

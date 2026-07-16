@@ -172,13 +172,15 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
           : '',
     );
 
+    // Skip empty notes (legacy notes that only held files, since moved to the step level).
+    const nonEmptyNotes = step.notes.filter((note) => note.texte?.trim());
     setNotes(
-      step.notes
+      nonEmptyNotes
         .filter((note) => note.author !== null)
         .map((note) => ({ key: nextNoteKey(), id: note.id, texte: note.texte, createdAt: note.createdAt })),
     );
     setReadOnlyNotes(
-      step.notes
+      nonEmptyNotes
         .filter((note) => note.author === null)
         .map((note) => ({ id: note.id, texte: note.texte, createdAt: note.createdAt })),
     );
@@ -391,8 +393,8 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
 
                   {fieldsLocked && (
                     <p className={`fr-text--sm ${styles.lockHint}`}>
-                      Cette étape correspond à un accusé de réception automatique : seules les notes peuvent être
-                      ajoutées ou modifiées.
+                      Cette étape correspond à un accusé de réception : le statut, le nom et la date ne sont pas
+                      modifiables ; vous pouvez uniquement ajouter des notes et des pièces jointes.
                     </p>
                   )}
 
@@ -556,7 +558,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                                 scanStatus={file.scanStatus}
                                 sanitizeStatus={file.sanitizeStatus}
                               />
-                              {!fieldsLocked && file.canDelete && (
+                              {file.canDelete && (
                                 <Button
                                   type="button"
                                   priority="tertiary"
@@ -574,30 +576,28 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                       </section>
                     )}
 
-                    {!fieldsLocked && (
-                      <section className={styles.attachmentSection}>
-                        <p className={`fr-label ${styles.attachmentTitle}`}>
-                          {existingFiles.length > 0 ? "Ajouter d'autres pièces jointes" : 'Ajouter des pièces jointes'}
-                        </p>
-                        <FileDropZone
-                          selectedFiles={filesToUpload}
-                          fileErrors={fileErrors}
-                          isUploading={isLoading}
-                          onFilesSelect={handleSelectFiles}
-                          title="Sélectionner ou glisser un fichier à joindre"
-                          buttonLabel="Sélectionner un fichier"
-                          className={styles.drawerDropZone}
-                          errorTextClassName={styles.errorText}
-                        />
-                        <SelectedFilesList
-                          files={filesToUpload}
-                          title="Fichiers sélectionnés"
-                          className={styles.selectedFilesList}
-                          variant="compact"
-                          onRemove={(fileName) => setFilesToUpload((prev) => prev.filter((f) => f.name !== fileName))}
-                        />
-                      </section>
-                    )}
+                    <section className={styles.attachmentSection}>
+                      <p className={`fr-label ${styles.attachmentTitle}`}>
+                        {existingFiles.length > 0 ? "Ajouter d'autres pièces jointes" : 'Ajouter des pièces jointes'}
+                      </p>
+                      <FileDropZone
+                        selectedFiles={filesToUpload}
+                        fileErrors={fileErrors}
+                        isUploading={isLoading}
+                        onFilesSelect={handleSelectFiles}
+                        title="Sélectionner ou glisser un fichier à joindre"
+                        buttonLabel="Sélectionner un fichier"
+                        className={styles.drawerDropZone}
+                        errorTextClassName={styles.errorText}
+                      />
+                      <SelectedFilesList
+                        files={filesToUpload}
+                        title="Fichiers sélectionnés"
+                        className={styles.selectedFilesList}
+                        variant="compact"
+                        onRemove={(fileName) => setFilesToUpload((prev) => prev.filter((f) => f.name !== fileName))}
+                      />
+                    </section>
 
                     <div className={styles.footerActions}>
                       {mode === 'edit' && !fieldsLocked && (
