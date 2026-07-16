@@ -366,7 +366,14 @@ describe('Entites endpoints: /entites', () => {
           nomComplet: 'Service PA',
           label: 'PA',
           email: 'service-pa@ars.fr',
-          isActive: false,
+          emailContactUsager: 'contact-pa@ars.fr',
+          telContactUsager: '0102030405',
+          adresseContactUsager: '1 rue de la Santé, Paris',
+          parentDirection: {
+            id: 'dir-autonomie',
+            nomComplet: 'Direction Autonomie',
+            label: 'DA',
+          },
         })
         .mockResolvedValueOnce(null);
 
@@ -381,7 +388,14 @@ describe('Entites endpoints: /entites', () => {
           nomComplet: 'Service PA',
           label: 'PA',
           email: 'service-pa@ars.fr',
-          isActive: false,
+          emailContactUsager: 'contact-pa@ars.fr',
+          telContactUsager: '0102030405',
+          adresseContactUsager: '1 rue de la Santé, Paris',
+          parentDirection: {
+            id: 'dir-autonomie',
+            nomComplet: 'Direction Autonomie',
+            label: 'DA',
+          },
         },
       });
       expect(deniedRes.status).toBe(404);
@@ -397,10 +411,12 @@ describe('Entites endpoints: /entites', () => {
         nomComplet: 'Service Personnes âgées',
         label: 'PA',
         email: 'notification-pa@ars.fr',
-        isActive: true,
+        emailContactUsager: 'contact-pa@ars.fr',
+        telContactUsager: '0102030405',
+        adresseContactUsager: '1 rue de la Santé, Paris',
       };
       vi.mocked(editDirectionServiceAdminLocal)
-        .mockResolvedValueOnce({ id: 'service-pa', kind: 'service', ...input })
+        .mockResolvedValueOnce({ id: 'service-pa', kind: 'service', ...input, parentDirection: null })
         .mockResolvedValueOnce(null);
 
       const authorizedRes = await app.request('/admin/directions-services/service-pa', {
@@ -416,11 +432,35 @@ describe('Entites endpoints: /entites', () => {
 
       expect(authorizedRes.status).toBe(200);
       expect(await authorizedRes.json()).toEqual({
-        data: { id: 'service-pa', kind: 'service', ...input },
+        data: { id: 'service-pa', kind: 'service', ...input, parentDirection: null },
       });
       expect(deniedRes.status).toBe(404);
       expect(editDirectionServiceAdminLocal).toHaveBeenNthCalledWith(1, 'dir-autonomie', 'service-pa', input);
       expect(editDirectionServiceAdminLocal).toHaveBeenNthCalledWith(2, 'dir-autonomie', 'service-outside', input);
+    });
+
+    it('rejects caller-controlled status and Service parent changes', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      const input = {
+        nomComplet: 'Service Personnes âgées',
+        label: 'PA',
+        email: 'notification-pa@ars.fr',
+        emailContactUsager: 'contact-pa@ars.fr',
+        telContactUsager: '0102030405',
+        adresseContactUsager: '1 rue de la Santé, Paris',
+      };
+
+      for (const forbiddenField of [{ isActive: false }, { directionId: 'dir-enfance' }]) {
+        vi.mocked(editDirectionServiceAdminLocal).mockClear();
+        const res = await app.request('/admin/directions-services/service-pa', {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ...input, ...forbiddenField }),
+        });
+
+        expect(res.status).toBe(400);
+        expect(editDirectionServiceAdminLocal).not.toHaveBeenCalled();
+      }
     });
   });
 

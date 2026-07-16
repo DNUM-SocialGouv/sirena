@@ -95,10 +95,7 @@ export type CreateChildEntiteAdminInput = {
 };
 
 export type CreateDirectionAdminLocalInput = Omit<CreateChildEntiteAdminInput, 'isActive'>;
-export type EditDirectionServiceAdminLocalInput = Pick<
-  CreateChildEntiteAdminInput,
-  'nomComplet' | 'label' | 'email' | 'isActive'
->;
+export type EditDirectionServiceAdminLocalInput = CreateDirectionAdminLocalInput;
 export type CreateServiceAdminLocalInput = CreateDirectionAdminLocalInput & {
   directionId?: string;
 };

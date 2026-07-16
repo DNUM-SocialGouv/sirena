@@ -109,7 +109,16 @@ export const GetDirectionServiceAdminLocalResponseSchema = z.object({
   nomComplet: z.string(),
   label: z.string(),
   email: z.string(),
-  isActive: z.boolean(),
+  emailContactUsager: z.string(),
+  telContactUsager: z.string(),
+  adresseContactUsager: z.string(),
+  parentDirection: z
+    .object({
+      id: z.string(),
+      nomComplet: z.string(),
+      label: z.string(),
+    })
+    .nullable(),
 });
 
 export const GetDirectionsServicesListResponseSchema = z.object({
@@ -169,10 +178,7 @@ export const CreateChildEntiteAdminInputSchema = z.object({
   isActive: z.boolean(),
 });
 
-export const EditDirectionServiceAdminLocalInputSchema = CreateChildEntiteAdminInputSchema.pick({
-  nomComplet: true,
-  label: true,
-  email: true,
+export const EditDirectionServiceAdminLocalInputSchema = CreateChildEntiteAdminInputSchema.omit({
   isActive: true,
 }).strict();
 

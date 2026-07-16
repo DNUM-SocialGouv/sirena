@@ -51,10 +51,17 @@ describe('local Direction and Service editing', () => {
       nomComplet: 'Service PA',
       label: 'PA',
       email: 'service-pa@ars.fr',
-      isActive: false,
+      emailContactUsager: 'contact-pa@ars.fr',
+      telContactUsager: '0102030405',
+      adresseContactUsager: '1 rue de la Santé, Paris',
+      parentDirection: {
+        id: 'dir-autonomie',
+        nomComplet: 'Direction Autonomie',
+        label: 'DA',
+      },
     };
-    const input = { ...target, nomComplet: 'Service Personnes âgées', isActive: true };
-    const { id: _id, kind: _kind, ...editInput } = input;
+    const input = { ...target, nomComplet: 'Service Personnes âgées' };
+    const { id: _id, kind: _kind, parentDirection: _parentDirection, ...editInput } = input;
     directionServiceGet.mockResolvedValueOnce({ json: async () => ({ data: target }) });
     directionServicePatch.mockResolvedValueOnce({ json: async () => ({ data: input }) });
 

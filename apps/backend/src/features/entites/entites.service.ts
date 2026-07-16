@@ -189,7 +189,7 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
   const [assignedEntite, targetEntite] = await Promise.all([
     prisma.entite.findUnique({
       where: { id: assignedEntiteId },
-      select: { id: true, entiteMereId: true },
+      select: { id: true, nomComplet: true, label: true, entiteMereId: true },
     }),
     prisma.entite.findUnique({
       where: { id: targetEntiteId },
@@ -198,8 +198,10 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
         nomComplet: true,
         label: true,
         email: true,
+        emailContactUsager: true,
+        telContactUsager: true,
+        adresseContactUsager: true,
         entiteMereId: true,
-        isActive: true,
       },
     }),
   ]);
@@ -209,6 +211,7 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
   }
 
   let kind: 'direction' | 'service' | null = null;
+  let parentDirection: { id: string; nomComplet: string; label: string } | null = null;
 
   if (assignedEntite.entiteMereId === null) {
     if (targetEntite.entiteMereId === assignedEntite.id) {
@@ -216,10 +219,15 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
     } else if (targetEntite.entiteMereId) {
       const targetParent = await prisma.entite.findUnique({
         where: { id: targetEntite.entiteMereId },
-        select: { entiteMereId: true },
+        select: { id: true, nomComplet: true, label: true, entiteMereId: true },
       });
       if (targetParent?.entiteMereId === assignedEntite.id) {
         kind = 'service';
+        parentDirection = {
+          id: targetParent.id,
+          nomComplet: targetParent.nomComplet,
+          label: targetParent.label,
+        };
       }
     }
   } else {
@@ -229,6 +237,11 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
     });
     if (assignedParent?.entiteMereId === null && targetEntite.entiteMereId === assignedEntite.id) {
       kind = 'service';
+      parentDirection = {
+        id: assignedEntite.id,
+        nomComplet: assignedEntite.nomComplet,
+        label: assignedEntite.label,
+      };
     }
   }
 
@@ -242,7 +255,10 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
     nomComplet: targetEntite.nomComplet,
     label: targetEntite.label,
     email: targetEntite.email,
-    isActive: targetEntite.isActive,
+    emailContactUsager: targetEntite.emailContactUsager,
+    telContactUsager: targetEntite.telContactUsager,
+    adresseContactUsager: targetEntite.adresseContactUsager,
+    parentDirection,
   };
 };
 
@@ -253,7 +269,9 @@ export const editDirectionServiceAdminLocal = async (
     nomComplet: string;
     label: string;
     email: string;
-    isActive: boolean;
+    emailContactUsager: string;
+    telContactUsager: string;
+    adresseContactUsager: string;
   },
 ) => {
   const target = await getDirectionServiceAdminLocal(assignedEntiteId, targetEntiteId);
@@ -270,7 +288,9 @@ export const editDirectionServiceAdminLocal = async (
       nomComplet: true,
       label: true,
       email: true,
-      isActive: true,
+      emailContactUsager: true,
+      telContactUsager: true,
+      adresseContactUsager: true,
     },
   });
 
@@ -280,7 +300,10 @@ export const editDirectionServiceAdminLocal = async (
     nomComplet: updatedEntite.nomComplet,
     label: updatedEntite.label,
     email: updatedEntite.email,
-    isActive: updatedEntite.isActive,
+    emailContactUsager: updatedEntite.emailContactUsager,
+    telContactUsager: updatedEntite.telContactUsager,
+    adresseContactUsager: updatedEntite.adresseContactUsager,
+    parentDirection: target.parentDirection,
   };
 };
 

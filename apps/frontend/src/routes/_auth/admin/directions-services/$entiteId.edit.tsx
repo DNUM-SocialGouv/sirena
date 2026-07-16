@@ -1,6 +1,6 @@
 import Button from '@codegouvfr/react-dsfr/Button';
-import Select from '@codegouvfr/react-dsfr/Select';
-import { optionalEmailSchema } from '@sirena/common/schemas';
+import Input from '@codegouvfr/react-dsfr/Input';
+import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Loader, Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useEffect, useState } from 'react';
@@ -8,7 +8,10 @@ import { z } from 'zod';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
 import { useDirectionServiceAdminLocal, useEditDirectionServiceAdminLocal } from '@/hooks/queries/entites.hook';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
-import { LocalDirectionServiceSirenaFields } from './-components/LocalDirectionServiceSirenaFields';
+import {
+  LocalDirectionServiceContactFields,
+  LocalDirectionServiceSirenaFields,
+} from './-components/LocalDirectionServiceSirenaFields';
 import { requireAdminLocalDirectionsServices } from './-route-guard';
 
 export const Route = createFileRoute('/_auth/admin/directions-services/$entiteId/edit')({
@@ -46,7 +49,9 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
     nomComplet: target.nomComplet,
     label: target.label,
     email: target.email,
-    isActive: target.isActive ? 'oui' : 'non',
+    emailContactUsager: target.emailContactUsager,
+    telContactUsager: target.telContactUsager,
+    adresseContactUsager: target.adresseContactUsager,
   });
   const formSchema = z.object({
     nomComplet: z
@@ -58,7 +63,9 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
       ),
     label: z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
     email: optionalEmailSchema,
-    isActive: z.enum(['oui', 'non']),
+    emailContactUsager: optionalEmailSchema,
+    telContactUsager: optionalPhoneSchema,
+    adresseContactUsager: z.string(),
   });
 
   useEffect(() => {
@@ -66,7 +73,7 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
   }, [title]);
 
   const handleChange =
-    (field: keyof typeof formData) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    (field: keyof typeof formData) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const value = event.target.value;
       setFormData((previous) => {
         const updated = { ...previous, [field]: value };
@@ -107,7 +114,9 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
           nomComplet: result.data.nomComplet,
           label: result.data.label,
           email: result.data.email ?? '',
-          isActive: result.data.isActive === 'oui',
+          emailContactUsager: result.data.emailContactUsager ?? '',
+          telContactUsager: result.data.telContactUsager ?? '',
+          adresseContactUsager: result.data.adresseContactUsager,
         },
       });
       const capitalizedEntityLabel = entityLabel[0].toUpperCase() + entityLabel.slice(1);
@@ -148,20 +157,31 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
             formData={formData}
             validationErrors={validationErrors}
             onChange={handleChange}
+            leadingField={
+              target.kind === 'service' ? (
+                <div className="fr-col-12 fr-col-md-7">
+                  <Input
+                    className="fr-fieldset__content"
+                    label="Direction (obligatoire)"
+                    hintText="Organisation à laquelle le service est rattaché"
+                    nativeInputProps={{
+                      name: 'parentDirection',
+                      value: target.parentDirection
+                        ? `${target.parentDirection.nomComplet} (${target.parentDirection.label})`
+                        : '',
+                      readOnly: true,
+                    }}
+                  />
+                </div>
+              ) : undefined
+            }
           />
 
-          <fieldset className="fr-fieldset">
-            <Select
-              className="fr-fieldset__content"
-              label="Actif dans SIRENA (obligatoire)"
-              state={validationErrors.isActive ? 'error' : 'default'}
-              stateRelatedMessage={validationErrors.isActive}
-              nativeSelectProps={{ name: 'isActive', value: formData.isActive, onChange: handleChange('isActive') }}
-            >
-              <option value="oui">Oui</option>
-              <option value="non">Non</option>
-            </Select>
-          </fieldset>
+          <LocalDirectionServiceContactFields
+            formData={formData}
+            validationErrors={validationErrors}
+            onChange={handleChange}
+          />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
             <Link className="fr-btn fr-btn--secondary" to="/admin/directions-services">
