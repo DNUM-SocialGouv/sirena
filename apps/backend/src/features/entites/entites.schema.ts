@@ -136,6 +136,13 @@ export const GetDirectionsServicesListResponseSchema = z.object({
       label: z.string(),
     }),
   ),
+  serviceParentDirection: z
+    .object({
+      id: z.string(),
+      nomComplet: z.string(),
+      label: z.string(),
+    })
+    .nullable(),
 });
 
 export const GetEntitesByIdAdminResponseSchema = EntiteAdminSchema;
@@ -185,14 +192,8 @@ export const CreateDirectionAdminLocalInputSchema = CreateChildEntiteAdminInputS
 
 export const CreateDirectionAdminLocalResponseSchema = CreateChildEntiteAdminResponseSchema;
 
-export const CreateServiceAdminLocalInputSchema = EditDirectionServiceAdminLocalInputSchema.extend({
+export const CreateServiceAdminLocalInputSchema = CreateDirectionAdminLocalInputSchema.extend({
   directionId: z.string().optional(),
-}).transform(({ directionId, ...data }) => ({
-  ...data,
-  emailContactUsager: '',
-  adresseContactUsager: '',
-  telContactUsager: '',
-  directionId,
-}));
+}).strict();
 
 export const CreateServiceAdminLocalResponseSchema = CreateChildEntiteAdminResponseSchema;

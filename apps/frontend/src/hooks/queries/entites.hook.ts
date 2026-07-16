@@ -61,6 +61,7 @@ export const useDirectionsServicesListQueryOptions = (query: Pick<QueryParams, '
       canCreateService: false,
     },
     availableDirections: [],
+    serviceParentDirection: null,
   },
 });
 

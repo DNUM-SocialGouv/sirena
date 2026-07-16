@@ -90,12 +90,14 @@ describe('createDirectionAdminLocal', () => {
 });
 
 describe('createServiceAdminLocal', () => {
-  it('posts only visible Service fields for an implicit Direction parent', async () => {
+  it('posts every visible Service field without activation status for an implicit Direction parent', async () => {
     const input = {
       nomComplet: 'Service Autonomie',
       label: 'SA',
       email: 'service-autonomie@ars.fr',
-      isActive: false,
+      emailContactUsager: 'contact-autonomie@ars.fr',
+      adresseContactUsager: '1 rue de la Santé, Paris',
+      telContactUsager: '0102030405',
     };
     servicesPost.mockResolvedValueOnce({
       json: async () => ({ data: { id: 'service-autonomie', ...input } }),
@@ -160,6 +162,7 @@ describe('fetchDirectionsServicesList', () => {
         canCreateService: false,
       },
       availableDirections: [],
+      serviceParentDirection: null,
     });
   });
 });

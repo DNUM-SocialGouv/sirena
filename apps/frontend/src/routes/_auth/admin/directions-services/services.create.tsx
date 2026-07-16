@@ -1,20 +1,26 @@
 import Button from '@codegouvfr/react-dsfr/Button';
+import Input from '@codegouvfr/react-dsfr/Input';
 import Select from '@codegouvfr/react-dsfr/Select';
-import { optionalEmailSchema } from '@sirena/common/schemas';
+import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { z } from 'zod';
 import { useCreateServiceAdminLocal, useDirectionsServicesList } from '@/hooks/queries/entites.hook';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
-import { LocalDirectionServiceSirenaFields } from './-components/LocalDirectionServiceSirenaFields';
+import {
+  LocalDirectionServiceContactFields,
+  LocalDirectionServiceSirenaFields,
+} from './-components/LocalDirectionServiceSirenaFields';
 import { requireAdminLocalDirectionsServices } from './-route-guard';
 
 const CreateServiceFormSchema = z.object({
   nomComplet: z.string().trim().min(1, 'Le champ "Nom du service" est vide. Veuillez le renseigner.'),
   label: z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
   email: optionalEmailSchema,
-  isActive: z.enum(['oui', 'non']),
+  emailContactUsager: optionalEmailSchema,
+  telContactUsager: optionalPhoneSchema,
+  adresseContactUsager: z.string(),
   directionId: z.string(),
 });
 
@@ -28,14 +34,17 @@ export function RouteComponent() {
     nomComplet: '',
     label: '',
     email: '',
-    isActive: 'oui',
+    emailContactUsager: '',
+    telContactUsager: '',
+    adresseContactUsager: '',
     directionId: '',
   });
   const createServiceAdminLocal = useCreateServiceAdminLocal();
   const directionsServicesQuery = useDirectionsServicesList();
   const capabilities = directionsServicesQuery.data?.capabilities;
   const availableDirections = directionsServicesQuery.data?.availableDirections ?? [];
-  const requiresDirectionSelection = availableDirections.length > 0;
+  const serviceParentDirection = directionsServicesQuery.data?.serviceParentDirection;
+  const requiresDirectionSelection = capabilities?.canCreateDirection ?? false;
   const canCreateService = capabilities?.canCreateService ?? false;
   const router = useRouter();
   const toastManager = Toast.useToastManager();
@@ -43,11 +52,11 @@ export function RouteComponent() {
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
   useEffect(() => {
-    document.title = 'Créer un service - Directions et services - SIRENA';
+    document.title = 'Ajouter un service - Directions et services - SIRENA';
   }, []);
 
   const handleInputChange =
-    (field: 'nomComplet' | 'label' | 'email') => (event: React.ChangeEvent<HTMLInputElement>) => {
+    (field: keyof typeof formData) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const value = event.target.value;
 
       setFormData((previous) => {
@@ -73,10 +82,13 @@ export function RouteComponent() {
 
     const result = CreateServiceFormSchema.safeParse(formData);
 
-    const errors = result.success ? {} : zodIssuesToFieldErrors(result.error);
+    let errors = result.success ? {} : zodIssuesToFieldErrors(result.error);
 
     if (requiresDirectionSelection && !formData.directionId) {
-      errors.directionId = 'Veuillez sélectionner la direction à laquelle rattacher le service.';
+      errors = {
+        directionId: 'Veuillez sélectionner la direction à laquelle rattacher le service.',
+        ...errors,
+      };
     }
 
     const firstField = Object.keys(errors)[0];
@@ -95,7 +107,9 @@ export function RouteComponent() {
         nomComplet: result.data.nomComplet,
         label: result.data.label,
         email: result.data.email ?? '',
-        isActive: result.data.isActive === 'oui',
+        emailContactUsager: result.data.emailContactUsager ?? '',
+        telContactUsager: result.data.telContactUsager ?? '',
+        adresseContactUsager: result.data.adresseContactUsager,
         ...(requiresDirectionSelection ? { directionId: result.data.directionId } : {}),
       });
 
@@ -125,7 +139,7 @@ export function RouteComponent() {
         </Link>
       </div>
 
-      <h2>Créer un service</h2>
+      <h2>Ajouter un service</h2>
 
       <div className="fr-card fr-p-3w fr-mt-4w">
         <form onSubmit={handleSubmit}>
@@ -136,56 +150,60 @@ export function RouteComponent() {
             formData={formData}
             validationErrors={validationErrors}
             onChange={handleInputChange}
+            leadingField={
+              <div className="fr-col-12 fr-col-md-7">
+                {requiresDirectionSelection ? (
+                  <Select
+                    className="fr-fieldset__content"
+                    label="Direction (obligatoire)"
+                    hint="Organisation à laquelle le service est rattaché"
+                    state={validationErrors.directionId ? 'error' : 'default'}
+                    stateRelatedMessage={validationErrors.directionId}
+                    nativeSelectProps={{
+                      name: 'directionId',
+                      value: formData.directionId,
+                      onChange: (event) => {
+                        setFormData((previous) => ({ ...previous, directionId: event.target.value }));
+                        setValidationErrors((previous) => {
+                          const next = { ...previous };
+                          delete next.directionId;
+                          return next;
+                        });
+                      },
+                    }}
+                  >
+                    <option value="" disabled>
+                      Sélectionner une option
+                    </option>
+                    {availableDirections.map((direction) => (
+                      <option key={direction.id} value={direction.id}>
+                        {direction.nomComplet} ({direction.label})
+                      </option>
+                    ))}
+                  </Select>
+                ) : (
+                  <Input
+                    className="fr-fieldset__content"
+                    label="Direction (obligatoire)"
+                    hintText="Organisation à laquelle le service est rattaché"
+                    nativeInputProps={{
+                      name: 'serviceParentDirection',
+                      value: serviceParentDirection
+                        ? `${serviceParentDirection.nomComplet} (${serviceParentDirection.label})`
+                        : '',
+                      readOnly: true,
+                    }}
+                  />
+                )}
+              </div>
+            }
           />
 
-          {requiresDirectionSelection ? (
-            <fieldset className="fr-fieldset fr-mb-3w">
-              <Select
-                className="fr-fieldset__content"
-                label="Direction à laquelle rattacher le service (obligatoire)"
-                state={validationErrors.directionId ? 'error' : 'default'}
-                stateRelatedMessage={validationErrors.directionId}
-                nativeSelectProps={{
-                  name: 'directionId',
-                  value: formData.directionId,
-                  onChange: (event) => {
-                    setFormData((previous) => ({ ...previous, directionId: event.target.value }));
-                    setValidationErrors((previous) => {
-                      const next = { ...previous };
-                      delete next.directionId;
-                      return next;
-                    });
-                  },
-                }}
-              >
-                <option value="" disabled>
-                  Sélectionnez une Direction
-                </option>
-                {availableDirections.map((direction) => (
-                  <option key={direction.id} value={direction.id}>
-                    {direction.nomComplet} ({direction.label})
-                  </option>
-                ))}
-              </Select>
-            </fieldset>
-          ) : null}
-
-          <fieldset className="fr-fieldset fr-mb-3w">
-            <Select
-              className="fr-fieldset__content"
-              label="Actif dans SIRENA (obligatoire)"
-              state={validationErrors.isActive ? 'error' : 'default'}
-              stateRelatedMessage={validationErrors.isActive}
-              nativeSelectProps={{
-                name: 'isActive',
-                value: formData.isActive,
-                onChange: (event) => setFormData((previous) => ({ ...previous, isActive: event.target.value })),
-              }}
-            >
-              <option value="oui">Oui</option>
-              <option value="non">Non</option>
-            </Select>
-          </fieldset>
+          <LocalDirectionServiceContactFields
+            formData={formData}
+            validationErrors={validationErrors}
+            onChange={handleInputChange}
+          />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
             <Link className="fr-btn fr-btn--secondary" to="/admin/directions-services">

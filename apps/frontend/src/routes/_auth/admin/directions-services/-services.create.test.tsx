@@ -48,6 +48,11 @@ beforeEach(() => {
         canCreateService: true,
       },
       availableDirections: [],
+      serviceParentDirection: {
+        id: 'dir-autonomie',
+        nomComplet: 'Direction Autonomie',
+        label: 'DA',
+      },
     },
   } as never);
 });
@@ -59,26 +64,47 @@ afterEach(() => {
 });
 
 describe('Admin local Service create route', () => {
-  it('renders Service-specific visible fields without contact-usager fields', () => {
+  it('renders the validated Service form with its assigned Direction first and read-only', () => {
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
+      data: {
+        data: [],
+        capabilities: {
+          canCreateDirection: false,
+          canCreateService: true,
+        },
+        availableDirections: [],
+        serviceParentDirection: {
+          id: 'dir-autonomie',
+          nomComplet: 'Direction Autonomie',
+          label: 'DA',
+        },
+      },
+    } as never);
+
     render(<RouteComponent />);
 
-    expect(screen.getByRole('heading', { level: 2, name: 'Créer un service' })).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: /Nom du service \(obligatoire\)/ })).toBeInTheDocument();
-    expect(screen.getByText(/Nom complet sans abréviation ou acronyme.*Service des personnes âgées/)).toBeVisible();
-    expect(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ })).toBeInTheDocument();
-    expect(screen.getByText(/Sigle, acronyme ou forme abrégée du nom.*PA/)).toBeVisible();
+    expect(screen.getByRole('heading', { level: 2, name: 'Ajouter un service' })).toBeInTheDocument();
+    expect(screen.getByText('Informations utilisées dans SIRENA')).toBeVisible();
+    const direction = screen.getByRole('textbox', { name: /Direction \(obligatoire\)/ });
+    const serviceName = screen.getByRole('textbox', { name: /Nom du service \(obligatoire\)/ });
+    expect(direction).toHaveValue('Direction Autonomie (DA)');
+    expect(direction).toHaveAttribute('readonly');
+    expect(screen.getByText('Organisation à laquelle le service est rattaché')).toBeVisible();
+    expect(direction.compareDocumentPosition(serviceName) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText(/Nom complet sans abréviation ou acronyme.*Professions Médicales/)).toBeVisible();
+    expect(screen.getByText(/Sigle, acronyme ou forme abrégée du nom.*PM/)).toBeVisible();
     expect(screen.getByRole('textbox', { name: /Adresse e-mail de notification/ })).toBeInTheDocument();
-    expect(screen.getByText(/Adresse générique pour la notification des nouvelles requêtes/)).toBeVisible();
-    expect(screen.getByRole('combobox', { name: /Actif dans SIRENA/ })).toHaveValue('oui');
-    expect(screen.queryByRole('textbox', { name: /Adresse e-mail de contact/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole('textbox', { name: /Numéro de téléphone/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole('textbox', { name: /Adresse postale/ })).not.toBeInTheDocument();
-    expect(screen.queryByText(/transmise au déclarant/)).not.toBeInTheDocument();
+    expect(screen.getByText('Informations de contact pour l’usager')).toBeVisible();
+    expect(screen.getByText(/l’adresse e-mail de notification sera transmise au déclarant/)).toBeVisible();
+    expect(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /Numéro de téléphone/ })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /Adresse postale/ })).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: /Actif dans SIRENA/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Ajouter le service' })).toBeInTheDocument();
-    expect(document.title).toBe('Créer un service - Directions et services - SIRENA');
+    expect(document.title).toBe('Ajouter un service - Directions et services - SIRENA');
   });
 
-  it('creates an inactive Service and returns to the refreshed local list', async () => {
+  it('submits every visible contact value without an activation field and returns to the refreshed list', async () => {
     const user = userEvent.setup();
     const mutateAsync = vi.fn().mockResolvedValue({ id: 'service-autonomie' });
     vi.mocked(useCreateServiceAdminLocal).mockReturnValue({ mutateAsync, isPending: false } as never);
@@ -90,14 +116,18 @@ describe('Admin local Service create route', () => {
       screen.getByRole('textbox', { name: /Adresse e-mail de notification/ }),
       'service-autonomie@ars.fr',
     );
-    await user.selectOptions(screen.getByRole('combobox', { name: /Actif dans SIRENA/ }), 'non');
+    await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'contact@ars.fr');
+    await user.type(screen.getByRole('textbox', { name: /Numéro de téléphone/ }), '0102030405');
+    await user.type(screen.getByRole('textbox', { name: /Adresse postale/ }), '1 rue de la Santé, Paris');
     await user.click(screen.getByRole('button', { name: 'Ajouter le service' }));
 
     expect(mutateAsync).toHaveBeenCalledWith({
       nomComplet: 'Service Autonomie',
       label: 'SA',
       email: 'service-autonomie@ars.fr',
-      isActive: false,
+      emailContactUsager: 'contact@ars.fr',
+      telContactUsager: '0102030405',
+      adresseContactUsager: '1 rue de la Santé, Paris',
     });
     await waitFor(() => {
       expect(addToastSpy).toHaveBeenCalledWith(expect.objectContaining({ title: 'Service créé avec succès' }));
@@ -126,17 +156,16 @@ describe('Admin local Service create route', () => {
 
     await user.type(screen.getByRole('textbox', { name: /Nom du service/ }), 'Service Autonomie');
     await user.type(screen.getByRole('textbox', { name: /Abréviation/ }), 'SA');
-    await user.selectOptions(
-      screen.getByRole('combobox', { name: /Direction à laquelle rattacher le service/ }),
-      'dir-autonomie',
-    );
+    await user.selectOptions(screen.getByRole('combobox', { name: /Direction \(obligatoire\)/ }), 'dir-autonomie');
     await user.click(screen.getByRole('button', { name: 'Ajouter le service' }));
 
     expect(mutateAsync).toHaveBeenCalledWith({
       nomComplet: 'Service Autonomie',
       label: 'SA',
       email: '',
-      isActive: true,
+      emailContactUsager: '',
+      telContactUsager: '',
+      adresseContactUsager: '',
       directionId: 'dir-autonomie',
     });
   });
@@ -157,11 +186,13 @@ describe('Admin local Service create route', () => {
 
     await user.click(screen.getByRole('button', { name: 'Ajouter le service' }));
 
-    const nameInput = screen.getByRole('textbox', { name: /Nom du service \(obligatoire\)/ });
-    expect(nameInput).toHaveFocus();
-    expect(nameInput).toHaveAccessibleDescription('Le champ "Nom du service" est vide. Veuillez le renseigner.');
+    const directionSelect = screen.getByRole('combobox', { name: /Direction \(obligatoire\)/ });
+    expect(directionSelect).toHaveFocus();
+    expect(directionSelect).toHaveAccessibleDescription(
+      'Veuillez sélectionner la direction à laquelle rattacher le service.',
+    );
+    expect(screen.getByText('Le champ "Nom du service" est vide. Veuillez le renseigner.')).toBeInTheDocument();
     expect(screen.getByText('Le champ "Abréviation" est vide. Veuillez le renseigner.')).toBeInTheDocument();
-    expect(screen.getByText('Veuillez sélectionner la direction à laquelle rattacher le service.')).toBeInTheDocument();
   });
 
   it('requires a Direction selection for a root-level Admin', async () => {
@@ -185,12 +216,32 @@ describe('Admin local Service create route', () => {
     await user.click(screen.getByRole('button', { name: 'Ajouter le service' }));
 
     const directionSelect = screen.getByRole('combobox', {
-      name: /Direction à laquelle rattacher le service \(obligatoire\)/,
+      name: /Direction \(obligatoire\)/,
     });
     expect(directionSelect).toHaveAccessibleDescription(
       'Veuillez sélectionner la direction à laquelle rattacher le service.',
     );
     expect(directionSelect).toHaveFocus();
+    expect(mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid contact-usager e-mail and telephone values', async () => {
+    const user = userEvent.setup();
+    const mutateAsync = vi.fn();
+    vi.mocked(useCreateServiceAdminLocal).mockReturnValue({ mutateAsync, isPending: false } as never);
+    render(<RouteComponent />);
+
+    await user.type(screen.getByRole('textbox', { name: /Nom du service/ }), 'Service Autonomie');
+    await user.type(screen.getByRole('textbox', { name: /Abréviation/ }), 'SA');
+    await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'adresse-invalide');
+    await user.type(screen.getByRole('textbox', { name: /Numéro de téléphone/ }), '123');
+    await user.click(screen.getByRole('button', { name: 'Ajouter le service' }));
+
+    expect(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ })).toHaveFocus();
+    expect(screen.getByText(/L’adresse e-mail est invalide/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Le numéro de téléphone doit être au format national ou international/),
+    ).toBeInTheDocument();
     expect(mutateAsync).not.toHaveBeenCalled();
   });
 

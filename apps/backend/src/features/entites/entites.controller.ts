@@ -138,6 +138,7 @@ const app = factoryWithLogs
             canCreateService: false,
           },
           availableDirections: [],
+          serviceParentDirection: null,
         });
       }
 

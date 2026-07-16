@@ -1191,15 +1191,20 @@ describe('createServiceAdminLocal()', () => {
       nomComplet: 'Service Autonomie',
       label: 'SA',
       email: 'service-autonomie@ars.fr',
-      emailContactUsager: '',
-      adresseContactUsager: '',
-      telContactUsager: '',
-      isActive: true,
+      emailContactUsager: 'contact-autonomie@ars.fr',
+      adresseContactUsager: '1 rue de la Santé, Paris',
+      telContactUsager: '0102030405',
     });
 
     expect(prisma.entite.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ entiteMereId: 'dir-autonomie' }),
+        data: expect.objectContaining({
+          entiteMereId: 'dir-autonomie',
+          emailContactUsager: 'contact-autonomie@ars.fr',
+          adresseContactUsager: '1 rue de la Santé, Paris',
+          telContactUsager: '0102030405',
+          isActive: true,
+        }),
       }),
     );
 
@@ -1218,7 +1223,6 @@ describe('createServiceAdminLocal()', () => {
         emailContactUsager: '',
         adresseContactUsager: '',
         telContactUsager: '',
-        isActive: true,
       }),
     ).rejects.toBeInstanceOf(EntiteChildCreationForbiddenError);
 
@@ -1237,7 +1241,6 @@ describe('createServiceAdminLocal()', () => {
         emailContactUsager: '',
         adresseContactUsager: '',
         telContactUsager: '',
-        isActive: true,
       }),
     ).rejects.toBeInstanceOf(EntiteChildCreationForbiddenError);
     expect(prisma.entite.create).not.toHaveBeenCalled();
@@ -1284,7 +1287,6 @@ describe('createServiceAdminLocal() for an Entité administrative assignment', (
         emailContactUsager: '',
         adresseContactUsager: '',
         telContactUsager: '',
-        isActive: true,
       },
       'dir-autonomie',
     );
@@ -1304,7 +1306,6 @@ describe('createServiceAdminLocal() for an Entité administrative assignment', (
       emailContactUsager: '',
       adresseContactUsager: '',
       telContactUsager: '',
-      isActive: true,
     };
     const deniedParents = [
       { entiteMereId: 'root-ars', isActive: false },
@@ -1572,6 +1573,7 @@ describe('getDirectionsServicesList()', () => {
         canCreateService: false,
       },
       availableDirections: [],
+      serviceParentDirection: null,
     });
   });
 
@@ -1626,6 +1628,11 @@ describe('getDirectionsServicesList()', () => {
         canEdit: true,
       },
     ]);
+    expect(result.serviceParentDirection).toEqual({
+      id: 'dir-autonomie',
+      nomComplet: 'Direction Autonomie',
+      label: 'DA',
+    });
   });
 
   it('returns only active direct Directions as Service parent options while keeping inactive Directions in the list', async () => {

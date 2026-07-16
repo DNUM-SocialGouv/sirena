@@ -7,6 +7,7 @@ import { getAdminLocalAssignmentLevel, groupEntitesByParentId } from './entites.
 import type {
   CreateChildEntiteAdminInput,
   CreateDirectionAdminLocalInput,
+  CreateServiceAdminLocalInput,
   EntiteChain,
   EntiteTraitement,
   EntiteTraitementInput,
@@ -309,7 +310,12 @@ export const getDirectionsServicesList = async (
   };
 
   if (!entiteAdminLocal) {
-    return { data: [], capabilities: emptyCapabilities, availableDirections: [] };
+    return {
+      data: [],
+      capabilities: emptyCapabilities,
+      availableDirections: [],
+      serviceParentDirection: null,
+    };
   }
 
   const assignmentLevel = getAdminLocalAssignmentLevel(entiteAdminLocal, entitesById);
@@ -319,6 +325,7 @@ export const getDirectionsServicesList = async (
       data: [],
       capabilities: emptyCapabilities,
       availableDirections: [],
+      serviceParentDirection: null,
     };
   }
 
@@ -353,6 +360,14 @@ export const getDirectionsServicesList = async (
       canCreateService,
     },
     availableDirections,
+    serviceParentDirection:
+      assignmentLevel === 'direction'
+        ? {
+            id: entiteAdminLocal.id,
+            nomComplet: entiteAdminLocal.nomComplet,
+            label: entiteAdminLocal.label,
+          }
+        : null,
   };
 };
 
@@ -362,11 +377,13 @@ export const createDirectionAdminLocal = async (assignedEntiteId: string, data: 
 
 export const createServiceAdminLocal = async (
   assignedEntiteId: string,
-  data: CreateChildEntiteAdminInput,
+  data: Omit<CreateServiceAdminLocalInput, 'directionId'>,
   directionId?: string,
 ) => {
+  const activeServiceData = { ...data, isActive: true };
+
   if (!directionId) {
-    return createChildEntiteAdmin(assignedEntiteId, data, {
+    return createChildEntiteAdmin(assignedEntiteId, activeServiceData, {
       requireActiveParent: true,
       requireDirectionParent: true,
     });
@@ -391,7 +408,7 @@ export const createServiceAdminLocal = async (
     throw new EntiteChildCreationForbiddenError();
   }
 
-  return createChildEntiteAdmin(directionId, data, {
+  return createChildEntiteAdmin(directionId, activeServiceData, {
     requireActiveParent: true,
     requireDirectionParent: true,
   });
