@@ -84,6 +84,7 @@ vi.mock('./sirecMigration.finess.transformer.js', () => ({
 
 vi.mock('../transco/dictionnaire.transco.js', () => ({
   SIREC_BOOLEAN_TRANSCO: { 1: true, 112: true, 0: false, 111: false },
+  SIREC_DICO: { 68: 'Addictologie', 71: 'Adultes' },
 }));
 
 vi.mock('../transco/finessCategetab.transco.js', () => ({
@@ -115,6 +116,8 @@ const makeMisEnCause = (
     autresMcType: number | null;
     label: string | null;
     adresse: string | null;
+    serviceConcerne: number | null;
+    publicConcerne: number | null;
     groupIds: number[];
     rppsData: SirecRppsData | null;
     finessData: SirecFinessData | null;
@@ -127,6 +130,8 @@ const makeMisEnCause = (
   autresMcType: null,
   label: null,
   adresse: null,
+  serviceConcerne: null,
+  publicConcerne: null,
   groupIds: [],
   rppsData: null,
   finessData: null,
@@ -428,6 +433,132 @@ describe('sirecMigration.misEnCause.transformer.ts', () => {
 
       expect(result[0].misEnCauseData).not.toBeNull();
       expect(result[1].misEnCauseData).toBeNull();
+    });
+  });
+
+  describe('service_concerne / public_concerne', () => {
+    it('should not set autrePrecision when both are null', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [makeMisEnCause({ id_data: 10, type: 65, identifiant: 12345678901, rppsData: mockRppsData })]),
+        [],
+      );
+
+      expect((result[0].misEnCauseData as any)?.autrePrecision).toBeUndefined();
+    });
+
+    it('should set autrePrecision with "Service concerné : " prefix and dictionary transco when service_concerne is set', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [
+            makeMisEnCause({
+              id_data: 10,
+              type: 65,
+              identifiant: 12345678901,
+              rppsData: mockRppsData,
+              serviceConcerne: 68,
+            }),
+          ],
+        ),
+        [],
+      );
+
+      expect((result[0].misEnCauseData as any)?.autrePrecision).toBe('Service concerné : Addictologie');
+    });
+
+    it('should set autrePrecision with "Public concerné : " prefix and dictionary transco when public_concerne is set', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [
+            makeMisEnCause({
+              id_data: 10,
+              type: 65,
+              identifiant: 12345678901,
+              rppsData: mockRppsData,
+              publicConcerne: 71,
+            }),
+          ],
+        ),
+        [],
+      );
+
+      expect((result[0].misEnCauseData as any)?.autrePrecision).toBe('Public concerné : Adultes');
+    });
+
+    it('should order Service concerné before Public concerné, both before Observations and Signalement', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [
+            makeMisEnCause({
+              id_data: 10,
+              type: 65,
+              identifiant: 12345678901,
+              rppsData: mockRppsData,
+              serviceConcerne: 68,
+              publicConcerne: 71,
+            }),
+          ],
+          null,
+          'Texte obs',
+          1,
+        ),
+        [],
+      );
+
+      expect((result[0].misEnCauseData as any)?.autrePrecision).toBe(
+        'Service concerné : Addictologie\nPublic concerné : Adultes\nObservations : Texte obs\nEnregistré en tant que Signalement dans SIREC',
+      );
+    });
+
+    it('should throw SirecTranscoError when service_concerne has an unknown id_dico', () => {
+      expect(() =>
+        transformSirecMisEnCauseSituations(
+          makeData(
+            [],
+            [
+              makeMisEnCause({
+                id_data: 10,
+                type: 65,
+                identifiant: 12345678901,
+                rppsData: mockRppsData,
+                serviceConcerne: 999,
+              }),
+            ],
+          ),
+          [],
+        ),
+      ).toThrow(SirecTranscoError);
+    });
+
+    it('should throw SirecTranscoError when public_concerne has an unknown id_dico', () => {
+      expect(() =>
+        transformSirecMisEnCauseSituations(
+          makeData(
+            [],
+            [
+              makeMisEnCause({
+                id_data: 10,
+                type: 65,
+                identifiant: 12345678901,
+                rppsData: mockRppsData,
+                publicConcerne: 999,
+              }),
+            ],
+          ),
+          [],
+        ),
+      ).toThrow(SirecTranscoError);
+    });
+
+    it('should not set autrePrecision for null misEnCauseData even when service_concerne is set', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [makeMisEnCause({ id_data: 10, type: null, serviceConcerne: 68 })]),
+        [],
+      );
+
+      expect(result[0].misEnCauseData).toBeNull();
     });
   });
 
