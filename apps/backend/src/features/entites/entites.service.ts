@@ -249,17 +249,24 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
     return null;
   }
 
-  return {
+  const editableFields = {
     id: targetEntite.id,
-    kind,
     nomComplet: targetEntite.nomComplet,
     label: targetEntite.label,
     email: targetEntite.email,
     emailContactUsager: targetEntite.emailContactUsager,
     telContactUsager: targetEntite.telContactUsager,
     adresseContactUsager: targetEntite.adresseContactUsager,
-    parentDirection,
   };
+
+  if (kind === 'service') {
+    if (!parentDirection) {
+      return null;
+    }
+    return { ...editableFields, kind, parentDirection };
+  }
+
+  return { ...editableFields, kind };
 };
 
 export const editDirectionServiceAdminLocal = async (
@@ -294,17 +301,19 @@ export const editDirectionServiceAdminLocal = async (
     },
   });
 
-  return {
+  const updatedFields = {
     id: updatedEntite.id,
-    kind: target.kind,
     nomComplet: updatedEntite.nomComplet,
     label: updatedEntite.label,
     email: updatedEntite.email,
     emailContactUsager: updatedEntite.emailContactUsager,
     telContactUsager: updatedEntite.telContactUsager,
     adresseContactUsager: updatedEntite.adresseContactUsager,
-    parentDirection: target.parentDirection,
   };
+
+  return target.kind === 'service'
+    ? { ...updatedFields, kind: target.kind, parentDirection: target.parentDirection }
+    : { ...updatedFields, kind: target.kind };
 };
 
 export const getDirectionsServicesList = async (

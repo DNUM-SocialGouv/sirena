@@ -103,23 +103,31 @@ export const GetEntitesListAdminResponseSchema = z.array(
   }),
 );
 
-export const GetDirectionServiceAdminLocalResponseSchema = z.object({
+const DirectionServiceAdminLocalFieldsSchema = z.object({
   id: z.string(),
-  kind: z.enum(['direction', 'service']),
   nomComplet: z.string(),
   label: z.string(),
   email: z.string(),
   emailContactUsager: z.string(),
   telContactUsager: z.string(),
   adresseContactUsager: z.string(),
-  parentDirection: z
-    .object({
-      id: z.string(),
-      nomComplet: z.string(),
-      label: z.string(),
-    })
-    .nullable(),
 });
+
+const ParentDirectionAdminLocalSchema = z.object({
+  id: z.string(),
+  nomComplet: z.string(),
+  label: z.string(),
+});
+
+export const GetDirectionServiceAdminLocalResponseSchema = z.discriminatedUnion('kind', [
+  DirectionServiceAdminLocalFieldsSchema.extend({
+    kind: z.literal('direction'),
+  }),
+  DirectionServiceAdminLocalFieldsSchema.extend({
+    kind: z.literal('service'),
+    parentDirection: ParentDirectionAdminLocalSchema,
+  }),
+]);
 
 export const GetDirectionsServicesListResponseSchema = z.object({
   data: z.array(

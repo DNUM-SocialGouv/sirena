@@ -416,7 +416,16 @@ describe('Entites endpoints: /entites', () => {
         adresseContactUsager: '1 rue de la Santé, Paris',
       };
       vi.mocked(editDirectionServiceAdminLocal)
-        .mockResolvedValueOnce({ id: 'service-pa', kind: 'service', ...input, parentDirection: null })
+        .mockResolvedValueOnce({
+          id: 'service-pa',
+          kind: 'service',
+          ...input,
+          parentDirection: {
+            id: 'dir-autonomie',
+            nomComplet: 'Direction Autonomie',
+            label: 'DA',
+          },
+        })
         .mockResolvedValueOnce(null);
 
       const authorizedRes = await app.request('/admin/directions-services/service-pa', {
@@ -432,7 +441,16 @@ describe('Entites endpoints: /entites', () => {
 
       expect(authorizedRes.status).toBe(200);
       expect(await authorizedRes.json()).toEqual({
-        data: { id: 'service-pa', kind: 'service', ...input, parentDirection: null },
+        data: {
+          id: 'service-pa',
+          kind: 'service',
+          ...input,
+          parentDirection: {
+            id: 'dir-autonomie',
+            nomComplet: 'Direction Autonomie',
+            label: 'DA',
+          },
+        },
       });
       expect(deniedRes.status).toBe(404);
       expect(editDirectionServiceAdminLocal).toHaveBeenNthCalledWith(1, 'dir-autonomie', 'service-pa', input);

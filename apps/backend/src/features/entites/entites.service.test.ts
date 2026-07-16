@@ -1403,7 +1403,6 @@ describe('editDirectionServiceAdminLocal()', () => {
       emailContactUsager: 'nouveau-contact@direction.fr',
       telContactUsager: '0605040302',
       adresseContactUsager: '2 rue de Paris',
-      parentDirection: null,
     });
     expect(prisma.entite.findMany).not.toHaveBeenCalled();
     expect(prisma.entite.findUnique).toHaveBeenCalledTimes(2);
@@ -1494,7 +1493,6 @@ describe('getDirectionServiceAdminLocal()', () => {
       emailContactUsager: '',
       telContactUsager: '',
       adresseContactUsager: '',
-      parentDirection: null,
     });
     expect(prisma.entite.findMany).not.toHaveBeenCalled();
     expect(prisma.entite.findUnique).toHaveBeenCalledTimes(2);
