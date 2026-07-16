@@ -153,13 +153,7 @@ export const GetDirectionsServicesListResponseSchema = z.object({
       label: z.string(),
     }),
   ),
-  serviceParentDirection: z
-    .object({
-      id: z.string(),
-      nomComplet: z.string(),
-      label: z.string(),
-    })
-    .nullable(),
+  serviceParentDirection: ParentDirectionAdminLocalSchema.nullable(),
 });
 
 export const GetEntitesByIdAdminResponseSchema = EntiteAdminSchema;
