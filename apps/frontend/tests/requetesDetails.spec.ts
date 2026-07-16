@@ -25,7 +25,8 @@ test.describe('Request Details Feature', () => {
     context = await browser.newContext({ storageState: authFile });
     page = await context.newPage();
 
-    await page.goto(`${baseUrl}/home`);
+    // Exclure les requêtes clôturées : elles sont en lecture seule (bouton « Ajouter une étape » masqué).
+    await page.goto(`${baseUrl}/home?statutIds=NOUVEAU,EN_COURS,TRAITEE`);
     await expect(page.getByText(/Bienvenue/)).toBeVisible();
 
     const requetesTable = page.getByRole('table');
