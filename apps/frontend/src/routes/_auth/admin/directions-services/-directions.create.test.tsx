@@ -6,6 +6,7 @@ import { useCreateDirectionAdminLocal } from '@/hooks/queries/entites.hook';
 import { fetchResolvedFeatureFlags } from '@/lib/api/fetchFeatureFlags';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { queryClient } from '@/lib/queryClient';
+import { requireAdminLocalDirectionCreation } from './-create-route-guard';
 import { Route, RouteComponent } from './directions.create';
 
 const { addToastSpy, authGuardSpy, redirectSpy, routerNavigateSpy } = vi.hoisted(() => ({
@@ -28,6 +29,10 @@ vi.mock('@/hooks/queries/entites.hook', () => ({
   useCreateDirectionAdminLocal: vi.fn(),
 }));
 
+vi.mock('@/lib/api/fetchEntites', () => ({
+  fetchDirectionsServicesList: vi.fn(),
+}));
+
 vi.mock('@/lib/api/fetchFeatureFlags', () => ({
   fetchResolvedFeatureFlags: vi.fn(),
 }));
@@ -35,6 +40,7 @@ vi.mock('@/lib/api/fetchFeatureFlags', () => ({
 vi.mock('@/lib/queryClient', () => ({
   queryClient: {
     ensureQueryData: vi.fn(),
+    fetchQuery: vi.fn(),
   },
 }));
 
@@ -69,9 +75,9 @@ afterEach(() => {
 });
 
 describe('Admin local Direction create route', () => {
-  it('restricts the route to entity admins', () => {
+  it('restricts the route to entity admins with Direction creation capability', () => {
     expect(vi.mocked(requireAuthAndRoles)).toHaveBeenCalledWith([ROLES.ENTITY_ADMIN]);
-    expect((Route as unknown as { beforeLoad: unknown }).beforeLoad).toBeTypeOf('function');
+    expect((Route as unknown as { beforeLoad: unknown }).beforeLoad).toBe(requireAdminLocalDirectionCreation);
   });
 
   it('redirects to admin users from beforeLoad when the feature flag is disabled', async () => {

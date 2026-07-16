@@ -12,7 +12,7 @@ import {
   LocalDirectionServiceContactFields,
   LocalDirectionServiceSirenaFields,
 } from './-components/LocalDirectionServiceSirenaFields';
-import { requireAdminLocalDirectionsServices } from './-route-guard';
+import { requireAdminLocalServiceCreation } from './-create-route-guard';
 
 const CreateServiceFormSchema = z.object({
   nomComplet: z.string().trim().min(1, 'Le champ "Nom du service" est vide. Veuillez le renseigner.'),
@@ -25,7 +25,7 @@ const CreateServiceFormSchema = z.object({
 });
 
 export const Route = createFileRoute('/_auth/admin/directions-services/services/create')({
-  beforeLoad: requireAdminLocalDirectionsServices,
+  beforeLoad: requireAdminLocalServiceCreation,
   component: RouteComponent,
 });
 

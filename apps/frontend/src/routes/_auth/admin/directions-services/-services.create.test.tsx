@@ -2,11 +2,12 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCreateServiceAdminLocal, useDirectionsServicesList } from '@/hooks/queries/entites.hook';
-import { RouteComponent } from './services.create';
+import { Route, RouteComponent } from './services.create';
 
-const { addToastSpy, routerNavigateSpy } = vi.hoisted(() => ({
+const { addToastSpy, routerNavigateSpy, serviceCreationGuardSpy } = vi.hoisted(() => ({
   addToastSpy: vi.fn(),
   routerNavigateSpy: vi.fn(),
+  serviceCreationGuardSpy: vi.fn(),
 }));
 
 vi.mock('@tanstack/react-router', () => ({
@@ -20,8 +21,8 @@ vi.mock('@/hooks/queries/entites.hook', () => ({
   useDirectionsServicesList: vi.fn(),
 }));
 
-vi.mock('./-route-guard', () => ({
-  requireAdminLocalDirectionsServices: vi.fn(),
+vi.mock('./-create-route-guard', () => ({
+  requireAdminLocalServiceCreation: serviceCreationGuardSpy,
 }));
 
 vi.mock('@sirena/ui', async () => {
@@ -64,6 +65,10 @@ afterEach(() => {
 });
 
 describe('Admin local Service create route', () => {
+  it('uses the Service creation capability guard', () => {
+    expect((Route as unknown as { beforeLoad: unknown }).beforeLoad).toBe(serviceCreationGuardSpy);
+  });
+
   it('renders the validated Service form with its assigned Direction first and read-only', () => {
     vi.mocked(useDirectionsServicesList).mockReturnValue({
       data: {
