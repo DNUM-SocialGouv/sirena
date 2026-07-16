@@ -152,15 +152,15 @@ export const createDefaultRequeteEtapes = async (
 export const getEtapePermissions = (etape: {
   type: string;
   statutId: string | null;
-  requete: { createdById: string | null } | null;
 }): { editable: boolean; canOnlyEditNotes: boolean } => {
   if (etape.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) return { editable: false, canOnlyEditNotes: false };
   if (etape.type === REQUETE_ETAPE_TYPES.CREATION || etape.type === REQUETE_ETAPE_TYPES.REOPEN) {
     return { editable: false, canOnlyEditNotes: false };
   }
-  // Spec: only an ACR sent automatically is locked (status + uploaded files), notes always editable.
-  // Automatic = request not created by an agent (createdById null) ; a manual ACR stays fully editable.
-  const canOnlyEditNotes = etape.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT && etape.requete?.createdById == null;
+  // An acknowledgment step is always a notes/attachments container: status, name and date stay
+  // locked, only notes can be edited. Manual ACRs behave exactly like automatic ones (the AR send,
+  // auto or semi-manual from SIRENA, is authoritative), so this no longer depends on who created the request.
+  const canOnlyEditNotes = etape.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT;
   return { editable: true, canOnlyEditNotes };
 };
 
@@ -384,7 +384,6 @@ export const updateProcessingEtape = async (
     include: {
       notes: { select: { id: true, authorId: true, texte: true } },
       uploadedFiles: { select: { id: true, canDelete: true, filePath: true } },
-      requete: { select: { createdById: true } },
     },
   });
   if (!etape) {
@@ -405,7 +404,8 @@ export const updateProcessingEtape = async (
   let noteChangelogs: NoteChangelogEntry[] = [];
 
   await prisma.$transaction(async (tx) => {
-    // canOnlyEditNotes (automatic ACR) only persists notes
+    // canOnlyEditNotes (ACR) locks the step itself (name/status/date) but notes and
+    // attachments stay editable — the AR PDF is kept via diffEtapeFiles (canDelete === false).
     if (!canOnlyEditNotes) {
       await tx.requeteEtape.update({
         where: { id: stepId },
@@ -415,16 +415,14 @@ export const updateProcessingEtape = async (
 
     noteChangelogs = await applyEtapeNoteChanges(tx, stepId, userId, data.notes, notesDiff);
 
-    if (!canOnlyEditNotes) {
-      if (fileIdsToAttach.length > 0) {
-        if (!(await isUserOwner(userId, fileIdsToAttach, tx))) {
-          throw new FilesNotOwnedError('FILES_NOT_OWNED');
-        }
-        await setEtapeFile(stepId, fileIdsToAttach, etape.entiteId, userId, tx);
+    if (fileIdsToAttach.length > 0) {
+      if (!(await isUserOwner(userId, fileIdsToAttach, tx))) {
+        throw new FilesNotOwnedError('FILES_NOT_OWNED');
       }
-      if (filesToRemove.length > 0) {
-        await tx.uploadedFile.deleteMany({ where: { id: { in: filesToRemove.map((f) => f.id) } } });
-      }
+      await setEtapeFile(stepId, fileIdsToAttach, etape.entiteId, userId, tx);
+    }
+    if (filesToRemove.length > 0) {
+      await tx.uploadedFile.deleteMany({ where: { id: { in: filesToRemove.map((f) => f.id) } } });
     }
   });
 
@@ -432,7 +430,7 @@ export const updateProcessingEtape = async (
     noteChangelogs.map((ev) => logNoteChangelog(ev.action, ev.id, ev.before, ev.after, userId, logger)),
   );
 
-  if (!canOnlyEditNotes && filesToRemove.length > 0) {
+  if (filesToRemove.length > 0) {
     await cleanupRemovedEtapeFiles(filesToRemove, userId, logger);
   }
 
@@ -567,7 +565,6 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
     const { editable, canOnlyEditNotes } = getEtapePermissions({
       type: etape.type,
       statutId: etape.statutId,
-      requete: etape.requete ? { createdById: etape.requete.createdById } : null,
     });
     return {
       ...etape,
