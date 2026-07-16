@@ -65,7 +65,7 @@ const isDryRun = args.includes('--dry-run');
 const entiteIdFlagIndex = args.indexOf('--entite-id');
 const entiteId = entiteIdFlagIndex >= 0 ? args[entiteIdFlagIndex + 1] : null;
 
-if (envVars.APP_ENV === APP_ENVS.INTEGRATION || envVars.APP_ENV === APP_ENVS.LOCAL) {
+if (envVars.APP_ENV !== APP_ENVS.INTEGRATION && envVars.APP_ENV !== APP_ENVS.LOCAL) {
   console.error('Ce script ne peut être lancé que sur integ ou sur un poste local. ');
   process.exit(1);
 }
