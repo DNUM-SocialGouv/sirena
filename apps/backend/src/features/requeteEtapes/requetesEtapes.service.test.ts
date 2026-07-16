@@ -545,12 +545,11 @@ describe('RequeteEtapes.service.ts', () => {
         authorId: 'authorId',
         requeteEtapeId: 'requeteEtapeId',
       });
-      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
-        {
-          ...requeteEtapeWithNotesAndFiles,
-          notes: [makeNote('has-text', 'Real note'), makeNote('empty', ''), makeNote('whitespace', '   ')],
-        },
-      ]);
+      const etapeWithMixedNotes: typeof requeteEtapeWithNotesAndFiles = {
+        ...requeteEtapeWithNotesAndFiles,
+        notes: [makeNote('has-text', 'Real note'), makeNote('empty', ''), makeNote('whitespace', '   ')],
+      };
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([etapeWithMixedNotes]);
       vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
 
       const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0, limit: 10 });
