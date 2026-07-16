@@ -593,7 +593,11 @@ export const getRequeteEtapeById = async (id: string) =>
  * @param requeteId - The ID of the requete
  * @param entiteIds - Array of entity IDs that received the acknowledgment email
  */
-export const updateAcknowledgmentStep = async (requeteId: string, entiteIds: string[]): Promise<void> => {
+export const updateAcknowledgmentStep = async (
+  requeteId: string,
+  entiteIds: string[],
+  sentDate: Date = new Date(),
+): Promise<void> => {
   const logger = getLoggerStore();
 
   try {
@@ -618,6 +622,7 @@ export const updateAcknowledgmentStep = async (requeteId: string, entiteIds: str
           id: etape.id,
           nom: etape.nom,
           statutId: etape.statutId,
+          dateRealisation: etape.dateRealisation?.toISOString() ?? null,
           requeteId: etape.requeteId,
           entiteId: etape.entiteId,
           createdAt: etape.createdAt.toISOString(),
@@ -628,6 +633,7 @@ export const updateAcknowledgmentStep = async (requeteId: string, entiteIds: str
           where: { id: etape.id },
           data: {
             statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+            dateRealisation: sentDate,
           },
         });
 
@@ -635,6 +641,7 @@ export const updateAcknowledgmentStep = async (requeteId: string, entiteIds: str
           id: updatedEtape.id,
           nom: updatedEtape.nom,
           statutId: updatedEtape.statutId,
+          dateRealisation: updatedEtape.dateRealisation?.toISOString() ?? null,
           requeteId: updatedEtape.requeteId,
           entiteId: updatedEtape.entiteId,
           createdAt: updatedEtape.createdAt.toISOString(),

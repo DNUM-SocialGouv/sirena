@@ -287,9 +287,10 @@ export async function sendManualAcknowledgmentEmail({
 }): Promise<void> {
   const logger = getLoggerStore();
 
+  const markedDoneAt = new Date();
   const claimResult = await prisma.requeteEtape.updateMany({
     where: { id: etapeId, statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
-    data: { statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT },
+    data: { statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT, dateRealisation: markedDoneAt },
   });
 
   if (claimResult.count === 0) {
@@ -348,8 +349,8 @@ export async function sendManualAcknowledgmentEmail({
         entity: 'RequeteEtape',
         entityId: etapeId,
         action: ChangeLogAction.UPDATED,
-        before: { statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
-        after: { statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT },
+        before: { statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE, dateRealisation: null },
+        after: { statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT, dateRealisation: markedDoneAt.toISOString() },
         changedById: userId,
       });
     } catch (changelogError) {
@@ -409,7 +410,7 @@ export async function sendManualAcknowledgmentEmail({
     try {
       await prisma.requeteEtape.update({
         where: { id: etapeId },
-        data: { statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
+        data: { statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE, dateRealisation: null },
       });
     } catch (rollbackError) {
       logger.error(
@@ -553,7 +554,7 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
     // Update acknowledgment step automatically for top entities only
     const entiteIdsToUpdate = topEntites.map((e) => e.id);
     try {
-      await updateAcknowledgmentStep(requeteId, entiteIdsToUpdate);
+      await updateAcknowledgmentStep(requeteId, entiteIdsToUpdate, sentDate);
     } catch (stepUpdateError) {
       logger.error(
         { requeteId, error: stepUpdateError },
