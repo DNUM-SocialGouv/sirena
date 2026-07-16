@@ -14,7 +14,7 @@
 }
 
 .entiteTag-text {
-  color: var(--light-decisions-text-text-title-grey, #161616);
+  color: var(--text-title-grey);
   font-size: 18px;
   font-style: normal;
   font-weight: 500;
