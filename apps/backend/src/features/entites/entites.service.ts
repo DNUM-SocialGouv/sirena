@@ -3,7 +3,15 @@ import { type Entite, prisma } from '../../libs/prisma.js';
 import { buildEntitesListAdmin } from './entites.admin.mapper.js';
 import { buildDirectionsServicesRows as buildDirectionsServicesRowsFromHierarchy } from './entites.directions-services.mapper.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
-import type { EntiteChain, EntiteTraitement, EntiteTraitementInput } from './entites.type.js';
+import { getAdminLocalAssignmentLevel, groupEntitesByParentId } from './entites.hierarchy.js';
+import type {
+  CreateChildEntiteAdminInput,
+  CreateDirectionAdminLocalInput,
+  CreateServiceAdminLocalInput,
+  EntiteChain,
+  EntiteTraitement,
+  EntiteTraitementInput,
+} from './entites.type.js';
 
 const ADMIN_SORT_COLUMNS = [
   'entiteNom',
@@ -177,7 +185,157 @@ export const getRootEntitesListAdmin = async () =>
     orderBy: [{ entiteTypeId: 'asc' }, { nomComplet: 'asc' }],
   });
 
-export const getDirectionsServicesRows = async (
+export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, targetEntiteId: string) => {
+  const [assignedEntite, targetEntite] = await Promise.all([
+    prisma.entite.findUnique({
+      where: { id: assignedEntiteId },
+      select: { id: true, nomComplet: true, label: true, entiteMereId: true },
+    }),
+    prisma.entite.findUnique({
+      where: { id: targetEntiteId },
+      select: {
+        id: true,
+        nomComplet: true,
+        label: true,
+        email: true,
+        emailContactUsager: true,
+        telContactUsager: true,
+        adresseContactUsager: true,
+        entiteMereId: true,
+      },
+    }),
+  ]);
+
+  if (!assignedEntite || !targetEntite) {
+    return null;
+  }
+
+  let kind: 'entite-administrative' | 'direction' | 'service' | null = null;
+  let parentDirection: { id: string; nomComplet: string; label: string } | null = null;
+
+  if (assignedEntite.entiteMereId === null) {
+    if (targetEntite.id === assignedEntite.id) {
+      kind = 'entite-administrative';
+    } else if (targetEntite.entiteMereId === assignedEntite.id) {
+      kind = 'direction';
+    } else if (targetEntite.entiteMereId) {
+      const targetParent = await prisma.entite.findUnique({
+        where: { id: targetEntite.entiteMereId },
+        select: { id: true, nomComplet: true, label: true, entiteMereId: true },
+      });
+      if (targetParent?.entiteMereId === assignedEntite.id) {
+        kind = 'service';
+        parentDirection = {
+          id: targetParent.id,
+          nomComplet: targetParent.nomComplet,
+          label: targetParent.label,
+        };
+      }
+    }
+  } else {
+    const assignedParent = await prisma.entite.findUnique({
+      where: { id: assignedEntite.entiteMereId },
+      select: {
+        id: true,
+        nomComplet: true,
+        label: true,
+        entiteMereId: true,
+        entiteMere: { select: { entiteMereId: true } },
+      },
+    });
+    if (assignedParent?.entiteMereId === null) {
+      if (targetEntite.id === assignedEntite.id) {
+        kind = 'direction';
+      } else if (targetEntite.entiteMereId === assignedEntite.id) {
+        kind = 'service';
+        parentDirection = {
+          id: assignedEntite.id,
+          nomComplet: assignedEntite.nomComplet,
+          label: assignedEntite.label,
+        };
+      }
+    } else if (assignedParent?.entiteMere?.entiteMereId === null && targetEntite.id === assignedEntite.id) {
+      kind = 'service';
+      parentDirection = {
+        id: assignedParent.id,
+        nomComplet: assignedParent.nomComplet,
+        label: assignedParent.label,
+      };
+    }
+  }
+
+  if (!kind) {
+    return null;
+  }
+
+  const editableFields = {
+    id: targetEntite.id,
+    nomComplet: targetEntite.nomComplet,
+    label: targetEntite.label,
+    email: targetEntite.email,
+    emailContactUsager: targetEntite.emailContactUsager,
+    telContactUsager: targetEntite.telContactUsager,
+    adresseContactUsager: targetEntite.adresseContactUsager,
+  };
+
+  if (kind === 'service') {
+    if (!parentDirection) {
+      return null;
+    }
+    return { ...editableFields, kind, parentDirection };
+  }
+
+  return { ...editableFields, kind };
+};
+
+export const editDirectionServiceAdminLocal = async (
+  assignedEntiteId: string,
+  targetEntiteId: string,
+  data: {
+    nomComplet: string;
+    label: string;
+    email: string;
+    emailContactUsager: string;
+    telContactUsager: string;
+    adresseContactUsager: string;
+  },
+) => {
+  const target = await getDirectionServiceAdminLocal(assignedEntiteId, targetEntiteId);
+
+  if (!target) {
+    return null;
+  }
+
+  const updatedEntite = await prisma.entite.update({
+    where: { id: targetEntiteId },
+    data,
+    select: {
+      id: true,
+      nomComplet: true,
+      label: true,
+      email: true,
+      emailContactUsager: true,
+      telContactUsager: true,
+      adresseContactUsager: true,
+    },
+  });
+
+  const updatedFields = {
+    id: updatedEntite.id,
+    nomComplet: updatedEntite.nomComplet,
+    label: updatedEntite.label,
+    email: updatedEntite.email,
+    emailContactUsager: updatedEntite.emailContactUsager,
+    telContactUsager: updatedEntite.telContactUsager,
+    adresseContactUsager: updatedEntite.adresseContactUsager,
+  };
+
+  return target.kind === 'service'
+    ? { ...updatedFields, kind: target.kind, parentDirection: target.parentDirection }
+    : { ...updatedFields, kind: target.kind };
+};
+
+export const getDirectionsServicesList = async (
   entiteAdminLocalId: string,
   { search = '' }: { search?: string } = {},
 ) => {
@@ -188,34 +346,51 @@ export const getDirectionsServicesRows = async (
       label: true,
       email: true,
       entiteMereId: true,
+      isActive: true,
     },
   });
 
-  const entitesParEntiteMere = new Map<string, typeof entites>();
-
-  for (const entite of entites) {
-    if (entite.entiteMereId === null) {
-      continue;
-    }
-
-    const entitesEnfants = entitesParEntiteMere.get(entite.entiteMereId) ?? [];
-    entitesEnfants.push(entite);
-    entitesParEntiteMere.set(entite.entiteMereId, entitesEnfants);
-  }
-
+  const entitesParEntiteMere = groupEntitesByParentId(entites);
+  const entitesById = new Map(entites.map((entite) => [entite.id, entite]));
   const entitesAdminLocal: typeof entites = [];
-  const entiteAdminLocal = entites.find((entite) => entite.id === entiteAdminLocalId);
+  const entiteAdminLocal = entitesById.get(entiteAdminLocalId);
+
+  const emptyCapabilities = {
+    canCreateDirection: false,
+    canCreateService: false,
+  };
 
   if (!entiteAdminLocal) {
-    return [];
+    return {
+      data: [],
+      capabilities: emptyCapabilities,
+      availableDirections: [],
+      serviceParentDirection: null,
+    };
   }
 
-  const entiteMereAdminLocal = entiteAdminLocal.entiteMereId
-    ? entites.find((entite) => entite.id === entiteAdminLocal.entiteMereId)
-    : undefined;
+  const assignmentLevel = getAdminLocalAssignmentLevel(entiteAdminLocal, entitesById);
 
-  if (entiteMereAdminLocal?.entiteMereId !== null && entiteMereAdminLocal !== undefined) {
-    return buildDirectionsServicesRowsFromHierarchy([entiteMereAdminLocal, entiteAdminLocal], { search });
+  if (assignmentLevel === 'invalid-hierarchy') {
+    return {
+      data: [],
+      capabilities: emptyCapabilities,
+      availableDirections: [],
+      serviceParentDirection: null,
+    };
+  }
+
+  if (assignmentLevel === 'service') {
+    const parentDirection = entiteAdminLocal.entiteMereId ? entitesById.get(entiteAdminLocal.entiteMereId) : undefined;
+
+    return {
+      data: parentDirection
+        ? buildDirectionsServicesRowsFromHierarchy([parentDirection, entiteAdminLocal], { search })
+        : [],
+      capabilities: emptyCapabilities,
+      availableDirections: [],
+      serviceParentDirection: null,
+    };
   }
 
   const buildEntitesAdminLocal = (entite: (typeof entites)[number]) => {
@@ -227,20 +402,89 @@ export const getDirectionsServicesRows = async (
 
   buildEntitesAdminLocal(entiteAdminLocal);
 
-  return buildDirectionsServicesRowsFromHierarchy(entitesAdminLocal, { search });
+  const hasActiveDirection = entitesAdminLocal.some(
+    (entite) => entite.entiteMereId === entiteAdminLocal.id && entite.isActive,
+  );
+  const canCreateService =
+    assignmentLevel === 'entite-administrative'
+      ? hasActiveDirection
+      : assignmentLevel === 'direction' && entiteAdminLocal.isActive;
+  const availableDirections =
+    assignmentLevel === 'entite-administrative'
+      ? entitesAdminLocal
+          .filter((entite) => entite.entiteMereId === entiteAdminLocal.id && entite.isActive)
+          .sort((a, b) => a.nomComplet.localeCompare(b.nomComplet))
+          .map(({ id, nomComplet, label }) => ({ id, nomComplet, label }))
+      : [];
+
+  return {
+    data: buildDirectionsServicesRowsFromHierarchy(entitesAdminLocal, {
+      search,
+      includeRootDirection: assignmentLevel === 'direction',
+    }),
+    capabilities: {
+      canCreateDirection: assignmentLevel === 'entite-administrative',
+      canCreateService,
+    },
+    availableDirections,
+    serviceParentDirection:
+      assignmentLevel === 'direction'
+        ? {
+            id: entiteAdminLocal.id,
+            nomComplet: entiteAdminLocal.nomComplet,
+            label: entiteAdminLocal.label,
+          }
+        : null,
+  };
+};
+
+export const createDirectionAdminLocal = async (assignedEntiteId: string, data: CreateDirectionAdminLocalInput) => {
+  return createChildEntiteAdmin(assignedEntiteId, { ...data, isActive: true }, { requireRootParent: true });
+};
+
+export const createServiceAdminLocal = async (
+  assignedEntiteId: string,
+  data: Omit<CreateServiceAdminLocalInput, 'directionId'>,
+  directionId?: string,
+) => {
+  const activeServiceData = { ...data, isActive: true };
+
+  if (!directionId) {
+    return createChildEntiteAdmin(assignedEntiteId, activeServiceData, {
+      requireActiveParent: true,
+      requireDirectionParent: true,
+    });
+  }
+
+  const [assignedEntite, parentDirection] = await Promise.all([
+    prisma.entite.findUnique({
+      where: { id: assignedEntiteId },
+      select: { entiteMereId: true },
+    }),
+    prisma.entite.findUnique({
+      where: { id: directionId },
+      select: { entiteMereId: true, isActive: true },
+    }),
+  ]);
+
+  if (
+    assignedEntite?.entiteMereId !== null ||
+    parentDirection?.entiteMereId !== assignedEntiteId ||
+    !parentDirection?.isActive
+  ) {
+    throw new EntiteChildCreationForbiddenError();
+  }
+
+  return createChildEntiteAdmin(directionId, activeServiceData, {
+    requireActiveParent: true,
+    requireDirectionParent: true,
+  });
 };
 
 export const createChildEntiteAdmin = async (
   parentId: string,
-  data: {
-    nomComplet: string;
-    label: string;
-    email: string;
-    emailContactUsager: string;
-    adresseContactUsager: string;
-    telContactUsager: string;
-    isActive: boolean;
-  },
+  data: CreateChildEntiteAdminInput,
+  options: { requireActiveParent?: boolean; requireDirectionParent?: boolean; requireRootParent?: boolean } = {},
 ) => {
   const parent = await prisma.entite.findUnique({
     where: { id: parentId },
@@ -252,6 +496,7 @@ export const createChildEntiteAdmin = async (
       regLib: true,
       dptLib: true,
       entiteMereId: true,
+      isActive: true,
       entiteMere: {
         select: { entiteMereId: true },
       },
@@ -260,6 +505,17 @@ export const createChildEntiteAdmin = async (
 
   if (!parent) {
     throw new EntiteNotFoundError();
+  }
+
+  if (options.requireRootParent && parent.entiteMereId !== null) {
+    throw new EntiteChildCreationForbiddenError();
+  }
+
+  if (
+    (options.requireActiveParent && !parent.isActive) ||
+    (options.requireDirectionParent && (parent.entiteMereId === null || parent.entiteMere?.entiteMereId !== null))
+  ) {
+    throw new EntiteChildCreationForbiddenError();
   }
 
   if (parent.entiteMere?.entiteMereId) {

@@ -34,16 +34,23 @@ export async function fetchEntitesListAdmin(query: QueryParams = {}) {
   return { data, meta };
 }
 
-export async function fetchDirectionsServicesRows(query: Pick<QueryParams, 'search'> = {}) {
+export async function fetchDirectionsServicesList(query: Pick<QueryParams, 'search'> = {}) {
   const res = await client.entites.admin['directions-services'].$get({
     query: formatPaginationParams(query),
   });
 
   await handleRequestErrors(res);
 
-  const { data } = await res.json();
+  const { data, capabilities, availableDirections = [], serviceParentDirection = null } = await res.json();
 
-  return { data };
+  return { data, capabilities, availableDirections, serviceParentDirection };
+}
+
+export async function fetchDirectionServiceAdminLocal(id: string) {
+  const res = await client.entites.admin['directions-services'][':id'].$get({ param: { id } });
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return data;
 }
 
 export async function fetchEntiteByIdAdmin(id: string) {
@@ -87,6 +94,22 @@ export type CreateChildEntiteAdminInput = {
   isActive: boolean;
 };
 
+export type CreateDirectionAdminLocalInput = Omit<CreateChildEntiteAdminInput, 'isActive'>;
+export type EditDirectionServiceAdminLocalInput = CreateDirectionAdminLocalInput;
+export type CreateServiceAdminLocalInput = CreateDirectionAdminLocalInput & {
+  directionId?: string;
+};
+
+export async function editDirectionServiceAdminLocal(id: string, input: EditDirectionServiceAdminLocalInput) {
+  const res = await client.entites.admin['directions-services'][':id'].$patch({
+    param: { id },
+    json: input,
+  });
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return data;
+}
+
 export async function editEntiteAdmin(id: string, input: EditEntiteAdminInput) {
   const res = await client.entites.admin[':id'].$patch({
     param: { id },
@@ -100,6 +123,24 @@ export async function editEntiteAdmin(id: string, input: EditEntiteAdminInput) {
 export async function createChildEntiteAdmin(id: string, input: CreateChildEntiteAdminInput) {
   const res = await client.entites.admin[':id'].children.$post({
     param: { id },
+    json: input,
+  });
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return data;
+}
+
+export async function createDirectionAdminLocal(input: CreateDirectionAdminLocalInput) {
+  const res = await client.entites.admin['directions-services'].directions.$post({
+    json: input,
+  });
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return data;
+}
+
+export async function createServiceAdminLocal(input: CreateServiceAdminLocalInput) {
+  const res = await client.entites.admin['directions-services'].services.$post({
     json: input,
   });
   await handleRequestErrors(res);

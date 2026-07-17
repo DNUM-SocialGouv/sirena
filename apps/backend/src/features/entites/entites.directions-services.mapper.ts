@@ -16,6 +16,7 @@ type DirectionsServicesRow = {
   serviceLabel: string;
   email: string;
   editId: string;
+  canEdit: boolean;
 };
 
 const compareByNomComplet = (a: EntiteAdminLocal, b: EntiteAdminLocal) => a.nomComplet.localeCompare(b.nomComplet);
@@ -34,7 +35,7 @@ const rowMatchesSearch = (row: DirectionsServicesRow, search: string) => {
 
 export const buildDirectionsServicesRows = (
   entitesAdminLocal: EntiteAdminLocal[],
-  { search = '' }: { search?: string } = {},
+  { search = '', includeRootDirection = false }: { search?: string; includeRootDirection?: boolean } = {},
 ): DirectionsServicesRow[] => {
   const entitesParEntiteMere = groupEntitesByParentId(entitesAdminLocal);
 
@@ -48,6 +49,19 @@ export const buildDirectionsServicesRows = (
     .sort(compareByNomComplet);
   const rows: DirectionsServicesRow[] = [];
 
+  const pushDirectionRow = (direction: EntiteAdminLocal) => {
+    rows.push({
+      id: direction.id,
+      directionNom: direction.nomComplet,
+      directionLabel: direction.label,
+      serviceNom: '',
+      serviceLabel: '',
+      email: direction.email,
+      editId: direction.id,
+      canEdit: true,
+    });
+  };
+
   const pushServiceRows = (direction: EntiteAdminLocal) => {
     const services = entitesParEntiteMere.get(direction.id) ?? [];
     for (const service of services) {
@@ -59,12 +73,16 @@ export const buildDirectionsServicesRows = (
         serviceLabel: service.label,
         email: service.email,
         editId: service.id,
+        canEdit: true,
       });
     }
   };
 
   for (const adminLocalRoot of adminLocalRoots) {
     if (adminLocalRoot.entiteMereId !== null) {
+      if (includeRootDirection) {
+        pushDirectionRow(adminLocalRoot);
+      }
       pushServiceRows(adminLocalRoot);
       continue;
     }
@@ -72,16 +90,7 @@ export const buildDirectionsServicesRows = (
     const directions = entitesParEntiteMere.get(adminLocalRoot.id) ?? [];
 
     for (const direction of directions) {
-      rows.push({
-        id: direction.id,
-        directionNom: direction.nomComplet,
-        directionLabel: direction.label,
-        serviceNom: '',
-        serviceLabel: '',
-        email: direction.email,
-        editId: direction.id,
-      });
-
+      pushDirectionRow(direction);
       pushServiceRows(direction);
     }
   }

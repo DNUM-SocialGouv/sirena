@@ -1,9 +1,21 @@
-import { describe, expect, it, vi } from 'vitest';
-import { fetchDirectionsServicesRows } from './fetchEntites';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  createDirectionAdminLocal,
+  createServiceAdminLocal,
+  editDirectionServiceAdminLocal,
+  fetchDirectionServiceAdminLocal,
+  fetchDirectionsServicesList,
+} from './fetchEntites';
 
-const { directionsServicesGet } = vi.hoisted(() => ({
-  directionsServicesGet: vi.fn(),
-}));
+const { directionServiceGet, directionServicePatch, directionsServicesGet, directionsPost, servicesPost } = vi.hoisted(
+  () => ({
+    directionServiceGet: vi.fn(),
+    directionServicePatch: vi.fn(),
+    directionsServicesGet: vi.fn(),
+    directionsPost: vi.fn(),
+    servicesPost: vi.fn(),
+  }),
+);
 
 vi.mock('@/lib/api/hc.ts', () => ({
   client: {
@@ -11,26 +23,78 @@ vi.mock('@/lib/api/hc.ts', () => ({
       admin: {
         'directions-services': {
           $get: directionsServicesGet,
+          ':id': { $get: directionServiceGet, $patch: directionServicePatch },
+          directions: { $post: directionsPost },
+          services: { $post: servicesPost },
         },
       },
     },
   },
 }));
+vi.mock('@/lib/api/tanstackQuery.ts', () => ({ handleRequestErrors: vi.fn() }));
 
-vi.mock('@/lib/api/tanstackQuery.ts', () => ({
-  handleRequestErrors: vi.fn(),
-}));
+const visibleInput = {
+  nomComplet: 'Direction Autonomie',
+  label: 'DA',
+  email: 'direction-autonomie@ars.fr',
+  emailContactUsager: 'contact-autonomie@ars.fr',
+  telContactUsager: '0102030405',
+  adresseContactUsager: '1 rue de la Santé, Paris',
+};
 
-describe('fetchDirectionsServicesRows', () => {
-  it('passes search query to the directions and services endpoint', async () => {
+beforeEach(() => vi.clearAllMocks());
+
+describe('local Direction and Service API adapter', () => {
+  it('loads and patches an edit target through its local endpoint', async () => {
+    const target = {
+      id: 'service-pa',
+      kind: 'service' as const,
+      ...visibleInput,
+      parentDirection: { id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' },
+    };
+    const editInput = { ...visibleInput, nomComplet: 'Service Personnes âgées' };
+    directionServiceGet.mockResolvedValueOnce({ json: async () => ({ data: target }) });
+    directionServicePatch.mockResolvedValueOnce({ json: async () => ({ data: { ...target, ...editInput } }) });
+
+    await expect(fetchDirectionServiceAdminLocal(target.id)).resolves.toEqual(target);
+    await expect(editDirectionServiceAdminLocal(target.id, editInput)).resolves.toEqual({ ...target, ...editInput });
+    expect(directionServiceGet).toHaveBeenCalledWith({ param: { id: target.id } });
+    expect(directionServicePatch).toHaveBeenCalledWith({ param: { id: target.id }, json: editInput });
+  });
+
+  it('posts only visible fields to the Direction and Service creation endpoints', async () => {
+    directionsPost.mockResolvedValueOnce({ json: async () => ({ data: { id: 'dir-autonomie', ...visibleInput } }) });
+    servicesPost.mockResolvedValueOnce({ json: async () => ({ data: { id: 'service-autonomie', ...visibleInput } }) });
+
+    await expect(createDirectionAdminLocal(visibleInput)).resolves.toEqual({ id: 'dir-autonomie', ...visibleInput });
+    await expect(createServiceAdminLocal(visibleInput)).resolves.toEqual({ id: 'service-autonomie', ...visibleInput });
+    expect(directionsPost).toHaveBeenCalledWith({ json: visibleInput });
+    expect(servicesPost).toHaveBeenCalledWith({ json: visibleInput });
+  });
+
+  it('passes search and returns list capabilities, available Directions and parent context', async () => {
+    const response = {
+      data: [],
+      capabilities: { canCreateDirection: true, canCreateService: true },
+      availableDirections: [{ id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' }],
+      serviceParentDirection: null,
+    };
+    directionsServicesGet.mockResolvedValueOnce({ json: async () => response });
+
+    await expect(fetchDirectionsServicesList({ search: 'direction test' })).resolves.toEqual(response);
+    expect(directionsServicesGet).toHaveBeenCalledWith({ query: { search: 'direction test' } });
+  });
+
+  it('defaults optional list context omitted by an older response', async () => {
     directionsServicesGet.mockResolvedValueOnce({
-      json: async () => ({ data: [] }),
+      json: async () => ({ data: [], capabilities: { canCreateDirection: false, canCreateService: false } }),
     });
 
-    await fetchDirectionsServicesRows({ search: 'direction test' });
-
-    expect(directionsServicesGet).toHaveBeenCalledWith({
-      query: { search: 'direction test' },
+    await expect(fetchDirectionsServicesList()).resolves.toEqual({
+      data: [],
+      capabilities: { canCreateDirection: false, canCreateService: false },
+      availableDirections: [],
+      serviceParentDirection: null,
     });
   });
 });

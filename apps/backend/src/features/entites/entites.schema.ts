@@ -103,17 +103,61 @@ export const GetEntitesListAdminResponseSchema = z.array(
   }),
 );
 
-export const GetDirectionsServicesRowsResponseSchema = z.array(
-  z.object({
-    id: z.string(),
-    directionNom: z.string(),
-    directionLabel: z.string(),
-    serviceNom: z.string(),
-    serviceLabel: z.string(),
-    email: z.string(),
-    editId: z.string(),
+const DirectionServiceAdminLocalFieldsSchema = z.object({
+  id: z.string(),
+  nomComplet: z.string(),
+  label: z.string(),
+  email: z.string(),
+  emailContactUsager: z.string(),
+  telContactUsager: z.string(),
+  adresseContactUsager: z.string(),
+});
+
+const ParentDirectionAdminLocalSchema = z.object({
+  id: z.string(),
+  nomComplet: z.string(),
+  label: z.string(),
+});
+
+export const GetDirectionServiceAdminLocalResponseSchema = z.discriminatedUnion('kind', [
+  DirectionServiceAdminLocalFieldsSchema.extend({
+    kind: z.literal('entite-administrative'),
   }),
-);
+  DirectionServiceAdminLocalFieldsSchema.extend({
+    kind: z.literal('direction'),
+  }),
+  DirectionServiceAdminLocalFieldsSchema.extend({
+    kind: z.literal('service'),
+    parentDirection: ParentDirectionAdminLocalSchema,
+  }),
+]);
+
+export const GetDirectionsServicesListResponseSchema = z.object({
+  data: z.array(
+    z.object({
+      id: z.string(),
+      directionNom: z.string(),
+      directionLabel: z.string(),
+      serviceNom: z.string(),
+      serviceLabel: z.string(),
+      email: z.string(),
+      editId: z.string(),
+      canEdit: z.boolean(),
+    }),
+  ),
+  capabilities: z.object({
+    canCreateDirection: z.boolean(),
+    canCreateService: z.boolean(),
+  }),
+  availableDirections: z.array(
+    z.object({
+      id: z.string(),
+      nomComplet: z.string(),
+      label: z.string(),
+    }),
+  ),
+  serviceParentDirection: ParentDirectionAdminLocalSchema.nullable(),
+});
 
 export const GetEntitesByIdAdminResponseSchema = EntiteAdminSchema;
 
@@ -139,6 +183,28 @@ export const CreateChildEntiteAdminInputSchema = z.object({
   isActive: z.boolean(),
 });
 
+export const EditDirectionServiceAdminLocalInputSchema = CreateChildEntiteAdminInputSchema.omit({
+  isActive: true,
+}).strict();
+
 export const CreateChildEntiteAdminResponseSchema = CreateChildEntiteAdminInputSchema.extend({
   id: z.string(),
 });
+
+export const CreateDirectionAdminLocalInputSchema = CreateChildEntiteAdminInputSchema.omit({
+  isActive: true,
+})
+  .extend({
+    emailContactUsager: z.string().default(''),
+    adresseContactUsager: z.string().default(''),
+    telContactUsager: z.string().default(''),
+  })
+  .strict();
+
+export const CreateDirectionAdminLocalResponseSchema = CreateChildEntiteAdminResponseSchema;
+
+export const CreateServiceAdminLocalInputSchema = CreateDirectionAdminLocalInputSchema.extend({
+  directionId: z.string().optional(),
+}).strict();
+
+export const CreateServiceAdminLocalResponseSchema = CreateChildEntiteAdminResponseSchema;
