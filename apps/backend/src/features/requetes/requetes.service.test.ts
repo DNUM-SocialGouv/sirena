@@ -599,6 +599,7 @@ describe('requetes.service.ts', () => {
         updatedAt: new Date(),
         lienAutrePrecision: null,
         estSignalementProfessionnel: null,
+        estPersonneMorale: null,
         aAutrePersonnes: null,
       });
 
@@ -636,6 +637,7 @@ describe('requetes.service.ts', () => {
         updatedAt: new Date(),
         lienAutrePrecision: null,
         estSignalementProfessionnel: null,
+        estPersonneMorale: null,
         aAutrePersonnes: null,
       });
 
@@ -879,6 +881,7 @@ describe('requetes.service.ts', () => {
         dateNaissance: new Date(),
         lienAutrePrecision: null,
         estSignalementProfessionnel: null,
+        estPersonneMorale: null,
         aAutrePersonnes: null,
       });
 
@@ -905,6 +908,7 @@ describe('requetes.service.ts', () => {
         dateNaissance: new Date(),
         lienAutrePrecision: null,
         estSignalementProfessionnel: null,
+        estPersonneMorale: null,
         aAutrePersonnes: null,
       });
 
