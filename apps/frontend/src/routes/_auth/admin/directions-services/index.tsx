@@ -36,11 +36,7 @@ const cells: Cells<DirectionServiceRow> = {
       : `la direction ${row.directionNom}`;
 
     return (
-      <Link
-        className="fr-btn fr-btn--secondary fr-btn--sm"
-        to="/admin/directions-services/$entiteId/edit"
-        params={{ entiteId: row.editId }}
-      >
+      <Link className="fr-link" to="/admin/directions-services/$entiteId/edit" params={{ entiteId: row.editId }}>
         Modifier <span className="fr-sr-only">{editLabel}</span>
       </Link>
     );
@@ -132,7 +128,7 @@ export function RouteComponent() {
           ) : null}
           {canCreateDirection ? (
             <div className="fr-col-auto">
-              <Link className="fr-btn" to="/admin/directions-services/directions/create">
+              <Link className="fr-btn fr-btn--secondary" to="/admin/directions-services/directions/create">
                 Ajouter une direction
               </Link>
             </div>
