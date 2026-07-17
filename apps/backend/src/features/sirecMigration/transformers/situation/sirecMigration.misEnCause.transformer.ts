@@ -126,7 +126,7 @@ export function transformSirecMisEnCauseSituations(
   const baseSituation = transformSirecSituation(sirecData, []);
 
   const allMisEnCauseGroupIds = new Set(misEnCauses.flatMap((m) => m.groupIds));
-  const orphanGroupIds = groupIds.filter((id) => !allMisEnCauseGroupIds.has(id));
+  const orphanGroupIds = groupIds.filter((g) => !allMisEnCauseGroupIds.has(g.id_group)).map((g) => g.id_group);
 
   const orphanEntiteIds = computeSituationEntiteIds([
     ...[reclamation.service_recepteur_niv1, reclamation.service_gestionnaire].filter(

@@ -23,7 +23,7 @@ export function transformSirecAffectation(sirecData: SirecReclamationData): Sire
 
   const allIds: (number | null)[] = [
     sirecData.reclamation.service_gestionnaire,
-    ...sirecData.groupIds,
+    ...sirecData.groupIds.map((g) => g.id_group),
     ...sirecData.mainCourantes.flatMap((mc) => mc.groupIds),
     ...sirecData.provenances.map((p) => p.id_group),
     ...sirecData.misEnCauses.flatMap((mec) => mec.groupIds),
