@@ -18,6 +18,12 @@ vi.mock('@sirena/common/constants', () => ({
     'ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES/AUTRES': 'Autres',
     'FACTURATIONS_HONORAIRES/AUTRES': 'Autres',
   },
+  motifCategoriesById: {
+    'HOTELLERIE_LOCAUX_RESTAURATION/ADMISSION': 'Hôtellerie locaux restauration',
+    'HOTELLERIE_LOCAUX_RESTAURATION/ACCUEIL': 'Hôtellerie locaux restauration',
+    'ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES/AUTRES': "Activités d'esthétique non réglementées",
+    'FACTURATIONS_HONORAIRES/AUTRES': 'Facturations et honoraires',
+  },
 }));
 
 const outMotif = (idIgas: number): SirecMcIgasMotif => ({ id_igas: idIgas, igas_type: 'out' });
@@ -44,7 +50,7 @@ describe('sirecMigration.motifsIgas.transformer.ts', () => {
     const result = resolveMotifsIgas([outMotif(153), inMotif(122)]);
 
     expect(result.motifs).toEqual(['ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES/AUTRES']);
-    expect(result.commentaireSuffix).toBe("Motifs IGAS d'entrée :\n- Autres");
+    expect(result.commentaireSuffix).toBe("Motifs IGAS d'entrée :\n- Facturations et honoraires / Autres");
   });
 
   it('should not set a commentaire suffix when out motifs are present but no in motifs exist', () => {
@@ -56,7 +62,9 @@ describe('sirecMigration.motifsIgas.transformer.ts', () => {
   it('should list one label per line in the commentaire suffix for multiple in motifs', () => {
     const result = resolveMotifsIgas([outMotif(153), inMotif(20)]);
 
-    expect(result.commentaireSuffix).toBe("Motifs IGAS d'entrée :\n- Admission\n- Accueil");
+    expect(result.commentaireSuffix).toBe(
+      "Motifs IGAS d'entrée :\n- Hôtellerie locaux restauration / Admission\n- Hôtellerie locaux restauration / Accueil",
+    );
   });
 
   it('should deduplicate motif ids resolved from multiple id_igas values', () => {

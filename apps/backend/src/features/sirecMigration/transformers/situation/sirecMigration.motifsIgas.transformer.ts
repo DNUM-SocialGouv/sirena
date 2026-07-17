@@ -1,4 +1,4 @@
-import { motifLabelsById } from '@sirena/common/constants';
+import { motifCategoriesById, motifLabelsById } from '@sirena/common/constants';
 import type { SirecMcIgasMotif } from '../../sirecMigration.repository.js';
 import { transcodeMotifIgas } from '../../transco/motifsIgas.transco.js';
 
@@ -26,7 +26,10 @@ export function resolveMotifsIgas(motifsIgas: SirecMcIgasMotif[]): MotifsIgasRes
   if (outMotifIds.length > 0) {
     const commentaireSuffix =
       inMotifIds.length > 0
-        ? [ENTREE_COMMENTAIRE_PREFIX, ...inMotifIds.map((motifId) => `- ${motifLabelsById[motifId]}`)].join('\n')
+        ? [
+            ENTREE_COMMENTAIRE_PREFIX,
+            ...inMotifIds.map((motifId) => `- ${motifCategoriesById[motifId]} / ${motifLabelsById[motifId]}`),
+          ].join('\n')
         : null;
     return { motifs: outMotifIds, commentaireSuffix };
   }
