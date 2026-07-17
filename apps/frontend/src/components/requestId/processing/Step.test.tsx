@@ -172,6 +172,25 @@ describe('Step', () => {
     expect(screen.getByText('Texte de la note')).toBeInTheDocument();
   });
 
+  it('hides empty notes (legacy notes that only held files)', () => {
+    const author = { prenom: 'jeanne', nom: 'Moulon' };
+    render(
+      <Step
+        {...makeStep({
+          notes: [
+            { id: 'has-text', texte: 'Contenu réel', createdAt: '2026-05-19T10:00:00.000Z', author },
+            { id: 'empty', texte: '', createdAt: '2026-05-18T10:00:00.000Z', author },
+            { id: 'whitespace', texte: '   ', createdAt: '2026-05-17T10:00:00.000Z', author },
+          ],
+        })}
+      />,
+    );
+
+    expect(screen.getByText('Contenu réel')).toBeInTheDocument();
+    // The two empty notes are not rendered — only one note block remains.
+    expect(screen.getAllByText(/Note rédigée le/)).toHaveLength(1);
+  });
+
   it('renders each step-level file as its own "Fichier ajouté le … par …" event', () => {
     render(
       <Step

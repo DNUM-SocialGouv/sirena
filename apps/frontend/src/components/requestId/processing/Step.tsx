@@ -188,6 +188,9 @@ const StepComponent = ({
   const showAFaireBadge = statutId === REQUETE_ETAPE_STATUT_TYPES.A_FAIRE;
   const canEditStep = canEdit && step.editable;
 
+  // Legacy notes that only held files show up empty once the files were moved to the step level; hide them.
+  const visibleNotes = notes.filter((note) => note.texte?.trim());
+
   const clotureReasonLabels =
     statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE
       ? step.clotureReason.map((reason) => reason.label).filter(Boolean)
@@ -322,12 +325,12 @@ const StepComponent = ({
         ) : (
           <>
             <div className={styles['request-notes']}>
-              {notes.slice(0, isOpen ? notes.length : 3).map((note: StepType['notes'][number]) => (
+              {visibleNotes.slice(0, isOpen ? visibleNotes.length : 3).map((note: StepType['notes'][number]) => (
                 <StepNote key={note.id} content={note.texte} author={note.author} createdAt={note.createdAt} />
               ))}
             </div>
             <div className={styles['request-notes-distplay']}>
-              {notes.length > 3 && (
+              {visibleNotes.length > 3 && (
                 <button type="button" className="fr-btn-link" onClick={() => setIsOpen(!isOpen)}>
                   {isOpen ? 'Masquer' : 'Afficher'} les notes précédentes{' '}
                   <span
