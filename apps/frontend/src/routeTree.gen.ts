@@ -17,13 +17,13 @@ import { Route as PublicMentionsLegalesRouteImport } from './routes/_public/ment
 import { Route as PublicGestionCookiesRouteImport } from './routes/_public/gestion-cookies'
 import { Route as PublicDonneesPersonnellesRouteImport } from './routes/_public/donnees-personnelles'
 import { Route as PublicAccessibiliteRouteImport } from './routes/_public/accessibilite'
+import { Route as AuthStatistiquesRouteImport } from './routes/_auth/statistiques'
 import { Route as AuthInactiveRouteRouteImport } from './routes/_auth/inactive/route'
 import { Route as AuthAdminRouteRouteImport } from './routes/_auth/admin/route'
 import { Route as AuthUserRouteRouteImport } from './routes/_auth/_user/route'
 import { Route as AuthAdminIndexRouteImport } from './routes/_auth/admin/index'
 import { Route as AuthAdminSirecMigrationRouteImport } from './routes/_auth/admin/sirec-migration'
 import { Route as AuthAdminFeatureFlagsRouteImport } from './routes/_auth/admin/feature-flags'
-import { Route as AuthUserStatistiquesRouteImport } from './routes/_auth/_user/statistiques'
 import { Route as AuthUserHomeRouteImport } from './routes/_auth/_user/home'
 import { Route as AuthAdminUsersRouteRouteImport } from './routes/_auth/admin/users/route'
 import { Route as AuthAdminUsersIndexRouteImport } from './routes/_auth/admin/users/index'
@@ -87,6 +87,11 @@ const PublicAccessibiliteRoute = PublicAccessibiliteRouteImport.update({
   path: '/accessibilite',
   getParentRoute: () => PublicRouteRoute,
 } as any)
+const AuthStatistiquesRoute = AuthStatistiquesRouteImport.update({
+  id: '/statistiques',
+  path: '/statistiques',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
 const AuthInactiveRouteRoute = AuthInactiveRouteRouteImport.update({
   id: '/inactive',
   path: '/inactive',
@@ -115,11 +120,6 @@ const AuthAdminFeatureFlagsRoute = AuthAdminFeatureFlagsRouteImport.update({
   id: '/feature-flags',
   path: '/feature-flags',
   getParentRoute: () => AuthAdminRouteRoute,
-} as any)
-const AuthUserStatistiquesRoute = AuthUserStatistiquesRouteImport.update({
-  id: '/statistiques',
-  path: '/statistiques',
-  getParentRoute: () => AuthUserRouteRoute,
 } as any)
 const AuthUserHomeRoute = AuthUserHomeRouteImport.update({
   id: '/home',
@@ -258,13 +258,13 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin': typeof AuthAdminRouteRouteWithChildren
   '/inactive': typeof AuthInactiveRouteRoute
+  '/statistiques': typeof AuthStatistiquesRoute
   '/accessibilite': typeof PublicAccessibiliteRoute
   '/donnees-personnelles': typeof PublicDonneesPersonnellesRoute
   '/gestion-cookies': typeof PublicGestionCookiesRoute
   '/mentions-legales': typeof PublicMentionsLegalesRoute
   '/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
   '/home': typeof AuthUserHomeRoute
-  '/statistiques': typeof AuthUserStatistiquesRoute
   '/admin/feature-flags': typeof AuthAdminFeatureFlagsRoute
   '/admin/sirec-migration': typeof AuthAdminSirecMigrationRoute
   '/admin/': typeof AuthAdminIndexRoute
@@ -294,12 +294,12 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/inactive': typeof AuthInactiveRouteRoute
+  '/statistiques': typeof AuthStatistiquesRoute
   '/accessibilite': typeof PublicAccessibiliteRoute
   '/donnees-personnelles': typeof PublicDonneesPersonnellesRoute
   '/gestion-cookies': typeof PublicGestionCookiesRoute
   '/mentions-legales': typeof PublicMentionsLegalesRoute
   '/home': typeof AuthUserHomeRoute
-  '/statistiques': typeof AuthUserStatistiquesRoute
   '/admin/feature-flags': typeof AuthAdminFeatureFlagsRoute
   '/admin/sirec-migration': typeof AuthAdminSirecMigrationRoute
   '/admin': typeof AuthAdminIndexRoute
@@ -330,13 +330,13 @@ export interface FileRoutesById {
   '/_auth/_user': typeof AuthUserRouteRouteWithChildren
   '/_auth/admin': typeof AuthAdminRouteRouteWithChildren
   '/_auth/inactive': typeof AuthInactiveRouteRoute
+  '/_auth/statistiques': typeof AuthStatistiquesRoute
   '/_public/accessibilite': typeof PublicAccessibiliteRoute
   '/_public/donnees-personnelles': typeof PublicDonneesPersonnellesRoute
   '/_public/gestion-cookies': typeof PublicGestionCookiesRoute
   '/_public/mentions-legales': typeof PublicMentionsLegalesRoute
   '/_auth/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
   '/_auth/_user/home': typeof AuthUserHomeRoute
-  '/_auth/_user/statistiques': typeof AuthUserStatistiquesRoute
   '/_auth/admin/feature-flags': typeof AuthAdminFeatureFlagsRoute
   '/_auth/admin/sirec-migration': typeof AuthAdminSirecMigrationRoute
   '/_auth/admin/': typeof AuthAdminIndexRoute
@@ -369,13 +369,13 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin'
     | '/inactive'
+    | '/statistiques'
     | '/accessibilite'
     | '/donnees-personnelles'
     | '/gestion-cookies'
     | '/mentions-legales'
     | '/admin/users'
     | '/home'
-    | '/statistiques'
     | '/admin/feature-flags'
     | '/admin/sirec-migration'
     | '/admin/'
@@ -405,12 +405,12 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/inactive'
+    | '/statistiques'
     | '/accessibilite'
     | '/donnees-personnelles'
     | '/gestion-cookies'
     | '/mentions-legales'
     | '/home'
-    | '/statistiques'
     | '/admin/feature-flags'
     | '/admin/sirec-migration'
     | '/admin'
@@ -440,13 +440,13 @@ export interface FileRouteTypes {
     | '/_auth/_user'
     | '/_auth/admin'
     | '/_auth/inactive'
+    | '/_auth/statistiques'
     | '/_public/accessibilite'
     | '/_public/donnees-personnelles'
     | '/_public/gestion-cookies'
     | '/_public/mentions-legales'
     | '/_auth/admin/users'
     | '/_auth/_user/home'
-    | '/_auth/_user/statistiques'
     | '/_auth/admin/feature-flags'
     | '/_auth/admin/sirec-migration'
     | '/_auth/admin/'
@@ -538,6 +538,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicAccessibiliteRouteImport
       parentRoute: typeof PublicRouteRoute
     }
+    '/_auth/statistiques': {
+      id: '/_auth/statistiques'
+      path: '/statistiques'
+      fullPath: '/statistiques'
+      preLoaderRoute: typeof AuthStatistiquesRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
     '/_auth/inactive': {
       id: '/_auth/inactive'
       path: '/inactive'
@@ -579,13 +586,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/feature-flags'
       preLoaderRoute: typeof AuthAdminFeatureFlagsRouteImport
       parentRoute: typeof AuthAdminRouteRoute
-    }
-    '/_auth/_user/statistiques': {
-      id: '/_auth/_user/statistiques'
-      path: '/statistiques'
-      fullPath: '/statistiques'
-      preLoaderRoute: typeof AuthUserStatistiquesRouteImport
-      parentRoute: typeof AuthUserRouteRoute
     }
     '/_auth/_user/home': {
       id: '/_auth/_user/home'
@@ -817,14 +817,12 @@ const AuthUserRequestCreateRouteWithChildren =
 
 interface AuthUserRouteRouteChildren {
   AuthUserHomeRoute: typeof AuthUserHomeRoute
-  AuthUserStatistiquesRoute: typeof AuthUserStatistiquesRoute
   AuthUserRequestRequestIdRoute: typeof AuthUserRequestRequestIdRouteWithChildren
   AuthUserRequestCreateRoute: typeof AuthUserRequestCreateRouteWithChildren
 }
 
 const AuthUserRouteRouteChildren: AuthUserRouteRouteChildren = {
   AuthUserHomeRoute: AuthUserHomeRoute,
-  AuthUserStatistiquesRoute: AuthUserStatistiquesRoute,
   AuthUserRequestRequestIdRoute: AuthUserRequestRequestIdRouteWithChildren,
   AuthUserRequestCreateRoute: AuthUserRequestCreateRouteWithChildren,
 }
@@ -892,12 +890,14 @@ interface AuthRouteRouteChildren {
   AuthUserRouteRoute: typeof AuthUserRouteRouteWithChildren
   AuthAdminRouteRoute: typeof AuthAdminRouteRouteWithChildren
   AuthInactiveRouteRoute: typeof AuthInactiveRouteRoute
+  AuthStatistiquesRoute: typeof AuthStatistiquesRoute
 }
 
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
   AuthUserRouteRoute: AuthUserRouteRouteWithChildren,
   AuthAdminRouteRoute: AuthAdminRouteRouteWithChildren,
   AuthInactiveRouteRoute: AuthInactiveRouteRoute,
+  AuthStatistiquesRoute: AuthStatistiquesRoute,
 }
 
 const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(

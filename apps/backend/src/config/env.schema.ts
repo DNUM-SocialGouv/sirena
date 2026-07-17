@@ -327,6 +327,11 @@ export const AppEnvSchema = z.object({
     .optional()
     .default('')
     .describe('Identifiant du dashboard Metabase à exposer sur la page statistiques (ex: "42")'),
+  METABASE_DASHBOARD_ID_ADMIN: z
+    .string()
+    .optional()
+    .default('')
+    .describe('Identifiant du dashboard Metabase national (super admin / pilotage national, ex: "43")'),
   APP_ENV: z
     .enum(APP_ENV_VALUES)
     .optional()

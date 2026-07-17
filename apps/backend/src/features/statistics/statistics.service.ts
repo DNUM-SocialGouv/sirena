@@ -16,6 +16,15 @@ type MetabaseDashboardConfig = MetabaseConfig & {
   dashboardId: number;
 };
 
+// 'local' = dashboard entité-scopé des admins locaux/agents ; 'national' = dashboard national du super
+// admin (et, plus tard, du pilotage national). Mêmes clés Metabase, seul l'identifiant change.
+export type DashboardScope = 'local' | 'national';
+
+const DASHBOARD_ID_ENV: Record<DashboardScope, 'METABASE_DASHBOARD_ID' | 'METABASE_DASHBOARD_ID_ADMIN'> = {
+  local: 'METABASE_DASHBOARD_ID',
+  national: 'METABASE_DASHBOARD_ID_ADMIN',
+};
+
 export type CardLayout = {
   col: number;
   row: number;
@@ -58,13 +67,14 @@ const ensureMetabaseConfigured = (): MetabaseConfig => {
   return { siteUrl, secretKey };
 };
 
-const ensureMetabaseDashboardConfigured = (): MetabaseDashboardConfig => {
+const ensureMetabaseDashboardConfigured = (scope: DashboardScope = 'local'): MetabaseDashboardConfig => {
   const logger = getLoggerStore();
   const base = ensureMetabaseConfigured();
-  const rawId = envVars.METABASE_DASHBOARD_ID;
+  const envKey = DASHBOARD_ID_ENV[scope];
+  const rawId = envVars[envKey];
   const dashboardId = Number.parseInt(rawId, 10);
   if (!rawId || Number.isNaN(dashboardId) || dashboardId <= 0) {
-    logger.error({ rawId }, '[statistics] METABASE_DASHBOARD_ID is missing or invalid');
+    logger.error({ rawId, envKey }, '[statistics] Metabase dashboard id is missing or invalid');
     throwHTTPException503ServiceUnavailable('Metabase dashboard id is not configured');
   }
   return { ...base, dashboardId };
@@ -292,9 +302,10 @@ const applyColumnTitles = (data: CardData, titles: Map<string, string>): CardDat
 export const fetchDashboardCardsData = async (
   lockedParams: Record<string, unknown> = {},
   optionalParams: Record<string, unknown> = {},
+  scope: DashboardScope = 'local',
 ): Promise<DashboardCardData[]> => {
   const logger = getLoggerStore();
-  const { siteUrl, secretKey, dashboardId } = ensureMetabaseDashboardConfigured();
+  const { siteUrl, secretKey, dashboardId } = ensureMetabaseDashboardConfigured(scope);
 
   const base = siteUrl.replace(/\/$/, '');
 
