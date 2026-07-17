@@ -92,7 +92,7 @@ it('shows loading and error query states', () => {
   view.unmount();
   vi.mocked(useDirectionServiceAdminLocal).mockReturnValue({ isPending: false, isError: true } as never);
   render(<RouteComponent />);
-  expect(screen.getByText('Erreur lors du chargement de l’entité.')).toBeInTheDocument();
+  expect(screen.getByText('Erreur lors du chargement.')).toBeInTheDocument();
 });
 
 it('renders and saves the assigned Entité administrative with dedicated wording and visible business fields', async () => {
