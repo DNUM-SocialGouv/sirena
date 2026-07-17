@@ -5,6 +5,13 @@ import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/_user/request/$requestId/processing')({
   beforeLoad: requireAuthAndRoles([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.READER, ROLES.WRITER]),
+  head: ({ params }) => ({
+    meta: [
+      {
+        title: `Traitement de la requête ${params.requestId} - SIRENA`,
+      },
+    ],
+  }),
   component: RouteComponent,
 });
 
