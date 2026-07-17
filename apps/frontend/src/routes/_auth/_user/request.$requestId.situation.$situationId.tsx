@@ -99,6 +99,8 @@ function RouteComponent() {
               situationId={situationId}
               initialData={formattedData}
               receptionType={receptionTypeId}
+              isFromSirec={data?.requete.sirecId != null}
+              sirecDepartementEnCharge={situation?.sirecDepartementEnCharge}
               onSave={performSave}
               saveButtonRef={saveButtonRef}
             />

@@ -19,6 +19,8 @@ interface SituationFormProps {
   situationId?: string;
   initialData?: SituationData;
   receptionType?: ReceptionType;
+  isFromSirec?: boolean;
+  sirecDepartementEnCharge?: string | null;
   onSave: (
     data: SituationData,
     shouldCreateRequest: boolean,
@@ -35,6 +37,8 @@ export function SituationForm({
   situationId,
   initialData,
   receptionType,
+  isFromSirec,
+  sirecDepartementEnCharge,
   onSave,
   saveButtonRef: externalSaveButtonRef,
 }: SituationFormProps) {
@@ -132,7 +136,13 @@ export function SituationForm({
           isSaving={isSaving}
         />
 
-        <Identification formData={formData} isSaving={isSaving} setFormData={setFormData} />
+        <Identification
+          formData={formData}
+          isSaving={isSaving}
+          setFormData={setFormData}
+          isFromSirec={isFromSirec}
+          sirecDepartementEnCharge={sirecDepartementEnCharge}
+        />
 
         <TraitementDesFaitsSection
           entites={(entitesData?.data || []).map((e: { id: string; nomComplet: string }) => ({

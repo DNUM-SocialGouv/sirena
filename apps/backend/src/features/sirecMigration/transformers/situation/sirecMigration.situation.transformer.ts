@@ -26,6 +26,7 @@ export interface SirenaSituationData {
   domainesFonctionnelsId: string | null;
   estLieAuSignalement: boolean | undefined;
   numerosSignalement: string;
+  sirecDepartementEnCharge: string | null;
 }
 
 const SAISINE_PLAINTE = 75;
@@ -53,5 +54,7 @@ export function transformSirecSituation(sirecData: SirecReclamationData, entiteI
     domainesFonctionnelsId: transcodeDomaineFonctionnel(sirecData.reclamation.domaine),
     estLieAuSignalement: resolveEstLieAuSignalement(ei_avere, num_sign_assoc),
     numerosSignalement: num_sign_assoc ?? '',
+    //TODO: Not yet mapped from SIREC
+    sirecDepartementEnCharge: null,
   };
 }
