@@ -86,6 +86,7 @@ export const createServiceAdminLocalRoute = openApiProtectedRoute({
   responses: {
     ...openApiResponse(CreateServiceAdminLocalResponseSchema),
     ...openApi400BadRequest('Child entite creation is not allowed for this parent'),
+    ...openApi404NotFound('Entite not found'),
   },
 });
 

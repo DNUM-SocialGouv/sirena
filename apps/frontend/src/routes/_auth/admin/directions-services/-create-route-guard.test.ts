@@ -1,10 +1,9 @@
-import { FEATURE_FLAGS } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { queryClient } from '@/lib/queryClient';
 import { requireAdminLocalDirectionCreation, requireAdminLocalServiceCreation } from './-create-route-guard';
+import { requireAdminLocalDirectionsServices } from './-route-guard';
 
-const { authGuardSpy, redirectSpy } = vi.hoisted(() => ({
-  authGuardSpy: vi.fn(),
+const { redirectSpy } = vi.hoisted(() => ({
   redirectSpy: vi.fn((args: unknown) => ({ redirect: args })),
 }));
 
@@ -12,71 +11,29 @@ vi.mock('@tanstack/react-router', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@tanstack/react-router')>()),
   redirect: redirectSpy,
 }));
+vi.mock('./-route-guard', () => ({ requireAdminLocalDirectionsServices: vi.fn() }));
+vi.mock('@/lib/api/fetchEntites', () => ({ fetchDirectionsServicesList: vi.fn() }));
+vi.mock('@/lib/queryClient', () => ({ queryClient: { fetchQuery: vi.fn() } }));
 
-vi.mock('@/lib/auth-guards', () => ({
-  requireAuthAndRoles: vi.fn(() => authGuardSpy),
-}));
+beforeEach(() => vi.clearAllMocks());
 
-vi.mock('@/lib/api/fetchEntites', () => ({
-  fetchDirectionsServicesList: vi.fn(),
-}));
+describe('local creation capability guards', () => {
+  it.each([
+    ['Direction', requireAdminLocalDirectionCreation, { canCreateDirection: true, canCreateService: false }],
+    ['Service', requireAdminLocalServiceCreation, { canCreateDirection: false, canCreateService: true }],
+  ] as const)('allows %s creation when its backend capability is enabled', async (_name, guard, capabilities) => {
+    vi.mocked(queryClient.fetchQuery).mockResolvedValue({ capabilities });
 
-vi.mock('@/lib/api/fetchFeatureFlags', () => ({
-  fetchResolvedFeatureFlags: vi.fn(),
-}));
-
-vi.mock('@/lib/queryClient', () => ({
-  queryClient: {
-    ensureQueryData: vi.fn(),
-    fetchQuery: vi.fn(),
-  },
-}));
-
-const enabledFlags = {
-  [FEATURE_FLAGS.ADMIN_LOCAL_DIRECTIONS_SERVICES]: true,
-};
-
-beforeEach(() => {
-  vi.clearAllMocks();
-  vi.mocked(queryClient.ensureQueryData).mockResolvedValue(enabledFlags);
-});
-
-describe('Admin local Direction and Service creation route guards', () => {
-  it('allows the Direction add route when the assigned perimeter can create Directions', async () => {
-    vi.mocked(queryClient.fetchQuery).mockResolvedValue({
-      capabilities: { canCreateDirection: true, canCreateService: true },
-    });
-
-    await expect(requireAdminLocalDirectionCreation({} as never)).resolves.toBeUndefined();
-
-    expect(authGuardSpy).toHaveBeenCalled();
+    await expect(guard({} as never)).resolves.toBeUndefined();
+    expect(requireAdminLocalDirectionsServices).toHaveBeenCalled();
   });
 
-  it('redirects Direction- and Service-level perimeters away from the Direction add route', async () => {
-    vi.mocked(queryClient.fetchQuery).mockResolvedValue({
-      capabilities: { canCreateDirection: false, canCreateService: true },
-    });
+  it.each([
+    ['Direction', requireAdminLocalDirectionCreation, { canCreateDirection: false, canCreateService: true }],
+    ['Service', requireAdminLocalServiceCreation, { canCreateDirection: true, canCreateService: false }],
+  ] as const)('redirects when %s creation capability is disabled', async (_name, guard, capabilities) => {
+    vi.mocked(queryClient.fetchQuery).mockResolvedValue({ capabilities });
 
-    await expect(requireAdminLocalDirectionCreation({} as never)).rejects.toEqual({
-      redirect: { to: '/admin/directions-services' },
-    });
-  });
-
-  it('allows the Service add route for root and Direction perimeters with an authorized active Direction', async () => {
-    vi.mocked(queryClient.fetchQuery).mockResolvedValue({
-      capabilities: { canCreateDirection: false, canCreateService: true },
-    });
-
-    await expect(requireAdminLocalServiceCreation({} as never)).resolves.toBeUndefined();
-  });
-
-  it('redirects Service-level or inactive Direction perimeters away from the Service add route', async () => {
-    vi.mocked(queryClient.fetchQuery).mockResolvedValue({
-      capabilities: { canCreateDirection: false, canCreateService: false },
-    });
-
-    await expect(requireAdminLocalServiceCreation({} as never)).rejects.toEqual({
-      redirect: { to: '/admin/directions-services' },
-    });
+    await expect(guard({} as never)).rejects.toEqual({ redirect: { to: '/admin/directions-services' } });
   });
 });

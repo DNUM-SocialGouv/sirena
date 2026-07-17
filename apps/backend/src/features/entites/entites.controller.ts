@@ -260,6 +260,10 @@ const app = factoryWithLogs
           : await createServiceAdminLocal(assignedEntiteId, data);
         return c.json({ data: entite });
       } catch (error) {
+        if (error instanceof EntiteNotFoundError) {
+          throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+        }
+
         if (error instanceof EntiteChildCreationForbiddenError) {
           throwHTTPException400BadRequest('Child entite creation is not allowed for this parent', {
             res: c.res,

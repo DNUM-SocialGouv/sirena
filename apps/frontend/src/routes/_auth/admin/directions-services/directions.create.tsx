@@ -1,26 +1,15 @@
 import Button from '@codegouvfr/react-dsfr/Button';
 
-import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
-import { type SubmitEvent, useEffect, useState } from 'react';
-import { z } from 'zod';
+import { type SubmitEvent, useEffect } from 'react';
 import { useCreateDirectionAdminLocal } from '@/hooks/queries/entites.hook';
-import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 import {
   LocalDirectionServiceContactFields,
   LocalDirectionServiceSirenaFields,
 } from './-components/LocalDirectionServiceSirenaFields';
+import { useLocalDirectionServiceForm } from './-components/useLocalDirectionServiceForm';
 import { requireAdminLocalDirectionCreation } from './-create-route-guard';
-
-const CreateDirectionFormSchema = z.object({
-  nomComplet: z.string().trim().min(1, 'Le champ "Nom de la direction" est vide. Veuillez le renseigner.'),
-  label: z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
-  email: optionalEmailSchema,
-  emailContactUsager: optionalEmailSchema,
-  telContactUsager: optionalPhoneSchema,
-  adresseContactUsager: z.string(),
-});
 
 export const Route = createFileRoute('/_auth/admin/directions-services/directions/create')({
   beforeLoad: requireAdminLocalDirectionCreation,
@@ -28,77 +17,22 @@ export const Route = createFileRoute('/_auth/admin/directions-services/direction
 });
 
 export function RouteComponent() {
-  const [formData, setFormData] = useState({
-    nomComplet: '',
-    label: '',
-    email: '',
-    emailContactUsager: '',
-    telContactUsager: '',
-    adresseContactUsager: '',
-  });
+  const form = useLocalDirectionServiceForm('direction');
   const router = useRouter();
   const createDirectionAdminLocal = useCreateDirectionAdminLocal();
   const toastManager = Toast.useToastManager();
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   useEffect(() => {
     document.title = 'Ajouter une direction - Directions et services - SIRENA';
   }, []);
 
-  const handleInputChange =
-    (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const value = e.target.value;
-
-      setFormData((prev) => {
-        const updatedData = { ...prev, [field]: value };
-
-        if (hasSubmitted && validationErrors[field]) {
-          const fieldError = getFieldError(CreateDirectionFormSchema, updatedData, field);
-
-          setValidationErrors((prevErrors) => {
-            const next = { ...prevErrors };
-
-            if (fieldError) {
-              next[field] = fieldError;
-            } else {
-              delete next[field];
-            }
-
-            return next;
-          });
-        }
-
-        return updatedData;
-      });
-    };
-
-  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setHasSubmitted(true);
-
-    const result = CreateDirectionFormSchema.safeParse(formData);
-
-    if (!result.success) {
-      const errors = zodIssuesToFieldErrors(result.error);
-      setValidationErrors(errors);
-
-      const firstField = Object.keys(errors)[0];
-      document.querySelector<HTMLElement>(`[name="${firstField}"]`)?.focus();
-      return;
-    }
-
-    setValidationErrors({});
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const values = form.validate();
+    if (!values) return;
 
     try {
-      await createDirectionAdminLocal.mutateAsync({
-        nomComplet: result.data.nomComplet,
-        label: result.data.label,
-        email: result.data.email ?? '',
-        emailContactUsager: result.data.emailContactUsager ?? '',
-        telContactUsager: result.data.telContactUsager ?? '',
-        adresseContactUsager: result.data.adresseContactUsager,
-      });
+      await createDirectionAdminLocal.mutateAsync(values);
 
       toastManager.add({
         title: 'Direction créée avec succès',
@@ -135,15 +69,15 @@ export function RouteComponent() {
 
           <LocalDirectionServiceSirenaFields
             kind="direction"
-            formData={formData}
-            validationErrors={validationErrors}
-            onChange={handleInputChange}
+            formData={form.values}
+            validationErrors={form.validationErrors}
+            onChange={form.onChange}
           />
 
           <LocalDirectionServiceContactFields
-            formData={formData}
-            validationErrors={validationErrors}
-            onChange={handleInputChange}
+            formData={form.values}
+            validationErrors={form.validationErrors}
+            onChange={form.onChange}
           />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">

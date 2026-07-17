@@ -1,28 +1,16 @@
 import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
 import Select from '@codegouvfr/react-dsfr/Select';
-import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useEffect, useState } from 'react';
-import { z } from 'zod';
 import { useCreateServiceAdminLocal, useDirectionsServicesList } from '@/hooks/queries/entites.hook';
-import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 import {
   LocalDirectionServiceContactFields,
   LocalDirectionServiceSirenaFields,
 } from './-components/LocalDirectionServiceSirenaFields';
+import { useLocalDirectionServiceForm } from './-components/useLocalDirectionServiceForm';
 import { requireAdminLocalServiceCreation } from './-create-route-guard';
-
-const CreateServiceFormSchema = z.object({
-  nomComplet: z.string().trim().min(1, 'Le champ "Nom du service" est vide. Veuillez le renseigner.'),
-  label: z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
-  email: optionalEmailSchema,
-  emailContactUsager: optionalEmailSchema,
-  telContactUsager: optionalPhoneSchema,
-  adresseContactUsager: z.string(),
-  directionId: z.string(),
-});
 
 export const Route = createFileRoute('/_auth/admin/directions-services/services/create')({
   beforeLoad: requireAdminLocalServiceCreation,
@@ -30,15 +18,8 @@ export const Route = createFileRoute('/_auth/admin/directions-services/services/
 });
 
 export function RouteComponent() {
-  const [formData, setFormData] = useState({
-    nomComplet: '',
-    label: '',
-    email: '',
-    emailContactUsager: '',
-    telContactUsager: '',
-    adresseContactUsager: '',
-    directionId: '',
-  });
+  const form = useLocalDirectionServiceForm('service');
+  const [directionId, setDirectionId] = useState('');
   const createServiceAdminLocal = useCreateServiceAdminLocal();
   const directionsServicesQuery = useDirectionsServicesList();
   const capabilities = directionsServicesQuery.data?.capabilities;
@@ -48,69 +29,24 @@ export function RouteComponent() {
   const canCreateService = capabilities?.canCreateService ?? false;
   const router = useRouter();
   const toastManager = Toast.useToastManager();
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   useEffect(() => {
     document.title = 'Ajouter un service - Directions et services - SIRENA';
   }, []);
 
-  const handleInputChange =
-    (field: keyof typeof formData) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const value = event.target.value;
-
-      setFormData((previous) => {
-        const updatedData = { ...previous, [field]: value };
-
-        if (hasSubmitted && validationErrors[field]) {
-          const fieldError = getFieldError(CreateServiceFormSchema, updatedData, field);
-          setValidationErrors((previousErrors) => {
-            const next = { ...previousErrors };
-            if (fieldError) next[field] = fieldError;
-            else delete next[field];
-            return next;
-          });
-        }
-
-        return updatedData;
-      });
-    };
-
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setHasSubmitted(true);
-
-    const result = CreateServiceFormSchema.safeParse(formData);
-
-    let errors = result.success ? {} : zodIssuesToFieldErrors(result.error);
-
-    if (requiresDirectionSelection && !formData.directionId) {
-      errors = {
-        directionId: 'Veuillez sélectionner la direction à laquelle rattacher le service.',
-        ...errors,
-      };
-    }
-
-    const firstField = Object.keys(errors)[0];
-    if (firstField) {
-      setValidationErrors(errors);
-      document.querySelector<HTMLElement>(`[name="${firstField}"]`)?.focus();
-      return;
-    }
-
-    setValidationErrors({});
-
-    if (!result.success) return;
+    const values = form.validate(
+      requiresDirectionSelection && !directionId
+        ? { directionId: 'Veuillez sélectionner la direction à laquelle rattacher le service.' }
+        : {},
+    );
+    if (!values) return;
 
     try {
       await createServiceAdminLocal.mutateAsync({
-        nomComplet: result.data.nomComplet,
-        label: result.data.label,
-        email: result.data.email ?? '',
-        emailContactUsager: result.data.emailContactUsager ?? '',
-        telContactUsager: result.data.telContactUsager ?? '',
-        adresseContactUsager: result.data.adresseContactUsager,
-        ...(requiresDirectionSelection ? { directionId: result.data.directionId } : {}),
+        ...values,
+        ...(requiresDirectionSelection ? { directionId } : {}),
       });
 
       toastManager.add({
@@ -147,9 +83,9 @@ export function RouteComponent() {
 
           <LocalDirectionServiceSirenaFields
             kind="service"
-            formData={formData}
-            validationErrors={validationErrors}
-            onChange={handleInputChange}
+            formData={form.values}
+            validationErrors={form.validationErrors}
+            onChange={form.onChange}
             leadingField={
               <div className="fr-col-12 fr-col-md-7">
                 {requiresDirectionSelection ? (
@@ -157,18 +93,14 @@ export function RouteComponent() {
                     className="fr-fieldset__content"
                     label="Direction (obligatoire)"
                     hint="Organisation à laquelle le service est rattaché"
-                    state={validationErrors.directionId ? 'error' : 'default'}
-                    stateRelatedMessage={validationErrors.directionId}
+                    state={form.validationErrors.directionId ? 'error' : 'default'}
+                    stateRelatedMessage={form.validationErrors.directionId}
                     nativeSelectProps={{
                       name: 'directionId',
-                      value: formData.directionId,
+                      value: directionId,
                       onChange: (event) => {
-                        setFormData((previous) => ({ ...previous, directionId: event.target.value }));
-                        setValidationErrors((previous) => {
-                          const next = { ...previous };
-                          delete next.directionId;
-                          return next;
-                        });
+                        setDirectionId(event.target.value);
+                        form.clearError('directionId');
                       },
                     }}
                   >
@@ -200,9 +132,9 @@ export function RouteComponent() {
           />
 
           <LocalDirectionServiceContactFields
-            formData={formData}
-            validationErrors={validationErrors}
-            onChange={handleInputChange}
+            formData={form.values}
+            validationErrors={form.validationErrors}
+            onChange={form.onChange}
           />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">

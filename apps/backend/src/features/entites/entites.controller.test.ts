@@ -715,6 +715,30 @@ describe('Entites endpoints: /entites', () => {
       );
     });
 
+    it('returns 404 when the assigned parent entity no longer exists', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      vi.mocked(createServiceAdminLocal).mockRejectedValueOnce(new EntiteNotFoundError());
+
+      const res = await app.request('/admin/directions-services/services', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          nomComplet: 'Service Autonomie',
+          label: 'SA',
+          email: '',
+          emailContactUsager: '',
+          adresseContactUsager: '',
+          telContactUsager: '',
+        }),
+      });
+
+      expect(res.status).toBe(404);
+      expect(await res.json()).toEqual({
+        message: 'Entite not found',
+        cause: { kind: ERROR_KIND.BUSINESS },
+      });
+    });
+
     it('returns 400 when the assigned entity cannot parent a Service', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       vi.mocked(createServiceAdminLocal).mockRejectedValueOnce(new EntiteChildCreationForbiddenError());

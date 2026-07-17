@@ -233,14 +233,31 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
   } else {
     const assignedParent = await prisma.entite.findUnique({
       where: { id: assignedEntite.entiteMereId },
-      select: { entiteMereId: true },
+      select: {
+        id: true,
+        nomComplet: true,
+        label: true,
+        entiteMereId: true,
+        entiteMere: { select: { entiteMereId: true } },
+      },
     });
-    if (assignedParent?.entiteMereId === null && targetEntite.entiteMereId === assignedEntite.id) {
+    if (assignedParent?.entiteMereId === null) {
+      if (targetEntite.id === assignedEntite.id) {
+        kind = 'direction';
+      } else if (targetEntite.entiteMereId === assignedEntite.id) {
+        kind = 'service';
+        parentDirection = {
+          id: assignedEntite.id,
+          nomComplet: assignedEntite.nomComplet,
+          label: assignedEntite.label,
+        };
+      }
+    } else if (assignedParent?.entiteMere?.entiteMereId === null && targetEntite.id === assignedEntite.id) {
       kind = 'service';
       parentDirection = {
-        id: assignedEntite.id,
-        nomComplet: assignedEntite.nomComplet,
-        label: assignedEntite.label,
+        id: assignedParent.id,
+        nomComplet: assignedParent.nomComplet,
+        label: assignedParent.label,
       };
     }
   }
@@ -352,9 +369,22 @@ export const getDirectionsServicesList = async (
 
   const assignmentLevel = getAdminLocalAssignmentLevel(entiteAdminLocal, entitesById);
 
-  if (assignmentLevel === 'service' || assignmentLevel === 'invalid-hierarchy') {
+  if (assignmentLevel === 'invalid-hierarchy') {
     return {
       data: [],
+      capabilities: emptyCapabilities,
+      availableDirections: [],
+      serviceParentDirection: null,
+    };
+  }
+
+  if (assignmentLevel === 'service') {
+    const parentDirection = entiteAdminLocal.entiteMereId ? entitesById.get(entiteAdminLocal.entiteMereId) : undefined;
+
+    return {
+      data: parentDirection
+        ? buildDirectionsServicesRowsFromHierarchy([parentDirection, entiteAdminLocal], { search })
+        : [],
       capabilities: emptyCapabilities,
       availableDirections: [],
       serviceParentDirection: null,
@@ -386,7 +416,10 @@ export const getDirectionsServicesList = async (
       : [];
 
   return {
-    data: buildDirectionsServicesRowsFromHierarchy(entitesAdminLocal, { search }),
+    data: buildDirectionsServicesRowsFromHierarchy(entitesAdminLocal, {
+      search,
+      includeRootDirection: assignmentLevel === 'direction',
+    }),
     capabilities: {
       canCreateDirection: assignmentLevel === 'entite-administrative',
       canCreateService,

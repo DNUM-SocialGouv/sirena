@@ -1,17 +1,15 @@
-import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
+import { ROLES } from '@sirena/common/constants';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useDirectionsServicesList } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
-import { fetchResolvedFeatureFlags } from '@/lib/api/fetchFeatureFlags';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
-import { queryClient } from '@/lib/queryClient';
+import { requireAdminLocalDirectionsServices } from './-route-guard';
 import { Route, RouteComponent } from './index';
 
-const { authGuardSpy, redirectSpy } = vi.hoisted(() => ({
+const { authGuardSpy } = vi.hoisted(() => ({
   authGuardSpy: vi.fn(),
-  redirectSpy: vi.fn((args: unknown) => ({ redirect: args })),
 }));
 
 vi.mock('@tanstack/react-router', () => ({
@@ -31,7 +29,6 @@ vi.mock('@tanstack/react-router', () => ({
       {children}
     </a>
   ),
-  redirect: redirectSpy,
 }));
 
 vi.mock('@/hooks/queries/profile.hook', () => ({
@@ -63,20 +60,9 @@ afterEach(() => {
 });
 
 describe('Admin directions and services route', () => {
-  it('restricts the route to entity admins', () => {
+  it('uses the entity-admin local Directions and Services guard', () => {
     expect(vi.mocked(requireAuthAndRoles)).toHaveBeenCalledWith([ROLES.ENTITY_ADMIN]);
-    expect((Route as unknown as { beforeLoad: unknown }).beforeLoad).toBeTypeOf('function');
-  });
-
-  it('redirects to admin users from beforeLoad when the feature flag is disabled', async () => {
-    vi.mocked(queryClient.ensureQueryData).mockResolvedValueOnce({
-      [FEATURE_FLAGS.ADMIN_LOCAL_DIRECTIONS_SERVICES]: false,
-    });
-
-    await expect(
-      (Route as unknown as { beforeLoad: (ctx: unknown) => Promise<void> }).beforeLoad({ location: { href: '' } }),
-    ).rejects.toEqual({ redirect: { to: '/admin/users' } });
-    expect(fetchResolvedFeatureFlags).not.toHaveBeenCalled();
+    expect((Route as unknown as { beforeLoad: unknown }).beforeLoad).toBe(requireAdminLocalDirectionsServices);
   });
 
   it('renders an accessible page title with the admin local affectation organization', () => {
@@ -98,7 +84,7 @@ describe('Admin directions and services route', () => {
     expect(document.title).toBe('Directions et services (ARS Normandie) - Espace administrateur - SIRENA');
   });
 
-  it('hides creation controls for a Service-level affectation', () => {
+  it('shows an assigned Service as editable with its parent Direction and no creation controls', () => {
     vi.mocked(useProfile).mockReturnValue({
       data: {
         affectationChain: [
@@ -108,10 +94,33 @@ describe('Admin directions and services route', () => {
         ],
       },
     } as never);
-    vi.mocked(useDirectionsServicesList).mockReturnValue({ data: { data: [] } } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
+      data: {
+        data: [
+          {
+            id: 'service-pa',
+            directionNom: 'Direction Autonomie',
+            directionLabel: 'DA',
+            serviceNom: 'Service PA',
+            serviceLabel: 'PA',
+            email: 'service-pa@ars.fr',
+            editId: 'service-pa',
+            canEdit: true,
+          },
+        ],
+        capabilities: { canCreateDirection: false, canCreateService: false },
+      },
+    } as never);
 
     render(<RouteComponent />);
 
+    expect(screen.getByRole('cell', { name: 'Direction Autonomie' })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'Service PA' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {
+        name: 'Modifier le service Service PA de la direction Direction Autonomie',
+      }),
+    ).toHaveAttribute('href', '/admin/directions-services/service-pa/edit');
     expect(screen.queryByRole('link', { name: 'Ajouter une direction' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Ajouter un service' })).not.toBeInTheDocument();
   });
@@ -184,7 +193,7 @@ describe('Admin directions and services route', () => {
     expect(screen.queryByRole('link', { name: 'Ajouter un service' })).not.toBeInTheDocument();
   });
 
-  it('links to Service creation when a Direction-level affectation can create Services', () => {
+  it('shows an assigned Direction before its descendant Services and preserves Service creation', () => {
     vi.mocked(useProfile).mockReturnValue({
       data: {
         affectationChain: [
@@ -195,7 +204,28 @@ describe('Admin directions and services route', () => {
     } as never);
     vi.mocked(useDirectionsServicesList).mockReturnValue({
       data: {
-        data: [],
+        data: [
+          {
+            id: 'dir-autonomie',
+            directionNom: 'Direction Autonomie',
+            directionLabel: 'DA',
+            serviceNom: '',
+            serviceLabel: '',
+            email: 'direction-autonomie@ars.fr',
+            editId: 'dir-autonomie',
+            canEdit: true,
+          },
+          {
+            id: 'service-pa',
+            directionNom: 'Direction Autonomie',
+            directionLabel: 'DA',
+            serviceNom: 'Service PA',
+            serviceLabel: 'PA',
+            email: 'service-pa@ars.fr',
+            editId: 'service-pa',
+            canEdit: true,
+          },
+        ],
         capabilities: {
           canCreateDirection: false,
           canCreateService: true,
@@ -206,6 +236,15 @@ describe('Admin directions and services route', () => {
 
     render(<RouteComponent />);
 
+    const assignedDirectionEdit = screen.getByRole('link', { name: 'Modifier la direction Direction Autonomie' });
+    const descendantServiceEdit = screen.getByRole('link', {
+      name: 'Modifier le service Service PA de la direction Direction Autonomie',
+    });
+    expect(assignedDirectionEdit).toHaveAttribute('href', '/admin/directions-services/dir-autonomie/edit');
+    expect(
+      assignedDirectionEdit.compareDocumentPosition(descendantServiceEdit) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Ajouter une direction' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ajouter un service' })).toHaveAttribute(
       'href',
       '/admin/directions-services/services/create',

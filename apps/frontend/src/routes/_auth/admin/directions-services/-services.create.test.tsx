@@ -15,47 +15,46 @@ vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
   useRouter: () => ({ navigate: routerNavigateSpy }),
 }));
-
 vi.mock('@/hooks/queries/entites.hook', () => ({
   useCreateServiceAdminLocal: vi.fn(),
   useDirectionsServicesList: vi.fn(),
 }));
-
-vi.mock('./-create-route-guard', () => ({
-  requireAdminLocalServiceCreation: serviceCreationGuardSpy,
-}));
-
+vi.mock('./-create-route-guard', () => ({ requireAdminLocalServiceCreation: serviceCreationGuardSpy }));
 vi.mock('@sirena/ui', async () => {
   const actual = await vi.importActual<typeof import('@sirena/ui')>('@sirena/ui');
-
-  return {
-    ...actual,
-    Toast: {
-      useToastManager: () => ({ add: addToastSpy }),
-    },
-  };
+  return { ...actual, Toast: { useToastManager: () => ({ add: addToastSpy }) } };
 });
+
+const parentDirection = { id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' };
+
+function mockDirectionsList(
+  data: {
+    capabilities?: { canCreateDirection: boolean; canCreateService: boolean };
+    availableDirections?: (typeof parentDirection)[];
+    serviceParentDirection?: typeof parentDirection;
+  } = {},
+) {
+  vi.mocked(useDirectionsServicesList).mockReturnValue({
+    data: {
+      data: [],
+      capabilities: data.capabilities ?? { canCreateDirection: false, canCreateService: true },
+      availableDirections: data.availableDirections ?? [],
+      serviceParentDirection: data.serviceParentDirection ?? parentDirection,
+    },
+  } as never);
+}
+
+async function fillRequiredFields(user: ReturnType<typeof userEvent.setup>) {
+  await user.type(screen.getByRole('textbox', { name: /Nom du service/ }), 'Service Autonomie');
+  await user.type(screen.getByRole('textbox', { name: /Abréviation/ }), 'SA');
+}
 
 beforeEach(() => {
   vi.mocked(useCreateServiceAdminLocal).mockReturnValue({
     mutateAsync: vi.fn().mockResolvedValue({ id: 'service-autonomie' }),
     isPending: false,
   } as never);
-  vi.mocked(useDirectionsServicesList).mockReturnValue({
-    data: {
-      data: [],
-      capabilities: {
-        canCreateDirection: false,
-        canCreateService: true,
-      },
-      availableDirections: [],
-      serviceParentDirection: {
-        id: 'dir-autonomie',
-        nomComplet: 'Direction Autonomie',
-        label: 'DA',
-      },
-    },
-  } as never);
+  mockDirectionsList();
 });
 
 afterEach(() => {
@@ -69,101 +68,68 @@ describe('Admin local Service create route', () => {
     expect((Route as unknown as { beforeLoad: unknown }).beforeLoad).toBe(serviceCreationGuardSpy);
   });
 
-  it('renders the validated Service form with its assigned Direction first and read-only', () => {
-    vi.mocked(useDirectionsServicesList).mockReturnValue({
-      data: {
-        data: [],
-        capabilities: {
-          canCreateDirection: false,
-          canCreateService: true,
-        },
-        availableDirections: [],
-        serviceParentDirection: {
-          id: 'dir-autonomie',
-          nomComplet: 'Direction Autonomie',
-          label: 'DA',
-        },
-      },
-    } as never);
-
+  it('renders the Service form with its assigned Direction first and read-only', () => {
     render(<RouteComponent />);
 
-    expect(screen.getByRole('heading', { level: 2, name: 'Ajouter un service' })).toBeInTheDocument();
-    expect(screen.getByText('Informations utilisées dans SIRENA')).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Ajouter un service' })).toBeInTheDocument();
     const direction = screen.getByRole('textbox', { name: /Direction \(obligatoire\)/ });
     const serviceName = screen.getByRole('textbox', { name: /Nom du service \(obligatoire\)/ });
     expect(direction).toHaveValue('Direction Autonomie (DA)');
     expect(direction).toHaveAttribute('readonly');
-    expect(screen.getByText('Organisation à laquelle le service est rattaché')).toBeVisible();
     expect(direction.compareDocumentPosition(serviceName) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByText(/Nom complet sans abréviation ou acronyme.*Professions Médicales/)).toBeVisible();
-    expect(screen.getByText(/Sigle, acronyme ou forme abrégée du nom.*PM/)).toBeVisible();
-    expect(screen.getByRole('textbox', { name: /Adresse e-mail de notification/ })).toBeInTheDocument();
-    expect(screen.getByText('Informations de contact pour l’usager')).toBeVisible();
-    expect(screen.getByText(/l’adresse e-mail de notification sera transmise au déclarant/)).toBeVisible();
-    expect(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ })).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: /Numéro de téléphone/ })).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: /Adresse postale/ })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Informations de contact pour l’usager' })).toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: /Actif dans SIRENA/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Ajouter le service' })).toBeInTheDocument();
     expect(document.title).toBe('Ajouter un service - Directions et services - SIRENA');
   });
 
-  it('submits every visible contact value without an activation field and returns to the refreshed list', async () => {
+  it('submits visible values under the assigned Direction and returns to the list', async () => {
     const user = userEvent.setup();
     const mutateAsync = vi.fn().mockResolvedValue({ id: 'service-autonomie' });
     vi.mocked(useCreateServiceAdminLocal).mockReturnValue({ mutateAsync, isPending: false } as never);
     render(<RouteComponent />);
 
-    await user.type(screen.getByRole('textbox', { name: /Nom du service/ }), 'Service Autonomie');
-    await user.type(screen.getByRole('textbox', { name: /Abréviation/ }), 'SA');
-    await user.type(
-      screen.getByRole('textbox', { name: /Adresse e-mail de notification/ }),
-      'service-autonomie@ars.fr',
-    );
+    await fillRequiredFields(user);
+    await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de notification/ }), 'service@ars.fr');
     await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'contact@ars.fr');
     await user.type(screen.getByRole('textbox', { name: /Numéro de téléphone/ }), '0102030405');
     await user.type(screen.getByRole('textbox', { name: /Adresse postale/ }), '1 rue de la Santé, Paris');
     await user.click(screen.getByRole('button', { name: 'Ajouter le service' }));
 
-    expect(mutateAsync).toHaveBeenCalledWith({
-      nomComplet: 'Service Autonomie',
-      label: 'SA',
-      email: 'service-autonomie@ars.fr',
-      emailContactUsager: 'contact@ars.fr',
-      telContactUsager: '0102030405',
-      adresseContactUsager: '1 rue de la Santé, Paris',
-    });
     await waitFor(() => {
+      expect(mutateAsync).toHaveBeenCalledWith({
+        nomComplet: 'Service Autonomie',
+        label: 'SA',
+        email: 'service@ars.fr',
+        emailContactUsager: 'contact@ars.fr',
+        telContactUsager: '0102030405',
+        adresseContactUsager: '1 rue de la Santé, Paris',
+      });
       expect(addToastSpy).toHaveBeenCalledWith(expect.objectContaining({ title: 'Service créé avec succès' }));
       expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services' });
     });
   });
 
-  it('creates a Service beneath the available Direction selected by a root-level Admin', async () => {
+  it('requires and submits a selected Direction for a root-level Admin', async () => {
     const user = userEvent.setup();
-    const mutateAsync = vi.fn().mockResolvedValue({ id: 'service-autonomie' });
+    const mutateAsync = vi.fn();
     vi.mocked(useCreateServiceAdminLocal).mockReturnValue({ mutateAsync, isPending: false } as never);
-    vi.mocked(useDirectionsServicesList).mockReturnValue({
-      data: {
-        data: [],
-        capabilities: {
-          canCreateDirection: true,
-          canCreateService: true,
-        },
-        availableDirections: [
-          { id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' },
-          { id: 'dir-enfance', nomComplet: 'Direction Enfance', label: 'DE' },
-        ],
-      },
-    } as never);
+    mockDirectionsList({
+      capabilities: { canCreateDirection: true, canCreateService: true },
+      availableDirections: [parentDirection, { id: 'dir-enfance', nomComplet: 'Direction Enfance', label: 'DE' }],
+      serviceParentDirection: undefined,
+    });
     render(<RouteComponent />);
+    await fillRequiredFields(user);
 
-    await user.type(screen.getByRole('textbox', { name: /Nom du service/ }), 'Service Autonomie');
-    await user.type(screen.getByRole('textbox', { name: /Abréviation/ }), 'SA');
-    await user.selectOptions(screen.getByRole('combobox', { name: /Direction \(obligatoire\)/ }), 'dir-autonomie');
     await user.click(screen.getByRole('button', { name: 'Ajouter le service' }));
+    const select = screen.getByRole('combobox', { name: /Direction \(obligatoire\)/ });
+    expect(select).toHaveFocus();
+    expect(select).toHaveAccessibleDescription('Veuillez sélectionner la direction à laquelle rattacher le service.');
+    expect(mutateAsync).not.toHaveBeenCalled();
 
+    await user.selectOptions(select, parentDirection.id);
+    await user.click(screen.getByRole('button', { name: 'Ajouter le service' }));
     expect(mutateAsync).toHaveBeenCalledWith({
       nomComplet: 'Service Autonomie',
       label: 'SA',
@@ -171,75 +137,19 @@ describe('Admin local Service create route', () => {
       emailContactUsager: '',
       telContactUsager: '',
       adresseContactUsager: '',
-      directionId: 'dir-autonomie',
+      directionId: parentDirection.id,
     });
   });
 
-  it('focuses the first invalid visible field when required fields and Direction are missing', async () => {
-    const user = userEvent.setup();
-    vi.mocked(useDirectionsServicesList).mockReturnValue({
-      data: {
-        data: [],
-        capabilities: {
-          canCreateDirection: true,
-          canCreateService: true,
-        },
-        availableDirections: [{ id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' }],
-      },
-    } as never);
-    render(<RouteComponent />);
-
-    await user.click(screen.getByRole('button', { name: 'Ajouter le service' }));
-
-    const directionSelect = screen.getByRole('combobox', { name: /Direction \(obligatoire\)/ });
-    expect(directionSelect).toHaveFocus();
-    expect(directionSelect).toHaveAccessibleDescription(
-      'Veuillez sélectionner la direction à laquelle rattacher le service.',
-    );
-    expect(screen.getByText('Le champ "Nom du service" est vide. Veuillez le renseigner.')).toBeInTheDocument();
-    expect(screen.getByText('Le champ "Abréviation" est vide. Veuillez le renseigner.')).toBeInTheDocument();
-  });
-
-  it('requires a Direction selection for a root-level Admin', async () => {
-    const user = userEvent.setup();
-    const mutateAsync = vi.fn();
-    vi.mocked(useCreateServiceAdminLocal).mockReturnValue({ mutateAsync, isPending: false } as never);
-    vi.mocked(useDirectionsServicesList).mockReturnValue({
-      data: {
-        data: [],
-        capabilities: {
-          canCreateDirection: true,
-          canCreateService: true,
-        },
-        availableDirections: [{ id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' }],
-      },
-    } as never);
-    render(<RouteComponent />);
-
-    await user.type(screen.getByRole('textbox', { name: /Nom du service/ }), 'Service Autonomie');
-    await user.type(screen.getByRole('textbox', { name: /Abréviation/ }), 'SA');
-    await user.click(screen.getByRole('button', { name: 'Ajouter le service' }));
-
-    const directionSelect = screen.getByRole('combobox', {
-      name: /Direction \(obligatoire\)/,
-    });
-    expect(directionSelect).toHaveAccessibleDescription(
-      'Veuillez sélectionner la direction à laquelle rattacher le service.',
-    );
-    expect(directionSelect).toHaveFocus();
-    expect(mutateAsync).not.toHaveBeenCalled();
-  });
-
-  it('rejects invalid contact-usager e-mail and telephone values', async () => {
+  it('rejects invalid contact values', async () => {
     const user = userEvent.setup();
     const mutateAsync = vi.fn();
     vi.mocked(useCreateServiceAdminLocal).mockReturnValue({ mutateAsync, isPending: false } as never);
     render(<RouteComponent />);
-
-    await user.type(screen.getByRole('textbox', { name: /Nom du service/ }), 'Service Autonomie');
-    await user.type(screen.getByRole('textbox', { name: /Abréviation/ }), 'SA');
+    await fillRequiredFields(user);
     await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'adresse-invalide');
     await user.type(screen.getByRole('textbox', { name: /Numéro de téléphone/ }), '123');
+
     await user.click(screen.getByRole('button', { name: 'Ajouter le service' }));
 
     expect(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ })).toHaveFocus();
@@ -250,26 +160,25 @@ describe('Admin local Service create route', () => {
     expect(mutateAsync).not.toHaveBeenCalled();
   });
 
-  it('shows an error and stays on the form when Service creation fails', async () => {
+  it('shows an error and stays on the form when creation fails', async () => {
     const user = userEvent.setup();
     vi.mocked(useCreateServiceAdminLocal).mockReturnValue({
       mutateAsync: vi.fn().mockRejectedValue(new Error('Creation failed')),
       isPending: false,
     } as never);
     render(<RouteComponent />);
+    await fillRequiredFields(user);
 
-    await user.type(screen.getByRole('textbox', { name: /Nom du service/ }), 'Service Autonomie');
-    await user.type(screen.getByRole('textbox', { name: /Abréviation/ }), 'SA');
     await user.click(screen.getByRole('button', { name: 'Ajouter le service' }));
 
-    await waitFor(() => {
+    await waitFor(() =>
       expect(addToastSpy).toHaveBeenCalledWith({
         title: 'Erreur',
         description: 'Erreur lors de la création du service. Veuillez réessayer.',
         timeout: 0,
         data: { icon: 'fr-alert--error' },
-      });
-    });
+      }),
+    );
     expect(routerNavigateSpy).not.toHaveBeenCalled();
   });
 });

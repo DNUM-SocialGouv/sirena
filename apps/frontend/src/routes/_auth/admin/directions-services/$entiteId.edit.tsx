@@ -1,17 +1,15 @@
 import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
-import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Loader, Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
-import { type SubmitEvent, useEffect, useState } from 'react';
-import { z } from 'zod';
+import { type SubmitEvent, useEffect } from 'react';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
 import { useDirectionServiceAdminLocal, useEditDirectionServiceAdminLocal } from '@/hooks/queries/entites.hook';
-import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 import {
   LocalDirectionServiceContactFields,
   LocalDirectionServiceSirenaFields,
 } from './-components/LocalDirectionServiceSirenaFields';
+import { useLocalDirectionServiceForm } from './-components/useLocalDirectionServiceForm';
 import { requireAdminLocalDirectionsServices } from './-route-guard';
 
 export const Route = createFileRoute('/_auth/admin/directions-services/$entiteId/edit')({
@@ -43,9 +41,7 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
   const editDirectionService = useEditDirectionServiceAdminLocal();
   const toastManager = Toast.useToastManager();
   const router = useRouter();
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [formData, setFormData] = useState({
+  const form = useLocalDirectionServiceForm(target.kind, {
     nomComplet: target.nomComplet,
     label: target.label,
     email: target.email,
@@ -53,72 +49,18 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
     telContactUsager: target.telContactUsager,
     adresseContactUsager: target.adresseContactUsager,
   });
-  const formSchema = z.object({
-    nomComplet: z
-      .string()
-      .trim()
-      .min(
-        1,
-        `Le champ "Nom ${target.kind === 'direction' ? 'de la direction' : 'du service'}" est vide. Veuillez le renseigner.`,
-      ),
-    label: z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
-    email: optionalEmailSchema,
-    emailContactUsager: optionalEmailSchema,
-    telContactUsager: optionalPhoneSchema,
-    adresseContactUsager: z.string(),
-  });
 
   useEffect(() => {
     document.title = `${title} - Directions et services - SIRENA`;
   }, [title]);
 
-  const handleChange =
-    (field: keyof typeof formData) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const value = event.target.value;
-      setFormData((previous) => {
-        const updated = { ...previous, [field]: value };
-
-        if (hasSubmitted && validationErrors[field]) {
-          const fieldError = getFieldError(formSchema, updated, field);
-          setValidationErrors((previousErrors) => {
-            const next = { ...previousErrors };
-            if (fieldError) next[field] = fieldError;
-            else delete next[field];
-            return next;
-          });
-        }
-
-        return updated;
-      });
-    };
-
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setHasSubmitted(true);
-    const result = formSchema.safeParse(formData);
-
-    if (!result.success) {
-      const errors = zodIssuesToFieldErrors(result.error);
-      setValidationErrors(errors);
-      const firstField = Object.keys(errors)[0];
-      document.querySelector<HTMLElement>(`[name="${firstField}"]`)?.focus();
-      return;
-    }
-
-    setValidationErrors({});
+    const values = form.validate();
+    if (!values) return;
 
     try {
-      await editDirectionService.mutateAsync({
-        id: target.id,
-        input: {
-          nomComplet: result.data.nomComplet,
-          label: result.data.label,
-          email: result.data.email ?? '',
-          emailContactUsager: result.data.emailContactUsager ?? '',
-          telContactUsager: result.data.telContactUsager ?? '',
-          adresseContactUsager: result.data.adresseContactUsager,
-        },
-      });
+      await editDirectionService.mutateAsync({ id: target.id, input: values });
       const capitalizedEntityLabel = entityLabel[0].toUpperCase() + entityLabel.slice(1);
       toastManager.add({
         title: `${capitalizedEntityLabel} ${target.kind === 'direction' ? 'modifiée' : 'modifié'} avec succès`,
@@ -154,9 +96,9 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
 
           <LocalDirectionServiceSirenaFields
             kind={target.kind}
-            formData={formData}
-            validationErrors={validationErrors}
-            onChange={handleChange}
+            formData={form.values}
+            validationErrors={form.validationErrors}
+            onChange={form.onChange}
             leadingField={
               target.kind === 'service' ? (
                 <div className="fr-col-12 fr-col-md-7">
@@ -178,9 +120,9 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
           />
 
           <LocalDirectionServiceContactFields
-            formData={formData}
-            validationErrors={validationErrors}
-            onChange={handleChange}
+            formData={form.values}
+            validationErrors={form.validationErrors}
+            onChange={form.onChange}
           />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">

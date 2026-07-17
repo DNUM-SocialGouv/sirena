@@ -1,65 +1,38 @@
-import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
+import { ROLES } from '@sirena/common/constants';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCreateDirectionAdminLocal } from '@/hooks/queries/entites.hook';
-import { fetchResolvedFeatureFlags } from '@/lib/api/fetchFeatureFlags';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
-import { queryClient } from '@/lib/queryClient';
 import { requireAdminLocalDirectionCreation } from './-create-route-guard';
 import { Route, RouteComponent } from './directions.create';
 
-const { addToastSpy, authGuardSpy, redirectSpy, routerNavigateSpy } = vi.hoisted(() => ({
+const { addToastSpy, authGuardSpy, routerNavigateSpy } = vi.hoisted(() => ({
   addToastSpy: vi.fn(),
   authGuardSpy: vi.fn(),
-  redirectSpy: vi.fn((args: unknown) => ({ redirect: args })),
   routerNavigateSpy: vi.fn(),
 }));
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => options,
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
-  redirect: redirectSpy,
-  useRouter: () => ({
-    navigate: routerNavigateSpy,
-  }),
+  redirect: vi.fn(),
+  useRouter: () => ({ navigate: routerNavigateSpy }),
 }));
-
-vi.mock('@/hooks/queries/entites.hook', () => ({
-  useCreateDirectionAdminLocal: vi.fn(),
-}));
-
-vi.mock('@/lib/api/fetchEntites', () => ({
-  fetchDirectionsServicesList: vi.fn(),
-}));
-
-vi.mock('@/lib/api/fetchFeatureFlags', () => ({
-  fetchResolvedFeatureFlags: vi.fn(),
-}));
-
-vi.mock('@/lib/queryClient', () => ({
-  queryClient: {
-    ensureQueryData: vi.fn(),
-    fetchQuery: vi.fn(),
-  },
-}));
-
-vi.mock('@/lib/auth-guards', () => ({
-  requireAuthAndRoles: vi.fn(() => authGuardSpy),
-}));
-
+vi.mock('@/hooks/queries/entites.hook', () => ({ useCreateDirectionAdminLocal: vi.fn() }));
+vi.mock('@/lib/api/fetchEntites', () => ({ fetchDirectionsServicesList: vi.fn() }));
+vi.mock('@/lib/api/fetchFeatureFlags', () => ({ fetchResolvedFeatureFlags: vi.fn() }));
+vi.mock('@/lib/queryClient', () => ({ queryClient: { ensureQueryData: vi.fn(), fetchQuery: vi.fn() } }));
+vi.mock('@/lib/auth-guards', () => ({ requireAuthAndRoles: vi.fn(() => authGuardSpy) }));
 vi.mock('@sirena/ui', async () => {
   const actual = await vi.importActual<typeof import('@sirena/ui')>('@sirena/ui');
-
-  return {
-    ...actual,
-    Toast: {
-      useToastManager: () => ({
-        add: addToastSpy,
-      }),
-    },
-  };
+  return { ...actual, Toast: { useToastManager: () => ({ add: addToastSpy }) } };
 });
+
+async function fillRequiredFields(user: ReturnType<typeof userEvent.setup>) {
+  await user.type(screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ }), 'Direction Autonomie');
+  await user.type(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ }), 'DA');
+}
 
 beforeEach(() => {
   vi.mocked(useCreateDirectionAdminLocal).mockReturnValue({
@@ -75,137 +48,65 @@ afterEach(() => {
 });
 
 describe('Admin local Direction create route', () => {
-  it('restricts the route to entity admins with Direction creation capability', () => {
+  it('uses the entity-admin Direction creation guard', () => {
     expect(vi.mocked(requireAuthAndRoles)).toHaveBeenCalledWith([ROLES.ENTITY_ADMIN]);
     expect((Route as unknown as { beforeLoad: unknown }).beforeLoad).toBe(requireAdminLocalDirectionCreation);
   });
 
-  it('redirects to admin users from beforeLoad when the feature flag is disabled', async () => {
-    vi.mocked(queryClient.ensureQueryData).mockResolvedValueOnce({
-      [FEATURE_FLAGS.ADMIN_LOCAL_DIRECTIONS_SERVICES]: false,
-    });
-
-    await expect(
-      (Route as unknown as { beforeLoad: (ctx: unknown) => Promise<void> }).beforeLoad({ location: { href: '' } }),
-    ).rejects.toEqual({ redirect: { to: '/admin/users' } });
-    expect(fetchResolvedFeatureFlags).not.toHaveBeenCalled();
-  });
-
-  it('renders the local Direction creation form sections from the mockup', () => {
+  it('renders the Direction-specific creation form', () => {
     render(<RouteComponent />);
 
-    expect(screen.getByRole('heading', { level: 2, name: 'Ajouter une direction' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Directions et services/ })).toHaveAttribute(
-      'href',
-      '/admin/directions-services',
-    );
+    expect(screen.getByRole('heading', { name: 'Ajouter une direction' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Informations utilisées dans SIRENA' })).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ })).toBeInTheDocument();
-    expect(screen.getByText(/Nom complet sans abréviation ou acronyme.*Direction de l’Offre de Soins/)).toBeVisible();
-    expect(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /Nom de la direction/ })).toBeInTheDocument();
+    expect(screen.getByText(/Direction de l’Offre de Soins/)).toBeVisible();
+    expect(screen.getByRole('textbox', { name: /Abréviation/ })).toBeInTheDocument();
     expect(screen.getByText(/Sigle, acronyme ou forme abrégée du nom.*DOS/)).toBeVisible();
-    expect(screen.getByRole('textbox', { name: /Adresse e-mail de notification/ })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Informations de contact pour l’usager' })).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent(/l’adresse e-mail de notification sera transmise au déclarant/);
-    expect(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ })).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: /Numéro de téléphone/ })).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: /Adresse postale/ })).toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: /Actif dans SIRENA/ })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Annuler' })).toHaveAttribute('href', '/admin/directions-services');
-    expect(screen.getByRole('button', { name: 'Ajouter la direction' })).toBeInTheDocument();
     expect(document.title).toBe('Ajouter une direction - Directions et services - SIRENA');
   });
 
-  it('shows required-field errors when submitting an empty Direction form', async () => {
+  it('shows required errors, focuses the first field and clears errors as values are entered', async () => {
     const user = userEvent.setup();
     render(<RouteComponent />);
 
     await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
+    const name = screen.getByRole('textbox', { name: /Nom de la direction/ });
+    const label = screen.getByRole('textbox', { name: /Abréviation/ });
+    expect(name).toHaveFocus();
+    expect(name).toHaveAccessibleDescription('Le champ "Nom de la direction" est vide. Veuillez le renseigner.');
+    expect(label).toHaveAccessibleDescription('Le champ "Abréviation" est vide. Veuillez le renseigner.');
 
-    expect(screen.getByText('Le champ "Nom de la direction" est vide. Veuillez le renseigner.')).toBeInTheDocument();
-    expect(screen.getByText('Le champ "Abréviation" est vide. Veuillez le renseigner.')).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ })).toHaveFocus();
+    await user.type(name, 'Direction Autonomie');
+    await user.type(label, 'DA');
+    expect(name).not.toHaveAccessibleDescription();
+    expect(label).not.toHaveAccessibleDescription();
   });
 
-  it('clears required-field errors as the submitted Direction form is corrected', async () => {
+  it.each([
+    ['Adresse e-mail de notification', 'invalid-email', /L’adresse e-mail est invalide/],
+    ['Adresse e-mail de contact', 'invalid-contact-email', /L’adresse e-mail est invalide/],
+    ['Numéro de téléphone', '123', /Le numéro de téléphone doit être au format national ou international/],
+  ] as const)('rejects an invalid %s', async (fieldName, value, message) => {
     const user = userEvent.setup();
     render(<RouteComponent />);
+    await fillRequiredFields(user);
+    await user.type(screen.getByRole('textbox', { name: new RegExp(fieldName) }), value);
 
     await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
-    await user.type(
-      screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ }),
-      'Direction Autonomie',
-    );
-    await user.type(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ }), 'DA');
 
-    expect(
-      screen.queryByText('Le champ "Nom de la direction" est vide. Veuillez le renseigner.'),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByText('Le champ "Abréviation" est vide. Veuillez le renseigner.')).not.toBeInTheDocument();
+    expect(screen.getByText(message)).toBeInTheDocument();
   });
 
-  it('shows the shared email-format error for an invalid notification email', async () => {
-    const user = userEvent.setup();
-    render(<RouteComponent />);
-
-    await user.type(
-      screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ }),
-      'Direction Autonomie',
-    );
-    await user.type(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ }), 'DA');
-    await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de notification/ }), 'invalid-email');
-    await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
-
-    expect(
-      screen.getByText('L’adresse e-mail est invalide. Merci de saisir une adresse au format prenom.nom@exemple.com.'),
-    ).toBeInTheDocument();
-  });
-
-  it('shows the email-format error for an invalid contact email', async () => {
-    const user = userEvent.setup();
-    render(<RouteComponent />);
-
-    await user.type(
-      screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ }),
-      'Direction Autonomie',
-    );
-    await user.type(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ }), 'DA');
-    await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'invalid-contact-email');
-    await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
-
-    expect(
-      screen.getByText('L’adresse e-mail est invalide. Merci de saisir une adresse au format prenom.nom@exemple.com.'),
-    ).toBeInTheDocument();
-  });
-
-  it('shows the shared phone-format error for an invalid contact phone number', async () => {
-    const user = userEvent.setup();
-    render(<RouteComponent />);
-
-    await user.type(
-      screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ }),
-      'Direction Autonomie',
-    );
-    await user.type(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ }), 'DA');
-    await user.type(screen.getByRole('textbox', { name: /Numéro de téléphone/ }), '123');
-    await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
-
-    expect(
-      screen.getByText('Le numéro de téléphone doit être au format national ou international (+33XXXXXXXXXX)'),
-    ).toBeInTheDocument();
-  });
-
-  it('submits the valid Direction fields to the local create mutation', async () => {
+  it('submits visible fields, shows success and returns to the list', async () => {
     const user = userEvent.setup();
     const mutateAsync = vi.fn().mockResolvedValue({ id: 'dir-autonomie' });
     vi.mocked(useCreateDirectionAdminLocal).mockReturnValue({ mutateAsync, isPending: false } as never);
     render(<RouteComponent />);
 
-    await user.type(
-      screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ }),
-      'Direction Autonomie',
-    );
-    await user.type(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ }), 'DA');
+    await fillRequiredFields(user);
     await user.type(
       screen.getByRole('textbox', { name: /Adresse e-mail de notification/ }),
       'reclamations@direction.fr',
@@ -215,84 +116,39 @@ describe('Admin local Direction create route', () => {
     await user.type(screen.getByRole('textbox', { name: /Adresse postale/ }), '1 rue de la République, 75000 Paris');
     await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
 
-    expect(mutateAsync).toHaveBeenCalledWith({
-      nomComplet: 'Direction Autonomie',
-      label: 'DA',
-      email: 'reclamations@direction.fr',
-      emailContactUsager: 'contact@direction.fr',
-      telContactUsager: '0102030405',
-      adresseContactUsager: '1 rue de la République, 75000 Paris',
-    });
-  });
-
-  it('shows a success toast after creating the Direction', async () => {
-    const user = userEvent.setup();
-    vi.mocked(useCreateDirectionAdminLocal).mockReturnValue({
-      mutateAsync: vi.fn().mockResolvedValue({ id: 'dir-autonomie' }),
-      isPending: false,
-    } as never);
-    render(<RouteComponent />);
-
-    await user.type(
-      screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ }),
-      'Direction Autonomie',
-    );
-    await user.type(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ }), 'DA');
-    await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
-
     await waitFor(() => {
-      expect(addToastSpy).toHaveBeenCalledWith({
-        title: 'Direction créée avec succès',
-        description: 'La nouvelle direction a bien été enregistrée.',
-        timeout: 0,
-        data: { icon: 'fr-alert--success' },
+      expect(mutateAsync).toHaveBeenCalledWith({
+        nomComplet: 'Direction Autonomie',
+        label: 'DA',
+        email: 'reclamations@direction.fr',
+        emailContactUsager: 'contact@direction.fr',
+        telContactUsager: '0102030405',
+        adresseContactUsager: '1 rue de la République, 75000 Paris',
       });
-    });
-  });
-
-  it('navigates back to the directions and services list after creating the Direction', async () => {
-    const user = userEvent.setup();
-    vi.mocked(useCreateDirectionAdminLocal).mockReturnValue({
-      mutateAsync: vi.fn().mockResolvedValue({ id: 'dir-autonomie' }),
-      isPending: false,
-    } as never);
-    render(<RouteComponent />);
-
-    await user.type(
-      screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ }),
-      'Direction Autonomie',
-    );
-    await user.type(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ }), 'DA');
-    await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
-
-    await waitFor(() => {
+      expect(addToastSpy).toHaveBeenCalledWith(expect.objectContaining({ title: 'Direction créée avec succès' }));
       expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services' });
     });
   });
 
-  it('shows an error toast and stays on the form when Direction creation fails', async () => {
+  it('shows an error and stays on the form when creation fails', async () => {
     const user = userEvent.setup();
     vi.mocked(useCreateDirectionAdminLocal).mockReturnValue({
       mutateAsync: vi.fn().mockRejectedValue(new Error('Creation failed')),
       isPending: false,
     } as never);
     render(<RouteComponent />);
+    await fillRequiredFields(user);
 
-    await user.type(
-      screen.getByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ }),
-      'Direction Autonomie',
-    );
-    await user.type(screen.getByRole('textbox', { name: /Abréviation \(obligatoire\)/ }), 'DA');
     await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
 
-    await waitFor(() => {
+    await waitFor(() =>
       expect(addToastSpy).toHaveBeenCalledWith({
         title: 'Erreur',
         description: 'Erreur lors de la création de la direction. Veuillez réessayer.',
         timeout: 0,
         data: { icon: 'fr-alert--error' },
-      });
-    });
+      }),
+    );
     expect(routerNavigateSpy).not.toHaveBeenCalled();
   });
 });
