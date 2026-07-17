@@ -1,6 +1,7 @@
+import { createDefaultLogger } from '../../../../helpers/pino.js';
 import type { SirecMisEnCause, SirecReclamationData, SirecReclamationRow } from '../../sirecMigration.repository.js';
 import { SIREC_NATIONAL_ENTITE_ID } from '../../transco/affectation/affectation.transco.js';
-import { SIREC_BOOLEAN_TRANSCO } from '../../transco/dictionnaire.transco.js';
+import { SIREC_BOOLEAN_TRANSCO, SIREC_DICO } from '../../transco/dictionnaire.transco.js';
 import { SIREC_TYPE_FINESS } from '../../transco/finessCategetab.transco.js';
 import { SIREC_TYPE_AUTRE } from '../../transco/misEnCauseAutre.transco.js';
 import { SIREC_TYPE_RPPS } from '../../transco/misEnCauseRpps.transco.js';
@@ -33,12 +34,37 @@ function appendAutrePrecision(data: SirenaMisEnCauseData | null, suffix: string 
   return { ...data, autrePrecision: data.autrePrecision ? `${data.autrePrecision}\n${suffix}` : suffix };
 }
 
+function transcodeServiceConcerne(idDico: number): string {
+  const label = SIREC_DICO[idDico];
+  if (label === undefined) throw new SirecTranscoError(idDico, 'service_concerne');
+  return label;
+}
+
+function transcodePublicConcerne(idDico: number): string {
+  const label = SIREC_DICO[idDico];
+  if (label === undefined) throw new SirecTranscoError(idDico, 'public_concerne');
+  return label;
+}
+
 function applyMisEnCauseAnnotations(
   data: SirenaMisEnCauseData | null,
   reclamation: SirecReclamationRow,
+  misEnCause?: SirecMisEnCause,
 ): SirenaMisEnCauseData | null {
-  const withObservation = appendAutrePrecision(
+  const withServiceConcerne = appendAutrePrecision(
     data,
+    misEnCause?.serviceConcerne !== null && misEnCause?.serviceConcerne !== undefined
+      ? `Service concerné : ${transcodeServiceConcerne(misEnCause.serviceConcerne)}`
+      : null,
+  );
+  const withPublicConcerne = appendAutrePrecision(
+    withServiceConcerne,
+    misEnCause?.publicConcerne !== null && misEnCause?.publicConcerne !== undefined
+      ? `Public concerné : ${transcodePublicConcerne(misEnCause.publicConcerne)}`
+      : null,
+  );
+  const withObservation = appendAutrePrecision(
+    withPublicConcerne,
     reclamation.observation ? `Observations : ${reclamation.observation}` : null,
   );
   return transcodeSignalement(reclamation.signalement) === true
@@ -117,7 +143,7 @@ export function transformSirecMisEnCauseSituations(
     return {
       ...baseSituation,
       entiteIds,
-      misEnCauseData: applyMisEnCauseAnnotations(misEnCauseData, reclamation),
+      misEnCauseData: applyMisEnCauseAnnotations(misEnCauseData, reclamation, misEnCause),
       lieuDeSurvenueData,
       fait: {
         ...baseSituation.fait,

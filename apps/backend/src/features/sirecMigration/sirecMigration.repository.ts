@@ -131,6 +131,8 @@ export interface SirecMisEnCause {
   autresMcType: number | null;
   label: string | null;
   adresse: string | null;
+  serviceConcerne: number | null;
+  publicConcerne: number | null;
   groupIds: number[];
   rppsData: SirecRppsData | null;
   finessData: SirecFinessData | null;
@@ -248,6 +250,8 @@ type MisEnCauseRow = {
   autres_mc_type: number | null;
   label: string | null;
   adresse: string | null;
+  service_concerne: number | null;
+  public_concerne: number | null;
   id_group: number | null;
   rpps_id_data: number | null;
   rpps_rpps: string | null;
@@ -303,6 +307,8 @@ export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEn
             m.autres_mc_type,
             m.label,
             m.adresse,
+            m.service_concerne,
+            m.public_concerne,
             mcg.id_group,
             r.id_data      AS rpps_id_data,
             r.rpps         AS rpps_rpps,
@@ -373,6 +379,8 @@ export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEn
         autresMcType: row.autres_mc_type,
         label: row.label,
         adresse: row.adresse,
+        serviceConcerne: row.service_concerne,
+        publicConcerne: row.public_concerne,
         groupIds: [],
         rppsData,
         finessData,

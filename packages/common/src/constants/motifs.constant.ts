@@ -525,4 +525,8 @@ export const motifLabelsById: Record<string, string> = Object.fromEntries(
   MOTIFS_DATA.map((motif) => [motif.id, motif.label]),
 );
 
+export const motifCategoriesById: Record<string, string> = Object.fromEntries(
+  MOTIFS_DATA.map((motif) => [motif.id, motif.category]),
+);
+
 export const motifCategories = Array.from(new Set(MOTIFS_DATA.map((m) => m.category)));
