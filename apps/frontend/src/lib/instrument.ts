@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/react';
 import { ERROR_KIND } from '@sirena/common/constants';
 import { env } from '@/config/env';
 import { APP_VERSION } from '@/config/version.constant';
+import { getLastKnownSentryUser } from '@/lib/sentryUser';
 import { getSessionId } from '@/lib/tracking';
 
 const isBusinessHttpError = (error: unknown): boolean => {
@@ -37,6 +38,22 @@ if (env.SENTRY_ENABLED === 'true') {
       const sessionId = getSessionId();
       if (!event.tags?.sessionId) {
         event.tags = { ...event.tags, sessionId, source: 'frontend' };
+      }
+
+      if (!event.user?.id) {
+        const lastUser = getLastKnownSentryUser();
+        if (lastUser) {
+          event.tags = { ...event.tags, lastKnownUserId: lastUser.id };
+          event.contexts = {
+            ...event.contexts,
+            lastKnownUser: {
+              id: lastUser.id,
+              email: lastUser.email,
+              role: lastUser.role,
+              topEntiteId: lastUser.topEntiteId,
+            },
+          };
+        }
       }
       return event;
     },
