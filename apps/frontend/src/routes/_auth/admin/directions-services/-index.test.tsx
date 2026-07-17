@@ -1,22 +1,34 @@
-import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
+import { ROLES } from '@sirena/common/constants';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useDirectionsServicesRows } from '@/hooks/queries/entites.hook';
+import { useDirectionsServicesList } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
-import { fetchResolvedFeatureFlags } from '@/lib/api/fetchFeatureFlags';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
-import { queryClient } from '@/lib/queryClient';
+import { requireAdminLocalDirectionsServices } from './-route-guard';
 import { Route, RouteComponent } from './index';
 
-const { authGuardSpy, redirectSpy } = vi.hoisted(() => ({
+const { authGuardSpy } = vi.hoisted(() => ({
   authGuardSpy: vi.fn(),
-  redirectSpy: vi.fn((args: unknown) => ({ redirect: args })),
 }));
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => options,
-  redirect: redirectSpy,
+  Link: ({
+    children,
+    className,
+    params,
+    to,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+    params?: { entiteId?: string };
+    to: string;
+  }) => (
+    <a className={className} href={to.replace('$entiteId', params?.entiteId ?? '')}>
+      {children}
+    </a>
+  ),
 }));
 
 vi.mock('@/hooks/queries/profile.hook', () => ({
@@ -24,7 +36,7 @@ vi.mock('@/hooks/queries/profile.hook', () => ({
 }));
 
 vi.mock('@/hooks/queries/entites.hook', () => ({
-  useDirectionsServicesRows: vi.fn(),
+  useDirectionsServicesList: vi.fn(),
 }));
 
 vi.mock('@/lib/api/fetchFeatureFlags', () => ({
@@ -48,20 +60,9 @@ afterEach(() => {
 });
 
 describe('Admin directions and services route', () => {
-  it('restricts the route to entity admins', () => {
+  it('uses the entity-admin local Directions and Services guard', () => {
     expect(vi.mocked(requireAuthAndRoles)).toHaveBeenCalledWith([ROLES.ENTITY_ADMIN]);
-    expect((Route as unknown as { beforeLoad: unknown }).beforeLoad).toBeTypeOf('function');
-  });
-
-  it('redirects to admin users from beforeLoad when the feature flag is disabled', async () => {
-    vi.mocked(queryClient.ensureQueryData).mockResolvedValueOnce({
-      [FEATURE_FLAGS.ADMIN_LOCAL_DIRECTIONS_SERVICES]: false,
-    });
-
-    await expect(
-      (Route as unknown as { beforeLoad: (ctx: unknown) => Promise<void> }).beforeLoad({ location: { href: '' } }),
-    ).rejects.toEqual({ redirect: { to: '/admin/users' } });
-    expect(fetchResolvedFeatureFlags).not.toHaveBeenCalled();
+    expect((Route as unknown as { beforeLoad: unknown }).beforeLoad).toBe(requireAdminLocalDirectionsServices);
   });
 
   it('renders an accessible page title with the admin local affectation organization', () => {
@@ -70,7 +71,7 @@ describe('Admin directions and services route', () => {
         affectationChain: [{ id: 'root-ars', nomComplet: 'ARS Normandie' }],
       },
     } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({ data: { data: [] } } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({ data: { data: [] } } as never);
 
     render(<RouteComponent />);
 
@@ -78,12 +79,48 @@ describe('Admin directions and services route', () => {
       screen.getByRole('heading', { level: 2, name: 'Directions et services (ARS Normandie)' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent(
-      /Direction désigne le premier niveau de votre organisation et Service désigne le second niveau/,
+      /direction” désigne le premier niveau de votre organisation et “service” désigne le second niveau/,
     );
     expect(document.title).toBe('Directions et services (ARS Normandie) - Espace administrateur - SIRENA');
   });
 
-  it('hides creation controls for a Service-level affectation', () => {
+  it('shows a dedicated assigned-Entité action without inserting it into the descendant table', () => {
+    vi.mocked(useProfile).mockReturnValue({
+      data: {
+        affectationChain: [{ id: 'root-ars', nomComplet: 'ARS Normandie' }],
+      },
+    } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
+      data: {
+        data: [
+          {
+            id: 'dir-autonomie',
+            directionNom: 'Direction Autonomie',
+            directionLabel: 'DA',
+            serviceNom: '',
+            serviceLabel: '',
+            email: 'direction-autonomie@ars.fr',
+            editId: 'dir-autonomie',
+            canEdit: true,
+          },
+        ],
+        capabilities: { canCreateDirection: true, canCreateService: true },
+      },
+    } as never);
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('link', { name: 'Modifier mon entité' })).toHaveAttribute(
+      'href',
+      '/admin/directions-services/root-ars/edit',
+    );
+    expect(screen.queryByRole('cell', { name: 'ARS Normandie' })).not.toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'Direction Autonomie' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ajouter une direction' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ajouter un service' })).toBeInTheDocument();
+  });
+
+  it('shows an assigned Service as editable with its parent Direction and no creation controls', () => {
     vi.mocked(useProfile).mockReturnValue({
       data: {
         affectationChain: [
@@ -93,15 +130,39 @@ describe('Admin directions and services route', () => {
         ],
       },
     } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({ data: { data: [] } } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
+      data: {
+        data: [
+          {
+            id: 'service-pa',
+            directionNom: 'Direction Autonomie',
+            directionLabel: 'DA',
+            serviceNom: 'Service PA',
+            serviceLabel: 'PA',
+            email: 'service-pa@ars.fr',
+            editId: 'service-pa',
+            canEdit: true,
+          },
+        ],
+        capabilities: { canCreateDirection: false, canCreateService: false },
+      },
+    } as never);
 
     render(<RouteComponent />);
 
-    expect(screen.queryByRole('button', { name: 'Ajouter une direction' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Ajouter un service' })).not.toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'Direction Autonomie' })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'Service PA' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {
+        name: 'Modifier le service Service PA de la direction Direction Autonomie',
+      }),
+    ).toHaveAttribute('href', '/admin/directions-services/service-pa/edit');
+    expect(screen.queryByRole('link', { name: 'Modifier mon entité' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Ajouter une direction' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Ajouter un service' })).not.toBeInTheDocument();
   });
 
-  it('shows only the disabled add service control for a Direction-level affectation', () => {
+  it('hides add service when backend capabilities disallow it for a Direction-level affectation', () => {
     vi.mocked(useProfile).mockReturnValue({
       data: {
         affectationChain: [
@@ -110,27 +171,126 @@ describe('Admin directions and services route', () => {
         ],
       },
     } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({ data: { data: [] } } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
+      data: {
+        data: [],
+        capabilities: {
+          canCreateDirection: false,
+          canCreateService: false,
+        },
+      },
+    } as never);
 
     render(<RouteComponent />);
 
-    expect(screen.queryByRole('button', { name: 'Ajouter une direction' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Ajouter un service' })).toBeDisabled();
+    expect(screen.queryByRole('link', { name: 'Ajouter une direction' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Ajouter un service' })).not.toBeInTheDocument();
   });
 
-  it('shows disabled add direction and add service controls', () => {
-    vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({ data: { data: [] } } as never);
+  it('hides Service creation for a root-level affectation without an available Direction', () => {
+    vi.mocked(useProfile).mockReturnValue({
+      data: {
+        affectationChain: [{ id: 'root-ars', nomComplet: 'ARS Normandie' }],
+      },
+    } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
+      data: {
+        data: [],
+        capabilities: {
+          canCreateDirection: true,
+          canCreateService: false,
+        },
+        availableDirections: [],
+      },
+    } as never);
 
     render(<RouteComponent />);
 
-    expect(screen.getByRole('button', { name: 'Ajouter une direction' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Ajouter un service' })).toBeDisabled();
+    expect(screen.queryByRole('link', { name: 'Ajouter un service' })).not.toBeInTheDocument();
   });
 
-  it('passes trimmed search to the directions and services rows hook', async () => {
+  it('links to Direction creation when backend capabilities allow Direction creation', () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({ data: { data: [] } } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
+      data: {
+        data: [],
+        capabilities: {
+          canCreateDirection: true,
+          canCreateService: false,
+        },
+      },
+    } as never);
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('link', { name: 'Ajouter une direction' })).toHaveAttribute(
+      'href',
+      '/admin/directions-services/directions/create',
+    );
+    expect(screen.queryByRole('link', { name: 'Ajouter un service' })).not.toBeInTheDocument();
+  });
+
+  it('shows an assigned Direction before its descendant Services and preserves Service creation', () => {
+    vi.mocked(useProfile).mockReturnValue({
+      data: {
+        affectationChain: [
+          { id: 'root-ars', nomComplet: 'ARS Normandie' },
+          { id: 'dir-autonomie', nomComplet: 'Direction Autonomie' },
+        ],
+      },
+    } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
+      data: {
+        data: [
+          {
+            id: 'dir-autonomie',
+            directionNom: 'Direction Autonomie',
+            directionLabel: 'DA',
+            serviceNom: '',
+            serviceLabel: '',
+            email: 'direction-autonomie@ars.fr',
+            editId: 'dir-autonomie',
+            canEdit: true,
+          },
+          {
+            id: 'service-pa',
+            directionNom: 'Direction Autonomie',
+            directionLabel: 'DA',
+            serviceNom: 'Service PA',
+            serviceLabel: 'PA',
+            email: 'service-pa@ars.fr',
+            editId: 'service-pa',
+            canEdit: true,
+          },
+        ],
+        capabilities: {
+          canCreateDirection: false,
+          canCreateService: true,
+        },
+        availableDirections: [],
+      },
+    } as never);
+
+    render(<RouteComponent />);
+
+    const assignedDirectionEdit = screen.getByRole('link', { name: 'Modifier la direction Direction Autonomie' });
+    const descendantServiceEdit = screen.getByRole('link', {
+      name: 'Modifier le service Service PA de la direction Direction Autonomie',
+    });
+    expect(assignedDirectionEdit).toHaveAttribute('href', '/admin/directions-services/dir-autonomie/edit');
+    expect(
+      assignedDirectionEdit.compareDocumentPosition(descendantServiceEdit) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Ajouter une direction' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ajouter un service' })).toHaveAttribute(
+      'href',
+      '/admin/directions-services/services/create',
+    );
+  });
+
+  it('passes trimmed search to the directions and services list hook', async () => {
+    vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({ data: { data: [] } } as never);
 
     render(<RouteComponent />);
 
@@ -140,12 +300,12 @@ describe('Admin directions and services route', () => {
     await userEvent.type(searchInput, ' pa ');
     await userEvent.click(screen.getByRole('button', { name: 'Rechercher' }));
 
-    expect(useDirectionsServicesRows).toHaveBeenLastCalledWith({ search: 'pa' });
+    expect(useDirectionsServicesList).toHaveBeenLastCalledWith({ search: 'pa' });
   });
 
   it('renders rows after submitting a search', async () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
       data: {
         data: [
           {
@@ -178,14 +338,14 @@ describe('Admin directions and services route', () => {
     await userEvent.type(searchInput, ' pa ');
     await userEvent.click(screen.getByRole('button', { name: 'Rechercher' }));
 
-    expect(useDirectionsServicesRows).toHaveBeenLastCalledWith({ search: 'pa' });
+    expect(useDirectionsServicesList).toHaveBeenLastCalledWith({ search: 'pa' });
     expect(screen.getByRole('row', { name: /Service PA/ })).toBeInTheDocument();
     expect(screen.getByRole('row', { name: /Service Enfance/ })).toBeInTheDocument();
   });
 
   it('renders local pagination when more than 10 rows are visible', async () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
       data: {
         data: Array.from({ length: 11 }, (_, index) => ({
           id: `service-${index + 1}`,
@@ -211,9 +371,79 @@ describe('Admin directions and services route', () => {
     expect(screen.queryByRole('row', { name: /Service 10/ })).not.toBeInTheDocument();
   });
 
-  it('renders disabled row edit actions with unique accessible labels', () => {
+  it('links an editable row to its local edit route', () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
+      data: {
+        data: [
+          {
+            id: 'service-pa',
+            directionNom: 'Direction Autonomie',
+            directionLabel: 'DA',
+            serviceNom: 'Service PA',
+            serviceLabel: 'PA',
+            email: 'service-pa@ars.fr',
+            editId: 'service-pa',
+            canEdit: true,
+          },
+        ],
+      },
+    } as never);
+
+    render(<RouteComponent />);
+
+    expect(
+      screen.getByRole('link', {
+        name: 'Modifier le service Service PA de la direction Direction Autonomie',
+      }),
+    ).toHaveAttribute('href', '/admin/directions-services/service-pa/edit');
+  });
+
+  it('gives each available edit action a unique accessible name', () => {
+    vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
+      data: {
+        data: [
+          {
+            id: 'dir-autonomie',
+            directionNom: 'Direction Autonomie',
+            directionLabel: 'DA',
+            serviceNom: '',
+            serviceLabel: '',
+            email: 'direction-autonomie@ars.fr',
+            editId: 'dir-autonomie',
+            canEdit: true,
+          },
+          {
+            id: 'service-pa',
+            directionNom: 'Direction Autonomie',
+            directionLabel: 'DA',
+            serviceNom: 'Service PA',
+            serviceLabel: 'PA',
+            email: 'service-pa@ars.fr',
+            editId: 'service-pa',
+            canEdit: true,
+          },
+        ],
+      },
+    } as never);
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('link', { name: 'Modifier la direction Direction Autonomie' })).toHaveAttribute(
+      'href',
+      '/admin/directions-services/dir-autonomie/edit',
+    );
+    expect(
+      screen.getByRole('link', {
+        name: 'Modifier le service Service PA de la direction Direction Autonomie',
+      }),
+    ).toHaveAttribute('href', '/admin/directions-services/service-pa/edit');
+  });
+
+  it('hides row edit action when backend row capability disallows edit', () => {
+    vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
       data: {
         data: [
           {
@@ -224,15 +454,7 @@ describe('Admin directions and services route', () => {
             serviceLabel: '',
             email: 'direction-test@ars.fr',
             editId: 'dir-test',
-          },
-          {
-            id: 'service-test',
-            directionNom: 'Direction Test',
-            directionLabel: 'DT',
-            serviceNom: 'Service Test',
-            serviceLabel: 'ST',
-            email: 'service-test@ars.fr',
-            editId: 'service-test',
+            canEdit: false,
           },
         ],
       },
@@ -240,15 +462,12 @@ describe('Admin directions and services route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.getByRole('button', { name: 'Modifier la direction Direction Test' })).toBeDisabled();
-    expect(
-      screen.getByRole('button', { name: 'Modifier le service Service Test de la direction Direction Test' }),
-    ).toBeDisabled();
+    expect(screen.queryByRole('link', { name: 'Modifier la direction Direction Test' })).not.toBeInTheDocument();
   });
 
   it('renders direction and service rows without global admin columns', () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
       data: {
         data: [
           {

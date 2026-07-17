@@ -1,36 +1,20 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
-import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
-import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { TableSearchBar } from '@/components/common/tables/TableSearchBar';
-import { useDirectionsServicesRows } from '@/hooks/queries/entites.hook';
+import { useDirectionsServicesList } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
-import { fetchResolvedFeatureFlags } from '@/lib/api/fetchFeatureFlags';
-import { requireAuthAndRoles } from '@/lib/auth-guards';
-import { queryClient } from '@/lib/queryClient';
+import { requireAdminLocalDirectionsServices } from './-route-guard';
 import './index.css';
 
-const requireEntityAdmin = requireAuthAndRoles([ROLES.ENTITY_ADMIN]);
-
 export const Route = createFileRoute('/_auth/admin/directions-services/')({
-  beforeLoad: async (ctx) => {
-    requireEntityAdmin(ctx);
-    const flags = await queryClient.ensureQueryData({
-      queryKey: ['featureFlags', 'resolved'],
-      queryFn: fetchResolvedFeatureFlags,
-    });
-
-    if (!flags[FEATURE_FLAGS.ADMIN_LOCAL_DIRECTIONS_SERVICES]) {
-      throw redirect({ to: '/admin/users' });
-    }
-  },
+  beforeLoad: requireAdminLocalDirectionsServices,
   component: RouteComponent,
 });
 
-type DirectionServiceRow = NonNullable<Awaited<ReturnType<typeof useDirectionsServicesRows>>['data']>['data'][number];
+type DirectionServiceRow = NonNullable<Awaited<ReturnType<typeof useDirectionsServicesList>>['data']>['data'][number];
 
 const columns: Column<DirectionServiceRow>[] = [
   { key: 'directionNom', label: 'Nom de la direction' },
@@ -43,14 +27,18 @@ const columns: Column<DirectionServiceRow>[] = [
 
 const cells: Cells<DirectionServiceRow> = {
   'custom:edit': (row) => {
+    if (!row.canEdit) {
+      return null;
+    }
+
     const editLabel = row.serviceNom
       ? `le service ${row.serviceNom} de la direction ${row.directionNom}`
       : `la direction ${row.directionNom}`;
 
     return (
-      <Button type="button" disabled size="small" priority="secondary">
+      <Link className="fr-link" to="/admin/directions-services/$entiteId/edit" params={{ entiteId: row.editId }}>
         Modifier <span className="fr-sr-only">{editLabel}</span>
-      </Button>
+      </Link>
     );
   },
 };
@@ -60,13 +48,13 @@ export function RouteComponent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const directionsServicesQuery = useDirectionsServicesRows({ search: activeSearch || undefined });
-  const affectationLevel = profile?.affectationChain?.length ?? 1;
-  const isAffectedToEntiteAdministrative = affectationLevel === 1;
-  const isAffectedToDirection = affectationLevel === 2;
-  const canCreateDirection = isAffectedToEntiteAdministrative;
-  const canCreateService = isAffectedToEntiteAdministrative || isAffectedToDirection;
+  const directionsServicesQuery = useDirectionsServicesList({ search: activeSearch || undefined });
+  const capabilities = directionsServicesQuery.data?.capabilities;
+  const canCreateDirection = capabilities?.canCreateDirection ?? false;
+  const canCreateService = capabilities?.canCreateService ?? false;
   const organizationName = profile?.affectationChain?.at(-1)?.nomComplet;
+  const assignedEntiteAdministrative =
+    profile?.affectationChain?.length === 1 ? profile.affectationChain[0] : undefined;
   const title = useMemo(
     () => (organizationName ? `Directions et services (${organizationName})` : 'Directions et services'),
     [organizationName],
@@ -104,8 +92,8 @@ export function RouteComponent() {
         small
         description={
           <>
-            dans SIRENA, <i>Direction</i> désigne le premier niveau de votre organisation et <i>Service</i> désigne le
-            second niveau. Un <i>Service</i> est donc toujours rattaché à une <i>Direction</i>.
+            Dans SIRENA, <i>“direction”</i> désigne le premier niveau de votre organisation et <i>“service”</i> désigne
+            le second niveau. Un <i>service</i> est donc toujours rattaché à une <i>direction</i>.
           </>
         }
       />
@@ -127,18 +115,29 @@ export function RouteComponent() {
           className="directions-services-actions fr-col-12 fr-col-md-7 fr-grid-row fr-grid-row--right"
           data-testid="directions-services-actions"
         >
+          {assignedEntiteAdministrative ? (
+            <div className="fr-col-auto">
+              <Link
+                className="fr-btn fr-btn--secondary"
+                to="/admin/directions-services/$entiteId/edit"
+                params={{ entiteId: assignedEntiteAdministrative.id }}
+              >
+                Modifier mon entité
+              </Link>
+            </div>
+          ) : null}
           {canCreateDirection ? (
             <div className="fr-col-auto">
-              <Button type="button" disabled>
+              <Link className="fr-btn fr-btn--secondary" to="/admin/directions-services/directions/create">
                 Ajouter une direction
-              </Button>
+              </Link>
             </div>
           ) : null}
           {canCreateService ? (
             <div className="fr-col-auto">
-              <Button type="button" disabled priority="secondary">
+              <Link className="fr-btn fr-btn--secondary" to="/admin/directions-services/services/create">
                 Ajouter un service
-              </Button>
+              </Link>
             </div>
           ) : null}
         </div>

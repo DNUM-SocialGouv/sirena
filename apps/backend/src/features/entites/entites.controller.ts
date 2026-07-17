@@ -11,8 +11,12 @@ import adminLocalDirectionsServicesFeatureFlagMiddleware from '../featureFlags/a
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import {
   createChildEntiteAdminRoute,
+  createDirectionAdminLocalRoute,
+  createServiceAdminLocalRoute,
+  editDirectionServiceAdminLocalRoute,
   editEntiteAdminRoute,
-  getDirectionsServicesRowsRoute,
+  getDirectionServiceAdminLocalRoute,
+  getDirectionsServicesListRoute,
   getEntiteByIdAdminRoute,
   getEntiteChainRoute,
   getEntitesListAdminRoute,
@@ -21,14 +25,21 @@ import {
 } from './entites.route.js';
 import {
   CreateChildEntiteAdminInputSchema,
+  CreateDirectionAdminLocalInputSchema,
+  CreateServiceAdminLocalInputSchema,
+  EditDirectionServiceAdminLocalInputSchema,
   EditEntiteInputSchema,
   GetEntitesListAdminQuerySchema,
   GetEntitiesQuerySchema,
 } from './entites.schema.js';
 import {
   createChildEntiteAdmin,
+  createDirectionAdminLocal,
+  createServiceAdminLocal,
+  editDirectionServiceAdminLocal,
   editEntiteAdmin,
-  getDirectionsServicesRows,
+  getDirectionServiceAdminLocal,
+  getDirectionsServicesList,
   getEditableEntitiesChain,
   getEntiteById,
   getEntiteDescendantIds,
@@ -111,7 +122,7 @@ const app = factoryWithLogs
     '/admin/directions-services',
     roleMiddleware([ROLES.ENTITY_ADMIN]),
     adminLocalDirectionsServicesFeatureFlagMiddleware,
-    getDirectionsServicesRowsRoute,
+    getDirectionsServicesListRoute,
     async (c) => {
       const logger = c.get('logger');
       const assignedEntiteId = c.get('assignedEntiteId');
@@ -120,13 +131,148 @@ const app = factoryWithLogs
       logger.info({ assignedEntiteId, search }, 'Local directions and services list requested');
 
       if (!assignedEntiteId) {
-        return c.json({ data: [] });
+        return c.json({
+          data: [],
+          capabilities: {
+            canCreateDirection: false,
+            canCreateService: false,
+          },
+          availableDirections: [],
+          serviceParentDirection: null,
+        });
       }
 
-      const rows = await getDirectionsServicesRows(assignedEntiteId, { search });
-      logger.info({ rowsCount: rows.length }, 'Local directions and services list retrieved successfully');
+      const result = await getDirectionsServicesList(assignedEntiteId, { search });
+      logger.info({ rowsCount: result.data.length }, 'Local directions and services list retrieved successfully');
 
-      return c.json({ data: rows });
+      return c.json(result);
+    },
+  )
+
+  .get(
+    '/admin/directions-services/:id',
+    roleMiddleware([ROLES.ENTITY_ADMIN]),
+    adminLocalDirectionsServicesFeatureFlagMiddleware,
+    getDirectionServiceAdminLocalRoute,
+    async (c) => {
+      const assignedEntiteId = c.get('assignedEntiteId');
+      const targetEntiteId = c.req.param('id');
+      const logger = c.get('logger');
+
+      const entite = assignedEntiteId ? await getDirectionServiceAdminLocal(assignedEntiteId, targetEntiteId) : null;
+
+      if (!entite) {
+        logger.warn({ assignedEntiteId, targetEntiteId }, 'Local entity edit target not found');
+        throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+      }
+
+      return c.json({ data: entite });
+    },
+  )
+
+  .patch(
+    '/admin/directions-services/:id',
+    roleMiddleware([ROLES.ENTITY_ADMIN]),
+    adminLocalDirectionsServicesFeatureFlagMiddleware,
+    zValidator('json', EditDirectionServiceAdminLocalInputSchema),
+    editDirectionServiceAdminLocalRoute,
+    async (c) => {
+      const assignedEntiteId = c.get('assignedEntiteId');
+      const targetEntiteId = c.req.param('id');
+      const data = c.req.valid('json');
+      const logger = c.get('logger');
+      const entite = assignedEntiteId
+        ? await editDirectionServiceAdminLocal(assignedEntiteId, targetEntiteId, data)
+        : null;
+
+      if (!entite) {
+        logger.warn({ assignedEntiteId, targetEntiteId }, 'Local entity edit target not found');
+        throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+      }
+
+      return c.json({ data: entite });
+    },
+  )
+
+  .post(
+    '/admin/directions-services/directions',
+    roleMiddleware([ROLES.ENTITY_ADMIN]),
+    adminLocalDirectionsServicesFeatureFlagMiddleware,
+    zValidator('json', CreateDirectionAdminLocalInputSchema),
+    createDirectionAdminLocalRoute,
+    async (c) => {
+      const assignedEntiteId = c.get('assignedEntiteId');
+      const data = c.req.valid('json');
+      const logger = c.get('logger');
+
+      if (!assignedEntiteId) {
+        throwHTTPException400BadRequest('Assigned entite is required to create a Direction', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+
+      try {
+        const entite = await createDirectionAdminLocal(assignedEntiteId, data);
+        return c.json({ data: entite });
+      } catch (error) {
+        if (error instanceof EntiteNotFoundError) {
+          logger.warn({ entiteId: assignedEntiteId }, 'Entite not found');
+          throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+        }
+
+        if (error instanceof EntiteChildCreationForbiddenError) {
+          logger.warn(
+            { entiteId: assignedEntiteId },
+            'Local Direction creation is not allowed for this assigned entity',
+          );
+          throwHTTPException400BadRequest('Child entite creation is not allowed for this parent', {
+            res: c.res,
+            kind: ERROR_KIND.BUSINESS,
+          });
+        }
+
+        throw error;
+      }
+    },
+  )
+
+  .post(
+    '/admin/directions-services/services',
+    roleMiddleware([ROLES.ENTITY_ADMIN]),
+    adminLocalDirectionsServicesFeatureFlagMiddleware,
+    zValidator('json', CreateServiceAdminLocalInputSchema),
+    createServiceAdminLocalRoute,
+    async (c) => {
+      const assignedEntiteId = c.get('assignedEntiteId');
+      const { directionId, ...data } = c.req.valid('json');
+
+      if (!assignedEntiteId) {
+        throwHTTPException400BadRequest('Assigned entite is required to create a Service', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+
+      try {
+        const entite = directionId
+          ? await createServiceAdminLocal(assignedEntiteId, data, directionId)
+          : await createServiceAdminLocal(assignedEntiteId, data);
+        return c.json({ data: entite });
+      } catch (error) {
+        if (error instanceof EntiteNotFoundError) {
+          throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+        }
+
+        if (error instanceof EntiteChildCreationForbiddenError) {
+          throwHTTPException400BadRequest('Child entite creation is not allowed for this parent', {
+            res: c.res,
+            kind: ERROR_KIND.BUSINESS,
+          });
+        }
+
+        throw error;
+      }
     },
   )
 

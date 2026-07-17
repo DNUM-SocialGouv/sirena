@@ -1,0 +1,19 @@
+import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
+import { redirect } from '@tanstack/react-router';
+import { fetchResolvedFeatureFlags } from '@/lib/api/fetchFeatureFlags';
+import { type BeforeLoad, requireAuthAndRoles } from '@/lib/auth-guards';
+import { queryClient } from '@/lib/queryClient';
+
+const requireEntityAdmin = requireAuthAndRoles([ROLES.ENTITY_ADMIN]);
+
+export const requireAdminLocalDirectionsServices = async (ctx: BeforeLoad) => {
+  requireEntityAdmin(ctx);
+  const flags = await queryClient.ensureQueryData({
+    queryKey: ['featureFlags', 'resolved'],
+    queryFn: fetchResolvedFeatureFlags,
+  });
+
+  if (!flags[FEATURE_FLAGS.ADMIN_LOCAL_DIRECTIONS_SERVICES]) {
+    throw redirect({ to: '/admin/users' });
+  }
+};
