@@ -26,7 +26,7 @@ export function RouteComponent() {
   }
 
   if (entiteQuery.isError || !entiteQuery.data) {
-    return <QueryErrorState message="Erreur lors du chargement de la direction ou du service." />;
+    return <QueryErrorState message="Erreur lors du chargement." />;
   }
 
   return <LocalEditForm target={entiteQuery.data} />;
@@ -35,9 +35,25 @@ export function RouteComponent() {
 type LocalEditTarget = NonNullable<ReturnType<typeof useDirectionServiceAdminLocal>['data']>;
 
 function LocalEditForm({ target }: { target: LocalEditTarget }) {
-  const entityLabel = target.kind === 'direction' ? 'direction' : 'service';
-  const entityArticle = target.kind === 'direction' ? 'la' : 'le';
-  const title = `Modifier ${entityArticle} ${entityLabel} ${target.nomComplet}`;
+  const wording =
+    target.kind === 'entite-administrative'
+      ? {
+          titlePrefix: 'Modifier l’entité administrative',
+          successTitle: 'Entité administrative modifiée avec succès',
+          errorDescription: 'Erreur lors de la modification de l’entité administrative. Veuillez réessayer.',
+        }
+      : target.kind === 'direction'
+        ? {
+            titlePrefix: 'Modifier la direction',
+            successTitle: 'Direction modifiée avec succès',
+            errorDescription: 'Erreur lors de la modification de la direction. Veuillez réessayer.',
+          }
+        : {
+            titlePrefix: 'Modifier le service',
+            successTitle: 'Service modifié avec succès',
+            errorDescription: 'Erreur lors de la modification du service. Veuillez réessayer.',
+          };
+  const title = `${wording.titlePrefix} ${target.nomComplet}`;
   const editDirectionService = useEditDirectionServiceAdminLocal();
   const toastManager = Toast.useToastManager();
   const router = useRouter();
@@ -61,9 +77,8 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
 
     try {
       await editDirectionService.mutateAsync({ id: target.id, input: values });
-      const capitalizedEntityLabel = entityLabel[0].toUpperCase() + entityLabel.slice(1);
       toastManager.add({
-        title: `${capitalizedEntityLabel} ${target.kind === 'direction' ? 'modifiée' : 'modifié'} avec succès`,
+        title: wording.successTitle,
         description: 'Les modifications ont bien été enregistrées.',
         timeout: 0,
         data: { icon: 'fr-alert--success' },
@@ -72,7 +87,7 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
     } catch {
       toastManager.add({
         title: 'Erreur',
-        description: `Erreur lors de la modification ${target.kind === 'direction' ? 'de la direction' : 'du service'}. Veuillez réessayer.`,
+        description: wording.errorDescription,
         timeout: 0,
         data: { icon: 'fr-alert--error' },
       });

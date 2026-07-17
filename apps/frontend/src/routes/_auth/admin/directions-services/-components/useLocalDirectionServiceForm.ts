@@ -21,24 +21,26 @@ const emptyLocalDirectionServiceForm: LocalDirectionServiceFormValues = {
   adresseContactUsager: '',
 };
 
-const createSchema = (kind: 'direction' | 'service') =>
-  z.object({
-    nomComplet: z
-      .string()
-      .trim()
-      .min(
-        1,
-        `Le champ "Nom ${kind === 'direction' ? 'de la direction' : 'du service'}" est vide. Veuillez le renseigner.`,
-      ),
+const createSchema = (kind: 'entite-administrative' | 'direction' | 'service') => {
+  const entityName =
+    kind === 'entite-administrative'
+      ? 'de l’entité administrative'
+      : kind === 'direction'
+        ? 'de la direction'
+        : 'du service';
+
+  return z.object({
+    nomComplet: z.string().trim().min(1, `Le champ "Nom ${entityName}" est vide. Veuillez le renseigner.`),
     label: z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
     email: optionalEmailSchema,
     emailContactUsager: optionalEmailSchema,
     telContactUsager: optionalPhoneSchema,
     adresseContactUsager: z.string(),
   });
+};
 
 export function useLocalDirectionServiceForm(
-  kind: 'direction' | 'service',
+  kind: 'entite-administrative' | 'direction' | 'service',
   initialValues: LocalDirectionServiceFormValues = emptyLocalDirectionServiceForm,
 ) {
   const schema = useMemo(() => createSchema(kind), [kind]);

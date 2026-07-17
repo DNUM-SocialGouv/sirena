@@ -84,6 +84,42 @@ describe('Admin directions and services route', () => {
     expect(document.title).toBe('Directions et services (ARS Normandie) - Espace administrateur - SIRENA');
   });
 
+  it('shows a dedicated assigned-Entité action without inserting it into the descendant table', () => {
+    vi.mocked(useProfile).mockReturnValue({
+      data: {
+        affectationChain: [{ id: 'root-ars', nomComplet: 'ARS Normandie' }],
+      },
+    } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
+      data: {
+        data: [
+          {
+            id: 'dir-autonomie',
+            directionNom: 'Direction Autonomie',
+            directionLabel: 'DA',
+            serviceNom: '',
+            serviceLabel: '',
+            email: 'direction-autonomie@ars.fr',
+            editId: 'dir-autonomie',
+            canEdit: true,
+          },
+        ],
+        capabilities: { canCreateDirection: true, canCreateService: true },
+      },
+    } as never);
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('link', { name: 'Modifier mon entité' })).toHaveAttribute(
+      'href',
+      '/admin/directions-services/root-ars/edit',
+    );
+    expect(screen.queryByRole('cell', { name: 'ARS Normandie' })).not.toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'Direction Autonomie' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ajouter une direction' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ajouter un service' })).toBeInTheDocument();
+  });
+
   it('shows an assigned Service as editable with its parent Direction and no creation controls', () => {
     vi.mocked(useProfile).mockReturnValue({
       data: {
@@ -121,6 +157,7 @@ describe('Admin directions and services route', () => {
         name: 'Modifier le service Service PA de la direction Direction Autonomie',
       }),
     ).toHaveAttribute('href', '/admin/directions-services/service-pa/edit');
+    expect(screen.queryByRole('link', { name: 'Modifier mon entité' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Ajouter une direction' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Ajouter un service' })).not.toBeInTheDocument();
   });

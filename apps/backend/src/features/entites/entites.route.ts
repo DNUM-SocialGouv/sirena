@@ -49,7 +49,7 @@ export const getDirectionsServicesListRoute = openApiProtectedRoute({
 });
 
 export const editDirectionServiceAdminLocalRoute = openApiProtectedRoute({
-  description: 'Edit an authorized Direction or Service for a local entity admin',
+  description: 'Edit an authorized entity for a local entity admin',
   responses: {
     ...openApiResponse(GetDirectionServiceAdminLocalResponseSchema),
     ...openApi404NotFound('Entite not found'),
@@ -57,7 +57,7 @@ export const editDirectionServiceAdminLocalRoute = openApiProtectedRoute({
 });
 
 export const getDirectionServiceAdminLocalRoute = openApiProtectedRoute({
-  description: 'Get an authorized Direction or Service for local entity admin editing',
+  description: 'Get an authorized entity for local entity admin editing',
   responses: {
     ...openApiResponse(GetDirectionServiceAdminLocalResponseSchema),
     ...openApi404NotFound('Entite not found'),

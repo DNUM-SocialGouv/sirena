@@ -210,11 +210,13 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
     return null;
   }
 
-  let kind: 'direction' | 'service' | null = null;
+  let kind: 'entite-administrative' | 'direction' | 'service' | null = null;
   let parentDirection: { id: string; nomComplet: string; label: string } | null = null;
 
   if (assignedEntite.entiteMereId === null) {
-    if (targetEntite.entiteMereId === assignedEntite.id) {
+    if (targetEntite.id === assignedEntite.id) {
+      kind = 'entite-administrative';
+    } else if (targetEntite.entiteMereId === assignedEntite.id) {
       kind = 'direction';
     } else if (targetEntite.entiteMereId) {
       const targetParent = await prisma.entite.findUnique({

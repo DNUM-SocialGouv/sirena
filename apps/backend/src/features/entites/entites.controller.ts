@@ -162,7 +162,7 @@ const app = factoryWithLogs
       const entite = assignedEntiteId ? await getDirectionServiceAdminLocal(assignedEntiteId, targetEntiteId) : null;
 
       if (!entite) {
-        logger.warn({ assignedEntiteId, targetEntiteId }, 'Local Direction or Service edit target not found');
+        logger.warn({ assignedEntiteId, targetEntiteId }, 'Local entity edit target not found');
         throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
 
@@ -186,7 +186,7 @@ const app = factoryWithLogs
         : null;
 
       if (!entite) {
-        logger.warn({ assignedEntiteId, targetEntiteId }, 'Local Direction or Service edit target not found');
+        logger.warn({ assignedEntiteId, targetEntiteId }, 'Local entity edit target not found');
         throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
 

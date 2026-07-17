@@ -121,6 +121,9 @@ const ParentDirectionAdminLocalSchema = z.object({
 
 export const GetDirectionServiceAdminLocalResponseSchema = z.discriminatedUnion('kind', [
   DirectionServiceAdminLocalFieldsSchema.extend({
+    kind: z.literal('entite-administrative'),
+  }),
+  DirectionServiceAdminLocalFieldsSchema.extend({
     kind: z.literal('direction'),
   }),
   DirectionServiceAdminLocalFieldsSchema.extend({

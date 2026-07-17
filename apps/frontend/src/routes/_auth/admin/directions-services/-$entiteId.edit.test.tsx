@@ -44,6 +44,16 @@ const directionTarget = {
   adresseContactUsager: '1 rue de la Santé, Paris',
 };
 
+const entiteAdministrativeTarget = {
+  ...directionTarget,
+  id: 'root-ars',
+  kind: 'entite-administrative' as const,
+  nomComplet: 'ARS Normandie',
+  label: 'ARS NOR',
+  email: 'notification@ars.fr',
+  emailContactUsager: 'contact@ars.fr',
+};
+
 const serviceTarget = {
   ...directionTarget,
   id: 'service-pa',
@@ -55,7 +65,7 @@ const serviceTarget = {
   parentDirection: { id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' },
 };
 
-function mockTarget(target: typeof directionTarget | typeof serviceTarget) {
+function mockTarget(target: typeof entiteAdministrativeTarget | typeof directionTarget | typeof serviceTarget) {
   vi.mocked(useDirectionServiceAdminLocal).mockReturnValue({
     data: target,
     isPending: false,
@@ -63,7 +73,7 @@ function mockTarget(target: typeof directionTarget | typeof serviceTarget) {
   } as never);
 }
 
-function renderTarget(target: typeof directionTarget | typeof serviceTarget) {
+function renderTarget(target: typeof entiteAdministrativeTarget | typeof directionTarget | typeof serviceTarget) {
   mockTarget(target);
   return render(<RouteComponent />);
 }
@@ -82,7 +92,42 @@ it('shows loading and error query states', () => {
   view.unmount();
   vi.mocked(useDirectionServiceAdminLocal).mockReturnValue({ isPending: false, isError: true } as never);
   render(<RouteComponent />);
-  expect(screen.getByText('Erreur lors du chargement de la direction ou du service.')).toBeInTheDocument();
+  expect(screen.getByText('Erreur lors du chargement de l’entité.')).toBeInTheDocument();
+});
+
+it('renders and saves the assigned Entité administrative with dedicated wording and visible business fields', async () => {
+  const user = userEvent.setup();
+  editMutateAsyncSpy.mockResolvedValueOnce({ id: entiteAdministrativeTarget.id });
+  renderTarget(entiteAdministrativeTarget);
+
+  expect(screen.getByRole('heading', { name: 'Modifier l’entité administrative ARS Normandie' })).toBeInTheDocument();
+  expect(screen.getByRole('textbox', { name: /Nom de l’entité administrative/ })).toHaveValue('ARS Normandie');
+  expect(screen.getByRole('textbox', { name: /Adresse e-mail de notification/ })).toHaveValue('notification@ars.fr');
+  expect(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ })).toHaveValue('contact@ars.fr');
+  expect(screen.getByRole('textbox', { name: /Numéro de téléphone/ })).toHaveValue('0102030405');
+  expect(screen.getByRole('textbox', { name: /Adresse postale/ })).toHaveValue('1 rue de la Santé, Paris');
+  expect(screen.queryByRole('combobox', { name: /Actif dans SIRENA/ })).not.toBeInTheDocument();
+  expect(document.title).toBe('Modifier l’entité administrative ARS Normandie - Directions et services - SIRENA');
+
+  await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
+
+  await waitFor(() =>
+    expect(editMutateAsyncSpy).toHaveBeenCalledWith({
+      id: 'root-ars',
+      input: {
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        email: 'notification@ars.fr',
+        emailContactUsager: 'contact@ars.fr',
+        telContactUsager: '0102030405',
+        adresseContactUsager: '1 rue de la Santé, Paris',
+      },
+    }),
+  );
+  expect(addToastSpy).toHaveBeenCalledWith(
+    expect.objectContaining({ title: 'Entité administrative modifiée avec succès' }),
+  );
+  expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services' });
 });
 
 it('renders a prefilled local Direction form with contact fields and no activation control', () => {

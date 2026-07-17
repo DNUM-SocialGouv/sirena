@@ -7,7 +7,7 @@ type ContactField = 'emailContactUsager' | 'telContactUsager' | 'adresseContactU
 type FieldChangeHandler = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 
 type SirenaFieldsProps = {
-  kind: 'direction' | 'service';
+  kind: 'entite-administrative' | 'direction' | 'service';
   formData: Record<SirenaField, string>;
   validationErrors: Record<string, string>;
   onChange: (field: SirenaField) => FieldChangeHandler;
@@ -21,7 +21,24 @@ export function LocalDirectionServiceSirenaFields({
   onChange,
   leadingField,
 }: SirenaFieldsProps) {
-  const isDirection = kind === 'direction';
+  const wording =
+    kind === 'entite-administrative'
+      ? {
+          name: 'de l’entité administrative',
+          nameExample: 'Agence régionale de santé Normandie',
+          abbreviationExample: 'ARS NOR',
+        }
+      : kind === 'direction'
+        ? {
+            name: 'de la direction',
+            nameExample: 'Direction de l’Offre de Soins',
+            abbreviationExample: 'DOS',
+          }
+        : {
+            name: 'du service',
+            nameExample: 'Professions Médicales',
+            abbreviationExample: 'PM',
+          };
 
   return (
     <fieldset className="fr-fieldset fr-mb-3w">
@@ -33,8 +50,8 @@ export function LocalDirectionServiceSirenaFields({
         <div className="fr-col-12 fr-col-md-7">
           <Input
             className="fr-fieldset__content"
-            label={`Nom ${isDirection ? 'de la direction' : 'du service'} (obligatoire)`}
-            hintText={`Nom complet sans abréviation ou acronyme. Exemple : ${isDirection ? 'Direction de l’Offre de Soins' : 'Professions Médicales'}`}
+            label={`Nom ${wording.name} (obligatoire)`}
+            hintText={`Nom complet sans abréviation ou acronyme. Exemple : ${wording.nameExample}`}
             state={validationErrors.nomComplet ? 'error' : 'default'}
             stateRelatedMessage={validationErrors.nomComplet}
             nativeInputProps={{
@@ -49,7 +66,7 @@ export function LocalDirectionServiceSirenaFields({
           <Input
             className="fr-fieldset__content"
             label="Abréviation (obligatoire)"
-            hintText={`Sigle, acronyme ou forme abrégée du nom. Exemple : ${isDirection ? 'DOS' : 'PM'}`}
+            hintText={`Sigle, acronyme ou forme abrégée du nom. Exemple : ${wording.abbreviationExample}`}
             state={validationErrors.label ? 'error' : 'default'}
             stateRelatedMessage={validationErrors.label}
             nativeInputProps={{ name: 'label', value: formData.label, onChange: onChange('label') }}

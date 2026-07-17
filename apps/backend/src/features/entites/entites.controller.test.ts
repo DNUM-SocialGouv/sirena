@@ -357,6 +357,29 @@ describe('Entites endpoints: /entites', () => {
   });
 
   describe('GET /admin/directions-services/:id', () => {
+    it('returns the assigned Entité administrative as an authorized local edit target', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      assignedEntiteIdState.value = 'root-ars';
+      vi.mocked(getDirectionServiceAdminLocal).mockResolvedValueOnce({
+        id: 'root-ars',
+        kind: 'entite-administrative',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        email: 'notification@ars.fr',
+        emailContactUsager: 'contact@ars.fr',
+        telContactUsager: '0102030405',
+        adresseContactUsager: '1 rue de la Santé, Paris',
+      });
+
+      const res = await app.request('/admin/directions-services/root-ars');
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        data: expect.objectContaining({ id: 'root-ars', kind: 'entite-administrative' }),
+      });
+      expect(getDirectionServiceAdminLocal).toHaveBeenCalledWith('root-ars', 'root-ars');
+    });
+
     it('returns an authorized local edit target and hides a denied target', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       vi.mocked(getDirectionServiceAdminLocal)
@@ -405,6 +428,36 @@ describe('Entites endpoints: /entites', () => {
   });
 
   describe('PATCH /admin/directions-services/:id', () => {
+    it('updates the assigned Entité administrative through the protected local contract', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      assignedEntiteIdState.value = 'root-ars';
+      const input = {
+        nomComplet: 'Agence régionale de santé Normandie',
+        label: 'ARS Normandie',
+        email: 'notification@ars.fr',
+        emailContactUsager: 'contact@ars.fr',
+        telContactUsager: '0102030405',
+        adresseContactUsager: '1 rue de la Santé, Paris',
+      };
+      vi.mocked(editDirectionServiceAdminLocal).mockResolvedValueOnce({
+        id: 'root-ars',
+        kind: 'entite-administrative',
+        ...input,
+      });
+
+      const res = await app.request('/admin/directions-services/root-ars', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        data: { id: 'root-ars', kind: 'entite-administrative', ...input },
+      });
+      expect(editDirectionServiceAdminLocal).toHaveBeenCalledWith('root-ars', 'root-ars', input);
+    });
+
     it('updates an authorized local target and hides a denied target', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       const input = {
