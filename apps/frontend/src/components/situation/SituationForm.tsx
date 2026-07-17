@@ -20,7 +20,7 @@ interface SituationFormProps {
   initialData?: SituationData;
   receptionType?: ReceptionType;
   isFromSirec?: boolean;
-  sirecDepartementEnCharge?: string | null;
+  sirecDepartement?: string | null;
   onSave: (
     data: SituationData,
     shouldCreateRequest: boolean,
@@ -38,7 +38,7 @@ export function SituationForm({
   initialData,
   receptionType,
   isFromSirec,
-  sirecDepartementEnCharge,
+  sirecDepartement,
   onSave,
   saveButtonRef: externalSaveButtonRef,
 }: SituationFormProps) {
@@ -141,7 +141,7 @@ export function SituationForm({
           isSaving={isSaving}
           setFormData={setFormData}
           isFromSirec={isFromSirec}
-          sirecDepartementEnCharge={sirecDepartementEnCharge}
+          sirecDepartement={sirecDepartement}
         />
 
         <TraitementDesFaitsSection

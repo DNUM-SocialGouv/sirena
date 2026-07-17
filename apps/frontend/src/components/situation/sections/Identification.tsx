@@ -9,7 +9,7 @@ type IdentificationProps = {
   setFormData: React.Dispatch<React.SetStateAction<SituationData>>;
   isSaving: boolean;
   isFromSirec?: boolean;
-  sirecDepartementEnCharge?: string | null;
+  sirecDepartement?: string | null;
 };
 
 export function Identification({
@@ -17,7 +17,7 @@ export function Identification({
   setFormData,
   isSaving,
   isFromSirec,
-  sirecDepartementEnCharge,
+  sirecDepartement,
 }: IdentificationProps) {
   const departementEnChargeId = useId();
   const estLieAuSignalement = formData.estLieAuSignalement;
@@ -86,7 +86,7 @@ export function Identification({
             id={departementEnChargeId}
             label="Département en charge"
             hintText="Donnée héritée de Sirec"
-            value={sirecDepartementEnCharge ?? ''}
+            value={sirecDepartement ?? ''}
           />
         )}
       </fieldset>

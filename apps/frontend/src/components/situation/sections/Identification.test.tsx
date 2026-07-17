@@ -7,11 +7,11 @@ import { Identification } from './Identification';
 function ControlledIdentification({
   initialData = {},
   isFromSirec,
-  sirecDepartementEnCharge,
+  sirecDepartement,
 }: {
   initialData?: SituationData;
   isFromSirec?: boolean;
-  sirecDepartementEnCharge?: string | null;
+  sirecDepartement?: string | null;
 }) {
   const [formData, setFormData] = useState<SituationData>(initialData);
   return (
@@ -20,7 +20,7 @@ function ControlledIdentification({
       setFormData={setFormData}
       isSaving={false}
       isFromSirec={isFromSirec}
-      sirecDepartementEnCharge={sirecDepartementEnCharge}
+      sirecDepartement={sirecDepartement}
     />
   );
 }
@@ -77,7 +77,7 @@ describe('Identification', () => {
   });
 
   it('affiche le champ Département en charge en lecture seule quand la requête est une reprise SIREC', () => {
-    render(<ControlledIdentification isFromSirec sirecDepartementEnCharge="75 - Paris" />);
+    render(<ControlledIdentification isFromSirec sirecDepartement="75 - Paris" />);
     const input = screen.getByLabelText(departementLabel);
     expect(input).toBeInTheDocument();
     expect(input).toHaveValue('75 - Paris');
@@ -86,7 +86,7 @@ describe('Identification', () => {
   });
 
   it('affiche le champ Département en charge vide quand la valeur héritée est nulle', () => {
-    render(<ControlledIdentification isFromSirec sirecDepartementEnCharge={null} />);
+    render(<ControlledIdentification isFromSirec sirecDepartement={null} />);
     expect(screen.getByLabelText(departementLabel)).toHaveValue('');
   });
 });

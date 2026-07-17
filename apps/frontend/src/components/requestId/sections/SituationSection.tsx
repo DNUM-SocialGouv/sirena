@@ -314,7 +314,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
 
     return (
       <>
-        {(situation?.estLieAuSignalement != null || situation?.sirecDepartementEnCharge) && (
+        {(situation?.estLieAuSignalement != null || situation?.sirecDepartement) && (
           <>
             <SectionTitle level={4}>Identification</SectionTitle>
             {situation?.estLieAuSignalement != null && (
@@ -330,9 +330,9 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                 )}
               </>
             )}
-            {situation?.sirecDepartementEnCharge && (
+            {situation?.sirecDepartement && (
               <p className={fr.cx('fr-mb-3w')}>
-                <span>Département en charge :</span> {situation.sirecDepartementEnCharge}
+                <span>Département en charge :</span> {situation.sirecDepartement}
               </p>
             )}
           </>

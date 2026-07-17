@@ -349,7 +349,7 @@ model Situation {
   estLieAuSignalement Boolean?
   numerosSignalement  String   @default("")
 
-  sirecDepartementEnCharge String?
+  sirecDepartement String?
 
   requete   Requete? @relation(fields: [requeteId], references: [id], onDelete: Cascade)
   requeteId String?

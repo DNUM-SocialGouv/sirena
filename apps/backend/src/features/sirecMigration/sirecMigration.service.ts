@@ -165,7 +165,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
           domainesFonctionnelsId: situationData.domainesFonctionnelsId,
           estLieAuSignalement: situationData.estLieAuSignalement,
           numerosSignalement: situationData.numerosSignalement,
-          sirecDepartementEnCharge: situationData.sirecDepartementEnCharge,
+          sirecDepartement: situationData.sirecDepartement,
         },
         select: { id: true },
       });
