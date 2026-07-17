@@ -567,6 +567,44 @@ describe('sirecMigration.repository.ts', () => {
         { id_igas: 122, igas_type: 'in' },
       ]);
     });
+
+    it('should map service_concerne and public_concerne to serviceConcerne and publicConcerne', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([
+        {
+          id_data: 10,
+          type: null,
+          identifiant: null,
+          id_group: null,
+          service_concerne: 68,
+          public_concerne: 71,
+          rpps_id_data: null,
+          rpps_civilite: null,
+          rpps_nom: null,
+          rpps_prenom: null,
+          rpps_code_postal: null,
+          rpps_commune: null,
+          rpps_libelle_prof: null,
+          finess_id_data: null,
+          finess_nofinesset: null,
+          finess_categetab: null,
+          finess_libcategetab: null,
+          finess_rs: null,
+          finess_codepostal: null,
+          finess_libcommune: null,
+          finess_numvoie: null,
+          finess_typevoie: null,
+          finess_voie: null,
+        },
+      ]);
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
+
+      const result = await fetchSirecMisEnCauses(42);
+
+      expect(result[0].serviceConcerne).toBe(68);
+      expect(result[0].publicConcerne).toBe(71);
+      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('m.service_concerne'), [42]);
+      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('m.public_concerne'), [42]);
+    });
   });
 
   describe('fetchSirecMainCourantes', () => {
