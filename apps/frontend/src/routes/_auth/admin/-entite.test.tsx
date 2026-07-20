@@ -2,10 +2,13 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useEntiteAdministrativeAdminLocal } from '@/hooks/queries/entites.hook';
 import { requireAdminLocalEntite } from './directions-services/-route-guard';
-import { Route, RouteComponent } from './entite';
+import { Route as EntiteRoute } from './entite';
+import { RouteComponent } from './entite.index';
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => options,
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
+  Outlet: () => null,
 }));
 
 vi.mock('@/hooks/queries/entites.hook', () => ({
@@ -24,7 +27,7 @@ afterEach(() => {
 
 describe('Admin local Entité route', () => {
   it('uses the protected local Entité guard', () => {
-    expect((Route as unknown as { beforeLoad: unknown }).beforeLoad).toBe(requireAdminLocalEntite);
+    expect((EntiteRoute as unknown as { beforeLoad: unknown }).beforeLoad).toBe(requireAdminLocalEntite);
   });
 
   it('displays the assigned Entité information in two semantic sections', () => {
@@ -61,6 +64,10 @@ describe('Admin local Entité route', () => {
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
     expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Modifier les informations' })).toHaveAttribute(
+      'href',
+      '/admin/entite/edit',
+    );
   });
 
   it('displays Non renseigné for every absent optional value', () => {
