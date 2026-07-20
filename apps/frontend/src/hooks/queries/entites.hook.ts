@@ -8,8 +8,10 @@ import {
   createServiceAdminLocal,
   type EditDirectionServiceAdminLocalInput,
   type EditEntiteAdminInput,
+  type EditEntiteAdministrativeAdminLocalInput,
   editDirectionServiceAdminLocal,
   editEntiteAdmin,
+  editEntiteAdministrativeAdminLocal,
   fetchDirectionServiceAdminLocal,
   fetchDirectionsServicesList,
   fetchEntiteAdministrativeAdminLocal,
@@ -109,6 +111,15 @@ export const useEntiteDescendantsQueryOptions = (id: string | undefined) => ({
 });
 
 export const useEntiteDescendants = (id: string | undefined) => useQuery(useEntiteDescendantsQueryOptions(id));
+
+export const useEditEntiteAdministrativeAdminLocal = () =>
+  useMutation({
+    mutationFn: (input: EditEntiteAdministrativeAdminLocalInput) => editEntiteAdministrativeAdminLocal(input),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['entite', 'admin', 'local'], data);
+      queryClient.invalidateQueries({ queryKey: ['entite', 'admin', 'local'] });
+    },
+  });
 
 export const useEditDirectionServiceAdminLocal = () =>
   useMutation({

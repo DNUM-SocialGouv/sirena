@@ -3,24 +3,32 @@ import {
   createDirectionAdminLocal,
   createServiceAdminLocal,
   editDirectionServiceAdminLocal,
+  editEntiteAdministrativeAdminLocal,
   fetchDirectionServiceAdminLocal,
   fetchDirectionsServicesList,
 } from './fetchEntites';
 
-const { directionServiceGet, directionServicePatch, directionsServicesGet, directionsPost, servicesPost } = vi.hoisted(
-  () => ({
-    directionServiceGet: vi.fn(),
-    directionServicePatch: vi.fn(),
-    directionsServicesGet: vi.fn(),
-    directionsPost: vi.fn(),
-    servicesPost: vi.fn(),
-  }),
-);
+const {
+  directionServiceGet,
+  directionServicePatch,
+  directionsServicesGet,
+  directionsPost,
+  entiteAdministrativePatch,
+  servicesPost,
+} = vi.hoisted(() => ({
+  directionServiceGet: vi.fn(),
+  directionServicePatch: vi.fn(),
+  directionsServicesGet: vi.fn(),
+  directionsPost: vi.fn(),
+  entiteAdministrativePatch: vi.fn(),
+  servicesPost: vi.fn(),
+}));
 
 vi.mock('@/lib/api/hc.ts', () => ({
   client: {
     entites: {
       admin: {
+        local: { $patch: entiteAdministrativePatch },
         'directions-services': {
           $get: directionsServicesGet,
           ':id': { $get: directionServiceGet, $patch: directionServicePatch },
@@ -43,6 +51,16 @@ const visibleInput = {
 };
 
 beforeEach(() => vi.clearAllMocks());
+
+describe('local Entité administrative API adapter', () => {
+  it('patches the authenticated assignment with exactly the six visible fields and no identifier', async () => {
+    const updatedEntite = { id: 'root-ars', ...visibleInput };
+    entiteAdministrativePatch.mockResolvedValueOnce({ json: async () => ({ data: updatedEntite }) });
+
+    await expect(editEntiteAdministrativeAdminLocal(visibleInput)).resolves.toEqual(updatedEntite);
+    expect(entiteAdministrativePatch).toHaveBeenCalledWith({ json: visibleInput });
+  });
+});
 
 describe('local Direction and Service API adapter', () => {
   it('loads and patches an edit target through its local endpoint', async () => {

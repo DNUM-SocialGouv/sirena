@@ -1,20 +1,33 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useEntiteAdministrativeAdminLocal } from '@/hooks/queries/entites.hook';
+import { useEditEntiteAdministrativeAdminLocal, useEntiteAdministrativeAdminLocal } from '@/hooks/queries/entites.hook';
 import { requireAdminLocalEntite } from './directions-services/-route-guard';
 import { Route as EntiteRoute } from './entite';
 import { RouteComponent } from './entite.edit';
+
+const { addToastSpy, editMutateAsyncSpy, routerNavigateSpy } = vi.hoisted(() => ({
+  addToastSpy: vi.fn(),
+  editMutateAsyncSpy: vi.fn(),
+  routerNavigateSpy: vi.fn(),
+}));
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => options,
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
   Outlet: () => null,
+  useRouter: () => ({ navigate: routerNavigateSpy }),
 }));
 
 vi.mock('@/hooks/queries/entites.hook', () => ({
   useEntiteAdministrativeAdminLocal: vi.fn(),
+  useEditEntiteAdministrativeAdminLocal: vi.fn(() => ({ mutateAsync: editMutateAsyncSpy, isPending: false })),
 }));
+
+vi.mock('@sirena/ui', async () => {
+  const actual = await vi.importActual<typeof import('@sirena/ui')>('@sirena/ui');
+  return { ...actual, Toast: { useToastManager: () => ({ add: addToastSpy }) } };
+});
 
 vi.mock('./directions-services/-route-guard', () => ({
   requireAdminLocalEntite: vi.fn(),
@@ -98,6 +111,121 @@ describe('Admin local Entité edit route', () => {
     expect(name).toHaveFocus();
     expect(screen.getByText(/Le champ "Nom de l’entité administrative" est vide/)).toBeInTheDocument();
     expect(screen.getByText(/Le champ "Abréviation" est vide/)).toBeInTheDocument();
+  });
+
+  it('submits exactly the six visible fields without an Entité identifier', async () => {
+    const user = userEvent.setup();
+    editMutateAsyncSpy.mockResolvedValueOnce({ ...assignedEntite, nomComplet: 'ARS de Normandie' });
+    vi.mocked(useEntiteAdministrativeAdminLocal).mockReturnValue({
+      data: assignedEntite,
+      isPending: false,
+      isError: false,
+    } as never);
+    render(<RouteComponent />);
+
+    const name = screen.getByRole('textbox', { name: /Nom de l’entité administrative/ });
+    await user.clear(name);
+    await user.type(name, 'ARS de Normandie');
+    await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
+
+    await waitFor(() =>
+      expect(editMutateAsyncSpy).toHaveBeenCalledWith({
+        nomComplet: 'ARS de Normandie',
+        label: 'ARS NOR',
+        email: 'notification@ars.fr',
+        emailContactUsager: 'contact@ars.fr',
+        telContactUsager: '0102030405',
+        adresseContactUsager: '1 rue de la Santé, Paris',
+      }),
+    );
+  });
+
+  it('cancels back to the consultation route without submitting changes', async () => {
+    vi.mocked(useEntiteAdministrativeAdminLocal).mockReturnValue({
+      data: assignedEntite,
+      isPending: false,
+      isError: false,
+    } as never);
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('link', { name: 'Annuler' })).toHaveAttribute('href', '/admin/entite');
+    expect(editMutateAsyncSpy).not.toHaveBeenCalled();
+  });
+
+  it('confirms a successful save and returns to the Entité consultation route', async () => {
+    const user = userEvent.setup();
+    editMutateAsyncSpy.mockResolvedValueOnce({ ...assignedEntite, nomComplet: 'ARS de Normandie' });
+    vi.mocked(useEntiteAdministrativeAdminLocal).mockReturnValue({
+      data: assignedEntite,
+      isPending: false,
+      isError: false,
+    } as never);
+    render(<RouteComponent />);
+
+    await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
+
+    await waitFor(() =>
+      expect(addToastSpy).toHaveBeenCalledWith({
+        title: 'Entité administrative modifiée avec succès',
+        description: 'Les modifications ont bien été enregistrées.',
+        timeout: 0,
+        data: { icon: 'fr-alert--success' },
+      }),
+    );
+    expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/entite' });
+  });
+
+  it('shows an error, retains input, stays on the form, and allows retry after a failed save', async () => {
+    const user = userEvent.setup();
+    editMutateAsyncSpy
+      .mockRejectedValueOnce(new Error('Request failed'))
+      .mockResolvedValueOnce({ ...assignedEntite, nomComplet: 'ARS de Normandie' });
+    vi.mocked(useEntiteAdministrativeAdminLocal).mockReturnValue({
+      data: assignedEntite,
+      isPending: false,
+      isError: false,
+    } as never);
+    render(<RouteComponent />);
+    const name = screen.getByRole('textbox', { name: /Nom de l’entité administrative/ });
+    await user.clear(name);
+    await user.type(name, 'ARS de Normandie');
+
+    await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
+
+    await waitFor(() =>
+      expect(addToastSpy).toHaveBeenCalledWith({
+        title: 'Erreur',
+        description: 'Erreur lors de la modification de l’entité administrative. Veuillez réessayer.',
+        timeout: 0,
+        data: { icon: 'fr-alert--error' },
+      }),
+    );
+    expect(routerNavigateSpy).not.toHaveBeenCalled();
+    expect(name).toHaveValue('ARS de Normandie');
+
+    await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
+
+    await waitFor(() => expect(editMutateAsyncSpy).toHaveBeenCalledTimes(2));
+    expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/entite' });
+  });
+
+  it('prevents duplicate submission while the update is pending', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useEntiteAdministrativeAdminLocal).mockReturnValue({
+      data: assignedEntite,
+      isPending: false,
+      isError: false,
+    } as never);
+    vi.mocked(useEditEntiteAdministrativeAdminLocal).mockReturnValueOnce({
+      mutateAsync: editMutateAsyncSpy,
+      isPending: true,
+    } as never);
+    render(<RouteComponent />);
+
+    const submit = screen.getByRole('button', { name: 'Valider les modifications' });
+    expect(submit).toBeDisabled();
+    await user.click(submit);
+    expect(editMutateAsyncSpy).not.toHaveBeenCalled();
   });
 
   it('accepts empty optional contact fields', async () => {

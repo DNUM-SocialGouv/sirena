@@ -1,9 +1,9 @@
 import Button from '@codegouvfr/react-dsfr/Button';
-import { Loader } from '@sirena/ui';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { Loader, Toast } from '@sirena/ui';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useCallback, useEffect } from 'react';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
-import { useEntiteAdministrativeAdminLocal } from '@/hooks/queries/entites.hook';
+import { useEditEntiteAdministrativeAdminLocal, useEntiteAdministrativeAdminLocal } from '@/hooks/queries/entites.hook';
 import {
   LocalDirectionServiceContactFields,
   LocalDirectionServiceSirenaFields,
@@ -32,6 +32,9 @@ type AssignedEntite = NonNullable<ReturnType<typeof useEntiteAdministrativeAdmin
 
 function EntiteAdministrativeEditForm({ entite }: { entite: AssignedEntite }) {
   const title = `Modifier l’entité administrative ${entite.nomComplet}`;
+  const editEntite = useEditEntiteAdministrativeAdminLocal();
+  const toastManager = Toast.useToastManager();
+  const router = useRouter();
   const form = useLocalDirectionServiceForm('entite-administrative', {
     nomComplet: entite.nomComplet,
     label: entite.label,
@@ -46,11 +49,30 @@ function EntiteAdministrativeEditForm({ entite }: { entite: AssignedEntite }) {
   }, [title]);
 
   const handleSubmit = useCallback(
-    (event: SubmitEvent<HTMLFormElement>) => {
+    async (event: SubmitEvent<HTMLFormElement>) => {
       event.preventDefault();
-      form.validate();
+      const values = form.validate();
+      if (!values) return;
+
+      try {
+        await editEntite.mutateAsync(values);
+        toastManager.add({
+          title: 'Entité administrative modifiée avec succès',
+          description: 'Les modifications ont bien été enregistrées.',
+          timeout: 0,
+          data: { icon: 'fr-alert--success' },
+        });
+        await router.navigate({ to: '/admin/entite' });
+      } catch {
+        toastManager.add({
+          title: 'Erreur',
+          description: 'Erreur lors de la modification de l’entité administrative. Veuillez réessayer.',
+          timeout: 0,
+          data: { icon: 'fr-alert--error' },
+        });
+      }
     },
-    [form],
+    [editEntite, form, router, toastManager],
   );
 
   return (
@@ -85,7 +107,9 @@ function EntiteAdministrativeEditForm({ entite }: { entite: AssignedEntite }) {
             <Link className="fr-btn fr-btn--secondary" to="/admin/entite">
               Annuler
             </Link>
-            <Button type="submit">Valider les modifications</Button>
+            <Button type="submit" disabled={editEntite.isPending}>
+              Valider les modifications
+            </Button>
           </div>
         </form>
       </div>
