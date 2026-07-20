@@ -248,6 +248,7 @@ model PersonneConcernee {
   isTuteur                    Boolean?
   veutGarderAnonymat          Boolean?
   estSignalementProfessionnel Boolean?
+  estPersonneMorale           Boolean?
   commentaire                 String   @default("")
   autrePersonnes              String   @default("")
   aAutrePersonnes             Boolean?

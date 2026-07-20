@@ -120,6 +120,7 @@ describe('sirecMigration.service.ts', () => {
         } | null;
         commentaire: string;
         estSignalementProfessionnel: boolean | null;
+        estPersonneMorale: boolean | null;
       } | null,
       victime: null as {
         identite: {
@@ -417,6 +418,7 @@ describe('sirecMigration.service.ts', () => {
           identite: null,
           commentaire: '',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
         },
         victime: { identite: null, adresse: null, commentaire: '', ageId: null, mesureProtection: null },
       });
@@ -448,6 +450,7 @@ describe('sirecMigration.service.ts', () => {
           identite: null,
           commentaire: '',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
         },
         victime: { identite: null, adresse: null, commentaire: '', ageId: null, mesureProtection: null },
       });
@@ -616,6 +619,7 @@ describe('sirecMigration.service.ts', () => {
           identite: null,
           commentaire: '',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
         },
         victime: null,
       });
@@ -635,6 +639,7 @@ describe('sirecMigration.service.ts', () => {
           identite: null,
           commentaire: '',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
         },
       });
 
@@ -648,6 +653,7 @@ describe('sirecMigration.service.ts', () => {
           commentaire: '',
           declarantDeId: 'SIREC-42',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
         },
       });
     });
@@ -664,6 +670,7 @@ describe('sirecMigration.service.ts', () => {
           identite: null,
           commentaire: 'Le requérant est anonyme : oui',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
         },
       });
 
@@ -677,6 +684,7 @@ describe('sirecMigration.service.ts', () => {
           commentaire: 'Le requérant est anonyme : oui',
           declarantDeId: 'SIREC-42',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
         },
       });
     });
@@ -693,6 +701,7 @@ describe('sirecMigration.service.ts', () => {
           identite: null,
           commentaire: '',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
         },
       });
 
@@ -706,6 +715,7 @@ describe('sirecMigration.service.ts', () => {
           commentaire: '',
           declarantDeId: 'SIREC-42',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
         },
       });
     });
@@ -722,6 +732,7 @@ describe('sirecMigration.service.ts', () => {
           identite: null,
           commentaire: '',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
         },
       });
 
@@ -735,6 +746,7 @@ describe('sirecMigration.service.ts', () => {
           commentaire: '',
           declarantDeId: 'SIREC-42',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
           adresse: { create: { rue: '12 rue de la Paix', codePostal: '75001', ville: 'Paris' } },
         },
       });
@@ -752,6 +764,7 @@ describe('sirecMigration.service.ts', () => {
           identite: null,
           commentaire: '',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
         },
       });
 
@@ -765,6 +778,7 @@ describe('sirecMigration.service.ts', () => {
           commentaire: '',
           declarantDeId: 'SIREC-42',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
           adresse: { create: { rue: '12 rue de la Paix', codePostal: '', ville: '' } },
         },
       });
@@ -788,6 +802,7 @@ describe('sirecMigration.service.ts', () => {
           },
           commentaire: '',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
         },
       });
 
@@ -801,6 +816,7 @@ describe('sirecMigration.service.ts', () => {
           commentaire: '',
           declarantDeId: 'SIREC-42',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
           identite: {
             create: {
               nom: 'Dupont',
@@ -826,6 +842,7 @@ describe('sirecMigration.service.ts', () => {
           identite: { nom: 'Dupont', prenom: null, email: null, telephone: null, civiliteId: null },
           commentaire: '',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
         },
       });
 
@@ -839,6 +856,7 @@ describe('sirecMigration.service.ts', () => {
           commentaire: '',
           declarantDeId: 'SIREC-42',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
           identite: { create: { nom: 'Dupont', prenom: '', email: '', telephone: '', civiliteId: null } },
         },
       });
@@ -856,6 +874,7 @@ describe('sirecMigration.service.ts', () => {
           identite: null,
           commentaire: '',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
         },
       });
 
@@ -937,6 +956,7 @@ describe('sirecMigration.service.ts', () => {
           identite: null,
           commentaire: '',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
         },
       });
 
@@ -957,6 +977,7 @@ describe('sirecMigration.service.ts', () => {
           identite: null,
           commentaire: '',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
         },
       });
 
@@ -977,6 +998,7 @@ describe('sirecMigration.service.ts', () => {
           identite: null,
           commentaire: '',
           estSignalementProfessionnel: true,
+          estPersonneMorale: null,
         },
       });
 
@@ -997,6 +1019,7 @@ describe('sirecMigration.service.ts', () => {
           identite: null,
           commentaire: '',
           estSignalementProfessionnel: true,
+          estPersonneMorale: null,
         },
         victime: { identite: null, adresse: null, commentaire: '', ageId: null, mesureProtection: null },
       });
@@ -1408,6 +1431,7 @@ describe('sirecMigration.service.ts', () => {
           identite: null,
           commentaire: '',
           estSignalementProfessionnel: null,
+          estPersonneMorale: null,
         },
         victime: null,
       });
