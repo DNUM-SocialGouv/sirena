@@ -7,6 +7,7 @@ const mockedEnvVars = vi.hoisted(() => ({
   METABASE_SITE_URL: 'https://metabase.example.com',
   METABASE_SECRET_KEY: 'test-secret-key',
   METABASE_DASHBOARD_ID: '7',
+  METABASE_DASHBOARD_ID_ADMIN: '9',
 }));
 
 vi.mock('../../config/env.js', () => ({
@@ -54,6 +55,7 @@ describe('statistics.service.ts', () => {
     mockedEnvVars.METABASE_SITE_URL = 'https://metabase.example.com';
     mockedEnvVars.METABASE_SECRET_KEY = 'test-secret-key';
     mockedEnvVars.METABASE_DASHBOARD_ID = '7';
+    mockedEnvVars.METABASE_DASHBOARD_ID_ADMIN = '9';
   });
 
   afterEach(() => {
@@ -221,6 +223,36 @@ describe('statistics.service.ts', () => {
 
       const { fetchDashboardCardsData } = await import('./statistics.service.js');
       await expect(fetchDashboardCardsData()).rejects.toThrow(/^503:/);
+    });
+
+    it('signs the token for the national dashboard id when scope is "national"', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ dashcards: [{ id: 100, card_id: 42, card: { id: 42, name: 'Total requêtes' } }] }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => cardResult([{ name: 'total', base_type: 'type/Integer' }], [[123]]),
+        });
+
+      const { fetchDashboardCardsData } = await import('./statistics.service.js');
+      await fetchDashboardCardsData({}, {}, 'national');
+
+      const [metadataCall] = fetchMock.mock.calls;
+      const token = String(metadataCall[0]).split('/api/embed/dashboard/')[1];
+      const decoded = jwt.verify(token, 'test-secret-key') as { resource: { dashboard: number } };
+      expect(decoded.resource).toEqual({ dashboard: 9 });
+    });
+
+    it('throws 503 when the national dashboard id is not configured', async () => {
+      mockedEnvVars.METABASE_DASHBOARD_ID_ADMIN = '';
+
+      const { fetchDashboardCardsData } = await import('./statistics.service.js');
+      await expect(fetchDashboardCardsData({}, {}, 'national')).rejects.toThrow(/^503:/);
+      expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it('degrades gracefully when a single dashcard fetch fails', async () => {
