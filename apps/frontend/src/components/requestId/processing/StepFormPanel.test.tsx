@@ -260,4 +260,27 @@ describe('StepFormPanel', () => {
     expect(screen.getByText('Sélectionner un fichier')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Ajouter une note' })).toBeInTheDocument();
   });
+
+  it('locks name and hides delete but keeps status editable for a not-yet-sent ACR step', () => {
+    const ref = createRef<StepFormPanelRef>();
+    render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+    act(() =>
+      ref.current?.openEdit(
+        makeStep({
+          type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          dateRealisation: '2026-05-20T00:00:00.000Z',
+          canOnlyEditNotes: false, // AR marked "Fait" by hand — no AR PDF, not sent
+        }),
+      ),
+    );
+
+    // Name and deletion stay locked (acknowledgment = system step)...
+    expect(screen.getByLabelText("Nom de l'étape (obligatoire)")).toBeDisabled();
+    expect(screen.queryByRole('button', { name: "Supprimer l'étape" })).not.toBeInTheDocument();
+    // ...but status and date remain editable since the AR has not been sent.
+    expect(screen.getByLabelText('Fait')).toBeEnabled();
+    expect(screen.getByLabelText('À faire')).toBeEnabled();
+  });
 });

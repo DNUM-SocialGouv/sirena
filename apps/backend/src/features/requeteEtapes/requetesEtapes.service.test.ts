@@ -637,22 +637,34 @@ describe('RequeteEtapes.service.ts', () => {
         uploadedFiles: [],
         requete: { createdById: 'agent-1' },
       };
-      const autoAckEtape = {
+      const sentAckEtape = {
         ...requeteEtape,
         id: 'ackEtapeId',
         type: 'ACKNOWLEDGMENT',
         statutId: 'FAIT',
         notes: [],
-        uploadedFiles: [],
+        // A sent ACR carries its non-deletable AR PDF → status/name/date locked.
+        uploadedFiles: [{ id: 'ar', fileName: 'AR.pdf', metadata: null, size: 10, canDelete: false }],
         requete: { createdById: null },
       };
-      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([closedEtape, autoAckEtape]);
-      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(2);
+      const handMarkedAckEtape = {
+        ...requeteEtape,
+        id: 'handAckEtapeId',
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'FAIT',
+        notes: [],
+        // Marked "Fait" by hand, no AR PDF → stays fully editable.
+        uploadedFiles: [],
+        requete: { createdById: 'agent-1' },
+      };
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([closedEtape, sentAckEtape, handMarkedAckEtape]);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(3);
 
       const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0 });
 
       expect(result.data[0]).toMatchObject({ editable: false, canOnlyEditNotes: false });
       expect(result.data[1]).toMatchObject({ editable: true, canOnlyEditNotes: true });
+      expect(result.data[2]).toMatchObject({ editable: true, canOnlyEditNotes: false });
     });
   });
 
@@ -870,34 +882,46 @@ describe('RequeteEtapes.service.ts', () => {
   });
 
   describe('getEtapePermissions', () => {
+    const arPdf = { canDelete: false };
+    const userFile = { canDelete: true };
+
     it('MANUAL step is fully editable', () => {
-      expect(getEtapePermissions({ type: 'MANUAL', statutId: 'A_FAIRE' })).toEqual({
+      expect(getEtapePermissions({ type: 'MANUAL', statutId: 'A_FAIRE', uploadedFiles: [] })).toEqual({
         editable: true,
         canOnlyEditNotes: false,
       });
     });
 
     it('CLOTUREE step is not editable', () => {
-      expect(getEtapePermissions({ type: 'MANUAL', statutId: 'CLOTUREE' })).toEqual({
+      expect(getEtapePermissions({ type: 'MANUAL', statutId: 'CLOTUREE', uploadedFiles: [] })).toEqual({
         editable: false,
         canOnlyEditNotes: false,
       });
     });
 
     it('CREATION and REOPEN steps are not editable', () => {
-      expect(getEtapePermissions({ type: 'CREATION', statutId: 'FAIT' }).editable).toBe(false);
-      expect(getEtapePermissions({ type: 'REOPEN', statutId: 'FAIT' }).editable).toBe(false);
+      expect(getEtapePermissions({ type: 'CREATION', statutId: 'FAIT', uploadedFiles: [] }).editable).toBe(false);
+      expect(getEtapePermissions({ type: 'REOPEN', statutId: 'FAIT', uploadedFiles: [] }).editable).toBe(false);
     });
 
-    it('ACKNOWLEDGMENT step is always notes-only (automatic and manual behave identically)', () => {
-      // Regardless of statut or who created the request, an ACR is a notes/attachments container:
-      // status, name and date stay locked.
-      for (const statutId of ['FAIT', 'A_FAIRE']) {
-        expect(getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId })).toEqual({
-          editable: true,
-          canOnlyEditNotes: true,
-        });
-      }
+    it('ACKNOWLEDGMENT is notes-only once the AR was sent (AR PDF attached)', () => {
+      expect(getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId: 'FAIT', uploadedFiles: [arPdf] })).toEqual({
+        editable: true,
+        canOnlyEditNotes: true,
+      });
+    });
+
+    it('ACKNOWLEDGMENT stays fully editable when marked "Fait" by hand (no AR PDF)', () => {
+      // No send, no non-deletable AR PDF → status/name/date remain editable.
+      expect(getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId: 'FAIT', uploadedFiles: [] })).toEqual({
+        editable: true,
+        canOnlyEditNotes: false,
+      });
+      // A user-added attachment (canDelete: true) is not an AR PDF, so it does not lock the step.
+      expect(getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId: 'A_FAIRE', uploadedFiles: [userFile] })).toEqual({
+        editable: true,
+        canOnlyEditNotes: false,
+      });
     });
   });
 
