@@ -4,8 +4,8 @@ import { SirecDataError } from '../../transco/sirecTransco.error.js';
 
 export interface SirenaFinessMisEnCauseData {
   kind: 'finess';
-  misEnCauseTypeId: string;
-  misEnCauseTypePrecisionId: string;
+  misEnCauseTypeId: string | null;
+  misEnCauseTypePrecisionId: string | null;
   finess?: string;
   nomService?: string;
   codePostal?: string | null;
