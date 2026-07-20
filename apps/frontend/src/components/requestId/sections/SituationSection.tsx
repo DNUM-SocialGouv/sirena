@@ -314,16 +314,25 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
 
     return (
       <>
-        {situation?.estLieAuSignalement != null && (
+        {(situation?.estLieAuSignalement != null || situation?.sirecDepartement) && (
           <>
             <SectionTitle level={4}>Identification</SectionTitle>
-            <p className={fr.cx('fr-mb-1w')}>
-              <span>Situation en lien avec un ou plusieurs signalement(s) :</span>{' '}
-              {situation.estLieAuSignalement ? 'Oui' : 'Non'}
-            </p>
-            {situation.estLieAuSignalement && situation.numerosSignalement && (
+            {situation?.estLieAuSignalement != null && (
+              <>
+                <p className={fr.cx('fr-mb-1w')}>
+                  <span>Situation en lien avec un ou plusieurs signalement(s) :</span>{' '}
+                  {situation.estLieAuSignalement ? 'Oui' : 'Non'}
+                </p>
+                {situation.estLieAuSignalement && situation.numerosSignalement && (
+                  <p className={fr.cx('fr-mb-3w')}>
+                    <span>Numéro(s) de signalement associé(s) :</span> {situation.numerosSignalement}
+                  </p>
+                )}
+              </>
+            )}
+            {situation?.sirecDepartement && (
               <p className={fr.cx('fr-mb-3w')}>
-                <span>Numéro(s) de signalement associé(s) :</span> {situation.numerosSignalement}
+                <span>Département en charge :</span> {situation.sirecDepartement}
               </p>
             )}
           </>

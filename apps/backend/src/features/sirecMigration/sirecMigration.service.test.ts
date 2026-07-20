@@ -162,6 +162,7 @@ describe('sirecMigration.service.ts', () => {
           domainesFonctionnelsId: null as string | null,
           estLieAuSignalement: undefined as boolean | undefined,
           numerosSignalement: '',
+          sirecDepartement: null as string | null,
         },
       ],
     };
@@ -384,6 +385,17 @@ describe('sirecMigration.service.ts', () => {
 
       expect(prisma.situation.create).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ numerosSignalement: 'SIG001,SIG002' }) }),
+      );
+    });
+
+    it('should create Situation with sirecDepartement when set', async () => {
+      await saveFromSirec({
+        ...data,
+        situations: [{ ...data.situations[0], sirecDepartement: '75 - Paris' }],
+      });
+
+      expect(prisma.situation.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ sirecDepartement: '75 - Paris' }) }),
       );
     });
 
