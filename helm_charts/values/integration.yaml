@@ -23,6 +23,8 @@ backend:
 
     deployment:
       replicas: 1
+      additionalsecretRef:
+        - mariadb-sirec-secret
 
     ingress:
       appAnnotations:

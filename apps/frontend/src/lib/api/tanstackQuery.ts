@@ -3,6 +3,7 @@ import type { Cause } from '@sirena/common/types';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import { queryClient } from '@/lib/queryClient';
 import { router } from '@/lib/router';
+import { clearSentryUser } from '@/lib/sentryUser';
 import { toastManager } from '@/lib/toastManager';
 import { useFeatureFlagStore } from '@/stores/featureFlagStore';
 import { useUserStore } from '@/stores/userStore';
@@ -75,6 +76,7 @@ export const handleRequestErrors = async (res: Response, options: RequestErrorOp
   if (res.status === 401) {
     const userStore = useUserStore.getState();
     userStore.logout();
+    clearSentryUser();
     useFeatureFlagStore.getState().reset();
     router.navigate({ to: '/login', search: { redirect: window.location.pathname } });
     errorFound = true;

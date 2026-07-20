@@ -350,6 +350,8 @@ model Situation {
   estLieAuSignalement Boolean?
   numerosSignalement  String   @default("")
 
+  sirecDepartement String?
+
   requete   Requete? @relation(fields: [requeteId], references: [id], onDelete: Cascade)
   requeteId String?
 

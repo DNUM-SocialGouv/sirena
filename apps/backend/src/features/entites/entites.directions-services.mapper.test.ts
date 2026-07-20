@@ -55,6 +55,7 @@ describe('buildDirectionsServicesRows', () => {
         serviceLabel: '',
         email: 'direction-autonomie@ars.fr',
         editId: 'dir-autonomie',
+        canEdit: true,
       },
       {
         id: 'service-pa',
@@ -64,6 +65,7 @@ describe('buildDirectionsServicesRows', () => {
         serviceLabel: 'PA',
         email: 'service-pa@ars.fr',
         editId: 'service-pa',
+        canEdit: true,
       },
     ]);
   });
@@ -100,6 +102,7 @@ describe('buildDirectionsServicesRows', () => {
         serviceLabel: '',
         email: 'direction-autonomie@ars.fr',
         editId: 'dir-autonomie',
+        canEdit: true,
       },
       {
         id: 'service-pa',
@@ -109,6 +112,7 @@ describe('buildDirectionsServicesRows', () => {
         serviceLabel: 'PA',
         email: 'service-pa@ars.fr',
         editId: 'service-pa',
+        canEdit: true,
       },
     ]);
 

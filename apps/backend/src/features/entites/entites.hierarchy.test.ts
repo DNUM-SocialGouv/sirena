@@ -1,5 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { groupEntitesByParentId } from './entites.hierarchy.js';
+import { getAdminLocalAssignmentLevel, groupEntitesByParentId } from './entites.hierarchy.js';
+
+describe('getAdminLocalAssignmentLevel', () => {
+  it('classifies root, Direction, Service, and invalid hierarchy affectations from their parent chain', () => {
+    const entites = [
+      { id: 'root-ars', entiteMereId: null },
+      { id: 'direction-autonomie', entiteMereId: 'root-ars' },
+      { id: 'service-pa', entiteMereId: 'direction-autonomie' },
+      { id: 'unexpected-child', entiteMereId: 'service-pa' },
+      { id: 'orphan', entiteMereId: 'missing-parent' },
+    ];
+    const entitesById = new Map(entites.map((entite) => [entite.id, entite]));
+
+    expect(getAdminLocalAssignmentLevel(entites[0], entitesById)).toBe('entite-administrative');
+    expect(getAdminLocalAssignmentLevel(entites[1], entitesById)).toBe('direction');
+    expect(getAdminLocalAssignmentLevel(entites[2], entitesById)).toBe('service');
+    expect(getAdminLocalAssignmentLevel(entites[3], entitesById)).toBe('invalid-hierarchy');
+    expect(getAdminLocalAssignmentLevel(entites[4], entitesById)).toBe('invalid-hierarchy');
+  });
+});
 
 describe('groupEntitesByParentId', () => {
   it('groups non-root entites by their parent id while excluding root entites', () => {

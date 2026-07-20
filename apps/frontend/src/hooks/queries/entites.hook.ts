@@ -1,10 +1,17 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   type CreateChildEntiteAdminInput,
+  type CreateDirectionAdminLocalInput,
+  type CreateServiceAdminLocalInput,
   createChildEntiteAdmin,
+  createDirectionAdminLocal,
+  createServiceAdminLocal,
+  type EditDirectionServiceAdminLocalInput,
   type EditEntiteAdminInput,
+  editDirectionServiceAdminLocal,
   editEntiteAdmin,
-  fetchDirectionsServicesRows,
+  fetchDirectionServiceAdminLocal,
+  fetchDirectionsServicesList,
   fetchEntiteByIdAdmin,
   fetchEntiteChain,
   fetchEntiteDescendants,
@@ -43,15 +50,30 @@ export const useRootEntitesListAdminQueryOptions = () => ({
 
 export const useRootEntitesListAdmin = () => useQuery(useRootEntitesListAdminQueryOptions());
 
-export const useDirectionsServicesRowsQueryOptions = (query: Pick<QueryParams, 'search'> = {}) => ({
+export const useDirectionsServicesListQueryOptions = (query: Pick<QueryParams, 'search'> = {}) => ({
   queryKey: ['entites', 'admin', 'directions-services', query],
-  queryFn: () => fetchDirectionsServicesRows(query),
+  queryFn: () => fetchDirectionsServicesList(query),
   retry: false,
-  initialData: { data: [] },
+  initialData: {
+    data: [],
+    capabilities: {
+      canCreateDirection: false,
+      canCreateService: false,
+    },
+    availableDirections: [],
+    serviceParentDirection: null,
+  },
 });
 
-export const useDirectionsServicesRows = (query: Pick<QueryParams, 'search'> = {}) =>
-  useQuery(useDirectionsServicesRowsQueryOptions(query));
+export const useDirectionsServicesList = (query: Pick<QueryParams, 'search'> = {}) =>
+  useQuery(useDirectionsServicesListQueryOptions(query));
+
+export const useDirectionServiceAdminLocal = (entiteId: string) =>
+  useQuery({
+    queryKey: ['entite', 'admin', 'directions-services', entiteId],
+    queryFn: () => fetchDirectionServiceAdminLocal(entiteId),
+    retry: false,
+  });
 
 export const useEntiteByIdAdmin = (entiteId: string) =>
   useQuery({
@@ -80,6 +102,16 @@ export const useEntiteDescendantsQueryOptions = (id: string | undefined) => ({
 
 export const useEntiteDescendants = (id: string | undefined) => useQuery(useEntiteDescendantsQueryOptions(id));
 
+export const useEditDirectionServiceAdminLocal = () =>
+  useMutation({
+    mutationFn: ({ id, input }: { id: string; input: EditDirectionServiceAdminLocalInput }) =>
+      editDirectionServiceAdminLocal(id, input),
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(['entite', 'admin', 'directions-services', variables.id], data);
+      queryClient.invalidateQueries({ queryKey: ['entites', 'admin', 'directions-services'] });
+    },
+  });
+
 export const useEditEntiteAdmin = () =>
   useMutation({
     mutationFn: ({ id, input }: { id: string; input: EditEntiteAdminInput }) => editEntiteAdmin(id, input),
@@ -95,5 +127,21 @@ export const useCreateChildEntiteAdmin = () =>
       createChildEntiteAdmin(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entites'] });
+    },
+  });
+
+export const useCreateDirectionAdminLocal = () =>
+  useMutation({
+    mutationFn: (input: CreateDirectionAdminLocalInput) => createDirectionAdminLocal(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entites', 'admin', 'directions-services'] });
+    },
+  });
+
+export const useCreateServiceAdminLocal = () =>
+  useMutation({
+    mutationFn: (input: CreateServiceAdminLocalInput) => createServiceAdminLocal(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entites', 'admin', 'directions-services'] });
     },
   });

@@ -2,13 +2,17 @@ import {
   openApi400BadRequest,
   openApi404NotFound,
   openApiProtectedRoute,
+  openApiRawResponse,
   openApiResponse,
   openApiResponses,
 } from '@sirena/backend-utils/helpers';
 import {
   CreateChildEntiteAdminResponseSchema,
+  CreateDirectionAdminLocalResponseSchema,
+  CreateServiceAdminLocalResponseSchema,
   EditEntiteAdminResponseSchema,
-  GetDirectionsServicesRowsResponseSchema,
+  GetDirectionServiceAdminLocalResponseSchema,
+  GetDirectionsServicesListResponseSchema,
   GetEntitesByIdAdminResponseSchema,
   GetEntitesListAdminResponseSchema,
   GetEntitiesChainResponseSchema,
@@ -37,10 +41,26 @@ export const getRootEntitesListAdminRoute = openApiProtectedRoute({
   },
 });
 
-export const getDirectionsServicesRowsRoute = openApiProtectedRoute({
-  description: 'Get local directions and services rows for entity admins',
+export const getDirectionsServicesListRoute = openApiProtectedRoute({
+  description: 'Get local directions and services list for entity admins',
   responses: {
-    ...openApiResponses(GetDirectionsServicesRowsResponseSchema),
+    ...openApiRawResponse(GetDirectionsServicesListResponseSchema),
+  },
+});
+
+export const editDirectionServiceAdminLocalRoute = openApiProtectedRoute({
+  description: 'Edit an authorized entity for a local entity admin',
+  responses: {
+    ...openApiResponse(GetDirectionServiceAdminLocalResponseSchema),
+    ...openApi404NotFound('Entite not found'),
+  },
+});
+
+export const getDirectionServiceAdminLocalRoute = openApiProtectedRoute({
+  description: 'Get an authorized entity for local entity admin editing',
+  responses: {
+    ...openApiResponse(GetDirectionServiceAdminLocalResponseSchema),
+    ...openApi404NotFound('Entite not found'),
   },
 });
 
@@ -48,6 +68,24 @@ export const getEntiteByIdAdminRoute = openApiProtectedRoute({
   description: 'Get entite by id for super admins',
   responses: {
     ...openApiResponse(GetEntitesByIdAdminResponseSchema),
+    ...openApi404NotFound('Entite not found'),
+  },
+});
+
+export const createDirectionAdminLocalRoute = openApiProtectedRoute({
+  description: 'Create Direction for entity admins from local directions and services workflow',
+  responses: {
+    ...openApiResponse(CreateDirectionAdminLocalResponseSchema),
+    ...openApi400BadRequest('Child entite creation is not allowed for this parent'),
+    ...openApi404NotFound('Entite not found'),
+  },
+});
+
+export const createServiceAdminLocalRoute = openApiProtectedRoute({
+  description: 'Create Service for entity admins from local directions and services workflow',
+  responses: {
+    ...openApiResponse(CreateServiceAdminLocalResponseSchema),
+    ...openApi400BadRequest('Child entite creation is not allowed for this parent'),
     ...openApi404NotFound('Entite not found'),
   },
 });

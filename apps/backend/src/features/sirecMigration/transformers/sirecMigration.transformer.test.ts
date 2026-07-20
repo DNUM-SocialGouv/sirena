@@ -155,6 +155,7 @@ describe('sirecMigration.transformer.ts', () => {
           domainesFonctionnelsId: null,
           estLieAuSignalement: undefined,
           numerosSignalement: '',
+          sirecDepartement: null,
         },
       ],
     });

@@ -2,6 +2,7 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { SelectWithChildren } from '@sirena/ui';
 import { useEffect, useId, useRef, useState } from 'react';
 import { EntiteCombobox } from '@/components/common/EntiteCombobox';
+import { ReadOnlyField } from '@/components/common/ReadOnlyField';
 import { useEntiteDescendants } from '@/hooks/queries/entites.hook';
 import styles from './TraitementDesFaits.module.css';
 
@@ -73,12 +74,11 @@ function TraitementDesFaitsRowComponent({
         <div className={styles.entiteWrapper}>
           <div className={styles.entiteField}>
             {isEntiteReadOnly ? (
-              <div className="fr-input-group">
-                <label className="fr-label" htmlFor={`entite-readonly-${row.id}`}>
-                  Entité administrative (obligatoire)
-                </label>
-                <input id={`entite-readonly-${row.id}`} className={styles.readOnlyValue} value={entiteLabel} readOnly />
-              </div>
+              <ReadOnlyField
+                id={`entite-readonly-${row.id}`}
+                label="Entité administrative (obligatoire)"
+                value={entiteLabel}
+              />
             ) : (
               <EntiteCombobox
                 label="Entité administrative (obligatoire)"
@@ -106,22 +106,16 @@ function TraitementDesFaitsRowComponent({
       {row.entiteId && (!disabled || (row.directionServiceIds && row.directionServiceIds.length > 0)) && (
         <div className="fr-col-12 fr-col-md-6" style={alignSelectStyle}>
           {disabled ? (
-            <div className="fr-input-group">
-              <label className="fr-label" htmlFor={`direction-readonly-${row.id}`}>
-                Direction ou Service
-              </label>
-              <input
-                id={`direction-readonly-${row.id}`}
-                className={styles.readOnlyValue}
-                value={
-                  row.directionServiceIds
-                    ?.map((id) => directionsServices.find((ds) => ds.id === id)?.nomComplet)
-                    .filter(Boolean)
-                    .join(', ') || ''
-                }
-                readOnly
-              />
-            </div>
+            <ReadOnlyField
+              id={`direction-readonly-${row.id}`}
+              label="Direction ou Service"
+              value={
+                row.directionServiceIds
+                  ?.map((id) => directionsServices.find((ds) => ds.id === id)?.nomComplet)
+                  .filter(Boolean)
+                  .join(', ') || ''
+              }
+            />
           ) : (
             <SelectWithChildren
               value={row.directionServiceIds || []}

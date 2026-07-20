@@ -711,6 +711,7 @@ describe('requetes.service.ts', () => {
           domainesFonctionnelsId: null,
           estLieAuSignalement: null,
           numerosSignalement: '',
+          sirecDepartement: null,
         });
 
         situation.faits.forEach((fait) => {
@@ -958,6 +959,7 @@ describe('requetes.service.ts', () => {
           domainesFonctionnelsId: null,
           estLieAuSignalement: null,
           numerosSignalement: '',
+          sirecDepartement: null,
         });
 
         situation.faits.forEach((fait) => {
