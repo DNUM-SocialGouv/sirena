@@ -476,6 +476,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                     )}
 
                     <section className={styles.notesSection}>
+                      {mode === 'edit' && <p className={`fr-label ${styles.attachmentTitle}`}>Notes</p>}
                       {readOnlyNotes.map((note) => (
                         <div key={note.id} className={styles.readOnlyNote}>
                           <p className={styles.readOnlyNoteLabel}>
