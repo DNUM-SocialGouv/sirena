@@ -19,12 +19,14 @@ import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import { streamFileResponse, streamSafeFileResponse } from '../../helpers/file.js';
 import { sseEventManager } from '../../helpers/sse.js';
+import createAccessLogMiddleware from '../../middlewares/accessLog/accessLog.middleware.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import requeteChangelogMiddleware from '../../middlewares/changelog/changelog.requete.middleware.js';
 import requeteStatesChangelogMiddleware from '../../middlewares/changelog/changelog.requeteEtape.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
+import { AccessLogAction } from '../accessLog/accessLog.type.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import {
   sendEntiteAssignedNotification,
@@ -420,31 +422,38 @@ const app = factoryWithLogs
     return streamSafeFileResponse(c, file);
   })
 
-  .get('/:id/export-pdf', exportPdfRoute, async (c) => {
-    const logger = c.get('logger');
-    const { id } = c.req.param();
-    const topEntiteId = c.get('topEntiteId');
-    if (!topEntiteId) {
-      throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
-        res: c.res,
-        kind: ERROR_KIND.BUSINESS,
-      });
-    }
+  .get(
+    '/:id/export-pdf',
+    exportPdfRoute,
+    createAccessLogMiddleware({ entity: 'Requete', action: AccessLogAction.EXPORT_ENTITY_PDF }),
+    async (c) => {
+      const logger = c.get('logger');
+      const { id } = c.req.param();
+      const topEntiteId = c.get('topEntiteId');
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
 
-    const pdfBuffer = await generateRequetePdfBuffer(id, topEntiteId);
+      const pdfExport = await generateRequetePdfBuffer(id, topEntiteId);
 
-    if (!pdfBuffer) {
-      throwHTTPException404NotFound('Requete not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
-    }
+      if (!pdfExport) {
+        throwHTTPException404NotFound('Requete not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+      }
 
-    const pdfFileName = `requete-${id}.pdf`;
-    c.header('Content-Type', 'application/pdf');
-    c.header('Content-Disposition', `attachment; filename="${pdfFileName}"`);
+      c.set('accessLogDataKeys', pdfExport.dataKeys);
 
-    logger.info({ requeteId: id }, 'Exporting requete as PDF');
+      const pdfFileName = `requete-${id}.pdf`;
+      c.header('Content-Type', 'application/pdf');
+      c.header('Content-Disposition', `attachment; filename="${pdfFileName}"`);
 
-    return c.body(new Uint8Array(pdfBuffer));
-  })
+      logger.info({ requeteId: id }, 'Exporting requete as PDF');
+
+      return c.body(new Uint8Array(pdfExport.buffer));
+    },
+  )
 
   .get('/:id/files/download-all', downloadAllFilesRoute, async (c) => {
     const logger = c.get('logger');

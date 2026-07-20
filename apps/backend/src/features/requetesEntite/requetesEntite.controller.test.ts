@@ -10,6 +10,7 @@ import type { UploadedFile } from '../../libs/prisma.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import { convertDatesToStrings } from '../../tests/formatter.js';
+import { createAccessLog } from '../accessLog/accessLog.service.js';
 import { getDirectionsServicesFromRequeteEntiteId, getEntitesByIds } from '../entites/entites.service.js';
 import type { EntiteTraitement } from '../entites/entites.type.js';
 import { updateDateAndTypeRequete } from '../requetes/requetes.service.js';
@@ -17,6 +18,7 @@ import { getUploadedFileById, isFileBelongsToRequete } from '../uploadedFiles/up
 import RequetesEntiteController from './requetesEntite.controller.js';
 import {
   closeRequeteForEntite,
+  generateRequetePdfBuffer,
   getOtherEntitesAffected,
   getRequeteEntiteById,
   getRequetesEntite,
@@ -30,12 +32,17 @@ vi.mock('./requetesEntite.service.js', () => ({
   filterOtherEntitesAffectedForUser: vi.fn((otherEntites, userEntityIds) =>
     otherEntites.filter((entite: { id: string }) => !userEntityIds.includes(entite.id)),
   ),
+  generateRequetePdfBuffer: vi.fn(),
   getRequeteEntiteById: vi.fn(),
   getRequetesEntite: vi.fn(),
   hasAccessToRequete: vi.fn(),
   getOtherEntitesAffected: vi.fn(),
   reopenRequeteForEntite: vi.fn(),
   updateStatusRequete: vi.fn(),
+}));
+
+vi.mock('../accessLog/accessLog.service.js', () => ({
+  createAccessLog: vi.fn(),
 }));
 
 vi.mock('../entites/entites.service.js', () => ({
@@ -559,6 +566,38 @@ describe('RequetesEntite endpoints: /', () => {
       expect(res.status).toBe(404);
       const json = await res.json();
       expect(json).toEqual({ message: 'Requete not found', cause: { kind: ERROR_KIND.BUSINESS } });
+    });
+  });
+
+  describe('GET /:id/export-pdf', () => {
+    it('should return the PDF and record an access log with the exported data keys', async () => {
+      vi.mocked(generateRequetePdfBuffer).mockResolvedValueOnce({
+        buffer: Buffer.from('%PDF-test'),
+        dataKeys: ['requete.declarant.identite.nom'],
+      });
+
+      const res = await client[':id']['export-pdf'].$get({ param: { id: 'requeteId' } });
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toBe('application/pdf');
+      expect(generateRequetePdfBuffer).toHaveBeenCalledWith('requeteId', 'entiteId');
+      expect(createAccessLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entity: 'Requete',
+          entityId: 'requeteId',
+          action: 'EXPORT_ENTITY_PDF',
+          dataKeys: ['requete.declarant.identite.nom'],
+        }),
+      );
+    });
+
+    it('should return 404 and not record an access log when the requete is not found', async () => {
+      vi.mocked(generateRequetePdfBuffer).mockResolvedValueOnce(null);
+
+      const res = await client[':id']['export-pdf'].$get({ param: { id: 'requeteId' } });
+
+      expect(res.status).toBe(404);
+      expect(createAccessLog).not.toHaveBeenCalled();
     });
   });
 
