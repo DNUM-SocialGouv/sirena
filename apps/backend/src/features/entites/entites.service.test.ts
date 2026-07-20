@@ -1349,7 +1349,7 @@ describe('editDirectionServiceAdminLocal()', () => {
     vi.resetAllMocks();
   });
 
-  it('self-edits an assigned Entité administrative without changing its status or structural fields', async () => {
+  it('does not update an assigned Entité administrative through the Direction and Service contract', async () => {
     const assignedEntite = {
       ...fakeEntite('root-ars'),
       nomComplet: 'ARS Normandie',
@@ -1368,24 +1368,8 @@ describe('editDirectionServiceAdminLocal()', () => {
     vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(assignedEntite).mockResolvedValueOnce(assignedEntite);
     vi.mocked(prisma.entite.update).mockResolvedValueOnce({ id: 'root-ars', ...input } as never);
 
-    await expect(editDirectionServiceAdminLocal('root-ars', 'root-ars', input)).resolves.toEqual({
-      id: 'root-ars',
-      kind: 'entite-administrative',
-      ...input,
-    });
-    expect(prisma.entite.update).toHaveBeenCalledWith({
-      where: { id: 'root-ars' },
-      data: input,
-      select: {
-        id: true,
-        nomComplet: true,
-        label: true,
-        email: true,
-        emailContactUsager: true,
-        telContactUsager: true,
-        adresseContactUsager: true,
-      },
-    });
+    await expect(editDirectionServiceAdminLocal('root-ars', 'root-ars', input)).resolves.toBeNull();
+    expect(prisma.entite.update).not.toHaveBeenCalled();
   });
 
   it('self-edits an assigned Direction without changing its status or structural fields', async () => {
@@ -1620,7 +1604,7 @@ describe('getDirectionServiceAdminLocal()', () => {
     vi.resetAllMocks();
   });
 
-  it('returns the assigned Entité administrative itself as an editable target', async () => {
+  it('does not expose the assigned Entité administrative as a Direction or Service target', async () => {
     const assignedEntite = {
       ...fakeEntite('root-ars'),
       nomComplet: 'ARS Normandie',
@@ -1633,16 +1617,7 @@ describe('getDirectionServiceAdminLocal()', () => {
     };
     vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(assignedEntite).mockResolvedValueOnce(assignedEntite);
 
-    await expect(getDirectionServiceAdminLocal('root-ars', 'root-ars')).resolves.toEqual({
-      id: 'root-ars',
-      kind: 'entite-administrative',
-      nomComplet: 'ARS Normandie',
-      label: 'ARS NOR',
-      email: 'notification@ars.fr',
-      emailContactUsager: 'contact@ars.fr',
-      telContactUsager: '0102030405',
-      adresseContactUsager: '1 rue de la Santé, Paris',
-    });
+    await expect(getDirectionServiceAdminLocal('root-ars', 'root-ars')).resolves.toBeNull();
     expect(prisma.entite.findUnique).toHaveBeenCalledTimes(2);
   });
 

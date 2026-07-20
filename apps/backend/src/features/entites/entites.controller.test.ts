@@ -8,6 +8,7 @@ import { Prisma } from '../../libs/prisma.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import EntitesController from './entites.controller.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
+import { GetDirectionServiceAdminLocalResponseSchema } from './entites.schema.js';
 import {
   createDirectionAdminLocal,
   createServiceAdminLocal,
@@ -559,26 +560,33 @@ describe('Entites endpoints: /entites', () => {
   });
 
   describe('GET /admin/directions-services/:id', () => {
-    it('returns the assigned Entité administrative as an authorized local edit target', async () => {
-      currentRole.value = ROLES.ENTITY_ADMIN;
-      assignedEntiteIdState.value = 'root-ars';
-      vi.mocked(getDirectionServiceAdminLocal).mockResolvedValueOnce({
+    it('publishes only Direction and Service edit target kinds', () => {
+      const fields = {
         id: 'root-ars',
-        kind: 'entite-administrative',
         nomComplet: 'ARS Normandie',
         label: 'ARS NOR',
         email: 'notification@ars.fr',
         emailContactUsager: 'contact@ars.fr',
         telContactUsager: '0102030405',
         adresseContactUsager: '1 rue de la Santé, Paris',
-      });
+      };
+
+      expect(GetDirectionServiceAdminLocalResponseSchema.safeParse({ ...fields, kind: 'direction' }).success).toBe(
+        true,
+      );
+      expect(
+        GetDirectionServiceAdminLocalResponseSchema.safeParse({ ...fields, kind: 'entite-administrative' }).success,
+      ).toBe(false);
+    });
+
+    it('does not expose the assigned Entité administrative at the former root edit URL', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      assignedEntiteIdState.value = 'root-ars';
+      vi.mocked(getDirectionServiceAdminLocal).mockResolvedValueOnce(null);
 
       const res = await app.request('/admin/directions-services/root-ars');
 
-      expect(res.status).toBe(200);
-      expect(await res.json()).toEqual({
-        data: expect.objectContaining({ id: 'root-ars', kind: 'entite-administrative' }),
-      });
+      expect(res.status).toBe(404);
       expect(getDirectionServiceAdminLocal).toHaveBeenCalledWith('root-ars', 'root-ars');
     });
 
@@ -630,7 +638,7 @@ describe('Entites endpoints: /entites', () => {
   });
 
   describe('PATCH /admin/directions-services/:id', () => {
-    it('updates the assigned Entité administrative through the protected local contract', async () => {
+    it('does not update the assigned Entité administrative at the former root edit URL', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       assignedEntiteIdState.value = 'root-ars';
       const input = {
@@ -641,11 +649,7 @@ describe('Entites endpoints: /entites', () => {
         telContactUsager: '0102030405',
         adresseContactUsager: '1 rue de la Santé, Paris',
       };
-      vi.mocked(editDirectionServiceAdminLocal).mockResolvedValueOnce({
-        id: 'root-ars',
-        kind: 'entite-administrative',
-        ...input,
-      });
+      vi.mocked(editDirectionServiceAdminLocal).mockResolvedValueOnce(null);
 
       const res = await app.request('/admin/directions-services/root-ars', {
         method: 'PATCH',
@@ -653,10 +657,7 @@ describe('Entites endpoints: /entites', () => {
         body: JSON.stringify(input),
       });
 
-      expect(res.status).toBe(200);
-      expect(await res.json()).toEqual({
-        data: { id: 'root-ars', kind: 'entite-administrative', ...input },
-      });
+      expect(res.status).toBe(404);
       expect(editDirectionServiceAdminLocal).toHaveBeenCalledWith('root-ars', 'root-ars', input);
     });
 

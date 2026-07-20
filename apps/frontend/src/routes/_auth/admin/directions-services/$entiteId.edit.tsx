@@ -36,23 +36,17 @@ type LocalEditTarget = NonNullable<ReturnType<typeof useDirectionServiceAdminLoc
 
 function LocalEditForm({ target }: { target: LocalEditTarget }) {
   const wording =
-    target.kind === 'entite-administrative'
+    target.kind === 'direction'
       ? {
-          titlePrefix: 'Modifier l’entité administrative',
-          successTitle: 'Entité administrative modifiée avec succès',
-          errorDescription: 'Erreur lors de la modification de l’entité administrative. Veuillez réessayer.',
+          titlePrefix: 'Modifier la direction',
+          successTitle: 'Direction modifiée avec succès',
+          errorDescription: 'Erreur lors de la modification de la direction. Veuillez réessayer.',
         }
-      : target.kind === 'direction'
-        ? {
-            titlePrefix: 'Modifier la direction',
-            successTitle: 'Direction modifiée avec succès',
-            errorDescription: 'Erreur lors de la modification de la direction. Veuillez réessayer.',
-          }
-        : {
-            titlePrefix: 'Modifier le service',
-            successTitle: 'Service modifié avec succès',
-            errorDescription: 'Erreur lors de la modification du service. Veuillez réessayer.',
-          };
+      : {
+          titlePrefix: 'Modifier le service',
+          successTitle: 'Service modifié avec succès',
+          errorDescription: 'Erreur lors de la modification du service. Veuillez réessayer.',
+        };
   const title = `${wording.titlePrefix} ${target.nomComplet}`;
   const editDirectionService = useEditDirectionServiceAdminLocal();
   const toastManager = Toast.useToastManager();

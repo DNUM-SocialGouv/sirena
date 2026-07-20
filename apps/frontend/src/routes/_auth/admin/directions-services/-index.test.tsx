@@ -84,7 +84,7 @@ describe('Admin directions and services route', () => {
     expect(document.title).toBe('Directions et services (ARS Normandie) - Espace administrateur - SIRENA');
   });
 
-  it('shows a dedicated assigned-Entité action without inserting it into the descendant table', () => {
+  it('keeps root-level descendant management without offering root editing', () => {
     vi.mocked(useProfile).mockReturnValue({
       data: {
         affectationChain: [{ id: 'root-ars', nomComplet: 'ARS Normandie' }],
@@ -110,10 +110,7 @@ describe('Admin directions and services route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.getByRole('link', { name: 'Modifier mon entité' })).toHaveAttribute(
-      'href',
-      '/admin/directions-services/root-ars/edit',
-    );
+    expect(screen.queryByRole('link', { name: 'Modifier mon entité' })).not.toBeInTheDocument();
     expect(screen.queryByRole('cell', { name: 'ARS Normandie' })).not.toBeInTheDocument();
     expect(screen.getByRole('cell', { name: 'Direction Autonomie' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ajouter une direction' })).toBeInTheDocument();
