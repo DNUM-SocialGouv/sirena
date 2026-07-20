@@ -160,6 +160,16 @@ describe('StepFormPanel', () => {
     expect(screen.getByText(/Note du 02-01-2026 \(lecture seule\)/)).toBeInTheDocument();
   });
 
+  it('shows a "Notes" heading in edit mode, even with no notes, so the add-note button is not tied to the status section', () => {
+    const ref = createRef<StepFormPanelRef>();
+    render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+    act(() => ref.current?.openEdit(makeStep({ notes: [] })));
+
+    expect(screen.getByText('Notes')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ajouter une note' })).toBeInTheDocument();
+  });
+
   it('removes an editable note via its delete button', async () => {
     const ref = createRef<StepFormPanelRef>();
     render(<StepFormPanel ref={ref} requestId="REQ-1" />);
