@@ -1,5 +1,5 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { type RefObject, useCallback, useEffect, useState } from 'react';
+import { type RefObject, useCallback, useLayoutEffect, useState } from 'react';
 import './ColumnScrollControls.css';
 
 export type ColumnScrollControlsProps = {
@@ -34,7 +34,9 @@ export const ColumnScrollControls = ({ containerRef, tableId }: ColumnScrollCont
     setCanScrollNext(scrollLeft + clientWidth < scrollWidth - SCROLL_EPSILON);
   }, [containerRef]);
 
-  useEffect(() => {
+  // useLayoutEffect so the initial overflow measurement runs before paint, avoiding a one-frame
+  // flash where both buttons render disabled before the real scroll state is known.
+  useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
