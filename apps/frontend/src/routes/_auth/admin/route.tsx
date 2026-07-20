@@ -1,6 +1,7 @@
 import { FEATURE_FLAGS, ROLES, type Role } from '@sirena/common/constants';
 import { Tabs } from '@sirena/ui';
 import { createFileRoute, Outlet, useMatches, useNavigate } from '@tanstack/react-router';
+import { useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin/layout';
 import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
@@ -22,15 +23,35 @@ export function RouteComponent() {
     resolvedFlagsQuery.data?.[FEATURE_FLAGS.ADMIN_LOCAL_DIRECTIONS_SERVICES] ?? false;
 
   const role = (data?.role?.id ?? null) as Role | null;
+  const isAssignedToEntiteAdministrative = role === ROLES.ENTITY_ADMIN && data?.affectationChain?.length === 1;
   const pathname = matches.at(-1)?.pathname ?? '/admin/users';
-  const tabs = getTabs(role, hasSirecMigration, hasAdminLocalDirectionsServicesFeatureFlag);
-  const tabPaths = getTabPaths(role, hasSirecMigration, hasAdminLocalDirectionsServicesFeatureFlag);
-  const activeTab = getActiveTab(pathname, role, hasSirecMigration, hasAdminLocalDirectionsServicesFeatureFlag);
+  const tabs = getTabs(
+    role,
+    hasSirecMigration,
+    hasAdminLocalDirectionsServicesFeatureFlag,
+    isAssignedToEntiteAdministrative,
+  );
+  const tabPaths = getTabPaths(
+    role,
+    hasSirecMigration,
+    hasAdminLocalDirectionsServicesFeatureFlag,
+    isAssignedToEntiteAdministrative,
+  );
+  const activeTab = getActiveTab(
+    pathname,
+    role,
+    hasSirecMigration,
+    hasAdminLocalDirectionsServicesFeatureFlag,
+    isAssignedToEntiteAdministrative,
+  );
   const isUserEditPage = pathname.startsWith('/admin/user/');
 
-  const handleTabChange = (newTabIndex: number) => {
-    navigate({ to: tabPaths[newTabIndex] });
-  };
+  const handleTabChange = useCallback(
+    (newTabIndex: number) => {
+      navigate({ to: tabPaths[newTabIndex] });
+    },
+    [navigate, tabPaths],
+  );
 
   if (resolvedFlagsQuery.isPending) {
     return null;

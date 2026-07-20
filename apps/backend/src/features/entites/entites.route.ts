@@ -13,6 +13,7 @@ import {
   EditEntiteAdminResponseSchema,
   GetDirectionServiceAdminLocalResponseSchema,
   GetDirectionsServicesListResponseSchema,
+  GetEntiteAdministrativeAdminLocalResponseSchema,
   GetEntitesByIdAdminResponseSchema,
   GetEntitesListAdminResponseSchema,
   GetEntitiesChainResponseSchema,
@@ -38,6 +39,14 @@ export const getRootEntitesListAdminRoute = openApiProtectedRoute({
   description: 'Get root entites list for super admins',
   responses: {
     ...openApiResponses(GetRootEntitesListAdminResponseSchema),
+  },
+});
+
+export const getEntiteAdministrativeAdminLocalRoute = openApiProtectedRoute({
+  description: 'Get the assigned administrative entity for a local entity admin',
+  responses: {
+    ...openApiResponse(GetEntiteAdministrativeAdminLocalResponseSchema),
+    ...openApi404NotFound('Entite not found'),
   },
 });
 

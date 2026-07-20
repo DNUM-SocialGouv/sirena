@@ -15,6 +15,7 @@ import {
   getDirectionServiceAdminLocal,
   getDirectionsServicesList,
   getEditableEntitiesChain,
+  getEntiteAdministrativeAdminLocal,
   getEntiteById,
   getEntites,
   getEntitesListAdmin,
@@ -29,6 +30,7 @@ vi.mock('./entites.service.js', () => ({
   getEntites: vi.fn(),
   getEntiteById: vi.fn(),
   getEntitesListAdmin: vi.fn(),
+  getEntiteAdministrativeAdminLocal: vi.fn(),
   getDirectionsServicesList: vi.fn(),
   getDirectionServiceAdminLocal: vi.fn(),
   editDirectionServiceAdminLocal: vi.fn(),
@@ -228,6 +230,70 @@ describe('Entites endpoints: /entites', () => {
         offset: 0,
         limit: 10,
       });
+    });
+  });
+
+  describe('GET /admin/local', () => {
+    it('returns only the root Entité inferred from the entity admin assignment', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      assignedEntiteIdState.value = 'root-ars';
+      vi.mocked(getEntiteAdministrativeAdminLocal).mockResolvedValueOnce({
+        id: 'root-ars',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        email: 'notification@ars.fr',
+        emailContactUsager: 'contact@ars.fr',
+        telContactUsager: '0102030405',
+        adresseContactUsager: '1 rue de la Santé, Paris',
+      });
+
+      const res = await app.request('/admin/local?id=root-other');
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        data: {
+          id: 'root-ars',
+          nomComplet: 'ARS Normandie',
+          label: 'ARS NOR',
+          email: 'notification@ars.fr',
+          emailContactUsager: 'contact@ars.fr',
+          telContactUsager: '0102030405',
+          adresseContactUsager: '1 rue de la Santé, Paris',
+        },
+      });
+      expect(getEntiteAdministrativeAdminLocal).toHaveBeenCalledWith('root-ars');
+    });
+
+    it('rejects roles other than entity admin', async () => {
+      currentRole.value = ROLES.SUPER_ADMIN;
+
+      const res = await app.request('/admin/local');
+
+      expect(res.status).toBe(403);
+      expect(getEntiteAdministrativeAdminLocal).not.toHaveBeenCalled();
+    });
+
+    it('rejects entity admins when the feature flag is disabled', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      hasFeatureSpy.mockResolvedValueOnce(false);
+
+      const res = await app.request('/admin/local');
+
+      expect(res.status).toBe(403);
+      expect(getEntiteAdministrativeAdminLocal).not.toHaveBeenCalled();
+    });
+
+    it('does not expose an Entité for missing or non-root assignments', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      vi.mocked(getEntiteAdministrativeAdminLocal).mockResolvedValueOnce(null);
+
+      const nonRootRes = await app.request('/admin/local');
+      assignedEntiteIdState.value = undefined;
+      const missingRes = await app.request('/admin/local');
+
+      expect(nonRootRes.status).toBe(404);
+      expect(missingRes.status).toBe(404);
+      expect(getEntiteAdministrativeAdminLocal).toHaveBeenCalledTimes(1);
     });
   });
 

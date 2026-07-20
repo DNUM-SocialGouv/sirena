@@ -103,6 +103,18 @@ export const GetEntitesListAdminResponseSchema = z.array(
   }),
 );
 
+export const EntiteAdministrativeAdminLocalSchema = z.object({
+  id: z.string(),
+  nomComplet: z.string(),
+  label: z.string(),
+  email: z.string(),
+  emailContactUsager: z.string(),
+  telContactUsager: z.string(),
+  adresseContactUsager: z.string(),
+});
+
+export const GetEntiteAdministrativeAdminLocalResponseSchema = EntiteAdministrativeAdminLocalSchema;
+
 const DirectionServiceAdminLocalFieldsSchema = z.object({
   id: z.string(),
   nomComplet: z.string(),

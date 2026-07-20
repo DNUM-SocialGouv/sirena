@@ -17,3 +17,5 @@ export const requireAdminLocalDirectionsServices = async (ctx: BeforeLoad) => {
     throw redirect({ to: '/admin/users' });
   }
 };
+
+export const requireAdminLocalEntite = requireAdminLocalDirectionsServices;

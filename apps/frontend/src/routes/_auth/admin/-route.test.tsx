@@ -27,10 +27,11 @@ const mockedUseNavigate = vi.mocked(useNavigate);
 const mockedUseProfile = vi.mocked(useProfile);
 const mockedUseResolvedFeatureFlags = vi.mocked(useResolvedFeatureFlags);
 
-function mockRole(roleId: string) {
+function mockRole(roleId: string, affectationChain: Array<{ id: string; nomComplet: string }> = []) {
   mockedUseProfile.mockReturnValue({
     data: {
       role: { id: roleId },
+      affectationChain,
     },
   } as never);
 }
@@ -85,6 +86,52 @@ describe('Admin route', () => {
       'false',
     );
     expect(screen.queryByRole('tab', { name: 'Gestion des entités' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Entités' })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [
+      'Direction',
+      [
+        { id: 'root-ars', nomComplet: 'ARS Normandie' },
+        { id: 'dir-autonomie', nomComplet: 'Direction Autonomie' },
+      ],
+    ],
+    [
+      'Service',
+      [
+        { id: 'root-ars', nomComplet: 'ARS Normandie' },
+        { id: 'dir-autonomie', nomComplet: 'Direction Autonomie' },
+        { id: 'service-pa', nomComplet: 'Service PA' },
+      ],
+    ],
+  ])('does not render local Entités for a %s-level entity admin', (_level, affectationChain) => {
+    mockRole(ROLES.ENTITY_ADMIN, affectationChain);
+    mockedUseMatches.mockReturnValue([
+      { routeId: '/_auth/admin', pathname: '/admin' },
+      { routeId: '/_auth/admin/users', pathname: '/admin/users' },
+    ] as never);
+
+    render(<RouteComponent />);
+
+    expect(screen.queryByRole('tab', { name: 'Entités' })).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Gestion des directions et services' })).toBeInTheDocument();
+  });
+
+  it('renders Entités and Directions et services for root-level entity admins', () => {
+    mockRole(ROLES.ENTITY_ADMIN, [{ id: 'root-ars', nomComplet: 'ARS Normandie' }]);
+    mockedUseMatches.mockReturnValue([
+      { routeId: '/_auth/admin', pathname: '/admin' },
+      { routeId: '/_auth/admin/entite', pathname: '/admin/entite' },
+    ] as never);
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('tab', { name: 'Entités' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Gestion des directions et services' })).toHaveAttribute(
+      'aria-selected',
+      'false',
+    );
   });
 
   it('renders the directions and services tab as active for entity admins on directions-services routes', () => {

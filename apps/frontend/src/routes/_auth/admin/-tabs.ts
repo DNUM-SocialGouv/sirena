@@ -20,6 +20,12 @@ const entitesTab: TabDescriptor = {
   tabId: 'tab-entites',
 };
 
+const localEntitesTab: TabDescriptor = {
+  label: 'Entités',
+  tabPanelId: 'panel-local-entites',
+  tabId: 'tab-local-entites',
+};
+
 const directionsServicesTab: TabDescriptor = {
   label: 'Gestion des directions et services',
   tabPanelId: 'panel-directions-services',
@@ -36,10 +42,14 @@ export function getTabs(
   role: Role | null,
   hasSirecMigration = false,
   hasAdminLocalDirectionsServicesFeatureFlag = false,
+  isAssignedToEntiteAdministrative = false,
 ): TabDescriptor[] {
   const tabs = role === ROLES.SUPER_ADMIN ? [...baseTabs, entitesTab] : [...baseTabs];
 
   if (role === ROLES.ENTITY_ADMIN && hasAdminLocalDirectionsServicesFeatureFlag) {
+    if (isAssignedToEntiteAdministrative) {
+      tabs.push(localEntitesTab);
+    }
     tabs.push(directionsServicesTab);
   }
 
@@ -54,6 +64,7 @@ export function getTabPaths(
   role: Role | null,
   hasSirecMigration = false,
   hasAdminLocalDirectionsServicesFeatureFlag = false,
+  isAssignedToEntiteAdministrative = false,
 ): string[] {
   const paths = ['/admin/users', '/admin/users/all'];
 
@@ -62,6 +73,9 @@ export function getTabPaths(
   }
 
   if (role === ROLES.ENTITY_ADMIN && hasAdminLocalDirectionsServicesFeatureFlag) {
+    if (isAssignedToEntiteAdministrative) {
+      paths.push('/admin/entite');
+    }
     paths.push('/admin/directions-services');
   }
 
@@ -77,6 +91,7 @@ export function getActiveTab(
   role: Role | null,
   hasSirecMigration = false,
   hasAdminLocalDirectionsServicesFeatureFlag = false,
+  isAssignedToEntiteAdministrative = false,
 ): number {
   if (pathname === '/admin/users/all') return 1;
 
@@ -84,16 +99,21 @@ export function getActiveTab(
     return 2;
   }
 
-  if (
-    role === ROLES.ENTITY_ADMIN &&
-    hasAdminLocalDirectionsServicesFeatureFlag &&
-    (pathname === '/admin/directions-services' || pathname.startsWith('/admin/directions-services/'))
-  ) {
-    return 2;
+  if (role === ROLES.ENTITY_ADMIN && hasAdminLocalDirectionsServicesFeatureFlag) {
+    if (isAssignedToEntiteAdministrative && (pathname === '/admin/entite' || pathname.startsWith('/admin/entite/'))) {
+      return 2;
+    }
+
+    if (pathname === '/admin/directions-services' || pathname.startsWith('/admin/directions-services/')) {
+      return isAssignedToEntiteAdministrative ? 3 : 2;
+    }
   }
 
   if (hasSirecMigration && pathname === '/admin/sirec-migration') {
-    return getTabPaths(role, hasSirecMigration, hasAdminLocalDirectionsServicesFeatureFlag).length - 1;
+    return (
+      getTabPaths(role, hasSirecMigration, hasAdminLocalDirectionsServicesFeatureFlag, isAssignedToEntiteAdministrative)
+        .length - 1
+    );
   }
 
   return 0;

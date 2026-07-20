@@ -12,6 +12,7 @@ import {
   getDirectionsServicesFromRequeteEntiteId,
   getDirectionsServicesList,
   getEditableEntitiesChain,
+  getEntiteAdministrativeAdminLocal,
   getEntiteAscendanteIds,
   getEntiteChain,
   getEntiteDescendantIds,
@@ -1493,6 +1494,58 @@ describe('editDirectionServiceAdminLocal()', () => {
     });
 
     expect(vi.mocked(prisma.entite.update).mock.calls[0]?.[0].data).toEqual(input);
+  });
+});
+
+describe('getEntiteAdministrativeAdminLocal()', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it.each([true, false])('returns the assigned root Entité when active status is %s', async (isActive) => {
+    vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
+      ...fakeEntite('root-ars'),
+      nomComplet: 'ARS Normandie',
+      label: 'ARS NOR',
+      email: 'notification@ars.fr',
+      emailContactUsager: 'contact@ars.fr',
+      telContactUsager: '0102030405',
+      adresseContactUsager: '1 rue de la Santé, Paris',
+      entiteMereId: null,
+      isActive,
+    });
+
+    await expect(getEntiteAdministrativeAdminLocal('root-ars')).resolves.toEqual({
+      id: 'root-ars',
+      nomComplet: 'ARS Normandie',
+      label: 'ARS NOR',
+      email: 'notification@ars.fr',
+      emailContactUsager: 'contact@ars.fr',
+      telContactUsager: '0102030405',
+      adresseContactUsager: '1 rue de la Santé, Paris',
+    });
+    expect(prisma.entite.findUnique).toHaveBeenCalledWith({
+      where: { id: 'root-ars' },
+      select: {
+        id: true,
+        nomComplet: true,
+        label: true,
+        email: true,
+        emailContactUsager: true,
+        telContactUsager: true,
+        adresseContactUsager: true,
+        entiteMereId: true,
+      },
+    });
+  });
+
+  it('does not return missing or non-root assignments', async () => {
+    vi.mocked(prisma.entite.findUnique)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(localEntite('dir-autonomie', 'root-ars'));
+
+    await expect(getEntiteAdministrativeAdminLocal('missing')).resolves.toBeNull();
+    await expect(getEntiteAdministrativeAdminLocal('dir-autonomie')).resolves.toBeNull();
   });
 });
 

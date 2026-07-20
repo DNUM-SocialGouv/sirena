@@ -17,6 +17,7 @@ import {
   editEntiteAdminRoute,
   getDirectionServiceAdminLocalRoute,
   getDirectionsServicesListRoute,
+  getEntiteAdministrativeAdminLocalRoute,
   getEntiteByIdAdminRoute,
   getEntiteChainRoute,
   getEntitesListAdminRoute,
@@ -41,6 +42,7 @@ import {
   getDirectionServiceAdminLocal,
   getDirectionsServicesList,
   getEditableEntitiesChain,
+  getEntiteAdministrativeAdminLocal,
   getEntiteById,
   getEntiteDescendantIds,
   getEntites,
@@ -115,6 +117,25 @@ const app = factoryWithLogs
           total,
         },
       });
+    },
+  )
+
+  .get(
+    '/admin/local',
+    roleMiddleware([ROLES.ENTITY_ADMIN]),
+    adminLocalDirectionsServicesFeatureFlagMiddleware,
+    getEntiteAdministrativeAdminLocalRoute,
+    async (c) => {
+      const assignedEntiteId = c.get('assignedEntiteId');
+      const logger = c.get('logger');
+      const entite = assignedEntiteId ? await getEntiteAdministrativeAdminLocal(assignedEntiteId) : null;
+
+      if (!entite) {
+        logger.warn({ assignedEntiteId }, 'Assigned administrative entity not found');
+        throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+      }
+
+      return c.json({ data: entite });
     },
   )
 

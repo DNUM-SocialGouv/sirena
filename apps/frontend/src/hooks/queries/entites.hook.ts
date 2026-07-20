@@ -12,6 +12,7 @@ import {
   editEntiteAdmin,
   fetchDirectionServiceAdminLocal,
   fetchDirectionsServicesList,
+  fetchEntiteAdministrativeAdminLocal,
   fetchEntiteByIdAdmin,
   fetchEntiteChain,
   fetchEntiteDescendants,
@@ -49,6 +50,13 @@ export const useRootEntitesListAdminQueryOptions = () => ({
 });
 
 export const useRootEntitesListAdmin = () => useQuery(useRootEntitesListAdminQueryOptions());
+
+export const useEntiteAdministrativeAdminLocal = () =>
+  useQuery({
+    queryKey: ['entite', 'admin', 'local'],
+    queryFn: fetchEntiteAdministrativeAdminLocal,
+    retry: false,
+  });
 
 export const useDirectionsServicesListQueryOptions = (query: Pick<QueryParams, 'search'> = {}) => ({
   queryKey: ['entites', 'admin', 'directions-services', query],

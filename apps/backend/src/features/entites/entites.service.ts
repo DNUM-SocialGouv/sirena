@@ -185,6 +185,36 @@ export const getRootEntitesListAdmin = async () =>
     orderBy: [{ entiteTypeId: 'asc' }, { nomComplet: 'asc' }],
   });
 
+export const getEntiteAdministrativeAdminLocal = async (assignedEntiteId: string) => {
+  const assignedEntite = await prisma.entite.findUnique({
+    where: { id: assignedEntiteId },
+    select: {
+      id: true,
+      nomComplet: true,
+      label: true,
+      email: true,
+      emailContactUsager: true,
+      telContactUsager: true,
+      adresseContactUsager: true,
+      entiteMereId: true,
+    },
+  });
+
+  if (!assignedEntite || assignedEntite.entiteMereId !== null) {
+    return null;
+  }
+
+  return {
+    id: assignedEntite.id,
+    nomComplet: assignedEntite.nomComplet,
+    label: assignedEntite.label,
+    email: assignedEntite.email,
+    emailContactUsager: assignedEntite.emailContactUsager,
+    telContactUsager: assignedEntite.telContactUsager,
+    adresseContactUsager: assignedEntite.adresseContactUsager,
+  };
+};
+
 export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, targetEntiteId: string) => {
   const [assignedEntite, targetEntite] = await Promise.all([
     prisma.entite.findUnique({
