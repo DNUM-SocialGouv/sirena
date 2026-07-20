@@ -23,21 +23,24 @@ export function RouteComponent() {
 
   return (
     <section aria-labelledby={titleId}>
-      <h2 id={titleId}>Informations de l’entité</h2>
+      <div className="assigned-entite-details__header">
+        <h2 id={titleId}>Informations de l’entité</h2>
+        {entiteQuery.data ? (
+          <Link className="fr-btn fr-btn--secondary" to="/admin/entite/edit">
+            Modifier les informations
+          </Link>
+        ) : null}
+      </div>
 
       {entiteQuery.isPending ? <Loader /> : null}
       {entiteQuery.isError ? <QueryErrorState message="Erreur lors du chargement de l’entité." /> : null}
 
       {entiteQuery.data ? (
         <div className="assigned-entite-details">
-          <div>
-            <Link className="fr-btn" to="/admin/entite/edit">
-              Modifier les informations
-            </Link>
-          </div>
-
           <section aria-labelledby={sirenaInformationTitleId}>
-            <h3 id={sirenaInformationTitleId}>Informations utilisées dans SIRENA</h3>
+            <h3 className="assigned-entite-details__section-title" id={sirenaInformationTitleId}>
+              Informations utilisées dans SIRENA
+            </h3>
             <dl className="assigned-entite-details__grid">
               <div>
                 <dt>Nom</dt>
@@ -55,7 +58,9 @@ export function RouteComponent() {
           </section>
 
           <section aria-labelledby={userContactInformationTitleId}>
-            <h3 id={userContactInformationTitleId}>Informations de contact pour l’usager</h3>
+            <h3 className="assigned-entite-details__section-title" id={userContactInformationTitleId}>
+              Informations de contact pour l’usager
+            </h3>
             <dl className="assigned-entite-details__grid">
               <div>
                 <dt>Adresse e-mail de contact</dt>
