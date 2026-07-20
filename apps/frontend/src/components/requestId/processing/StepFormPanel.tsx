@@ -2,7 +2,7 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
-import { REQUETE_ETAPE_STATUT_TYPES } from '@sirena/common/constants';
+import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
 import { Drawer, Toast } from '@sirena/ui';
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
@@ -104,6 +104,9 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   const [editStepId, setEditStepId] = useState<string | null>(null);
   const [editStepNom, setEditStepNom] = useState('');
   const [canOnlyEditNotes, setCanOnlyEditNotes] = useState(false);
+  // An acknowledgment step is a system step: its name and deletion stay locked even before the AR is sent
+  // (like pre-release prod). Only its status/date become editable while the AR has not been sent.
+  const [isAcknowledgment, setIsAcknowledgment] = useState(false);
 
   const [nom, setNom] = useState('');
   const [nomError, setNomError] = useState<string | null>(null);
@@ -146,6 +149,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
     setMode('create');
     setEditStepId(null);
     setCanOnlyEditNotes(false);
+    setIsAcknowledgment(false);
     setNotes([{ key: nextNoteKey(), texte: '' }]);
     setIsOpen(true);
   };
@@ -157,6 +161,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
     setEditStepId(step.id);
     setEditStepNom(step.nom);
     setCanOnlyEditNotes(step.canOnlyEditNotes);
+    setIsAcknowledgment(step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT);
     setNom(step.nom);
 
     const initialStatut =
@@ -406,7 +411,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                   >
                     <Input
                       label="Nom de l'étape (obligatoire)"
-                      disabled={isLoading || fieldsLocked}
+                      disabled={isLoading || fieldsLocked || isAcknowledgment}
                       state={nomError ? 'error' : 'default'}
                       stateRelatedMessage={nomError ?? undefined}
                       nativeInputProps={{
@@ -600,7 +605,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                     </section>
 
                     <div className={styles.footerActions}>
-                      {mode === 'edit' && !fieldsLocked && (
+                      {mode === 'edit' && !fieldsLocked && !isAcknowledgment && (
                         <Button
                           type="button"
                           priority="secondary"
