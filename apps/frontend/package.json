@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@codegouvfr/react-dsfr": "catalog:",
-    "@sentry/react": "^10.63.0",
+    "@sentry/react": "^10.65.0",
     "@sirena/backend": "workspace:*",
     "@sirena/common": "workspace:*",
     "@sirena/ui": "workspace:*",
