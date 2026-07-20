@@ -98,6 +98,8 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   const headingRef = useRef<HTMLHeadingElement>(null);
   const nomInputRef = useRef<HTMLInputElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
+  // Key of a freshly added note whose textarea should receive focus once it mounts.
+  const pendingFocusNoteKey = useRef<string | null>(null);
 
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
@@ -230,7 +232,9 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   const fieldsLocked = canOnlyEditNotes;
 
   const handleAddNote = () => {
-    setNotes((prev) => [...prev, { key: nextNoteKey(), texte: '' }]);
+    const key = nextNoteKey();
+    pendingFocusNoteKey.current = key;
+    setNotes((prev) => [...prev, { key, texte: '' }]);
   };
 
   const handleRemoveNote = (key: string) => {
@@ -523,6 +527,13 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                                 note.texte.length > NOTE_MAX_LENGTH ? NOTE_MAX_LENGTH_ERROR : undefined
                               }
                               nativeTextAreaProps={{
+                                // Move focus into a freshly added note's textarea as soon as it mounts.
+                                ref: (el: HTMLTextAreaElement | null) => {
+                                  if (el && pendingFocusNoteKey.current === note.key) {
+                                    el.focus();
+                                    pendingFocusNoteKey.current = null;
+                                  }
+                                },
                                 rows: 6,
                                 value: note.texte,
                                 onChange: (e) => handleNoteChange(note.key, e.target.value),

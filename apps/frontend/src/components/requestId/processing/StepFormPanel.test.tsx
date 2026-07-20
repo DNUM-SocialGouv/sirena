@@ -170,6 +170,24 @@ describe('StepFormPanel', () => {
     expect(screen.getByRole('button', { name: 'Ajouter une note' })).toBeInTheDocument();
   });
 
+  it('moves focus into the new note textarea when adding a note', async () => {
+    const ref = createRef<StepFormPanelRef>();
+    render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+    act(() => ref.current?.openEdit(makeStep({ notes: [] })));
+    // Let the panel's open-focus (heading) settle first, as it does in the real app.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Ajouter une note' }));
+    });
+
+    // Focus lands in the note textarea, not on the add-note button.
+    expect(document.activeElement?.tagName).toBe('TEXTAREA');
+  });
+
   it('removes an editable note via its delete button', async () => {
     const ref = createRef<StepFormPanelRef>();
     render(<StepFormPanel ref={ref} requestId="REQ-1" />);
