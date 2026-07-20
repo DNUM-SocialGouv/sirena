@@ -8,6 +8,7 @@ import type {
   CreateChildEntiteAdminInput,
   CreateDirectionAdminLocalInput,
   CreateServiceAdminLocalInput,
+  EditEntiteAdministrativeAdminLocalInput,
   EntiteChain,
   EntiteTraitement,
   EntiteTraitementInput,
@@ -25,6 +26,10 @@ const ADMIN_SORT_COLUMNS = [
   'isActiveLabel',
 ] as const;
 type AdminSortColumn = (typeof ADMIN_SORT_COLUMNS)[number];
+type EntiteInformationInput = Pick<
+  Entite,
+  'nomComplet' | 'label' | 'email' | 'emailContactUsager' | 'telContactUsager' | 'adresseContactUsager'
+>;
 
 const isAdminSortColumn = (sort: string): sort is AdminSortColumn =>
   (ADMIN_SORT_COLUMNS as readonly string[]).includes(sort);
@@ -215,6 +220,34 @@ export const getEntiteAdministrativeAdminLocal = async (assignedEntiteId: string
   };
 };
 
+const updateEntiteInformation = (entiteId: string, data: EntiteInformationInput) =>
+  prisma.entite.update({
+    where: { id: entiteId },
+    data,
+    select: {
+      id: true,
+      nomComplet: true,
+      label: true,
+      email: true,
+      emailContactUsager: true,
+      telContactUsager: true,
+      adresseContactUsager: true,
+    },
+  });
+
+export const editEntiteAdministrativeAdminLocal = async (
+  assignedEntiteId: string,
+  data: EditEntiteAdministrativeAdminLocalInput,
+) => {
+  const assignedEntite = await getEntiteAdministrativeAdminLocal(assignedEntiteId);
+
+  if (!assignedEntite) {
+    return null;
+  }
+
+  return updateEntiteInformation(assignedEntiteId, data);
+};
+
 export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, targetEntiteId: string) => {
   const [assignedEntite, targetEntite] = await Promise.all([
     prisma.entite.findUnique({
@@ -321,14 +354,7 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
 export const editDirectionServiceAdminLocal = async (
   assignedEntiteId: string,
   targetEntiteId: string,
-  data: {
-    nomComplet: string;
-    label: string;
-    email: string;
-    emailContactUsager: string;
-    telContactUsager: string;
-    adresseContactUsager: string;
-  },
+  data: EntiteInformationInput,
 ) => {
   const target = await getDirectionServiceAdminLocal(assignedEntiteId, targetEntiteId);
 
@@ -336,19 +362,7 @@ export const editDirectionServiceAdminLocal = async (
     return null;
   }
 
-  const updatedEntite = await prisma.entite.update({
-    where: { id: targetEntiteId },
-    data,
-    select: {
-      id: true,
-      nomComplet: true,
-      label: true,
-      email: true,
-      emailContactUsager: true,
-      telContactUsager: true,
-      adresseContactUsager: true,
-    },
-  });
+  const updatedEntite = await updateEntiteInformation(targetEntiteId, data);
 
   const updatedFields = {
     id: updatedEntite.id,

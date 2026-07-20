@@ -12,6 +12,7 @@ import {
   createDirectionAdminLocal,
   createServiceAdminLocal,
   editDirectionServiceAdminLocal,
+  editEntiteAdministrativeAdminLocal,
   getDirectionServiceAdminLocal,
   getDirectionsServicesList,
   getEditableEntitiesChain,
@@ -31,6 +32,7 @@ vi.mock('./entites.service.js', () => ({
   getEntiteById: vi.fn(),
   getEntitesListAdmin: vi.fn(),
   getEntiteAdministrativeAdminLocal: vi.fn(),
+  editEntiteAdministrativeAdminLocal: vi.fn(),
   getDirectionsServicesList: vi.fn(),
   getDirectionServiceAdminLocal: vi.fn(),
   editDirectionServiceAdminLocal: vi.fn(),
@@ -294,6 +296,140 @@ describe('Entites endpoints: /entites', () => {
       expect(nonRootRes.status).toBe(404);
       expect(missingRes.status).toBe(404);
       expect(getEntiteAdministrativeAdminLocal).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('PATCH /admin/local', () => {
+    it('updates the Entité administrative inferred from the entity admin assignment', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      assignedEntiteIdState.value = 'root-ars';
+      const input = {
+        nomComplet: 'Agence régionale de santé Normandie',
+        label: 'ARS Normandie',
+        email: 'notification@ars.fr',
+        emailContactUsager: 'contact@ars.fr',
+        telContactUsager: '0102030405',
+        adresseContactUsager: '2 rue de Paris',
+      };
+      vi.mocked(editEntiteAdministrativeAdminLocal).mockResolvedValueOnce({ id: 'root-ars', ...input });
+
+      const res = await app.request('/admin/local?id=root-other', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ data: { id: 'root-ars', ...input } });
+      expect(editEntiteAdministrativeAdminLocal).toHaveBeenCalledWith('root-ars', input);
+    });
+
+    it.each(['nomComplet', 'label'] as const)('rejects a blank required %s field', async (requiredField) => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      const input = {
+        nomComplet: 'Agence régionale de santé Normandie',
+        label: 'ARS Normandie',
+        email: '',
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        [requiredField]: '   ',
+      };
+
+      const res = await app.request('/admin/local', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+
+      expect(res.status).toBe(400);
+      expect(editEntiteAdministrativeAdminLocal).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['id', 'root-other'],
+      ['isActive', false],
+      ['entiteMereId', 'root-other'],
+      ['directionId', 'dir-other'],
+      ['entiteTypeId', 'ARS'],
+      ['regionCode', '99'],
+      ['organizationalUnit', 'other-unit'],
+      ['emailDomain', '@other.fr'],
+      ['unknownProperty', 'other'],
+    ])('rejects caller-controlled or unknown field %s', async (field, value) => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      const input = {
+        nomComplet: 'Agence régionale de santé Normandie',
+        label: 'ARS Normandie',
+        email: '',
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        [field]: value,
+      };
+
+      const res = await app.request('/admin/local', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+
+      expect(res.status).toBe(400);
+      expect(editEntiteAdministrativeAdminLocal).not.toHaveBeenCalled();
+    });
+
+    it('rejects roles other than entity admin', async () => {
+      const res = await app.request('/admin/local', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+
+      expect(res.status).toBe(403);
+      expect(editEntiteAdministrativeAdminLocal).not.toHaveBeenCalled();
+    });
+
+    it('rejects entity admins when the feature flag is disabled', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      hasFeatureSpy.mockResolvedValueOnce(false);
+
+      const res = await app.request('/admin/local', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+
+      expect(res.status).toBe(403);
+      expect(editEntiteAdministrativeAdminLocal).not.toHaveBeenCalled();
+    });
+
+    it('does not update missing or non-root assigned Entités', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      vi.mocked(editEntiteAdministrativeAdminLocal).mockResolvedValueOnce(null);
+      const input = {
+        nomComplet: 'Agence régionale de santé Normandie',
+        label: 'ARS Normandie',
+        email: '',
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+      };
+
+      const nonRootRes = await app.request('/admin/local', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+      assignedEntiteIdState.value = undefined;
+      const missingRes = await app.request('/admin/local', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+
+      expect(nonRootRes.status).toBe(404);
+      expect(missingRes.status).toBe(404);
+      expect(editEntiteAdministrativeAdminLocal).toHaveBeenCalledTimes(1);
     });
   });
 

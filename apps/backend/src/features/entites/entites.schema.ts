@@ -114,6 +114,15 @@ export const EntiteAdministrativeAdminLocalSchema = z.object({
 });
 
 export const GetEntiteAdministrativeAdminLocalResponseSchema = EntiteAdministrativeAdminLocalSchema;
+export const EditEntiteAdministrativeAdminLocalInputSchema = EntiteAdministrativeAdminLocalSchema.omit({
+  id: true,
+})
+  .extend({
+    nomComplet: z.string().trim().min(1),
+    label: z.string().trim().min(1),
+  })
+  .strict();
+export const EditEntiteAdministrativeAdminLocalResponseSchema = EntiteAdministrativeAdminLocalSchema;
 
 const DirectionServiceAdminLocalFieldsSchema = z.object({
   id: z.string(),

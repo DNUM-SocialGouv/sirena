@@ -7,6 +7,7 @@ import {
   createServiceAdminLocal,
   editDirectionServiceAdminLocal,
   editEntiteAdmin,
+  editEntiteAdministrativeAdminLocal,
   getDirectionServiceAdminLocal,
   getDirectionsFromRequeteEntiteId,
   getDirectionsServicesFromRequeteEntiteId,
@@ -1494,6 +1495,71 @@ describe('editDirectionServiceAdminLocal()', () => {
     });
 
     expect(vi.mocked(prisma.entite.update).mock.calls[0]?.[0].data).toEqual(input);
+  });
+});
+
+describe('editEntiteAdministrativeAdminLocal()', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it.each([
+    true,
+    false,
+  ])('updates only the assigned root Entité information when active status is %s', async (isActive) => {
+    const assignedEntite = {
+      ...fakeEntite('root-ars'),
+      nomComplet: 'ARS Normandie',
+      label: 'ARS NOR',
+      entiteMereId: null,
+      isActive,
+    };
+    const input = {
+      nomComplet: 'Agence régionale de santé Normandie',
+      label: 'ARS Normandie',
+      email: 'notification@ars.fr',
+      emailContactUsager: 'contact@ars.fr',
+      telContactUsager: '0102030405',
+      adresseContactUsager: '2 rue de Paris',
+    };
+    vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(assignedEntite);
+    vi.mocked(prisma.entite.update).mockResolvedValueOnce({ id: 'root-ars', ...input } as never);
+
+    await expect(editEntiteAdministrativeAdminLocal('root-ars', input)).resolves.toEqual({
+      id: 'root-ars',
+      ...input,
+    });
+    expect(prisma.entite.update).toHaveBeenCalledWith({
+      where: { id: 'root-ars' },
+      data: input,
+      select: {
+        id: true,
+        nomComplet: true,
+        label: true,
+        email: true,
+        emailContactUsager: true,
+        telContactUsager: true,
+        adresseContactUsager: true,
+      },
+    });
+  });
+
+  it('does not update a missing or non-root assignment', async () => {
+    const input = {
+      nomComplet: 'Agence régionale de santé Normandie',
+      label: 'ARS Normandie',
+      email: '',
+      emailContactUsager: '',
+      telContactUsager: '',
+      adresseContactUsager: '',
+    };
+    vi.mocked(prisma.entite.findUnique)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(localEntite('dir-autonomie', 'root-ars'));
+
+    await expect(editEntiteAdministrativeAdminLocal('missing', input)).resolves.toBeNull();
+    await expect(editEntiteAdministrativeAdminLocal('dir-autonomie', input)).resolves.toBeNull();
+    expect(prisma.entite.update).not.toHaveBeenCalled();
   });
 });
 
