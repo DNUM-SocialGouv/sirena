@@ -3,7 +3,9 @@ import { useMemo, useState } from 'react';
 import { z } from 'zod';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 
-type LocalEntiteFormValues = {
+export type LocalEntiteFormKind = 'entite-administrative' | 'direction' | 'service';
+
+export type LocalEntiteFormValues = {
   nomComplet: string;
   label: string;
   email: string;
@@ -21,7 +23,7 @@ const emptyLocalEntiteForm: LocalEntiteFormValues = {
   adresseContactUsager: '',
 };
 
-const createSchema = (kind: 'entite-administrative' | 'direction' | 'service') => {
+const createSchema = (kind: LocalEntiteFormKind) => {
   const entityName =
     kind === 'entite-administrative'
       ? 'de l’entité administrative'
@@ -46,7 +48,7 @@ const createSchema = (kind: 'entite-administrative' | 'direction' | 'service') =
 };
 
 export function useLocalEntiteForm(
-  kind: 'entite-administrative' | 'direction' | 'service',
+  kind: LocalEntiteFormKind,
   initialValues: LocalEntiteFormValues = emptyLocalEntiteForm,
 ) {
   const schema = useMemo(() => createSchema(kind), [kind]);
@@ -111,5 +113,5 @@ export function useLocalEntiteForm(
     };
   };
 
-  return { values, validationErrors, onChange, clearError, validate };
+  return { kind, values, validationErrors, onChange, clearError, validate };
 }

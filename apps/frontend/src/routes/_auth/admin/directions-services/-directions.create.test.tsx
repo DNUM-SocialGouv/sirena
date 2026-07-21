@@ -58,9 +58,9 @@ describe('Admin local Direction create route', () => {
 
     expect(screen.getByRole('heading', { name: 'Ajouter une direction' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Informations utilisées dans SIRENA' })).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: /Nom de la direction/ })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /Nom de la direction/ })).toBeEnabled();
     expect(screen.getByText(/Direction de l’Offre de Soins/)).toBeVisible();
-    expect(screen.getByRole('textbox', { name: /Abréviation/ })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /Abréviation/ })).toBeEnabled();
     expect(screen.getByText(/Sigle, acronyme ou forme abrégée du nom.*DOS/)).toBeVisible();
     expect(screen.getByRole('group', { name: 'Informations de contact pour l’usager' })).toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: /Actif dans SIRENA/ })).not.toBeInTheDocument();

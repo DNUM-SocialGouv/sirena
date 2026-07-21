@@ -4,7 +4,7 @@ import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useEffect } from 'react';
 import { useCreateDirectionAdminLocal } from '@/hooks/queries/entites.hook';
-import { LocalEntiteContactFields, LocalEntiteSirenaFields } from '../-components/LocalEntiteFormFields';
+import { LocalEntiteFormFields } from '../-components/LocalEntiteFormFields';
 import { useLocalEntiteForm } from '../-components/useLocalEntiteForm';
 import { requireAdminLocalDirectionCreation } from './-create-route-guard';
 
@@ -64,18 +64,7 @@ export function RouteComponent() {
         <form onSubmit={handleSubmit}>
           <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
-          <LocalEntiteSirenaFields
-            kind="direction"
-            formData={form.values}
-            validationErrors={form.validationErrors}
-            onChange={form.onChange}
-          />
-
-          <LocalEntiteContactFields
-            formData={form.values}
-            validationErrors={form.validationErrors}
-            onChange={form.onChange}
-          />
+          <LocalEntiteFormFields form={form} />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
             <Link className="fr-btn fr-btn--secondary" to="/admin/directions-services">

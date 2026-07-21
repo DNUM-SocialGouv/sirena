@@ -5,7 +5,7 @@ import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { useCreateServiceAdminLocal, useDirectionsServicesList } from '@/hooks/queries/entites.hook';
-import { LocalEntiteContactFields, LocalEntiteSirenaFields } from '../-components/LocalEntiteFormFields';
+import { LocalEntiteFormFields } from '../-components/LocalEntiteFormFields';
 import { useLocalEntiteForm } from '../-components/useLocalEntiteForm';
 import { requireAdminLocalServiceCreation } from './-create-route-guard';
 
@@ -78,11 +78,8 @@ export function RouteComponent() {
         <form onSubmit={handleSubmit}>
           <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
-          <LocalEntiteSirenaFields
-            kind="service"
-            formData={form.values}
-            validationErrors={form.validationErrors}
-            onChange={form.onChange}
+          <LocalEntiteFormFields
+            form={form}
             leadingField={
               <div className="fr-col-12 fr-col-md-7">
                 {requiresDirectionSelection ? (
@@ -126,12 +123,6 @@ export function RouteComponent() {
                 )}
               </div>
             }
-          />
-
-          <LocalEntiteContactFields
-            formData={form.values}
-            validationErrors={form.validationErrors}
-            onChange={form.onChange}
           />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">

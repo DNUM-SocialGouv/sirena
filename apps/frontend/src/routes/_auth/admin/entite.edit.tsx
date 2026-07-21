@@ -4,7 +4,7 @@ import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useCallback, useEffect } from 'react';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
 import { useEditEntiteAdministrativeAdminLocal, useEntiteAdministrativeAdminLocal } from '@/hooks/queries/entites.hook';
-import { LocalEntiteContactFields, LocalEntiteSirenaFields } from './-components/LocalEntiteFormFields';
+import { LocalEntiteFormFields } from './-components/LocalEntiteFormFields';
 import { useLocalEntiteForm } from './-components/useLocalEntiteForm';
 
 export const Route = createFileRoute('/_auth/admin/entite/edit')({
@@ -88,19 +88,7 @@ function EntiteAdministrativeEditForm({ entite }: { entite: AssignedEntite }) {
         <form onSubmit={handleSubmit}>
           <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
-          <LocalEntiteSirenaFields
-            kind="entite-administrative"
-            formData={form.values}
-            validationErrors={form.validationErrors}
-            onChange={form.onChange}
-            identityFieldsDisabled
-          />
-
-          <LocalEntiteContactFields
-            formData={form.values}
-            validationErrors={form.validationErrors}
-            onChange={form.onChange}
-          />
+          <LocalEntiteFormFields form={form} />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
             <Link className="fr-btn fr-btn--secondary" to="/admin/entite">

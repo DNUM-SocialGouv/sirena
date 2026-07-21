@@ -6,7 +6,7 @@ import { type SubmitEvent, useEffect } from 'react';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
 import { useDirectionServiceAdminLocal, useEditDirectionServiceAdminLocal } from '@/hooks/queries/entites.hook';
 import { requireAdminLocalAccess } from '../-admin-local-route-guard';
-import { LocalEntiteContactFields, LocalEntiteSirenaFields } from '../-components/LocalEntiteFormFields';
+import { LocalEntiteFormFields } from '../-components/LocalEntiteFormFields';
 import { useLocalEntiteForm } from '../-components/useLocalEntiteForm';
 
 export const Route = createFileRoute('/_auth/admin/directions-services/$entiteId/edit')({
@@ -100,11 +100,8 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
         <form onSubmit={handleSubmit}>
           <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
-          <LocalEntiteSirenaFields
-            kind={target.kind}
-            formData={form.values}
-            validationErrors={form.validationErrors}
-            onChange={form.onChange}
+          <LocalEntiteFormFields
+            form={form}
             leadingField={
               target.kind === 'service' ? (
                 <div className="fr-col-12 fr-col-md-7">
@@ -123,12 +120,6 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
                 </div>
               ) : undefined
             }
-          />
-
-          <LocalEntiteContactFields
-            formData={form.values}
-            validationErrors={form.validationErrors}
-            onChange={form.onChange}
           />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">

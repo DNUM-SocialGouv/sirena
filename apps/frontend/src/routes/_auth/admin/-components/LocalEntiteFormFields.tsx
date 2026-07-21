@@ -1,28 +1,26 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import Input from '@codegouvfr/react-dsfr/Input';
 import type { ReactNode } from 'react';
+import type { LocalEntiteFormKind, LocalEntiteFormValues } from './useLocalEntiteForm';
 
-type SirenaField = 'nomComplet' | 'label' | 'email';
-type ContactField = 'emailContactUsager' | 'telContactUsager' | 'adresseContactUsager';
 type FieldChangeHandler = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-
-type SirenaFieldsProps = {
-  kind: 'entite-administrative' | 'direction' | 'service';
-  formData: Record<SirenaField, string>;
+type FormFieldsState = {
+  kind: LocalEntiteFormKind;
+  values: LocalEntiteFormValues;
   validationErrors: Record<string, string>;
-  onChange: (field: SirenaField) => FieldChangeHandler;
-  leadingField?: ReactNode;
-  identityFieldsDisabled?: boolean;
+  onChange: (field: keyof LocalEntiteFormValues) => FieldChangeHandler;
 };
 
-export function LocalEntiteSirenaFields({
-  kind,
-  formData,
-  validationErrors,
-  onChange,
-  leadingField,
-  identityFieldsDisabled = false,
-}: SirenaFieldsProps) {
+type SirenaFieldsProps = {
+  kind: LocalEntiteFormKind;
+  formData: LocalEntiteFormValues;
+  validationErrors: Record<string, string>;
+  onChange: FormFieldsState['onChange'];
+  leadingField?: ReactNode;
+};
+
+function LocalEntiteSirenaFields({ kind, formData, validationErrors, onChange, leadingField }: SirenaFieldsProps) {
+  const identityFieldsDisabled = kind === 'entite-administrative';
   const wording =
     kind === 'entite-administrative'
       ? {
@@ -93,12 +91,12 @@ export function LocalEntiteSirenaFields({
 }
 
 type ContactFieldsProps = {
-  formData: Record<ContactField, string>;
+  formData: LocalEntiteFormValues;
   validationErrors: Record<string, string>;
-  onChange: (field: ContactField) => FieldChangeHandler;
+  onChange: FormFieldsState['onChange'];
 };
 
-export function LocalEntiteContactFields({ formData, validationErrors, onChange }: ContactFieldsProps) {
+function LocalEntiteContactFields({ formData, validationErrors, onChange }: ContactFieldsProps) {
   return (
     <fieldset className="fr-fieldset">
       <legend className="fr-fieldset__legend fr-mb-3w fr-pb-0">Informations de contact pour l’usager</legend>
@@ -131,7 +129,7 @@ export function LocalEntiteContactFields({ formData, validationErrors, onChange 
           <Input
             className="fr-fieldset__content"
             label="Numéro de téléphone"
-            hintText="Format attendu : 10 chiffres ou +31XXXXXXXXXX (international)"
+            hintText="Format attendu : 10 chiffres ou +33XXXXXXXXXX (international)"
             state={validationErrors.telContactUsager ? 'error' : 'default'}
             stateRelatedMessage={validationErrors.telContactUsager}
             nativeInputProps={{
@@ -159,5 +157,25 @@ export function LocalEntiteContactFields({ formData, validationErrors, onChange 
         </div>
       </div>
     </fieldset>
+  );
+}
+
+type LocalEntiteFormFieldsProps = {
+  form: FormFieldsState;
+  leadingField?: ReactNode;
+};
+
+export function LocalEntiteFormFields({ form, leadingField }: LocalEntiteFormFieldsProps) {
+  const fields = {
+    formData: form.values,
+    validationErrors: form.validationErrors,
+    onChange: form.onChange,
+  };
+
+  return (
+    <>
+      <LocalEntiteSirenaFields kind={form.kind} {...fields} leadingField={leadingField} />
+      <LocalEntiteContactFields {...fields} />
+    </>
   );
 }

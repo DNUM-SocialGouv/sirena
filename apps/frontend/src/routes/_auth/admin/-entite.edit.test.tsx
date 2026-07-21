@@ -85,6 +85,7 @@ describe('Admin local Entité edit route', () => {
     expect(screen.getByRole('textbox', { name: /Adresse e-mail de notification/ })).toHaveValue('notification@ars.fr');
     expect(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ })).toHaveValue('contact@ars.fr');
     expect(screen.getByRole('textbox', { name: /Numéro de téléphone/ })).toHaveValue('0102030405');
+    expect(screen.getByText('Format attendu : 10 chiffres ou +33XXXXXXXXXX (international)')).toBeVisible();
     expect(screen.getByRole('textbox', { name: /Adresse postale/ })).toHaveValue('1 rue de la Santé, Paris');
     expect(screen.getByText('Sauf mention contraire, les champs sont facultatifs.')).toBeInTheDocument();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
