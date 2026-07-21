@@ -1,4 +1,3 @@
-import { createDefaultLogger } from '../../../../helpers/pino.js';
 import type { SirecMisEnCause, SirecReclamationData, SirecReclamationRow } from '../../sirecMigration.repository.js';
 import { SIREC_NATIONAL_ENTITE_ID } from '../../transco/affectation/affectation.transco.js';
 import { SIREC_BOOLEAN_TRANSCO, SIREC_DICO } from '../../transco/dictionnaire.transco.js';

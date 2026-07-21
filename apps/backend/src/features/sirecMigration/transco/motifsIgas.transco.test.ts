@@ -1,6 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { transcodeMotifIgas } from './motifsIgas.transco.js';
-import { SirecDataError } from './sirecTransco.error.js';
 
 describe('motifsIgas.transco.ts', () => {
   it('should transcode a known id_igas to a single SIRENA motif id', () => {
