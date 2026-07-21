@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useEditEntiteAdministrativeAdminLocal, useEntiteAdministrativeAdminLocal } from '@/hooks/queries/entites.hook';
-import { requireAdminLocalAccess } from './-admin-local-route-guard';
+import { requireAdminLocalEntiteAccess } from './-admin-local-route-guard';
 import { Route as EntiteRoute } from './entite';
 import { RouteComponent } from './entite.edit';
 
@@ -30,7 +30,7 @@ vi.mock('@sirena/ui', async () => {
 });
 
 vi.mock('./-admin-local-route-guard', () => ({
-  requireAdminLocalAccess: vi.fn(),
+  requireAdminLocalEntiteAccess: vi.fn(),
 }));
 
 const assignedEntite = {
@@ -78,7 +78,7 @@ describe('Admin local Entité edit route', () => {
 
     render(<RouteComponent />);
 
-    expect((EntiteRoute as unknown as { beforeLoad: unknown }).beforeLoad).toBe(requireAdminLocalAccess);
+    expect((EntiteRoute as unknown as { beforeLoad: unknown }).beforeLoad).toBe(requireAdminLocalEntiteAccess);
     expect(screen.getByRole('heading', { name: 'Modifier l’entité administrative ARS Normandie' })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: /Nom de l’entité administrative/ })).toHaveValue('ARS Normandie');
     expect(screen.getByRole('textbox', { name: /Abréviation/ })).toHaveValue('ARS NOR');
