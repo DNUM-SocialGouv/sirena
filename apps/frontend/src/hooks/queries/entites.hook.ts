@@ -117,7 +117,6 @@ export const useEditEntiteAdministrativeAdminLocal = () =>
     mutationFn: (input: EditEntiteAdministrativeAdminLocalInput) => editEntiteAdministrativeAdminLocal(input),
     onSuccess: (data) => {
       queryClient.setQueryData(['entite', 'admin', 'local'], data);
-      queryClient.invalidateQueries({ queryKey: ['entite', 'admin', 'local'] });
     },
   });
 

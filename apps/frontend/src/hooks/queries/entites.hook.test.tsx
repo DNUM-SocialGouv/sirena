@@ -50,7 +50,7 @@ afterEach(() => {
 });
 
 it('refreshes assigned-Entité consultation data after a successful local update', async () => {
-  fetchEntiteAdministrativeSpy.mockResolvedValueOnce(oldEntite).mockResolvedValueOnce(updatedEntite);
+  fetchEntiteAdministrativeSpy.mockResolvedValueOnce(oldEntite);
   editEntiteAdministrativeSpy.mockResolvedValueOnce(updatedEntite);
 
   const { result } = renderHook(
@@ -69,6 +69,6 @@ it('refreshes assigned-Entité consultation data after a successful local update
 
   await waitFor(() => {
     expect(result.current.entiteQuery.data).toEqual(updatedEntite);
-    expect(fetchEntiteAdministrativeSpy).toHaveBeenCalledTimes(2);
+    expect(fetchEntiteAdministrativeSpy).toHaveBeenCalledOnce();
   });
 });
