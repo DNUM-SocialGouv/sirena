@@ -301,18 +301,22 @@ describe('Entites endpoints: /entites', () => {
   });
 
   describe('PATCH /admin/local', () => {
-    it('updates the Entité administrative inferred from the entity admin assignment', async () => {
+    it('updates contact information for the Entité administrative inferred from the entity admin assignment', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       assignedEntiteIdState.value = 'root-ars';
       const input = {
-        nomComplet: 'Agence régionale de santé Normandie',
-        label: 'ARS Normandie',
         email: 'notification@ars.fr',
         emailContactUsager: 'contact@ars.fr',
         telContactUsager: '0102030405',
         adresseContactUsager: '2 rue de Paris',
       };
-      vi.mocked(editEntiteAdministrativeAdminLocal).mockResolvedValueOnce({ id: 'root-ars', ...input });
+      const updatedEntite = {
+        id: 'root-ars',
+        nomComplet: 'Agence régionale de santé Normandie',
+        label: 'ARS Normandie',
+        ...input,
+      };
+      vi.mocked(editEntiteAdministrativeAdminLocal).mockResolvedValueOnce(updatedEntite);
 
       const res = await app.request('/admin/local?id=root-other', {
         method: 'PATCH',
@@ -321,33 +325,13 @@ describe('Entites endpoints: /entites', () => {
       });
 
       expect(res.status).toBe(200);
-      expect(await res.json()).toEqual({ data: { id: 'root-ars', ...input } });
+      expect(await res.json()).toEqual({ data: updatedEntite });
       expect(editEntiteAdministrativeAdminLocal).toHaveBeenCalledWith('root-ars', input);
     });
 
-    it.each(['nomComplet', 'label'] as const)('rejects a blank required %s field', async (requiredField) => {
-      currentRole.value = ROLES.ENTITY_ADMIN;
-      const input = {
-        nomComplet: 'Agence régionale de santé Normandie',
-        label: 'ARS Normandie',
-        email: '',
-        emailContactUsager: '',
-        telContactUsager: '',
-        adresseContactUsager: '',
-        [requiredField]: '   ',
-      };
-
-      const res = await app.request('/admin/local', {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(input),
-      });
-
-      expect(res.status).toBe(400);
-      expect(editEntiteAdministrativeAdminLocal).not.toHaveBeenCalled();
-    });
-
     it.each([
+      ['nomComplet', 'Agence régionale de santé Normandie'],
+      ['label', 'ARS Normandie'],
       ['id', 'root-other'],
       ['isActive', false],
       ['entiteMereId', 'root-other'],
@@ -360,8 +344,6 @@ describe('Entites endpoints: /entites', () => {
     ])('rejects caller-controlled or unknown field %s', async (field, value) => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       const input = {
-        nomComplet: 'Agence régionale de santé Normandie',
-        label: 'ARS Normandie',
         email: '',
         emailContactUsager: '',
         telContactUsager: '',
@@ -408,8 +390,6 @@ describe('Entites endpoints: /entites', () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       vi.mocked(editEntiteAdministrativeAdminLocal).mockResolvedValueOnce(null);
       const input = {
-        nomComplet: 'Agence régionale de santé Normandie',
-        label: 'ARS Normandie',
         email: '',
         emailContactUsager: '',
         telContactUsager: '',

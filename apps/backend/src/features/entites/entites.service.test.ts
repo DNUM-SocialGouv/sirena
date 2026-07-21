@@ -1490,7 +1490,7 @@ describe('editEntiteAdministrativeAdminLocal()', () => {
   it.each([
     true,
     false,
-  ])('updates only the assigned root Entité information when active status is %s', async (isActive) => {
+  ])('updates only contact information and preserves identity when active status is %s', async (isActive) => {
     const assignedEntite = {
       ...fakeEntite('root-ars'),
       nomComplet: 'ARS Normandie',
@@ -1499,20 +1499,21 @@ describe('editEntiteAdministrativeAdminLocal()', () => {
       isActive,
     };
     const input = {
-      nomComplet: 'Agence régionale de santé Normandie',
-      label: 'ARS Normandie',
       email: 'notification@ars.fr',
       emailContactUsager: 'contact@ars.fr',
       telContactUsager: '0102030405',
       adresseContactUsager: '2 rue de Paris',
     };
-    vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(assignedEntite);
-    vi.mocked(prisma.entite.update).mockResolvedValueOnce({ id: 'root-ars', ...input } as never);
-
-    await expect(editEntiteAdministrativeAdminLocal('root-ars', input)).resolves.toEqual({
+    const updatedEntite = {
       id: 'root-ars',
+      nomComplet: 'ARS Normandie',
+      label: 'ARS NOR',
       ...input,
-    });
+    };
+    vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(assignedEntite);
+    vi.mocked(prisma.entite.update).mockResolvedValueOnce(updatedEntite as never);
+
+    await expect(editEntiteAdministrativeAdminLocal('root-ars', input)).resolves.toEqual(updatedEntite);
     expect(prisma.entite.update).toHaveBeenCalledWith({
       where: { id: 'root-ars' },
       data: input,
@@ -1530,8 +1531,6 @@ describe('editEntiteAdministrativeAdminLocal()', () => {
 
   it('does not update a missing or non-root assignment', async () => {
     const input = {
-      nomComplet: 'Agence régionale de santé Normandie',
-      label: 'ARS Normandie',
       email: '',
       emailContactUsager: '',
       telContactUsager: '',

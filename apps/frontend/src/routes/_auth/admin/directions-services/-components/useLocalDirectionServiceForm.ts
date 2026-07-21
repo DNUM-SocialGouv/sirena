@@ -30,8 +30,14 @@ const createSchema = (kind: 'entite-administrative' | 'direction' | 'service') =
         : 'du service';
 
   return z.object({
-    nomComplet: z.string().trim().min(1, `Le champ "Nom ${entityName}" est vide. Veuillez le renseigner.`),
-    label: z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
+    nomComplet:
+      kind === 'entite-administrative'
+        ? z.string()
+        : z.string().trim().min(1, `Le champ "Nom ${entityName}" est vide. Veuillez le renseigner.`),
+    label:
+      kind === 'entite-administrative'
+        ? z.string()
+        : z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
     email: optionalEmailSchema,
     emailContactUsager: optionalEmailSchema,
     telContactUsager: optionalPhoneSchema,

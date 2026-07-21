@@ -220,7 +220,10 @@ export const getEntiteAdministrativeAdminLocal = async (assignedEntiteId: string
   };
 };
 
-const updateEntiteInformation = (entiteId: string, data: EntiteInformationInput) =>
+const updateEntiteInformation = (
+  entiteId: string,
+  data: EntiteInformationInput | EditEntiteAdministrativeAdminLocalInput,
+) =>
   prisma.entite.update({
     where: { id: entiteId },
     data,

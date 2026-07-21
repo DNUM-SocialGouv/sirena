@@ -227,11 +227,13 @@ describe('Admin local Entité edit route', () => {
     expect(editMutateAsyncSpy).not.toHaveBeenCalled();
   });
 
-  it('accepts empty optional contact fields', async () => {
+  it('does not validate disabled identity and accepts empty optional contact fields', async () => {
     const user = userEvent.setup();
     vi.mocked(useEntiteAdministrativeAdminLocal).mockReturnValue({
       data: {
         ...assignedEntite,
+        nomComplet: '',
+        label: '',
         email: '',
         emailContactUsager: '',
         telContactUsager: '',
@@ -244,7 +246,14 @@ describe('Admin local Entité edit route', () => {
 
     await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
 
-    expect(screen.queryByText(/est invalide|doit être au format/)).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(editMutateAsyncSpy).toHaveBeenCalledWith({
+        email: '',
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+      }),
+    );
   });
 
   it('validates optional e-mail and telephone fields and focuses the first invalid field', async () => {
