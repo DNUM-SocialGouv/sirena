@@ -14,6 +14,7 @@ const {
   directionsServicesGet,
   directionsPost,
   entiteAdministrativePatch,
+  handleRequestErrorsSpy,
   servicesPost,
 } = vi.hoisted(() => ({
   directionServiceGet: vi.fn(),
@@ -21,6 +22,7 @@ const {
   directionsServicesGet: vi.fn(),
   directionsPost: vi.fn(),
   entiteAdministrativePatch: vi.fn(),
+  handleRequestErrorsSpy: vi.fn(),
   servicesPost: vi.fn(),
 }));
 
@@ -39,7 +41,7 @@ vi.mock('@/lib/api/hc.ts', () => ({
     },
   },
 }));
-vi.mock('@/lib/api/tanstackQuery.ts', () => ({ handleRequestErrors: vi.fn() }));
+vi.mock('@/lib/api/tanstackQuery.ts', () => ({ handleRequestErrors: handleRequestErrorsSpy }));
 
 const visibleInput = {
   nomComplet: 'Direction Autonomie',
@@ -59,6 +61,7 @@ describe('local Entité administrative API adapter', () => {
 
     await expect(editEntiteAdministrativeAdminLocal(visibleInput)).resolves.toEqual(updatedEntite);
     expect(entiteAdministrativePatch).toHaveBeenCalledWith({ json: visibleInput });
+    expect(handleRequestErrorsSpy).toHaveBeenCalledWith(expect.anything(), { silentToastError: true });
   });
 });
 

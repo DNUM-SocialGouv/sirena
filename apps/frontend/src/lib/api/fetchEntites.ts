@@ -115,7 +115,7 @@ export type CreateServiceAdminLocalInput = CreateDirectionAdminLocalInput & {
 
 export async function editEntiteAdministrativeAdminLocal(input: EditEntiteAdministrativeAdminLocalInput) {
   const res = await client.entites.admin.local.$patch({ json: input });
-  await handleRequestErrors(res);
+  await handleRequestErrors(res, { silentToastError: true });
   const { data } = await res.json();
   return data;
 }
