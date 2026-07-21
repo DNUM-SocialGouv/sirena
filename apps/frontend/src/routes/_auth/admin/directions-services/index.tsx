@@ -6,11 +6,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { TableSearchBar } from '@/components/common/tables/TableSearchBar';
 import { useDirectionsServicesList } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
-import { requireAdminLocalDirectionsServices } from './-route-guard';
+import { requireAdminLocalAccess } from '../-admin-local-route-guard';
 import './index.css';
 
 export const Route = createFileRoute('/_auth/admin/directions-services/')({
-  beforeLoad: requireAdminLocalDirectionsServices,
+  beforeLoad: requireAdminLocalAccess,
   component: RouteComponent,
 });
 

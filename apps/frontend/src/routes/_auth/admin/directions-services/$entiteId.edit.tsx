@@ -5,12 +5,12 @@ import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useEffect } from 'react';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
 import { useDirectionServiceAdminLocal, useEditDirectionServiceAdminLocal } from '@/hooks/queries/entites.hook';
+import { requireAdminLocalAccess } from '../-admin-local-route-guard';
 import { LocalEntiteContactFields, LocalEntiteSirenaFields } from '../-components/LocalEntiteFormFields';
 import { useLocalEntiteForm } from '../-components/useLocalEntiteForm';
-import { requireAdminLocalDirectionsServices } from './-route-guard';
 
 export const Route = createFileRoute('/_auth/admin/directions-services/$entiteId/edit')({
-  beforeLoad: requireAdminLocalDirectionsServices,
+  beforeLoad: requireAdminLocalAccess,
   component: RouteComponent,
 });
 

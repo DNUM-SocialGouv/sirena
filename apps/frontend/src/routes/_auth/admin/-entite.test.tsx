@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useEntiteAdministrativeAdminLocal } from '@/hooks/queries/entites.hook';
-import { requireAdminLocalEntite } from './directions-services/-route-guard';
+import { requireAdminLocalAccess } from './-admin-local-route-guard';
 import { Route as EntiteRoute } from './entite';
 import { RouteComponent } from './entite.index';
 
@@ -15,8 +15,8 @@ vi.mock('@/hooks/queries/entites.hook', () => ({
   useEntiteAdministrativeAdminLocal: vi.fn(),
 }));
 
-vi.mock('./directions-services/-route-guard', () => ({
-  requireAdminLocalEntite: vi.fn(),
+vi.mock('./-admin-local-route-guard', () => ({
+  requireAdminLocalAccess: vi.fn(),
 }));
 
 afterEach(() => {
@@ -27,7 +27,7 @@ afterEach(() => {
 
 describe('Admin local Entité route', () => {
   it('uses the protected local Entité guard', () => {
-    expect((EntiteRoute as unknown as { beforeLoad: unknown }).beforeLoad).toBe(requireAdminLocalEntite);
+    expect((EntiteRoute as unknown as { beforeLoad: unknown }).beforeLoad).toBe(requireAdminLocalAccess);
   });
 
   it('displays the assigned Entité information in two semantic sections', () => {

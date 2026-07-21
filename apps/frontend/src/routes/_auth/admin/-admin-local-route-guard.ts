@@ -6,7 +6,7 @@ import { queryClient } from '@/lib/queryClient';
 
 const requireEntityAdmin = requireAuthAndRoles([ROLES.ENTITY_ADMIN]);
 
-export const requireAdminLocalDirectionsServices = async (ctx: BeforeLoad) => {
+export const requireAdminLocalAccess = async (ctx: BeforeLoad) => {
   requireEntityAdmin(ctx);
   const flags = await queryClient.ensureQueryData({
     queryKey: ['featureFlags', 'resolved'],
@@ -17,5 +17,3 @@ export const requireAdminLocalDirectionsServices = async (ctx: BeforeLoad) => {
     throw redirect({ to: '/admin/users' });
   }
 };
-
-export const requireAdminLocalEntite = requireAdminLocalDirectionsServices;

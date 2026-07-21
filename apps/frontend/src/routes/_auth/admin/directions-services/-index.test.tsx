@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useDirectionsServicesList } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
-import { requireAdminLocalDirectionsServices } from './-route-guard';
+import { requireAdminLocalAccess } from '../-admin-local-route-guard';
 import { Route, RouteComponent } from './index';
 
 const { authGuardSpy } = vi.hoisted(() => ({
@@ -60,9 +60,9 @@ afterEach(() => {
 });
 
 describe('Admin directions and services route', () => {
-  it('uses the entity-admin local Directions and Services guard', () => {
+  it('uses the shared Admin-local access guard', () => {
     expect(vi.mocked(requireAuthAndRoles)).toHaveBeenCalledWith([ROLES.ENTITY_ADMIN]);
-    expect((Route as unknown as { beforeLoad: unknown }).beforeLoad).toBe(requireAdminLocalDirectionsServices);
+    expect((Route as unknown as { beforeLoad: unknown }).beforeLoad).toBe(requireAdminLocalAccess);
   });
 
   it('renders an accessible page title with the admin local affectation organization', () => {
