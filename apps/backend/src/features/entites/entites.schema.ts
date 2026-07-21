@@ -1,34 +1,40 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
+import { emailSchema, phoneSchema } from '@sirena/common/schemas';
 import { z } from 'zod';
 import { Prisma } from '../../libs/prisma.js';
 
-export const EntiteSchema = z.object({
-  id: z.uuid(),
+const EntiteIdentityFieldsSchema = z.object({
   nomComplet: z.string(),
   label: z.string(),
-  email: z.string(),
-  emailContactUsager: z.string(),
-  telContactUsager: z.string(),
-  adresseContactUsager: z.string(),
-  emailDomain: z.string(),
-  organizationalUnit: z.string(),
-  entiteTypeId: z.string(),
-  entiteMereId: z.string().nullable(),
-  departementCode: z.string().nullable(),
-  ctcdCode: z.string().nullable(),
-  regionCode: z.string().nullable(),
-  regLib: z.string().nullable(),
-  dptLib: z.string().nullable(),
 });
 
-const EntiteAdminSchema = z.object({
-  id: z.string(),
-  nomComplet: z.string(),
-  label: z.string(),
+const EntiteContactFieldsSchema = z.object({
   email: z.string(),
   emailContactUsager: z.string(),
-  adresseContactUsager: z.string(),
   telContactUsager: z.string(),
+  adresseContactUsager: z.string(),
+});
+
+const EntiteReferenceSchema = z.object({ id: z.string() }).extend(EntiteIdentityFieldsSchema.shape);
+const EntiteDetailsSchema = EntiteReferenceSchema.extend(EntiteContactFieldsSchema.shape);
+
+export const EntiteSchema = z
+  .object({ id: z.uuid() })
+  .extend(EntiteIdentityFieldsSchema.shape)
+  .extend(EntiteContactFieldsSchema.shape)
+  .extend({
+    emailDomain: z.string(),
+    organizationalUnit: z.string(),
+    entiteTypeId: z.string(),
+    entiteMereId: z.string().nullable(),
+    departementCode: z.string().nullable(),
+    ctcdCode: z.string().nullable(),
+    regionCode: z.string().nullable(),
+    regLib: z.string().nullable(),
+    dptLib: z.string().nullable(),
+  });
+
+const EntiteAdminSchema = EntiteDetailsSchema.extend({
   isActive: z.boolean(),
 });
 
@@ -79,11 +85,7 @@ export const GetEntitesListAdminQuerySchema = paginationQueryParamsSchema(adminS
 
 export const GetEntitiesResponseSchema = z.array(EntiteSchema);
 
-export const RootEntiteAdminSchema = z.object({
-  id: z.string(),
-  nomComplet: z.string(),
-  label: z.string(),
-});
+export const RootEntiteAdminSchema = EntiteReferenceSchema;
 
 export const GetRootEntitesListAdminResponseSchema = z.array(RootEntiteAdminSchema);
 
@@ -103,39 +105,18 @@ export const GetEntitesListAdminResponseSchema = z.array(
   }),
 );
 
-export const EntiteAdministrativeAdminLocalSchema = z.object({
-  id: z.string(),
-  nomComplet: z.string(),
-  label: z.string(),
-  email: z.string(),
-  emailContactUsager: z.string(),
-  telContactUsager: z.string(),
-  adresseContactUsager: z.string(),
-});
+export const EntiteAdministrativeAdminLocalSchema = EntiteDetailsSchema;
 
 export const GetEntiteAdministrativeAdminLocalResponseSchema = EntiteAdministrativeAdminLocalSchema;
-export const EditEntiteAdministrativeAdminLocalInputSchema = EntiteAdministrativeAdminLocalSchema.omit({
-  id: true,
-  nomComplet: true,
-  label: true,
+export const EditEntiteAdministrativeAdminLocalInputSchema = EntiteContactFieldsSchema.extend({
+  email: emailSchema.or(z.literal('')),
+  emailContactUsager: emailSchema.or(z.literal('')),
+  telContactUsager: phoneSchema.or(z.literal('')),
 }).strict();
 export const EditEntiteAdministrativeAdminLocalResponseSchema = EntiteAdministrativeAdminLocalSchema;
 
-const DirectionServiceAdminLocalFieldsSchema = z.object({
-  id: z.string(),
-  nomComplet: z.string(),
-  label: z.string(),
-  email: z.string(),
-  emailContactUsager: z.string(),
-  telContactUsager: z.string(),
-  adresseContactUsager: z.string(),
-});
-
-const ParentDirectionAdminLocalSchema = z.object({
-  id: z.string(),
-  nomComplet: z.string(),
-  label: z.string(),
-});
+const DirectionServiceAdminLocalFieldsSchema = EntiteDetailsSchema;
+const ParentDirectionAdminLocalSchema = EntiteReferenceSchema;
 
 export const GetDirectionServiceAdminLocalResponseSchema = z.discriminatedUnion('kind', [
   DirectionServiceAdminLocalFieldsSchema.extend({
@@ -164,13 +145,7 @@ export const GetDirectionsServicesListResponseSchema = z.object({
     canCreateDirection: z.boolean(),
     canCreateService: z.boolean(),
   }),
-  availableDirections: z.array(
-    z.object({
-      id: z.string(),
-      nomComplet: z.string(),
-      label: z.string(),
-    }),
-  ),
+  availableDirections: z.array(EntiteReferenceSchema),
   serviceParentDirection: ParentDirectionAdminLocalSchema.nullable(),
 });
 
@@ -188,13 +163,9 @@ export const GetEntitiesChainResponseSchema = z.array(
   }),
 );
 
-export const CreateChildEntiteAdminInputSchema = z.object({
+export const CreateChildEntiteAdminInputSchema = EntiteContactFieldsSchema.extend({
   nomComplet: z.string().trim().min(1),
   label: z.string().trim().min(1),
-  email: z.string(),
-  emailContactUsager: z.string(),
-  adresseContactUsager: z.string(),
-  telContactUsager: z.string(),
   isActive: z.boolean(),
 });
 

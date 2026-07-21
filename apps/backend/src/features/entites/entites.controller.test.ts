@@ -330,6 +330,30 @@ describe('Entites endpoints: /entites', () => {
     });
 
     it.each([
+      ['email', 'notification-invalide'],
+      ['emailContactUsager', 'contact-invalide'],
+      ['telContactUsager', '123'],
+    ])('rejects invalid contact field %s', async (field, value) => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      const input = {
+        email: '',
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        [field]: value,
+      };
+
+      const res = await app.request('/admin/local', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+
+      expect(res.status).toBe(400);
+      expect(editEntiteAdministrativeAdminLocal).not.toHaveBeenCalled();
+    });
+
+    it.each([
       ['nomComplet', 'Agence régionale de santé Normandie'],
       ['label', 'ARS Normandie'],
       ['id', 'root-other'],

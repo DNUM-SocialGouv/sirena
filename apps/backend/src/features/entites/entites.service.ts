@@ -8,6 +8,7 @@ import type {
   CreateChildEntiteAdminInput,
   CreateDirectionAdminLocalInput,
   CreateServiceAdminLocalInput,
+  EditDirectionServiceAdminLocalInput,
   EditEntiteAdministrativeAdminLocalInput,
   EntiteChain,
   EntiteTraitement,
@@ -26,10 +27,6 @@ const ADMIN_SORT_COLUMNS = [
   'isActiveLabel',
 ] as const;
 type AdminSortColumn = (typeof ADMIN_SORT_COLUMNS)[number];
-type EntiteInformationInput = Pick<
-  Entite,
-  'nomComplet' | 'label' | 'email' | 'emailContactUsager' | 'telContactUsager' | 'adresseContactUsager'
->;
 
 const isAdminSortColumn = (sort: string): sort is AdminSortColumn =>
   (ADMIN_SORT_COLUMNS as readonly string[]).includes(sort);
@@ -222,7 +219,7 @@ export const getEntiteAdministrativeAdminLocal = async (assignedEntiteId: string
 
 const updateEntiteInformation = (
   entiteId: string,
-  data: EntiteInformationInput | EditEntiteAdministrativeAdminLocalInput,
+  data: EditDirectionServiceAdminLocalInput | EditEntiteAdministrativeAdminLocalInput,
 ) =>
   prisma.entite.update({
     where: { id: entiteId },
@@ -355,7 +352,7 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
 export const editDirectionServiceAdminLocal = async (
   assignedEntiteId: string,
   targetEntiteId: string,
-  data: EntiteInformationInput,
+  data: EditDirectionServiceAdminLocalInput,
 ) => {
   const target = await getDirectionServiceAdminLocal(assignedEntiteId, targetEntiteId);
 
