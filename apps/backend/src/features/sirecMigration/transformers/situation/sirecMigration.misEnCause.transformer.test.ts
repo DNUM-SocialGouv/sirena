@@ -179,6 +179,12 @@ const makeData = (
     misEnCauses,
   }) as unknown as SirecReclamationData;
 
+const mockFinessDataUnmappedCategetab: SirecFinessData = {
+  ...mockFinessData,
+  categetab: '999',
+  libcategetab: 'Catégorie non mappée',
+};
+
 const mockRppsData: SirecRppsData = {
   id_data: 12345678901,
   rpps: '12345678901',
@@ -785,6 +791,7 @@ describe('sirecMigration.misEnCause.transformer.ts', () => {
       identite: null,
       commentaire: '',
       estSignalementProfessionnel: null,
+      estPersonneMorale: null,
     };
 
     it('should clear misEnCauseTypeId and misEnCauseTypePrecisionId when all conditions are met', () => {
@@ -847,6 +854,24 @@ describe('sirecMigration.misEnCause.transformer.ts', () => {
       );
 
       expect((result[0].misEnCauseData as any)?.misEnCauseTypeId).toBe('PROFESSIONNEL_SANTE');
+    });
+
+    it('should not clear when FINESS categetab does not map to a lieu de survenue', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [makeMisEnCause({ id_data: 10, type: 64, identifiant: 20, finessData: mockFinessDataUnmappedCategetab })],
+          null,
+          null,
+          1,
+        ),
+        [],
+        [ARS_NORMANDIE_ENTITE_ID],
+        null,
+      );
+
+      expect(result[0].lieuDeSurvenueData).toBeNull();
+      expect((result[0].misEnCauseData as any)?.misEnCauseTypeId).toBe('ETABLISSEMENT');
     });
 
     it('should never clear when requeteEntiteIds/declarant are omitted (defaults)', () => {

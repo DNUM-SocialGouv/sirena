@@ -75,12 +75,12 @@ function applyMisEnCauseAnnotations(
 function shouldClearMisEnCauseType(
   requeteEntiteIds: string[],
   declarant: SirenaDeclarantData | null,
-  reclamation: SirecReclamationRow,
+  signalement: number | null,
   lieuDeSurvenueData: SirenaLieuDeSurvenueData | null,
 ): boolean {
   return (
     requeteEntiteIds.includes(ARS_NORMANDIE_ENTITE_ID) &&
-    transcodeSignalement(reclamation.signalement) === true &&
+    transcodeSignalement(signalement) === true &&
     declarant === null &&
     lieuDeSurvenueData !== null
   );
@@ -158,7 +158,8 @@ export function transformSirecMisEnCauseSituations(
     const { motifs, commentaireSuffix } = resolveMotifsIgas(misEnCause.motifsIgas);
     const annotatedMisEnCauseData = applyMisEnCauseAnnotations(misEnCauseData, reclamation, misEnCause);
     const finalMisEnCauseData =
-      annotatedMisEnCauseData && shouldClearMisEnCauseType(requeteEntiteIds, declarant, reclamation, lieuDeSurvenueData)
+      annotatedMisEnCauseData &&
+      shouldClearMisEnCauseType(requeteEntiteIds, declarant, reclamation.signalement, lieuDeSurvenueData)
         ? { ...annotatedMisEnCauseData, misEnCauseTypeId: null, misEnCauseTypePrecisionId: null }
         : annotatedMisEnCauseData;
     return {
