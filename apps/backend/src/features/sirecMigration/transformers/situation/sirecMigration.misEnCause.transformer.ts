@@ -1,12 +1,12 @@
-import { createDefaultLogger } from '../../../../helpers/pino.js';
 import type { SirecMisEnCause, SirecReclamationData, SirecReclamationRow } from '../../sirecMigration.repository.js';
-import { SIREC_NATIONAL_ENTITE_ID } from '../../transco/affectation/affectation.transco.js';
+import { ARS_NORMANDIE_ENTITE_ID, SIREC_NATIONAL_ENTITE_ID } from '../../transco/affectation/affectation.transco.js';
 import { SIREC_BOOLEAN_TRANSCO, SIREC_DICO } from '../../transco/dictionnaire.transco.js';
 import { SIREC_TYPE_FINESS } from '../../transco/finessCategetab.transco.js';
 import { SIREC_TYPE_AUTRE } from '../../transco/misEnCauseAutre.transco.js';
 import { SIREC_TYPE_RPPS } from '../../transco/misEnCauseRpps.transco.js';
 import { transcodeSignalement } from '../../transco/signalement.transco.js';
 import { SirecDataError, SirecTranscoError } from '../../transco/sirecTransco.error.js';
+import type { SirenaDeclarantData } from '../sirecMigration.declarant.transformer.js';
 import { computeSituationEntiteIds } from './sirecMigration.affectation.transformer.js';
 import { transformSirecAutre } from './sirecMigration.autre.transformer.js';
 import {
@@ -72,6 +72,20 @@ function applyMisEnCauseAnnotations(
     : withObservation;
 }
 
+function shouldClearMisEnCauseType(
+  requeteEntiteIds: string[],
+  declarant: SirenaDeclarantData | null,
+  signalement: number | null,
+  lieuDeSurvenueData: SirenaLieuDeSurvenueData | null,
+): boolean {
+  return (
+    requeteEntiteIds.includes(ARS_NORMANDIE_ENTITE_ID) &&
+    transcodeSignalement(signalement) === true &&
+    declarant === null &&
+    lieuDeSurvenueData !== null
+  );
+}
+
 function resolveSansMc(sansMc: number | null): SirenaMisEnCauseData | null {
   if (sansMc === null) return null;
   const value = SIREC_BOOLEAN_TRANSCO[sansMc];
@@ -114,6 +128,8 @@ function resolveMisEnCause(misEnCause: SirecMisEnCause): MisEnCauseResolution {
 export function transformSirecMisEnCauseSituations(
   sirecData: SirecReclamationData,
   situationEntiteIds: string[],
+  requeteEntiteIds: string[] = [],
+  declarant: SirenaDeclarantData | null = null,
 ): SirenaSituationData[] {
   const { misEnCauses, reclamation, groupIds } = sirecData;
 
@@ -140,10 +156,16 @@ export function transformSirecMisEnCauseSituations(
     const entiteIds = [...new Set([...orphanEntiteIds, ...misEnCauseEntiteIds])];
     const { misEnCauseData, lieuDeSurvenueData } = resolveMisEnCause(misEnCause);
     const { motifs, commentaireSuffix } = resolveMotifsIgas(misEnCause.motifsIgas);
+    const annotatedMisEnCauseData = applyMisEnCauseAnnotations(misEnCauseData, reclamation, misEnCause);
+    const finalMisEnCauseData =
+      annotatedMisEnCauseData &&
+      shouldClearMisEnCauseType(requeteEntiteIds, declarant, reclamation.signalement, lieuDeSurvenueData)
+        ? { ...annotatedMisEnCauseData, misEnCauseTypeId: null, misEnCauseTypePrecisionId: null }
+        : annotatedMisEnCauseData;
     return {
       ...baseSituation,
       entiteIds,
-      misEnCauseData: applyMisEnCauseAnnotations(misEnCauseData, reclamation, misEnCause),
+      misEnCauseData: finalMisEnCauseData,
       lieuDeSurvenueData,
       fait: {
         ...baseSituation.fait,
