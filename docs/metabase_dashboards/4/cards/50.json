@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 288.3333333333333,
+  "average_query_time": 269.79242424242426,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -25,7 +25,7 @@
   "dashboard": {
     "id": 4,
     "moderation_status": null,
-    "name": "[integrated] Sirena"
+    "name": "[integration] Dashboard local"
   },
   "dashboard_count": 1,
   "dashboard_id": 4,
@@ -37,26 +37,26 @@
       {
         "lib/type": "mbql.stage/native",
         "native": "  SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]];",
-        "template-tags": {
-          "end_date": {
-            "display-name": "End Date",
-            "id": "3411f4eb-2d32-4849-8b7c-438328f9938a",
-            "name": "end_date",
-            "type": "date"
-          },
-          "entity_label": {
+        "template-tags": [
+          {
             "display-name": "Entity Label",
             "id": "3a350622-7615-4473-91ce-4b96b1b8ce2b",
             "name": "entity_label",
             "type": "text"
           },
-          "start_date": {
+          {
             "display-name": "Start Date",
             "id": "e3ebe751-0c1d-48a7-82d1-6387312ba30a",
             "name": "start_date",
             "type": "date"
+          },
+          {
+            "display-name": "End Date",
+            "id": "3411f4eb-2d32-4849-8b7c-438328f9938a",
+            "name": "end_date",
+            "type": "date"
           }
-        }
+        ]
       }
     ]
   },
@@ -71,7 +71,7 @@
   "entity_id": "-amAbLzIyj64hmyOmt0n2",
   "id": 50,
   "is_remote_synced": false,
-  "last_query_start": "2026-07-03T13:53:54.988062Z",
+  "last_query_start": "2026-07-21T14:31:02.918997Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.60.4.4 (65c9d32)",
