@@ -1,0 +1,9 @@
+.data-table-column-scroll {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.data-table-column-scroll .fr-btn:not(:disabled) {
+  color: var(--text-action-high-grey);
+}

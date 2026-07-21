@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isEqual, pick } from './object.js';
+import { collectDataKeys, isEqual, pick } from './object.js';
 
 describe('pick', () => {
   it('should pick specified keys from an object', () => {
@@ -57,6 +57,59 @@ describe('pick', () => {
     const result = pick(obj, ['a']);
 
     expect(result.a).toBe(nested);
+  });
+});
+
+describe('collectDataKeys', () => {
+  it('should collect dot-separated paths of non-null leaves', () => {
+    const value = {
+      id: 'requete-1',
+      declarant: {
+        identite: { prenom: 'Jean', nom: 'Dupont', email: null },
+        adresse: { ville: 'Paris' },
+      },
+    };
+
+    expect(collectDataKeys(value)).toEqual([
+      'declarant.adresse.ville',
+      'declarant.identite.nom',
+      'declarant.identite.prenom',
+      'id',
+    ]);
+  });
+
+  it('should merge array items under the same path', () => {
+    const value = {
+      situations: [
+        { lieu: 'EHPAD', faits: [{ motif: 'motif-1' }] },
+        { lieu: 'Domicile', commentaire: 'texte' },
+      ],
+    };
+
+    expect(collectDataKeys(value)).toEqual(['situations.commentaire', 'situations.faits.motif', 'situations.lieu']);
+  });
+
+  it('should skip null, undefined and empty values', () => {
+    const value = {
+      a: null,
+      b: undefined,
+      c: [],
+      d: {},
+      e: 0,
+      f: false,
+    };
+
+    expect(collectDataKeys(value)).toEqual(['e', 'f']);
+  });
+
+  it('should treat dates as leaves', () => {
+    expect(collectDataKeys({ createdAt: new Date() })).toEqual(['createdAt']);
+  });
+
+  it('should truncate paths deeper than maxDepth', () => {
+    const value = { a: { b: { c: { d: 'value' } } } };
+
+    expect(collectDataKeys(value, 2)).toEqual(['a.b']);
   });
 });
 
