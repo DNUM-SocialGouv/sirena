@@ -5,11 +5,8 @@ import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useEffect } from 'react';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
 import { useDirectionServiceAdminLocal, useEditDirectionServiceAdminLocal } from '@/hooks/queries/entites.hook';
-import {
-  LocalDirectionServiceContactFields,
-  LocalDirectionServiceSirenaFields,
-} from './-components/LocalDirectionServiceSirenaFields';
-import { useLocalDirectionServiceForm } from './-components/useLocalDirectionServiceForm';
+import { LocalEntiteContactFields, LocalEntiteSirenaFields } from '../-components/LocalEntiteFormFields';
+import { useLocalEntiteForm } from '../-components/useLocalEntiteForm';
 import { requireAdminLocalDirectionsServices } from './-route-guard';
 
 export const Route = createFileRoute('/_auth/admin/directions-services/$entiteId/edit')({
@@ -51,7 +48,7 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
   const editDirectionService = useEditDirectionServiceAdminLocal();
   const toastManager = Toast.useToastManager();
   const router = useRouter();
-  const form = useLocalDirectionServiceForm(target.kind, {
+  const form = useLocalEntiteForm(target.kind, {
     nomComplet: target.nomComplet,
     label: target.label,
     email: target.email,
@@ -103,7 +100,7 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
         <form onSubmit={handleSubmit}>
           <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
-          <LocalDirectionServiceSirenaFields
+          <LocalEntiteSirenaFields
             kind={target.kind}
             formData={form.values}
             validationErrors={form.validationErrors}
@@ -128,7 +125,7 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
             }
           />
 
-          <LocalDirectionServiceContactFields
+          <LocalEntiteContactFields
             formData={form.values}
             validationErrors={form.validationErrors}
             onChange={form.onChange}

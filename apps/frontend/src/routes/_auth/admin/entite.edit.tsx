@@ -4,11 +4,8 @@ import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useCallback, useEffect } from 'react';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
 import { useEditEntiteAdministrativeAdminLocal, useEntiteAdministrativeAdminLocal } from '@/hooks/queries/entites.hook';
-import {
-  LocalDirectionServiceContactFields,
-  LocalDirectionServiceSirenaFields,
-} from './directions-services/-components/LocalDirectionServiceSirenaFields';
-import { useLocalDirectionServiceForm } from './directions-services/-components/useLocalDirectionServiceForm';
+import { LocalEntiteContactFields, LocalEntiteSirenaFields } from './-components/LocalEntiteFormFields';
+import { useLocalEntiteForm } from './-components/useLocalEntiteForm';
 
 export const Route = createFileRoute('/_auth/admin/entite/edit')({
   component: RouteComponent,
@@ -35,7 +32,7 @@ function EntiteAdministrativeEditForm({ entite }: { entite: AssignedEntite }) {
   const editEntite = useEditEntiteAdministrativeAdminLocal();
   const toastManager = Toast.useToastManager();
   const router = useRouter();
-  const form = useLocalDirectionServiceForm('entite-administrative', {
+  const form = useLocalEntiteForm('entite-administrative', {
     nomComplet: entite.nomComplet,
     label: entite.label,
     email: entite.email,
@@ -91,7 +88,7 @@ function EntiteAdministrativeEditForm({ entite }: { entite: AssignedEntite }) {
         <form onSubmit={handleSubmit}>
           <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
-          <LocalDirectionServiceSirenaFields
+          <LocalEntiteSirenaFields
             kind="entite-administrative"
             formData={form.values}
             validationErrors={form.validationErrors}
@@ -99,7 +96,7 @@ function EntiteAdministrativeEditForm({ entite }: { entite: AssignedEntite }) {
             identityFieldsDisabled
           />
 
-          <LocalDirectionServiceContactFields
+          <LocalEntiteContactFields
             formData={form.values}
             validationErrors={form.validationErrors}
             onChange={form.onChange}

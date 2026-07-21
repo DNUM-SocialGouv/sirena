@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { z } from 'zod';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 
-type LocalDirectionServiceFormValues = {
+type LocalEntiteFormValues = {
   nomComplet: string;
   label: string;
   email: string;
@@ -12,7 +12,7 @@ type LocalDirectionServiceFormValues = {
   adresseContactUsager: string;
 };
 
-const emptyLocalDirectionServiceForm: LocalDirectionServiceFormValues = {
+const emptyLocalEntiteForm: LocalEntiteFormValues = {
   nomComplet: '',
   label: '',
   email: '',
@@ -45,9 +45,9 @@ const createSchema = (kind: 'entite-administrative' | 'direction' | 'service') =
   });
 };
 
-export function useLocalDirectionServiceForm(
+export function useLocalEntiteForm(
   kind: 'entite-administrative' | 'direction' | 'service',
-  initialValues: LocalDirectionServiceFormValues = emptyLocalDirectionServiceForm,
+  initialValues: LocalEntiteFormValues = emptyLocalEntiteForm,
 ) {
   const schema = useMemo(() => createSchema(kind), [kind]);
   const [values, setValues] = useState(initialValues);
@@ -55,8 +55,7 @@ export function useLocalDirectionServiceForm(
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const onChange =
-    (field: keyof LocalDirectionServiceFormValues) =>
-    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    (field: keyof LocalEntiteFormValues) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const value = event.target.value;
       setValues((previous) => {
         const updated = { ...previous, [field]: value };
@@ -84,7 +83,7 @@ export function useLocalDirectionServiceForm(
     });
   };
 
-  const validate = (additionalErrors: Record<string, string> = {}): LocalDirectionServiceFormValues | null => {
+  const validate = (additionalErrors: Record<string, string> = {}): LocalEntiteFormValues | null => {
     setHasSubmitted(true);
     const result = schema.safeParse(values);
     const errors = {

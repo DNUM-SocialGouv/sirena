@@ -15,7 +15,7 @@ type SirenaFieldsProps = {
   identityFieldsDisabled?: boolean;
 };
 
-export function LocalDirectionServiceSirenaFields({
+export function LocalEntiteSirenaFields({
   kind,
   formData,
   validationErrors,
@@ -98,7 +98,7 @@ type ContactFieldsProps = {
   onChange: (field: ContactField) => FieldChangeHandler;
 };
 
-export function LocalDirectionServiceContactFields({ formData, validationErrors, onChange }: ContactFieldsProps) {
+export function LocalEntiteContactFields({ formData, validationErrors, onChange }: ContactFieldsProps) {
   return (
     <fieldset className="fr-fieldset">
       <legend className="fr-fieldset__legend fr-mb-3w fr-pb-0">Informations de contact pour l’usager</legend>

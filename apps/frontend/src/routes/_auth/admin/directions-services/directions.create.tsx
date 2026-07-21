@@ -4,11 +4,8 @@ import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useEffect } from 'react';
 import { useCreateDirectionAdminLocal } from '@/hooks/queries/entites.hook';
-import {
-  LocalDirectionServiceContactFields,
-  LocalDirectionServiceSirenaFields,
-} from './-components/LocalDirectionServiceSirenaFields';
-import { useLocalDirectionServiceForm } from './-components/useLocalDirectionServiceForm';
+import { LocalEntiteContactFields, LocalEntiteSirenaFields } from '../-components/LocalEntiteFormFields';
+import { useLocalEntiteForm } from '../-components/useLocalEntiteForm';
 import { requireAdminLocalDirectionCreation } from './-create-route-guard';
 
 export const Route = createFileRoute('/_auth/admin/directions-services/directions/create')({
@@ -17,7 +14,7 @@ export const Route = createFileRoute('/_auth/admin/directions-services/direction
 });
 
 export function RouteComponent() {
-  const form = useLocalDirectionServiceForm('direction');
+  const form = useLocalEntiteForm('direction');
   const router = useRouter();
   const createDirectionAdminLocal = useCreateDirectionAdminLocal();
   const toastManager = Toast.useToastManager();
@@ -67,14 +64,14 @@ export function RouteComponent() {
         <form onSubmit={handleSubmit}>
           <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
-          <LocalDirectionServiceSirenaFields
+          <LocalEntiteSirenaFields
             kind="direction"
             formData={form.values}
             validationErrors={form.validationErrors}
             onChange={form.onChange}
           />
 
-          <LocalDirectionServiceContactFields
+          <LocalEntiteContactFields
             formData={form.values}
             validationErrors={form.validationErrors}
             onChange={form.onChange}
