@@ -55,7 +55,8 @@ function EntiteAdministrativeEditForm({ entite }: { entite: AssignedEntite }) {
       if (!values) return;
 
       try {
-        await editEntite.mutateAsync(values);
+        const { email, emailContactUsager, telContactUsager, adresseContactUsager } = values;
+        await editEntite.mutateAsync({ email, emailContactUsager, telContactUsager, adresseContactUsager });
         toastManager.add({
           title: 'Entité administrative modifiée avec succès',
           description: 'Les modifications ont bien été enregistrées.',
@@ -95,6 +96,7 @@ function EntiteAdministrativeEditForm({ entite }: { entite: AssignedEntite }) {
             formData={form.values}
             validationErrors={form.validationErrors}
             onChange={form.onChange}
+            identityFieldsDisabled
           />
 
           <LocalDirectionServiceContactFields

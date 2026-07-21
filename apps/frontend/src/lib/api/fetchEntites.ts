@@ -103,8 +103,6 @@ export type CreateChildEntiteAdminInput = {
 
 export type CreateDirectionAdminLocalInput = Omit<CreateChildEntiteAdminInput, 'isActive'>;
 export type EditEntiteAdministrativeAdminLocalInput = {
-  nomComplet: string;
-  label: string;
   email: string;
   emailContactUsager: string;
   adresseContactUsager: string;

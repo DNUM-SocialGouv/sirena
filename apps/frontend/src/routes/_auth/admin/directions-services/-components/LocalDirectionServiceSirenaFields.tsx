@@ -12,6 +12,7 @@ type SirenaFieldsProps = {
   validationErrors: Record<string, string>;
   onChange: (field: SirenaField) => FieldChangeHandler;
   leadingField?: ReactNode;
+  identityFieldsDisabled?: boolean;
 };
 
 export function LocalDirectionServiceSirenaFields({
@@ -20,6 +21,7 @@ export function LocalDirectionServiceSirenaFields({
   validationErrors,
   onChange,
   leadingField,
+  identityFieldsDisabled = false,
 }: SirenaFieldsProps) {
   const wording =
     kind === 'entite-administrative'
@@ -50,10 +52,11 @@ export function LocalDirectionServiceSirenaFields({
         <div className="fr-col-12 fr-col-md-7">
           <Input
             className="fr-fieldset__content"
-            label={`Nom ${wording.name} (obligatoire)`}
+            label={`Nom ${wording.name}${identityFieldsDisabled ? '' : ' (obligatoire)'}`}
             hintText={`Nom complet sans abréviation ou acronyme. Exemple : ${wording.nameExample}`}
             state={validationErrors.nomComplet ? 'error' : 'default'}
             stateRelatedMessage={validationErrors.nomComplet}
+            disabled={identityFieldsDisabled}
             nativeInputProps={{
               name: 'nomComplet',
               value: formData.nomComplet,
@@ -65,10 +68,11 @@ export function LocalDirectionServiceSirenaFields({
         <div className="fr-col-12 fr-col-md-5">
           <Input
             className="fr-fieldset__content"
-            label="Abréviation (obligatoire)"
+            label={`Abréviation${identityFieldsDisabled ? '' : ' (obligatoire)'}`}
             hintText={`Sigle, acronyme ou forme abrégée du nom. Exemple : ${wording.abbreviationExample}`}
             state={validationErrors.label ? 'error' : 'default'}
             stateRelatedMessage={validationErrors.label}
+            disabled={identityFieldsDisabled}
             nativeInputProps={{ name: 'label', value: formData.label, onChange: onChange('label') }}
           />
         </div>

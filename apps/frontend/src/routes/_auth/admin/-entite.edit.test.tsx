@@ -93,29 +93,21 @@ describe('Admin local Entité edit route', () => {
     expect(document.title).toBe('Modifier l’entité administrative ARS Normandie - Espace administrateur - SIRENA');
   });
 
-  it('requires the name and abbreviation and focuses the first invalid field', async () => {
-    const user = userEvent.setup();
+  it('presents the assigned Entité identity as immutable information', () => {
     vi.mocked(useEntiteAdministrativeAdminLocal).mockReturnValue({
       data: assignedEntite,
       isPending: false,
       isError: false,
     } as never);
     render(<RouteComponent />);
-    const name = screen.getByRole('textbox', { name: /Nom de l’entité administrative/ });
-    const abbreviation = screen.getByRole('textbox', { name: /Abréviation/ });
 
-    await user.clear(name);
-    await user.clear(abbreviation);
-    await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
-
-    expect(name).toHaveFocus();
-    expect(screen.getByText(/Le champ "Nom de l’entité administrative" est vide/)).toBeInTheDocument();
-    expect(screen.getByText(/Le champ "Abréviation" est vide/)).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /^Nom de l’entité administrative(?! \(obligatoire\))/ })).toBeDisabled();
+    expect(screen.getByRole('textbox', { name: /^Abréviation(?! \(obligatoire\))/ })).toBeDisabled();
   });
 
-  it('submits exactly the six visible fields without an Entité identifier', async () => {
+  it('submits exactly the four editable notification and contact fields', async () => {
     const user = userEvent.setup();
-    editMutateAsyncSpy.mockResolvedValueOnce({ ...assignedEntite, nomComplet: 'ARS de Normandie' });
+    editMutateAsyncSpy.mockResolvedValueOnce(assignedEntite);
     vi.mocked(useEntiteAdministrativeAdminLocal).mockReturnValue({
       data: assignedEntite,
       isPending: false,
@@ -123,19 +115,26 @@ describe('Admin local Entité edit route', () => {
     } as never);
     render(<RouteComponent />);
 
-    const name = screen.getByRole('textbox', { name: /Nom de l’entité administrative/ });
-    await user.clear(name);
-    await user.type(name, 'ARS de Normandie');
+    const notificationEmail = screen.getByRole('textbox', { name: /Adresse e-mail de notification/ });
+    const contactEmail = screen.getByRole('textbox', { name: /Adresse e-mail de contact/ });
+    const telephone = screen.getByRole('textbox', { name: /Numéro de téléphone/ });
+    const postalAddress = screen.getByRole('textbox', { name: /Adresse postale/ });
+    await user.clear(notificationEmail);
+    await user.type(notificationEmail, 'notifications@ars.fr');
+    await user.clear(contactEmail);
+    await user.type(contactEmail, 'usagers@ars.fr');
+    await user.clear(telephone);
+    await user.type(telephone, '0203040506');
+    await user.clear(postalAddress);
+    await user.type(postalAddress, '2 rue de la Santé, Paris');
     await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
 
     await waitFor(() =>
       expect(editMutateAsyncSpy).toHaveBeenCalledWith({
-        nomComplet: 'ARS de Normandie',
-        label: 'ARS NOR',
-        email: 'notification@ars.fr',
-        emailContactUsager: 'contact@ars.fr',
-        telContactUsager: '0102030405',
-        adresseContactUsager: '1 rue de la Santé, Paris',
+        email: 'notifications@ars.fr',
+        emailContactUsager: 'usagers@ars.fr',
+        telContactUsager: '0203040506',
+        adresseContactUsager: '2 rue de la Santé, Paris',
       }),
     );
   });
@@ -179,16 +178,16 @@ describe('Admin local Entité edit route', () => {
     const user = userEvent.setup();
     editMutateAsyncSpy
       .mockRejectedValueOnce(new Error('Request failed'))
-      .mockResolvedValueOnce({ ...assignedEntite, nomComplet: 'ARS de Normandie' });
+      .mockResolvedValueOnce({ ...assignedEntite, emailContactUsager: 'usagers@ars.fr' });
     vi.mocked(useEntiteAdministrativeAdminLocal).mockReturnValue({
       data: assignedEntite,
       isPending: false,
       isError: false,
     } as never);
     render(<RouteComponent />);
-    const name = screen.getByRole('textbox', { name: /Nom de l’entité administrative/ });
-    await user.clear(name);
-    await user.type(name, 'ARS de Normandie');
+    const contactEmail = screen.getByRole('textbox', { name: /Adresse e-mail de contact/ });
+    await user.clear(contactEmail);
+    await user.type(contactEmail, 'usagers@ars.fr');
 
     await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
 
@@ -201,7 +200,7 @@ describe('Admin local Entité edit route', () => {
       }),
     );
     expect(routerNavigateSpy).not.toHaveBeenCalled();
-    expect(name).toHaveValue('ARS de Normandie');
+    expect(contactEmail).toHaveValue('usagers@ars.fr');
 
     await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
 
