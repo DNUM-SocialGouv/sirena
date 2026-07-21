@@ -16,7 +16,7 @@ interface QueryErrorStateProps {
 
 export function QueryErrorState({ message = 'Erreur lors du chargement des données' }: QueryErrorStateProps) {
   return (
-    <div className="error-state">
+    <div className="error-state" role="alert">
       <p>{message}</p>
     </div>
   );
