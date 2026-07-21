@@ -22,6 +22,7 @@ vi.mock('@tanstack/react-router', () => ({
 vi.mock('@/hooks/queries/entites.hook', () => ({ useCreateDirectionAdminLocal: vi.fn() }));
 vi.mock('@/lib/api/fetchEntites', () => ({ fetchDirectionsServicesList: vi.fn() }));
 vi.mock('@/lib/api/fetchFeatureFlags', () => ({ fetchResolvedFeatureFlags: vi.fn() }));
+vi.mock('@/hooks/queries/profile.hook', () => ({ profileQueryOptions: vi.fn() }));
 vi.mock('@/lib/queryClient', () => ({ queryClient: { ensureQueryData: vi.fn(), fetchQuery: vi.fn() } }));
 vi.mock('@/lib/auth-guards', () => ({ requireAuthAndRoles: vi.fn(() => authGuardSpy) }));
 vi.mock('@sirena/ui', async () => {

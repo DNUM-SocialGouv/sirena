@@ -27,6 +27,7 @@ vi.mock('@/hooks/queries/entites.hook', () => ({
 }));
 
 vi.mock('@/lib/api/fetchFeatureFlags', () => ({ fetchResolvedFeatureFlags: vi.fn() }));
+vi.mock('@/hooks/queries/profile.hook', () => ({ profileQueryOptions: vi.fn() }));
 vi.mock('@/lib/queryClient', () => ({ queryClient: { ensureQueryData: vi.fn() } }));
 vi.mock('@/lib/auth-guards', () => ({ requireAuthAndRoles: vi.fn(() => vi.fn()) }));
 vi.mock('@sirena/ui', async () => {
