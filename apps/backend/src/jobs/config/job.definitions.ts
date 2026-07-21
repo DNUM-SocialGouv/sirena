@@ -1,6 +1,7 @@
 import { envVars } from '../../config/env.js';
 import { fetchRequetes } from '../tasks/fetchRequetes.task.js';
 import { fileIntegrityCheck } from '../tasks/fileIntegrityCheck.task.js';
+import { purgeAccessLogs } from '../tasks/purgeAccessLogs.task.js';
 import { queueUnprocessedFiles } from '../tasks/queueUnprocessedFiles.task.js';
 import { retryAffectation } from '../tasks/retryAffectation.task.js';
 import { retryImportRequetes } from '../tasks/retryImportRequetes.task.js';
@@ -45,6 +46,15 @@ export const jobHandlers = [
     task: fileIntegrityCheck,
     repeatEveryMs: parseInt(envVars.CRON_FILE_INTEGRITY_CHECK, 10) * 1000,
     data: {},
+    runOnStart: false,
+  },
+  {
+    name: 'purge-access-logs',
+    task: purgeAccessLogs,
+    repeatEveryMs: parseInt(envVars.CRON_PURGE_ACCESS_LOGS, 10) * 1000,
+    data: {
+      retentionDays: envVars.ACCESS_LOG_RETENTION_DAYS,
+    },
     runOnStart: false,
   },
 ] as const;

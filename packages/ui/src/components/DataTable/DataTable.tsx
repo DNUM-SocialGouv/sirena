@@ -2,6 +2,7 @@ import { type JSX, memo, useCallback, useEffect, useId, useMemo, useRef } from '
 import { isPrimitive } from '../../utils/guards';
 import type { Primitive } from '../../utils/types';
 import { Loader } from '../Loader/Loader';
+import { ColumnScrollControls } from './ColumnScrollControls/ColumnScrollControls';
 import type { Cells, Column, ColumnKey, OnSortChangeParams, Row, RowWithId } from './DataTable.type';
 import { DataTableHeader } from './DataTableHeader/DataTableHeader';
 import { DataTableRow } from './DataTableRow/DataTableRow';
@@ -25,6 +26,11 @@ export type DataTableProps<K extends string, T extends RowWithId<K>> = {
   onSortChange?: (params: OnSortChangeParams<T>) => void;
   onSelectedValuesChange?: (selectedValues: T[K][]) => void;
   isLoading?: boolean;
+  // TODO: the scroll controls compute the viewport from clientWidth without subtracting sticky
+  // column widths, so combining showColumnScrollControls with isFixedLeft/isFixedRight/isSelectable
+  // can reveal a column edge behind a fixed column. No table currently uses both; fix the viewport
+  // math (in ColumnScrollControls) before enabling this on a table with fixed/selectable columns.
+  showColumnScrollControls?: boolean;
 };
 
 function isRow(x: Row | Primitive | unknown[]): x is Row {
@@ -91,9 +97,12 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
   onSortChange = () => {},
   onSelectedValuesChange = () => {},
   isLoading = false,
+  showColumnScrollControls = false,
 }: DataTableProps<RowId, Datum>): JSX.Element => {
   const fallbackId = useId();
   const tableId = id || fallbackId;
+  const labelId = `${tableId}-label`;
+  const containerRef = useRef<HTMLDivElement>(null);
   const getCell = useMemo(() => {
     return (row: Datum, column: ColumnKey<Datum>) =>
       column in cells && cells[column] ? cells[column](row) : getNestedValue(row, column);
@@ -168,16 +177,31 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
 
   return (
     <div className={tableClasses} id={`${tableId}-component`}>
+      {showColumnScrollControls && (
+        <div className="data-table-header">
+          <div className="data-table-header__label">
+            <span id={labelId} aria-live="polite">
+              {title}
+            </span>
+            {isLoading && <Loader size="sm" />}
+          </div>
+          <ColumnScrollControls containerRef={containerRef} tableId={tableId} />
+        </div>
+      )}
       <div className="fr-table__wrapper">
-        <div className="fr-table__container">
+        <div className="fr-table__container" ref={containerRef}>
           <div className="fr-table__content">
-            <table id={tableId}>
-              <caption>
-                <div className={`fr-table__caption-with-loader${hideCaption ? ' fr-sr-only' : ''}`}>
-                  <span aria-live="polite">{title}</span>
-                  {isLoading && <Loader size="sm" />}
-                </div>
-              </caption>
+            {/* In controls mode the visible header band is the table's accessible name (aria-labelledby),
+                so the caption is skipped to avoid announcing the same label twice. */}
+            <table id={tableId} aria-labelledby={showColumnScrollControls ? labelId : undefined}>
+              {!showColumnScrollControls && (
+                <caption>
+                  <div className={`fr-table__caption-with-loader${hideCaption ? ' fr-sr-only' : ''}`}>
+                    <span aria-live="polite">{title}</span>
+                    {isLoading && <Loader size="sm" />}
+                  </div>
+                </caption>
+              )}
               <DataTableHeader
                 id={tableId}
                 isSelectable={isSelectable}
