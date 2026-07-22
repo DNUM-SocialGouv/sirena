@@ -23,7 +23,9 @@ export function transformSirecFait(sirecData: SirecReclamationData): SirenaFaitD
 
   return {
     commentaire: commentaireParts.join('\n'),
-    autresPrecisions: sirecData.reclamation.description ?? '',
+    autresPrecisions: sirecData.reclamation.description
+      ? `Description de la Pré-identification : ${sirecData.reclamation.description}`
+      : '',
     motifsDeclaratifs: [...new Set(transcodeMotifsDeclaratifs(sirecData.motifsDeclaresIdDicos))],
     motifs: [],
   };

@@ -82,7 +82,7 @@ describe('sirecMigration.fait.transformer.ts', () => {
   it('should map description to autresPrecisions', () => {
     const result = transformSirecFait(sirecData);
 
-    expect(result.autresPrecisions).toBe('Ma réclamation');
+    expect(result.autresPrecisions).toBe('Description de la Pré-identification : Ma réclamation');
   });
 
   it('should default autresPrecisions to empty string when description is null', () => {
