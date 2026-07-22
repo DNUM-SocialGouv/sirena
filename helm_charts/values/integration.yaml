@@ -20,6 +20,7 @@ backend:
       REDIS_TLS: "false"
       TIPIMAIL_DISABLE_SENDING: "false"
       APP_ENV: integration
+      ACCESS_LOG_RETENTION_DAYS: "1"
 
     deployment:
       replicas: 1
