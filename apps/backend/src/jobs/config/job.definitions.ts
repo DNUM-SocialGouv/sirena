@@ -45,7 +45,9 @@ export const jobHandlers = [
     name: 'file-integrity-check',
     task: fileIntegrityCheck,
     repeatEveryMs: parseInt(envVars.CRON_FILE_INTEGRITY_CHECK, 10) * 1000,
-    data: {},
+    data: {
+      timeoutMs: 1000 * 60 * 10,
+    },
     runOnStart: false,
   },
   {
