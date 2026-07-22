@@ -102,8 +102,13 @@ describe('Admin local Entité edit route', () => {
     } as never);
     render(<RouteComponent />);
 
-    expect(screen.getByRole('textbox', { name: /^Nom de l’entité administrative(?! \(obligatoire\))/ })).toBeDisabled();
-    expect(screen.getByRole('textbox', { name: /^Abréviation(?! \(obligatoire\))/ })).toBeDisabled();
+    const name = screen.getByRole('textbox', { name: /^Nom de l’entité administrative(?! \(obligatoire\))/ });
+    const abbreviation = screen.getByRole('textbox', { name: /^Abréviation(?! \(obligatoire\))/ });
+
+    expect(name).toHaveAttribute('readonly');
+    expect(name).not.toBeDisabled();
+    expect(abbreviation).toHaveAttribute('readonly');
+    expect(abbreviation).not.toBeDisabled();
   });
 
   it('submits exactly the four editable notification and contact fields', async () => {
@@ -228,7 +233,7 @@ describe('Admin local Entité edit route', () => {
     expect(editMutateAsyncSpy).not.toHaveBeenCalled();
   });
 
-  it('does not validate disabled identity and accepts empty optional contact fields', async () => {
+  it('does not validate read-only identity and accepts empty optional contact fields', async () => {
     const user = userEvent.setup();
     vi.mocked(useEntiteAdministrativeAdminLocal).mockReturnValue({
       data: {
