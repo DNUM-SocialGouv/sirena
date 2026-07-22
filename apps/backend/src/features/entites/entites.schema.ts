@@ -118,12 +118,12 @@ export const EditEntiteAdministrativeAdminLocalResponseSchema = EntiteAdministra
 const DirectionServiceAdminLocalFieldsSchema = EntiteDetailsSchema;
 const ParentDirectionAdminLocalSchema = EntiteReferenceSchema;
 
-export const GetDirectionServiceAdminLocalResponseSchema = z.discriminatedUnion('kind', [
+export const GetDirectionServiceAdminLocalResponseSchema = z.discriminatedUnion('entiteType', [
   DirectionServiceAdminLocalFieldsSchema.extend({
-    kind: z.literal('direction'),
+    entiteType: z.literal('direction'),
   }),
   DirectionServiceAdminLocalFieldsSchema.extend({
-    kind: z.literal('service'),
+    entiteType: z.literal('service'),
     parentDirection: ParentDirectionAdminLocalSchema,
   }),
 ]);

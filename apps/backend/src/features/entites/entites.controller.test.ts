@@ -575,11 +575,12 @@ describe('Entites endpoints: /entites', () => {
         adresseContactUsager: '1 rue de la Santé, Paris',
       };
 
-      expect(GetDirectionServiceAdminLocalResponseSchema.safeParse({ ...fields, kind: 'direction' }).success).toBe(
-        true,
-      );
       expect(
-        GetDirectionServiceAdminLocalResponseSchema.safeParse({ ...fields, kind: 'entite-administrative' }).success,
+        GetDirectionServiceAdminLocalResponseSchema.safeParse({ ...fields, entiteType: 'direction' }).success,
+      ).toBe(true);
+      expect(
+        GetDirectionServiceAdminLocalResponseSchema.safeParse({ ...fields, entiteType: 'entite-administrative' })
+          .success,
       ).toBe(false);
     });
 
@@ -599,7 +600,7 @@ describe('Entites endpoints: /entites', () => {
       vi.mocked(getDirectionServiceAdminLocal)
         .mockResolvedValueOnce({
           id: 'service-pa',
-          kind: 'service',
+          entiteType: 'service',
           nomComplet: 'Service PA',
           label: 'PA',
           email: 'service-pa@ars.fr',
@@ -621,7 +622,7 @@ describe('Entites endpoints: /entites', () => {
       expect(await authorizedRes.json()).toEqual({
         data: {
           id: 'service-pa',
-          kind: 'service',
+          entiteType: 'service',
           nomComplet: 'Service PA',
           label: 'PA',
           email: 'service-pa@ars.fr',
@@ -678,7 +679,7 @@ describe('Entites endpoints: /entites', () => {
       vi.mocked(editDirectionServiceAdminLocal)
         .mockResolvedValueOnce({
           id: 'service-pa',
-          kind: 'service',
+          entiteType: 'service',
           ...input,
           parentDirection: {
             id: 'dir-autonomie',
@@ -703,7 +704,7 @@ describe('Entites endpoints: /entites', () => {
       expect(await authorizedRes.json()).toEqual({
         data: {
           id: 'service-pa',
-          kind: 'service',
+          entiteType: 'service',
           ...input,
           parentDirection: {
             id: 'dir-autonomie',

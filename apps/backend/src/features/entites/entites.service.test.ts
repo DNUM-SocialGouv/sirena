@@ -1409,7 +1409,7 @@ describe('editDirectionServiceAdminLocal()', () => {
       }),
     ).resolves.toEqual({
       id: 'dir-autonomie',
-      kind: 'direction',
+      entiteType: 'direction',
       nomComplet: 'Direction Autonomie et Handicap',
       label: 'DAH',
       email: 'notification@direction.fr',
@@ -1469,7 +1469,7 @@ describe('editDirectionServiceAdminLocal()', () => {
 
     await expect(editDirectionServiceAdminLocal('service-pa', 'service-pa', input)).resolves.toEqual({
       id: 'service-pa',
-      kind: 'service',
+      entiteType: 'service',
       ...input,
       parentDirection: {
         id: 'dir-autonomie',
@@ -1634,7 +1634,7 @@ describe('getDirectionServiceAdminLocal()', () => {
 
     await expect(getDirectionServiceAdminLocal('root-ars', 'dir-autonomie')).resolves.toEqual({
       id: 'dir-autonomie',
-      kind: 'direction',
+      entiteType: 'direction',
       nomComplet: 'Direction Autonomie',
       label: 'DA',
       email: 'direction-autonomie@ars.fr',
@@ -1669,7 +1669,7 @@ describe('getDirectionServiceAdminLocal()', () => {
 
     await expect(getDirectionServiceAdminLocal('root-ars', 'service-pa')).resolves.toEqual({
       id: 'service-pa',
-      kind: 'service',
+      entiteType: 'service',
       nomComplet: 'Service PA',
       label: 'PA',
       email: 'service-pa@ars.fr',
@@ -1702,7 +1702,7 @@ describe('getDirectionServiceAdminLocal()', () => {
 
     await expect(getDirectionServiceAdminLocal('dir-autonomie', 'dir-autonomie')).resolves.toEqual({
       id: 'dir-autonomie',
-      kind: 'direction',
+      entiteType: 'direction',
       nomComplet: 'Direction Autonomie',
       label: 'DA',
       email: 'direction-autonomie@ars.fr',
@@ -1732,7 +1732,7 @@ describe('getDirectionServiceAdminLocal()', () => {
 
     await expect(getDirectionServiceAdminLocal('dir-autonomie', 'service-pa')).resolves.toEqual({
       id: 'service-pa',
-      kind: 'service',
+      entiteType: 'service',
       nomComplet: 'Service PA',
       label: 'PA',
       email: 'service-pa@ars.fr',
@@ -1771,7 +1771,7 @@ describe('getDirectionServiceAdminLocal()', () => {
 
     await expect(getDirectionServiceAdminLocal('service-pa', 'service-pa')).resolves.toEqual({
       id: 'service-pa',
-      kind: 'service',
+      entiteType: 'service',
       nomComplet: 'Service PA',
       label: 'PA',
       email: 'service-pa@ars.fr',

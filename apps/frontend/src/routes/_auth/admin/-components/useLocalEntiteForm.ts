@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { z } from 'zod';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 
-export type LocalEntiteFormKind = 'entite-administrative' | 'direction' | 'service';
+export type LocalEntiteFormType = 'entite-administrative' | 'direction' | 'service';
 
 export type LocalEntiteFormValues = {
   nomComplet: string;
@@ -23,21 +23,21 @@ const emptyLocalEntiteForm: LocalEntiteFormValues = {
   adresseContactUsager: '',
 };
 
-const createSchema = (kind: LocalEntiteFormKind) => {
+const createSchema = (entiteType: LocalEntiteFormType) => {
   const entityName =
-    kind === 'entite-administrative'
+    entiteType === 'entite-administrative'
       ? 'de l’entité administrative'
-      : kind === 'direction'
+      : entiteType === 'direction'
         ? 'de la direction'
         : 'du service';
 
   return z.object({
     nomComplet:
-      kind === 'entite-administrative'
+      entiteType === 'entite-administrative'
         ? z.string()
         : z.string().trim().min(1, `Le champ "Nom ${entityName}" est vide. Veuillez le renseigner.`),
     label:
-      kind === 'entite-administrative'
+      entiteType === 'entite-administrative'
         ? z.string()
         : z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
     email: optionalEmailSchema,
@@ -48,10 +48,10 @@ const createSchema = (kind: LocalEntiteFormKind) => {
 };
 
 export function useLocalEntiteForm(
-  kind: LocalEntiteFormKind,
+  entiteType: LocalEntiteFormType,
   initialValues: LocalEntiteFormValues = emptyLocalEntiteForm,
 ) {
-  const schema = useMemo(() => createSchema(kind), [kind]);
+  const schema = useMemo(() => createSchema(entiteType), [entiteType]);
   const [values, setValues] = useState(initialValues);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -113,5 +113,5 @@ export function useLocalEntiteForm(
     };
   };
 
-  return { kind, values, validationErrors, onChange, clearError, validate };
+  return { entiteType, values, validationErrors, onChange, clearError, validate };
 }

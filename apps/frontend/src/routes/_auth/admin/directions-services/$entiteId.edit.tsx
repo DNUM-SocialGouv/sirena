@@ -33,7 +33,7 @@ type LocalEditTarget = NonNullable<ReturnType<typeof useDirectionServiceAdminLoc
 
 function LocalEditForm({ target }: { target: LocalEditTarget }) {
   const wording =
-    target.kind === 'direction'
+    target.entiteType === 'direction'
       ? {
           titlePrefix: 'Modifier la direction',
           successTitle: 'Direction modifiée avec succès',
@@ -48,7 +48,7 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
   const editDirectionService = useEditDirectionServiceAdminLocal();
   const toastManager = Toast.useToastManager();
   const router = useRouter();
-  const form = useLocalEntiteForm(target.kind, {
+  const form = useLocalEntiteForm(target.entiteType, {
     nomComplet: target.nomComplet,
     label: target.label,
     email: target.email,
@@ -103,7 +103,7 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
           <LocalEntiteFormFields
             form={form}
             leadingField={
-              target.kind === 'service' ? (
+              target.entiteType === 'service' ? (
                 <div className="fr-col-12 fr-col-md-7">
                   <Input
                     className="fr-fieldset__content"

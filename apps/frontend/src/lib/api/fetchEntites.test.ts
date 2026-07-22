@@ -69,7 +69,7 @@ describe('local Direction and Service API adapter', () => {
   it('loads and patches an edit target through its local endpoint', async () => {
     const target = {
       id: 'service-pa',
-      kind: 'service' as const,
+      entiteType: 'service' as const,
       ...visibleInput,
       parentDirection: { id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' },
     };

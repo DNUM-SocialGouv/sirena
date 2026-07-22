@@ -37,7 +37,7 @@ vi.mock('@sirena/ui', async () => {
 
 const directionTarget = {
   id: 'dir-autonomie',
-  kind: 'direction' as const,
+  entiteType: 'direction' as const,
   nomComplet: 'Direction Autonomie',
   label: 'DA',
   email: 'direction-autonomie@ars.fr',
@@ -49,7 +49,7 @@ const directionTarget = {
 const serviceTarget = {
   ...directionTarget,
   id: 'service-pa',
-  kind: 'service' as const,
+  entiteType: 'service' as const,
   nomComplet: 'Service PA',
   label: 'PA',
   email: 'service-pa@ars.fr',

@@ -273,19 +273,19 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
     return null;
   }
 
-  let kind: 'direction' | 'service' | null = null;
+  let entiteType: 'direction' | 'service' | null = null;
   let parentDirection: { id: string; nomComplet: string; label: string } | null = null;
 
   if (assignedEntite.entiteMereId === null) {
     if (targetEntite.entiteMereId === assignedEntite.id) {
-      kind = 'direction';
+      entiteType = 'direction';
     } else if (targetEntite.entiteMereId) {
       const targetParent = await prisma.entite.findUnique({
         where: { id: targetEntite.entiteMereId },
         select: { id: true, nomComplet: true, label: true, entiteMereId: true },
       });
       if (targetParent?.entiteMereId === assignedEntite.id) {
-        kind = 'service';
+        entiteType = 'service';
         parentDirection = {
           id: targetParent.id,
           nomComplet: targetParent.nomComplet,
@@ -306,9 +306,9 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
     });
     if (assignedParent?.entiteMereId === null) {
       if (targetEntite.id === assignedEntite.id) {
-        kind = 'direction';
+        entiteType = 'direction';
       } else if (targetEntite.entiteMereId === assignedEntite.id) {
-        kind = 'service';
+        entiteType = 'service';
         parentDirection = {
           id: assignedEntite.id,
           nomComplet: assignedEntite.nomComplet,
@@ -316,7 +316,7 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
         };
       }
     } else if (assignedParent?.entiteMere?.entiteMereId === null && targetEntite.id === assignedEntite.id) {
-      kind = 'service';
+      entiteType = 'service';
       parentDirection = {
         id: assignedParent.id,
         nomComplet: assignedParent.nomComplet,
@@ -325,7 +325,7 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
     }
   }
 
-  if (!kind) {
+  if (!entiteType) {
     return null;
   }
 
@@ -339,14 +339,14 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
     adresseContactUsager: targetEntite.adresseContactUsager,
   };
 
-  if (kind === 'service') {
+  if (entiteType === 'service') {
     if (!parentDirection) {
       return null;
     }
-    return { ...editableFields, kind, parentDirection };
+    return { ...editableFields, entiteType, parentDirection };
   }
 
-  return { ...editableFields, kind };
+  return { ...editableFields, entiteType };
 };
 
 export const editDirectionServiceAdminLocal = async (
@@ -372,9 +372,9 @@ export const editDirectionServiceAdminLocal = async (
     adresseContactUsager: updatedEntite.adresseContactUsager,
   };
 
-  return target.kind === 'service'
-    ? { ...updatedFields, kind: target.kind, parentDirection: target.parentDirection }
-    : { ...updatedFields, kind: target.kind };
+  return target.entiteType === 'service'
+    ? { ...updatedFields, entiteType: target.entiteType, parentDirection: target.parentDirection }
+    : { ...updatedFields, entiteType: target.entiteType };
 };
 
 export const getDirectionsServicesList = async (

@@ -1,34 +1,40 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import Input from '@codegouvfr/react-dsfr/Input';
 import type { ReactNode } from 'react';
-import type { LocalEntiteFormKind, LocalEntiteFormValues } from './useLocalEntiteForm';
+import type { LocalEntiteFormType, LocalEntiteFormValues } from './useLocalEntiteForm';
 
 type FieldChangeHandler = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 type FormFieldsState = {
-  kind: LocalEntiteFormKind;
+  entiteType: LocalEntiteFormType;
   values: LocalEntiteFormValues;
   validationErrors: Record<string, string>;
   onChange: (field: keyof LocalEntiteFormValues) => FieldChangeHandler;
 };
 
 type SirenaFieldsProps = {
-  kind: LocalEntiteFormKind;
+  entiteType: LocalEntiteFormType;
   formData: LocalEntiteFormValues;
   validationErrors: Record<string, string>;
   onChange: FormFieldsState['onChange'];
   leadingField?: ReactNode;
 };
 
-function LocalEntiteSirenaFields({ kind, formData, validationErrors, onChange, leadingField }: SirenaFieldsProps) {
-  const identityFieldsDisabled = kind === 'entite-administrative';
+function LocalEntiteSirenaFields({
+  entiteType,
+  formData,
+  validationErrors,
+  onChange,
+  leadingField,
+}: SirenaFieldsProps) {
+  const identityFieldsDisabled = entiteType === 'entite-administrative';
   const wording =
-    kind === 'entite-administrative'
+    entiteType === 'entite-administrative'
       ? {
           name: 'de l’entité administrative',
           nameExample: 'Agence régionale de santé Normandie',
           abbreviationExample: 'ARS NOR',
         }
-      : kind === 'direction'
+      : entiteType === 'direction'
         ? {
             name: 'de la direction',
             nameExample: 'Direction de l’Offre de Soins',
@@ -174,7 +180,7 @@ export function LocalEntiteFormFields({ form, leadingField }: LocalEntiteFormFie
 
   return (
     <>
-      <LocalEntiteSirenaFields kind={form.kind} {...fields} leadingField={leadingField} />
+      <LocalEntiteSirenaFields entiteType={form.entiteType} {...fields} leadingField={leadingField} />
       <LocalEntiteContactFields {...fields} />
     </>
   );
