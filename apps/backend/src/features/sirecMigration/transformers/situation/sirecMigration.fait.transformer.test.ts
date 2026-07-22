@@ -19,7 +19,7 @@ describe('sirecMigration.fait.transformer.ts', () => {
     reclamation: {
       id_data: 42,
       r_recept_date: new Date('2024-01-15'),
-      description: 'Ma réclamation',
+      description: null,
       prioritaire_precisez: 'Précision prioritaire',
       dest: null as number | null,
       dest_primaire: null as string | null,
@@ -38,28 +38,30 @@ describe('sirecMigration.fait.transformer.ts', () => {
     misEnCauses: [],
   } as unknown as SirecReclamationData;
 
-  it('should map prioritaire_precisez to commentaire when dest is null', () => {
+  it('should map prioritaire_precisez to autresPrecisions when dest is null', () => {
     const result = transformSirecFait(sirecData);
 
-    expect(result.commentaire).toBe('Précision prioritaire');
+    expect(result.autresPrecisions).toBe('Précision sur le caractère prioritaire : Précision prioritaire');
   });
 
-  it('should default commentaire to empty string when both prioritaire_precisez and dest are null', () => {
+  it('should default autresPrecisions to empty string when both prioritaire_precisez and dest are null', () => {
     const result = transformSirecFait({
       ...sirecData,
       reclamation: { ...sirecData.reclamation, prioritaire_precisez: null, dest: null },
     });
 
-    expect(result.commentaire).toBe('');
+    expect(result.autresPrecisions).toBe('');
   });
 
-  it('should append dest label to commentaire when dest is set', () => {
+  it('should append dest label to autresPrecisions when dest is set', () => {
     const result = transformSirecFait({
       ...sirecData,
       reclamation: { ...sirecData.reclamation, dest: 12 },
     });
 
-    expect(result.commentaire).toBe('Précision prioritaire\nDestinataire(s) de la réclamation : Courriel');
+    expect(result.autresPrecisions).toBe(
+      'Précision sur le caractère prioritaire : Précision prioritaire\nDestinataire(s) de la réclamation : Courriel',
+    );
   });
 
   it('should use only dest label when prioritaire_precisez is null', () => {
@@ -68,7 +70,7 @@ describe('sirecMigration.fait.transformer.ts', () => {
       reclamation: { ...sirecData.reclamation, prioritaire_precisez: null, dest: 12 },
     });
 
-    expect(result.commentaire).toBe('Destinataire(s) de la réclamation : Courriel');
+    expect(result.autresPrecisions).toBe('Destinataire(s) de la réclamation : Courriel');
   });
 
   it('should delegate dest transcoding to transcodeDest', async () => {
@@ -80,13 +82,19 @@ describe('sirecMigration.fait.transformer.ts', () => {
   });
 
   it('should map description to autresPrecisions', () => {
-    const result = transformSirecFait(sirecData);
+    const result = transformSirecFait({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, prioritaire_precisez: null, description: 'Ma réclamation' },
+    });
 
     expect(result.autresPrecisions).toBe('Description de la Pré-identification : Ma réclamation');
   });
 
   it('should default autresPrecisions to empty string when description is null', () => {
-    const result = transformSirecFait({ ...sirecData, reclamation: { ...sirecData.reclamation, description: null } });
+    const result = transformSirecFait({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, prioritaire_precisez: null, description: null },
+    });
 
     expect(result.autresPrecisions).toBe('');
   });
@@ -99,22 +107,26 @@ describe('sirecMigration.fait.transformer.ts', () => {
     expect(transcodeMotifsDeclaratifs).toHaveBeenCalledWith([809, 811]);
   });
 
-  it('should append dest_primaire label to commentaire when set', () => {
+  it('should append dest_primaire label to autresPrecisions when set', () => {
     const result = transformSirecFait({
       ...sirecData,
       reclamation: { ...sirecData.reclamation, dest_primaire: 'Service X' },
     });
 
-    expect(result.commentaire).toBe('Précision prioritaire\nDestinataire primaire : Service X');
+    expect(result.autresPrecisions).toBe(
+      'Précision sur le caractère prioritaire : Précision prioritaire\nDestinataire primaire : Service X',
+    );
   });
 
-  it('should append dest_secondaire label to commentaire when set', () => {
+  it('should append dest_secondaire label to autresPrecisions when set', () => {
     const result = transformSirecFait({
       ...sirecData,
       reclamation: { ...sirecData.reclamation, dest_secondaire: 'Service Y' },
     });
 
-    expect(result.commentaire).toBe('Précision prioritaire\nDestinataire secondaire : Service Y');
+    expect(result.autresPrecisions).toBe(
+      'Précision sur le caractère prioritaire : Précision prioritaire\nDestinataire secondaire : Service Y',
+    );
   });
 
   it('should append both dest_primaire and dest_secondaire when both are set', () => {
@@ -123,8 +135,8 @@ describe('sirecMigration.fait.transformer.ts', () => {
       reclamation: { ...sirecData.reclamation, dest_primaire: 'Service X', dest_secondaire: 'Service Y' },
     });
 
-    expect(result.commentaire).toBe(
-      'Précision prioritaire\nDestinataire primaire : Service X\nDestinataire secondaire : Service Y',
+    expect(result.autresPrecisions).toBe(
+      'Précision sur le caractère prioritaire : Précision prioritaire\nDestinataire primaire : Service X\nDestinataire secondaire : Service Y',
     );
   });
 
@@ -134,7 +146,7 @@ describe('sirecMigration.fait.transformer.ts', () => {
       reclamation: { ...sirecData.reclamation, prioritaire_precisez: null, dest_primaire: null, dest_secondaire: null },
     });
 
-    expect(result.commentaire).toBe('');
+    expect(result.autresPrecisions).toBe('');
   });
 
   it('should not include dest_primaire when it is an empty string', () => {
@@ -143,16 +155,16 @@ describe('sirecMigration.fait.transformer.ts', () => {
       reclamation: { ...sirecData.reclamation, prioritaire_precisez: null, dest_primaire: '' },
     });
 
-    expect(result.commentaire).toBe('');
+    expect(result.autresPrecisions).toBe('');
   });
 
-  it('should append courrier_signal label to commentaire when set', () => {
+  it('should append courrier_signal label to autresPrecisions when set', () => {
     const result = transformSirecFait({
       ...sirecData,
       reclamation: { ...sirecData.reclamation, prioritaire_precisez: null, courrier_signal: 10 },
     });
 
-    expect(result.commentaire).toBe('Courrier signalé : Courrier');
+    expect(result.autresPrecisions).toBe('Courrier signalé : Courrier');
   });
 
   it('should not include courrier_signal line when courrier_signal is null', () => {
@@ -161,7 +173,7 @@ describe('sirecMigration.fait.transformer.ts', () => {
       reclamation: { ...sirecData.reclamation, prioritaire_precisez: null, courrier_signal: null },
     });
 
-    expect(result.commentaire).toBe('');
+    expect(result.autresPrecisions).toBe('');
   });
 
   it('should delegate courrier_signal transcoding to transcodeCourrierSignal', async () => {
