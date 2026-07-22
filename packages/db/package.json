@@ -44,7 +44,7 @@
     "@types/node": "catalog:",
     "@types/pg": "^8.20.0",
     "prisma": "catalog:",
-    "prisma-erd-generator": "^2.4.3",
+    "prisma-erd-generator": "^2.4.4",
     "typescript": "catalog:"
   }
 }
