@@ -12,7 +12,7 @@ import {
 } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
 import { clsx } from 'clsx';
-import { useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useCreateRequeteEntite } from '@/hooks/mutations/createRequeteEntite.hook';
 import { useRequeteDateTypeSave } from '@/hooks/mutations/useRequeteDateTypeSave';
 import { useCanEdit } from '@/hooks/useCanEdit';
@@ -45,13 +45,13 @@ const RenderExtraInfos = ({
 
   return (
     <dl className={fr.cx('fr-mb-0')}>
-      {dateDemandeDeclarant && (
+      {dateDemandeDeclarant ? (
         <>
           <dt>Date de la demande par le déclarant</dt>
           <dd>{new Date(dateDemandeDeclarant).toLocaleDateString('fr-FR')}</dd>
         </>
-      )}
-      {provenanceId && (
+      ) : null}
+      {provenanceId ? (
         <>
           <dt>Provenance</dt>
           <dd>
@@ -61,7 +61,7 @@ const RenderExtraInfos = ({
               ` – ${provenancePrecision}`}
           </dd>
         </>
-      )}
+      ) : null}
     </dl>
   );
 };
@@ -230,6 +230,13 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
     }
   };
 
+  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    handleSubmit();
+  };
+
+  const handleEditClick = useCallback(() => setIsEdit(true), []);
+
   const hasRequestData = Boolean(dateValue || typeValue || provenanceValue || dateDemandeDeclarantValue);
 
   return (
@@ -244,12 +251,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
         style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
       >
         {isEdit ? (
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              handleSubmit();
-            }}
-          >
+          <form onSubmit={handleFormSubmit}>
             <div className={fr.cx('fr-grid-row')}>
               <div className={fr.cx('fr-col-12', 'fr-mb-2w')}>
                 <Input
@@ -313,7 +315,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
                       ))}
                     </Select>
                   </div>
-                  {showProvenancePrecision && (
+                  {showProvenancePrecision ? (
                     <div className={fr.cx('fr-col-12', 'fr-mb-2w')}>
                       <Input
                         label="Précision (optionnel)"
@@ -324,7 +326,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
                         }}
                       />
                     </div>
-                  )}
+                  ) : null}
                 </>
               )}
               <div className={clsx(fr.cx('fr-col-12'), 'display-end')}>
@@ -357,7 +359,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
                 nativeButtonProps={{
                   'aria-label': dateValue && typeValue ? 'Modifier' : 'Compléter',
                 }}
-                onClick={() => setIsEdit(true)}
+                onClick={handleEditClick}
               >
                 <span className="fr-sr-only">{dateValue && typeValue ? 'Modifier' : 'Compléter'}</span>
               </Button>

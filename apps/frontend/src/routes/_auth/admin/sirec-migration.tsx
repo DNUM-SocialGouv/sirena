@@ -4,7 +4,7 @@ import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
 import { migrateByReclamations, migrateByServices } from '@/lib/api/fetchSirecMigration';
 import { HttpError } from '@/lib/api/tanstackQuery';
@@ -60,56 +60,62 @@ export function RouteComponent() {
   const [systemError, setSystemError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleModeChange = (newMode: Mode) => {
+  const handleModeChange = useCallback((newMode: Mode) => {
     setMode(newMode);
     setRaw('');
     setDeleteIfExists(false);
     setResult(null);
     setFieldError(null);
     setSystemError(null);
-  };
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setResult(null);
-    setFieldError(null);
-    setSystemError(null);
+  const selectReclamations = useCallback(() => handleModeChange('reclamations'), [handleModeChange]);
+  const selectServices = useCallback(() => handleModeChange('services'), [handleModeChange]);
 
-    const ids = parseIds(raw);
-    if (ids.length === 0) {
-      setFieldError('Aucun identifiant valide trouvé.');
-      return;
-    }
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setResult(null);
+      setFieldError(null);
+      setSystemError(null);
 
-    setLoading(true);
-    try {
-      if (mode === 'reclamations') {
-        const { queued } = await migrateByReclamations(ids, deleteIfExists);
-        setResult(`${queued} réclamation${queued > 1 ? 's' : ''} ajoutée${queued > 1 ? 's' : ''} à la queue.`);
-      } else {
-        const { queued, found } = await migrateByServices(ids, deleteIfExists);
-        setResult(
-          `${found} réclamation${found > 1 ? 's' : ''} trouvée${found > 1 ? 's' : ''}, ${queued} ajoutée${queued > 1 ? 's' : ''} à la queue.`,
-        );
+      const ids = parseIds(raw);
+      if (ids.length === 0) {
+        setFieldError('Aucun identifiant valide trouvé.');
+        return;
       }
-      setRaw('');
-    } catch (error) {
-      if (error instanceof HttpError && error.status === 422) {
-        const unknownIds = (error.rawData as { unknownIds?: number[] } | undefined)?.unknownIds;
-        if (unknownIds && unknownIds.length > 0) {
-          setFieldError(
-            `Identifiant${unknownIds.length > 1 ? 's' : ''} introuvable${
-              unknownIds.length > 1 ? 's' : ''
-            } dans SIREC : ${unknownIds.join(', ')}.`,
+
+      setLoading(true);
+      try {
+        if (mode === 'reclamations') {
+          const { queued } = await migrateByReclamations(ids, deleteIfExists);
+          setResult(`${queued} réclamation${queued > 1 ? 's' : ''} ajoutée${queued > 1 ? 's' : ''} à la queue.`);
+        } else {
+          const { queued, found } = await migrateByServices(ids, deleteIfExists);
+          setResult(
+            `${found} réclamation${found > 1 ? 's' : ''} trouvée${found > 1 ? 's' : ''}, ${queued} ajoutée${queued > 1 ? 's' : ''} à la queue.`,
           );
-          return;
         }
+        setRaw('');
+      } catch (error) {
+        if (error instanceof HttpError && error.status === 422) {
+          const unknownIds = (error.rawData as { unknownIds?: number[] } | undefined)?.unknownIds;
+          if (unknownIds && unknownIds.length > 0) {
+            setFieldError(
+              `Identifiant${unknownIds.length > 1 ? 's' : ''} introuvable${
+                unknownIds.length > 1 ? 's' : ''
+              } dans SIREC : ${unknownIds.join(', ')}.`,
+            );
+            return;
+          }
+        }
+        setSystemError('Une erreur est survenue lors de la requête.');
+      } finally {
+        setLoading(false);
       }
-      setSystemError('Une erreur est survenue lors de la requête.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [raw, mode, deleteIfExists],
+  );
 
   const isReclamations = mode === 'reclamations';
 
@@ -133,7 +139,7 @@ export function RouteComponent() {
               tabIndex={isReclamations ? 0 : -1}
               aria-selected={isReclamations}
               aria-controls={panelReclamationsId}
-              onClick={() => handleModeChange('reclamations')}
+              onClick={selectReclamations}
             >
               Par IDs de réclamations
             </button>
@@ -147,7 +153,7 @@ export function RouteComponent() {
               tabIndex={isReclamations ? -1 : 0}
               aria-selected={!isReclamations}
               aria-controls={panelServicesId}
-              onClick={() => handleModeChange('services')}
+              onClick={selectServices}
             >
               Par IDs de services
             </button>
@@ -233,8 +239,8 @@ export function RouteComponent() {
         </div>
       </div>
 
-      {result && <Alert className="fr-mt-2w" severity="success" title={result} />}
-      {systemError && <Alert className="fr-mt-2w" severity="error" title={systemError} />}
+      {result ? <Alert className="fr-mt-2w" severity="success" title={result} /> : null}
+      {systemError ? <Alert className="fr-mt-2w" severity="error" title={systemError} /> : null}
     </div>
   );
 }

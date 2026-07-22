@@ -55,6 +55,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
   };
   const handleCloseRequete = () => closeRequeteModalRef.current?.openModal();
   const handleReopenRequete = () => reopenRequeteModalRef.current?.openModal();
+  const handleOpenCreate = () => stepFormPanelRef.current?.openCreate();
 
   const content = requestId ? (
     <>
@@ -120,7 +121,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                   style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}
                 >
                   <h2 className="fr-mb-0 fr-text--xl">Traitement</h2>
-                  {requestQuery.data && (
+                  {requestQuery.data ? (
                     <>
                       <EntiteTypeBadge
                         entiteTypeId={requestQuery.data.entite.entiteTypeId}
@@ -133,7 +134,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                         </p>
                       ))}
                     </>
-                  )}
+                  ) : null}
                 </div>
                 {requestId &&
                   !requestQuery.error &&
@@ -152,12 +153,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                   )}
                 {requestId && canEdit && !requestQuery.error && (
                   <div className="fr-col-auto">
-                    <Button
-                      priority="secondary"
-                      className="fr-mr-2w"
-                      size="small"
-                      onClick={() => stepFormPanelRef.current?.openCreate()}
-                    >
+                    <Button priority="secondary" className="fr-mr-2w" size="small" onClick={handleOpenCreate}>
                       Ajouter une étape
                     </Button>
                     <Button ref={closeRequeteButtonRef} size="small" priority="primary" onClick={handleCloseRequete}>

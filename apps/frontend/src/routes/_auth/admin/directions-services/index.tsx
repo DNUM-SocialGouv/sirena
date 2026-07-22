@@ -80,6 +80,17 @@ export function RouteComponent() {
     setCurrentPage(1);
   }, []);
 
+  const getPageLinkProps = useCallback(
+    (pageNumber: number) => ({
+      href: '#',
+      onClick: (event: React.MouseEvent<HTMLAnchorElement>) => {
+        event.preventDefault();
+        setCurrentPage(pageNumber);
+      },
+    }),
+    [],
+  );
+
   return (
     <section>
       <h2>{title}</h2>
@@ -142,17 +153,7 @@ export function RouteComponent() {
 
       {shouldShowPagination && (
         <div className="fr-mt-3w fr-grid-row fr-grid-row--center">
-          <Pagination
-            count={totalPages}
-            defaultPage={currentPage}
-            getPageLinkProps={(pageNumber) => ({
-              href: '#',
-              onClick: (event) => {
-                event.preventDefault();
-                setCurrentPage(pageNumber);
-              },
-            })}
-          />
+          <Pagination count={totalPages} defaultPage={currentPage} getPageLinkProps={getPageLinkProps} />
         </div>
       )}
     </section>

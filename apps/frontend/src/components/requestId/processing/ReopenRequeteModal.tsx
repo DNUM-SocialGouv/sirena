@@ -87,11 +87,11 @@ export const ReopenRequeteModal = forwardRef<ReopenRequeteModalRef, ReopenRequet
           Êtes-vous sûr de vouloir rouvrir cette requête ? La requête repassera au statut « En cours » et sera de
           nouveau modifiable.
         </p>
-        {errorMessage && (
+        {errorMessage ? (
           <p className="fr-text--sm" style={{ color: 'var(--text-default-error)' }}>
             {errorMessage}
           </p>
-        )}
+        ) : null}
       </reopenModal.Component>
     );
   },

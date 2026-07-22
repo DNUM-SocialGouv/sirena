@@ -67,7 +67,17 @@ export function SituationForm({
     },
     [],
   );
-  const handleSave = async () => {
+  const handleCancel = useCallback(() => {
+    if (mode === 'create' && !requestId) {
+      navigate({ to: '/request/create' });
+    } else if (requestId) {
+      navigate({ to: '/request/$requestId', params: { requestId } });
+    } else {
+      window.history.back();
+    }
+  }, [mode, requestId, navigate]);
+
+  const handleSave = useCallback(async () => {
     setHasAttemptedSave(true);
 
     if (!isTraitementDesFaitsValid) {
@@ -88,17 +98,7 @@ export function SituationForm({
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handleCancel = () => {
-    if (mode === 'create' && !requestId) {
-      navigate({ to: '/request/create' });
-    } else if (requestId) {
-      navigate({ to: '/request/$requestId', params: { requestId } });
-    } else {
-      window.history.back();
-    }
-  };
+  }, [isTraitementDesFaitsValid, formData, faitFiles, handleCancel, mode, requestId, initialData, onSave]);
 
   const backUrl = mode === 'create' && !requestId ? '/request/create' : requestId ? `/request/${requestId}` : '/home';
 
