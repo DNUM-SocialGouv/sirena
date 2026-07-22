@@ -75,6 +75,6 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
       ...transformSirecMesuresPrises(sirecData, arsEntiteIds),
       ...clotureEtapes,
     ],
-    situations: transformSirecMisEnCauseSituations(sirecData, situationEntiteIds),
+    situations: transformSirecMisEnCauseSituations(sirecData, situationEntiteIds, requeteEntiteIds, declarant),
   };
 }

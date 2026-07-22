@@ -18,6 +18,8 @@ const logger = createDefaultLogger();
 
 export const SIREC_NATIONAL_ENTITE_ID = 1;
 
+export const ARS_NORMANDIE_ENTITE_ID = '4af829ff-07c1-425d-85d6-83b5f97e4422';
+
 const ALL_AFFECTATION_ENTITES = {
   ...AFFECTATION_ENTITES_TOP_LEVEL,
   ...AFFECTATION_ENTITES_ILE_DE_FRANCE,

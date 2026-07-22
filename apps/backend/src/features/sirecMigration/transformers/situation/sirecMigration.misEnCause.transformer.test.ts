@@ -1,7 +1,9 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <test assertions on optional fields> */
 import { describe, expect, it, vi } from 'vitest';
 import type { SirecFinessData, SirecReclamationData, SirecRppsData } from '../../sirecMigration.repository.js';
+import { ARS_NORMANDIE_ENTITE_ID } from '../../transco/affectation/affectation.transco.js';
 import { SirecDataError, SirecTranscoError } from '../../transco/sirecTransco.error.js';
+import type { SirenaDeclarantData } from '../sirecMigration.declarant.transformer.js';
 import { transformSirecMisEnCauseSituations } from './sirecMigration.misEnCause.transformer.js';
 
 vi.mock('./sirecMigration.affectation.transformer.js', () => ({
@@ -176,6 +178,12 @@ const makeData = (
     mainCourantes: [],
     misEnCauses,
   }) as unknown as SirecReclamationData;
+
+const mockFinessDataUnmappedCategetab: SirecFinessData = {
+  ...mockFinessData,
+  categetab: '999',
+  libcategetab: 'Catégorie non mappée',
+};
 
 const mockRppsData: SirecRppsData = {
   id_data: 12345678901,
@@ -768,6 +776,108 @@ describe('sirecMigration.misEnCause.transformer.ts', () => {
 
       expect(result[0].fait.motifs).toEqual(['MOTIF_OUT_153']);
       expect(result[1].fait.motifs).toEqual(['MOTIF_IN_122']);
+    });
+  });
+
+  describe('ARS Normandie special rule (clear misEnCauseType on FINESS situation)', () => {
+    const arsMisEnCause = () => makeMisEnCause({ id_data: 10, type: 64, identifiant: 20, finessData: mockFinessData });
+
+    const emptyDeclarant: SirenaDeclarantData = {
+      estVictime: null,
+      veutGarderAnonymat: null,
+      lienVictimeId: null,
+      lienAutrePrecision: null,
+      adresse: null,
+      identite: null,
+      commentaire: '',
+      estSignalementProfessionnel: null,
+      estPersonneMorale: null,
+    };
+
+    it('should clear misEnCauseTypeId and misEnCauseTypePrecisionId when all conditions are met', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [arsMisEnCause()], null, null, 1),
+        [],
+        [ARS_NORMANDIE_ENTITE_ID],
+        null,
+      );
+
+      expect((result[0].misEnCauseData as any)?.misEnCauseTypeId).toBeNull();
+      expect((result[0].misEnCauseData as any)?.misEnCauseTypePrecisionId).toBeNull();
+    });
+
+    it('should not clear when requeteEntiteIds does not include ARS Normandie', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [arsMisEnCause()], null, null, 1),
+        [],
+        ['some-other-entite'],
+        null,
+      );
+
+      expect((result[0].misEnCauseData as any)?.misEnCauseTypeId).toBe('ETABLISSEMENT');
+    });
+
+    it('should not clear when signalement is not true', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [arsMisEnCause()], null, null, 0),
+        [],
+        [ARS_NORMANDIE_ENTITE_ID],
+        null,
+      );
+
+      expect((result[0].misEnCauseData as any)?.misEnCauseTypeId).toBe('ETABLISSEMENT');
+    });
+
+    it('should not clear when declarant data is present', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [arsMisEnCause()], null, null, 1),
+        [],
+        [ARS_NORMANDIE_ENTITE_ID],
+        emptyDeclarant,
+      );
+
+      expect((result[0].misEnCauseData as any)?.misEnCauseTypeId).toBe('ETABLISSEMENT');
+    });
+
+    it('should not clear when lieuDeSurvenueData is empty (e.g. RPPS mis en cause)', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [makeMisEnCause({ id_data: 10, type: 65, identifiant: 12345678901, rppsData: mockRppsData })],
+          null,
+          null,
+          1,
+        ),
+        [],
+        [ARS_NORMANDIE_ENTITE_ID],
+        null,
+      );
+
+      expect((result[0].misEnCauseData as any)?.misEnCauseTypeId).toBe('PROFESSIONNEL_SANTE');
+    });
+
+    it('should not clear when FINESS categetab does not map to a lieu de survenue', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [makeMisEnCause({ id_data: 10, type: 64, identifiant: 20, finessData: mockFinessDataUnmappedCategetab })],
+          null,
+          null,
+          1,
+        ),
+        [],
+        [ARS_NORMANDIE_ENTITE_ID],
+        null,
+      );
+
+      expect(result[0].lieuDeSurvenueData).toBeNull();
+      expect((result[0].misEnCauseData as any)?.misEnCauseTypeId).toBe('ETABLISSEMENT');
+    });
+
+    it('should never clear when requeteEntiteIds/declarant are omitted (defaults)', () => {
+      const result = transformSirecMisEnCauseSituations(makeData([], [arsMisEnCause()], null, null, 1), []);
+
+      expect((result[0].misEnCauseData as any)?.misEnCauseTypeId).toBe('ETABLISSEMENT');
     });
   });
 });

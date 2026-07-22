@@ -38,7 +38,8 @@ describe('purgeAccessLogs.task.js', () => {
 
     expect(prisma.accessLog.deleteMany).toHaveBeenCalledTimes(1);
     const [args] = vi.mocked(prisma.accessLog.deleteMany).mock.calls[0];
-    const cutoff = (args?.where?.createdAt as { lt: Date } | undefined)?.lt;
+    if (!args?.where?.createdAt) throw new Error('deleteMany called without a createdAt filter');
+    const cutoff = (args.where.createdAt as { lt: Date }).lt;
     const retentionMs = 365 * 24 * 60 * 60 * 1000;
 
     expect(cutoff?.getTime()).toBeGreaterThanOrEqual(before - retentionMs);
