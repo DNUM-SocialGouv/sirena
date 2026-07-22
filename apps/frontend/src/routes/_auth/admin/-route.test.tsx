@@ -76,16 +76,9 @@ describe('Admin route', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'Espace administrateur' })).toBeInTheDocument();
 
-    expect(screen.getByRole('tab', { name: "Gestion des demandes d'habilitations" })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
-    expect(screen.getByRole('tab', { name: 'Gestion des utilisateurs' })).toHaveAttribute('aria-selected', 'false');
-    expect(screen.getByRole('tab', { name: 'Gestion des directions et services' })).toHaveAttribute(
-      'aria-selected',
-      'false',
-    );
-    expect(screen.queryByRole('tab', { name: 'Gestion des entités' })).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: "Demandes d'habilitation" })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Utilisateurs' })).toHaveAttribute('aria-selected', 'false');
+    expect(screen.getByRole('tab', { name: 'Directions et services' })).toHaveAttribute('aria-selected', 'false');
     expect(screen.queryByRole('tab', { name: 'Entités' })).not.toBeInTheDocument();
   });
 
@@ -115,7 +108,7 @@ describe('Admin route', () => {
     render(<RouteComponent />);
 
     expect(screen.queryByRole('tab', { name: 'Entités' })).not.toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Gestion des directions et services' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Directions et services' })).toBeInTheDocument();
   });
 
   it('renders Entités and Directions et services for root-level entity admins', () => {
@@ -128,10 +121,7 @@ describe('Admin route', () => {
     render(<RouteComponent />);
 
     expect(screen.getByRole('tab', { name: 'Entités' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('tab', { name: 'Gestion des directions et services' })).toHaveAttribute(
-      'aria-selected',
-      'false',
-    );
+    expect(screen.getByRole('tab', { name: 'Directions et services' })).toHaveAttribute('aria-selected', 'false');
   });
 
   it('renders the directions and services tab as active for entity admins on directions-services routes', () => {
@@ -142,16 +132,10 @@ describe('Admin route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.getByRole('tab', { name: 'Gestion des directions et services' })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
-    expect(screen.getByRole('tab', { name: "Gestion des demandes d'habilitations" })).toHaveAttribute(
-      'aria-selected',
-      'false',
-    );
-    expect(screen.getByRole('tab', { name: 'Gestion des utilisateurs' })).toHaveAttribute('aria-selected', 'false');
-    expect(screen.queryByRole('tab', { name: 'Gestion des entités' })).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Directions et services' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: "Demandes d'habilitation" })).toHaveAttribute('aria-selected', 'false');
+    expect(screen.getByRole('tab', { name: 'Utilisateurs' })).toHaveAttribute('aria-selected', 'false');
+    expect(screen.queryByRole('tab', { name: 'Entités' })).not.toBeInTheDocument();
   });
 
   it('renders the entites tab as active for super admins on entites routes', () => {
@@ -163,12 +147,9 @@ describe('Admin route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.getByRole('tab', { name: 'Gestion des entités' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('tab', { name: "Gestion des demandes d'habilitations" })).toHaveAttribute(
-      'aria-selected',
-      'false',
-    );
-    expect(screen.getByRole('tab', { name: 'Gestion des utilisateurs' })).toHaveAttribute('aria-selected', 'false');
-    expect(screen.queryByRole('tab', { name: 'Gestion des directions et services' })).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Entités' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: "Demandes d'habilitation" })).toHaveAttribute('aria-selected', 'false');
+    expect(screen.getByRole('tab', { name: 'Utilisateurs' })).toHaveAttribute('aria-selected', 'false');
+    expect(screen.queryByRole('tab', { name: 'Directions et services' })).not.toBeInTheDocument();
   });
 });

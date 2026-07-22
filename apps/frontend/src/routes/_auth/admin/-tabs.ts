@@ -3,19 +3,19 @@ import type { TabDescriptor } from '@sirena/ui';
 
 const baseTabs: TabDescriptor[] = [
   {
-    label: "Gestion des demandes d'habilitations",
+    label: "Demandes d'habilitation",
     tabPanelId: 'panel-pending',
     tabId: 'tab-pending',
   },
   {
-    label: 'Gestion des utilisateurs',
+    label: 'Utilisateurs',
     tabPanelId: 'panel-all',
     tabId: 'tab-all',
   },
 ];
 
 const entitesTab: TabDescriptor = {
-  label: 'Gestion des entités',
+  label: 'Entités',
   tabPanelId: 'panel-entites',
   tabId: 'tab-entites',
 };
@@ -26,10 +26,10 @@ const localEntitesTab: TabDescriptor = {
   tabId: 'tab-local-entites',
 };
 
-const directionsServicesTab: TabDescriptor = {
-  label: 'Gestion des directions et services',
-  tabPanelId: 'panel-directions-services',
-  tabId: 'tab-directions-services',
+const localDirectionsServicesTab: TabDescriptor = {
+  label: 'Directions et services',
+  tabPanelId: 'panel-local-directions-services',
+  tabId: 'tab-local-directions-services',
 };
 
 const sirecMigrationTab: TabDescriptor = {
@@ -50,7 +50,7 @@ export function getTabs(
     if (isAssignedToEntiteAdministrative) {
       tabs.push(localEntitesTab);
     }
-    tabs.push(directionsServicesTab);
+    tabs.push(localDirectionsServicesTab);
   }
 
   if (hasSirecMigration) {

@@ -5,18 +5,18 @@ import { getActiveTab, getTabPaths, getTabs } from './-tabs';
 describe('tabs', () => {
   it('shows the entites tab as the third tab for super admins', () => {
     expect(getTabs(ROLES.SUPER_ADMIN).map((tab) => tab.label)).toEqual([
-      "Gestion des demandes d'habilitations",
-      'Gestion des utilisateurs',
-      'Gestion des entités',
+      "Demandes d'habilitation",
+      'Utilisateurs',
+      'Entités',
     ]);
   });
 
   it('shows local Entités and Directions et services for root-level entity admins when the feature flag is enabled', () => {
     expect(getTabs(ROLES.ENTITY_ADMIN, false, true, true).map((tab) => tab.label)).toEqual([
-      "Gestion des demandes d'habilitations",
-      'Gestion des utilisateurs',
+      "Demandes d'habilitation",
+      'Utilisateurs',
       'Entités',
-      'Gestion des directions et services',
+      'Directions et services',
     ]);
     expect(getTabPaths(ROLES.ENTITY_ADMIN, false, true, true)).toEqual([
       '/admin/users',
@@ -30,16 +30,16 @@ describe('tabs', () => {
 
   it('shows directions and services instead of global entites for entity admins when the feature flag is enabled', () => {
     expect(getTabs(ROLES.ENTITY_ADMIN, false, true).map((tab) => tab.label)).toEqual([
-      "Gestion des demandes d'habilitations",
-      'Gestion des utilisateurs',
-      'Gestion des directions et services',
+      "Demandes d'habilitation",
+      'Utilisateurs',
+      'Directions et services',
     ]);
   });
 
   it('hides directions and services for entity admins when the feature flag is disabled', () => {
     expect(getTabs(ROLES.ENTITY_ADMIN, false, false, true).map((tab) => tab.label)).toEqual([
-      "Gestion des demandes d'habilitations",
-      'Gestion des utilisateurs',
+      "Demandes d'habilitation",
+      'Utilisateurs',
     ]);
   });
 
