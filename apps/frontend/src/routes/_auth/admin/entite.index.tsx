@@ -1,6 +1,6 @@
 import { Loader } from '@sirena/ui';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useEffect, useId } from 'react';
+import { useEffect } from 'react';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
 import { useEntiteAdministrativeAdminLocal } from '@/hooks/queries/entites.hook';
 import './entite.css';
@@ -13,18 +13,15 @@ const displayOptionalValue = (value: string) => value.trim() || 'Non renseigné'
 
 export function RouteComponent() {
   const entiteQuery = useEntiteAdministrativeAdminLocal();
-  const titleId = useId();
-  const sirenaInformationTitleId = useId();
-  const userContactInformationTitleId = useId();
 
   useEffect(() => {
     document.title = 'Informations de l’entité - Espace administrateur - SIRENA';
   }, []);
 
   return (
-    <section aria-labelledby={titleId}>
+    <section>
       <div className="assigned-entite-details__header">
-        <h2 id={titleId}>Informations de l’entité</h2>
+        <h2>Informations de l’entité</h2>
         {entiteQuery.data ? (
           <Link className="fr-btn fr-btn--secondary" to="/admin/entite/edit">
             Modifier les informations
@@ -37,10 +34,8 @@ export function RouteComponent() {
 
       {entiteQuery.data ? (
         <div className="assigned-entite-details">
-          <section aria-labelledby={sirenaInformationTitleId}>
-            <h3 className="assigned-entite-details__section-title" id={sirenaInformationTitleId}>
-              Informations utilisées dans SIRENA
-            </h3>
+          <section>
+            <h3 className="assigned-entite-details__section-title">Informations utilisées dans SIRENA</h3>
             <dl className="assigned-entite-details__grid">
               <div>
                 <dt>Nom</dt>
@@ -57,10 +52,8 @@ export function RouteComponent() {
             </dl>
           </section>
 
-          <section aria-labelledby={userContactInformationTitleId}>
-            <h3 className="assigned-entite-details__section-title" id={userContactInformationTitleId}>
-              Informations de contact pour l’usager
-            </h3>
+          <section>
+            <h3 className="assigned-entite-details__section-title">Informations de contact pour l’usager</h3>
             <dl className="assigned-entite-details__grid">
               <div>
                 <dt>Adresse e-mail de contact</dt>
