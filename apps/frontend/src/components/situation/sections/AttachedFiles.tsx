@@ -18,7 +18,7 @@ type ExistingFileItemProps = {
   requestId?: string;
   situationId?: string;
   isSaving: boolean;
-  topEntiteId?: string;
+  topEntiteId?: string | null;
   onRegisterTrigger: (element: HTMLElement) => void;
   onDelete: (file: FileInfo, event: React.MouseEvent) => void;
 };
