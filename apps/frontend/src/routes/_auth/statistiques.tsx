@@ -1,7 +1,7 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { FEATURE_FLAGS, ROLES, ROLES_STATISTICS } from '@sirena/common/constants';
 import { createFileRoute, Navigate, useNavigate, useSearch } from '@tanstack/react-router';
-import type { CSSProperties } from 'react';
+import { type CSSProperties, useCallback } from 'react';
 import { z } from 'zod';
 import { AuthLayout } from '@/components/layout/auth/layout';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
@@ -152,11 +152,14 @@ export function RouteComponent() {
   const dataDate = formatDataDate(new Date());
   const query = useStatisticsDashboard(range, areFlagsReady && isEnabled && canView);
 
-  const handlePeriodChange = (next: PeriodSelection) => {
-    navigate({
-      search: (prev) => ({ ...prev, period: next.period, startDate: next.startDate, endDate: next.endDate }),
-    });
-  };
+  const handlePeriodChange = useCallback(
+    (next: PeriodSelection) => {
+      navigate({
+        search: (prev) => ({ ...prev, period: next.period, startDate: next.startDate, endDate: next.endDate }),
+      });
+    },
+    [navigate],
+  );
 
   if (isProfilePending || !areFlagsReady) {
     return null;

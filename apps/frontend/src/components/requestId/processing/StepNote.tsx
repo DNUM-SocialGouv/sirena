@@ -17,14 +17,14 @@ export const StepNote = ({ author, content, createdAt }: StepNoteProps) => {
       <div className="fr-grid-row fr-grid-row--middle fr-mb-1v">
         <p className={clsx('fr-col fr-mb-0', styles['request-note__from'])}>
           <span className="fr-icon-draft-line fr-icon--xs" aria-hidden="true" /> Note rédigée le {formatDate(createdAt)}
-          {author && <> par {formatAgent(author)}</>}
+          {author ? <> par {formatAgent(author)}</> : null}
         </p>
       </div>
-      {content && (
+      {content ? (
         <div>
           <p className="fr-text--sm fr-text--grey fr-mb-0">{content}</p>
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

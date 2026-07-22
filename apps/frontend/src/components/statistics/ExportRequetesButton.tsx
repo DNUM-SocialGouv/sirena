@@ -1,5 +1,5 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { fetchExportRequetesCsv } from '@/lib/api/fetchStatistics';
 import { toastManager } from '@/lib/toastManager';
 
@@ -13,7 +13,7 @@ function getFilenameFromContentDisposition(contentDisposition: string | null) {
 export function ExportRequetesButton() {
   const [isExporting, setIsExporting] = useState(false);
 
-  const handleExport = async () => {
+  const handleExport = useCallback(async () => {
     setIsExporting(true);
 
     try {
@@ -41,7 +41,7 @@ export function ExportRequetesButton() {
     } finally {
       setIsExporting(false);
     }
-  };
+  }, []);
 
   return (
     <Button

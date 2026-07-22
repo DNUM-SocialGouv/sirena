@@ -156,6 +156,8 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
 
   const { allSelected, isIndeterminate, toggleAll } = useSelectAll(data, rowId, selectedValues, tableId);
 
+  const handleToggleAll = useCallback(() => onSelectedValuesChange(toggleAll()), [onSelectedValuesChange, toggleAll]);
+
   const tableClasses = useMemo(() => getTableClasses(size, isBordered), [size, isBordered]);
 
   const renderedRows = useMemo(() => {
@@ -177,17 +179,17 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
 
   return (
     <div className={tableClasses} id={`${tableId}-component`}>
-      {showColumnScrollControls && (
+      {showColumnScrollControls ? (
         <div className="data-table-header">
           <div className="data-table-header__label">
             <span id={labelId} aria-live="polite">
               {title}
             </span>
-            {isLoading && <Loader size="sm" />}
+            {isLoading ? <Loader size="sm" /> : null}
           </div>
           <ColumnScrollControls containerRef={containerRef} tableId={tableId} />
         </div>
-      )}
+      ) : null}
       <div className="fr-table__wrapper">
         <div className="fr-table__container" ref={containerRef}>
           <div className="fr-table__content">
@@ -198,7 +200,7 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
                 <caption>
                   <div className={`fr-table__caption-with-loader${hideCaption ? ' fr-sr-only' : ''}`}>
                     <span aria-live="polite">{title}</span>
-                    {isLoading && <Loader size="sm" />}
+                    {isLoading ? <Loader size="sm" /> : null}
                   </div>
                 </caption>
               )}
@@ -209,7 +211,7 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
                 isIndeterminate={isIndeterminate}
                 columns={columns}
                 sort={sort}
-                onToggleAll={() => onSelectedValuesChange(toggleAll())}
+                onToggleAll={handleToggleAll}
                 onSortChange={handleSortChange}
               />
               <tbody>

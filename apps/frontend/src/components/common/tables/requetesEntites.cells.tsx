@@ -201,7 +201,7 @@ const buildIdentity = (misEnCause: MisEnCause): { key: string; node: ReactNode }
         <>
           {[civilite, prenom].filter(Boolean).join(' ')}
           {(civilite || prenom) && nom ? ' ' : ''}
-          {nom && <span className="lastname">{nom}</span>}
+          {nom ? <span className="lastname">{nom}</span> : null}
         </>
       ),
     };
@@ -345,7 +345,7 @@ export function renderAffectationCell(row: RequeteEntiteRow, userTopEntiteId: st
   return (
     <>
       {monEntiteContent}
-      {monEntiteContent && autresEntitesContent && <div className="fr-mt-1w">{autresEntitesContent}</div>}
+      {monEntiteContent && autresEntitesContent ? <div className="fr-mt-1w">{autresEntitesContent}</div> : null}
       {!monEntiteContent && autresEntitesContent}
     </>
   );

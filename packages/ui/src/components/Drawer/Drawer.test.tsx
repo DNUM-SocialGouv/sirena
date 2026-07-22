@@ -1,7 +1,7 @@
 // Drawer.test.tsx
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useId, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
 import Drawer from './Drawer';
 
 // Polyfill rAF
@@ -62,12 +62,13 @@ describe('Drawer', () => {
 
     function Harness() {
       const [open, setOpen] = useState(false);
+      const handleClose = useCallback(() => setOpen(false), []);
       return (
         <Drawer.Root open={open} onOpenChange={setOpen}>
           <Drawer.Trigger>Open</Drawer.Trigger>
           <Drawer.Portal>
             <Drawer.Panel>
-              <button type="button" onClick={() => setOpen(false)}>
+              <button type="button" onClick={handleClose}>
                 Close
               </button>
             </Drawer.Panel>
@@ -92,15 +93,12 @@ describe('Drawer', () => {
 
     function Harness() {
       const [open, setOpen] = useState(true);
+      const handleClickOutside = useCallback(() => {
+        onClickOutside();
+        setOpen(false);
+      }, []);
       return (
-        <Drawer.Root
-          open={open}
-          onOpenChange={setOpen}
-          onClickOutside={() => {
-            onClickOutside();
-            setOpen(false);
-          }}
-        >
+        <Drawer.Root open={open} onOpenChange={setOpen} onClickOutside={handleClickOutside}>
           <Drawer.Portal>
             <Drawer.Panel>
               <div>content</div>
@@ -168,13 +166,14 @@ describe('Drawer', () => {
   it('does NOT close on outside click if onClickOutside is not provided', async () => {
     function Harness() {
       const [open, setOpen] = useState(true);
+      const handleClose = useCallback(() => setOpen(false), []);
       return (
         <Drawer.Root open={open} onOpenChange={setOpen} overlay={false}>
           <Drawer.Trigger>Open</Drawer.Trigger>
           <Drawer.Portal>
             {/* pas de Backdrop */}
             <Drawer.Panel>
-              <PanelContent onClose={() => setOpen(false)} />
+              <PanelContent onClose={handleClose} />
             </Drawer.Panel>
           </Drawer.Portal>
         </Drawer.Root>

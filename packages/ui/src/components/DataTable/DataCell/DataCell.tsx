@@ -27,10 +27,11 @@ const dataCellComponent = <Datum extends RowWithId<RowId>, RowId extends string>
   const { key, isFixedLeft, isFixedRight } = column;
 
   const value = getCell(row, key);
+  const content = isEmpty(value) ? <EmptyCell /> : value;
 
   return (
     <td className={`fr-cell ${isFixedLeft ? 'fr-cell--fixed' : ''} ${isFixedRight ? 'fr-cell--fixed-right' : ''}`}>
-      {isEmpty(value) ? <EmptyCell /> : value}
+      {content}
     </td>
   );
 };

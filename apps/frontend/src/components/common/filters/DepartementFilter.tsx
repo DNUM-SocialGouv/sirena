@@ -4,6 +4,8 @@ import { DropdownCheckboxFilter } from './DropdownCheckboxFilter';
 type Departement = { code: string; label: string };
 type CountsMap = Record<string, number>;
 
+const selectedValuesLabel = (count: number) => `département${count > 1 ? 's' : ''} sélectionné${count > 1 ? 's' : ''}`;
+
 type Props = {
   departements: Departement[];
   selectedCodes: string[];
@@ -30,7 +32,7 @@ export function DepartementFilter({ departements, selectedCodes, counts, onChang
   return (
     <DropdownCheckboxFilter
       buttonLabel="Département"
-      selectedValuesLabel={(count) => `département${count > 1 ? 's' : ''} sélectionné${count > 1 ? 's' : ''}`}
+      selectedValuesLabel={selectedValuesLabel}
       legend="Filtrer les requêtes par département"
       hintText="Code - Département (nombre de requêtes)"
       options={options}
