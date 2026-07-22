@@ -41,14 +41,14 @@ function RouteComponent() {
             <div className="fr-grid-row fr-grid-row-gutters fr-grid-row--center">
               <div className="fr-col-12 fr-col-md-9 fr-col-lg-8">
                 <h1>Connexion à SIRENA</h1>
-                {error && (
+                {error ? (
                   <Alert
                     severity="error"
                     title="Erreur de connexion"
                     description={getErrorMessage(error)}
                     className="fr-mb-4v"
                   />
-                )}
+                ) : null}
                 <div className="fr-mb-6v">
                   <h1>Se connecter avec ProConnect</h1>
                   <div className="fr-connect-group">

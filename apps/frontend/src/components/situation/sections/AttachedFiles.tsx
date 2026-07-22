@@ -13,6 +13,111 @@ import { ACCEPTED_FILE_TYPES, FILE_UPLOAD_HINT, formatFileSize } from '@/utils/f
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 import styles from './AttachedFiles.module.css';
 
+type ExistingFileItemProps = {
+  file: FileInfo;
+  requestId?: string;
+  situationId?: string;
+  isSaving: boolean;
+  topEntiteId?: string;
+  onRegisterTrigger: (element: HTMLElement) => void;
+  onDelete: (file: FileInfo, event: React.MouseEvent) => void;
+};
+
+const ExistingFileItem = ({
+  file,
+  requestId,
+  situationId,
+  isSaving,
+  topEntiteId,
+  onRegisterTrigger,
+  onDelete,
+}: ExistingFileItemProps) => {
+  const handleDelete = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      onRegisterTrigger(event.currentTarget);
+      onDelete(file, event);
+    },
+    [onRegisterTrigger, onDelete, file],
+  );
+
+  return (
+    <li className={noteStyles['request-note__file']}>
+      <div className={styles.fileItem}>
+        <div className={styles.fileName}>
+          <FileDownloadLink
+            href={
+              situationId && requestId
+                ? `/api/requetes-entite/${requestId}/situation/${situationId}/file/${file.id}`
+                : '#'
+            }
+            safeHref={
+              requestId && situationId
+                ? `/api/requetes-entite/${requestId}/situation/${situationId}/file/${file.id}/safe`
+                : undefined
+            }
+            fileName={file.fileName}
+            fileId={file.id}
+            fileSize={file.size}
+            status={file.status}
+            scanStatus={file.scanStatus}
+            sanitizeStatus={file.sanitizeStatus}
+            className={`${fr.cx('fr-link', 'fr-text--sm')} ${styles.fileNameLink}`}
+          />
+        </div>
+        {!isSaving && file.canDelete !== false && file.entiteId === topEntiteId && (
+          <Button
+            aria-label={`Supprimer le fichier ${file.fileName}`}
+            title={`Supprimer le fichier ${file.fileName}`}
+            type="button"
+            className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
+            onClick={handleDelete}
+          >
+            <span className={fr.cx('fr-sr-only')}>Supprimer le fichier {file.fileName}</span>
+          </Button>
+        )}
+      </div>
+    </li>
+  );
+};
+
+type SelectedFileItemProps = {
+  file: File;
+  isSaving: boolean;
+  onDelete: (file: File, event: React.MouseEvent) => void;
+};
+
+const SelectedFileItem = ({ file, isSaving, onDelete }: SelectedFileItemProps) => {
+  const handleDelete = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      onDelete(file, event);
+    },
+    [onDelete, file],
+  );
+
+  return (
+    <li className={noteStyles['request-note__file']}>
+      <div className={styles.fileItem}>
+        <div className={styles.fileName}>
+          <span className={fr.cx('fr-text--sm')}>
+            {file.name} ({formatFileSize(file.size)})
+          </span>
+        </div>
+        {!isSaving && (
+          <Button
+            aria-label={`Supprimer le fichier ${file.name}`}
+            title={`Supprimer le fichier ${file.name}`}
+            type="button"
+            className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
+            onClick={handleDelete}
+          >
+            <span className={fr.cx('fr-sr-only')}>Supprimer le fichier {file.name}</span>
+          </Button>
+        )}
+      </div>
+    </li>
+  );
+};
+
 type AttachedFilesProps = {
   formData: SituationData;
   situationId?: string;
@@ -71,12 +176,15 @@ export function AttachedFiles({
     [setFaitFiles],
   );
 
-  const handleDeleteExistingFile = (file: FileInfo, event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setFileToDelete(file);
-    deleteFileModal.open();
-  };
+  const handleDeleteExistingFile = useCallback(
+    (file: FileInfo, event: React.MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setFileToDelete(file);
+      deleteFileModal.open();
+    },
+    [deleteFileModal],
+  );
 
   const handleConfirmDeleteExistingFile = useCallback(() => {
     if (!fileToDelete) return;
@@ -104,15 +212,18 @@ export function AttachedFiles({
     setFileToDelete(null);
   }, [fileToDelete, deleteFileModal, setFormData]);
 
-  const handleDeleteSelectedFile = (fileToRemove: File, event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setFaitFiles((prev) => prev.filter((file) => file !== fileToRemove));
-    // Clear file input if no files left
-    if (faitFiles.length === 1 && uploadInputRef.current) {
-      uploadInputRef.current.value = '';
-    }
-  };
+  const handleDeleteSelectedFile = useCallback(
+    (fileToRemove: File, event: React.MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setFaitFiles((prev) => prev.filter((file) => file !== fileToRemove));
+      // Clear file input if no files left
+      if (faitFiles.length === 1 && uploadInputRef.current) {
+        uploadInputRef.current.value = '';
+      }
+    },
+    [faitFiles, setFaitFiles],
+  );
 
   return (
     <fieldset className="fr-mb-3w" style={{ border: 'none', padding: 0, margin: 0 }}>
@@ -125,45 +236,16 @@ export function AttachedFiles({
           <div className={fr.cx('fr-mt-1w')} style={{ maxHeight: '200px', overflowY: 'auto', overflowX: 'hidden' }}>
             <ul>
               {existingFiles.map((file) => (
-                <li key={file.id} className={noteStyles['request-note__file']}>
-                  <div className={styles.fileItem}>
-                    <div className={styles.fileName}>
-                      <FileDownloadLink
-                        href={
-                          situationId && requestId
-                            ? `/api/requetes-entite/${requestId}/situation/${situationId}/file/${file.id}`
-                            : '#'
-                        }
-                        safeHref={
-                          requestId && situationId
-                            ? `/api/requetes-entite/${requestId}/situation/${situationId}/file/${file.id}/safe`
-                            : undefined
-                        }
-                        fileName={file.fileName}
-                        fileId={file.id}
-                        fileSize={file.size}
-                        status={file.status}
-                        scanStatus={file.scanStatus}
-                        sanitizeStatus={file.sanitizeStatus}
-                        className={`${fr.cx('fr-link', 'fr-text--sm')} ${styles.fileNameLink}`}
-                      />
-                    </div>
-                    {!isSaving && file.canDelete !== false && file.entiteId === profile?.topEntiteId && (
-                      <Button
-                        aria-label={`Supprimer le fichier ${file.fileName}`}
-                        title={`Supprimer le fichier ${file.fileName}`}
-                        type="button"
-                        className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
-                        onClick={(event) => {
-                          registerTrigger(event.currentTarget);
-                          handleDeleteExistingFile(file, event);
-                        }}
-                      >
-                        <span className={fr.cx('fr-sr-only')}>Supprimer le fichier {file.fileName}</span>
-                      </Button>
-                    )}
-                  </div>
-                </li>
+                <ExistingFileItem
+                  key={file.id}
+                  file={file}
+                  requestId={requestId}
+                  situationId={situationId}
+                  isSaving={isSaving}
+                  topEntiteId={profile?.topEntiteId}
+                  onRegisterTrigger={registerTrigger}
+                  onDelete={handleDeleteExistingFile}
+                />
               ))}
             </ul>
           </div>
@@ -199,26 +281,12 @@ export function AttachedFiles({
           <div className={fr.cx('fr-mt-1w')} style={{ maxHeight: '200px', overflowY: 'auto', overflowX: 'hidden' }}>
             <ul>
               {faitFiles.map((file) => (
-                <li key={`${file.name}-${file.size}-${file.lastModified}`} className={noteStyles['request-note__file']}>
-                  <div className={styles.fileItem}>
-                    <div className={styles.fileName}>
-                      <span className={fr.cx('fr-text--sm')}>
-                        {file.name} ({formatFileSize(file.size)})
-                      </span>
-                    </div>
-                    {!isSaving && (
-                      <Button
-                        aria-label={`Supprimer le fichier ${file.name}`}
-                        title={`Supprimer le fichier ${file.name}`}
-                        type="button"
-                        className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
-                        onClick={(event) => handleDeleteSelectedFile(file, event)}
-                      >
-                        <span className={fr.cx('fr-sr-only')}>Supprimer le fichier {file.name}</span>
-                      </Button>
-                    )}
-                  </div>
-                </li>
+                <SelectedFileItem
+                  key={`${file.name}-${file.size}-${file.lastModified}`}
+                  file={file}
+                  isSaving={isSaving}
+                  onDelete={handleDeleteSelectedFile}
+                />
               ))}
             </ul>
           </div>

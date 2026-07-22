@@ -3,6 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DropdownCheckboxFilter } from './DropdownCheckboxFilter';
 
+const selectedValuesLabel = (count: number) =>
+  `entité${count > 1 ? 's' : ''} administrative${count > 1 ? 's' : ''} sélectionnée${count > 1 ? 's' : ''}`;
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -15,9 +18,7 @@ describe('DropdownCheckboxFilter', () => {
     render(
       <DropdownCheckboxFilter
         buttonLabel="Entité administrative"
-        selectedValuesLabel={(count) =>
-          `entité${count > 1 ? 's' : ''} administrative${count > 1 ? 's' : ''} sélectionnée${count > 1 ? 's' : ''}`
-        }
+        selectedValuesLabel={selectedValuesLabel}
         legend="Filtrer les entités par entité administrative"
         hintText="Entité administrative"
         options={[

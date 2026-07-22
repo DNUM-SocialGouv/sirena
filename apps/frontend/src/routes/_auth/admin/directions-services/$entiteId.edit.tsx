@@ -2,7 +2,7 @@ import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
 import { Loader, Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
-import { type SubmitEvent, useEffect } from 'react';
+import { type SubmitEvent, useCallback, useEffect } from 'react';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
 import { useDirectionServiceAdminLocal, useEditDirectionServiceAdminLocal } from '@/hooks/queries/entites.hook';
 import {
@@ -70,29 +70,32 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
     document.title = `${title} - Directions et services - SIRENA`;
   }, [title]);
 
-  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const values = form.validate();
-    if (!values) return;
+  const handleSubmit = useCallback(
+    async (event: SubmitEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const values = form.validate();
+      if (!values) return;
 
-    try {
-      await editDirectionService.mutateAsync({ id: target.id, input: values });
-      toastManager.add({
-        title: wording.successTitle,
-        description: 'Les modifications ont bien été enregistrées.',
-        timeout: 0,
-        data: { icon: 'fr-alert--success' },
-      });
-      await router.navigate({ to: '/admin/directions-services' });
-    } catch {
-      toastManager.add({
-        title: 'Erreur',
-        description: wording.errorDescription,
-        timeout: 0,
-        data: { icon: 'fr-alert--error' },
-      });
-    }
-  };
+      try {
+        await editDirectionService.mutateAsync({ id: target.id, input: values });
+        toastManager.add({
+          title: wording.successTitle,
+          description: 'Les modifications ont bien été enregistrées.',
+          timeout: 0,
+          data: { icon: 'fr-alert--success' },
+        });
+        await router.navigate({ to: '/admin/directions-services' });
+      } catch {
+        toastManager.add({
+          title: 'Erreur',
+          description: wording.errorDescription,
+          timeout: 0,
+          data: { icon: 'fr-alert--error' },
+        });
+      }
+    },
+    [editDirectionService, form, router, target, toastManager, wording],
+  );
 
   return (
     <section>

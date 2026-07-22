@@ -3,7 +3,7 @@ import { API_ERROR_MESSAGES, type ApiErrorCodes } from '@sirena/common/constants
 import { Drawer } from '@sirena/ui';
 import { useParams } from '@tanstack/react-router';
 
-import { forwardRef, useId, useImperativeHandle, useState } from 'react';
+import { forwardRef, useCallback, useId, useImperativeHandle, useState } from 'react';
 import { FileDropZone } from '@/components/common/FileDropZone';
 import { SelectedFilesList } from '@/components/common/SelectedFilesList';
 import { useAddClotureFiles } from '@/hooks/mutations/updateProcessingStep.hook';
@@ -104,6 +104,24 @@ export const AddFilesClotureDrawer = forwardRef<AddFilesClotureDrawerRef, AddFil
       }
     };
 
+    const handleClose = useCallback(() => setIsOpen(false), []);
+
+    const handleFilesSelect = useCallback((selectedFiles: File[]) => {
+      setFiles((prev) => {
+        const existingNames = new Set(prev.map((f) => f.name));
+        const newFiles = selectedFiles
+          .filter((f) => !existingNames.has(f.name))
+          .map((f) => new File([f], f.name, { type: f.type }));
+        return [...prev, ...newFiles];
+      });
+      setFileErrors({});
+      setErrorMessage(null);
+    }, []);
+
+    const handleRemoveFile = useCallback((fileName: string) => {
+      setFiles((prev) => prev.filter((f) => f.name !== fileName));
+    }, []);
+
     return (
       <Drawer.Root variant="nonModal" withCloseButton={false} open={isOpen} onOpenChange={handleOpenChange}>
         <Drawer.Portal>
@@ -116,7 +134,7 @@ export const AddFilesClotureDrawer = forwardRef<AddFilesClotureDrawerRef, AddFil
                       type="button"
                       priority="tertiary no outline"
                       iconId="fr-icon-close-line"
-                      onClick={() => setIsOpen(false)}
+                      onClick={handleClose}
                       disabled={isLoading}
                     >
                       Fermer
@@ -133,17 +151,7 @@ export const AddFilesClotureDrawer = forwardRef<AddFilesClotureDrawerRef, AddFil
                         fileErrors={fileErrors}
                         errorMessage={errorMessage}
                         isUploading={isLoading}
-                        onFilesSelect={(selectedFiles) => {
-                          setFiles((prev) => {
-                            const existingNames = new Set(prev.map((f) => f.name));
-                            const newFiles = selectedFiles
-                              .filter((f) => !existingNames.has(f.name))
-                              .map((f) => new File([f], f.name, { type: f.type }));
-                            return [...prev, ...newFiles];
-                          });
-                          setFileErrors({});
-                          setErrorMessage(null);
-                        }}
+                        onFilesSelect={handleFilesSelect}
                         title="Sélectionner ou glisser un fichier à joindre"
                         buttonLabel="Sélectionner un fichier"
                         className={styles.drawerDropZone}
@@ -154,7 +162,7 @@ export const AddFilesClotureDrawer = forwardRef<AddFilesClotureDrawerRef, AddFil
                         title="Fichiers sélectionnés"
                         className={styles.selectedFilesList}
                         variant="compact"
-                        onRemove={(fileName) => setFiles((prev) => prev.filter((f) => f.name !== fileName))}
+                        onRemove={handleRemoveFile}
                       />
                     </section>
                     <div className={styles.footerActions}>
@@ -162,7 +170,7 @@ export const AddFilesClotureDrawer = forwardRef<AddFilesClotureDrawerRef, AddFil
                         type="button"
                         priority="secondary"
                         size="small"
-                        onClick={() => setIsOpen(false)}
+                        onClick={handleClose}
                         disabled={isLoading}
                       >
                         Annuler

@@ -4,7 +4,7 @@ import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
 import { Drawer, Toast } from '@sirena/ui';
-import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { FileDropZone } from '@/components/common/FileDropZone';
 import { SelectedFilesList } from '@/components/common/SelectedFilesList';
@@ -91,6 +91,113 @@ const formatNoteDate = (value: string | Date): string => {
 };
 
 const deleteStepModal = createModal({ id: 'step-form-panel-delete', isOpenedByDefault: false });
+
+type NoteCardProps = {
+  note: EditableNote;
+  mode: 'create' | 'edit';
+  isLoading: boolean;
+  pendingFocusNoteKey: React.MutableRefObject<string | null>;
+  onRemove: (key: string) => void;
+  onChange: (key: string, value: string) => void;
+};
+
+const NoteCard = ({ note, mode, isLoading, pendingFocusNoteKey, onRemove, onChange }: NoteCardProps) => {
+  const noteLabel = note.createdAt ? `Note du ${formatNoteDate(note.createdAt)}` : 'Ajouter une note';
+  const noteDeleteLabel = note.createdAt
+    ? `Supprimer la note du ${formatNoteDate(note.createdAt)}`
+    : 'Supprimer la note';
+
+  const handleRemove = useCallback(() => onRemove(note.key), [onRemove, note.key]);
+  const handleTextChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => onChange(note.key, e.target.value),
+    [onChange, note.key],
+  );
+  const setTextAreaRef = useCallback(
+    (el: HTMLTextAreaElement | null) => {
+      // Move focus into a freshly added note's textarea as soon as it mounts.
+      if (el && pendingFocusNoteKey.current === note.key) {
+        el.focus();
+        pendingFocusNoteKey.current = null;
+      }
+    },
+    [pendingFocusNoteKey, note.key],
+  );
+
+  return (
+    <div className={mode === 'edit' ? styles.noteCard : undefined}>
+      <Input
+        label={
+          mode === 'edit' ? (
+            <span className={styles.noteLabelRow}>
+              <span>{noteLabel}</span>
+              <Button
+                type="button"
+                priority="tertiary"
+                size="small"
+                iconId="fr-icon-delete-line"
+                title={noteDeleteLabel}
+                aria-label={noteDeleteLabel}
+                disabled={isLoading}
+                onClick={handleRemove}
+              />
+            </span>
+          ) : (
+            noteLabel
+          )
+        }
+        hintText="Maximum 10 000 caractères"
+        textArea
+        disabled={isLoading}
+        state={note.texte.length > NOTE_MAX_LENGTH ? 'error' : 'default'}
+        stateRelatedMessage={note.texte.length > NOTE_MAX_LENGTH ? NOTE_MAX_LENGTH_ERROR : undefined}
+        nativeTextAreaProps={{
+          ref: setTextAreaRef,
+          rows: 6,
+          value: note.texte,
+          onChange: handleTextChange,
+        }}
+      />
+    </div>
+  );
+};
+
+type ExistingFileItemProps = {
+  file: ExistingFile;
+  editStepId: string | null;
+  isLoading: boolean;
+  onRemove: (id: string) => void;
+};
+
+const ExistingFileItem = ({ file, editStepId, isLoading, onRemove }: ExistingFileItemProps) => {
+  const handleRemove = useCallback(() => onRemove(file.id), [onRemove, file.id]);
+
+  return (
+    <li className={styles.existingFileItem}>
+      <FileDownloadLink
+        href={`/api/requete-etapes/${editStepId}/file/${file.id}`}
+        safeHref={`/api/requete-etapes/${editStepId}/file/${file.id}/safe`}
+        fileName={file.originalName}
+        fileId={file.id}
+        fileSize={file.size}
+        status={file.status}
+        scanStatus={file.scanStatus}
+        sanitizeStatus={file.sanitizeStatus}
+      />
+      {file.canDelete ? (
+        <Button
+          type="button"
+          priority="tertiary"
+          size="small"
+          iconId="fr-icon-delete-line"
+          title={`Retirer le fichier ${file.originalName}`}
+          aria-label={`Retirer le fichier ${file.originalName}`}
+          disabled={isLoading}
+          onClick={handleRemove}
+        />
+      ) : null}
+    </li>
+  );
+};
 
 export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({ requestId }, ref) => {
   const generatedId = useId();
@@ -375,6 +482,25 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
     }
   };
 
+  const handleClose = useCallback(() => setIsOpen(false), []);
+
+  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    handleSubmit();
+  };
+
+  const handleRemoveFileToUpload = useCallback(
+    (fileName: string) => setFilesToUpload((prev) => prev.filter((f) => f.name !== fileName)),
+    [],
+  );
+
+  const handleRemoveExistingFile = useCallback(
+    (id: string) => setExistingFiles((prev) => prev.filter((f) => f.id !== id)),
+    [],
+  );
+
+  const handleOpenDeleteModal = useCallback(() => deleteStepModal.open(), []);
+
   return (
     <>
       <Drawer.Root variant="nonModal" withCloseButton={false} open={isOpen} onOpenChange={handleOpenChange}>
@@ -389,7 +515,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                       type="button"
                       priority="tertiary no outline"
                       iconId="fr-icon-close-line"
-                      onClick={() => setIsOpen(false)}
+                      onClick={handleClose}
                       disabled={isLoading}
                     >
                       Fermer
@@ -400,19 +526,14 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                   </h3>
                   <p className="fr-text--sm fr-mb-2w">Sauf mention contraire, tous les champs sont facultatifs.</p>
 
-                  {fieldsLocked && (
+                  {fieldsLocked ? (
                     <p className={`fr-text--sm ${styles.lockHint}`}>
                       Cette étape correspond à un accusé de réception : le statut, le nom et la date ne sont pas
                       modifiables ; vous pouvez uniquement ajouter des notes et des pièces jointes.
                     </p>
-                  )}
+                  ) : null}
 
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleSubmit();
-                    }}
-                  >
+                  <form onSubmit={handleFormSubmit}>
                     <Input
                       label="Nom de l'étape (obligatoire)"
                       disabled={isLoading || fieldsLocked || isAcknowledgment}
@@ -490,58 +611,17 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                         </div>
                       ))}
 
-                      {notes.map((note) => {
-                        const noteLabel = note.createdAt
-                          ? `Note du ${formatNoteDate(note.createdAt)}`
-                          : 'Ajouter une note';
-                        const noteDeleteLabel = note.createdAt
-                          ? `Supprimer la note du ${formatNoteDate(note.createdAt)}`
-                          : 'Supprimer la note';
-                        return (
-                          <div key={note.key} className={mode === 'edit' ? styles.noteCard : undefined}>
-                            <Input
-                              label={
-                                mode === 'edit' ? (
-                                  <span className={styles.noteLabelRow}>
-                                    <span>{noteLabel}</span>
-                                    <Button
-                                      type="button"
-                                      priority="tertiary"
-                                      size="small"
-                                      iconId="fr-icon-delete-line"
-                                      title={noteDeleteLabel}
-                                      aria-label={noteDeleteLabel}
-                                      disabled={isLoading}
-                                      onClick={() => handleRemoveNote(note.key)}
-                                    />
-                                  </span>
-                                ) : (
-                                  noteLabel
-                                )
-                              }
-                              hintText="Maximum 10 000 caractères"
-                              textArea
-                              disabled={isLoading}
-                              state={note.texte.length > NOTE_MAX_LENGTH ? 'error' : 'default'}
-                              stateRelatedMessage={
-                                note.texte.length > NOTE_MAX_LENGTH ? NOTE_MAX_LENGTH_ERROR : undefined
-                              }
-                              nativeTextAreaProps={{
-                                // Move focus into a freshly added note's textarea as soon as it mounts.
-                                ref: (el: HTMLTextAreaElement | null) => {
-                                  if (el && pendingFocusNoteKey.current === note.key) {
-                                    el.focus();
-                                    pendingFocusNoteKey.current = null;
-                                  }
-                                },
-                                rows: 6,
-                                value: note.texte,
-                                onChange: (e) => handleNoteChange(note.key, e.target.value),
-                              }}
-                            />
-                          </div>
-                        );
-                      })}
+                      {notes.map((note) => (
+                        <NoteCard
+                          key={note.key}
+                          note={note}
+                          mode={mode}
+                          isLoading={isLoading}
+                          pendingFocusNoteKey={pendingFocusNoteKey}
+                          onRemove={handleRemoveNote}
+                          onChange={handleNoteChange}
+                        />
+                      ))}
 
                       {mode === 'edit' && (
                         <Button
@@ -564,30 +644,13 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                         <p className={`fr-label ${styles.attachmentTitle}`}>Fichiers ajoutés</p>
                         <ul className={styles.existingFilesList}>
                           {existingFiles.map((file) => (
-                            <li key={file.id} className={styles.existingFileItem}>
-                              <FileDownloadLink
-                                href={`/api/requete-etapes/${editStepId}/file/${file.id}`}
-                                safeHref={`/api/requete-etapes/${editStepId}/file/${file.id}/safe`}
-                                fileName={file.originalName}
-                                fileId={file.id}
-                                fileSize={file.size}
-                                status={file.status}
-                                scanStatus={file.scanStatus}
-                                sanitizeStatus={file.sanitizeStatus}
-                              />
-                              {file.canDelete && (
-                                <Button
-                                  type="button"
-                                  priority="tertiary"
-                                  size="small"
-                                  iconId="fr-icon-delete-line"
-                                  title={`Retirer le fichier ${file.originalName}`}
-                                  aria-label={`Retirer le fichier ${file.originalName}`}
-                                  disabled={isLoading}
-                                  onClick={() => setExistingFiles((prev) => prev.filter((f) => f.id !== file.id))}
-                                />
-                              )}
-                            </li>
+                            <ExistingFileItem
+                              key={file.id}
+                              file={file}
+                              editStepId={editStepId}
+                              isLoading={isLoading}
+                              onRemove={handleRemoveExistingFile}
+                            />
                           ))}
                         </ul>
                       </section>
@@ -612,7 +675,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                         title="Fichiers sélectionnés"
                         className={styles.selectedFilesList}
                         variant="compact"
-                        onRemove={(fileName) => setFilesToUpload((prev) => prev.filter((f) => f.name !== fileName))}
+                        onRemove={handleRemoveFileToUpload}
                       />
                     </section>
 
@@ -625,7 +688,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                           iconId="fr-icon-delete-line"
                           disabled={isLoading}
                           style={{ marginRight: 'auto' }}
-                          onClick={() => deleteStepModal.open()}
+                          onClick={handleOpenDeleteModal}
                         >
                           Supprimer l'étape
                         </Button>
@@ -634,7 +697,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                         type="button"
                         priority="secondary"
                         size="small"
-                        onClick={() => setIsOpen(false)}
+                        onClick={handleClose}
                         disabled={isLoading}
                       >
                         Annuler

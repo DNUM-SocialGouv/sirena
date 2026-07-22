@@ -1,7 +1,40 @@
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './SearchField.module.css';
+
+interface SearchFieldOptionProps<T> {
+  item: T;
+  isSelected: boolean;
+  onSelect: (item: T) => void;
+  renderItem: (item: T) => React.ReactNode;
+}
+
+function SearchFieldOption<T>({ item, isSelected, onSelect, renderItem }: SearchFieldOptionProps<T>) {
+  const handleClick = useCallback(() => onSelect(item), [onSelect, item]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onSelect(item);
+      }
+    },
+    [onSelect, item],
+  );
+
+  return (
+    <div
+      className={`${styles.item} ${isSelected ? styles.selected : ''}`}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      role="option"
+      aria-selected={isSelected}
+      tabIndex={0}
+    >
+      {renderItem(item)}
+    </div>
+  );
+}
 
 interface SearchFieldProps<T> {
   value?: string;
@@ -119,15 +152,18 @@ export function SearchField<T>({
     }
   };
 
-  const handleSelectItem = (item: T) => {
-    const displayValue = formatDisplay(item);
-    const itemId = getItemId(item);
-    setSearchTerm(displayValue);
-    setHasSelected(true);
-    onChange(itemId, item);
-    setShowSuggestions(false);
-    setSelectedIndex(-1);
-  };
+  const handleSelectItem = useCallback(
+    (item: T) => {
+      const displayValue = formatDisplay(item);
+      const itemId = getItemId(item);
+      setSearchTerm(displayValue);
+      setHasSelected(true);
+      onChange(itemId, item);
+      setShowSuggestions(false);
+      setSelectedIndex(-1);
+    },
+    [formatDisplay, getItemId, onChange],
+  );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!showSuggestions || items.length === 0) return;
@@ -174,9 +210,9 @@ export function SearchField<T>({
           autoComplete: 'off',
         }}
       />
-      {showDropdown && (
+      {showDropdown ? (
         <div className={styles.dropdown}>
-          {isLoading && (
+          {isLoading ? (
             <div className={styles.message}>
               <span
                 className="fr-icon-refresh-line fr-icon--sm"
@@ -185,8 +221,8 @@ export function SearchField<T>({
               />
               Recherche en cours...{failureCount > 0 && ' (nouvelle tentative)'}
             </div>
-          )}
-          {isError && (
+          ) : null}
+          {isError ? (
             <div className={styles.message} style={{ color: 'var(--text-default-error)' }}>
               <span className="fr-icon-error-warning-line fr-icon--sm" aria-hidden="true" />
               <div style={{ textAlign: 'center' }}>
@@ -202,32 +238,23 @@ export function SearchField<T>({
                 )}
               </div>
             </div>
-          )}
+          ) : null}
           {!isLoading && !isError && !hasSuggestions && <div className={styles.message}>{noResultsMessage}</div>}
           {!isLoading && !isError && hasSuggestions && (
             <div className={styles.list} role="listbox">
               {items.map((item, index) => (
-                <div
+                <SearchFieldOption
                   key={getItemKey(item)}
-                  className={`${styles.item} ${index === selectedIndex ? styles.selected : ''}`}
-                  onClick={() => handleSelectItem(item)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleSelectItem(item);
-                    }
-                  }}
-                  role="option"
-                  aria-selected={index === selectedIndex}
-                  tabIndex={0}
-                >
-                  {renderItem(item)}
-                </div>
+                  item={item}
+                  isSelected={index === selectedIndex}
+                  onSelect={handleSelectItem}
+                  renderItem={renderItem}
+                />
               ))}
             </div>
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

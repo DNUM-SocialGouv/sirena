@@ -90,16 +90,19 @@ export function RequestForm({ requestId, activeTab: activeTabProp = 0 }: Request
     },
   ];
 
-  const handleTabChange = (newTabIndex: number) => {
-    if (!requestId) {
-      setLocalActiveTab(newTabIndex);
-      return;
-    }
-    navigate({
-      to: newTabIndex === 1 ? '/request/$requestId/processing' : '/request/$requestId',
-      params: { requestId },
-    });
-  };
+  const handleTabChange = useCallback(
+    (newTabIndex: number) => {
+      if (!requestId) {
+        setLocalActiveTab(newTabIndex);
+        return;
+      }
+      navigate({
+        to: newTabIndex === 1 ? '/request/$requestId/processing' : '/request/$requestId',
+        params: { requestId },
+      });
+    },
+    [navigate, requestId],
+  );
 
   return (
     <>

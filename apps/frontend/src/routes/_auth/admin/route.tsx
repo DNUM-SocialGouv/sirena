@@ -1,6 +1,7 @@
 import { FEATURE_FLAGS, ROLES, type Role } from '@sirena/common/constants';
 import { Tabs } from '@sirena/ui';
 import { createFileRoute, Outlet, useMatches, useNavigate } from '@tanstack/react-router';
+import { useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin/layout';
 import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
@@ -28,9 +29,12 @@ export function RouteComponent() {
   const activeTab = getActiveTab(pathname, role, hasSirecMigration, hasAdminLocalDirectionsServicesFeatureFlag);
   const isUserEditPage = pathname.startsWith('/admin/user/');
 
-  const handleTabChange = (newTabIndex: number) => {
-    navigate({ to: tabPaths[newTabIndex] });
-  };
+  const handleTabChange = useCallback(
+    (newTabIndex: number) => {
+      navigate({ to: tabPaths[newTabIndex] });
+    },
+    [navigate, tabPaths],
+  );
 
   if (resolvedFlagsQuery.isPending) {
     return null;

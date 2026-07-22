@@ -2,7 +2,7 @@ import Button from '@codegouvfr/react-dsfr/Button';
 
 import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
-import { type SubmitEvent, useEffect } from 'react';
+import { type SubmitEvent, useCallback, useEffect } from 'react';
 import { useCreateDirectionAdminLocal } from '@/hooks/queries/entites.hook';
 import {
   LocalDirectionServiceContactFields,
@@ -26,31 +26,34 @@ export function RouteComponent() {
     document.title = 'Ajouter une direction - Directions et services - SIRENA';
   }, []);
 
-  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const values = form.validate();
-    if (!values) return;
+  const handleSubmit = useCallback(
+    async (event: SubmitEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const values = form.validate();
+      if (!values) return;
 
-    try {
-      await createDirectionAdminLocal.mutateAsync(values);
+      try {
+        await createDirectionAdminLocal.mutateAsync(values);
 
-      toastManager.add({
-        title: 'Direction créée avec succès',
-        description: 'La nouvelle direction a bien été enregistrée.',
-        timeout: 0,
-        data: { icon: 'fr-alert--success' },
-      });
+        toastManager.add({
+          title: 'Direction créée avec succès',
+          description: 'La nouvelle direction a bien été enregistrée.',
+          timeout: 0,
+          data: { icon: 'fr-alert--success' },
+        });
 
-      await router.navigate({ to: '/admin/directions-services' });
-    } catch {
-      toastManager.add({
-        title: 'Erreur',
-        description: 'Erreur lors de la création de la direction. Veuillez réessayer.',
-        timeout: 0,
-        data: { icon: 'fr-alert--error' },
-      });
-    }
-  };
+        await router.navigate({ to: '/admin/directions-services' });
+      } catch {
+        toastManager.add({
+          title: 'Erreur',
+          description: 'Erreur lors de la création de la direction. Veuillez réessayer.',
+          timeout: 0,
+          data: { icon: 'fr-alert--error' },
+        });
+      }
+    },
+    [form, createDirectionAdminLocal, toastManager, router],
+  );
 
   return (
     <section>
