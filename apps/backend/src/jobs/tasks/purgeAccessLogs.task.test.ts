@@ -42,8 +42,8 @@ describe('purgeAccessLogs.task.js', () => {
     const cutoff = (args.where.createdAt as { lt: Date }).lt;
     const retentionMs = 365 * 24 * 60 * 60 * 1000;
 
-    expect(cutoff.getTime()).toBeGreaterThanOrEqual(before - retentionMs);
-    expect(cutoff.getTime()).toBeLessThanOrEqual(after - retentionMs);
+    expect(cutoff?.getTime()).toBeGreaterThanOrEqual(before - retentionMs);
+    expect(cutoff?.getTime()).toBeLessThanOrEqual(after - retentionMs);
   });
 
   it('should return the deleted count and cutoff date', async () => {

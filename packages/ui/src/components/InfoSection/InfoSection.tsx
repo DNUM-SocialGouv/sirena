@@ -39,7 +39,7 @@ export function InfoSection({
 
   const editLabel = isEmpty ? 'Compléter' : 'Modifier';
 
-  const toggleDetails = () => setIsDetailsExpanded(!isDetailsExpanded);
+  const toggleDetails = React.useCallback(() => setIsDetailsExpanded(!isDetailsExpanded), [isDetailsExpanded]);
 
   const titleId = id ? `${id}-title` : 'title';
   const detailsId = id ? `${id}-details` : 'details';
@@ -70,19 +70,19 @@ export function InfoSection({
             </output>
           ))}
         </div>
-        {canEdit && editHref && (
+        {canEdit && editHref ? (
           <Link to={editHref} className="fr-btn fr-btn--tertiary-no-outline fr-btn--icon-right fr-icon-pencil-line">
             {editLabel}
             <span className="fr-sr-only">{title}</span>
           </Link>
-        )}
+        ) : null}
       </div>
 
       {isEmpty ? (
         <p className={fr.cx('fr-text--xs')}>{emptyLabel}</p>
       ) : (
         <>
-          {shouldShowSummary && summaryContent}
+          {shouldShowSummary ? summaryContent : null}
           {hasDetails && (
             <div className={fr.cx('fr-mt-2w')}>
               <Accordion

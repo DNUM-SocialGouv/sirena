@@ -81,14 +81,14 @@ export function Identification({
           />
         )}
 
-        {isFromSirec && (
+        {isFromSirec ? (
           <ReadOnlyField
             id={departementEnChargeId}
             label="Département en charge"
             hintText="Donnée héritée de Sirec"
             value={sirecDepartement ?? ''}
           />
-        )}
+        ) : null}
       </fieldset>
     </div>
   );

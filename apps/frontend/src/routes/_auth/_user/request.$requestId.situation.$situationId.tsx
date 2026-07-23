@@ -1,6 +1,6 @@
 import { type ReceptionType, ROLES } from '@sirena/common/constants';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { CloseRequeteModal, type CloseRequeteModalRef } from '@/components/requestId/processing/CloseRequeteModal';
@@ -61,23 +61,23 @@ function RouteComponent() {
     },
   });
 
-  const handleCloseModalCancel = async () => {
+  const handleCloseModalCancel = useCallback(async () => {
     setShouldCloseRequeteStatus(null);
     navigate({ to: '/request/$requestId', params: { requestId } });
-  };
+  }, [navigate, requestId]);
 
-  const handleBeforeClose = async () => {
+  const handleBeforeClose = useCallback(async () => {
     navigate({ to: '/request/$requestId', params: { requestId } });
-  };
+  }, [navigate, requestId]);
 
-  const handleCloseModalSuccess = () => {
+  const handleCloseModalSuccess = useCallback(() => {
     setShouldCloseRequeteStatus(null);
     navigate({ to: '/request/$requestId', params: { requestId } });
-  };
+  }, [navigate, requestId]);
 
-  const handleModalDismiss = () => {
+  const handleModalDismiss = useCallback(() => {
     setShouldCloseRequeteStatus(null);
-  };
+  }, []);
 
   return (
     <QueryStateHandler query={requestQuery}>

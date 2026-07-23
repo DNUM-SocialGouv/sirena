@@ -3,9 +3,11 @@ import userEvent from '@testing-library/user-event';
 
 import { Button } from './Button';
 
+const noop = () => {};
+
 describe('Button Component', () => {
   it('renders the button with the correct label', () => {
-    render(<Button label="Click Me" onClick={() => {}} />);
+    render(<Button label="Click Me" onClick={noop} />);
     expect(screen.getByText('Click Me')).toBeInTheDocument();
   });
 

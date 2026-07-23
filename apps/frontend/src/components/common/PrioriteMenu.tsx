@@ -95,11 +95,11 @@ export function PrioriteMenu({ value, onChange, disabled, onOpen, onClose }: Pri
           className={`fr-icon-arrow-down-s-line menu__trigger__icon${isOpen ? ' menu__trigger__icon--is-open' : ''}`}
         />
       </button>
-      {isOpen && (
+      {isOpen ? (
         <div id={menuId} ref={panelRef} className={prioriteStyles['priorite-filter__dropdown']}>
           <RadioButtons legend="Choisir une priorité" name={`priorite-${menuId}`} options={options} />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

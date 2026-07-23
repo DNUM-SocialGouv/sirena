@@ -3,13 +3,10 @@ import Input from '@codegouvfr/react-dsfr/Input';
 import Select from '@codegouvfr/react-dsfr/Select';
 import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
-import { type SubmitEvent, useEffect, useState } from 'react';
+import { type SubmitEvent, useCallback, useEffect, useState } from 'react';
 import { useCreateServiceAdminLocal, useDirectionsServicesList } from '@/hooks/queries/entites.hook';
-import {
-  LocalDirectionServiceContactFields,
-  LocalDirectionServiceSirenaFields,
-} from './-components/LocalDirectionServiceSirenaFields';
-import { useLocalDirectionServiceForm } from './-components/useLocalDirectionServiceForm';
+import { LocalEntiteFormFields } from '../-components/LocalEntiteFormFields';
+import { useLocalEntiteForm } from '../-components/useLocalEntiteForm';
 import { requireAdminLocalServiceCreation } from './-create-route-guard';
 
 export const Route = createFileRoute('/_auth/admin/directions-services/services/create')({
@@ -18,7 +15,7 @@ export const Route = createFileRoute('/_auth/admin/directions-services/services/
 });
 
 export function RouteComponent() {
-  const form = useLocalDirectionServiceForm('service');
+  const form = useLocalEntiteForm('service');
   const [directionId, setDirectionId] = useState('');
   const createServiceAdminLocal = useCreateServiceAdminLocal();
   const directionsServicesQuery = useDirectionsServicesList();
@@ -34,37 +31,40 @@ export function RouteComponent() {
     document.title = 'Ajouter un service - Directions et services - SIRENA';
   }, []);
 
-  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const values = form.validate(
-      requiresDirectionSelection && !directionId
-        ? { directionId: 'Veuillez sélectionner la direction à laquelle rattacher le service.' }
-        : {},
-    );
-    if (!values) return;
+  const handleSubmit = useCallback(
+    async (event: SubmitEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const values = form.validate(
+        requiresDirectionSelection && !directionId
+          ? { directionId: 'Veuillez sélectionner la direction à laquelle rattacher le service.' }
+          : {},
+      );
+      if (!values) return;
 
-    try {
-      await createServiceAdminLocal.mutateAsync({
-        ...values,
-        ...(requiresDirectionSelection ? { directionId } : {}),
-      });
+      try {
+        await createServiceAdminLocal.mutateAsync({
+          ...values,
+          ...(requiresDirectionSelection ? { directionId } : {}),
+        });
 
-      toastManager.add({
-        title: 'Service créé avec succès',
-        description: 'Le nouveau service a bien été enregistré.',
-        timeout: 0,
-        data: { icon: 'fr-alert--success' },
-      });
-      await router.navigate({ to: '/admin/directions-services' });
-    } catch {
-      toastManager.add({
-        title: 'Erreur',
-        description: 'Erreur lors de la création du service. Veuillez réessayer.',
-        timeout: 0,
-        data: { icon: 'fr-alert--error' },
-      });
-    }
-  };
+        toastManager.add({
+          title: 'Service créé avec succès',
+          description: 'Le nouveau service a bien été enregistré.',
+          timeout: 0,
+          data: { icon: 'fr-alert--success' },
+        });
+        await router.navigate({ to: '/admin/directions-services' });
+      } catch {
+        toastManager.add({
+          title: 'Erreur',
+          description: 'Erreur lors de la création du service. Veuillez réessayer.',
+          timeout: 0,
+          data: { icon: 'fr-alert--error' },
+        });
+      }
+    },
+    [form, requiresDirectionSelection, directionId, createServiceAdminLocal, toastManager, router],
+  );
 
   return (
     <section>
@@ -81,11 +81,8 @@ export function RouteComponent() {
         <form onSubmit={handleSubmit}>
           <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
-          <LocalDirectionServiceSirenaFields
-            kind="service"
-            formData={form.values}
-            validationErrors={form.validationErrors}
-            onChange={form.onChange}
+          <LocalEntiteFormFields
+            form={form}
             leadingField={
               <div className="fr-col-12 fr-col-md-7">
                 {requiresDirectionSelection ? (
@@ -129,12 +126,6 @@ export function RouteComponent() {
                 )}
               </div>
             }
-          />
-
-          <LocalDirectionServiceContactFields
-            formData={form.values}
-            validationErrors={form.validationErrors}
-            onChange={form.onChange}
           />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">

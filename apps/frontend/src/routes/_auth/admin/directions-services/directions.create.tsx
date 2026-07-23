@@ -2,13 +2,10 @@ import Button from '@codegouvfr/react-dsfr/Button';
 
 import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
-import { type SubmitEvent, useEffect } from 'react';
+import { type SubmitEvent, useCallback, useEffect } from 'react';
 import { useCreateDirectionAdminLocal } from '@/hooks/queries/entites.hook';
-import {
-  LocalDirectionServiceContactFields,
-  LocalDirectionServiceSirenaFields,
-} from './-components/LocalDirectionServiceSirenaFields';
-import { useLocalDirectionServiceForm } from './-components/useLocalDirectionServiceForm';
+import { LocalEntiteFormFields } from '../-components/LocalEntiteFormFields';
+import { useLocalEntiteForm } from '../-components/useLocalEntiteForm';
 import { requireAdminLocalDirectionCreation } from './-create-route-guard';
 
 export const Route = createFileRoute('/_auth/admin/directions-services/directions/create')({
@@ -17,7 +14,7 @@ export const Route = createFileRoute('/_auth/admin/directions-services/direction
 });
 
 export function RouteComponent() {
-  const form = useLocalDirectionServiceForm('direction');
+  const form = useLocalEntiteForm('direction');
   const router = useRouter();
   const createDirectionAdminLocal = useCreateDirectionAdminLocal();
   const toastManager = Toast.useToastManager();
@@ -26,31 +23,34 @@ export function RouteComponent() {
     document.title = 'Ajouter une direction - Directions et services - SIRENA';
   }, []);
 
-  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const values = form.validate();
-    if (!values) return;
+  const handleSubmit = useCallback(
+    async (event: SubmitEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const values = form.validate();
+      if (!values) return;
 
-    try {
-      await createDirectionAdminLocal.mutateAsync(values);
+      try {
+        await createDirectionAdminLocal.mutateAsync(values);
 
-      toastManager.add({
-        title: 'Direction créée avec succès',
-        description: 'La nouvelle direction a bien été enregistrée.',
-        timeout: 0,
-        data: { icon: 'fr-alert--success' },
-      });
+        toastManager.add({
+          title: 'Direction créée avec succès',
+          description: 'La nouvelle direction a bien été enregistrée.',
+          timeout: 0,
+          data: { icon: 'fr-alert--success' },
+        });
 
-      await router.navigate({ to: '/admin/directions-services' });
-    } catch {
-      toastManager.add({
-        title: 'Erreur',
-        description: 'Erreur lors de la création de la direction. Veuillez réessayer.',
-        timeout: 0,
-        data: { icon: 'fr-alert--error' },
-      });
-    }
-  };
+        await router.navigate({ to: '/admin/directions-services' });
+      } catch {
+        toastManager.add({
+          title: 'Erreur',
+          description: 'Erreur lors de la création de la direction. Veuillez réessayer.',
+          timeout: 0,
+          data: { icon: 'fr-alert--error' },
+        });
+      }
+    },
+    [form, createDirectionAdminLocal, toastManager, router],
+  );
 
   return (
     <section>
@@ -67,18 +67,7 @@ export function RouteComponent() {
         <form onSubmit={handleSubmit}>
           <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
-          <LocalDirectionServiceSirenaFields
-            kind="direction"
-            formData={form.values}
-            validationErrors={form.validationErrors}
-            onChange={form.onChange}
-          />
-
-          <LocalDirectionServiceContactFields
-            formData={form.values}
-            validationErrors={form.validationErrors}
-            onChange={form.onChange}
-          />
+          <LocalEntiteFormFields form={form} />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
             <Link className="fr-btn fr-btn--secondary" to="/admin/directions-services">

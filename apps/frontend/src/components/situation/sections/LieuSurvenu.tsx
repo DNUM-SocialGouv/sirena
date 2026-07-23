@@ -24,8 +24,9 @@ import {
   // transportTypeLabels,
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { OrganizationSearchField } from '@/components/common/OrganizationSearchField';
+import type { Organization } from '@/lib/api/fetchOrganizations';
 import { buildOrganizationAddress, extractOrganizationName, updateOrganizationName } from '@/utils/organizationHelpers';
 
 type LieuSurvenuProps = {
@@ -75,6 +76,32 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
       setIsNoFinessChecked(false);
     }
   }, [isFinessEtablissementType]);
+
+  const handleFinessChange = useCallback(
+    (value: string, organization?: Organization) => {
+      if (organization) {
+        setIsNoFinessChecked(false);
+        setFormData((prev) => ({
+          ...prev,
+          lieuDeSurvenue: {
+            ...prev.lieuDeSurvenue,
+            finess: value,
+            adresse: buildOrganizationAddress(
+              organization.name,
+              organization.addressPostalcode,
+              organization.addressCity,
+            ),
+          },
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          lieuDeSurvenue: { ...prev.lieuDeSurvenue, finess: value },
+        }));
+      }
+    },
+    [setFormData],
+  );
 
   const lieuTypeOptions = Object.entries(LIEU_TYPE).map(([key, value]) => ({
     key,
@@ -172,7 +199,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                   ))}
                 </Select>
               </div>
-              {shouldShowDomicileAddressFields && (
+              {shouldShowDomicileAddressFields ? (
                 <>
                   <div className="fr-col-12">
                     <Input
@@ -223,7 +250,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                     />
                   </div>
                 </>
-              )}
+              ) : null}
             </>
           )}
 
@@ -434,28 +461,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
               <div className="fr-col-12 fr-col-md-6">
                 <OrganizationSearchField
                   value={formData.lieuDeSurvenue?.finess || ''}
-                  onChange={(value, organization) => {
-                    if (organization) {
-                      setIsNoFinessChecked(false);
-                      setFormData((prev) => ({
-                        ...prev,
-                        lieuDeSurvenue: {
-                          ...prev.lieuDeSurvenue,
-                          finess: value,
-                          adresse: buildOrganizationAddress(
-                            organization.name,
-                            organization.addressPostalcode,
-                            organization.addressCity,
-                          ),
-                        },
-                      }));
-                    } else {
-                      setFormData((prev) => ({
-                        ...prev,
-                        lieuDeSurvenue: { ...prev.lieuDeSurvenue, finess: value },
-                      }));
-                    }
-                  }}
+                  onChange={handleFinessChange}
                   label="Rechercher l'établissement par numéro FINESS"
                   hintText="Saisir le numéro FINESS et sélectionner l'établissement"
                   state={isNoFinessChecked ? 'info' : 'default'}
@@ -515,7 +521,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                 </div>
               </div>
 
-              {(isNoFinessChecked || hasCompleteOrganizationFromFiness) && (
+              {isNoFinessChecked || hasCompleteOrganizationFromFiness ? (
                 <>
                   <div
                     className={shouldShowCabinetMedicalStreetField ? 'fr-col-12 fr-col-md-4' : 'fr-col-12 fr-col-md-6'}
@@ -539,7 +545,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                       }}
                     />
                   </div>
-                  {shouldShowCabinetMedicalStreetField && (
+                  {shouldShowCabinetMedicalStreetField ? (
                     <div className="fr-col-12 fr-col-md-4">
                       <Input
                         label="Rue"
@@ -557,7 +563,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                         }}
                       />
                     </div>
-                  )}
+                  ) : null}
                   <div
                     className={shouldShowCabinetMedicalStreetField ? 'fr-col-12 fr-col-md-2' : 'fr-col-12 fr-col-md-3'}
                   >
@@ -597,7 +603,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                     />
                   </div>
                 </>
-              )}
+              ) : null}
             </>
           )}
 

@@ -20,7 +20,7 @@ export const UserMenu = () => {
     if (!nom && !prenom) return null;
     return (
       <>
-        {nom && <span className="lastname">{nom}</span>}
+        {nom ? <span className="lastname">{nom}</span> : null}
         {nom && prenom ? ' ' : ''}
         {prenom}
       </>
@@ -40,6 +40,11 @@ export const UserMenu = () => {
   const closeMenu = useCallback(() => {
     setIsOpen(false);
     triggerRef.current?.focus();
+  }, []);
+
+  const handleTriggerClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    setIsOpen((o) => !o);
   }, []);
 
   const handleClickOutside = useCallback(
@@ -122,10 +127,7 @@ export const UserMenu = () => {
         aria-haspopup="true"
         aria-expanded={isOpen}
         aria-controls={menuId}
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen((o) => !o);
-        }}
+        onClick={handleTriggerClick}
       >
         Mon espace
         <span
@@ -134,7 +136,7 @@ export const UserMenu = () => {
         />
       </button>
 
-      {isOpen && (
+      {isOpen ? (
         <div id={menuId} ref={popupRef} className="user-menu fr-card">
           <div className="user-menu__header fr-p-2w">
             <p className="fr-text--bold">{displayName ?? 'Mon espace'}</p>
@@ -199,7 +201,7 @@ export const UserMenu = () => {
             </form>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

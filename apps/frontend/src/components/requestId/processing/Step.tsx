@@ -10,7 +10,7 @@ import {
 import { Toast } from '@sirena/ui';
 
 import { clsx } from 'clsx';
-import { memo, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { useDeleteUploadedFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
@@ -144,6 +144,65 @@ const getStepSubtitle = ({
   );
 };
 
+type ClotureFileItemProps = {
+  file: StepType['uploadedFiles'][number];
+  stepId: string;
+  canEdit: boolean;
+  onRequestDelete: (fileId: string, fileName: string) => void;
+};
+
+const ClotureFileItem = ({ file, stepId, canEdit, onRequestDelete }: ClotureFileItemProps) => {
+  const fileName = file.fileName;
+
+  const handleDelete = useCallback(() => {
+    onRequestDelete(file.id, fileName);
+  }, [onRequestDelete, file.id, fileName]);
+
+  return (
+    <li className={styles['request-note__file']}>
+      <FileDownloadLink
+        href={`/api/requete-etapes/${stepId}/file/${file.id}`}
+        safeHref={`/api/requete-etapes/${stepId}/file/${file.id}/safe`}
+        fileName={fileName}
+        fileId={file.id}
+        fileSize={file.size}
+        status={file.status}
+        scanStatus={file.scanStatus}
+        sanitizeStatus={file.sanitizeStatus}
+      />
+      {canEdit ? (
+        <Button
+          aria-label={`Supprimer le fichier ${fileName}`}
+          title="Supprimer le fichier"
+          type="button"
+          className={fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')}
+          onClick={handleDelete}
+        >
+          <span className={fr.cx('fr-sr-only')}>Supprimer le fichier</span>
+        </Button>
+      ) : null}
+    </li>
+  );
+};
+
+type StepEditButtonProps = {
+  className?: string;
+  step: StepType;
+  onEdit?(step: StepType): void;
+};
+
+const StepEditButton = ({ className, step, onEdit }: StepEditButtonProps) => {
+  const handleClick = useCallback(() => {
+    onEdit?.(step);
+  }, [onEdit, step]);
+
+  return (
+    <Button className={className} type="button" priority="tertiary" iconId="fr-icon-edit-line" onClick={handleClick}>
+      Modifier l'étape
+    </Button>
+  );
+};
+
 const StepComponent = ({
   requestId,
   nom,
@@ -218,6 +277,22 @@ const StepComponent = ({
     }
   };
 
+  const handleRequestDeleteClotureFile = useCallback(
+    (fileId: string, fileName: string) => {
+      setFileToDelete({ id: fileId, name: fileName });
+      deleteClotureFileModal.open();
+    },
+    [deleteClotureFileModal],
+  );
+
+  const handleToggleNotes = useCallback(() => {
+    setIsOpen(!isOpen);
+  }, [isOpen]);
+
+  const handleAddClotureFile = useCallback(() => {
+    addFilesClotureDrawerRef.current?.openDrawer();
+  }, []);
+
   return (
     <div className={`fr-mb-4w ${styles['timeline-step']}`}>
       <div className={styles['timeline-dot']} />
@@ -249,13 +324,13 @@ const StepComponent = ({
                   dateRealisation: step.dateRealisation,
                 })}
               </p>
-              {isAcknowledgmentSendable && canEdit && (
+              {isAcknowledgmentSendable && canEdit ? (
                 <div className="fr-mt-2w">
                   <Button priority="secondary" size="small" onClick={onSendAcknowledgment}>
                     Envoyer
                   </Button>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
@@ -274,51 +349,26 @@ const StepComponent = ({
                   ))}
                 </div>
               )}
-              {notes[0]?.texte && (
+              {notes[0]?.texte ? (
                 <div className="fr-mt-2w">
                   <p className={styles['cloture-block__label']}>Précisions :</p>
                   <p className={styles['cloture-block__precision']}>{notes[0].texte}</p>
                 </div>
-              )}
+              ) : null}
             </div>
             {step.uploadedFiles && step.uploadedFiles.filter((f) => !deletedFileIds.has(f.id)).length > 0 && (
               <ul className={`fr-mt-1w ${styles['cloture-files']}`}>
                 {step.uploadedFiles
                   .filter((f) => !deletedFileIds.has(f.id))
-                  .map((file: StepType['uploadedFiles'][number]) => {
-                    const fileName = file.fileName;
-                    return (
-                      <li key={file.id} className={styles['request-note__file']}>
-                        <FileDownloadLink
-                          href={`/api/requete-etapes/${id}/file/${file.id}`}
-                          safeHref={`/api/requete-etapes/${id}/file/${file.id}/safe`}
-                          fileName={fileName}
-                          fileId={file.id}
-                          fileSize={file.size}
-                          status={file.status}
-                          scanStatus={file.scanStatus}
-                          sanitizeStatus={file.sanitizeStatus}
-                        />
-                        {canEdit && (
-                          <Button
-                            aria-label={`Supprimer le fichier ${fileName}`}
-                            title="Supprimer le fichier"
-                            type="button"
-                            className={fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')}
-                            onClick={() => {
-                              setFileToDelete({
-                                id: file.id,
-                                name: fileName,
-                              });
-                              deleteClotureFileModal.open();
-                            }}
-                          >
-                            <span className={fr.cx('fr-sr-only')}>Supprimer le fichier</span>
-                          </Button>
-                        )}
-                      </li>
-                    );
-                  })}
+                  .map((file: StepType['uploadedFiles'][number]) => (
+                    <ClotureFileItem
+                      key={file.id}
+                      file={file}
+                      stepId={id}
+                      canEdit={canEdit}
+                      onRequestDelete={handleRequestDeleteClotureFile}
+                    />
+                  ))}
               </ul>
             )}
           </>
@@ -331,7 +381,7 @@ const StepComponent = ({
             </div>
             <div className={styles['request-notes-distplay']}>
               {visibleNotes.length > 3 && (
-                <button type="button" className="fr-btn-link" onClick={() => setIsOpen(!isOpen)}>
+                <button type="button" className="fr-btn-link" onClick={handleToggleNotes}>
                   {isOpen ? 'Masquer' : 'Afficher'} les notes précédentes{' '}
                   <span
                     className={clsx(
@@ -343,30 +393,24 @@ const StepComponent = ({
               )}
             </div>
             <StepFiles files={step.uploadedFiles} stepId={id} />
-            {canEditStep && (
-              <Button
+            {canEditStep ? (
+              <StepEditButton
                 className={styles['request-step__add-note']}
-                type="button"
-                priority="tertiary"
-                iconId="fr-icon-edit-line"
-                onClick={() =>
-                  openEdit?.({
-                    id,
-                    nom,
-                    statutId,
-                    notes,
-                    createdAt,
-                    updatedAt,
-                    createdBy,
-                    requete,
-                    clotureEffectiveDate,
-                    ...step,
-                  })
-                }
-              >
-                Modifier l'étape
-              </Button>
-            )}
+                step={{
+                  id,
+                  nom,
+                  statutId,
+                  notes,
+                  createdAt,
+                  updatedAt,
+                  createdBy,
+                  requete,
+                  clotureEffectiveDate,
+                  ...step,
+                }}
+                onEdit={openEdit}
+              />
+            ) : null}
           </>
         )}
         {statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE && canWrite && (
@@ -376,7 +420,7 @@ const StepComponent = ({
               type="button"
               priority="tertiary"
               iconId="fr-icon-add-line"
-              onClick={() => addFilesClotureDrawerRef.current?.openDrawer()}
+              onClick={handleAddClotureFile}
             >
               Ajouter un fichier
             </Button>

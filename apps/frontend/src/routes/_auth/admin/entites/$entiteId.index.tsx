@@ -3,7 +3,7 @@ import { ROLES } from '@sirena/common/constants';
 import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Loader, Toast } from '@sirena/ui';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { type SubmitEvent, useEffect, useRef, useState } from 'react';
+import { type SubmitEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
 import { useEditEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
@@ -76,6 +76,83 @@ export function RouteComponent() {
     });
   }, [entiteQuery.data]);
 
+  const handleInputChange = useCallback(
+    (field: keyof typeof formData) =>
+      (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const value = e.target.value;
+
+        setFormData((prev) => {
+          const updated = { ...prev, [field]: value };
+
+          if (hasSubmitted) {
+            const fieldError = getFieldError(EditEntiteFormSchema, updated, field);
+
+            setValidationErrors((prevErrors) => {
+              const next = { ...prevErrors };
+
+              if (fieldError) next[field] = fieldError;
+              else delete next[field];
+
+              return next;
+            });
+          }
+
+          return updated;
+        });
+      },
+    [hasSubmitted],
+  );
+
+  const handleSubmit = useCallback(
+    async (e: SubmitEvent<HTMLFormElement>) => {
+      e.preventDefault();
+
+      if (isSubmittingRef.current || editEntiteAdmin.isPending) return;
+
+      setHasSubmitted(true);
+
+      const result = EditEntiteFormSchema.safeParse(formData);
+
+      if (!result.success) {
+        const errors = zodIssuesToFieldErrors(result.error);
+        setValidationErrors(errors);
+
+        const firstField = Object.keys(errors)[0];
+
+        const el = document.querySelector<HTMLElement>(`[name="${firstField}"]`);
+        el?.focus?.();
+
+        return;
+      }
+
+      setValidationErrors({});
+      isSubmittingRef.current = true;
+
+      try {
+        await editEntiteAdmin.mutateAsync({
+          id: entiteId,
+          input: {
+            ...result.data,
+            email: result.data.email ?? '',
+            emailContactUsager: result.data.emailContactUsager ?? '',
+            telContactUsager: result.data.telContactUsager ?? '',
+            isActive: result.data.isActive === 'oui',
+          },
+        });
+
+        toastManager.add({
+          title: 'Entité modifiée avec succès',
+          description: 'Les modifications ont bien été enregistrées.',
+          timeout: 0,
+          data: { icon: 'fr-alert--success' },
+        });
+      } finally {
+        isSubmittingRef.current = false;
+      }
+    },
+    [editEntiteAdmin, formData, entiteId, toastManager],
+  );
+
   if (entiteQuery.isPending || entiteChainQuery.isPending) {
     return (
       <div className="fr-container fr-mt-4w">
@@ -91,78 +168,6 @@ export function RouteComponent() {
       </div>
     );
   }
-
-  const handleInputChange =
-    (field: keyof typeof formData) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-      const value = e.target.value;
-
-      setFormData((prev) => {
-        const updated = { ...prev, [field]: value };
-
-        if (hasSubmitted) {
-          const fieldError = getFieldError(EditEntiteFormSchema, updated, field);
-
-          setValidationErrors((prevErrors) => {
-            const next = { ...prevErrors };
-
-            if (fieldError) next[field] = fieldError;
-            else delete next[field];
-
-            return next;
-          });
-        }
-
-        return updated;
-      });
-    };
-
-  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (isSubmittingRef.current || editEntiteAdmin.isPending) return;
-
-    setHasSubmitted(true);
-
-    const result = EditEntiteFormSchema.safeParse(formData);
-
-    if (!result.success) {
-      const errors = zodIssuesToFieldErrors(result.error);
-      setValidationErrors(errors);
-
-      const firstField = Object.keys(errors)[0];
-
-      const el = document.querySelector<HTMLElement>(`[name="${firstField}"]`);
-      el?.focus?.();
-
-      return;
-    }
-
-    setValidationErrors({});
-    isSubmittingRef.current = true;
-
-    try {
-      await editEntiteAdmin.mutateAsync({
-        id: entiteId,
-        input: {
-          ...result.data,
-          email: result.data.email ?? '',
-          emailContactUsager: result.data.emailContactUsager ?? '',
-          telContactUsager: result.data.telContactUsager ?? '',
-          isActive: result.data.isActive === 'oui',
-        },
-      });
-
-      toastManager.add({
-        title: 'Entité modifiée avec succès',
-        description: 'Les modifications ont bien été enregistrées.',
-        timeout: 0,
-        data: { icon: 'fr-alert--success' },
-      });
-    } finally {
-      isSubmittingRef.current = false;
-    }
-  };
 
   return (
     <div className="fr-container fr-mt-4w">

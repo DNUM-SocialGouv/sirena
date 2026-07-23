@@ -3,6 +3,7 @@ import {
   memo,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
+  useCallback,
   useRef,
   useState,
 } from 'react';
@@ -35,16 +36,42 @@ export type TabsProps = {
   children: ReactNode;
 } & HTMLAttributes<HTMLDivElement>;
 
+type TabsListItemProps = {
+  tab: TabDescriptor;
+  index: number;
+  selected: boolean;
+  onChangeTab: (newIndex: number) => void;
+};
+
+const TabsListItem = ({ tab, index, selected, onChangeTab }: TabsListItemProps) => {
+  const handleClick = useCallback(() => onChangeTab(index), [onChangeTab, index]);
+
+  return (
+    <TabsItem
+      panelId={tab.tabPanelId}
+      selected={selected}
+      tabId={tab.tabId}
+      onTabClick={handleClick}
+      title={tab.title}
+      disabled={tab.disabled}
+    >
+      {tab.label}
+    </TabsItem>
+  );
+};
+
 const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children, className, ...props }: TabsProps) => {
   const panelRef = useRef<HTMLDivElement>(null);
 
   const [direction, setDirection] = useState<'left' | 'right'>('right');
 
-  const computeDirection = (newIndex: number): 'left' | 'right' => (newIndex < activeTab ? 'left' : 'right');
-  const changeTab = (newIndex: number) => {
-    setDirection(computeDirection(newIndex));
-    onUpdateActiveTab(newIndex);
-  };
+  const changeTab = useCallback(
+    (newIndex: number) => {
+      setDirection(newIndex < activeTab ? 'left' : 'right');
+      onUpdateActiveTab(newIndex);
+    },
+    [activeTab, onUpdateActiveTab],
+  );
 
   const onTabKeyDown = (action: TabActions) => {
     switch (action) {
@@ -80,17 +107,13 @@ const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children, className
         onKeyDownCapture={onKeyDownCapture}
       >
         {tabs.map((tab, index) => (
-          <TabsItem
+          <TabsListItem
             key={tab.tabId}
-            panelId={tab.tabPanelId}
+            tab={tab}
+            index={index}
             selected={index === activeTab}
-            tabId={tab.tabId}
-            onTabClick={() => changeTab(index)}
-            title={tab.title}
-            disabled={tab.disabled}
-          >
-            {tab.label}
-          </TabsItem>
+            onChangeTab={changeTab}
+          />
         ))}
       </ul>
 
