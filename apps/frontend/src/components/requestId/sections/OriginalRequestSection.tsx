@@ -3,6 +3,7 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import {
+  NON_SELECTABLE_RECEPTION_TYPES,
   RECEPTION_TYPE,
   REQUETE_PROVENANCE_NEEDS_PRECISION,
   type ReceptionType,
@@ -189,7 +190,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
   const receptionOptions = useMemo(
     () =>
       Object.values(RECEPTION_TYPE).flatMap((value) => {
-        if (value === RECEPTION_TYPE.FORMULAIRE) return [];
+        if (NON_SELECTABLE_RECEPTION_TYPES.includes(value)) return [];
         return [
           {
             value,
@@ -282,6 +283,11 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
                   }}
                 >
                   <option value="">Sélectionnez une option</option>
+                  {typeValue && NON_SELECTABLE_RECEPTION_TYPES.includes(typeValue) && (
+                    <option value={typeValue} disabled>
+                      {receptionTypeLabels[typeValue]}
+                    </option>
+                  )}
                   {receptionOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}

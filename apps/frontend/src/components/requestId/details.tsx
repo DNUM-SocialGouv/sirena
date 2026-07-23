@@ -95,6 +95,9 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
         const receptionTypeId = data?.requete.receptionTypeId as ReceptionType | undefined;
         const receptionDate = data?.requete.receptionDate;
         const dateDemandeDeclarant = data?.requete.dateDemandeDeclarant;
+        // Declared motifs only exist on requests fed by a declarant source: the
+        // DematSocial form or the SIREC migration.
+        const hasDeclarantMotifs = Boolean(data?.requete.dematSocialId || data?.requete.sirecId);
 
         return (
           <div className={fr.cx('fr-container--fluid')}>
@@ -150,6 +153,7 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
                       key={situation.id}
                       id={`situation-${situation.id}`}
                       receptionType={data?.requete.receptionTypeId || null}
+                      hasDeclarantMotifs={hasDeclarantMotifs}
                       requestId={requestId}
                       situation={situation}
                       editHref={getEditSituationHref(situation.id)}
@@ -158,6 +162,7 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
                 ) : (
                   <SituationSection
                     receptionType={data?.requete.receptionTypeId || null}
+                    hasDeclarantMotifs={hasDeclarantMotifs}
                     id={situationSectionId}
                     requestId={requestId}
                     editHref={getEditSituationHref()}

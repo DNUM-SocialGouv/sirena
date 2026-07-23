@@ -245,11 +245,21 @@ interface SituationSectionProps {
   id: string;
   requestId?: string;
   receptionType: string | null;
+  // True when the request comes from a declarant-fed source (DematSocial form or
+  // SIREC migration), i.e. the only sources that carry declared motifs.
+  hasDeclarantMotifs?: boolean;
   situation?: SituationData | null;
   editHref?: string;
 }
 
-export const SituationSection = ({ id, requestId, situation, receptionType, editHref }: SituationSectionProps) => {
+export const SituationSection = ({
+  id,
+  requestId,
+  situation,
+  receptionType,
+  hasDeclarantMotifs = false,
+  editHref,
+}: SituationSectionProps) => {
   const situationId = situation?.id;
   const { canEdit } = useCanEdit({ requeteId: requestId });
   const [fait] = situation?.faits ?? [];
@@ -300,7 +310,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
 
         <div className="fr-col-auto">
           <MotifsQualified situation={situation} />
-          {receptionType === RECEPTION_TYPE.FORMULAIRE ? <MotifsDeclared situation={situation} /> : null}
+          {hasDeclarantMotifs ? <MotifsDeclared situation={situation} /> : null}
         </div>
         {hasTraitementDesFaits && <TraitementDesFaits situation={situation} details={false} />}
       </div>
