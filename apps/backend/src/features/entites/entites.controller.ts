@@ -14,9 +14,11 @@ import {
   createDirectionAdminLocalRoute,
   createServiceAdminLocalRoute,
   editDirectionServiceAdminLocalRoute,
+  editEntiteAdministrativeAdminLocalRoute,
   editEntiteAdminRoute,
   getDirectionServiceAdminLocalRoute,
   getDirectionsServicesListRoute,
+  getEntiteAdministrativeAdminLocalRoute,
   getEntiteByIdAdminRoute,
   getEntiteChainRoute,
   getEntitesListAdminRoute,
@@ -28,6 +30,7 @@ import {
   CreateDirectionAdminLocalInputSchema,
   CreateServiceAdminLocalInputSchema,
   EditDirectionServiceAdminLocalInputSchema,
+  EditEntiteAdministrativeAdminLocalInputSchema,
   EditEntiteInputSchema,
   GetEntitesListAdminQuerySchema,
   GetEntitiesQuerySchema,
@@ -38,9 +41,11 @@ import {
   createServiceAdminLocal,
   editDirectionServiceAdminLocal,
   editEntiteAdmin,
+  editEntiteAdministrativeAdminLocal,
   getDirectionServiceAdminLocal,
   getDirectionsServicesList,
   getEditableEntitiesChain,
+  getEntiteAdministrativeAdminLocal,
   getEntiteById,
   getEntiteDescendantIds,
   getEntites,
@@ -115,6 +120,46 @@ const app = factoryWithLogs
           total,
         },
       });
+    },
+  )
+
+  .get(
+    '/admin/local',
+    roleMiddleware([ROLES.ENTITY_ADMIN]),
+    adminLocalDirectionsServicesFeatureFlagMiddleware,
+    getEntiteAdministrativeAdminLocalRoute,
+    async (c) => {
+      const assignedEntiteId = c.get('assignedEntiteId');
+      const logger = c.get('logger');
+      const entite = assignedEntiteId ? await getEntiteAdministrativeAdminLocal(assignedEntiteId) : null;
+
+      if (!entite) {
+        logger.warn({ assignedEntiteId }, 'Assigned administrative entity not found');
+        throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+      }
+
+      return c.json({ data: entite });
+    },
+  )
+
+  .patch(
+    '/admin/local',
+    roleMiddleware([ROLES.ENTITY_ADMIN]),
+    adminLocalDirectionsServicesFeatureFlagMiddleware,
+    zValidator('json', EditEntiteAdministrativeAdminLocalInputSchema),
+    editEntiteAdministrativeAdminLocalRoute,
+    async (c) => {
+      const assignedEntiteId = c.get('assignedEntiteId');
+      const data = c.req.valid('json');
+      const logger = c.get('logger');
+      const entite = assignedEntiteId ? await editEntiteAdministrativeAdminLocal(assignedEntiteId, data) : null;
+
+      if (!entite) {
+        logger.warn({ assignedEntiteId }, 'Assigned administrative entity not found');
+        throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+      }
+
+      return c.json({ data: entite });
     },
   )
 

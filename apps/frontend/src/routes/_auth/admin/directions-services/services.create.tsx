@@ -5,11 +5,8 @@ import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useCallback, useEffect, useState } from 'react';
 import { useCreateServiceAdminLocal, useDirectionsServicesList } from '@/hooks/queries/entites.hook';
-import {
-  LocalDirectionServiceContactFields,
-  LocalDirectionServiceSirenaFields,
-} from './-components/LocalDirectionServiceSirenaFields';
-import { useLocalDirectionServiceForm } from './-components/useLocalDirectionServiceForm';
+import { LocalEntiteFormFields } from '../-components/LocalEntiteFormFields';
+import { useLocalEntiteForm } from '../-components/useLocalEntiteForm';
 import { requireAdminLocalServiceCreation } from './-create-route-guard';
 
 export const Route = createFileRoute('/_auth/admin/directions-services/services/create')({
@@ -18,7 +15,7 @@ export const Route = createFileRoute('/_auth/admin/directions-services/services/
 });
 
 export function RouteComponent() {
-  const form = useLocalDirectionServiceForm('service');
+  const form = useLocalEntiteForm('service');
   const [directionId, setDirectionId] = useState('');
   const createServiceAdminLocal = useCreateServiceAdminLocal();
   const directionsServicesQuery = useDirectionsServicesList();
@@ -84,11 +81,8 @@ export function RouteComponent() {
         <form onSubmit={handleSubmit}>
           <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
-          <LocalDirectionServiceSirenaFields
-            kind="service"
-            formData={form.values}
-            validationErrors={form.validationErrors}
-            onChange={form.onChange}
+          <LocalEntiteFormFields
+            form={form}
             leadingField={
               <div className="fr-col-12 fr-col-md-7">
                 {requiresDirectionSelection ? (
@@ -132,12 +126,6 @@ export function RouteComponent() {
                 )}
               </div>
             }
-          />
-
-          <LocalDirectionServiceContactFields
-            formData={form.values}
-            validationErrors={form.validationErrors}
-            onChange={form.onChange}
           />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">

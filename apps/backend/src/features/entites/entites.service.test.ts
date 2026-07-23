@@ -7,11 +7,13 @@ import {
   createServiceAdminLocal,
   editDirectionServiceAdminLocal,
   editEntiteAdmin,
+  editEntiteAdministrativeAdminLocal,
   getDirectionServiceAdminLocal,
   getDirectionsFromRequeteEntiteId,
   getDirectionsServicesFromRequeteEntiteId,
   getDirectionsServicesList,
   getEditableEntitiesChain,
+  getEntiteAdministrativeAdminLocal,
   getEntiteAscendanteIds,
   getEntiteChain,
   getEntiteDescendantIds,
@@ -1347,7 +1349,7 @@ describe('editDirectionServiceAdminLocal()', () => {
     vi.resetAllMocks();
   });
 
-  it('self-edits an assigned Entité administrative without changing its status or structural fields', async () => {
+  it('does not update an assigned Entité administrative through the Direction and Service contract', async () => {
     const assignedEntite = {
       ...fakeEntite('root-ars'),
       nomComplet: 'ARS Normandie',
@@ -1366,24 +1368,8 @@ describe('editDirectionServiceAdminLocal()', () => {
     vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(assignedEntite).mockResolvedValueOnce(assignedEntite);
     vi.mocked(prisma.entite.update).mockResolvedValueOnce({ id: 'root-ars', ...input } as never);
 
-    await expect(editDirectionServiceAdminLocal('root-ars', 'root-ars', input)).resolves.toEqual({
-      id: 'root-ars',
-      kind: 'entite-administrative',
-      ...input,
-    });
-    expect(prisma.entite.update).toHaveBeenCalledWith({
-      where: { id: 'root-ars' },
-      data: input,
-      select: {
-        id: true,
-        nomComplet: true,
-        label: true,
-        email: true,
-        emailContactUsager: true,
-        telContactUsager: true,
-        adresseContactUsager: true,
-      },
-    });
+    await expect(editDirectionServiceAdminLocal('root-ars', 'root-ars', input)).resolves.toBeNull();
+    expect(prisma.entite.update).not.toHaveBeenCalled();
   });
 
   it('self-edits an assigned Direction without changing its status or structural fields', async () => {
@@ -1423,7 +1409,7 @@ describe('editDirectionServiceAdminLocal()', () => {
       }),
     ).resolves.toEqual({
       id: 'dir-autonomie',
-      kind: 'direction',
+      entiteType: 'direction',
       nomComplet: 'Direction Autonomie et Handicap',
       label: 'DAH',
       email: 'notification@direction.fr',
@@ -1483,7 +1469,7 @@ describe('editDirectionServiceAdminLocal()', () => {
 
     await expect(editDirectionServiceAdminLocal('service-pa', 'service-pa', input)).resolves.toEqual({
       id: 'service-pa',
-      kind: 'service',
+      entiteType: 'service',
       ...input,
       parentDirection: {
         id: 'dir-autonomie',
@@ -1496,12 +1482,128 @@ describe('editDirectionServiceAdminLocal()', () => {
   });
 });
 
+describe('editEntiteAdministrativeAdminLocal()', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it.each([true, false])(
+    'updates only contact information and preserves identity when active status is %s',
+    async (isActive) => {
+      const assignedEntite = {
+        ...fakeEntite('root-ars'),
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        entiteMereId: null,
+        isActive,
+      };
+      const input = {
+        email: 'notification@ars.fr',
+        emailContactUsager: 'contact@ars.fr',
+        telContactUsager: '0102030405',
+        adresseContactUsager: '2 rue de Paris',
+      };
+      const updatedEntite = {
+        id: 'root-ars',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        ...input,
+      };
+      vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(assignedEntite);
+      vi.mocked(prisma.entite.update).mockResolvedValueOnce(updatedEntite as never);
+
+      await expect(editEntiteAdministrativeAdminLocal('root-ars', input)).resolves.toEqual(updatedEntite);
+      expect(prisma.entite.update).toHaveBeenCalledWith({
+        where: { id: 'root-ars' },
+        data: input,
+        select: {
+          id: true,
+          nomComplet: true,
+          label: true,
+          email: true,
+          emailContactUsager: true,
+          telContactUsager: true,
+          adresseContactUsager: true,
+        },
+      });
+    },
+  );
+
+  it('does not update a missing or non-root assignment', async () => {
+    const input = {
+      email: '',
+      emailContactUsager: '',
+      telContactUsager: '',
+      adresseContactUsager: '',
+    };
+    vi.mocked(prisma.entite.findUnique)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(localEntite('dir-autonomie', 'root-ars'));
+
+    await expect(editEntiteAdministrativeAdminLocal('missing', input)).resolves.toBeNull();
+    await expect(editEntiteAdministrativeAdminLocal('dir-autonomie', input)).resolves.toBeNull();
+    expect(prisma.entite.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('getEntiteAdministrativeAdminLocal()', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it.each([true, false])('returns the assigned root Entité when active status is %s', async (isActive) => {
+    vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
+      ...fakeEntite('root-ars'),
+      nomComplet: 'ARS Normandie',
+      label: 'ARS NOR',
+      email: 'notification@ars.fr',
+      emailContactUsager: 'contact@ars.fr',
+      telContactUsager: '0102030405',
+      adresseContactUsager: '1 rue de la Santé, Paris',
+      entiteMereId: null,
+      isActive,
+    });
+
+    await expect(getEntiteAdministrativeAdminLocal('root-ars')).resolves.toEqual({
+      id: 'root-ars',
+      nomComplet: 'ARS Normandie',
+      label: 'ARS NOR',
+      email: 'notification@ars.fr',
+      emailContactUsager: 'contact@ars.fr',
+      telContactUsager: '0102030405',
+      adresseContactUsager: '1 rue de la Santé, Paris',
+    });
+    expect(prisma.entite.findUnique).toHaveBeenCalledWith({
+      where: { id: 'root-ars' },
+      select: {
+        id: true,
+        nomComplet: true,
+        label: true,
+        email: true,
+        emailContactUsager: true,
+        telContactUsager: true,
+        adresseContactUsager: true,
+        entiteMereId: true,
+      },
+    });
+  });
+
+  it('does not return missing or non-root assignments', async () => {
+    vi.mocked(prisma.entite.findUnique)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(localEntite('dir-autonomie', 'root-ars'));
+
+    await expect(getEntiteAdministrativeAdminLocal('missing')).resolves.toBeNull();
+    await expect(getEntiteAdministrativeAdminLocal('dir-autonomie')).resolves.toBeNull();
+  });
+});
+
 describe('getDirectionServiceAdminLocal()', () => {
   beforeEach(() => {
     vi.resetAllMocks();
   });
 
-  it('returns the assigned Entité administrative itself as an editable target', async () => {
+  it('does not expose the assigned Entité administrative as a Direction or Service target', async () => {
     const assignedEntite = {
       ...fakeEntite('root-ars'),
       nomComplet: 'ARS Normandie',
@@ -1514,16 +1616,7 @@ describe('getDirectionServiceAdminLocal()', () => {
     };
     vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(assignedEntite).mockResolvedValueOnce(assignedEntite);
 
-    await expect(getDirectionServiceAdminLocal('root-ars', 'root-ars')).resolves.toEqual({
-      id: 'root-ars',
-      kind: 'entite-administrative',
-      nomComplet: 'ARS Normandie',
-      label: 'ARS NOR',
-      email: 'notification@ars.fr',
-      emailContactUsager: 'contact@ars.fr',
-      telContactUsager: '0102030405',
-      adresseContactUsager: '1 rue de la Santé, Paris',
-    });
+    await expect(getDirectionServiceAdminLocal('root-ars', 'root-ars')).resolves.toBeNull();
     expect(prisma.entite.findUnique).toHaveBeenCalledTimes(2);
   });
 
@@ -1541,7 +1634,7 @@ describe('getDirectionServiceAdminLocal()', () => {
 
     await expect(getDirectionServiceAdminLocal('root-ars', 'dir-autonomie')).resolves.toEqual({
       id: 'dir-autonomie',
-      kind: 'direction',
+      entiteType: 'direction',
       nomComplet: 'Direction Autonomie',
       label: 'DA',
       email: 'direction-autonomie@ars.fr',
@@ -1576,7 +1669,7 @@ describe('getDirectionServiceAdminLocal()', () => {
 
     await expect(getDirectionServiceAdminLocal('root-ars', 'service-pa')).resolves.toEqual({
       id: 'service-pa',
-      kind: 'service',
+      entiteType: 'service',
       nomComplet: 'Service PA',
       label: 'PA',
       email: 'service-pa@ars.fr',
@@ -1609,7 +1702,7 @@ describe('getDirectionServiceAdminLocal()', () => {
 
     await expect(getDirectionServiceAdminLocal('dir-autonomie', 'dir-autonomie')).resolves.toEqual({
       id: 'dir-autonomie',
-      kind: 'direction',
+      entiteType: 'direction',
       nomComplet: 'Direction Autonomie',
       label: 'DA',
       email: 'direction-autonomie@ars.fr',
@@ -1639,7 +1732,7 @@ describe('getDirectionServiceAdminLocal()', () => {
 
     await expect(getDirectionServiceAdminLocal('dir-autonomie', 'service-pa')).resolves.toEqual({
       id: 'service-pa',
-      kind: 'service',
+      entiteType: 'service',
       nomComplet: 'Service PA',
       label: 'PA',
       email: 'service-pa@ars.fr',
@@ -1678,7 +1771,7 @@ describe('getDirectionServiceAdminLocal()', () => {
 
     await expect(getDirectionServiceAdminLocal('service-pa', 'service-pa')).resolves.toEqual({
       id: 'service-pa',
-      kind: 'service',
+      entiteType: 'service',
       nomComplet: 'Service PA',
       label: 'PA',
       email: 'service-pa@ars.fr',

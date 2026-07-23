@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { queryClient } from '@/lib/queryClient';
+import { requireAdminLocalAccess } from '../-admin-local-route-guard';
 import { requireAdminLocalDirectionCreation, requireAdminLocalServiceCreation } from './-create-route-guard';
-import { requireAdminLocalDirectionsServices } from './-route-guard';
 
 const { redirectSpy } = vi.hoisted(() => ({
   redirectSpy: vi.fn((args: unknown) => ({ redirect: args })),
@@ -11,7 +11,7 @@ vi.mock('@tanstack/react-router', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@tanstack/react-router')>()),
   redirect: redirectSpy,
 }));
-vi.mock('./-route-guard', () => ({ requireAdminLocalDirectionsServices: vi.fn() }));
+vi.mock('../-admin-local-route-guard', () => ({ requireAdminLocalAccess: vi.fn() }));
 vi.mock('@/lib/api/fetchEntites', () => ({ fetchDirectionsServicesList: vi.fn() }));
 vi.mock('@/lib/queryClient', () => ({ queryClient: { fetchQuery: vi.fn() } }));
 
@@ -25,7 +25,7 @@ describe('local creation capability guards', () => {
     vi.mocked(queryClient.fetchQuery).mockResolvedValue({ capabilities });
 
     await expect(guard({} as never)).resolves.toBeUndefined();
-    expect(requireAdminLocalDirectionsServices).toHaveBeenCalled();
+    expect(requireAdminLocalAccess).toHaveBeenCalled();
   });
 
   it.each([
