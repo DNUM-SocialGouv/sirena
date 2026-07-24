@@ -1,4 +1,4 @@
-import type { LieuType, Motif } from '@sirena/common/constants';
+import type { DsMotif, LieuType } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../../libs/__mocks__/prisma.js';
 import { checkRequired, computeEntitesFromMotifs, leaf, rootNode, runDecisionTree } from './decisionTree.js';
@@ -68,7 +68,7 @@ describe('checkRequired', () => {
 describe('computeEntitesFromMotifs', () => {
   it('should map ARS-related motifs déclaratifs to ARS', () => {
     const ctx = {
-      motifsDeclaratifs: ['PROBLEME_QUALITE_SOINS'] as Motif[],
+      motifsDeclaratifs: ['PROBLEME_QUALITE_SOINS'] as DsMotif[],
     };
 
     const result = computeEntitesFromMotifs(ctx);
@@ -78,7 +78,7 @@ describe('computeEntitesFromMotifs', () => {
 
   it('should return empty array when no mapped motifs déclaratifs', () => {
     const ctx = {
-      motifsDeclaratifs: ['UN_MOTIF_NON_MAPPE'] as unknown as Motif[],
+      motifsDeclaratifs: ['UN_MOTIF_NON_MAPPE'] as unknown as DsMotif[],
     };
 
     const result = computeEntitesFromMotifs(ctx);

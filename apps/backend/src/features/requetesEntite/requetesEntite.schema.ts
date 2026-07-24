@@ -131,6 +131,11 @@ const receptionTypeId = z
     RECEPTION_TYPE.AUTRE,
     RECEPTION_TYPE.PLATEFORME,
     RECEPTION_TYPE.TELEPHONE,
+    // SIREC-only values: not offered in the UI, accepted here so that editing a
+    // migrated request does not reject its existing reception type
+    RECEPTION_TYPE.INFO_MEDIA,
+    RECEPTION_TYPE.PORTAIL_SIGNALEMENTS,
+    RECEPTION_TYPE.SIGNAL_CONSO,
   ])
   .nullable()
   .optional();

@@ -44,6 +44,12 @@ export const MIS_EN_CAUSE_TYPE = {
   MEMBRE_FAMILLE: 'MEMBRE_FAMILLE',
   PROCHE: 'PROCHE',
   AUTRE_PERSONNE_NON_PRO: 'AUTRE_PERSONNE_NON_PRO',
+  // Accused-party types that only exist on requests migrated from SIREC (display only)
+  ETABLISSEMENT_FICTIF: 'ETABLISSEMENT_FICTIF',
+  EXERCICE_ILLEGAL: 'EXERCICE_ILLEGAL',
+  MAISON_ARRET: 'MAISON_ARRET',
+  TRANSPORTEUR_SANITAIRE: 'TRANSPORTEUR_SANITAIRE',
+  AUTRE: 'AUTRE',
 } as const;
 
 export type MisEnCauseType = keyof typeof MIS_EN_CAUSE_TYPE;
@@ -57,7 +63,22 @@ export const misEnCauseTypeLabels: Record<MisEnCauseType, string> = {
   PROFESSIONNEL_SOCIAL: 'Professionnel social (éducateur, assistant social...)',
   ETABLISSEMENT: 'Établissement ou un service',
   AUTRE_PROFESSIONNEL: 'Autre professionnel',
+  ETABLISSEMENT_FICTIF: 'Etablissement fictif',
+  EXERCICE_ILLEGAL: 'Exercice illégal',
+  MAISON_ARRET: "Maison d'arrêt",
+  TRANSPORTEUR_SANITAIRE: 'Transporteur Sanitaire',
+  AUTRE: 'Autre',
 };
+
+// Accused-party types not offered in the manual entry form: they only arrive
+// through the SIREC migration and are displayed, not picked.
+export const NON_SELECTABLE_MIS_EN_CAUSE_TYPES: MisEnCauseType[] = [
+  MIS_EN_CAUSE_TYPE.ETABLISSEMENT_FICTIF,
+  MIS_EN_CAUSE_TYPE.EXERCICE_ILLEGAL,
+  MIS_EN_CAUSE_TYPE.MAISON_ARRET,
+  MIS_EN_CAUSE_TYPE.TRANSPORTEUR_SANITAIRE,
+  MIS_EN_CAUSE_TYPE.AUTRE,
+];
 
 // Précisions pour chaque type de mis en cause
 export const MIS_EN_CAUSE_FAMILLE_PRECISION = {
@@ -164,6 +185,10 @@ export const MOTIF = {
   PROBLEME_ORGANISATION: 'PROBLEME_ORGANISATION',
   PROBLEME_INFORMATION: 'PROBLEME_INFORMATION',
   PROBLEME_QUALITE_SOINS: 'PROBLEME_QUALITE_SOINS',
+  // Declared motifs that only exist on requests migrated from SIREC (display only)
+  DIFFICULTES_ACCES_SOINS: 'DIFFICULTES_ACCES_SOINS',
+  MALTRAITANCE: 'MALTRAITANCE',
+  PROBLEME_ORGANISATION_FONCTIONNEMENT: 'PROBLEME_ORGANISATION_FONCTIONNEMENT',
   AUTRE: 'AUTRE',
 } as const;
 
@@ -177,6 +202,9 @@ export const motifLabels: Record<Motif, string> = {
   PROBLEME_ORGANISATION: "Un manque d'information sur l'organisation de l'établissement ou du service",
   PROBLEME_INFORMATION: 'Un manque d’information sur les droits des usagers',
   PROBLEME_QUALITE_SOINS: 'Problème de qualité des soins médicaux ou paramédicaux',
+  DIFFICULTES_ACCES_SOINS: "Difficultés d'accès aux soins (établissement ou professionnel)",
+  MALTRAITANCE: "Maltraitance (action ou défaut d'action individuelle, collective ou institutionnelle)",
+  PROBLEME_ORGANISATION_FONCTIONNEMENT: "Problème d'organisation ou de fonctionnement de l'établissement ou du service",
   AUTRE: 'Autre (ex: tatouage, chirurgie et/ou soins esthétiques...)',
 };
 
@@ -188,6 +216,9 @@ export const motifShortLabels: Record<Motif, string> = {
   PROBLEME_ORGANISATION: "Manque d'information sur l'organisation",
   PROBLEME_INFORMATION: 'Manque d’information sur les droits des usagers',
   PROBLEME_QUALITE_SOINS: 'Problème de qualité des soins',
+  DIFFICULTES_ACCES_SOINS: "Difficultés d'accès aux soins",
+  MALTRAITANCE: 'Maltraitance',
+  PROBLEME_ORGANISATION_FONCTIONNEMENT: "Problème d'organisation ou de fonctionnement",
   AUTRE: 'Autre',
 };
 
@@ -680,6 +711,10 @@ export const RECEPTION_TYPE = {
   FORMULAIRE: 'FORMULAIRE',
   PLATEFORME: 'PLATEFORME',
   TELEPHONE: 'TELEPHONE',
+  // Reception types that only exist on requests migrated from SIREC (display only)
+  INFO_MEDIA: 'INFO_MEDIA',
+  PORTAIL_SIGNALEMENTS: 'PORTAIL_SIGNALEMENTS',
+  SIGNAL_CONSO: 'SIGNAL_CONSO',
   AUTRE: 'AUTRE',
 } as const;
 
@@ -691,8 +726,20 @@ export const receptionTypeLabels: Record<ReceptionType, string> = {
   FORMULAIRE: 'Formulaire',
   PLATEFORME: 'Plateforme téléphonique',
   TELEPHONE: 'Téléphone',
+  INFO_MEDIA: 'Info par média',
+  PORTAIL_SIGNALEMENTS: 'Portail des signalements',
+  SIGNAL_CONSO: 'Signal Conso',
   AUTRE: 'Autre',
 };
+
+// Reception types that cannot be picked manually: FORMULAIRE is set by the DematSocial
+// import, the others only arrive through the SIREC migration.
+export const NON_SELECTABLE_RECEPTION_TYPES: ReceptionType[] = [
+  RECEPTION_TYPE.FORMULAIRE,
+  RECEPTION_TYPE.INFO_MEDIA,
+  RECEPTION_TYPE.PORTAIL_SIGNALEMENTS,
+  RECEPTION_TYPE.SIGNAL_CONSO,
+];
 
 export const REQUETE_PROVENANCE = {
   AUTO_SAISINE_PARTICULIER: 'AUTO_SAISINE_PARTICULIER',
