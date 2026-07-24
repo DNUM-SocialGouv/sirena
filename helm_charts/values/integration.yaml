@@ -25,6 +25,7 @@ backend:
       replicas: 1
       additionalsecretRef:
         - mariadb-sirec-secret
+        - migration-bucket-secret
 
     ingress:
       appAnnotations:
@@ -44,6 +45,9 @@ external-secrets:
       host: "mariadb.org-sdpsn-ws-sirena-services-integration.svc.cluster.local"
       db: "sirec"
       user: "sirec"
+    migrationBucket:
+      enable: true
+      bucketName: sirena-migration-s3
 
   SDPSN-devops-charts:
     externalSecret:
@@ -79,3 +83,4 @@ worker:
       additionalsecretRef:
         - backend
         - mariadb-sirec-secret
+        - migration-bucket-secret
