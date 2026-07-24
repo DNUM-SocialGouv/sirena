@@ -169,9 +169,7 @@ export const CreateChildEntiteAdminInputSchema = EntiteContactFieldsSchema.exten
   isActive: z.boolean(),
 });
 
-export const EditDirectionServiceAdminLocalInputSchema = CreateChildEntiteAdminInputSchema.omit({
-  isActive: true,
-}).strict();
+export const EditDirectionServiceAdminLocalInputSchema = EntiteContactFieldsSchema.strict();
 
 export const CreateChildEntiteAdminResponseSchema = CreateChildEntiteAdminInputSchema.extend({
   id: z.string(),

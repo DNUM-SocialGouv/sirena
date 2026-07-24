@@ -2,11 +2,12 @@ import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import Input from '@codegouvfr/react-dsfr/Input';
 import { type ReactNode, useId } from 'react';
 import { ReadOnlyField } from '@/components/common/ReadOnlyField';
-import type { LocalEntiteFormType, LocalEntiteFormValues } from './useLocalEntiteForm';
+import type { LocalEntiteFormMode, LocalEntiteFormType, LocalEntiteFormValues } from './useLocalEntiteForm';
 
 type FieldChangeHandler = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 type FormFieldsState = {
   entiteType: LocalEntiteFormType;
+  mode: LocalEntiteFormMode;
   values: LocalEntiteFormValues;
   validationErrors: Record<string, string>;
   onChange: (field: keyof LocalEntiteFormValues) => FieldChangeHandler;
@@ -14,6 +15,7 @@ type FormFieldsState = {
 
 type SirenaFieldsProps = {
   entiteType: LocalEntiteFormType;
+  mode: LocalEntiteFormMode;
   formData: LocalEntiteFormValues;
   validationErrors: Record<string, string>;
   onChange: FormFieldsState['onChange'];
@@ -22,12 +24,13 @@ type SirenaFieldsProps = {
 
 function LocalEntiteSirenaFields({
   entiteType,
+  mode,
   formData,
   validationErrors,
   onChange,
   leadingField,
 }: SirenaFieldsProps) {
-  const identityFieldsReadOnly = entiteType === 'entite-administrative';
+  const identityFieldsReadOnly = mode === 'edit';
   const nameReadOnlyId = useId();
   const abbreviationReadOnlyId = useId();
   const wording =
@@ -203,7 +206,7 @@ export function LocalEntiteFormFields({ form, leadingField }: LocalEntiteFormFie
 
   return (
     <>
-      <LocalEntiteSirenaFields entiteType={form.entiteType} {...fields} leadingField={leadingField} />
+      <LocalEntiteSirenaFields entiteType={form.entiteType} mode={form.mode} {...fields} leadingField={leadingField} />
       <LocalEntiteContactFields {...fields} />
     </>
   );

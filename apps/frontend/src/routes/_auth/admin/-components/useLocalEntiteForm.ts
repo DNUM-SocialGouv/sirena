@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 
 export type LocalEntiteFormType = 'entite-administrative' | 'direction' | 'service';
+export type LocalEntiteFormMode = 'create' | 'edit';
 
 export type LocalEntiteFormValues = {
   nomComplet: string;
@@ -23,7 +24,7 @@ const emptyLocalEntiteForm: LocalEntiteFormValues = {
   adresseContactUsager: '',
 };
 
-const createSchema = (entiteType: LocalEntiteFormType) => {
+const createFormSchema = (entiteType: LocalEntiteFormType, mode: LocalEntiteFormMode) => {
   const entityName =
     entiteType === 'entite-administrative'
       ? 'de l’entité administrative'
@@ -33,11 +34,11 @@ const createSchema = (entiteType: LocalEntiteFormType) => {
 
   return z.object({
     nomComplet:
-      entiteType === 'entite-administrative'
+      mode === 'edit'
         ? z.string()
         : z.string().trim().min(1, `Le champ "Nom ${entityName}" est vide. Veuillez le renseigner.`),
     label:
-      entiteType === 'entite-administrative'
+      mode === 'edit'
         ? z.string()
         : z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
     email: optionalEmailSchema,
@@ -49,9 +50,10 @@ const createSchema = (entiteType: LocalEntiteFormType) => {
 
 export function useLocalEntiteForm(
   entiteType: LocalEntiteFormType,
+  mode: LocalEntiteFormMode,
   initialValues: LocalEntiteFormValues = emptyLocalEntiteForm,
 ) {
-  const schema = useMemo(() => createSchema(entiteType), [entiteType]);
+  const schema = useMemo(() => createFormSchema(entiteType, mode), [entiteType, mode]);
   const [values, setValues] = useState(initialValues);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -113,5 +115,5 @@ export function useLocalEntiteForm(
     };
   };
 
-  return { entiteType, values, validationErrors, onChange, clearError, validate };
+  return { entiteType, mode, values, validationErrors, onChange, clearError, validate };
 }

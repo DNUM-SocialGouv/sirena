@@ -32,7 +32,7 @@ function EntiteAdministrativeEditForm({ entite }: { entite: AssignedEntite }) {
   const editEntite = useEditEntiteAdministrativeAdminLocal();
   const toastManager = Toast.useToastManager();
   const router = useRouter();
-  const form = useLocalEntiteForm('entite-administrative', {
+  const form = useLocalEntiteForm('entite-administrative', 'edit', {
     nomComplet: entite.nomComplet,
     label: entite.label,
     email: entite.email,

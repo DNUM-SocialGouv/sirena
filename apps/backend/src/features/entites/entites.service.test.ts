@@ -1358,8 +1358,6 @@ describe('editDirectionServiceAdminLocal()', () => {
       isActive: false,
     };
     const input = {
-      nomComplet: 'Agence régionale de santé Normandie',
-      label: 'ARS Normandie',
       email: 'notification@ars.fr',
       emailContactUsager: 'contact@ars.fr',
       telContactUsager: '0102030405',
@@ -1372,63 +1370,44 @@ describe('editDirectionServiceAdminLocal()', () => {
     expect(prisma.entite.update).not.toHaveBeenCalled();
   });
 
-  it('self-edits an assigned Direction without changing its status or structural fields', async () => {
+  it('self-edits an assigned Direction by persisting only contact fields', async () => {
     const assignedDirection = {
       ...fakeEntite('dir-autonomie'),
       nomComplet: 'Direction Autonomie',
+      label: 'DA',
       entiteMereId: 'root-ars',
       emailContactUsager: 'contact@direction.fr',
       telContactUsager: '0102030405',
       adresseContactUsager: '1 rue de Paris',
       isActive: false,
     };
+    const input = {
+      email: 'notification@direction.fr',
+      emailContactUsager: 'nouveau-contact@direction.fr',
+      telContactUsager: '0605040302',
+      adresseContactUsager: '2 rue de Paris',
+    };
+    const updatedDirection = {
+      id: 'dir-autonomie',
+      nomComplet: 'Direction Autonomie',
+      label: 'DA',
+      ...input,
+    };
     vi.mocked(prisma.entite.findUnique)
       .mockResolvedValueOnce(assignedDirection)
       .mockResolvedValueOnce(assignedDirection)
       .mockResolvedValueOnce({ entiteMereId: null } as never);
-    vi.mocked(prisma.entite.update).mockResolvedValueOnce({
-      ...fakeEntite('dir-autonomie'),
-      nomComplet: 'Direction Autonomie et Handicap',
-      label: 'DAH',
-      email: 'notification@direction.fr',
-      emailContactUsager: 'nouveau-contact@direction.fr',
-      telContactUsager: '0605040302',
-      adresseContactUsager: '2 rue de Paris',
-      entiteMereId: 'root-ars',
-      isActive: false,
-    });
+    vi.mocked(prisma.entite.update).mockResolvedValueOnce(updatedDirection as never);
 
-    await expect(
-      editDirectionServiceAdminLocal('dir-autonomie', 'dir-autonomie', {
-        nomComplet: 'Direction Autonomie et Handicap',
-        label: 'DAH',
-        email: 'notification@direction.fr',
-        emailContactUsager: 'nouveau-contact@direction.fr',
-        telContactUsager: '0605040302',
-        adresseContactUsager: '2 rue de Paris',
-      }),
-    ).resolves.toEqual({
-      id: 'dir-autonomie',
+    await expect(editDirectionServiceAdminLocal('dir-autonomie', 'dir-autonomie', input)).resolves.toEqual({
+      ...updatedDirection,
       entiteType: 'direction',
-      nomComplet: 'Direction Autonomie et Handicap',
-      label: 'DAH',
-      email: 'notification@direction.fr',
-      emailContactUsager: 'nouveau-contact@direction.fr',
-      telContactUsager: '0605040302',
-      adresseContactUsager: '2 rue de Paris',
     });
     expect(prisma.entite.findMany).not.toHaveBeenCalled();
     expect(prisma.entite.findUnique).toHaveBeenCalledTimes(3);
     expect(prisma.entite.update).toHaveBeenCalledWith({
       where: { id: 'dir-autonomie' },
-      data: {
-        nomComplet: 'Direction Autonomie et Handicap',
-        label: 'DAH',
-        email: 'notification@direction.fr',
-        emailContactUsager: 'nouveau-contact@direction.fr',
-        telContactUsager: '0605040302',
-        adresseContactUsager: '2 rue de Paris',
-      },
+      data: input,
       select: {
         id: true,
         nomComplet: true,
@@ -1441,10 +1420,8 @@ describe('editDirectionServiceAdminLocal()', () => {
     });
   });
 
-  it('self-edits an assigned Service without writing its status or parent Direction', async () => {
+  it('self-edits an assigned Service without writing identity, status, or parent Direction', async () => {
     const input = {
-      nomComplet: 'Service Personnes âgées',
-      label: 'PA',
       email: 'notification-pa@ars.fr',
       emailContactUsager: 'contact-pa@ars.fr',
       telContactUsager: '0102030405',
@@ -1452,6 +1429,8 @@ describe('editDirectionServiceAdminLocal()', () => {
     };
     const assignedService = {
       ...fakeEntite('service-pa'),
+      nomComplet: 'Service Personnes âgées',
+      label: 'PA',
       entiteMereId: 'dir-autonomie',
       isActive: true,
     };
@@ -1465,11 +1444,18 @@ describe('editDirectionServiceAdminLocal()', () => {
         entiteMereId: 'root-ars',
         entiteMere: { entiteMereId: null },
       } as never);
-    vi.mocked(prisma.entite.update).mockResolvedValueOnce({ id: 'service-pa', ...input } as never);
+    vi.mocked(prisma.entite.update).mockResolvedValueOnce({
+      id: 'service-pa',
+      nomComplet: assignedService.nomComplet,
+      label: assignedService.label,
+      ...input,
+    } as never);
 
     await expect(editDirectionServiceAdminLocal('service-pa', 'service-pa', input)).resolves.toEqual({
       id: 'service-pa',
       entiteType: 'service',
+      nomComplet: assignedService.nomComplet,
+      label: assignedService.label,
       ...input,
       parentDirection: {
         id: 'dir-autonomie',

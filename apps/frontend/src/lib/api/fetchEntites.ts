@@ -108,7 +108,7 @@ export type EditEntiteAdministrativeAdminLocalInput = {
   adresseContactUsager: string;
   telContactUsager: string;
 };
-export type EditDirectionServiceAdminLocalInput = CreateDirectionAdminLocalInput;
+export type EditDirectionServiceAdminLocalInput = Omit<CreateDirectionAdminLocalInput, 'nomComplet' | 'label'>;
 export type CreateServiceAdminLocalInput = CreateDirectionAdminLocalInput & {
   directionId?: string;
 };

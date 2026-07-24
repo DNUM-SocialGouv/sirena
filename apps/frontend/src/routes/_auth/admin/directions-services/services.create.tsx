@@ -15,7 +15,7 @@ export const Route = createFileRoute('/_auth/admin/directions-services/services/
 });
 
 export function RouteComponent() {
-  const form = useLocalEntiteForm('service');
+  const form = useLocalEntiteForm('service', 'create');
   const [directionId, setDirectionId] = useState('');
   const createServiceAdminLocal = useCreateServiceAdminLocal();
   const directionsServicesQuery = useDirectionsServicesList();

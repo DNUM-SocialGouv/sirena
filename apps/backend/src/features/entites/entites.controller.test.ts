@@ -647,8 +647,6 @@ describe('Entites endpoints: /entites', () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       assignedEntiteIdState.value = 'root-ars';
       const input = {
-        nomComplet: 'Agence régionale de santé Normandie',
-        label: 'ARS Normandie',
         email: 'notification@ars.fr',
         emailContactUsager: 'contact@ars.fr',
         telContactUsager: '0102030405',
@@ -666,28 +664,27 @@ describe('Entites endpoints: /entites', () => {
       expect(editDirectionServiceAdminLocal).toHaveBeenCalledWith('root-ars', 'root-ars', input);
     });
 
-    it('updates an authorized local target and hides a denied target', async () => {
+    it('updates an authorized local target with exactly the contact fields and hides a denied target', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       const input = {
-        nomComplet: 'Service Personnes âgées',
-        label: 'PA',
         email: 'notification-pa@ars.fr',
         emailContactUsager: 'contact-pa@ars.fr',
         telContactUsager: '0102030405',
         adresseContactUsager: '1 rue de la Santé, Paris',
       };
-      vi.mocked(editDirectionServiceAdminLocal)
-        .mockResolvedValueOnce({
-          id: 'service-pa',
-          entiteType: 'service',
-          ...input,
-          parentDirection: {
-            id: 'dir-autonomie',
-            nomComplet: 'Direction Autonomie',
-            label: 'DA',
-          },
-        })
-        .mockResolvedValueOnce(null);
+      const updatedTarget = {
+        id: 'service-pa',
+        entiteType: 'service' as const,
+        nomComplet: 'Service Personnes âgées',
+        label: 'PA',
+        ...input,
+        parentDirection: {
+          id: 'dir-autonomie',
+          nomComplet: 'Direction Autonomie',
+          label: 'DA',
+        },
+      };
+      vi.mocked(editDirectionServiceAdminLocal).mockResolvedValueOnce(updatedTarget).mockResolvedValueOnce(null);
 
       const authorizedRes = await app.request('/admin/directions-services/service-pa', {
         method: 'PATCH',
@@ -701,45 +698,42 @@ describe('Entites endpoints: /entites', () => {
       });
 
       expect(authorizedRes.status).toBe(200);
-      expect(await authorizedRes.json()).toEqual({
-        data: {
-          id: 'service-pa',
-          entiteType: 'service',
-          ...input,
-          parentDirection: {
-            id: 'dir-autonomie',
-            nomComplet: 'Direction Autonomie',
-            label: 'DA',
-          },
-        },
-      });
+      expect(await authorizedRes.json()).toEqual({ data: updatedTarget });
       expect(deniedRes.status).toBe(404);
       expect(editDirectionServiceAdminLocal).toHaveBeenNthCalledWith(1, 'dir-autonomie', 'service-pa', input);
       expect(editDirectionServiceAdminLocal).toHaveBeenNthCalledWith(2, 'dir-autonomie', 'service-outside', input);
     });
 
-    it('rejects caller-controlled status and Service parent changes', async () => {
+    it.each([
+      ['nomComplet', 'Service renommé'],
+      ['label', 'SR'],
+      ['isActive', false],
+      ['directionId', 'dir-enfance'],
+      ['entiteMereId', 'dir-enfance'],
+      ['parentDirection', { id: 'dir-enfance' }],
+      ['entiteTypeId', 'ARS'],
+      ['regionCode', '99'],
+      ['organizationalUnit', 'other-unit'],
+      ['emailDomain', '@other.fr'],
+      ['unknownProperty', 'other'],
+    ])('rejects caller-controlled or unknown field %s', async (field, value) => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       const input = {
-        nomComplet: 'Service Personnes âgées',
-        label: 'PA',
         email: 'notification-pa@ars.fr',
         emailContactUsager: 'contact-pa@ars.fr',
         telContactUsager: '0102030405',
         adresseContactUsager: '1 rue de la Santé, Paris',
+        [field]: value,
       };
 
-      for (const forbiddenField of [{ isActive: false }, { directionId: 'dir-enfance' }]) {
-        vi.mocked(editDirectionServiceAdminLocal).mockClear();
-        const res = await app.request('/admin/directions-services/service-pa', {
-          method: 'PATCH',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ ...input, ...forbiddenField }),
-        });
+      const res = await app.request('/admin/directions-services/service-pa', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      });
 
-        expect(res.status).toBe(400);
-        expect(editDirectionServiceAdminLocal).not.toHaveBeenCalled();
-      }
+      expect(res.status).toBe(400);
+      expect(editDirectionServiceAdminLocal).not.toHaveBeenCalled();
     });
   });
 
