@@ -34,6 +34,13 @@ export async function fetchEntitesListAdmin(query: QueryParams = {}) {
   return { data, meta };
 }
 
+export async function fetchEntiteAdministrativeAdminLocal() {
+  const res = await client.entites.admin.local.$get();
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return data;
+}
+
 export async function fetchDirectionsServicesList(query: Pick<QueryParams, 'search'> = {}) {
   const res = await client.entites.admin['directions-services'].$get({
     query: formatPaginationParams(query),
@@ -95,10 +102,23 @@ export type CreateChildEntiteAdminInput = {
 };
 
 export type CreateDirectionAdminLocalInput = Omit<CreateChildEntiteAdminInput, 'isActive'>;
+export type EditEntiteAdministrativeAdminLocalInput = {
+  email: string;
+  emailContactUsager: string;
+  adresseContactUsager: string;
+  telContactUsager: string;
+};
 export type EditDirectionServiceAdminLocalInput = CreateDirectionAdminLocalInput;
 export type CreateServiceAdminLocalInput = CreateDirectionAdminLocalInput & {
   directionId?: string;
 };
+
+export async function editEntiteAdministrativeAdminLocal(input: EditEntiteAdministrativeAdminLocalInput) {
+  const res = await client.entites.admin.local.$patch({ json: input });
+  await handleRequestErrors(res, { silentToastError: true });
+  const { data } = await res.json();
+  return data;
+}
 
 export async function editDirectionServiceAdminLocal(id: string, input: EditDirectionServiceAdminLocalInput) {
   const res = await client.entites.admin['directions-services'][':id'].$patch({

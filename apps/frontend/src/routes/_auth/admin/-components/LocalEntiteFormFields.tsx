@@ -1,34 +1,43 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import Input from '@codegouvfr/react-dsfr/Input';
-import type { ReactNode } from 'react';
+import { type ReactNode, useId } from 'react';
+import { ReadOnlyField } from '@/components/common/ReadOnlyField';
+import type { LocalEntiteFormType, LocalEntiteFormValues } from './useLocalEntiteForm';
 
-type SirenaField = 'nomComplet' | 'label' | 'email';
-type ContactField = 'emailContactUsager' | 'telContactUsager' | 'adresseContactUsager';
 type FieldChangeHandler = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+type FormFieldsState = {
+  entiteType: LocalEntiteFormType;
+  values: LocalEntiteFormValues;
+  validationErrors: Record<string, string>;
+  onChange: (field: keyof LocalEntiteFormValues) => FieldChangeHandler;
+};
 
 type SirenaFieldsProps = {
-  kind: 'entite-administrative' | 'direction' | 'service';
-  formData: Record<SirenaField, string>;
+  entiteType: LocalEntiteFormType;
+  formData: LocalEntiteFormValues;
   validationErrors: Record<string, string>;
-  onChange: (field: SirenaField) => FieldChangeHandler;
+  onChange: FormFieldsState['onChange'];
   leadingField?: ReactNode;
 };
 
-export function LocalDirectionServiceSirenaFields({
-  kind,
+function LocalEntiteSirenaFields({
+  entiteType,
   formData,
   validationErrors,
   onChange,
   leadingField,
 }: SirenaFieldsProps) {
+  const identityFieldsReadOnly = entiteType === 'entite-administrative';
+  const nameReadOnlyId = useId();
+  const abbreviationReadOnlyId = useId();
   const wording =
-    kind === 'entite-administrative'
+    entiteType === 'entite-administrative'
       ? {
           name: 'de l’entité administrative',
           nameExample: 'Agence régionale de santé Normandie',
           abbreviationExample: 'ARS NOR',
         }
-      : kind === 'direction'
+      : entiteType === 'direction'
         ? {
             name: 'de la direction',
             nameExample: 'Direction de l’Offre de Soins',
@@ -48,29 +57,51 @@ export function LocalDirectionServiceSirenaFields({
         {leadingField}
 
         <div className="fr-col-12 fr-col-md-7">
-          <Input
-            className="fr-fieldset__content"
-            label={`Nom ${wording.name} (obligatoire)`}
-            hintText={`Nom complet sans abréviation ou acronyme. Exemple : ${wording.nameExample}`}
-            state={validationErrors.nomComplet ? 'error' : 'default'}
-            stateRelatedMessage={validationErrors.nomComplet}
-            nativeInputProps={{
-              name: 'nomComplet',
-              value: formData.nomComplet,
-              onChange: onChange('nomComplet'),
-            }}
-          />
+          {identityFieldsReadOnly ? (
+            <div className="fr-fieldset__content">
+              <ReadOnlyField
+                id={nameReadOnlyId}
+                label={`Nom ${wording.name}`}
+                hintText={`Nom complet sans abréviation ou acronyme. Exemple : ${wording.nameExample}`}
+                value={formData.nomComplet}
+              />
+            </div>
+          ) : (
+            <Input
+              className="fr-fieldset__content"
+              label={`Nom ${wording.name} (obligatoire)`}
+              hintText={`Nom complet sans abréviation ou acronyme. Exemple : ${wording.nameExample}`}
+              state={validationErrors.nomComplet ? 'error' : 'default'}
+              stateRelatedMessage={validationErrors.nomComplet}
+              nativeInputProps={{
+                name: 'nomComplet',
+                value: formData.nomComplet,
+                onChange: onChange('nomComplet'),
+              }}
+            />
+          )}
         </div>
 
         <div className="fr-col-12 fr-col-md-5">
-          <Input
-            className="fr-fieldset__content"
-            label="Abréviation (obligatoire)"
-            hintText={`Sigle, acronyme ou forme abrégée du nom. Exemple : ${wording.abbreviationExample}`}
-            state={validationErrors.label ? 'error' : 'default'}
-            stateRelatedMessage={validationErrors.label}
-            nativeInputProps={{ name: 'label', value: formData.label, onChange: onChange('label') }}
-          />
+          {identityFieldsReadOnly ? (
+            <div className="fr-fieldset__content">
+              <ReadOnlyField
+                id={abbreviationReadOnlyId}
+                label="Abréviation"
+                hintText={`Sigle, acronyme ou forme abrégée du nom. Exemple : ${wording.abbreviationExample}`}
+                value={formData.label}
+              />
+            </div>
+          ) : (
+            <Input
+              className="fr-fieldset__content"
+              label="Abréviation (obligatoire)"
+              hintText={`Sigle, acronyme ou forme abrégée du nom. Exemple : ${wording.abbreviationExample}`}
+              state={validationErrors.label ? 'error' : 'default'}
+              stateRelatedMessage={validationErrors.label}
+              nativeInputProps={{ name: 'label', value: formData.label, onChange: onChange('label') }}
+            />
+          )}
         </div>
 
         <div className="fr-col-12 fr-col-md-7">
@@ -89,12 +120,12 @@ export function LocalDirectionServiceSirenaFields({
 }
 
 type ContactFieldsProps = {
-  formData: Record<ContactField, string>;
+  formData: LocalEntiteFormValues;
   validationErrors: Record<string, string>;
-  onChange: (field: ContactField) => FieldChangeHandler;
+  onChange: FormFieldsState['onChange'];
 };
 
-export function LocalDirectionServiceContactFields({ formData, validationErrors, onChange }: ContactFieldsProps) {
+function LocalEntiteContactFields({ formData, validationErrors, onChange }: ContactFieldsProps) {
   return (
     <fieldset className="fr-fieldset">
       <legend className="fr-fieldset__legend fr-mb-3w fr-pb-0">Informations de contact pour l’usager</legend>
@@ -127,7 +158,7 @@ export function LocalDirectionServiceContactFields({ formData, validationErrors,
           <Input
             className="fr-fieldset__content"
             label="Numéro de téléphone"
-            hintText="Format attendu : 10 chiffres ou +31XXXXXXXXXX (international)"
+            hintText="Format attendu : 10 chiffres ou +33XXXXXXXXXX (international)"
             state={validationErrors.telContactUsager ? 'error' : 'default'}
             stateRelatedMessage={validationErrors.telContactUsager}
             nativeInputProps={{
@@ -155,5 +186,25 @@ export function LocalDirectionServiceContactFields({ formData, validationErrors,
         </div>
       </div>
     </fieldset>
+  );
+}
+
+type LocalEntiteFormFieldsProps = {
+  form: FormFieldsState;
+  leadingField?: ReactNode;
+};
+
+export function LocalEntiteFormFields({ form, leadingField }: LocalEntiteFormFieldsProps) {
+  const fields = {
+    formData: form.values,
+    validationErrors: form.validationErrors,
+    onChange: form.onChange,
+  };
+
+  return (
+    <>
+      <LocalEntiteSirenaFields entiteType={form.entiteType} {...fields} leadingField={leadingField} />
+      <LocalEntiteContactFields {...fields} />
+    </>
   );
 }

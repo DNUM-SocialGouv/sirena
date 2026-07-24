@@ -22,6 +22,7 @@ vi.mock('@tanstack/react-router', () => ({
 vi.mock('@/hooks/queries/entites.hook', () => ({ useCreateDirectionAdminLocal: vi.fn() }));
 vi.mock('@/lib/api/fetchEntites', () => ({ fetchDirectionsServicesList: vi.fn() }));
 vi.mock('@/lib/api/fetchFeatureFlags', () => ({ fetchResolvedFeatureFlags: vi.fn() }));
+vi.mock('@/hooks/queries/profile.hook', () => ({ profileQueryOptions: vi.fn() }));
 vi.mock('@/lib/queryClient', () => ({ queryClient: { ensureQueryData: vi.fn(), fetchQuery: vi.fn() } }));
 vi.mock('@/lib/auth-guards', () => ({ requireAuthAndRoles: vi.fn(() => authGuardSpy) }));
 vi.mock('@sirena/ui', async () => {
@@ -58,9 +59,9 @@ describe('Admin local Direction create route', () => {
 
     expect(screen.getByRole('heading', { name: 'Ajouter une direction' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Informations utilisées dans SIRENA' })).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: /Nom de la direction/ })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /Nom de la direction/ })).toBeEnabled();
     expect(screen.getByText(/Direction de l’Offre de Soins/)).toBeVisible();
-    expect(screen.getByRole('textbox', { name: /Abréviation/ })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /Abréviation/ })).toBeEnabled();
     expect(screen.getByText(/Sigle, acronyme ou forme abrégée du nom.*DOS/)).toBeVisible();
     expect(screen.getByRole('group', { name: 'Informations de contact pour l’usager' })).toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: /Actif dans SIRENA/ })).not.toBeInTheDocument();

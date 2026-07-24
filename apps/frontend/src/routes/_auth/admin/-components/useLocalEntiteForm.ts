@@ -3,7 +3,9 @@ import { useMemo, useState } from 'react';
 import { z } from 'zod';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 
-type LocalDirectionServiceFormValues = {
+export type LocalEntiteFormType = 'entite-administrative' | 'direction' | 'service';
+
+export type LocalEntiteFormValues = {
   nomComplet: string;
   label: string;
   email: string;
@@ -12,7 +14,7 @@ type LocalDirectionServiceFormValues = {
   adresseContactUsager: string;
 };
 
-const emptyLocalDirectionServiceForm: LocalDirectionServiceFormValues = {
+const emptyLocalEntiteForm: LocalEntiteFormValues = {
   nomComplet: '',
   label: '',
   email: '',
@@ -21,17 +23,23 @@ const emptyLocalDirectionServiceForm: LocalDirectionServiceFormValues = {
   adresseContactUsager: '',
 };
 
-const createSchema = (kind: 'entite-administrative' | 'direction' | 'service') => {
+const createSchema = (entiteType: LocalEntiteFormType) => {
   const entityName =
-    kind === 'entite-administrative'
+    entiteType === 'entite-administrative'
       ? 'de l’entité administrative'
-      : kind === 'direction'
+      : entiteType === 'direction'
         ? 'de la direction'
         : 'du service';
 
   return z.object({
-    nomComplet: z.string().trim().min(1, `Le champ "Nom ${entityName}" est vide. Veuillez le renseigner.`),
-    label: z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
+    nomComplet:
+      entiteType === 'entite-administrative'
+        ? z.string()
+        : z.string().trim().min(1, `Le champ "Nom ${entityName}" est vide. Veuillez le renseigner.`),
+    label:
+      entiteType === 'entite-administrative'
+        ? z.string()
+        : z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
     email: optionalEmailSchema,
     emailContactUsager: optionalEmailSchema,
     telContactUsager: optionalPhoneSchema,
@@ -39,18 +47,17 @@ const createSchema = (kind: 'entite-administrative' | 'direction' | 'service') =
   });
 };
 
-export function useLocalDirectionServiceForm(
-  kind: 'entite-administrative' | 'direction' | 'service',
-  initialValues: LocalDirectionServiceFormValues = emptyLocalDirectionServiceForm,
+export function useLocalEntiteForm(
+  entiteType: LocalEntiteFormType,
+  initialValues: LocalEntiteFormValues = emptyLocalEntiteForm,
 ) {
-  const schema = useMemo(() => createSchema(kind), [kind]);
+  const schema = useMemo(() => createSchema(entiteType), [entiteType]);
   const [values, setValues] = useState(initialValues);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const onChange =
-    (field: keyof LocalDirectionServiceFormValues) =>
-    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    (field: keyof LocalEntiteFormValues) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const value = event.target.value;
       setValues((previous) => {
         const updated = { ...previous, [field]: value };
@@ -78,7 +85,7 @@ export function useLocalDirectionServiceForm(
     });
   };
 
-  const validate = (additionalErrors: Record<string, string> = {}): LocalDirectionServiceFormValues | null => {
+  const validate = (additionalErrors: Record<string, string> = {}): LocalEntiteFormValues | null => {
     setHasSubmitted(true);
     const result = schema.safeParse(values);
     const errors = {
@@ -106,5 +113,5 @@ export function useLocalDirectionServiceForm(
     };
   };
 
-  return { values, validationErrors, onChange, clearError, validate };
+  return { entiteType, values, validationErrors, onChange, clearError, validate };
 }
