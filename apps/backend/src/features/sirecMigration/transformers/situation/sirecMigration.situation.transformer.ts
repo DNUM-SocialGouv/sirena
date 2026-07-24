@@ -1,5 +1,6 @@
 import { DEMARCHES_ENGAGEES } from '@sirena/common/constants';
 import type { SirecReclamationData } from '../../sirecMigration.repository.js';
+import { transcodeDepartement } from '../../transco/departement.transco.js';
 import { SIREC_BOOLEAN_TRANSCO } from '../../transco/dictionnaire.transco.js';
 import { transcodeDomaineFonctionnel } from '../../transco/domaineFonctionnel.transco.js';
 import { SirecTranscoError } from '../../transco/sirecTransco.error.js';
@@ -54,7 +55,6 @@ export function transformSirecSituation(sirecData: SirecReclamationData, entiteI
     domainesFonctionnelsId: transcodeDomaineFonctionnel(sirecData.reclamation.domaine),
     estLieAuSignalement: resolveEstLieAuSignalement(ei_avere, num_sign_assoc),
     numerosSignalement: num_sign_assoc ?? '',
-    //TODO: Not yet mapped from SIREC
-    sirecDepartement: null,
+    sirecDepartement: transcodeDepartement(sirecData.reclamation.departement),
   };
 }

@@ -113,6 +113,7 @@ describe('sirecMigration.transformer.ts', () => {
       num_sign_assoc: null as string | null,
       date_recep_gest: null as Date | null,
       signalement: null as number | null,
+      departement: null as number | null,
     },
     motifsDeclaresIdDicos: [809],
     groupIds: [],
