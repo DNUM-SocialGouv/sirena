@@ -13,6 +13,7 @@ import {
   fetchSirecReclamationById,
   fetchSirecTypeTraitementIds,
 } from './sirecMigration.repository.js';
+import { SirecDataError } from './transco/sirecTransco.error.js';
 
 vi.mock('../../config/mariadb.js', () => ({
   mariadbPool: {
@@ -84,13 +85,40 @@ describe('sirecMigration.repository.ts', () => {
   });
 
   describe('fetchSirecGroupIds', () => {
-    it('should return the list of group ids when found', async () => {
-      vi.mocked(mariadbPool.query).mockResolvedValueOnce([{ id_group: 3 }, { id_group: 5 }]);
+    it('should default to mode ECRITURE for all groups when no mode records exist', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([
+        { id_group: 3, mode: null },
+        { id_group: 5, mode: null },
+      ]);
 
       const result = await fetchSirecGroupIds(42);
 
-      expect(result).toEqual([3, 5]);
+      expect(result).toEqual([
+        { id_group: 3, mode: 'ECRITURE' },
+        { id_group: 5, mode: 'ECRITURE' },
+      ]);
       expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_reclamation_data_group'), [42]);
+    });
+
+    it('should only return groups that have mode records, with their mode, when some exist', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([
+        { id_group: 3, mode: null },
+        { id_group: 5, mode: 4 },
+        { id_group: 7, mode: 2 },
+      ]);
+
+      const result = await fetchSirecGroupIds(42);
+
+      expect(result).toEqual([
+        { id_group: 5, mode: 'LECTURE' },
+        { id_group: 7, mode: 'ECRITURE' },
+      ]);
+    });
+
+    it('should throw SirecDataError for an unknown mode raw value', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([{ id_group: 5, mode: 99 }]);
+
+      await expect(fetchSirecGroupIds(42)).rejects.toThrow(SirecDataError);
     });
 
     it('should return an empty array when no groups found', async () => {
@@ -660,7 +688,10 @@ describe('sirecMigration.repository.ts', () => {
       vi.mocked(mariadbPool.query)
         .mockResolvedValueOnce([mockRow])
         .mockResolvedValueOnce([{ id_dico: 823 }, { id_dico: 809 }])
-        .mockResolvedValueOnce([{ id_group: 3 }, { id_group: 5 }])
+        .mockResolvedValueOnce([
+          { id_group: 3, mode: null },
+          { id_group: 5, mode: null },
+        ])
         .mockResolvedValueOnce([{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }])
         .mockResolvedValueOnce([{ id_dico: 344 }])
         .mockResolvedValueOnce([])
@@ -672,7 +703,10 @@ describe('sirecMigration.repository.ts', () => {
       expect(result).toEqual({
         reclamation: mockRow,
         motifsDeclaresIdDicos: [823, 809],
-        groupIds: [3, 5],
+        groupIds: [
+          { id_group: 3, mode: 'ECRITURE' },
+          { id_group: 5, mode: 'ECRITURE' },
+        ],
         provenances: [{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }],
         institutionPartenaires: {},
         typeTraitementIdDicos: [344],
@@ -760,6 +794,17 @@ describe('sirecMigration.repository.ts', () => {
 
       expect(result).toEqual([]);
       expect(mariadbPool.query).not.toHaveBeenCalled();
+    });
+
+    it('should query with a mode-aware join on sire_reclamation_data_group_mode', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
+
+      await fetchSirecIdsByServiceIds([1]);
+
+      expect(mariadbPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('sire_reclamation_data_group_mode'),
+        expect.any(Array),
+      );
     });
 
     it('should query with INNER JOIN on sire_reclamation_data', async () => {

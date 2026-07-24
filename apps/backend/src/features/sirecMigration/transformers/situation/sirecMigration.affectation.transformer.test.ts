@@ -33,7 +33,7 @@ const makeData = (
       accuser_reception_precision: null,
     },
     motifsDeclaresIdDicos: [],
-    groupIds,
+    groupIds: groupIds.map((id_group) => ({ id_group, mode: 'ECRITURE' })),
     mainCourantes,
     provenances: [],
     institutionPartenaires: {},

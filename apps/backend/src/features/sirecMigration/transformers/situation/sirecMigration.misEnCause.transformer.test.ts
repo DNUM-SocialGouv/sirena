@@ -171,7 +171,7 @@ const makeData = (
       signalement,
     },
     motifsDeclaresIdDicos: [],
-    groupIds,
+    groupIds: groupIds.map((id_group) => ({ id_group, mode: 'ECRITURE' })),
     provenances: [],
     institutionPartenaires: {},
     typeTraitementIdDicos: [],

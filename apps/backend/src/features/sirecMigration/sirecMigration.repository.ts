@@ -1,6 +1,32 @@
 import { mariadbPool } from '../../config/mariadb.js';
 import { SIREC_NATIONAL_ENTITE_ID } from './transco/affectation/affectation.transco.js';
 import { MOTIF_IGAS_A_RENSEIGNER, MOTIF_IGAS_HORS_COMPETENCE } from './transco/motifsIgas.transco.js';
+import { SirecDataError } from './transco/sirecTransco.error.js';
+
+export const SIREC_GROUP_MODE = {
+  LECTURE: 'LECTURE',
+  ECRITURE: 'ECRITURE',
+} as const;
+
+export type SirecGroupMode = (typeof SIREC_GROUP_MODE)[keyof typeof SIREC_GROUP_MODE];
+
+const SIREC_GROUP_MODE_BY_RAW_VALUE: Record<number, SirecGroupMode> = {
+  2: SIREC_GROUP_MODE.ECRITURE,
+  4: SIREC_GROUP_MODE.LECTURE,
+};
+
+function mapSirecGroupMode(rawMode: number): SirecGroupMode {
+  const mode = SIREC_GROUP_MODE_BY_RAW_VALUE[rawMode];
+  if (!mode) {
+    throw new SirecDataError(`Mode de groupe SIREC inconnu: ${rawMode}`);
+  }
+  return mode;
+}
+
+export interface SirecGroupIdWithMode {
+  id_group: number;
+  mode: SirecGroupMode;
+}
 
 export interface SirecReclamationRow {
   id_data: number;
@@ -151,7 +177,7 @@ export interface SirecMainCourante {
 export interface SirecReclamationData {
   reclamation: SirecReclamationRow;
   motifsDeclaresIdDicos: number[];
-  groupIds: number[];
+  groupIds: SirecGroupIdWithMode[];
   provenances: SirecProvenance[];
   institutionPartenaires: Record<number, string>;
   typeTraitementIdDicos: number[];
@@ -197,16 +223,22 @@ export async function fetchSirecMotifsDeclaresById(sirecId: number): Promise<num
   return rows.map((row) => row.id_dico);
 }
 
-export async function fetchSirecGroupIds(sirecId: number): Promise<number[]> {
-  const rows = await mariadbPool.query<{ id_group: number }[]>(
-    `SELECT id_group
-     FROM sire_reclamation_data_group
-     WHERE id_data = ?
-       AND id_group != ${SIREC_NATIONAL_ENTITE_ID}
-       and id_group != 3`,
+export async function fetchSirecGroupIds(sirecId: number): Promise<SirecGroupIdWithMode[]> {
+  const rows = await mariadbPool.query<{ id_group: number; mode: number | null }[]>(
+    `SELECT rg.id_group, rgm.mode
+     FROM sire_reclamation_data_group rg
+     LEFT JOIN sire_reclamation_data_group_mode rgm ON rgm.id_data_group = rg.id_data_group
+     WHERE rg.id_data = ?
+       AND rg.id_group != ${SIREC_NATIONAL_ENTITE_ID}
+       and rg.id_group != 3`,
     [sirecId],
   );
-  return rows.map((row) => row.id_group);
+  const rowsWithMode = rows.filter((row) => row.mode !== null);
+  if (rowsWithMode.length > 0) {
+    return rowsWithMode.map((row) => ({ id_group: row.id_group, mode: mapSirecGroupMode(row.mode as number) }));
+  }
+
+  return rows.map((row) => ({ id_group: row.id_group, mode: SIREC_GROUP_MODE.ECRITURE }));
 }
 
 export async function fetchSirecProvenances(sirecId: number): Promise<SirecProvenance[]> {
@@ -285,7 +317,7 @@ export async function fetchSirecMcIgasMotifs(sirecId: number): Promise<Map<numbe
      FROM sire_mc_igas_data i
               INNER JOIN sire_misencause_data m ON m.id_data = i.id_mc
      WHERE m.id_reclamation = ?
-       and i.id_igas NOT IN  (${MOTIF_IGAS_A_RENSEIGNER}, ${MOTIF_IGAS_HORS_COMPETENCE})`,
+     and i.id_igas NOT IN  (${MOTIF_IGAS_A_RENSEIGNER}, ${MOTIF_IGAS_HORS_COMPETENCE})`,
     [sirecId],
   );
 
