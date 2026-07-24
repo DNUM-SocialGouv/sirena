@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 283.95909580193756,
+  "average_query_time": 359,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -23,12 +23,12 @@
   "collection_preview": true,
   "creator_id": 3,
   "dashboard": {
-    "id": 4,
+    "id": 6,
     "moderation_status": null,
-    "name": "[integration] Dashboard local"
+    "name": "[integration] Dashboard national"
   },
   "dashboard_count": 1,
-  "dashboard_id": 4,
+  "dashboard_id": 6,
   "database_id": 4,
   "dataset_query": {
     "database": 4,
@@ -36,24 +36,23 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'CLOTUREE'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]];",
+        "native": "  SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]];",
         "template-tags": [
           {
             "display-name": "Entity Label",
-            "id": "cc23122a-24e6-4299-91ae-a3d6e6e3e71c",
+            "id": "c6cc645e-4a7d-4636-b549-31b8cf60eb45",
             "name": "entity_label",
-            "required": true,
             "type": "text"
           },
           {
             "display-name": "Start Date",
-            "id": "1b5c1e68-6b21-4d5c-8d50-9af1862a4303",
+            "id": "54ea0cda-8c2e-4fe9-a43e-ad07eb4a59ae",
             "name": "start_date",
             "type": "date"
           },
           {
             "display-name": "End Date",
-            "id": "f4098765-99bf-4fa5-a062-f5784b68228d",
+            "id": "3273b579-c81e-4987-a609-87facb773f3d",
             "name": "end_date",
             "type": "date"
           }
@@ -69,24 +68,23 @@
   "embedding_params": null,
   "embedding_type": null,
   "enable_embedding": false,
-  "entity_id": "_9ybydYPyhKzf76tn1pu5",
-  "id": 45,
+  "entity_id": "2z5eiukXf6jmI88kBaqxj",
+  "id": 65,
   "is_remote_synced": false,
-  "last_query_start": "2026-07-21T14:31:03.219827Z",
+  "last_query_start": "2026-07-21T15:58:52.11913Z",
   "legacy_query": null,
   "made_public_by_id": null,
-  "metabase_version": "v0.60.4.4 (65c9d32)",
+  "metabase_version": "v0.62.3.3 (686cac9)",
   "moderation_reviews": [],
-  "name": "requêtes cloturées",
+  "name": "requêtes au total",
   "param_fields": {},
   "parameter_mappings": [],
   "parameter_usage_count": 0,
   "parameters": [
     {
-      "id": "cc23122a-24e6-4299-91ae-a3d6e6e3e71c",
+      "id": "c6cc645e-4a7d-4636-b549-31b8cf60eb45",
       "isMultiSelect": false,
       "name": "Entity Label",
-      "required": true,
       "slug": "entity_label",
       "target": [
         "variable",
@@ -99,6 +97,13 @@
       "values_query_type": "list",
       "values_source_config": {
         "card_id": 46,
+        "label_field": [
+          "field",
+          "nomComplet",
+          {
+            "base-type": "type/Text"
+          }
+        ],
         "value_field": [
           "field",
           "label",
@@ -110,7 +115,7 @@
       "values_source_type": "card"
     },
     {
-      "id": "1b5c1e68-6b21-4d5c-8d50-9af1862a4303",
+      "id": "54ea0cda-8c2e-4fe9-a43e-ad07eb4a59ae",
       "isMultiSelect": false,
       "name": "Start Date",
       "slug": "start_date",
@@ -124,7 +129,7 @@
       "type": "date/single"
     },
     {
-      "id": "f4098765-99bf-4fa5-a062-f5784b68228d",
+      "id": "3273b579-c81e-4987-a609-87facb773f3d",
       "isMultiSelect": false,
       "name": "End Date",
       "slug": "end_date",
@@ -160,13 +165,13 @@
         },
         "type": {
           "type/Number": {
-            "avg": 29,
+            "avg": 847,
             "excess-kurtosis": null,
-            "max": 29,
-            "min": 29,
+            "max": 847,
+            "min": 847,
             "mode-fraction": 1,
-            "q1": 29,
-            "q3": 29,
+            "q1": 847,
+            "q3": 847,
             "sd": 0,
             "skewness": null,
             "top-3-fraction": 1,

@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 283.95909580193756,
+  "average_query_time": 291.05882352941177,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -23,12 +23,12 @@
   "collection_preview": true,
   "creator_id": 3,
   "dashboard": {
-    "id": 4,
+    "id": 6,
     "moderation_status": null,
-    "name": "[integration] Dashboard local"
+    "name": "[integration] Dashboard national"
   },
   "dashboard_count": 1,
-  "dashboard_id": 4,
+  "dashboard_id": 6,
   "database_id": 4,
   "dataset_query": {
     "database": 4,
@@ -36,24 +36,23 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'CLOTUREE'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]];",
+        "native": "WITH RECURSIVE\n-- 1. Périmètre entités : l'entité de premier niveau de l'utilisateur (entiteMereId IS NULL)\n--    identifiée par {{entity_label}}, PLUS tous ses services descendants (récursif).\nentites_scope AS (\n  SELECT e.id\n  FROM \"Entite\" e\n  WHERE e.\"entiteMereId\" IS NULL\n    [[ AND e.label = {{entity_label}} ]]\n\n  UNION ALL\n\n  SELECT child.id\n  FROM \"Entite\" child\n  JOIN entites_scope s ON child.\"entiteMereId\" = s.id\n),\n\n-- 2. Requêtes ayant AU MOINS un motif dont le 1er niveau est \"Maltraitance professionnels ou entourage\".\n--    Les id de MotifEnum sont au format \"PARENT/ENFANT\" -> on filtre sur le parent.\nrequetes_maltraitance AS (\n  SELECT DISTINCT s.\"requeteId\" AS requete_id\n  FROM \"Situation\" s\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  WHERE s.\"requeteId\" IS NOT NULL\n    AND fm.\"motifId\" LIKE 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/%'\n)\n\nSELECT COUNT(DISTINCT r.id) AS \"Requêtes maltraitance\"\nFROM \"Requete\" r\nJOIN requetes_maltraitance rm ON rm.requete_id = r.id\nJOIN \"RequeteEntite\" re     ON re.\"requeteId\" = r.id\nJOIN entites_scope es       ON es.id = re.\"entiteId\"\nWHERE 1 = 1\n  [[ AND r.\"receptionDate\"::date >= {{start_date}} ]]\n  [[ AND r.\"receptionDate\"::date <= {{end_date}} ]]\n",
         "template-tags": [
           {
             "display-name": "Entity Label",
-            "id": "cc23122a-24e6-4299-91ae-a3d6e6e3e71c",
+            "id": "406d7b10-cd2a-4503-84a7-b850bde7f4f0",
             "name": "entity_label",
-            "required": true,
             "type": "text"
           },
           {
             "display-name": "Start Date",
-            "id": "1b5c1e68-6b21-4d5c-8d50-9af1862a4303",
+            "id": "e10cae6c-fa1b-43c0-8299-975b1632ef7d",
             "name": "start_date",
             "type": "date"
           },
           {
             "display-name": "End Date",
-            "id": "f4098765-99bf-4fa5-a062-f5784b68228d",
+            "id": "a3c671f3-cab1-4388-838f-8df2e3f61178",
             "name": "end_date",
             "type": "date"
           }
@@ -69,24 +68,23 @@
   "embedding_params": null,
   "embedding_type": null,
   "enable_embedding": false,
-  "entity_id": "_9ybydYPyhKzf76tn1pu5",
-  "id": 45,
+  "entity_id": "2P4X0t5mBkSBs54R0UTUb",
+  "id": 69,
   "is_remote_synced": false,
-  "last_query_start": "2026-07-21T14:31:03.219827Z",
+  "last_query_start": "2026-07-21T15:58:52.119965Z",
   "legacy_query": null,
   "made_public_by_id": null,
-  "metabase_version": "v0.60.4.4 (65c9d32)",
+  "metabase_version": "v0.63.1.2 (b067da1)",
   "moderation_reviews": [],
-  "name": "requêtes cloturées",
+  "name": "requêtes taggués maltraitance",
   "param_fields": {},
   "parameter_mappings": [],
   "parameter_usage_count": 0,
   "parameters": [
     {
-      "id": "cc23122a-24e6-4299-91ae-a3d6e6e3e71c",
+      "id": "406d7b10-cd2a-4503-84a7-b850bde7f4f0",
       "isMultiSelect": false,
       "name": "Entity Label",
-      "required": true,
       "slug": "entity_label",
       "target": [
         "variable",
@@ -99,6 +97,13 @@
       "values_query_type": "list",
       "values_source_config": {
         "card_id": 46,
+        "label_field": [
+          "field",
+          "nomComplet",
+          {
+            "base-type": "type/Text"
+          }
+        ],
         "value_field": [
           "field",
           "label",
@@ -110,7 +115,7 @@
       "values_source_type": "card"
     },
     {
-      "id": "1b5c1e68-6b21-4d5c-8d50-9af1862a4303",
+      "id": "e10cae6c-fa1b-43c0-8299-975b1632ef7d",
       "isMultiSelect": false,
       "name": "Start Date",
       "slug": "start_date",
@@ -124,7 +129,7 @@
       "type": "date/single"
     },
     {
-      "id": "f4098765-99bf-4fa5-a062-f5784b68228d",
+      "id": "a3c671f3-cab1-4388-838f-8df2e3f61178",
       "isMultiSelect": false,
       "name": "End Date",
       "slug": "end_date",
@@ -144,11 +149,11 @@
     {
       "base_type": "type/BigInteger",
       "database_type": "int8",
-      "display_name": "nombre_requetes",
+      "display_name": "Requêtes maltraitance",
       "effective_type": "type/BigInteger",
       "field_ref": [
         "field",
-        "nombre_requetes",
+        "Requêtes maltraitance",
         {
           "base-type": "type/BigInteger"
         }
@@ -160,13 +165,13 @@
         },
         "type": {
           "type/Number": {
-            "avg": 29,
+            "avg": 12,
             "excess-kurtosis": null,
-            "max": 29,
-            "min": 29,
+            "max": 12,
+            "min": 12,
             "mode-fraction": 1,
-            "q1": 29,
-            "q3": 29,
+            "q1": 12,
+            "q3": 12,
             "sd": 0,
             "skewness": null,
             "top-3-fraction": 1,
@@ -174,12 +179,12 @@
           }
         }
       },
-      "lib/deduplicated-name": "nombre_requetes",
-      "lib/desired-column-alias": "nombre_requetes",
-      "lib/original-name": "nombre_requetes",
+      "lib/deduplicated-name": "Requêtes maltraitance",
+      "lib/desired-column-alias": "Requêtes maltraitance",
+      "lib/original-name": "Requêtes maltraitance",
       "lib/source": "source/native",
-      "lib/source-column-alias": "nombre_requetes",
-      "name": "nombre_requetes",
+      "lib/source-column-alias": "Requêtes maltraitance",
+      "name": "Requêtes maltraitance",
       "semantic_type": null,
       "source": "native"
     }

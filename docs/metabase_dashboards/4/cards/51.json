@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 275.6,
+  "average_query_time": 256.5154320987654,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -25,7 +25,7 @@
   "dashboard": {
     "id": 4,
     "moderation_status": null,
-    "name": "[integrated] Sirena"
+    "name": "[integration] Dashboard local"
   },
   "dashboard_count": 1,
   "dashboard_id": 4,
@@ -37,26 +37,26 @@
       {
         "lib/type": "mbql.stage/native",
         "native": "-- Nombre de requêtes de l'entité de l'agent connecté qui sont en compétence partagée,\n-- c.-à-d. affectées à au moins une AUTRE entité administrative « réellement » compétente.\n-- Une autre entité est ignorée si elle a clôturé la requête pour motif « Hors compétence ».\nSELECT\n  COUNT(DISTINCT re_self.\"requeteId\") AS nombre_requetes_competence_partagee\nFROM \"RequeteEntite\" re_self\nJOIN \"Entite\"   e ON e.id = re_self.\"entiteId\"\nJOIN \"Requete\"  r ON r.id = re_self.\"requeteId\"\nWHERE\n  e.label = {{entity_label}}\n  AND EXISTS (\n    -- une autre entité affectée à la même requête...\n    SELECT 1\n    FROM \"RequeteEntite\" re_other\n    WHERE re_other.\"requeteId\" = re_self.\"requeteId\"\n      AND re_other.\"entiteId\" <> re_self.\"entiteId\"\n      -- ...qui n'est PAS clôturée « Hors compétence »\n      AND NOT (\n        re_other.\"statutId\" = 'CLOTUREE'\n        AND EXISTS (\n          SELECT 1\n          FROM \"RequeteEtape\" et\n          JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n          WHERE et.\"requeteId\" = re_other.\"requeteId\"\n            AND et.\"entiteId\"  = re_other.\"entiteId\"\n            AND et.\"statutId\"  = 'CLOTUREE'\n            AND j.\"A\"          = 'HORS_COMPETENCE'\n        )\n      )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]];",
-        "template-tags": {
-          "end_date": {
-            "display-name": "End Date",
-            "id": "1d20b736-898e-4a78-8bdd-ff198232d8e3",
-            "name": "end_date",
-            "type": "date"
-          },
-          "entity_label": {
+        "template-tags": [
+          {
             "display-name": "Entity Label",
             "id": "fd677468-a4da-47d0-8c73-87bd90cafe61",
             "name": "entity_label",
             "type": "text"
           },
-          "start_date": {
+          {
             "display-name": "Start Date",
             "id": "39685465-f3f0-40e4-9a14-ae74670e2eed",
             "name": "start_date",
             "type": "date"
+          },
+          {
+            "display-name": "End Date",
+            "id": "1d20b736-898e-4a78-8bdd-ff198232d8e3",
+            "name": "end_date",
+            "type": "date"
           }
-        }
+        ]
       }
     ]
   },
@@ -71,7 +71,7 @@
   "entity_id": "gYpEpTUnIXQCbRJm3uW7a",
   "id": 51,
   "is_remote_synced": false,
-  "last_query_start": "2026-07-03T13:53:54.888723Z",
+  "last_query_start": "2026-07-21T14:31:02.520539Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.62.3.3 (686cac9)",

@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 294.3130841121495,
+  "average_query_time": 275.3531855955679,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -25,7 +25,7 @@
   "dashboard": {
     "id": 4,
     "moderation_status": null,
-    "name": "[integrated] Sirena"
+    "name": "[integration] Dashboard local"
   },
   "dashboard_count": 1,
   "dashboard_id": 4,
@@ -37,27 +37,27 @@
       {
         "lib/type": "mbql.stage/native",
         "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'NOUVEAU'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]];",
-        "template-tags": {
-          "end_date": {
-            "display-name": "End Date",
-            "id": "63e6a5b7-a326-4ae5-9ab6-6b6c9b0db210",
-            "name": "end_date",
-            "type": "date"
-          },
-          "entity_label": {
+        "template-tags": [
+          {
             "display-name": "Entity Label",
             "id": "fe2fc655-5100-4c24-85ce-9d3bb93488eb",
             "name": "entity_label",
             "required": false,
             "type": "text"
           },
-          "start_date": {
+          {
             "display-name": "Start Date",
             "id": "99a9d6ba-6cb9-4199-a794-06fbf3296075",
             "name": "start_date",
             "type": "date"
+          },
+          {
+            "display-name": "End Date",
+            "id": "63e6a5b7-a326-4ae5-9ab6-6b6c9b0db210",
+            "name": "end_date",
+            "type": "date"
           }
-        }
+        ]
       }
     ]
   },
@@ -72,7 +72,7 @@
   "entity_id": "iB2FCamFXsLUqH2gYr9AC",
   "id": 48,
   "is_remote_synced": false,
-  "last_query_start": "2026-07-03T13:53:54.889906Z",
+  "last_query_start": "2026-07-21T14:31:03.820116Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.60.4.4 (65c9d32)",

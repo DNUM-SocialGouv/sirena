@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 264.20367278797994,
+  "average_query_time": 274.8585635359116,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -25,7 +25,7 @@
   "dashboard": {
     "id": 4,
     "moderation_status": null,
-    "name": "[integrated] Sirena"
+    "name": "[integration] Dashboard local"
   },
   "dashboard_count": 1,
   "dashboard_id": 4,
@@ -37,26 +37,26 @@
       {
         "lib/type": "mbql.stage/native",
         "native": "SELECT\n    cr.label              AS raison_cloture,\n    COUNT(DISTINCT et.id) AS nb_requetes\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\" e\n    ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r\n    ON r.id = re.\"requeteId\"\n  JOIN \"RequeteEtape\" et\n    ON et.\"requeteId\" = re.\"requeteId\"\n   AND et.\"entiteId\"  = re.\"entiteId\"\n   AND et.\"statutId\"  = 'CLOTUREE'\n  JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j\n    ON j.\"B\" = et.id\n  JOIN \"RequeteClotureReasonEnum\" cr\n    ON cr.id = j.\"A\"\n  WHERE re.\"statutId\" = 'CLOTUREE'\n    AND e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day')]]\n  GROUP BY cr.label\n  ORDER BY nb_requetes DESC;",
-        "template-tags": {
-          "end_date": {
-            "display-name": "End Date",
-            "id": "e5b95869-3dca-4960-bd80-6a4c9591551b",
-            "name": "end_date",
-            "type": "date"
-          },
-          "entity_label": {
+        "template-tags": [
+          {
             "display-name": "Entity Label",
             "id": "28575bb8-65aa-4594-bf0f-ebf58b62922f",
             "name": "entity_label",
             "type": "text"
           },
-          "start_date": {
+          {
             "display-name": "Start Date",
             "id": "ad253bd1-6d23-4662-84b1-f893a1945044",
             "name": "start_date",
             "type": "date"
+          },
+          {
+            "display-name": "End Date",
+            "id": "e5b95869-3dca-4960-bd80-6a4c9591551b",
+            "name": "end_date",
+            "type": "date"
           }
-        }
+        ]
       }
     ]
   },
@@ -71,7 +71,7 @@
   "entity_id": "AhmL1ImfBecTkedR2qyJB",
   "id": 47,
   "is_remote_synced": false,
-  "last_query_start": "2026-07-03T13:54:59.187947Z",
+  "last_query_start": "2026-07-21T14:31:02.919181Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.60.4.4 (65c9d32)",
@@ -126,11 +126,101 @@
   ],
   "public_uuid": null,
   "query_type": "native",
-  "result_metadata": null,
+  "result_metadata": [
+    {
+      "base_type": "type/Text",
+      "database_type": "text",
+      "display_name": "raison_cloture",
+      "effective_type": "type/Text",
+      "field_ref": [
+        "field",
+        "raison_cloture",
+        {
+          "base-type": "type/Text"
+        }
+      ],
+      "fingerprint": {
+        "global": {
+          "distinct-count": 12,
+          "nil%": 0
+        },
+        "type": {
+          "type/Text": {
+            "average-length": 38,
+            "mode-fraction": 0.08333333333333333,
+            "percent-blank": 0,
+            "percent-email": 0,
+            "percent-json": 0,
+            "percent-state": 0,
+            "percent-url": 0,
+            "top-3-fraction": 0.25
+          }
+        }
+      },
+      "lib/deduplicated-name": "raison_cloture",
+      "lib/desired-column-alias": "raison_cloture",
+      "lib/original-name": "raison_cloture",
+      "lib/source": "source/native",
+      "lib/source-column-alias": "raison_cloture",
+      "name": "raison_cloture",
+      "semantic_type": null,
+      "source": "native"
+    },
+    {
+      "base_type": "type/BigInteger",
+      "database_type": "int8",
+      "display_name": "nb_requetes",
+      "effective_type": "type/BigInteger",
+      "field_ref": [
+        "field",
+        "nb_requetes",
+        {
+          "base-type": "type/BigInteger"
+        }
+      ],
+      "fingerprint": {
+        "global": {
+          "distinct-count": 6,
+          "nil%": 0
+        },
+        "type": {
+          "type/Number": {
+            "avg": 4.833333333333333,
+            "excess-kurtosis": 8.558450360994536,
+            "max": 23,
+            "min": 1,
+            "mode-fraction": 0.25,
+            "q1": 1,
+            "q3": 6,
+            "sd": 6.087742279417392,
+            "skewness": 2.7927921510010143,
+            "top-3-fraction": 0.6666666666666666,
+            "zero-fraction": 0
+          }
+        }
+      },
+      "lib/deduplicated-name": "nb_requetes",
+      "lib/desired-column-alias": "nb_requetes",
+      "lib/original-name": "nb_requetes",
+      "lib/source": "source/native",
+      "lib/source-column-alias": "nb_requetes",
+      "name": "nb_requetes",
+      "semantic_type": null,
+      "source": "native"
+    }
+  ],
   "source_card_id": null,
   "table_id": null,
   "type": "question",
   "visualization_settings": {
+    "column_settings": {
+      "[\"name\",\"nb_requetes\"]": {
+        "column_title": "Nombre de requêtes"
+      },
+      "[\"name\",\"raison_cloture\"]": {
+        "column_title": "Raison de cloture"
+      }
+    },
     "table.cell_column": "raison_cloture",
     "table.pivot_column": "nb_requetes"
   }
