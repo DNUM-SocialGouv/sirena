@@ -31,6 +31,7 @@ function LocalEntiteSirenaFields({
   leadingField,
 }: SirenaFieldsProps) {
   const identityFieldsReadOnly = mode === 'edit';
+  const notificationEmailRequired = entiteType === 'entite-administrative' && mode === 'edit';
   const nameReadOnlyId = useId();
   const abbreviationReadOnlyId = useId();
   const wording =
@@ -110,7 +111,7 @@ function LocalEntiteSirenaFields({
         <div className="fr-col-12 fr-col-md-7">
           <Input
             className="fr-fieldset__content"
-            label="Adresse e-mail de notification"
+            label={`Adresse e-mail de notification${notificationEmailRequired ? ' (obligatoire)' : ''}`}
             hintText="Adresse générique pour la notification des nouvelles requêtes. Exemple : reclamations@direction.fr"
             state={validationErrors.email ? 'error' : 'default'}
             stateRelatedMessage={validationErrors.email}

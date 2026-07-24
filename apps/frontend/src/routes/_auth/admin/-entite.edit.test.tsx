@@ -82,7 +82,9 @@ describe('Admin local Entité edit route', () => {
     expect(screen.getByRole('heading', { name: 'Modifier l’entité administrative ARS Normandie' })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: /Nom de l’entité administrative/ })).toHaveValue('ARS Normandie');
     expect(screen.getByRole('textbox', { name: /Abréviation/ })).toHaveValue('ARS NOR');
-    expect(screen.getByRole('textbox', { name: /Adresse e-mail de notification/ })).toHaveValue('notification@ars.fr');
+    expect(screen.getByRole('textbox', { name: /^Adresse e-mail de notification \(obligatoire\)/ })).toHaveValue(
+      'notification@ars.fr',
+    );
     expect(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ })).toHaveValue('contact@ars.fr');
     expect(screen.getByRole('textbox', { name: /Numéro de téléphone/ })).toHaveValue('0102030405');
     expect(screen.getByText('Format attendu : 10 chiffres ou +33XXXXXXXXXX (international)')).toBeVisible();
@@ -147,7 +149,7 @@ describe('Admin local Entité edit route', () => {
 
   it('cancels back to the consultation route without submitting changes', async () => {
     vi.mocked(useEntiteAdministrativeAdminLocal).mockReturnValue({
-      data: assignedEntite,
+      data: { ...assignedEntite, email: '' },
       isPending: false,
       isError: false,
     } as never);
@@ -233,14 +235,78 @@ describe('Admin local Entité edit route', () => {
     expect(editMutateAsyncSpy).not.toHaveBeenCalled();
   });
 
-  it('does not validate read-only identity and accepts empty optional contact fields', async () => {
+  it('defers validation for a legacy empty notification e-mail, retains values, focuses it, and allows repair', async () => {
+    const user = userEvent.setup();
+    editMutateAsyncSpy.mockResolvedValueOnce({ ...assignedEntite, email: 'notification@ars.fr' });
+    vi.mocked(useEntiteAdministrativeAdminLocal).mockReturnValue({
+      data: {
+        ...assignedEntite,
+        email: '',
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+      },
+      isPending: false,
+      isError: false,
+    } as never);
+    render(<RouteComponent />);
+    const notificationEmail = screen.getByRole('textbox', {
+      name: /^Adresse e-mail de notification \(obligatoire\)/,
+    });
+    const contactEmail = screen.getByRole('textbox', { name: /Adresse e-mail de contact/ });
+    const postalAddress = screen.getByRole('textbox', { name: /Adresse postale/ });
+
+    expect(screen.queryByText(/Adresse e-mail de notification.*vide/)).not.toBeInTheDocument();
+    await user.type(contactEmail, 'usagers@ars.fr');
+    await user.type(postalAddress, '2 rue de Paris');
+    await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
+
+    expect(editMutateAsyncSpy).not.toHaveBeenCalled();
+    expect(notificationEmail).toHaveFocus();
+    expect(screen.getByText(/Adresse e-mail de notification.*vide/)).toBeInTheDocument();
+    expect(contactEmail).toHaveValue('usagers@ars.fr');
+    expect(postalAddress).toHaveValue('2 rue de Paris');
+
+    await user.type(notificationEmail, 'notification@ars.fr');
+    await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
+
+    await waitFor(() =>
+      expect(editMutateAsyncSpy).toHaveBeenCalledWith({
+        email: 'notification@ars.fr',
+        emailContactUsager: 'usagers@ars.fr',
+        telContactUsager: '',
+        adresseContactUsager: '2 rue de Paris',
+      }),
+    );
+    expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/entite' });
+  });
+
+  it('prevents submission after clearing an existing notification e-mail', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useEntiteAdministrativeAdminLocal).mockReturnValue({
+      data: assignedEntite,
+      isPending: false,
+      isError: false,
+    } as never);
+    render(<RouteComponent />);
+    const notificationEmail = screen.getByRole('textbox', {
+      name: /^Adresse e-mail de notification \(obligatoire\)/,
+    });
+
+    await user.clear(notificationEmail);
+    await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
+
+    expect(editMutateAsyncSpy).not.toHaveBeenCalled();
+    expect(notificationEmail).toHaveFocus();
+  });
+
+  it('does not validate read-only identity and accepts empty user-facing contact fields', async () => {
     const user = userEvent.setup();
     vi.mocked(useEntiteAdministrativeAdminLocal).mockReturnValue({
       data: {
         ...assignedEntite,
         nomComplet: '',
         label: '',
-        email: '',
         emailContactUsager: '',
         telContactUsager: '',
         adresseContactUsager: '',
@@ -254,7 +320,7 @@ describe('Admin local Entité edit route', () => {
 
     await waitFor(() =>
       expect(editMutateAsyncSpy).toHaveBeenCalledWith({
-        email: '',
+        email: 'notification@ars.fr',
         emailContactUsager: '',
         telContactUsager: '',
         adresseContactUsager: '',
@@ -262,7 +328,7 @@ describe('Admin local Entité edit route', () => {
     );
   });
 
-  it('validates optional e-mail and telephone fields and focuses the first invalid field', async () => {
+  it('validates notification e-mail and optional user-facing contact fields and focuses the first invalid field', async () => {
     const user = userEvent.setup();
     vi.mocked(useEntiteAdministrativeAdminLocal).mockReturnValue({
       data: { ...assignedEntite, email: '', emailContactUsager: '', telContactUsager: '' },
@@ -277,6 +343,7 @@ describe('Admin local Entité edit route', () => {
     await user.type(screen.getByRole('textbox', { name: /Numéro de téléphone/ }), '123');
     await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
 
+    expect(editMutateAsyncSpy).not.toHaveBeenCalled();
     expect(notificationEmail).toHaveFocus();
     expect(screen.getAllByText(/L’adresse e-mail est invalide/)).toHaveLength(2);
     expect(

@@ -1,4 +1,4 @@
-import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
+import { emailSchema, optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { useMemo, useState } from 'react';
 import { z } from 'zod';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
@@ -41,7 +41,13 @@ const createFormSchema = (entiteType: LocalEntiteFormType, mode: LocalEntiteForm
       mode === 'edit'
         ? z.string()
         : z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
-    email: optionalEmailSchema,
+    email:
+      entiteType === 'entite-administrative' && mode === 'edit'
+        ? z
+            .string()
+            .min(1, 'Le champ "Adresse e-mail de notification" est vide. Veuillez le renseigner.')
+            .pipe(emailSchema)
+        : optionalEmailSchema,
     emailContactUsager: optionalEmailSchema,
     telContactUsager: optionalPhoneSchema,
     adresseContactUsager: z.string(),

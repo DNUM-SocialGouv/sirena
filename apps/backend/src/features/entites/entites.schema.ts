@@ -109,7 +109,7 @@ export const EntiteAdministrativeAdminLocalSchema = EntiteDetailsSchema;
 
 export const GetEntiteAdministrativeAdminLocalResponseSchema = EntiteAdministrativeAdminLocalSchema;
 export const EditEntiteAdministrativeAdminLocalInputSchema = EntiteContactFieldsSchema.extend({
-  email: emailSchema.or(z.literal('')),
+  email: emailSchema,
   emailContactUsager: emailSchema.or(z.literal('')),
   telContactUsager: phoneSchema.or(z.literal('')),
 }).strict();
