@@ -5,15 +5,12 @@ import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useCallback, useEffect } from 'react';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
 import { useDirectionServiceAdminLocal, useEditDirectionServiceAdminLocal } from '@/hooks/queries/entites.hook';
-import {
-  LocalDirectionServiceContactFields,
-  LocalDirectionServiceSirenaFields,
-} from './-components/LocalDirectionServiceSirenaFields';
-import { useLocalDirectionServiceForm } from './-components/useLocalDirectionServiceForm';
-import { requireAdminLocalDirectionsServices } from './-route-guard';
+import { requireAdminLocalAccess } from '../-admin-local-route-guard';
+import { LocalEntiteFormFields } from '../-components/LocalEntiteFormFields';
+import { useLocalEntiteForm } from '../-components/useLocalEntiteForm';
 
 export const Route = createFileRoute('/_auth/admin/directions-services/$entiteId/edit')({
-  beforeLoad: requireAdminLocalDirectionsServices,
+  beforeLoad: requireAdminLocalAccess,
   component: RouteComponent,
 });
 
@@ -36,28 +33,22 @@ type LocalEditTarget = NonNullable<ReturnType<typeof useDirectionServiceAdminLoc
 
 function LocalEditForm({ target }: { target: LocalEditTarget }) {
   const wording =
-    target.kind === 'entite-administrative'
+    target.entiteType === 'direction'
       ? {
-          titlePrefix: 'Modifier l’entité administrative',
-          successTitle: 'Entité administrative modifiée avec succès',
-          errorDescription: 'Erreur lors de la modification de l’entité administrative. Veuillez réessayer.',
+          titlePrefix: 'Modifier la direction',
+          successTitle: 'Direction modifiée avec succès',
+          errorDescription: 'Erreur lors de la modification de la direction. Veuillez réessayer.',
         }
-      : target.kind === 'direction'
-        ? {
-            titlePrefix: 'Modifier la direction',
-            successTitle: 'Direction modifiée avec succès',
-            errorDescription: 'Erreur lors de la modification de la direction. Veuillez réessayer.',
-          }
-        : {
-            titlePrefix: 'Modifier le service',
-            successTitle: 'Service modifié avec succès',
-            errorDescription: 'Erreur lors de la modification du service. Veuillez réessayer.',
-          };
+      : {
+          titlePrefix: 'Modifier le service',
+          successTitle: 'Service modifié avec succès',
+          errorDescription: 'Erreur lors de la modification du service. Veuillez réessayer.',
+        };
   const title = `${wording.titlePrefix} ${target.nomComplet}`;
   const editDirectionService = useEditDirectionServiceAdminLocal();
   const toastManager = Toast.useToastManager();
   const router = useRouter();
-  const form = useLocalDirectionServiceForm(target.kind, {
+  const form = useLocalEntiteForm(target.entiteType, {
     nomComplet: target.nomComplet,
     label: target.label,
     email: target.email,
@@ -112,13 +103,10 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
         <form onSubmit={handleSubmit}>
           <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
-          <LocalDirectionServiceSirenaFields
-            kind={target.kind}
-            formData={form.values}
-            validationErrors={form.validationErrors}
-            onChange={form.onChange}
+          <LocalEntiteFormFields
+            form={form}
             leadingField={
-              target.kind === 'service' ? (
+              target.entiteType === 'service' ? (
                 <div className="fr-col-12 fr-col-md-7">
                   <Input
                     className="fr-fieldset__content"
@@ -135,12 +123,6 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
                 </div>
               ) : undefined
             }
-          />
-
-          <LocalDirectionServiceContactFields
-            formData={form.values}
-            validationErrors={form.validationErrors}
-            onChange={form.onChange}
           />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">

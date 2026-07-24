@@ -23,10 +23,27 @@ export function RouteComponent() {
     resolvedFlagsQuery.data?.[FEATURE_FLAGS.ADMIN_LOCAL_DIRECTIONS_SERVICES] ?? false;
 
   const role = (data?.role?.id ?? null) as Role | null;
+  const isAssignedToEntiteAdministrative = role === ROLES.ENTITY_ADMIN && data?.affectationChain?.length === 1;
   const pathname = matches.at(-1)?.pathname ?? '/admin/users';
-  const tabs = getTabs(role, hasSirecMigration, hasAdminLocalDirectionsServicesFeatureFlag);
-  const tabPaths = getTabPaths(role, hasSirecMigration, hasAdminLocalDirectionsServicesFeatureFlag);
-  const activeTab = getActiveTab(pathname, role, hasSirecMigration, hasAdminLocalDirectionsServicesFeatureFlag);
+  const tabs = getTabs(
+    role,
+    hasSirecMigration,
+    hasAdminLocalDirectionsServicesFeatureFlag,
+    isAssignedToEntiteAdministrative,
+  );
+  const tabPaths = getTabPaths(
+    role,
+    hasSirecMigration,
+    hasAdminLocalDirectionsServicesFeatureFlag,
+    isAssignedToEntiteAdministrative,
+  );
+  const activeTab = getActiveTab(
+    pathname,
+    role,
+    hasSirecMigration,
+    hasAdminLocalDirectionsServicesFeatureFlag,
+    isAssignedToEntiteAdministrative,
+  );
   const isUserEditPage = pathname.startsWith('/admin/user/');
 
   const handleTabChange = useCallback(

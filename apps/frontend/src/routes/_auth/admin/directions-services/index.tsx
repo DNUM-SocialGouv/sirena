@@ -6,11 +6,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { TableSearchBar } from '@/components/common/tables/TableSearchBar';
 import { useDirectionsServicesList } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
-import { requireAdminLocalDirectionsServices } from './-route-guard';
+import { requireAdminLocalAccess } from '../-admin-local-route-guard';
 import './index.css';
 
 export const Route = createFileRoute('/_auth/admin/directions-services/')({
-  beforeLoad: requireAdminLocalDirectionsServices,
+  beforeLoad: requireAdminLocalAccess,
   component: RouteComponent,
 });
 
@@ -53,8 +53,6 @@ export function RouteComponent() {
   const canCreateDirection = capabilities?.canCreateDirection ?? false;
   const canCreateService = capabilities?.canCreateService ?? false;
   const organizationName = profile?.affectationChain?.at(-1)?.nomComplet;
-  const assignedEntiteAdministrative =
-    profile?.affectationChain?.length === 1 ? profile.affectationChain[0] : undefined;
   const title = useMemo(
     () => (organizationName ? `Directions et services (${organizationName})` : 'Directions et services'),
     [organizationName],
@@ -126,17 +124,6 @@ export function RouteComponent() {
           className="directions-services-actions fr-col-12 fr-col-md-7 fr-grid-row fr-grid-row--right"
           data-testid="directions-services-actions"
         >
-          {assignedEntiteAdministrative ? (
-            <div className="fr-col-auto">
-              <Link
-                className="fr-btn fr-btn--secondary"
-                to="/admin/directions-services/$entiteId/edit"
-                params={{ entiteId: assignedEntiteAdministrative.id }}
-              >
-                Modifier mon entité
-              </Link>
-            </div>
-          ) : null}
           {canCreateDirection ? (
             <div className="fr-col-auto">
               <Link className="fr-btn fr-btn--secondary" to="/admin/directions-services/directions/create">

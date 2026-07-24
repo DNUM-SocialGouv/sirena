@@ -4,16 +4,17 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { useDirectionServiceAdminLocal } from '@/hooks/queries/entites.hook';
 import { RouteComponent } from './$entiteId.edit';
 
-const { addToastSpy, editMutateAsyncSpy, routerNavigateSpy } = vi.hoisted(() => ({
+const { addToastSpy, editMutateAsyncSpy, routerNavigateSpy, currentEntiteId } = vi.hoisted(() => ({
   addToastSpy: vi.fn(),
   editMutateAsyncSpy: vi.fn(),
   routerNavigateSpy: vi.fn(),
+  currentEntiteId: { value: 'dir-autonomie' },
 }));
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => ({
     ...options,
-    useParams: () => ({ entiteId: 'dir-autonomie' }),
+    useParams: () => ({ entiteId: currentEntiteId.value }),
   }),
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
   redirect: vi.fn(),
@@ -26,6 +27,7 @@ vi.mock('@/hooks/queries/entites.hook', () => ({
 }));
 
 vi.mock('@/lib/api/fetchFeatureFlags', () => ({ fetchResolvedFeatureFlags: vi.fn() }));
+vi.mock('@/hooks/queries/profile.hook', () => ({ profileQueryOptions: vi.fn() }));
 vi.mock('@/lib/queryClient', () => ({ queryClient: { ensureQueryData: vi.fn() } }));
 vi.mock('@/lib/auth-guards', () => ({ requireAuthAndRoles: vi.fn(() => vi.fn()) }));
 vi.mock('@sirena/ui', async () => {
@@ -35,7 +37,7 @@ vi.mock('@sirena/ui', async () => {
 
 const directionTarget = {
   id: 'dir-autonomie',
-  kind: 'direction' as const,
+  entiteType: 'direction' as const,
   nomComplet: 'Direction Autonomie',
   label: 'DA',
   email: 'direction-autonomie@ars.fr',
@@ -44,20 +46,10 @@ const directionTarget = {
   adresseContactUsager: '1 rue de la Santé, Paris',
 };
 
-const entiteAdministrativeTarget = {
-  ...directionTarget,
-  id: 'root-ars',
-  kind: 'entite-administrative' as const,
-  nomComplet: 'ARS Normandie',
-  label: 'ARS NOR',
-  email: 'notification@ars.fr',
-  emailContactUsager: 'contact@ars.fr',
-};
-
 const serviceTarget = {
   ...directionTarget,
   id: 'service-pa',
-  kind: 'service' as const,
+  entiteType: 'service' as const,
   nomComplet: 'Service PA',
   label: 'PA',
   email: 'service-pa@ars.fr',
@@ -65,7 +57,7 @@ const serviceTarget = {
   parentDirection: { id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' },
 };
 
-function mockTarget(target: typeof entiteAdministrativeTarget | typeof directionTarget | typeof serviceTarget) {
+function mockTarget(target: typeof directionTarget | typeof serviceTarget) {
   vi.mocked(useDirectionServiceAdminLocal).mockReturnValue({
     data: target,
     isPending: false,
@@ -73,7 +65,7 @@ function mockTarget(target: typeof entiteAdministrativeTarget | typeof direction
   } as never);
 }
 
-function renderTarget(target: typeof entiteAdministrativeTarget | typeof directionTarget | typeof serviceTarget) {
+function renderTarget(target: typeof directionTarget | typeof serviceTarget) {
   mockTarget(target);
   return render(<RouteComponent />);
 }
@@ -82,52 +74,26 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
   document.title = '';
+  currentEntiteId.value = 'dir-autonomie';
 });
 
-it('shows loading and error query states', () => {
+it('shows a loading state while an edit target is requested', () => {
   vi.mocked(useDirectionServiceAdminLocal).mockReturnValue({ isPending: true } as never);
-  const view = render(<RouteComponent />);
-  expect(screen.getByRole('progressbar')).toBeInTheDocument();
 
-  view.unmount();
-  vi.mocked(useDirectionServiceAdminLocal).mockReturnValue({ isPending: false, isError: true } as never);
   render(<RouteComponent />);
-  expect(screen.getByText('Erreur lors du chargement.')).toBeInTheDocument();
+
+  expect(screen.getByRole('progressbar')).toBeInTheDocument();
 });
 
-it('renders and saves the assigned Entité administrative with dedicated wording and visible business fields', async () => {
-  const user = userEvent.setup();
-  editMutateAsyncSpy.mockResolvedValueOnce({ id: entiteAdministrativeTarget.id });
-  renderTarget(entiteAdministrativeTarget);
+it('leaves the former root edit URL unsupported without redirecting it', () => {
+  currentEntiteId.value = 'root-ars';
+  vi.mocked(useDirectionServiceAdminLocal).mockReturnValue({ isPending: false, isError: true } as never);
 
-  expect(screen.getByRole('heading', { name: 'Modifier l’entité administrative ARS Normandie' })).toBeInTheDocument();
-  expect(screen.getByRole('textbox', { name: /Nom de l’entité administrative/ })).toHaveValue('ARS Normandie');
-  expect(screen.getByRole('textbox', { name: /Adresse e-mail de notification/ })).toHaveValue('notification@ars.fr');
-  expect(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ })).toHaveValue('contact@ars.fr');
-  expect(screen.getByRole('textbox', { name: /Numéro de téléphone/ })).toHaveValue('0102030405');
-  expect(screen.getByRole('textbox', { name: /Adresse postale/ })).toHaveValue('1 rue de la Santé, Paris');
-  expect(screen.queryByRole('combobox', { name: /Actif dans SIRENA/ })).not.toBeInTheDocument();
-  expect(document.title).toBe('Modifier l’entité administrative ARS Normandie - Directions et services - SIRENA');
+  render(<RouteComponent />);
 
-  await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
-
-  await waitFor(() =>
-    expect(editMutateAsyncSpy).toHaveBeenCalledWith({
-      id: 'root-ars',
-      input: {
-        nomComplet: 'ARS Normandie',
-        label: 'ARS NOR',
-        email: 'notification@ars.fr',
-        emailContactUsager: 'contact@ars.fr',
-        telContactUsager: '0102030405',
-        adresseContactUsager: '1 rue de la Santé, Paris',
-      },
-    }),
-  );
-  expect(addToastSpy).toHaveBeenCalledWith(
-    expect.objectContaining({ title: 'Entité administrative modifiée avec succès' }),
-  );
-  expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services' });
+  expect(useDirectionServiceAdminLocal).toHaveBeenCalledWith('root-ars');
+  expect(screen.getByText('Erreur lors du chargement.')).toBeInTheDocument();
+  expect(routerNavigateSpy).not.toHaveBeenCalled();
 });
 
 it('renders a prefilled local Direction form with contact fields and no activation control', () => {

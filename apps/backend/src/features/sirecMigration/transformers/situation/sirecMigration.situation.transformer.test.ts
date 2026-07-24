@@ -31,7 +31,7 @@ describe('sirecMigration.situation.transformer.ts', () => {
   it('should map description to fait.autresPrecisions', () => {
     const result = transformSirecSituation(sirecData, []);
 
-    expect(result.fait.autresPrecisions).toBe('Ma réclamation');
+    expect(result.fait.autresPrecisions).toBe('Description de la Pré-identification : Ma réclamation');
   });
 
   it('should transcode motifsDeclaresIdDicos into fait.motifsDeclaratifs', () => {

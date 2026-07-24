@@ -1,5 +1,5 @@
 import { REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
-import { generateSirenaIdFromSirecReclamation } from '../../../helpers/sirecMigration.js';
+import { generateSirenaIdFromSirecReclamation, toSirecLocalDate } from '../../../helpers/sirecMigration.js';
 import type { SirecReclamationData } from '../sirecMigration.repository.js';
 import { filterArsEntiteIds } from '../transco/affectation/affectation.transco.js';
 import { transcodeReceptionType } from '../transco/receptionType.transco.js';
@@ -52,13 +52,15 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
   return {
     sirenaId: generateSirenaIdFromSirecReclamation(sirecData.reclamation),
     sirecId: sirecData.reclamation.id_data,
-    receptionDate: sirecData.reclamation.r_recept_date,
+    receptionDate: sirecData.reclamation.r_recept_date ? toSirecLocalDate(sirecData.reclamation.r_recept_date) : null,
     receptionTypeId: transcodeReceptionType(sirecData.reclamation.reception),
     prioriteId: sirecData.reclamation.prioritaire === 1 ? REQUETE_PRIORITE_TYPES.HAUTE : null,
     requeteStatutId,
     sysLastModDate: sirecData.reclamation.sys_last_mod_date,
     sysCreationDate: sirecData.reclamation.sys_creation_date,
-    dateDemandeDeclarant: sirecData.reclamation.date_ecriture,
+    dateDemandeDeclarant: sirecData.reclamation.date_ecriture
+      ? toSirecLocalDate(sirecData.reclamation.date_ecriture)
+      : null,
     declarant,
     victime,
     requeteEntiteIds,
