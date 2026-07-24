@@ -80,8 +80,8 @@ test.describe('Admin Feature', () => {
     await expect(pendingTab).toBeVisible();
     await expect(allUsersTab).toBeVisible();
 
-    await expect(pendingTab).toContainText("Gestion des demandes d'habilitations");
-    await expect(allUsersTab).toContainText('Gestion des utilisateurs');
+    await expect(pendingTab).toContainText("Demandes d'habilitation");
+    await expect(allUsersTab).toContainText('Utilisateurs');
   });
 
   test('should show pending users tab by default', async () => {

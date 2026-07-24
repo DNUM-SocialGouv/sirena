@@ -55,6 +55,7 @@ model User {
 
   sessions        Session[]
   changeLogs      ChangeLog[]
+  accessLogs      AccessLog[]
   uploads         UploadedFile[]
   notes           RequeteEtapeNote[]
   createdEtapes   RequeteEtape[]
@@ -248,6 +249,7 @@ model PersonneConcernee {
   isTuteur                    Boolean?
   veutGarderAnonymat          Boolean?
   estSignalementProfessionnel Boolean?
+  estPersonneMorale           Boolean?
   commentaire                 String   @default("")
   autrePersonnes              String   @default("")
   aAutrePersonnes             Boolean?
@@ -348,6 +350,8 @@ model Situation {
 
   estLieAuSignalement Boolean?
   numerosSignalement  String   @default("")
+
+  sirecDepartement String?
 
   requete   Requete? @relation(fields: [requeteId], references: [id], onDelete: Cascade)
   requeteId String?
@@ -649,6 +653,23 @@ model ChangeLog {
 
   @@index([entity, entityId])
   @@index([changedById])
+}
+
+model AccessLog {
+  id        String   @id @default(cuid())
+  entity    String
+  entityId  String
+  action    String // e.g. "EXPORT_ENTITY_PDF"
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  requestId String?
+  path      String
+  dataKeys  String[] @default([])
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([userId, createdAt])
+  @@index([createdAt])
 }
 
 model Crons {

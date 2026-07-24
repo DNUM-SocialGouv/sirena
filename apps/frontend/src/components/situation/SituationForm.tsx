@@ -19,6 +19,8 @@ interface SituationFormProps {
   situationId?: string;
   initialData?: SituationData;
   receptionType?: ReceptionType;
+  isFromSirec?: boolean;
+  sirecDepartement?: string | null;
   onSave: (
     data: SituationData,
     shouldCreateRequest: boolean,
@@ -35,6 +37,8 @@ export function SituationForm({
   situationId,
   initialData,
   receptionType,
+  isFromSirec,
+  sirecDepartement,
   onSave,
   saveButtonRef: externalSaveButtonRef,
 }: SituationFormProps) {
@@ -63,7 +67,17 @@ export function SituationForm({
     },
     [],
   );
-  const handleSave = async () => {
+  const handleCancel = useCallback(() => {
+    if (mode === 'create' && !requestId) {
+      navigate({ to: '/request/create' });
+    } else if (requestId) {
+      navigate({ to: '/request/$requestId', params: { requestId } });
+    } else {
+      window.history.back();
+    }
+  }, [mode, requestId, navigate]);
+
+  const handleSave = useCallback(async () => {
     setHasAttemptedSave(true);
 
     if (!isTraitementDesFaitsValid) {
@@ -84,17 +98,7 @@ export function SituationForm({
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handleCancel = () => {
-    if (mode === 'create' && !requestId) {
-      navigate({ to: '/request/create' });
-    } else if (requestId) {
-      navigate({ to: '/request/$requestId', params: { requestId } });
-    } else {
-      window.history.back();
-    }
-  };
+  }, [isTraitementDesFaitsValid, formData, faitFiles, handleCancel, mode, requestId, initialData, onSave]);
 
   const backUrl = mode === 'create' && !requestId ? '/request/create' : requestId ? `/request/${requestId}` : '/home';
 
@@ -132,7 +136,13 @@ export function SituationForm({
           isSaving={isSaving}
         />
 
-        <Identification formData={formData} isSaving={isSaving} setFormData={setFormData} />
+        <Identification
+          formData={formData}
+          isSaving={isSaving}
+          setFormData={setFormData}
+          isFromSirec={isFromSirec}
+          sirecDepartement={sirecDepartement}
+        />
 
         <TraitementDesFaitsSection
           entites={(entitesData?.data || []).map((e: { id: string; nomComplet: string }) => ({

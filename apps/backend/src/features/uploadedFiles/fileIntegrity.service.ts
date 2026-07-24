@@ -1,4 +1,4 @@
-import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
+import { abortControllerStorage, getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import { deleteFileFromMinio, listMinioObjects } from '../../libs/minio.js';
 import { prisma } from '../../libs/prisma.js';
 
@@ -24,10 +24,18 @@ export async function runFileIntegrityCheck(options?: {
   removeDangling?: boolean;
 }): Promise<FileIntegrityResult> {
   const logger = getLoggerStore();
+  const signal = abortControllerStorage.getStore()?.signal;
   const { removeOrphans = false, removeDangling = false } = options ?? {};
+
+  const throwIfAborted = (phase: string): void => {
+    if (signal?.aborted) {
+      throw new Error(`File integrity check aborted (timeout) during phase: ${phase}`);
+    }
+  };
 
   logger.info({ removeOrphans, removeDangling }, 'Starting file integrity check');
 
+  throwIfAborted('db-fetch');
   const dbStartedAt = Date.now();
   const dbFiles = await prisma.uploadedFile.findMany({
     select: {
@@ -47,6 +55,7 @@ export async function runFileIntegrityCheck(options?: {
   logger.info({ count: dbFiles.length, durationMs: Date.now() - dbStartedAt }, 'Fetched uploaded files from database');
   logger.info(`Found ${dbFiles.length} files in database`);
 
+  throwIfAborted('s3-list');
   const s3StartedAt = Date.now();
   const s3Objects = await listMinioObjects();
   const s3Paths = new Set(s3Objects.map((o) => o.name));
@@ -89,6 +98,8 @@ export async function runFileIntegrityCheck(options?: {
   for (const [i, f] of s3FilesWithoutDb.entries()) {
     logger.warn(`orphan-s3 | ${i + 1} | ${f.name} | ${formatBytes(f.size)} | ${f.lastModified.toISOString()}`);
   }
+
+  throwIfAborted('removal');
 
   if (removeOrphans && (orphanDbFiles.length > 0 || s3FilesWithoutDb.length > 0)) {
     logger.info(

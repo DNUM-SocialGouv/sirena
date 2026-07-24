@@ -28,6 +28,25 @@
   text-align: center !important;
 }
 
+.data-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.data-table-header__label {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  color: var(--text-title-grey);
+}
+
 .fr-table__caption-with-loader {
   display: flex;
   justify-content: space-between;

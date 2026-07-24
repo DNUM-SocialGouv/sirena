@@ -152,16 +152,18 @@ export const createDefaultRequeteEtapes = async (
 export const getEtapePermissions = (etape: {
   type: string;
   statutId: string | null;
+  uploadedFiles: { canDelete: boolean }[];
 }): { editable: boolean; canOnlyEditNotes: boolean } => {
   if (etape.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) return { editable: false, canOnlyEditNotes: false };
   if (etape.type === REQUETE_ETAPE_TYPES.CREATION || etape.type === REQUETE_ETAPE_TYPES.REOPEN) {
     return { editable: false, canOnlyEditNotes: false };
   }
-  // An acknowledgment step is always a notes/attachments container: status, name and date stay
-  // locked, only notes can be edited. Manual ACRs behave exactly like automatic ones (the AR send,
-  // auto or semi-manual from SIRENA, is authoritative), so this no longer depends on who created the request.
-  const canOnlyEditNotes = etape.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT;
-  return { editable: true, canOnlyEditNotes };
+  // An acknowledgment step is locked (notes/attachments only) only once the AR was actually sent from
+  // SIRENA — i.e. its non-deletable AR PDF (canDelete === false) is attached, by the auto or semi-manual
+  // send. If the step was merely switched to "Fait" by hand (no send, no PDF), it stays fully editable.
+  const acknowledgmentSent =
+    etape.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT && etape.uploadedFiles.some((file) => !file.canDelete);
+  return { editable: true, canOnlyEditNotes: acknowledgmentSent };
 };
 
 export class EtapeNotEditableError extends Error {
@@ -560,11 +562,12 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
     return { ...rest, fileName: getOriginalFileName(file) };
   };
 
-  // closure / creation = not editable; automatic ACR = statut + files locked but notes OK; manual = full.
+  // closure / creation = not editable; a sent ACR (AR PDF attached) = statut/name/date locked, notes OK; else full.
   const data = raw.map((etape) => {
     const { editable, canOnlyEditNotes } = getEtapePermissions({
       type: etape.type,
       statutId: etape.statutId,
+      uploadedFiles: etape.uploadedFiles,
     });
     return {
       ...etape,

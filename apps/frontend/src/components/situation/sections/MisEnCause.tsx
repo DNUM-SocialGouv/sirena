@@ -21,9 +21,11 @@ import {
   type ReceptionType,
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { OrganizationSearchField } from '@/components/common/OrganizationSearchField';
 import { PractitionerSearchField } from '@/components/common/PractitionerSearchField';
+import type { Organization } from '@/lib/api/fetchOrganizations';
+import type { Practitioner } from '@/lib/api/fetchPractitioners';
 
 type misEnCauseProps = {
   formData: SituationData;
@@ -196,6 +198,57 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
     }
   }, [isServiceType]);
 
+  const handleFinessChange = useCallback(
+    (value: string, organization?: Organization) => {
+      if (organization) {
+        setIsNoFinessChecked(false);
+        setFormData((prev) => ({
+          ...prev,
+          misEnCause: {
+            ...prev.misEnCause,
+            finess: value,
+            nomService: organization.name,
+            codePostal: organization.addressPostalcode,
+            ville: organization.addressCity,
+          },
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          misEnCause: { ...prev.misEnCause, finess: value },
+        }));
+      }
+    },
+    [setFormData],
+  );
+
+  const handleRppsChange = useCallback(
+    (value: string, practitioner?: Practitioner) => {
+      if (practitioner) {
+        setIsNoRppsChecked(false);
+        setFormData((prev) => ({
+          ...prev,
+          misEnCause: {
+            ...prev.misEnCause,
+            rpps: value,
+            civilite: practitioner.prefix,
+            nom: practitioner.lastName || '',
+            prenom: practitioner.firstName || '',
+          },
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          misEnCause: {
+            ...prev.misEnCause,
+            rpps: value,
+          },
+        }));
+      }
+    },
+    [setFormData],
+  );
+
   return (
     <div
       className="fr-p-4w fr-mb-4w"
@@ -269,31 +322,12 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
             </div>
           )}
 
-          {isServiceType && (
+          {isServiceType ? (
             <>
               <div className="fr-col-12 fr-col-md-6">
                 <OrganizationSearchField
                   value={formData.misEnCause?.finess || ''}
-                  onChange={(value, organization) => {
-                    if (organization) {
-                      setIsNoFinessChecked(false);
-                      setFormData((prev) => ({
-                        ...prev,
-                        misEnCause: {
-                          ...prev.misEnCause,
-                          finess: value,
-                          nomService: organization.name,
-                          codePostal: organization.addressPostalcode,
-                          ville: organization.addressCity,
-                        },
-                      }));
-                    } else {
-                      setFormData((prev) => ({
-                        ...prev,
-                        misEnCause: { ...prev.misEnCause, finess: value },
-                      }));
-                    }
-                  }}
+                  onChange={handleFinessChange}
                   label="Rechercher le service par numéro FINESS"
                   hintText="Saisir le numéro FINESS et sélectionner le service"
                   state={isNoFinessChecked ? 'info' : 'default'}
@@ -343,7 +377,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                 </div>
               </div>
 
-              {(isNoFinessChecked || hasCompleteServiceFromFiness) && (
+              {isNoFinessChecked || hasCompleteServiceFromFiness ? (
                 <>
                   <div className="fr-col-12 fr-col-md-6">
                     <Input
@@ -388,38 +422,16 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                     />
                   </div>
                 </>
-              )}
+              ) : null}
             </>
-          )}
+          ) : null}
 
           {MIS_EN_CAUSE_RPPS.includes(misEnCauseType || '') && (
             <>
               <div className="fr-col-12 fr-col-md-6">
                 <PractitionerSearchField
                   value={formData.misEnCause?.rpps || ''}
-                  onChange={(value, practitioner) => {
-                    if (practitioner) {
-                      setIsNoRppsChecked(false);
-                      setFormData((prev) => ({
-                        ...prev,
-                        misEnCause: {
-                          ...prev.misEnCause,
-                          rpps: value,
-                          civilite: practitioner.prefix,
-                          nom: practitioner.lastName || '',
-                          prenom: practitioner.firstName || '',
-                        },
-                      }));
-                    } else {
-                      setFormData((prev) => ({
-                        ...prev,
-                        misEnCause: {
-                          ...prev.misEnCause,
-                          rpps: value,
-                        },
-                      }));
-                    }
-                  }}
+                  onChange={handleRppsChange}
                   label="Rechercher le professionnel par numéro RPPS"
                   state={isNoRppsChecked ? 'info' : 'default'}
                   stateRelatedMessage={
@@ -475,9 +487,9 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                 </div>
               </div>
 
-              {(isNoRppsChecked || hasCompleteIdentityFromRpps) && (
+              {isNoRppsChecked || hasCompleteIdentityFromRpps ? (
                 <MisEnCauseIdentityFields formData={formData} isSaving={isSaving} setFormData={setFormData} />
-              )}
+              ) : null}
             </>
           )}
 

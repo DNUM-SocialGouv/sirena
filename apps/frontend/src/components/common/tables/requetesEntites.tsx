@@ -1,6 +1,6 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
-import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
+import { SearchBar, type SearchBarProps } from '@codegouvfr/react-dsfr/SearchBar';
 import type { RequetePrioriteType, RequeteStatutType } from '@sirena/common/constants';
 import { entiteTypes, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@sirena/ui';
@@ -139,7 +139,7 @@ export function RequetesEntite() {
 
   useEffect(() => {
     if (requetes) {
-      setTitle(`Liste des requêtes: ${requetes?.meta?.total ?? 0}`);
+      setTitle(`Nombre de requêtes : ${requetes?.meta?.total ?? 0}`);
     }
   }, [requetes]);
 
@@ -163,6 +163,15 @@ export function RequetesEntite() {
       }),
     });
   }, [navigate]);
+
+  const handleSearchTermChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  }, []);
+
+  const renderSearchInput = useCallback<NonNullable<SearchBarProps['renderInput']>>(
+    (inputProps) => <input {...inputProps} placeholder="" value={searchTerm} onChange={handleSearchTermChange} />,
+    [searchTerm, handleSearchTermChange],
+  );
 
   const handleSortChange = useCallback(
     (params: OnSortChangeParams<RequeteEntiteRow>) => {
@@ -271,11 +280,11 @@ export function RequetesEntite() {
       return (
         <div className="requetesEntitesTable__reception-date-cell">
           {createdAt.toLocaleDateString('fr-FR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
-          {isOver90Days && (
+          {isOver90Days ? (
             <Badge severity="warning" noIcon small>
               <span className="fr-sr-only">Requête reçue depuis</span>+90 jours
             </Badge>
-          )}
+          ) : null}
         </div>
       );
     },
@@ -380,19 +389,12 @@ export function RequetesEntite() {
             <SearchBar
               label="Rechercher une requête par numéro, lieu de survenue, mis en cause (nom, RPPS, FINESS)"
               onButtonClick={handleSearch}
-              renderInput={(inputProps) => (
-                <input
-                  {...inputProps}
-                  placeholder=""
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              )}
+              renderInput={renderSearchInput}
             />
           </div>
         </div>
 
-        {queries.search && requetes && (
+        {queries.search && requetes ? (
           <div className="fr-mt-2w">
             <div className="fr-grid-row fr-grid-row--middle">
               <div className="fr-col-auto">
@@ -418,7 +420,7 @@ export function RequetesEntite() {
               </div>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
       <div className="requetesEntitesTable">
         <RequetesEntiteQuickFilters />
@@ -431,6 +433,7 @@ export function RequetesEntite() {
           isLoading={isFetching}
           sort={currentSort}
           onSortChange={handleSortChange}
+          showColumnScrollControls
         />
       </div>
       {shouldShowPagination && (

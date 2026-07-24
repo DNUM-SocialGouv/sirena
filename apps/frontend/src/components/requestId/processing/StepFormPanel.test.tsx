@@ -160,6 +160,34 @@ describe('StepFormPanel', () => {
     expect(screen.getByText(/Note du 02-01-2026 \(lecture seule\)/)).toBeInTheDocument();
   });
 
+  it('shows a "Notes" heading in edit mode, even with no notes, so the add-note button is not tied to the status section', () => {
+    const ref = createRef<StepFormPanelRef>();
+    render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+    act(() => ref.current?.openEdit(makeStep({ notes: [] })));
+
+    expect(screen.getByText('Notes')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ajouter une note' })).toBeInTheDocument();
+  });
+
+  it('moves focus into the new note textarea when adding a note', async () => {
+    const ref = createRef<StepFormPanelRef>();
+    render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+    act(() => ref.current?.openEdit(makeStep({ notes: [] })));
+    // Let the panel's open-focus (heading) settle first, as it does in the real app.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Ajouter une note' }));
+    });
+
+    // Focus lands in the note textarea, not on the add-note button.
+    expect(document.activeElement?.tagName).toBe('TEXTAREA');
+  });
+
   it('removes an editable note via its delete button', async () => {
     const ref = createRef<StepFormPanelRef>();
     render(<StepFormPanel ref={ref} requestId="REQ-1" />);
@@ -259,5 +287,28 @@ describe('StepFormPanel', () => {
     // ...but notes and attachments can still be added.
     expect(screen.getByText('Sélectionner un fichier')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Ajouter une note' })).toBeInTheDocument();
+  });
+
+  it('locks name and hides delete but keeps status editable for a not-yet-sent ACR step', () => {
+    const ref = createRef<StepFormPanelRef>();
+    render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+    act(() =>
+      ref.current?.openEdit(
+        makeStep({
+          type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          dateRealisation: '2026-05-20T00:00:00.000Z',
+          canOnlyEditNotes: false, // AR marked "Fait" by hand — no AR PDF, not sent
+        }),
+      ),
+    );
+
+    // Name and deletion stay locked (acknowledgment = system step)...
+    expect(screen.getByLabelText("Nom de l'étape (obligatoire)")).toBeDisabled();
+    expect(screen.queryByRole('button', { name: "Supprimer l'étape" })).not.toBeInTheDocument();
+    // ...but status and date remain editable since the AR has not been sent.
+    expect(screen.getByLabelText('Fait')).toBeEnabled();
+    expect(screen.getByLabelText('À faire')).toBeEnabled();
   });
 });

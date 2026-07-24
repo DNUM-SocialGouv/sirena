@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import type { RowWithId } from '../DataTable.type';
 
 type CheckboxCellProps<Datum extends RowWithId<RowId>, RowId extends string> = {
@@ -20,6 +20,8 @@ const checkboxCellComponent = <Datum extends RowWithId<RowId>, RowId extends str
 }: CheckboxCellProps<Datum, RowId>) => {
   const inputId = `${id}-checkbox-key-${rowIndex}`;
 
+  const handleChange = useCallback(() => onToggleSelect(row[rowId]), [onToggleSelect, row, rowId]);
+
   return (
     <th className="fr-cell--fixed" scope="row">
       <div className="fr-checkbox-group fr-checkbox-group--sm">
@@ -29,7 +31,7 @@ const checkboxCellComponent = <Datum extends RowWithId<RowId>, RowId extends str
           type="checkbox"
           value={row[rowId]}
           checked={selected}
-          onChange={() => onToggleSelect(row[rowId])}
+          onChange={handleChange}
         />
         <label className="fr-label" htmlFor={inputId}>
           Sélectionner la ligne {rowIndex + 1}

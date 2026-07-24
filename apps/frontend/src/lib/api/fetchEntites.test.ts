@@ -3,24 +3,34 @@ import {
   createDirectionAdminLocal,
   createServiceAdminLocal,
   editDirectionServiceAdminLocal,
+  editEntiteAdministrativeAdminLocal,
   fetchDirectionServiceAdminLocal,
   fetchDirectionsServicesList,
 } from './fetchEntites';
 
-const { directionServiceGet, directionServicePatch, directionsServicesGet, directionsPost, servicesPost } = vi.hoisted(
-  () => ({
-    directionServiceGet: vi.fn(),
-    directionServicePatch: vi.fn(),
-    directionsServicesGet: vi.fn(),
-    directionsPost: vi.fn(),
-    servicesPost: vi.fn(),
-  }),
-);
+const {
+  directionServiceGet,
+  directionServicePatch,
+  directionsServicesGet,
+  directionsPost,
+  entiteAdministrativePatch,
+  handleRequestErrorsSpy,
+  servicesPost,
+} = vi.hoisted(() => ({
+  directionServiceGet: vi.fn(),
+  directionServicePatch: vi.fn(),
+  directionsServicesGet: vi.fn(),
+  directionsPost: vi.fn(),
+  entiteAdministrativePatch: vi.fn(),
+  handleRequestErrorsSpy: vi.fn(),
+  servicesPost: vi.fn(),
+}));
 
 vi.mock('@/lib/api/hc.ts', () => ({
   client: {
     entites: {
       admin: {
+        local: { $patch: entiteAdministrativePatch },
         'directions-services': {
           $get: directionsServicesGet,
           ':id': { $get: directionServiceGet, $patch: directionServicePatch },
@@ -31,7 +41,7 @@ vi.mock('@/lib/api/hc.ts', () => ({
     },
   },
 }));
-vi.mock('@/lib/api/tanstackQuery.ts', () => ({ handleRequestErrors: vi.fn() }));
+vi.mock('@/lib/api/tanstackQuery.ts', () => ({ handleRequestErrors: handleRequestErrorsSpy }));
 
 const visibleInput = {
   nomComplet: 'Direction Autonomie',
@@ -44,11 +54,22 @@ const visibleInput = {
 
 beforeEach(() => vi.clearAllMocks());
 
+describe('local Entité administrative API adapter', () => {
+  it('patches the authenticated assignment with exactly the six visible fields and no identifier', async () => {
+    const updatedEntite = { id: 'root-ars', ...visibleInput };
+    entiteAdministrativePatch.mockResolvedValueOnce({ json: async () => ({ data: updatedEntite }) });
+
+    await expect(editEntiteAdministrativeAdminLocal(visibleInput)).resolves.toEqual(updatedEntite);
+    expect(entiteAdministrativePatch).toHaveBeenCalledWith({ json: visibleInput });
+    expect(handleRequestErrorsSpy).toHaveBeenCalledWith(expect.anything(), { silentToastError: true });
+  });
+});
+
 describe('local Direction and Service API adapter', () => {
   it('loads and patches an edit target through its local endpoint', async () => {
     const target = {
       id: 'service-pa',
-      kind: 'service' as const,
+      entiteType: 'service' as const,
       ...visibleInput,
       parentDirection: { id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' },
     };

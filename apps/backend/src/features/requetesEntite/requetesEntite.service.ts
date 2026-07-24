@@ -19,6 +19,7 @@ import { getDateTodayInParis, getLieuPrecisionLabel, getMesureProtectionShortLab
 import { ZipArchive } from 'archiver';
 import type { z } from 'zod';
 import { getFileEncryptionParams, getOriginalFileName, getSafeFileEncryptionParams } from '../../helpers/file.js';
+import { collectDataKeys } from '../../helpers/object.js';
 import { sortObject } from '../../helpers/prisma/sort.js';
 import { createSearchConditionsForRequeteEntite } from '../../helpers/search.js';
 import { sseEventManager } from '../../helpers/sse.js';
@@ -2203,7 +2204,10 @@ const getEtapePdfSubtitle = (
   return agentName ? `Ajouté par ${agentName} le ${date}` : `Ajouté automatiquement le ${date}`;
 };
 
-export const generateRequetePdfBuffer = async (requeteId: string, entiteId: string | null): Promise<Buffer | null> => {
+export const generateRequetePdfBuffer = async (
+  requeteId: string,
+  entiteId: string | null,
+): Promise<{ buffer: Buffer; dataKeys: string[] } | null> => {
   if (!entiteId) return null;
 
   const result = await prisma.requeteEntite.findFirst({
@@ -2591,5 +2595,5 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
     }
   }
 
-  return pdf.toBuffer();
+  return { buffer: await pdf.toBuffer(), dataKeys: collectDataKeys(requeteEntite) };
 };

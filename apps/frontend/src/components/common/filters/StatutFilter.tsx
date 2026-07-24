@@ -14,6 +14,8 @@ type Props = {
 
 const BASE_STATUTS = [REQUETE_STATUT_TYPES.NOUVEAU, REQUETE_STATUT_TYPES.EN_COURS, REQUETE_STATUT_TYPES.CLOTUREE];
 
+const selectedValuesLabel = (count: number) => `statut${count > 1 ? 's' : ''} sélectionné${count > 1 ? 's' : ''}`;
+
 export function StatutFilter({ selectedIds, counts, onChange, onOpen, onClose }: Props) {
   const options = useMemo(() => {
     const requetesTraiteeCount = counts?.[REQUETE_STATUT_TYPES.TRAITEE];
@@ -32,7 +34,7 @@ export function StatutFilter({ selectedIds, counts, onChange, onOpen, onClose }:
   return (
     <DropdownCheckboxFilter
       buttonLabel="Statut"
-      selectedValuesLabel={(count) => `statut${count > 1 ? 's' : ''} sélectionné${count > 1 ? 's' : ''}`}
+      selectedValuesLabel={selectedValuesLabel}
       legend="Filtrer les requêtes par statut"
       hintText="Statut de la requête (nombre de requêtes)"
       options={options}

@@ -1,8 +1,9 @@
 import { fr } from '@codegouvfr/react-dsfr';
-import { FEATURE_FLAGS, ROLES_READ } from '@sirena/common/constants';
+import { FEATURE_FLAGS, ROLES, ROLES_STATISTICS } from '@sirena/common/constants';
 import { createFileRoute, Navigate, useNavigate, useSearch } from '@tanstack/react-router';
-import type { CSSProperties } from 'react';
+import { type CSSProperties, useCallback } from 'react';
 import { z } from 'zod';
+import { AuthLayout } from '@/components/layout/auth/layout';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { parseCard } from '@/components/statistics/chartData';
 import { ExportRequetesButton } from '@/components/statistics/ExportRequetesButton';
@@ -32,8 +33,8 @@ const StatisticsSearchSchema = z.object({
   endDate: z.iso.date().optional().catch(undefined),
 });
 
-export const Route = createFileRoute('/_auth/_user/statistiques')({
-  beforeLoad: requireAuthAndRoles([...ROLES_READ]),
+export const Route = createFileRoute('/_auth/statistiques')({
+  beforeLoad: requireAuthAndRoles([...ROLES_STATISTICS]),
   validateSearch: StatisticsSearchSchema,
   head: () => ({
     meta: [{ title: 'Indicateurs - SIRENA' }],
@@ -131,10 +132,14 @@ function ChartCard({ card }: { card: StatisticsCard }) {
 export function RouteComponent() {
   const resolvedFlagsQuery = useResolvedFeatureFlags();
   const { data: profile, isPending: isProfilePending } = useProfile();
-  const search = useSearch({ from: '/_auth/_user/statistiques' });
+  const search = useSearch({ from: '/_auth/statistiques' });
   const navigate = useNavigate({ from: '/statistiques' });
 
+  // Super admin : périmètre national (pas de rattachement entité). Le backend bascule automatiquement
+  // sur le dashboard national ; côté UI on n'exige pas d'entité et on masque l'export (entité-scopé).
+  const isSuperAdmin = profile?.role?.id === ROLES.SUPER_ADMIN;
   const hasEntityLink = profile?.entiteId != null;
+  const canView = isSuperAdmin || hasEntityLink;
 
   const areFlagsReady = resolvedFlagsQuery.status !== 'pending';
   const isEnabled = resolvedFlagsQuery.data?.[FEATURE_FLAGS.STATISTICS] ?? false;
@@ -145,19 +150,22 @@ export function RouteComponent() {
   };
   const range = resolveDateRange(selection, new Date());
   const dataDate = formatDataDate(new Date());
-  const query = useStatisticsDashboard(range, areFlagsReady && isEnabled && hasEntityLink);
+  const query = useStatisticsDashboard(range, areFlagsReady && isEnabled && canView);
 
-  const handlePeriodChange = (next: PeriodSelection) => {
-    navigate({
-      search: (prev) => ({ ...prev, period: next.period, startDate: next.startDate, endDate: next.endDate }),
-    });
-  };
+  const handlePeriodChange = useCallback(
+    (next: PeriodSelection) => {
+      navigate({
+        search: (prev) => ({ ...prev, period: next.period, startDate: next.startDate, endDate: next.endDate }),
+      });
+    },
+    [navigate],
+  );
 
   if (isProfilePending || !areFlagsReady) {
     return null;
   }
-  if (!isEnabled || !hasEntityLink) {
-    return <Navigate to="/home" />;
+  if (!isEnabled || !canView) {
+    return <Navigate to={isSuperAdmin ? '/admin/users' : '/home'} />;
   }
 
   const periodLabel = describePeriod(selection);
@@ -168,39 +176,41 @@ export function RouteComponent() {
       : '';
 
   return (
-    <div className={fr.cx('fr-container', 'fr-my-8w')}>
-      <div className={styles['page-header']}>
-        <h1 className="fr-mb-0">Indicateurs</h1>
-        <ExportRequetesButton />
+    <AuthLayout>
+      <div className={fr.cx('fr-container', 'fr-my-8w')}>
+        <div className={styles['page-header']}>
+          <h1 className="fr-mb-0">Indicateurs</h1>
+          {!isSuperAdmin && <ExportRequetesButton />}
+        </div>
+        <PeriodFilter value={selection} onChange={handlePeriodChange} />
+        <p role="status" className="fr-sr-only">
+          {statusMessage}
+        </p>
+        <QueryStateHandler query={query} noDataComponent={<p>Aucune carte configurée dans le dashboard Metabase.</p>}>
+          {({ data }) => {
+            const cards = Array.isArray(data.cards) ? data.cards : [];
+            if (cards.length === 0) {
+              return <p>Aucune carte configurée dans le dashboard Metabase.</p>;
+            }
+
+            const sortedCards = [...cards].sort(byGridPosition);
+
+            return (
+              <div className={styles['mb-grid']}>
+                {sortedCards.map((card) => (
+                  <section key={`${card.dashcardId}-${card.id}`} className={styles['mb-cell']} style={cellStyle(card)}>
+                    <CardContent card={card} />
+                  </section>
+                ))}
+              </div>
+            );
+          }}
+        </QueryStateHandler>
+        <p className={`${fr.cx('fr-text--sm', 'fr-mt-6w', 'fr-mb-0')} ${styles['data-note']}`}>
+          <span className={fr.cx('fr-icon-time-line')} aria-hidden="true" />
+          Données du {dataDate}
+        </p>
       </div>
-      <PeriodFilter value={selection} onChange={handlePeriodChange} />
-      <p role="status" className="fr-sr-only">
-        {statusMessage}
-      </p>
-      <QueryStateHandler query={query} noDataComponent={<p>Aucune carte configurée dans le dashboard Metabase.</p>}>
-        {({ data }) => {
-          const cards = Array.isArray(data.cards) ? data.cards : [];
-          if (cards.length === 0) {
-            return <p>Aucune carte configurée dans le dashboard Metabase.</p>;
-          }
-
-          const sortedCards = [...cards].sort(byGridPosition);
-
-          return (
-            <div className={styles['mb-grid']}>
-              {sortedCards.map((card) => (
-                <section key={`${card.dashcardId}-${card.id}`} className={styles['mb-cell']} style={cellStyle(card)}>
-                  <CardContent card={card} />
-                </section>
-              ))}
-            </div>
-          );
-        }}
-      </QueryStateHandler>
-      <p className={`${fr.cx('fr-text--sm', 'fr-mt-6w', 'fr-mb-0')} ${styles['data-note']}`}>
-        <span className={fr.cx('fr-icon-time-line')} aria-hidden="true" />
-        Données du {dataDate}
-      </p>
-    </div>
+    </AuthLayout>
   );
 }

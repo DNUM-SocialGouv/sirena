@@ -165,6 +165,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
           domainesFonctionnelsId: situationData.domainesFonctionnelsId,
           estLieAuSignalement: situationData.estLieAuSignalement,
           numerosSignalement: situationData.numerosSignalement,
+          sirecDepartement: situationData.sirecDepartement,
         },
         select: { id: true },
       });
@@ -251,6 +252,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
           lienAutrePrecision: data.declarant.lienAutrePrecision,
           commentaire: data.declarant.commentaire,
           estSignalementProfessionnel: data.declarant.estSignalementProfessionnel,
+          estPersonneMorale: data.declarant.estPersonneMorale,
           ...(data.declarant.adresse !== null
             ? {
                 adresse: {

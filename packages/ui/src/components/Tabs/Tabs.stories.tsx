@@ -135,7 +135,7 @@ export const Default: Story = {
     const [activeIndex, setActiveIndex] = useState(args.activeTab ?? 0);
 
     return (
-      <Tabs {...args} activeTab={activeIndex} onUpdateActiveTab={(newIndex) => setActiveIndex(newIndex)}>
+      <Tabs {...args} activeTab={activeIndex} onUpdateActiveTab={setActiveIndex}>
         {sampleContent[activeIndex]}
       </Tabs>
     );

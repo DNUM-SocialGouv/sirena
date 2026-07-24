@@ -1,7 +1,8 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { SelectWithChildren } from '@sirena/ui';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { EntiteCombobox } from '@/components/common/EntiteCombobox';
+import { ReadOnlyField } from '@/components/common/ReadOnlyField';
 import { useEntiteDescendants } from '@/hooks/queries/entites.hook';
 import styles from './TraitementDesFaits.module.css';
 
@@ -66,6 +67,15 @@ function TraitementDesFaitsRowComponent({
 
   const showModifyButton = isEntiteReadOnly && onEntiteEditClick;
 
+  const handleEntiteChange = useCallback((id: string) => onChange(row.id, 'entiteId', id), [onChange, row.id]);
+
+  const handleDirectionServiceChange = useCallback(
+    (newValues: string[]) => onChange(row.id, 'directionServiceIds', newValues),
+    [onChange, row.id],
+  );
+
+  const handleRemove = useCallback(() => onRemove?.(row.id), [onRemove, row.id]);
+
   return (
     <div className={`fr-grid-row fr-grid-row--gutters fr-mb-2w ${styles.row}`}>
       {/* Entite */}
@@ -73,18 +83,17 @@ function TraitementDesFaitsRowComponent({
         <div className={styles.entiteWrapper}>
           <div className={styles.entiteField}>
             {isEntiteReadOnly ? (
-              <div className="fr-input-group">
-                <label className="fr-label" htmlFor={`entite-readonly-${row.id}`}>
-                  Entité administrative (obligatoire)
-                </label>
-                <input id={`entite-readonly-${row.id}`} className={styles.readOnlyValue} value={entiteLabel} readOnly />
-              </div>
+              <ReadOnlyField
+                id={`entite-readonly-${row.id}`}
+                label="Entité administrative (obligatoire)"
+                value={entiteLabel}
+              />
             ) : (
               <EntiteCombobox
                 label="Entité administrative (obligatoire)"
                 entites={availableEntites}
                 value={row.entiteId}
-                onChange={(id) => onChange(row.id, 'entiteId', id)}
+                onChange={handleEntiteChange}
                 disabled={disabled}
                 state={showError ? 'error' : 'default'}
                 stateRelatedMessage={showError ? errorMessage : undefined}
@@ -92,13 +101,13 @@ function TraitementDesFaitsRowComponent({
               />
             )}
           </div>
-          {showModifyButton && (
+          {showModifyButton ? (
             <div className={styles.modifyButtonWrapper}>
               <Button iconId="fr-icon-edit-line" priority="secondary" onClick={onEntiteEditClick} disabled={disabled}>
                 Modifier <span className="fr-sr-only">l’entité administrative</span>
               </Button>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -106,26 +115,20 @@ function TraitementDesFaitsRowComponent({
       {row.entiteId && (!disabled || (row.directionServiceIds && row.directionServiceIds.length > 0)) && (
         <div className="fr-col-12 fr-col-md-6" style={alignSelectStyle}>
           {disabled ? (
-            <div className="fr-input-group">
-              <label className="fr-label" htmlFor={`direction-readonly-${row.id}`}>
-                Direction ou Service
-              </label>
-              <input
-                id={`direction-readonly-${row.id}`}
-                className={styles.readOnlyValue}
-                value={
-                  row.directionServiceIds
-                    ?.map((id) => directionsServices.find((ds) => ds.id === id)?.nomComplet)
-                    .filter(Boolean)
-                    .join(', ') || ''
-                }
-                readOnly
-              />
-            </div>
+            <ReadOnlyField
+              id={`direction-readonly-${row.id}`}
+              label="Direction ou Service"
+              value={
+                row.directionServiceIds
+                  ?.map((id) => directionsServices.find((ds) => ds.id === id)?.nomComplet)
+                  .filter(Boolean)
+                  .join(', ') || ''
+              }
+            />
           ) : (
             <SelectWithChildren
               value={row.directionServiceIds || []}
-              onChange={(newValues) => onChange(row.id, 'directionServiceIds', newValues)}
+              onChange={handleDirectionServiceChange}
               options={directionsServices.map((entite) => ({
                 label: entite.nomComplet,
                 value: entite.id,
@@ -137,13 +140,13 @@ function TraitementDesFaitsRowComponent({
         </div>
       )}
 
-      {onRemove && (
+      {onRemove ? (
         <div className="fr-col-12">
-          <Button iconId="fr-icon-delete-line" priority="tertiary" onClick={() => onRemove(row.id)} disabled={disabled}>
+          <Button iconId="fr-icon-delete-line" priority="tertiary" onClick={handleRemove} disabled={disabled}>
             Supprimer cette entité
           </Button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -282,7 +285,7 @@ function TraitementDesFaitsSection({
     }
   }, [hasAttemptedSave, rows]);
 
-  const handleAddRow = () => {
+  const handleAddRow = useCallback(() => {
     setRows((prev) => ({
       editableRows: [
         ...prev.editableRows,
@@ -299,36 +302,42 @@ function TraitementDesFaitsSection({
     if (globalError) {
       setGlobalError(undefined);
     }
-  };
+  }, [globalError]);
 
-  const handleRemoveRow = (id: string) => {
-    setRows((prev) => ({
-      editableRows: prev.editableRows.filter((row) => row.id !== id),
-      readOnlyRows: prev.readOnlyRows.filter((row) => row.id !== id),
-    }));
-    if (globalError) {
-      setGlobalError(undefined);
-    }
-  };
+  const handleRemoveRow = useCallback(
+    (id: string) => {
+      setRows((prev) => ({
+        editableRows: prev.editableRows.filter((row) => row.id !== id),
+        readOnlyRows: prev.readOnlyRows.filter((row) => row.id !== id),
+      }));
+      if (globalError) {
+        setGlobalError(undefined);
+      }
+    },
+    [globalError],
+  );
 
-  const handleRowChange = (id: string, field: 'entiteId' | 'directionServiceIds', value: string | string[]) => {
-    setRows((prev) => ({
-      readOnlyRows: prev.readOnlyRows,
-      editableRows: prev.editableRows.map((row) =>
-        row.id === id
-          ? {
-              ...row,
-              [field]: value,
-              ...(field === 'entiteId' ? { directionServiceIds: undefined } : {}),
-            }
-          : row,
-      ),
-    }));
+  const handleRowChange = useCallback(
+    (id: string, field: 'entiteId' | 'directionServiceIds', value: string | string[]) => {
+      setRows((prev) => ({
+        readOnlyRows: prev.readOnlyRows,
+        editableRows: prev.editableRows.map((row) =>
+          row.id === id
+            ? {
+                ...row,
+                [field]: value,
+                ...(field === 'entiteId' ? { directionServiceIds: undefined } : {}),
+              }
+            : row,
+        ),
+      }));
 
-    if (globalError) {
-      setGlobalError(undefined);
-    }
-  };
+      if (globalError) {
+        setGlobalError(undefined);
+      }
+    },
+    [globalError],
+  );
 
   return (
     <div className={`fr-p-4w fr-mb-4w ${styles.container}`}>
@@ -340,11 +349,11 @@ function TraitementDesFaitsSection({
           <h2 className="fr-h6">Traitement des faits</h2>
         </legend>
 
-        {hasGlobalError && (
+        {hasGlobalError ? (
           <p id={globalErrorId} className="fr-message fr-message--error fr-text--md fr-mb-3w">
             Au moins une entité administrative doit être renseignée.
           </p>
-        )}
+        ) : null}
 
         {rows.editableRows.length > 0 && <hr />}
 

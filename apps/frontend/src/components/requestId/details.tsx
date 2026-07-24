@@ -73,13 +73,13 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
               requestId={requestId}
               editHref={getEditSituationHref()}
             />
-            {canEdit && (
+            {canEdit ? (
               <div className="fr-mb-4w">
                 <Link to={getEditSituationHref()} className="fr-btn--secondary fr-icon-add-line">
                   Ajouter une autre situation
                 </Link>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
@@ -123,7 +123,7 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
                     provenancePrecision: data?.requete.provenancePrecision ?? null,
                   }}
                   updatedAt={data?.requete.updatedAt || null}
-                  onEdit={() => refetchRequest()}
+                  onEdit={refetchRequest}
                 />
                 <RequeteFileUploadSection
                   requeteId={requestId}
@@ -163,7 +163,7 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
                     editHref={getEditSituationHref()}
                   />
                 )}
-                {canEdit && (
+                {canEdit ? (
                   <div className="fr-mb-4w">
                     <Link
                       to={getEditSituationHref()}
@@ -172,7 +172,7 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
                       Ajouter une autre situation
                     </Link>
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
           </div>

@@ -835,6 +835,7 @@ describe('requetesEntite.service', () => {
         createdAt: oldTimestamp,
         updatedAt: oldTimestamp,
         estSignalementProfessionnel: null,
+        estPersonneMorale: null,
         aAutrePersonnes: null,
         isTuteur: null,
         mesureProtection: null,
@@ -913,6 +914,7 @@ describe('requetesEntite.service', () => {
         createdAt: timestamp,
         updatedAt: timestamp,
         estSignalementProfessionnel: null,
+        estPersonneMorale: null,
         aAutrePersonnes: null,
         isTuteur: null,
         mesureProtection: null,
@@ -1307,6 +1309,7 @@ describe('requetesEntite.service', () => {
         estNonIdentifiee: null,
         estHandicapee: null,
         estSignalementProfessionnel: null,
+        estPersonneMorale: null,
         estIdentifie: true,
         estVictime: false,
         estVictimeInformee: null,
@@ -3381,6 +3384,47 @@ describe('requetesEntite.service', () => {
       await generateRequetePdfBuffer('req123', 'ent123');
 
       expect(fieldSpy).toHaveBeenCalledWith('Il/elle est en mesure de protection', 'mandataire familial');
+    });
+
+    it('returns the buffer and the dataKeys of the loaded data for the RGPD access journal', async () => {
+      vi.spyOn(RequetePdfBuilder.prototype, 'toBuffer').mockResolvedValue(Buffer.from('%PDF-test'));
+      vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statut: { id: 'EN_COURS', label: 'En cours' },
+        priorite: null,
+        requete: {
+          ...mockRequeteEntite.requete,
+          receptionType: null,
+          provenance: null,
+          declarant: null,
+          participant: {
+            id: 'participant123',
+            mesureProtection: 'MANDATAIRE_FAMILIAL',
+            identite: null,
+            adresse: null,
+            age: null,
+            lienVictime: null,
+          },
+          fichiersRequeteOriginale: [],
+          situations: [],
+        },
+      } as unknown as Awaited<ReturnType<typeof prisma.requeteEntite.findFirst>>);
+
+      const result = await generateRequetePdfBuffer('req123', 'ent123');
+
+      expect(result?.buffer).toEqual(Buffer.from('%PDF-test'));
+      // Keys (categories) are collected, never their values
+      expect(result?.dataKeys).toContain('requete.participant.mesureProtection');
+      expect(result?.dataKeys).toContain('requete.participant.id');
+      // A null field is not exposed
+      expect(result?.dataKeys).not.toContain('requete.participant.identite');
+      expect(result?.dataKeys).not.toContain('MANDATAIRE_FAMILIAL');
+    });
+
+    it('returns null when the requete is not found', async () => {
+      vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce(null);
+
+      expect(await generateRequetePdfBuffer('req123', 'ent123')).toBeNull();
     });
 
     it('renders étape-level files (new ACR model without auto-note)', async () => {

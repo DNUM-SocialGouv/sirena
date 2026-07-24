@@ -14,6 +14,7 @@ import {
 } from '@sirena/common/constants';
 import { getLieuPrecisionLabel } from '@sirena/common/utils';
 import { InfoSection } from '@sirena/ui';
+import { useCallback } from 'react';
 import { EntiteTypeBadge } from '@/components/common/EntiteTypeBadge';
 import { FileList } from '@/components/common/FileList';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
@@ -263,46 +264,56 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
 
   const traitementDesFaits = situation?.traitementDesFaits;
 
+  const getSituationFileUrl = useCallback(
+    (fileId: string) => `/api/requetes-entite/${requestId}/situation/${situationId}/file/${fileId}`,
+    [requestId, situationId],
+  );
+  const getSituationSafeFileUrl = useCallback(
+    (fileId: string) => `/api/requetes-entite/${requestId}/situation/${situationId}/file/${fileId}/safe`,
+    [requestId, situationId],
+  );
+
   const renderSummary = () => {
     const hasTraitementDesFaits = traitementDesFaits?.entites && traitementDesFaits.entites.length > 0;
     if (!hasLieu && !hasMisEnCause && !hasMotifs && !hasTraitementDesFaits) return null;
 
     return (
       <div className="fr-grid-row fr-grid-row--gutters">
-        {hasLieu && (
+        {hasLieu ? (
           <div className="fr-col-auto">
             <p className={fr.cx('fr-mb-0')}>
               <span className={fr.cx('fr-icon-map-pin-2-line', 'fr-icon--sm')} aria-hidden="true" />
               <span className="fr-sr-only"> Lieu de survenue des faits :</span> {getLieuDeSurvenue(situation)}
             </p>
           </div>
-        )}
+        ) : null}
 
-        {hasMisEnCause &&
-          (() => {
-            const identity = getMisEnCauseIdentity(situation?.misEnCause);
-            return (
-              <div className="fr-col-auto">
-                <p className={fr.cx('fr-mb-0')}>
-                  <span className={fr.cx('fr-icon-error-warning-line', 'fr-icon--sm')} aria-hidden="true" />
-                  <span className="fr-sr-only">Identité de la personne concernée :</span>{' '}
-                  {identity && (
-                    <>
-                      {identity}
-                      {' - '}
-                    </>
-                  )}
-                  {situation?.misEnCause?.misEnCauseType?.label}
-                </p>
-              </div>
-            );
-          })()}
+        {hasMisEnCause
+          ? (() => {
+              const identity = getMisEnCauseIdentity(situation?.misEnCause);
+              return (
+                <div className="fr-col-auto">
+                  <p className={fr.cx('fr-mb-0')}>
+                    <span className={fr.cx('fr-icon-error-warning-line', 'fr-icon--sm')} aria-hidden="true" />
+                    <span className="fr-sr-only">Identité de la personne concernée :</span>{' '}
+                    {identity && (
+                      <>
+                        {identity}
+                        {' - '}
+                      </>
+                    )}
+                    {situation?.misEnCause?.misEnCauseType?.label}
+                  </p>
+                </div>
+              );
+            })()
+          : null}
 
         <div className="fr-col-auto">
           <MotifsQualified situation={situation} />
           {receptionType === RECEPTION_TYPE.FORMULAIRE ? <MotifsDeclared situation={situation} /> : null}
         </div>
-        {hasTraitementDesFaits && <TraitementDesFaits situation={situation} details={false} />}
+        {hasTraitementDesFaits ? <TraitementDesFaits situation={situation} details={false} /> : null}
       </div>
     );
   };
@@ -314,38 +325,47 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
 
     return (
       <>
-        {situation?.estLieAuSignalement != null && (
+        {(situation?.estLieAuSignalement != null || situation?.sirecDepartement) && (
           <>
             <SectionTitle level={4}>Identification</SectionTitle>
-            <p className={fr.cx('fr-mb-1w')}>
-              <span>Situation en lien avec un ou plusieurs signalement(s) :</span>{' '}
-              {situation.estLieAuSignalement ? 'Oui' : 'Non'}
-            </p>
-            {situation.estLieAuSignalement && situation.numerosSignalement && (
-              <p className={fr.cx('fr-mb-3w')}>
-                <span>Numéro(s) de signalement associé(s) :</span> {situation.numerosSignalement}
-              </p>
+            {situation?.estLieAuSignalement != null && (
+              <>
+                <p className={fr.cx('fr-mb-1w')}>
+                  <span>Situation en lien avec un ou plusieurs signalement(s) :</span>{' '}
+                  {situation.estLieAuSignalement ? 'Oui' : 'Non'}
+                </p>
+                {situation.estLieAuSignalement && situation.numerosSignalement ? (
+                  <p className={fr.cx('fr-mb-3w')}>
+                    <span>Numéro(s) de signalement associé(s) :</span> {situation.numerosSignalement}
+                  </p>
+                ) : null}
+              </>
             )}
+            {situation?.sirecDepartement ? (
+              <p className={fr.cx('fr-mb-3w')}>
+                <span>Département en charge :</span> {situation.sirecDepartement}
+              </p>
+            ) : null}
           </>
         )}
 
-        {hasLieu && (
+        {hasLieu ? (
           <>
             <SectionTitle level={4}>Lieu où se sont déroulés les faits</SectionTitle>
             <p className={fr.cx('fr-mb-1w')}>
               <span>Type de lieu :</span> {situation?.lieuDeSurvenue?.lieuType?.label}
             </p>
-            {situation?.lieuDeSurvenue.codePostal && (
+            {situation?.lieuDeSurvenue.codePostal ? (
               <p className={fr.cx('fr-mb-1w')}>
                 <span>Code postal renseigné par le déclarant :</span> {situation.lieuDeSurvenue.codePostal}
               </p>
-            )}
-            {situation?.lieuDeSurvenue?.lieuPrecision && (
+            ) : null}
+            {situation?.lieuDeSurvenue?.lieuPrecision ? (
               <p className={fr.cx('fr-mb-1w')}>
                 <span>Précision du lieu :</span>{' '}
                 {getLieuPrecisionLabel(situation.lieuDeSurvenue.lieuType?.id, situation.lieuDeSurvenue.lieuPrecision)}
               </p>
-            )}
+            ) : null}
             {(situation?.lieuDeSurvenue?.adresse?.label ||
               (situation?.lieuDeSurvenue?.lieuTypeId === LIEU_TYPE.DOMICILE &&
                 situation?.lieuDeSurvenue?.adresse?.rue)) &&
@@ -354,11 +374,11 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                   <p className={fr.cx('fr-mb-1w')}>
                     <span>Nom de l'établissement :</span> {situation.lieuDeSurvenue.adresse.label}
                   </p>
-                  {situation?.lieuDeSurvenue?.adresse?.rue && (
+                  {situation?.lieuDeSurvenue?.adresse?.rue ? (
                     <p className={fr.cx('fr-mb-1w')}>
                       <span>Adresse :</span> {situation.lieuDeSurvenue.adresse.rue}
                     </p>
-                  )}
+                  ) : null}
                 </>
               ) : (
                 <p className={fr.cx('fr-mb-1w')}>
@@ -366,61 +386,61 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                   {situation.lieuDeSurvenue.adresse.rue || situation.lieuDeSurvenue.adresse.label}
                 </p>
               ))}
-            {(situation?.lieuDeSurvenue?.adresse?.codePostal || situation?.lieuDeSurvenue?.adresse?.ville) && (
+            {situation?.lieuDeSurvenue?.adresse?.codePostal || situation?.lieuDeSurvenue?.adresse?.ville ? (
               <p className={fr.cx('fr-mb-2w')}>
                 <span>Ville :</span> {situation.lieuDeSurvenue.adresse.codePostal}{' '}
                 {situation.lieuDeSurvenue.adresse.ville}
               </p>
-            )}
-            {situation?.lieuDeSurvenue?.societeTransport && (
+            ) : null}
+            {situation?.lieuDeSurvenue?.societeTransport ? (
               <p className={fr.cx('fr-mb-2w')}>
                 <span>Société de transport concernée :</span> {situation.lieuDeSurvenue.societeTransport}
               </p>
-            )}
-            {situation?.lieuDeSurvenue?.finess && (
+            ) : null}
+            {situation?.lieuDeSurvenue?.finess ? (
               <p className={fr.cx('fr-mb-1w')}>
                 <span>Numéro FINESS :</span> {situation.lieuDeSurvenue.finess}
               </p>
-            )}
+            ) : null}
           </>
-        )}
+        ) : null}
 
-        {hasMisEnCause && (
+        {hasMisEnCause ? (
           <>
             <SectionTitle level={4}>Mis en cause</SectionTitle>
             <p className={fr.cx('fr-mb-1w')}>
               <span>Type de mis en cause :</span> {situation?.misEnCause?.misEnCauseType?.label}
             </p>
-            {situation?.misEnCause?.misEnCauseTypePrecision && (
+            {situation?.misEnCause?.misEnCauseTypePrecision ? (
               <p className={fr.cx('fr-mb-1w')}>
                 <span>Précision :</span> {situation.misEnCause.misEnCauseTypePrecision.label}
               </p>
-            )}
-            {situation?.misEnCause?.autrePrecision && (
+            ) : null}
+            {situation?.misEnCause?.autrePrecision ? (
               <p className={fr.cx('fr-mb-1w')}>
                 <span>Précision supplémentaire :</span> {situation.misEnCause.autrePrecision}
               </p>
-            )}
-            {situation?.misEnCause?.rpps && (
+            ) : null}
+            {situation?.misEnCause?.rpps ? (
               <p className={fr.cx('fr-mb-1w')}>
                 <span>Numéro RPPS :</span> {situation.misEnCause.rpps}
               </p>
-            )}
-            {situation?.misEnCause?.nomService && (
+            ) : null}
+            {situation?.misEnCause?.nomService ? (
               <p className={fr.cx('fr-mb-1w')}>
                 <span>Nom du service :</span> {situation.misEnCause.nomService}
               </p>
-            )}
-            {situation?.misEnCause?.finess && (
+            ) : null}
+            {situation?.misEnCause?.finess ? (
               <p className={fr.cx('fr-mb-1w')}>
                 <span>Numéro FINESS :</span> {situation.misEnCause.finess}
               </p>
-            )}
-            {(situation?.misEnCause?.codePostal || situation?.misEnCause?.ville) && (
+            ) : null}
+            {situation?.misEnCause?.codePostal || situation?.misEnCause?.ville ? (
               <p className={fr.cx('fr-mb-1w')}>
                 <span>Ville :</span> {situation.misEnCause.codePostal} {situation.misEnCause.ville}
               </p>
-            )}
+            ) : null}
             {getMisEnCauseIdentity(situation?.misEnCause) &&
               MIS_EN_CAUSE_PROFESSIONNEL_LABELS.includes(situation?.misEnCause?.misEnCauseType?.label || '') && (
                 <p className={fr.cx('fr-mb-2w')}>
@@ -435,7 +455,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                 </>
               )}
           </>
-        )}
+        ) : null}
 
         {motifsDeclares.length > 0 && (
           <>
@@ -484,7 +504,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
           </>
         )}
 
-        {(fait?.dateDebut || fait?.dateFin) && (
+        {fait?.dateDebut || fait?.dateFin ? (
           <>
             <SectionTitle level={4}>Période des faits</SectionTitle>
             <p className={fr.cx('fr-mb-3w')}>
@@ -497,42 +517,40 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                     : null}
             </p>
           </>
-        )}
+        ) : null}
 
-        {fait?.commentaire && (
+        {fait?.commentaire ? (
           <>
             <SectionTitle level={4}>Explication des faits</SectionTitle>
             <p className={fr.cx('fr-mb-3w')}>{fait.commentaire}</p>
           </>
-        )}
+        ) : null}
 
-        {fait?.autresPrecisions && (
+        {fait?.autresPrecisions ? (
           <>
             <SectionTitle level={4}>Autres précisions</SectionTitle>
             <p className={fr.cx('fr-mb-3w')}>{fait.autresPrecisions}</p>
           </>
-        )}
+        ) : null}
 
         {fait?.fichiers?.length > 0 && (
           <>
             <SectionTitle level={4}>Pièces jointes</SectionTitle>
             <FileList
               files={fait.fichiers.map(formatFileFromServer)}
-              getFileUrl={(fileId) => `/api/requetes-entite/${requestId}/situation/${situationId}/file/${fileId}`}
-              getSafeFileUrl={(fileId) =>
-                `/api/requetes-entite/${requestId}/situation/${situationId}/file/${fileId}/safe`
-              }
+              getFileUrl={getSituationFileUrl}
+              getSafeFileUrl={getSituationSafeFileUrl}
               title=""
             />
           </>
         )}
 
-        {situation?.domainesFonctionnels?.label && (
+        {situation?.domainesFonctionnels?.label ? (
           <>
             <SectionTitle level={4}>Domaine fonctionnel</SectionTitle>
             <p className={fr.cx('fr-mb-3w')}>{situation.domainesFonctionnels.label}</p>
           </>
-        )}
+        ) : null}
 
         {situation?.demarchesEngagees?.demarches && situation.demarchesEngagees.demarches.length > 0 && (
           <>
@@ -543,13 +561,15 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                   {demarche.label}
                   {demarche.label === demarcheEngageeLabels.CONTACT_RESPONSABLES && (
                     <ul>
-                      {situation.demarchesEngagees?.dateContactEtablissement && (
+                      {situation.demarchesEngagees?.dateContactEtablissement ? (
                         <li>
                           <span>Date de prise de contact :</span>{' '}
                           {new Date(situation.demarchesEngagees.dateContactEtablissement).toLocaleDateString('fr-FR')}
                         </li>
-                      )}
-                      {situation.demarchesEngagees?.etablissementARepondu && <li>Le déclarant a reçu une réponse</li>}
+                      ) : null}
+                      {situation.demarchesEngagees?.etablissementARepondu ? (
+                        <li>Le déclarant a reçu une réponse</li>
+                      ) : null}
                     </ul>
                   )}
                   {demarche.label === demarcheEngageeLabels.CONTACT_ORGANISME &&
@@ -562,17 +582,17 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                     )}
                   {demarche.label === demarcheEngageeLabels.PLAINTE && (
                     <ul>
-                      {situation.demarchesEngagees?.datePlainte && (
+                      {situation.demarchesEngagees?.datePlainte ? (
                         <li>
                           <span>Date du dépôt de plainte :</span>{' '}
                           {new Date(situation.demarchesEngagees.datePlainte).toLocaleDateString('fr-FR')}
                         </li>
-                      )}
-                      {situation.demarchesEngagees?.autoriteType?.label && (
+                      ) : null}
+                      {situation.demarchesEngagees?.autoriteType?.label ? (
                         <li>
                           <span>Lieu de dépôt de la plainte :</span> {situation.demarchesEngagees.autoriteType.label}
                         </li>
-                      )}
+                      ) : null}
                     </ul>
                   )}
                 </li>
@@ -583,10 +603,8 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                 <SectionTitle level={4}>Pièces jointes de la réponse de l'établissement</SectionTitle>
                 <FileList
                   files={situation.demarchesEngagees.etablissementReponse.map(formatFileFromServer)}
-                  getFileUrl={(fileId) => `/api/requetes-entite/${requestId}/situation/${situationId}/file/${fileId}`}
-                  getSafeFileUrl={(fileId) =>
-                    `/api/requetes-entite/${requestId}/situation/${situationId}/file/${fileId}/safe`
-                  }
+                  getFileUrl={getSituationFileUrl}
+                  getSafeFileUrl={getSituationSafeFileUrl}
                   title=""
                 />
               </>
@@ -594,7 +612,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
             <p className={fr.cx('fr-mb-3w')}>{situation.demarchesEngagees.commentaire}</p>
           </>
         )}
-        {hasTraitementDesFaits && <TraitementDesFaits situation={situation} details={true} />}
+        {hasTraitementDesFaits ? <TraitementDesFaits situation={situation} details={true} /> : null}
       </>
     );
   };

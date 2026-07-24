@@ -13,6 +13,7 @@ import {
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
 import { SelectWithChildren } from '@sirena/ui';
+import { useCallback } from 'react';
 import { shouldShowMaltraitanceWarning } from '@/utils/maltraitanceHelpers';
 
 type DescriptionFaitsProps = {
@@ -56,6 +57,30 @@ export function DescriptionFaits({ formData, setFormData, initialData }: Descrip
       }));
     };
 
+  const handleMotifsChange = useCallback(
+    (values: string[]) =>
+      setFormData((prev) => ({
+        ...prev,
+        fait: {
+          ...prev.fait,
+          motifs: values,
+        },
+      })),
+    [setFormData],
+  );
+
+  const handleConsequencesChange = useCallback(
+    (values: string[]) =>
+      setFormData((prev) => ({
+        ...prev,
+        fait: {
+          ...prev.fait,
+          consequences: values,
+        },
+      })),
+    [setFormData],
+  );
+
   return (
     <div
       className="fr-p-4w fr-mb-4w"
@@ -90,15 +115,7 @@ export function DescriptionFaits({ formData, setFormData, initialData }: Descrip
             <SelectWithChildren
               options={MOTIFS_HIERARCHICAL_DATA}
               value={formData.fait?.motifs || []}
-              onChange={(values) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  fait: {
-                    ...prev.fait,
-                    motifs: values,
-                  },
-                }))
-              }
+              onChange={handleMotifsChange}
             />
             {showMaltraitanceWarning && (
               <div className="fr-mt-2w">
@@ -119,15 +136,7 @@ export function DescriptionFaits({ formData, setFormData, initialData }: Descrip
                 value: key,
               }))}
               value={formData.fait?.consequences || []}
-              onChange={(values) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  fait: {
-                    ...prev.fait,
-                    consequences: values,
-                  },
-                }))
-              }
+              onChange={handleConsequencesChange}
             />
           </div>
 

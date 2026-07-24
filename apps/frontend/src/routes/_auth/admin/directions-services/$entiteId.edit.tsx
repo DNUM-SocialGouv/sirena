@@ -2,18 +2,15 @@ import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
 import { Loader, Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
-import { type SubmitEvent, useEffect } from 'react';
+import { type SubmitEvent, useCallback, useEffect } from 'react';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
 import { useDirectionServiceAdminLocal, useEditDirectionServiceAdminLocal } from '@/hooks/queries/entites.hook';
-import {
-  LocalDirectionServiceContactFields,
-  LocalDirectionServiceSirenaFields,
-} from './-components/LocalDirectionServiceSirenaFields';
-import { useLocalDirectionServiceForm } from './-components/useLocalDirectionServiceForm';
-import { requireAdminLocalDirectionsServices } from './-route-guard';
+import { requireAdminLocalAccess } from '../-admin-local-route-guard';
+import { LocalEntiteFormFields } from '../-components/LocalEntiteFormFields';
+import { useLocalEntiteForm } from '../-components/useLocalEntiteForm';
 
 export const Route = createFileRoute('/_auth/admin/directions-services/$entiteId/edit')({
-  beforeLoad: requireAdminLocalDirectionsServices,
+  beforeLoad: requireAdminLocalAccess,
   component: RouteComponent,
 });
 
@@ -36,28 +33,22 @@ type LocalEditTarget = NonNullable<ReturnType<typeof useDirectionServiceAdminLoc
 
 function LocalEditForm({ target }: { target: LocalEditTarget }) {
   const wording =
-    target.kind === 'entite-administrative'
+    target.entiteType === 'direction'
       ? {
-          titlePrefix: 'Modifier l’entité administrative',
-          successTitle: 'Entité administrative modifiée avec succès',
-          errorDescription: 'Erreur lors de la modification de l’entité administrative. Veuillez réessayer.',
+          titlePrefix: 'Modifier la direction',
+          successTitle: 'Direction modifiée avec succès',
+          errorDescription: 'Erreur lors de la modification de la direction. Veuillez réessayer.',
         }
-      : target.kind === 'direction'
-        ? {
-            titlePrefix: 'Modifier la direction',
-            successTitle: 'Direction modifiée avec succès',
-            errorDescription: 'Erreur lors de la modification de la direction. Veuillez réessayer.',
-          }
-        : {
-            titlePrefix: 'Modifier le service',
-            successTitle: 'Service modifié avec succès',
-            errorDescription: 'Erreur lors de la modification du service. Veuillez réessayer.',
-          };
+      : {
+          titlePrefix: 'Modifier le service',
+          successTitle: 'Service modifié avec succès',
+          errorDescription: 'Erreur lors de la modification du service. Veuillez réessayer.',
+        };
   const title = `${wording.titlePrefix} ${target.nomComplet}`;
   const editDirectionService = useEditDirectionServiceAdminLocal();
   const toastManager = Toast.useToastManager();
   const router = useRouter();
-  const form = useLocalDirectionServiceForm(target.kind, {
+  const form = useLocalEntiteForm(target.entiteType, {
     nomComplet: target.nomComplet,
     label: target.label,
     email: target.email,
@@ -70,29 +61,32 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
     document.title = `${title} - Directions et services - SIRENA`;
   }, [title]);
 
-  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const values = form.validate();
-    if (!values) return;
+  const handleSubmit = useCallback(
+    async (event: SubmitEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const values = form.validate();
+      if (!values) return;
 
-    try {
-      await editDirectionService.mutateAsync({ id: target.id, input: values });
-      toastManager.add({
-        title: wording.successTitle,
-        description: 'Les modifications ont bien été enregistrées.',
-        timeout: 0,
-        data: { icon: 'fr-alert--success' },
-      });
-      await router.navigate({ to: '/admin/directions-services' });
-    } catch {
-      toastManager.add({
-        title: 'Erreur',
-        description: wording.errorDescription,
-        timeout: 0,
-        data: { icon: 'fr-alert--error' },
-      });
-    }
-  };
+      try {
+        await editDirectionService.mutateAsync({ id: target.id, input: values });
+        toastManager.add({
+          title: wording.successTitle,
+          description: 'Les modifications ont bien été enregistrées.',
+          timeout: 0,
+          data: { icon: 'fr-alert--success' },
+        });
+        await router.navigate({ to: '/admin/directions-services' });
+      } catch {
+        toastManager.add({
+          title: 'Erreur',
+          description: wording.errorDescription,
+          timeout: 0,
+          data: { icon: 'fr-alert--error' },
+        });
+      }
+    },
+    [editDirectionService, form, router, target, toastManager, wording],
+  );
 
   return (
     <section>
@@ -109,13 +103,10 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
         <form onSubmit={handleSubmit}>
           <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
-          <LocalDirectionServiceSirenaFields
-            kind={target.kind}
-            formData={form.values}
-            validationErrors={form.validationErrors}
-            onChange={form.onChange}
+          <LocalEntiteFormFields
+            form={form}
             leadingField={
-              target.kind === 'service' ? (
+              target.entiteType === 'service' ? (
                 <div className="fr-col-12 fr-col-md-7">
                   <Input
                     className="fr-fieldset__content"
@@ -132,12 +123,6 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
                 </div>
               ) : undefined
             }
-          />
-
-          <LocalDirectionServiceContactFields
-            formData={form.values}
-            validationErrors={form.validationErrors}
-            onChange={form.onChange}
           />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">

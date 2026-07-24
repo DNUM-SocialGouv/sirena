@@ -327,6 +327,11 @@ export const AppEnvSchema = z.object({
     .optional()
     .default('')
     .describe('Identifiant du dashboard Metabase à exposer sur la page statistiques (ex: "42")'),
+  METABASE_DASHBOARD_ID_ADMIN: z
+    .string()
+    .optional()
+    .default('')
+    .describe('Identifiant du dashboard Metabase national (super admin / pilotage national, ex: "43")'),
   APP_ENV: z
     .enum(APP_ENV_VALUES)
     .optional()
@@ -344,6 +349,8 @@ export const CronEnvSchema = z.object({
   CRON_RETRY_IMPORT_REQUETES: z.string().optional().default('3600'),
   CRON_QUEUE_UNPROCESSED_FILES: z.string().optional().default('3600'),
   CRON_FILE_INTEGRITY_CHECK: z.string().optional().default('86400'),
+  CRON_PURGE_ACCESS_LOGS: z.string().optional().default('86400'),
+  ACCESS_LOG_RETENTION_DAYS: z.coerce.number().int().min(1).default(365),
 });
 
 /**
