@@ -335,7 +335,7 @@ export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEn
               LEFT JOIN sire_rpps_data r ON r.id_data = m.identifiant AND m.type = 65
               LEFT JOIN sire_finess_data f ON f.id_data = m.identifiant AND m.type = 64
      WHERE m.id_reclamation = ?
-       and m.identifiant != 0`,
+       and (m.identifiant is null or m.identifiant != 0)`,
       [sirecId],
     ),
     fetchSirecMcIgasMotifs(sirecId),
