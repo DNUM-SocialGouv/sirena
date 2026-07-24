@@ -521,12 +521,15 @@ describe('sirecMigration.repository.ts', () => {
       expect(result).toEqual([]);
     });
 
-    it('should exclude rows with identifiant = 0 in the query', async () => {
+    it('should exclude rows with identifiant = 0 but keep null identifiant in the query', async () => {
       vi.mocked(mariadbPool.query).mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
       await fetchSirecMisEnCauses(42);
 
-      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('m.identifiant != 0'), [42]);
+      expect(mariadbPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('(m.identifiant is null or m.identifiant != 0)'),
+        [42],
+      );
     });
 
     it('should populate motifsIgas for each mis en cause from sire_mc_igas_data', async () => {
