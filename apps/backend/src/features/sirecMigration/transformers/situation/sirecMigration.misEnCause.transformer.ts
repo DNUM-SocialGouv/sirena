@@ -170,9 +170,7 @@ export function transformSirecMisEnCauseSituations(
       fait: {
         ...baseSituation.fait,
         motifs,
-        commentaire: commentaireSuffix
-          ? [baseSituation.fait.commentaire, commentaireSuffix].filter(Boolean).join('\n')
-          : baseSituation.fait.commentaire,
+        commentaire: commentaireSuffix ? commentaireSuffix : undefined,
       },
     };
   });
