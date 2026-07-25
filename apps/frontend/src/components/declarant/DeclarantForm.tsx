@@ -10,6 +10,7 @@ import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useCallback, useState } from 'react';
 import { z } from 'zod';
+import { DomicileFields } from '@/components/common/DomicileFields';
 import type { DeclarantData } from '@/lib/declarant';
 import { declarantFieldMetadata } from '@/lib/fieldMetadata';
 
@@ -292,42 +293,25 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                 <legend>
                   <h2 className="fr-h6 fr-mb-3w">Informations de contact</h2>
                 </legend>
-                <div className="fr-grid-row fr-grid-row--gutters">
-                  <div className="fr-col-12 fr-col-md-6">
-                    <Input
-                      label={declarantFieldMetadata.adresseDomicile.label}
-                      nativeInputProps={{
-                        value: formData.adresseDomicile || '',
-                        onChange: handleInputChange('adresseDomicile'),
-                      }}
-                    />
-                  </div>
-                  <div className="fr-col-12 fr-col-md-2">
-                    <Input
-                      label={declarantFieldMetadata.codePostal.label}
-                      nativeInputProps={{
-                        value: formData.codePostal || '',
-                        onChange: handleInputChange('codePostal'),
-                        maxLength: 5,
-                      }}
-                    />
-                  </div>
-                  <div className="fr-col-12 fr-col-md-4">
-                    <Input
-                      label={declarantFieldMetadata.ville.label}
-                      nativeInputProps={{
-                        value: formData.ville || '',
-                        onChange: handleInputChange('ville'),
-                      }}
-                    />
-                  </div>
-                </div>
+                <DomicileFields
+                  values={{
+                    adresseDomicile: formData.adresseDomicile || '',
+                    codePostal: formData.codePostal || '',
+                    ville: formData.ville || '',
+                  }}
+                  onChange={(v) => setFormData((prev) => ({ ...prev, ...v }))}
+                  labels={{
+                    adresseDomicile: declarantFieldMetadata.adresseDomicile.label,
+                    codePostal: declarantFieldMetadata.codePostal.label,
+                    ville: declarantFieldMetadata.ville.label,
+                  }}
+                />
 
                 <div className="fr-grid-row fr-grid-row--gutters">
                   <div className="fr-col-12 fr-col-md-6">
                     <Input
                       label={declarantFieldMetadata.numeroTelephone.label}
-                      hintText="Format attendu : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
+                      hintText="Format : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
                       state={phoneError ? 'error' : undefined}
                       stateRelatedMessage={phoneError}
                       nativeInputProps={{
