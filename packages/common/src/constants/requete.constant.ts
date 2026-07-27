@@ -194,6 +194,15 @@ export const MOTIF = {
 
 export type Motif = keyof typeof MOTIF;
 
+// Declared motifs that only reach SIRENA through the SIREC migration. They exist in the
+// referential for display, but are not selectable when creating a request and must not be
+// advertised by the third-party enum endpoints (the third-party FaitSchema rejects them).
+export const SIREC_ONLY_MOTIF_DECLARATIF_IDS: Motif[] = [
+  MOTIF.DIFFICULTES_ACCES_SOINS,
+  MOTIF.MALTRAITANCE,
+  MOTIF.PROBLEME_ORGANISATION_FONCTIONNEMENT,
+];
+
 export const motifLabels: Record<Motif, string> = {
   PROBLEME_COMPORTEMENTAL: "Problème lié au comportement d'une personne",
   PROBLEME_FACTURATION: 'Problème lié à la facturation ou aux honoraires',
