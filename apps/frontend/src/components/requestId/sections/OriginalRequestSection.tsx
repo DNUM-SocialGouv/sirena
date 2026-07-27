@@ -10,6 +10,8 @@ import {
   type RequeteProvenance,
   receptionTypeLabels,
   requeteProvenanceLabels,
+  SIREC_ONLY_RECEPTION_TYPE_IDS,
+  type SirecOnlyReceptionType,
 } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
 import { clsx } from 'clsx';
@@ -187,6 +189,9 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
   const normalizeReceptionType = (value: ReceptionType | '') =>
     value === RECEPTION_TYPE.FORMULAIRE ? null : value || null;
 
+  const isSirecOnlyReceptionType = (value: ReceptionType): value is SirecOnlyReceptionType =>
+    (SIREC_ONLY_RECEPTION_TYPE_IDS as readonly ReceptionType[]).includes(value);
+
   const receptionOptions = useMemo(
     () =>
       Object.values(RECEPTION_TYPE).flatMap((value) => {
@@ -216,7 +221,12 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
 
     try {
       if (!requestId) {
-        const createdRequete = await createRequeteMutation.mutateAsync(payload);
+        // SIREC-only types can't be picked in the create dropdown; coerce to satisfy the strict type.
+        const { receptionTypeId } = payload;
+        const createdRequete = await createRequeteMutation.mutateAsync({
+          ...payload,
+          receptionTypeId: receptionTypeId && !isSirecOnlyReceptionType(receptionTypeId) ? receptionTypeId : null,
+        });
         navigate({ to: '/request/$requestId', params: { requestId: createdRequete.id } });
         setIsEdit(false);
         onEdit?.();

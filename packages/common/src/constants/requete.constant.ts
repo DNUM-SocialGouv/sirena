@@ -729,6 +729,14 @@ export const RECEPTION_TYPE = {
 
 export type ReceptionType = keyof typeof RECEPTION_TYPE;
 
+// SIREC-only reception types: accepted when editing a migrated request, never at creation.
+export const SIREC_ONLY_RECEPTION_TYPE_IDS = [
+  RECEPTION_TYPE.INFO_MEDIA,
+  RECEPTION_TYPE.PORTAIL_SIGNALEMENTS,
+  RECEPTION_TYPE.SIGNAL_CONSO,
+] as const;
+export type SirecOnlyReceptionType = (typeof SIREC_ONLY_RECEPTION_TYPE_IDS)[number];
+
 export const receptionTypeLabels: Record<ReceptionType, string> = {
   EMAIL: 'Courrier électronique',
   COURRIER: 'Courrier postal',
@@ -745,9 +753,7 @@ export const receptionTypeLabels: Record<ReceptionType, string> = {
 // import, the others only arrive through the SIREC migration.
 export const NON_SELECTABLE_RECEPTION_TYPES: ReceptionType[] = [
   RECEPTION_TYPE.FORMULAIRE,
-  RECEPTION_TYPE.INFO_MEDIA,
-  RECEPTION_TYPE.PORTAIL_SIGNALEMENTS,
-  RECEPTION_TYPE.SIGNAL_CONSO,
+  ...SIREC_ONLY_RECEPTION_TYPE_IDS,
 ];
 
 export const REQUETE_PROVENANCE = {
