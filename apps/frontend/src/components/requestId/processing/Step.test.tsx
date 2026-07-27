@@ -247,4 +247,37 @@ describe('Step', () => {
 
     expect(screen.getByText(/Envoyé automatiquement le 20\/05\/2026/)).toBeInTheDocument();
   });
+
+  it('labels the creation step of an automatically-created request as "Fait automatiquement le …"', () => {
+    render(
+      <Step
+        {...makeStep({
+          type: REQUETE_ETAPE_TYPES.CREATION,
+          requete: { dematSocialId: 1, createdById: null, thirdPartyAccountId: null, createdBy: null },
+        })}
+      />,
+    );
+
+    expect(screen.getByText(/Fait automatiquement le 19\/05\/2026/)).toBeInTheDocument();
+    expect(screen.queryByText(/Requête créée le/)).not.toBeInTheDocument();
+  });
+
+  it('labels the creation step of a manually-created request as "Requête créée le … par …"', () => {
+    render(
+      <Step
+        {...makeStep({
+          type: REQUETE_ETAPE_TYPES.CREATION,
+          requete: {
+            dematSocialId: null,
+            createdById: 'AGENT-1',
+            thirdPartyAccountId: null,
+            createdBy: { prenom: 'jeanne', nom: 'moulon' },
+          },
+        })}
+      />,
+    );
+
+    expect(screen.getByText(/Requête créée le 19\/05\/2026 par/)).toBeInTheDocument();
+    expect(screen.queryByText(/Fait automatiquement/)).not.toBeInTheDocument();
+  });
 });

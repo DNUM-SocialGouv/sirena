@@ -92,12 +92,13 @@ const getStepSubtitle = ({
     );
   }
   if (type === REQUETE_ETAPE_TYPES.CREATION) {
+    // A request with no author agent was created automatically (ingested from DematSocial, SIREC, ...).
     return requete?.createdBy ? (
       <>
         Requête créée le {formatDate(createdAt)} par {formatAgent(requete.createdBy)}
       </>
     ) : (
-      `Requête créée le ${formatDate(createdAt)}`
+      `Fait automatiquement le ${formatDate(createdAt)}`
     );
   }
   if (type === REQUETE_ETAPE_TYPES.REOPEN) {

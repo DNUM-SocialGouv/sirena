@@ -2173,7 +2173,8 @@ const getEtapePdfSubtitle = (
   if (type === REQUETE_ETAPE_TYPES.CREATION) {
     const agentName = formatAgentPdf(requeteCreatedBy);
     const date = formatDateFr(createdAt);
-    return agentName ? `Requête créée le ${date} par ${agentName}` : `Requête créée le ${date}`;
+    // A request with no author agent was created automatically (ingested from DematSocial, SIREC, ...).
+    return agentName ? `Requête créée le ${date} par ${agentName}` : `Fait automatiquement le ${date}`;
   }
 
   if (type === REQUETE_ETAPE_TYPES.REOPEN) {

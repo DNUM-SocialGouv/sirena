@@ -3625,6 +3625,50 @@ describe('requetesEntite.service', () => {
       expect(paragraphs).toContain('Envoyé le 13/06/2026 par Claire Petit');
       expect(paragraphs.some((text) => typeof text === 'string' && text.startsWith('Ajouté le'))).toBe(false);
     });
+
+    it('labels the creation step of an automatically-created request as "Fait automatiquement"', async () => {
+      const paragraphSpy = vi.spyOn(RequetePdfBuilder.prototype, 'paragraph');
+      vi.spyOn(RequetePdfBuilder.prototype, 'toBuffer').mockResolvedValue(Buffer.from('%PDF-test'));
+
+      vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statut: { id: 'EN_COURS', label: 'En cours' },
+        priorite: null,
+        requete: {
+          ...mockRequeteEntite.requete,
+          receptionType: null,
+          provenance: null,
+          // No author agent: the request was ingested automatically.
+          createdBy: null,
+          declarant: null,
+          participant: null,
+          fichiersRequeteOriginale: [],
+          situations: [],
+        },
+        requeteEtape: [
+          {
+            id: 'etapeCreation',
+            type: REQUETE_ETAPE_TYPES.CREATION,
+            statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+            statut: { id: 'FAIT', label: 'Fait' },
+            clotureReason: [],
+            createdBy: null,
+            nom: 'Création',
+            createdAt: new Date('2026-06-10'),
+            updatedAt: new Date('2026-06-10'),
+            clotureEffectiveDate: null,
+            uploadedFiles: [],
+            notes: [],
+          },
+        ],
+      } as unknown as Awaited<ReturnType<typeof prisma.requeteEntite.findFirst>>);
+
+      await generateRequetePdfBuffer('req123', 'ent123');
+
+      const paragraphs = paragraphSpy.mock.calls.map(([text]) => text);
+      expect(paragraphs).toContain('Fait automatiquement le 10/06/2026');
+      expect(paragraphs.some((text) => typeof text === 'string' && text.startsWith('Requête créée le'))).toBe(false);
+    });
   });
 
   describe('createChangeLogForRequeteEntite', () => {
