@@ -105,6 +105,7 @@ describe('sirecMigration.service.ts', () => {
       receptionDate,
       receptionTypeId: 'EMAIL',
       prioriteId: 'HAUTE',
+      provenanceId: null as string | null,
       declarant: null as {
         estVictime: boolean | null;
         veutGarderAnonymat: boolean | null;
@@ -197,8 +198,18 @@ describe('sirecMigration.service.ts', () => {
           sirecId: 42,
           receptionDate,
           receptionTypeId: 'EMAIL',
+          provenanceId: null,
           dateDemandeDeclarant: null,
         },
+        select: { id: true },
+      });
+    });
+
+    it('should create Requete with provenanceId when set', async () => {
+      await saveFromSirec({ ...data, provenanceId: 'PREMIER_MINISTRE' });
+
+      expect(prisma.requete.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ provenanceId: 'PREMIER_MINISTRE' }),
         select: { id: true },
       });
     });

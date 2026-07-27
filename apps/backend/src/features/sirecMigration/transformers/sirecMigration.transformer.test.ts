@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { SirecTranscoError } from '../transco/sirecTransco.error.js';
 import { transformSirecReclamation } from './sirecMigration.transformer.js';
 
 vi.mock('../transco/affectation/affectation.transco.js', () => ({
@@ -132,6 +133,7 @@ describe('sirecMigration.transformer.ts', () => {
       receptionDate: new Date('2024-01-15'),
       receptionTypeId: 'EMAIL',
       prioriteId: 'HAUTE',
+      provenanceId: null,
       requeteStatutId: 'EN_COURS',
       sysLastModDate: new Date('2024-01-17'),
       sysCreationDate: new Date('2024-01-20'),
@@ -220,6 +222,42 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     expect(result.prioriteId).toBeNull();
+  });
+
+  it('should map the first provenance id_provenance to provenanceId via transco', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      provenances: [{ id_provenance: 26, id_group: 693, date_signalement: null, reponse_attendue: null }],
+    });
+
+    expect(result.provenanceId).toBe('PREMIER_MINISTRE');
+  });
+
+  it('should take the first provenance when there are several', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      provenances: [
+        { id_provenance: 26, id_group: 693, date_signalement: null, reponse_attendue: null },
+        { id_provenance: 28, id_group: 693, date_signalement: null, reponse_attendue: null },
+      ],
+    });
+
+    expect(result.provenanceId).toBe('PREMIER_MINISTRE');
+  });
+
+  it('should map an empty provenances array to null provenanceId', () => {
+    const result = transformSirecReclamation({ ...sirecData, provenances: [] });
+
+    expect(result.provenanceId).toBeNull();
+  });
+
+  it('should throw SirecTranscoError when the first provenance id_provenance is unknown', () => {
+    expect(() =>
+      transformSirecReclamation({
+        ...sirecData,
+        provenances: [{ id_provenance: 9999, id_group: 693, date_signalement: null, reponse_attendue: null }],
+      }),
+    ).toThrow(SirecTranscoError);
   });
 
   it('should map sys_last_mod_date to sysLastModDate', () => {
@@ -327,10 +365,10 @@ describe('sirecMigration.transformer.ts', () => {
       // provenance id_group: 693 → same ARS Normandie
       const result = transformSirecReclamation({
         ...sirecData,
-        provenances: [{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }],
+        provenances: [{ id_provenance: 26, id_group: 693, date_signalement: null, reponse_attendue: null }],
       });
 
-      expect(result.etapes[0].nom).toBe("Réception à l'institution de provenance : Institution 1");
+      expect(result.etapes[0].nom).toBe("Réception à l'institution de provenance : Premier Ministre");
       expect(result.etapes[0].entiteId).toBe('4af829ff-07c1-425d-85d6-83b5f97e4422');
     });
   });
