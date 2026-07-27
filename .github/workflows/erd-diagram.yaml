@@ -21,7 +21,7 @@ jobs:
     # Pure Node check (no install, no browser): docs/prisma.svg must carry
     # the current schema fingerprint.
     steps:
-      - uses: actions/checkout@1cce3390c2bfda521930d01229c073c7ff920824 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
         with:
           fetch-depth: 1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
