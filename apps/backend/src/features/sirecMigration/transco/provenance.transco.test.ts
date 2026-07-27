@@ -45,7 +45,7 @@ describe('provenance.transco.ts', () => {
     } catch (err) {
       expect(err).toBeInstanceOf(SirecTranscoError);
       expect((err as SirecTranscoError).idDico).toBe(9999);
-      expect((err as SirecTranscoError).tableName).toBe('requeteProvenance');
+      expect((err as SirecTranscoError).tableName).toBe('provenance');
     }
   });
 });

@@ -215,7 +215,7 @@ export async function fetchSirecProvenances(sirecId: number): Promise<SirecProve
      FROM sire_provenances_data p
               INNER JOIN sire_provenances_data_group pg
                          ON pg.id_data = p.id_data and pg.id_group != ${SIREC_NATIONAL_ENTITE_ID} and pg.id_group != 3
-     WHERE p.id_reclamation = ?`,
+     WHERE p.id_reclamation = ? ORDER BY sys_creation_date, id_data`,
     [sirecId],
   );
   return rows.map((row) => ({

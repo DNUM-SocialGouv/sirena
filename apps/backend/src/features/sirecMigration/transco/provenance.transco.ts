@@ -1,7 +1,7 @@
-import { REQUETE_PROVENANCE } from '@sirena/common/constants';
+import { REQUETE_PROVENANCE, type RequeteProvenance } from '@sirena/common/constants';
 import { SirecTranscoError } from './sirecTransco.error.js';
 
-const PROVENANCE_TRANSCO: Record<number, string> = {
+const PROVENANCE_TRANSCO: Record<number, RequeteProvenance> = {
   26: REQUETE_PROVENANCE.PREMIER_MINISTRE,
   28: REQUETE_PROVENANCE.ELUS,
   30: REQUETE_PROVENANCE.MINISTERES,
@@ -26,9 +26,9 @@ const PROVENANCE_TRANSCO: Record<number, string> = {
   806: REQUETE_PROVENANCE.DDETS_DREETS,
 };
 
-export function transcodeProvenance(idProvenance: number | null): string | null {
+export function transcodeProvenance(idProvenance: number | null): RequeteProvenance | null {
   if (idProvenance === null) return null;
   const provenanceId = PROVENANCE_TRANSCO[idProvenance];
-  if (provenanceId === undefined) throw new SirecTranscoError(idProvenance, 'requeteProvenance');
+  if (provenanceId === undefined) throw new SirecTranscoError(idProvenance, 'provenance');
   return provenanceId;
 }

@@ -260,6 +260,15 @@ describe('sirecMigration.transformer.ts', () => {
     ).toThrow(SirecTranscoError);
   });
 
+  it('should throw SirecTranscoError when the first provenance id_provenance is not mapped', () => {
+    expect(() =>
+      transformSirecReclamation({
+        ...sirecData,
+        provenances: [{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }],
+      }),
+    ).toThrow(SirecTranscoError);
+  });
+
   it('should map sys_last_mod_date to sysLastModDate', () => {
     const date = new Date('2024-03-20');
     const result = transformSirecReclamation({

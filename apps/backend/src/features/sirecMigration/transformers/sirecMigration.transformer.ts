@@ -50,14 +50,14 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
   const declarant = transformSirecDeclarant(sirecData.reclamation);
   const victime = transformSirecVictime(sirecData.reclamation);
   const { requeteStatutId, etapes: clotureEtapes } = transformSirecCloture(sirecData, arsEntiteIds);
-
+  const premiereProvenance = sirecData.provenances[0];
   return {
     sirenaId: generateSirenaIdFromSirecReclamation(sirecData.reclamation),
     sirecId: sirecData.reclamation.id_data,
     receptionDate: sirecData.reclamation.r_recept_date ? toSirecLocalDate(sirecData.reclamation.r_recept_date) : null,
     receptionTypeId: transcodeReceptionType(sirecData.reclamation.reception),
     prioriteId: sirecData.reclamation.prioritaire === 1 ? REQUETE_PRIORITE_TYPES.HAUTE : null,
-    provenanceId: transcodeProvenance(sirecData.provenances[0]?.id_provenance ?? null),
+    provenanceId: transcodeProvenance(premiereProvenance?.id_provenance ?? null),
     requeteStatutId,
     sysLastModDate: sirecData.reclamation.sys_last_mod_date,
     sysCreationDate: sirecData.reclamation.sys_creation_date,
