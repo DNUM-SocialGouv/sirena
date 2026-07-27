@@ -1,8 +1,8 @@
 import { DEMARCHES_ENGAGEES } from '@sirena/common/constants';
 import type { SirecReclamationData } from '../../sirecMigration.repository.js';
-import { transcodeDepartement } from '../../transco/departement.transco.js';
 import { SIREC_BOOLEAN_TRANSCO } from '../../transco/dictionnaire.transco.js';
 import { transcodeDomaineFonctionnel } from '../../transco/domaineFonctionnel.transco.js';
+import { transcodeSimpleField } from '../../transco/simpleField.transco.js';
 import { SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import type { SirenaAutreMisEnCauseData } from './sirecMigration.autre.transformer.js';
 import { type SirenaFaitData, transformSirecFait } from './sirecMigration.fait.transformer.js';
@@ -55,6 +55,6 @@ export function transformSirecSituation(sirecData: SirecReclamationData, entiteI
     domainesFonctionnelsId: transcodeDomaineFonctionnel(sirecData.reclamation.domaine),
     estLieAuSignalement: resolveEstLieAuSignalement(ei_avere, num_sign_assoc),
     numerosSignalement: num_sign_assoc ?? '',
-    sirecDepartement: transcodeDepartement(sirecData.reclamation.departement),
+    sirecDepartement: transcodeSimpleField(sirecData.reclamation.departement, 'departement'),
   };
 }

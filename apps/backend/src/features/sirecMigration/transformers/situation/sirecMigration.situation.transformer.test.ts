@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SirecReclamationData } from '../../sirecMigration.repository.js';
+import { SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import { transformSirecSituation } from './sirecMigration.situation.transformer.js';
 
 describe('sirecMigration.situation.transformer.ts', () => {
@@ -172,7 +173,7 @@ describe('sirecMigration.situation.transformer.ts', () => {
     it('should throw SirecTranscoError when departement has an unknown id', () => {
       expect(() =>
         transformSirecSituation({ ...sirecData, reclamation: { ...sirecData.reclamation, departement: 99999 } }, []),
-      ).toThrow();
+      ).toThrow(SirecTranscoError);
     });
   });
 });
