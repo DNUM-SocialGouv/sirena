@@ -1,0 +1,15 @@
+apiVersion: v2
+name: valkey
+version: 0.1.0
+description: >-
+  Cache Valkey déployé dans le cluster, pour les environnements qui n'utilisent
+  pas de cache managé. Wrapper autour du chart officiel valkey-io/valkey-helm.
+dependencies:
+  - name: valkey
+    version: 0.11.0
+    repository: "https://valkey.io/valkey-helm/"
+    # Le sous-chart n'est rendu que si `valkey.enabled` est vrai dans les values
+    # d'environnement. Helm préfixe automatiquement ce chemin par celui du chart
+    # qui le déclare : `enabled` est donc résolu comme `valkey.enabled` dans les
+    # values du chart racine (`sirena`), d'où la clé déclarée dans values.yaml.
+    condition: enabled
