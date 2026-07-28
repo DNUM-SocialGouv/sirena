@@ -365,7 +365,7 @@ describe('Entites endpoints: /entites', () => {
       ['organizationalUnit', 'other-unit'],
       ['emailDomain', '@other.fr'],
       ['unknownProperty', 'other'],
-    ])('rejects caller-controlled or unknown field %s', async (field, value) => {
+    ])('rejects caller-controlled or unknown field %s with value %j', async (field, value) => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       const input = {
         email: '',
