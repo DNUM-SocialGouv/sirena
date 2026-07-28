@@ -108,10 +108,11 @@ export const GetEntitesListAdminResponseSchema = z.array(
 export const EntiteAdministrativeAdminLocalSchema = EntiteDetailsSchema;
 
 export const GetEntiteAdministrativeAdminLocalResponseSchema = EntiteAdministrativeAdminLocalSchema;
-export const EditEntiteAdministrativeAdminLocalInputSchema = EntiteContactFieldsSchema.extend({
+export const EditEntiteContactInputSchema = EntiteContactFieldsSchema.extend({
   email: emailSchema.or(z.literal('')),
   emailContactUsager: emailSchema.or(z.literal('')),
   telContactUsager: phoneSchema.or(z.literal('')),
+  adresseContactUsager: z.string().max(500),
 }).strict();
 export const EditEntiteAdministrativeAdminLocalResponseSchema = EntiteAdministrativeAdminLocalSchema;
 
@@ -163,21 +164,17 @@ export const GetEntitiesChainResponseSchema = z.array(
   }),
 );
 
-export const CreateChildEntiteAdminInputSchema = EntiteContactFieldsSchema.extend({
+export const CreateDirectionOrServiceAdminInputSchema = EntiteContactFieldsSchema.extend({
   nomComplet: z.string().trim().min(1),
   label: z.string().trim().min(1),
   isActive: z.boolean(),
 });
 
-export const EditDirectionServiceAdminLocalInputSchema = CreateChildEntiteAdminInputSchema.omit({
-  isActive: true,
-}).strict();
-
-export const CreateChildEntiteAdminResponseSchema = CreateChildEntiteAdminInputSchema.extend({
+export const CreateDirectionOrServiceAdminResponseSchema = CreateDirectionOrServiceAdminInputSchema.extend({
   id: z.string(),
 });
 
-export const CreateDirectionAdminLocalInputSchema = CreateChildEntiteAdminInputSchema.omit({
+export const CreateDirectionAdminLocalInputSchema = CreateDirectionOrServiceAdminInputSchema.omit({
   isActive: true,
 })
   .extend({
@@ -187,10 +184,10 @@ export const CreateDirectionAdminLocalInputSchema = CreateChildEntiteAdminInputS
   })
   .strict();
 
-export const CreateDirectionAdminLocalResponseSchema = CreateChildEntiteAdminResponseSchema;
+export const CreateDirectionAdminLocalResponseSchema = CreateDirectionOrServiceAdminResponseSchema;
 
 export const CreateServiceAdminLocalInputSchema = CreateDirectionAdminLocalInputSchema.extend({
   directionId: z.string().optional(),
 }).strict();
 
-export const CreateServiceAdminLocalResponseSchema = CreateChildEntiteAdminResponseSchema;
+export const CreateServiceAdminLocalResponseSchema = CreateDirectionOrServiceAdminResponseSchema;
