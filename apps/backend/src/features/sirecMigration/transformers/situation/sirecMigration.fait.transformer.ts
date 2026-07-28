@@ -1,7 +1,6 @@
 import type { SirecReclamationData } from '../../sirecMigration.repository.js';
-import { transcodeCourrierSignal } from '../../transco/courrierSignal.transco.js';
-import { transcodeDest } from '../../transco/dest.transco.js';
 import { transcodeMotifsDeclaratifs } from '../../transco/motifsDeclaratifs.transco.js';
+import { transcodeSimpleField } from '../../transco/simpleField.transco.js';
 
 export interface SirenaFaitData {
   commentaire?: string;
@@ -11,8 +10,8 @@ export interface SirenaFaitData {
 }
 
 export function transformSirecFait(sirecData: SirecReclamationData): SirenaFaitData {
-  const destLabel = transcodeDest(sirecData.reclamation.dest);
-  const courrierSignalLabel = transcodeCourrierSignal(sirecData.reclamation.courrier_signal);
+  const destLabel = transcodeSimpleField(sirecData.reclamation.dest, 'dest');
+  const courrierSignalLabel = transcodeSimpleField(sirecData.reclamation.courrier_signal, 'courrierSignal');
   const autresPrecisionsParts = [
     sirecData.reclamation.prioritaire_precisez
       ? `Précision sur le caractère prioritaire : ${sirecData.reclamation.prioritaire_precisez}`
