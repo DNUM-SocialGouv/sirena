@@ -8,7 +8,7 @@ import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHand
 import { parseCard } from '@/components/statistics/chartData';
 import { ExportRequetesButton } from '@/components/statistics/ExportRequetesButton';
 import { PeriodFilter } from '@/components/statistics/PeriodFilter';
-import { describePeriod, PERIOD_PRESETS, type PeriodSelection, resolveDateRange } from '@/components/statistics/period';
+import { PERIOD_PRESETS, type PeriodSelection, resolveDateRange } from '@/components/statistics/period';
 import { StatChart } from '@/components/statistics/StatChart';
 import { StatTable } from '@/components/statistics/StatTable';
 import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
@@ -69,8 +69,7 @@ function KpiCard({ card }: { card: StatisticsCard }) {
 
   return (
     <p className={styles['kpi-card']}>
-      <span className={styles['kpi-value']}>{display}</span>
-      <span className={styles['kpi-label']}>{card.name}</span>
+      <span className={styles['kpi-value']}>{display}</span> <span className={styles['kpi-label']}>{card.name}</span>
     </p>
   );
 }
@@ -168,12 +167,7 @@ export function RouteComponent() {
     return <Navigate to={isSuperAdmin ? '/admin/users' : '/home'} />;
   }
 
-  const periodLabel = describePeriod(selection);
-  const statusMessage = query.isFetching
-    ? 'Mise à jour des indicateurs en cours…'
-    : query.isSuccess
-      ? `Indicateurs à jour${periodLabel ? ` pour la période : ${periodLabel}` : ''}.`
-      : '';
+  const statusMessage = query.isFetching ? 'Mise à jour des indicateurs en cours…' : '';
 
   return (
     <AuthLayout>
