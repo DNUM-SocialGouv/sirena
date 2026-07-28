@@ -164,7 +164,21 @@ Points d'attention :
 - `{{start_date}}`/`{{end_date}}` doivent apparaître dans une clause `WHERE` (ou `AND`) déjà
   amorcée, sinon préfixer le premier bloc par `[[ WHERE ... ]]` ;
 - une carte sans dimension temporelle pertinente n'a simplement pas besoin de ces clauses (ne
-  pas mapper les paramètres du dashboard dessus).
+  pas mapper les paramètres du dashboard dessus) ;
+- filtrer sur la **même colonne de date que les cartes KPI** (`r."createdAt"`) quand le
+  pourcentage d'une carte a pour dénominateur un effectif affiché ailleurs sur la page, sinon
+  les deux chiffres ne portent pas sur le même ensemble. Attention aux colonnes **nullables**
+  (`Requete."receptionDate"` l'est) : filtrer dessus écarte silencieusement les lignes à `NULL`.
+
+Deux pièges hors filtres, mais qui se paient sur ces mêmes cartes :
+
+- **regrouper sur un identifiant, jamais sur un libellé.** `MotifEnum.label` n'est pas unique :
+  8 motifs différents s'appellent « Autres » (un par catégorie parente, l'id étant de la forme
+  `PARENT/ENFANT`). Un `GROUP BY label` fusionne donc des motifs sans rapport. Les libellés des
+  catégories parentes ne sont pas en base : ils vivent dans
+  `packages/common/src/constants/motifs.constant.ts`.
+- **dimension multivaluée** (plusieurs motifs ou plusieurs motifs de clôture par requête) :
+  dédoublonner par requête et calculer la part en SQL — cf. l'exemple 2 ci-dessous.
 
 ### Exemple 1 — Carte 45 (« Combien de requêtes de l'ARS NOR ? »)
 
@@ -184,34 +198,62 @@ WHERE
   [[ AND r."receptionDate" <= {{end_date}} ]];
 ```
 
-### Exemple 2 — Carte 47 (« Répartition par raison de clôture »)
+### Exemple 2 — Carte 47 (« Répartition des requêtes clôturées par motif de clôture »)
 
-`RequeteEntite re` est déjà relié à `RequeteEtape et`. La clôture étant un événement daté, on
-filtre ici sur la date de l'étape de clôture `et."createdAt"` (adapter selon la sémantique
-voulue) :
+Ici les clauses optionnelles portent sur `r."createdAt"`, comme les cartes KPI (45, 48, 49, 50,
+51), pour que le dénominateur du pourcentage corresponde exactement au KPI « requêtes
+clôturées » affiché sur la même page.
+
+> ⚠️ **Dimension multivaluée.** Une requête peut être clôturée avec **plusieurs motifs**. Le
+> pourcentage ne peut donc pas être déduit du total des lignes (ce que ferait le front à défaut
+> de colonne de part) : il se calcule en SQL sur le **nombre de requêtes clôturées**, et la
+> somme des parts dépasse alors 100 %. Il faut aussi dédoublonner par **requête** (`DISTINCT
+> requete_id`) et non par étape : une requête peut porter plusieurs étapes de clôture.
 
 ```sql
+WITH requetes_cloturees AS (
+  SELECT DISTINCT re."requeteId" AS requete_id, re."entiteId" AS entite_id
+  FROM "RequeteEntite" re
+  JOIN "Entite"  e ON e.id = re."entiteId"
+  JOIN "Requete" r ON r.id = re."requeteId"
+  WHERE re."statutId" = 'CLOTUREE'
+    AND e.label = {{entity_label}}
+    [[ AND r."createdAt" >= {{start_date}} ]]
+    [[ AND r."createdAt" <  ({{end_date}}::date + INTERVAL '1 day') ]]
+),
+total AS (
+  SELECT COUNT(*) AS nb_total FROM requetes_cloturees
+),
+requete_motif AS (
+  -- 1 ligne par (requête, motif) : dédoublonne les étapes de clôture multiples
+  SELECT DISTINCT rc.requete_id, cr.label AS motif
+  FROM requetes_cloturees rc
+  JOIN "RequeteEtape" et
+    ON et."requeteId" = rc.requete_id
+   AND et."entiteId"  = rc.entite_id
+   AND et."statutId"  = 'CLOTUREE'
+  JOIN "_RequeteClotureReasonEnumToRequeteEtape" j ON j."B" = et.id
+  JOIN "RequeteClotureReasonEnum" cr               ON cr.id = j."A"
+),
+par_motif AS (
+  SELECT motif, COUNT(*) AS nb_requetes
+  FROM requete_motif
+  GROUP BY motif
+)
 SELECT
-  cr.label              AS raison_cloture,
-  COUNT(DISTINCT et.id) AS nb_requetes
-FROM "RequeteEntite" re
-JOIN "Entite" e
-  ON e.id = re."entiteId"
-JOIN "RequeteEtape" et
-  ON et."requeteId" = re."requeteId"
- AND et."entiteId"  = re."entiteId"
- AND et."statutId"  = 'CLOTUREE'
-JOIN "_RequeteClotureReasonEnumToRequeteEtape" j
-  ON j."B" = et.id
-JOIN "RequeteClotureReasonEnum" cr
-  ON cr.id = j."A"
-WHERE re."statutId" = 'CLOTUREE'
-  -- AND e.label = {{entity_label}}
-  [[ AND et."createdAt" >= {{start_date}} ]]
-  [[ AND et."createdAt" <= {{end_date}} ]]
-GROUP BY cr.label
-ORDER BY nb_requetes DESC;
+  pm.motif                                                 AS "Motif de clôture",
+  pm.nb_requetes                                           AS "Nombre de requêtes clôturées",
+  ROUND(100.0 * pm.nb_requetes / NULLIF(t.nb_total, 0), 1) AS "Part des requêtes clôturées (%)"
+FROM par_motif pm
+CROSS JOIN total t
+WHERE pm.nb_requetes > 0
+ORDER BY pm.nb_requetes DESC;
 ```
+
+> Les **alias de colonnes sont les en-têtes du tableau** affiché sur `/statistiques` : les
+> nommer explicitement est le seul moyen de lever l'ambiguïté du pourcentage. Le front
+> reconnaît la colonne de part à son `%` (ou au type sémantique `type/Percentage`) et l'affiche
+> telle quelle, sans recalcul.
 
 > `end_date` est **inclusive** : si la colonne est un `timestamp` (heure comprise), une date
 > de fin `2026-03-31` exclut les événements du 31 après 00:00. Pour inclure toute la journée,

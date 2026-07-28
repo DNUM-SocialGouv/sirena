@@ -114,16 +114,7 @@ function ChartCard({ card }: { card: StatisticsCard }) {
   return (
     <>
       <h2 className={fr.cx('fr-h5')}>{card.name}</h2>
-      <StatTable
-        caption={card.name}
-        items={parsed.items}
-        total={parsed.total}
-        dimensionLabel={parsed.dimensionLabel}
-        metricLabel={parsed.metricLabel}
-        percentLabel={parsed.percentLabel}
-        hasPrecomputedPercent={parsed.hasPrecomputedPercent}
-        hideCaption
-      />
+      <StatTable caption={card.name} parsed={parsed} hideCaption />
     </>
   );
 }
