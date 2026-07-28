@@ -7,6 +7,7 @@ import {
   ROLES,
   requeteEtapeStatutType,
 } from '@sirena/common/constants';
+import { isAutomaticRequest } from '@sirena/common/utils';
 import { Toast } from '@sirena/ui';
 
 import { clsx } from 'clsx';
@@ -92,6 +93,11 @@ const getStepSubtitle = ({
     );
   }
   if (type === REQUETE_ETAPE_TYPES.CREATION) {
+    // An ingested request (DematSocial, SIREC, third-party API) was created automatically.
+    if (isAutomaticRequest(requete)) {
+      return `Fait automatiquement le ${formatDate(createdAt)}`;
+    }
+    // Otherwise the request was created manually; the author agent may be missing if the account was deleted.
     return requete?.createdBy ? (
       <>
         Requête créée le {formatDate(createdAt)} par {formatAgent(requete.createdBy)}
@@ -123,11 +129,10 @@ const getStepSubtitle = ({
       if (arFile) {
         return `Envoyé automatiquement le ${formatDate(arFile.createdAt)}`;
       }
-      const isManualRequest = !!requete?.createdBy;
-      if (isManualRequest) {
-        return `Marqué comme fait le ${formatDate(updatedAt)}`;
+      if (isAutomaticRequest(requete)) {
+        return `Envoyé automatiquement le ${formatDate(updatedAt)}`;
       }
-      return `Envoyé automatiquement le ${formatDate(updatedAt)}`;
+      return `Marqué comme fait le ${formatDate(updatedAt)}`;
     }
     return `Ajouté automatiquement le ${formatDate(createdAt)}`;
   }

@@ -14,11 +14,11 @@ describe('receptionType.transco.ts', () => {
     expect(transcodeReceptionType(803)).toBe('FORMULAIRE');
   });
 
-  it('should transcode multiple SIREC ids mapping to the same SIRENA value', () => {
-    expect(transcodeReceptionType(89)).toBe('AUTRE');
-    expect(transcodeReceptionType(338)).toBe('AUTRE');
+  it('should transcode SIREC-only reception types to their dedicated SIRENA values', () => {
+    expect(transcodeReceptionType(89)).toBe('INFO_MEDIA');
+    expect(transcodeReceptionType(338)).toBe('PORTAIL_SIGNALEMENTS');
     expect(transcodeReceptionType(340)).toBe('AUTRE');
-    expect(transcodeReceptionType(825)).toBe('AUTRE');
+    expect(transcodeReceptionType(825)).toBe('SIGNAL_CONSO');
   });
 
   it('should throw SirecTranscoError for an unknown idSirec', () => {

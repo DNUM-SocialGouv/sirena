@@ -66,7 +66,7 @@ describe('ColumnScrollControls', () => {
     });
     render(<ColumnScrollControls containerRef={{ current: container }} tableId="table-42" />);
 
-    expect(screen.getByRole('toolbar', { name: /Navigation horizontale des colonnes/ })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: /Navigation horizontale des colonnes/ })).toBeInTheDocument();
     expect(getPrevButton()).toHaveAttribute('aria-controls', 'table-42');
     expect(getNextButton()).toHaveAttribute('aria-controls', 'table-42');
   });

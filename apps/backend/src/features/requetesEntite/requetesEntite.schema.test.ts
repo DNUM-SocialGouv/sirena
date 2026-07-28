@@ -1,5 +1,10 @@
+import { RECEPTION_TYPE } from '@sirena/common/constants';
 import { describe, expect, it } from 'vitest';
-import { GetRequetesEntiteQuerySchema } from './requetesEntite.schema.js';
+import {
+  CreateRequeteBodySchema,
+  GetRequetesEntiteQuerySchema,
+  UpdateTypeAndDateRequeteBodySchema,
+} from './requetesEntite.schema.js';
 
 describe('GetRequetesEntiteQuerySchema - statutIds', () => {
   it('accepts a comma-separated list of valid statut ids', () => {
@@ -19,6 +24,23 @@ describe('GetRequetesEntiteQuerySchema - statutIds', () => {
 
   it('allows statutIds to be omitted', () => {
     const result = GetRequetesEntiteQuerySchema.safeParse({});
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('receptionTypeId validation - creation vs edition', () => {
+  it('accepts a UI-selectable reception type at creation', () => {
+    const result = CreateRequeteBodySchema.safeParse({ receptionTypeId: RECEPTION_TYPE.EMAIL });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a SIREC-only reception type at creation', () => {
+    const result = CreateRequeteBodySchema.safeParse({ receptionTypeId: RECEPTION_TYPE.INFO_MEDIA });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts a SIREC-only reception type when editing a migrated request', () => {
+    const result = UpdateTypeAndDateRequeteBodySchema.safeParse({ receptionTypeId: RECEPTION_TYPE.INFO_MEDIA });
     expect(result.success).toBe(true);
   });
 });

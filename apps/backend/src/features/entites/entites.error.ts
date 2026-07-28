@@ -5,9 +5,9 @@ export class EntiteNotFoundError extends Error {
   }
 }
 
-export class EntiteChildCreationForbiddenError extends Error {
-  constructor(message = 'Child entite creation is not allowed for this parent') {
+export class DirectionOrServiceCreationForbiddenError extends Error {
+  constructor(message = 'Direction or Service creation is not allowed for this parent') {
     super(message);
-    this.name = 'EntiteChildCreationForbiddenError';
+    this.name = 'DirectionOrServiceCreationForbiddenError';
   }
 }
