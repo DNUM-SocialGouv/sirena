@@ -4,7 +4,7 @@ import { handleRequestErrors } from '@/lib/api/tanstackQuery.ts';
 import type { QueryParams } from '@/types/pagination.type.ts';
 
 export type EditEntiteAdminInput = InferRequestType<(typeof client.entites.admin)[':id']['$patch']>['json'];
-export type CreateChildEntiteAdminInput = InferRequestType<
+export type CreateDirectionOrServiceAdminInput = InferRequestType<
   (typeof client.entites.admin)[':id']['children']['$post']
 >['json'];
 export type CreateDirectionAdminLocalInput = InferRequestType<
@@ -126,7 +126,7 @@ export async function editEntiteAdmin(id: string, input: EditEntiteAdminInput) {
   return data;
 }
 
-export async function createChildEntiteAdmin(id: string, input: CreateChildEntiteAdminInput) {
+export async function createDirectionOrServiceAdmin(id: string, input: CreateDirectionOrServiceAdminInput) {
   const res = await client.entites.admin[':id'].children.$post({
     param: { id },
     json: input,

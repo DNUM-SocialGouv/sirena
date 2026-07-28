@@ -2,11 +2,11 @@ import type { Pagination } from '@sirena/backend-utils/types';
 import { type Entite, prisma } from '../../libs/prisma.js';
 import { buildEntitesListAdmin } from './entites.admin.mapper.js';
 import { buildDirectionsServicesRows as buildDirectionsServicesRowsFromHierarchy } from './entites.directions-services.mapper.js';
-import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
+import { DirectionOrServiceCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import { getAdminLocalAssignmentLevel, groupEntitesByParentId } from './entites.hierarchy.js';
 import type {
-  CreateChildEntiteAdminInput,
   CreateDirectionAdminLocalInput,
+  CreateDirectionOrServiceAdminInput,
   CreateServiceAdminLocalInput,
   EditEntiteContactInput,
   EntiteChain,
@@ -474,7 +474,7 @@ export const getDirectionsServicesList = async (
 };
 
 export const createDirectionAdminLocal = async (assignedEntiteId: string, data: CreateDirectionAdminLocalInput) => {
-  return createChildEntiteAdmin(assignedEntiteId, { ...data, isActive: true }, { requireRootParent: true });
+  return createDirectionOrServiceAdmin(assignedEntiteId, { ...data, isActive: true }, { requireRootParent: true });
 };
 
 export const createServiceAdminLocal = async (
@@ -485,7 +485,7 @@ export const createServiceAdminLocal = async (
   const activeServiceData = { ...data, isActive: true };
 
   if (!directionId) {
-    return createChildEntiteAdmin(assignedEntiteId, activeServiceData, {
+    return createDirectionOrServiceAdmin(assignedEntiteId, activeServiceData, {
       requireActiveParent: true,
       requireDirectionParent: true,
     });
@@ -507,18 +507,18 @@ export const createServiceAdminLocal = async (
     parentDirection?.entiteMereId !== assignedEntiteId ||
     !parentDirection?.isActive
   ) {
-    throw new EntiteChildCreationForbiddenError();
+    throw new DirectionOrServiceCreationForbiddenError();
   }
 
-  return createChildEntiteAdmin(directionId, activeServiceData, {
+  return createDirectionOrServiceAdmin(directionId, activeServiceData, {
     requireActiveParent: true,
     requireDirectionParent: true,
   });
 };
 
-export const createChildEntiteAdmin = async (
+export const createDirectionOrServiceAdmin = async (
   parentId: string,
-  data: CreateChildEntiteAdminInput,
+  data: CreateDirectionOrServiceAdminInput,
   options: { requireActiveParent?: boolean; requireDirectionParent?: boolean; requireRootParent?: boolean } = {},
 ) => {
   const parent = await prisma.entite.findUnique({
@@ -543,18 +543,18 @@ export const createChildEntiteAdmin = async (
   }
 
   if (options.requireRootParent && parent.entiteMereId !== null) {
-    throw new EntiteChildCreationForbiddenError();
+    throw new DirectionOrServiceCreationForbiddenError();
   }
 
   if (
     (options.requireActiveParent && !parent.isActive) ||
     (options.requireDirectionParent && (parent.entiteMereId === null || parent.entiteMere?.entiteMereId !== null))
   ) {
-    throw new EntiteChildCreationForbiddenError();
+    throw new DirectionOrServiceCreationForbiddenError();
   }
 
   if (parent.entiteMere?.entiteMereId) {
-    throw new EntiteChildCreationForbiddenError();
+    throw new DirectionOrServiceCreationForbiddenError();
   }
 
   return prisma.entite.create({

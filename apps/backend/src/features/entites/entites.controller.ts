@@ -8,10 +8,10 @@ import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import adminLocalDirectionsServicesFeatureFlagMiddleware from '../featureFlags/adminLocalDirectionsServicesFeatureFlag.middleware.js';
-import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
+import { DirectionOrServiceCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import {
-  createChildEntiteAdminRoute,
   createDirectionAdminLocalRoute,
+  createDirectionOrServiceAdminRoute,
   createServiceAdminLocalRoute,
   editDirectionServiceAdminLocalRoute,
   editEntiteAdministrativeAdminLocalRoute,
@@ -26,8 +26,8 @@ import {
   getRootEntitesListAdminRoute,
 } from './entites.route.js';
 import {
-  CreateChildEntiteAdminInputSchema,
   CreateDirectionAdminLocalInputSchema,
+  CreateDirectionOrServiceAdminInputSchema,
   CreateServiceAdminLocalInputSchema,
   EditEntiteContactInputSchema,
   EditEntiteInputSchema,
@@ -35,8 +35,8 @@ import {
   GetEntitiesQuerySchema,
 } from './entites.schema.js';
 import {
-  createChildEntiteAdmin,
   createDirectionAdminLocal,
+  createDirectionOrServiceAdmin,
   createServiceAdminLocal,
   editDirectionServiceAdminLocal,
   editEntiteAdmin,
@@ -265,12 +265,12 @@ const app = factoryWithLogs
           throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
         }
 
-        if (error instanceof EntiteChildCreationForbiddenError) {
+        if (error instanceof DirectionOrServiceCreationForbiddenError) {
           logger.warn(
             { entiteId: assignedEntiteId },
             'Local Direction creation is not allowed for this assigned entity',
           );
-          throwHTTPException400BadRequest('Child entite creation is not allowed for this parent', {
+          throwHTTPException400BadRequest('Direction or Service creation is not allowed for this parent', {
             res: c.res,
             kind: ERROR_KIND.BUSINESS,
           });
@@ -308,8 +308,8 @@ const app = factoryWithLogs
           throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
         }
 
-        if (error instanceof EntiteChildCreationForbiddenError) {
-          throwHTTPException400BadRequest('Child entite creation is not allowed for this parent', {
+        if (error instanceof DirectionOrServiceCreationForbiddenError) {
+          throwHTTPException400BadRequest('Direction or Service creation is not allowed for this parent', {
             res: c.res,
             kind: ERROR_KIND.BUSINESS,
           });
@@ -349,15 +349,15 @@ const app = factoryWithLogs
   .post(
     '/admin/:id/children',
     roleMiddleware([ROLES.SUPER_ADMIN]),
-    zValidator('json', CreateChildEntiteAdminInputSchema),
-    createChildEntiteAdminRoute,
+    zValidator('json', CreateDirectionOrServiceAdminInputSchema),
+    createDirectionOrServiceAdminRoute,
     async (c) => {
       const id = c.req.param('id');
       const data = c.req.valid('json');
       const logger = c.get('logger');
 
       try {
-        const entite = await createChildEntiteAdmin(id, data);
+        const entite = await createDirectionOrServiceAdmin(id, data);
         return c.json({ data: entite });
       } catch (error) {
         if (error instanceof EntiteNotFoundError) {
@@ -365,9 +365,9 @@ const app = factoryWithLogs
           throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
         }
 
-        if (error instanceof EntiteChildCreationForbiddenError) {
-          logger.warn({ entiteId: id }, 'Child entite creation is not allowed for this parent');
-          throwHTTPException400BadRequest('Child entite creation is not allowed for this parent', {
+        if (error instanceof DirectionOrServiceCreationForbiddenError) {
+          logger.warn({ entiteId: id }, 'Direction or Service creation is not allowed for this parent');
+          throwHTTPException400BadRequest('Direction or Service creation is not allowed for this parent', {
             res: c.res,
             kind: ERROR_KIND.BUSINESS,
           });
