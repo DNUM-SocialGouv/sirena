@@ -705,6 +705,10 @@ describe('Entites endpoints: /entites', () => {
     });
 
     it.each([
+      ['email', 'invalid-email'],
+      ['emailContactUsager', 'invalid-email'],
+      ['telContactUsager', '123'],
+      ['adresseContactUsager', 'a'.repeat(501)],
       ['nomComplet', 'Service renommé'],
       ['label', 'SR'],
       ['isActive', false],
@@ -716,7 +720,7 @@ describe('Entites endpoints: /entites', () => {
       ['organizationalUnit', 'other-unit'],
       ['emailDomain', '@other.fr'],
       ['unknownProperty', 'other'],
-    ])('rejects caller-controlled or unknown field %s', async (field, value) => {
+    ])('rejects invalid, caller-controlled, or unknown field %s', async (field, value) => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       const input = {
         email: 'notification-pa@ars.fr',

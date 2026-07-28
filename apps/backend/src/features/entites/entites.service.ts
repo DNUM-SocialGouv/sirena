@@ -8,8 +8,7 @@ import type {
   CreateChildEntiteAdminInput,
   CreateDirectionAdminLocalInput,
   CreateServiceAdminLocalInput,
-  EditDirectionServiceAdminLocalInput,
-  EditEntiteAdministrativeAdminLocalInput,
+  EditEntiteContactInput,
   EntiteChain,
   EntiteTraitement,
   EntiteTraitementInput,
@@ -217,10 +216,7 @@ export const getEntiteAdministrativeAdminLocal = async (assignedEntiteId: string
   };
 };
 
-const updateEntiteInformation = (
-  entiteId: string,
-  data: EditDirectionServiceAdminLocalInput | EditEntiteAdministrativeAdminLocalInput,
-) =>
+const updateEntiteInformation = (entiteId: string, data: EditEntiteContactInput) =>
   prisma.entite.update({
     where: { id: entiteId },
     data,
@@ -235,10 +231,7 @@ const updateEntiteInformation = (
     },
   });
 
-export const editEntiteAdministrativeAdminLocal = async (
-  assignedEntiteId: string,
-  data: EditEntiteAdministrativeAdminLocalInput,
-) => {
+export const editEntiteAdministrativeAdminLocal = async (assignedEntiteId: string, data: EditEntiteContactInput) => {
   const assignedEntite = await getEntiteAdministrativeAdminLocal(assignedEntiteId);
 
   if (!assignedEntite) {
@@ -352,7 +345,7 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
 export const editDirectionServiceAdminLocal = async (
   assignedEntiteId: string,
   targetEntiteId: string,
-  data: EditDirectionServiceAdminLocalInput,
+  data: EditEntiteContactInput,
 ) => {
   const target = await getDirectionServiceAdminLocal(assignedEntiteId, targetEntiteId);
 

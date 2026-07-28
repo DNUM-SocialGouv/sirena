@@ -108,10 +108,11 @@ export const GetEntitesListAdminResponseSchema = z.array(
 export const EntiteAdministrativeAdminLocalSchema = EntiteDetailsSchema;
 
 export const GetEntiteAdministrativeAdminLocalResponseSchema = EntiteAdministrativeAdminLocalSchema;
-export const EditEntiteAdministrativeAdminLocalInputSchema = EntiteContactFieldsSchema.extend({
+export const EditEntiteContactInputSchema = EntiteContactFieldsSchema.extend({
   email: emailSchema.or(z.literal('')),
   emailContactUsager: emailSchema.or(z.literal('')),
   telContactUsager: phoneSchema.or(z.literal('')),
+  adresseContactUsager: z.string().max(500),
 }).strict();
 export const EditEntiteAdministrativeAdminLocalResponseSchema = EntiteAdministrativeAdminLocalSchema;
 
@@ -168,8 +169,6 @@ export const CreateChildEntiteAdminInputSchema = EntiteContactFieldsSchema.exten
   label: z.string().trim().min(1),
   isActive: z.boolean(),
 });
-
-export const EditDirectionServiceAdminLocalInputSchema = EntiteContactFieldsSchema.strict();
 
 export const CreateChildEntiteAdminResponseSchema = CreateChildEntiteAdminInputSchema.extend({
   id: z.string(),
