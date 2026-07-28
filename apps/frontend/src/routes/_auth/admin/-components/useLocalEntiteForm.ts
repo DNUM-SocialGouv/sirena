@@ -5,6 +5,7 @@ import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 
 export type LocalEntiteFormType = 'entite-administrative' | 'direction' | 'service';
 export type LocalEntiteFormMode = 'create' | 'edit';
+type LocalEntiteCreateFormType = 'direction' | 'service';
 
 export type LocalEntiteFormValues = {
   nomComplet: string;
@@ -24,42 +25,69 @@ const emptyLocalEntiteForm: LocalEntiteFormValues = {
   adresseContactUsager: '',
 };
 
-const createFormSchema = (entiteType: LocalEntiteFormType, mode: LocalEntiteFormMode) => {
-  const entityName =
-    entiteType === 'entite-administrative'
-      ? 'de l’entité administrative'
-      : entiteType === 'direction'
-        ? 'de la direction'
-        : 'du service';
+const contactShape = {
+  email: optionalEmailSchema.default(''),
+  emailContactUsager: optionalEmailSchema.default(''),
+  telContactUsager: optionalPhoneSchema.default(''),
+  adresseContactUsager: z.string(),
+};
 
-  return z.object({
-    nomComplet:
-      mode === 'edit'
-        ? z.string()
-        : z.string().trim().min(1, `Le champ "Nom ${entityName}" est vide. Veuillez le renseigner.`),
-    label:
-      mode === 'edit'
-        ? z.string()
-        : z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
+const editFormSchema = (entiteType: LocalEntiteFormType) =>
+  z.object({
+    ...contactShape,
     email:
-      entiteType === 'entite-administrative' && mode === 'edit'
+      entiteType === 'entite-administrative'
         ? z
             .string()
             .min(1, 'Le champ "Adresse e-mail de notification" est vide. Veuillez le renseigner.')
             .pipe(emailSchema)
-        : optionalEmailSchema,
-    emailContactUsager: optionalEmailSchema,
-    telContactUsager: optionalPhoneSchema,
-    adresseContactUsager: z.string(),
+        : contactShape.email,
   });
+
+const createFormSchema = (entiteType: LocalEntiteCreateFormType) => {
+  const entityName = entiteType === 'direction' ? 'de la direction' : 'du service';
+
+  return z.object({
+    nomComplet: z.string().trim().min(1, `Le champ "Nom ${entityName}" est vide. Veuillez le renseigner.`),
+    label: z.string().trim().min(1, 'Le champ "Abréviation" est vide. Veuillez le renseigner.'),
+    ...contactShape,
+  });
+};
+
+type EditFormValues = z.infer<ReturnType<typeof editFormSchema>>;
+type CreateFormValues = z.infer<ReturnType<typeof createFormSchema>>;
+
+type LocalEntiteForm<ValidatedValues> = {
+  entiteType: LocalEntiteFormType;
+  mode: LocalEntiteFormMode;
+  values: LocalEntiteFormValues;
+  validationErrors: Record<string, string>;
+  onChange: (
+    field: keyof LocalEntiteFormValues,
+  ) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  clearError: (field: string) => void;
+  validate: (additionalErrors?: Record<string, string>) => ValidatedValues | null;
 };
 
 export function useLocalEntiteForm(
   entiteType: LocalEntiteFormType,
+  mode: 'edit',
+  initialValues?: LocalEntiteFormValues,
+): LocalEntiteForm<EditFormValues>;
+export function useLocalEntiteForm(
+  entiteType: LocalEntiteCreateFormType,
+  mode: 'create',
+  initialValues?: LocalEntiteFormValues,
+): LocalEntiteForm<CreateFormValues>;
+export function useLocalEntiteForm(
+  entiteType: LocalEntiteFormType,
   mode: LocalEntiteFormMode,
   initialValues: LocalEntiteFormValues = emptyLocalEntiteForm,
-) {
-  const schema = useMemo(() => createFormSchema(entiteType, mode), [entiteType, mode]);
+): LocalEntiteForm<EditFormValues | CreateFormValues> {
+  const schema = useMemo(
+    () => (mode === 'edit' ? editFormSchema(entiteType) : createFormSchema(entiteType as LocalEntiteCreateFormType)),
+    [entiteType, mode],
+  );
   const [values, setValues] = useState(initialValues);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -93,7 +121,7 @@ export function useLocalEntiteForm(
     });
   };
 
-  const validate = (additionalErrors: Record<string, string> = {}): LocalEntiteFormValues | null => {
+  const validate = (additionalErrors: Record<string, string> = {}) => {
     setHasSubmitted(true);
     const result = schema.safeParse(values);
     const errors = {
@@ -111,14 +139,7 @@ export function useLocalEntiteForm(
     setValidationErrors({});
     if (!result.success) return null;
 
-    return {
-      nomComplet: result.data.nomComplet,
-      label: result.data.label,
-      email: result.data.email ?? '',
-      emailContactUsager: result.data.emailContactUsager ?? '',
-      telContactUsager: result.data.telContactUsager ?? '',
-      adresseContactUsager: result.data.adresseContactUsager,
-    };
+    return result.data;
   };
 
   return { entiteType, mode, values, validationErrors, onChange, clearError, validate };

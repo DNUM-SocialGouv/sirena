@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Entite, prisma } from '../../libs/prisma.js';
-import { EntiteChildCreationForbiddenError } from './entites.error.js';
+import { DirectionOrServiceCreationForbiddenError } from './entites.error.js';
 import {
-  createChildEntiteAdmin,
   createDirectionAdminLocal,
+  createDirectionOrServiceAdmin,
   createServiceAdminLocal,
   editDirectionServiceAdminLocal,
   editEntiteAdmin,
@@ -907,8 +907,8 @@ describe('editEntiteAdmin()', () => {
   });
 });
 
-describe('createChildEntiteAdmin()', () => {
-  const createChildInput = {
+describe('createDirectionOrServiceAdmin()', () => {
+  const createDirectionOrServiceInput = {
     nomComplet: 'Direction de la prévention',
     label: 'DIR PREV',
     email: 'direction@example.fr',
@@ -922,7 +922,7 @@ describe('createChildEntiteAdmin()', () => {
     vi.resetAllMocks();
   });
 
-  it('creates a child entity under a root parent', async () => {
+  it('creates a Direction under a root Entité', async () => {
     vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
       entiteTypeId: 'ARS',
       departementCode: '14',
@@ -934,7 +934,7 @@ describe('createChildEntiteAdmin()', () => {
     } as never);
     vi.mocked(prisma.entite.create).mockResolvedValueOnce({
       id: 'direction-1',
-      ...createChildInput,
+      ...createDirectionOrServiceInput,
       entiteMereId: 'root-ars',
       entiteTypeId: 'ARS',
       departementCode: '14',
@@ -944,12 +944,12 @@ describe('createChildEntiteAdmin()', () => {
       dptLib: 'Calvados',
     } as never);
 
-    const result = await createChildEntiteAdmin('root-ars', createChildInput);
+    const result = await createDirectionOrServiceAdmin('root-ars', createDirectionOrServiceInput);
 
     expect(prisma.entite.findUnique).toHaveBeenCalledTimes(1);
     expect(prisma.entite.create).toHaveBeenCalledWith({
       data: {
-        ...createChildInput,
+        ...createDirectionOrServiceInput,
         entiteMereId: 'root-ars',
         entiteTypeId: 'ARS',
         departementCode: '14',
@@ -971,11 +971,11 @@ describe('createChildEntiteAdmin()', () => {
     });
     expect(result).toMatchObject({
       id: 'direction-1',
-      ...createChildInput,
+      ...createDirectionOrServiceInput,
     });
   });
 
-  it('creates a child entity under a direction parent', async () => {
+  it('creates a Service under a Direction', async () => {
     vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
       entiteTypeId: 'ARS',
       departementCode: '14',
@@ -988,7 +988,7 @@ describe('createChildEntiteAdmin()', () => {
     } as never);
     vi.mocked(prisma.entite.create).mockResolvedValueOnce({
       id: 'service-1',
-      ...createChildInput,
+      ...createDirectionOrServiceInput,
       entiteMereId: 'dir-1',
       entiteTypeId: 'ARS',
       departementCode: '14',
@@ -998,7 +998,7 @@ describe('createChildEntiteAdmin()', () => {
       dptLib: 'Calvados',
     } as never);
 
-    const result = await createChildEntiteAdmin('dir-1', createChildInput);
+    const result = await createDirectionOrServiceAdmin('dir-1', createDirectionOrServiceInput);
 
     expect(prisma.entite.findUnique).toHaveBeenNthCalledWith(1, {
       where: { id: 'dir-1' },
@@ -1018,7 +1018,7 @@ describe('createChildEntiteAdmin()', () => {
     });
     expect(prisma.entite.create).toHaveBeenCalledWith({
       data: {
-        ...createChildInput,
+        ...createDirectionOrServiceInput,
         entiteMereId: 'dir-1',
         entiteTypeId: 'ARS',
         departementCode: '14',
@@ -1040,7 +1040,7 @@ describe('createChildEntiteAdmin()', () => {
     });
     expect(result).toMatchObject({
       id: 'service-1',
-      ...createChildInput,
+      ...createDirectionOrServiceInput,
     });
   });
 
@@ -1056,8 +1056,8 @@ describe('createChildEntiteAdmin()', () => {
       entiteMere: { entiteMereId: 'root-ars' },
     } as never);
 
-    await expect(createChildEntiteAdmin('service-1', createChildInput)).rejects.toBeInstanceOf(
-      EntiteChildCreationForbiddenError,
+    await expect(createDirectionOrServiceAdmin('service-1', createDirectionOrServiceInput)).rejects.toBeInstanceOf(
+      DirectionOrServiceCreationForbiddenError,
     );
 
     expect(prisma.entite.create).not.toHaveBeenCalled();
@@ -1161,7 +1161,7 @@ describe('createDirectionAdminLocal()', () => {
         adresseContactUsager: '',
         telContactUsager: '',
       }),
-    ).rejects.toBeInstanceOf(EntiteChildCreationForbiddenError);
+    ).rejects.toBeInstanceOf(DirectionOrServiceCreationForbiddenError);
 
     expect(prisma.entite.create).not.toHaveBeenCalled();
   });
@@ -1234,7 +1234,7 @@ describe('createServiceAdminLocal()', () => {
     vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(parent as never);
 
     await expect(createServiceAdminLocal(parentId, serviceInput)).rejects.toBeInstanceOf(
-      EntiteChildCreationForbiddenError,
+      DirectionOrServiceCreationForbiddenError,
     );
     expect(prisma.entite.create).not.toHaveBeenCalled();
   });
@@ -1245,7 +1245,7 @@ describe('createServiceAdminLocal() for an Entité administrative assignment', (
     vi.resetAllMocks();
   });
 
-  it('creates a Service beneath the selected active direct-child Direction', async () => {
+  it('creates a Service beneath the selected directly attached Direction', async () => {
     vi.mocked(prisma.entite.findUnique)
       .mockResolvedValueOnce({ entiteMereId: null } as never)
       .mockResolvedValueOnce({ entiteMereId: 'root-ars', isActive: true } as never)
@@ -1312,7 +1312,7 @@ describe('createServiceAdminLocal() for an Entité administrative assignment', (
         .mockResolvedValueOnce(deniedParent as never);
 
       await expect(createServiceAdminLocal('root-ars', input, 'dir-denied')).rejects.toBeInstanceOf(
-        EntiteChildCreationForbiddenError,
+        DirectionOrServiceCreationForbiddenError,
       );
       expect(prisma.entite.create).not.toHaveBeenCalled();
     }

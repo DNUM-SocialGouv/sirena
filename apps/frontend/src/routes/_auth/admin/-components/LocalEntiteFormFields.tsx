@@ -66,7 +66,7 @@ function LocalEntiteSirenaFields({
               <ReadOnlyField
                 id={nameReadOnlyId}
                 label={`Nom ${wording.name}`}
-                hintText={`Nom complet sans abréviation ou acronyme. Exemple : ${wording.nameExample}`}
+                hintText="Ce champ n’est pas modifiable ici."
                 value={formData.nomComplet}
               />
             </div>
@@ -92,7 +92,7 @@ function LocalEntiteSirenaFields({
               <ReadOnlyField
                 id={abbreviationReadOnlyId}
                 label="Abréviation"
-                hintText={`Sigle, acronyme ou forme abrégée du nom. Exemple : ${wording.abbreviationExample}`}
+                hintText="Ce champ n’est pas modifiable ici."
                 value={formData.label}
               />
             </div>
@@ -138,7 +138,7 @@ function LocalEntiteContactFields({ formData, validationErrors, onChange }: Cont
         <Alert
           severity="info"
           small
-          description="Si vous ne renseignez pas ces informations, l’adresse e-mail de notification sera transmise au déclarant, dans l’accusé de réception, afin qu’il puisse vous contacter."
+          description="Information : si vous ne renseignez pas ces informations, l’adresse e-mail de notification sera transmise au déclarant, dans l’accusé de réception, afin qu’il puisse vous contacter."
         />
       </div>
 
