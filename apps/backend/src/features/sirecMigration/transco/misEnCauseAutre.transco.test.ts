@@ -37,16 +37,21 @@ describe('transcodeAutresMcType', () => {
     expect(result.misEnCauseTypePrecisionId).toBe('TATOUEUR');
   });
 
-  it('should return AUTRE_PROFESSIONNEL with null precision for 122', () => {
-    const result = transcodeAutresMcType(122);
-    expect(result.misEnCauseTypeId).toBe('AUTRE_PROFESSIONNEL');
-    expect(result.misEnCauseTypePrecisionId).toBeNull();
-  });
-
-  it('should return AUTRE_PROFESSIONNEL with null precision for 131', () => {
-    const result = transcodeAutresMcType(131);
-    expect(result.misEnCauseTypeId).toBe('AUTRE_PROFESSIONNEL');
-    expect(result.misEnCauseTypePrecisionId).toBeNull();
+  it('should map SIREC-only accused-party types to their dedicated SIRENA types', () => {
+    expect(transcodeAutresMcType(122)).toEqual({
+      misEnCauseTypeId: 'ETABLISSEMENT_FICTIF',
+      misEnCauseTypePrecisionId: null,
+    });
+    expect(transcodeAutresMcType(123)).toEqual({
+      misEnCauseTypeId: 'EXERCICE_ILLEGAL',
+      misEnCauseTypePrecisionId: null,
+    });
+    expect(transcodeAutresMcType(124)).toEqual({ misEnCauseTypeId: 'MAISON_ARRET', misEnCauseTypePrecisionId: null });
+    expect(transcodeAutresMcType(130)).toEqual({
+      misEnCauseTypeId: 'TRANSPORTEUR_SANITAIRE',
+      misEnCauseTypePrecisionId: null,
+    });
+    expect(transcodeAutresMcType(131)).toEqual({ misEnCauseTypeId: 'AUTRE', misEnCauseTypePrecisionId: null });
   });
 
   it('should throw SirecTranscoError for unknown autresMcType', () => {
