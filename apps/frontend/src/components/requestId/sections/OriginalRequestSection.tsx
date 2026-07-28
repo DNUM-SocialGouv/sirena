@@ -3,12 +3,15 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import {
+  NON_SELECTABLE_RECEPTION_TYPES,
   RECEPTION_TYPE,
   REQUETE_PROVENANCE_NEEDS_PRECISION,
   type ReceptionType,
   type RequeteProvenance,
   receptionTypeLabels,
   requeteProvenanceLabels,
+  SIREC_ONLY_RECEPTION_TYPE_IDS,
+  type SirecOnlyReceptionType,
 } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
 import { clsx } from 'clsx';
@@ -186,10 +189,13 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
   const normalizeReceptionType = (value: ReceptionType | '') =>
     value === RECEPTION_TYPE.FORMULAIRE ? null : value || null;
 
+  const isSirecOnlyReceptionType = (value: ReceptionType): value is SirecOnlyReceptionType =>
+    (SIREC_ONLY_RECEPTION_TYPE_IDS as readonly ReceptionType[]).includes(value);
+
   const receptionOptions = useMemo(
     () =>
       Object.values(RECEPTION_TYPE).flatMap((value) => {
-        if (value === RECEPTION_TYPE.FORMULAIRE) return [];
+        if (NON_SELECTABLE_RECEPTION_TYPES.includes(value)) return [];
         return [
           {
             value,
@@ -215,7 +221,12 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
 
     try {
       if (!requestId) {
-        const createdRequete = await createRequeteMutation.mutateAsync(payload);
+        // SIREC-only types can't be picked in the create dropdown; coerce to satisfy the strict type.
+        const { receptionTypeId } = payload;
+        const createdRequete = await createRequeteMutation.mutateAsync({
+          ...payload,
+          receptionTypeId: receptionTypeId && !isSirecOnlyReceptionType(receptionTypeId) ? receptionTypeId : null,
+        });
         navigate({ to: '/request/$requestId', params: { requestId: createdRequete.id } });
         setIsEdit(false);
         onEdit?.();
@@ -284,6 +295,11 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
                   }}
                 >
                   <option value="">Sélectionnez une option</option>
+                  {typeValue && NON_SELECTABLE_RECEPTION_TYPES.includes(typeValue) && (
+                    <option value={typeValue} disabled>
+                      {receptionTypeLabels[typeValue]}
+                    </option>
+                  )}
                   {receptionOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}

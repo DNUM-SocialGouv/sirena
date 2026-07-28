@@ -32,7 +32,7 @@ function EntiteAdministrativeEditForm({ entite }: { entite: AssignedEntite }) {
   const editEntite = useEditEntiteAdministrativeAdminLocal();
   const toastManager = Toast.useToastManager();
   const router = useRouter();
-  const form = useLocalEntiteForm('entite-administrative', {
+  const form = useLocalEntiteForm('entite-administrative', 'edit', {
     nomComplet: entite.nomComplet,
     label: entite.label,
     email: entite.email,
@@ -52,8 +52,7 @@ function EntiteAdministrativeEditForm({ entite }: { entite: AssignedEntite }) {
       if (!values) return;
 
       try {
-        const { email, emailContactUsager, telContactUsager, adresseContactUsager } = values;
-        await editEntite.mutateAsync({ email, emailContactUsager, telContactUsager, adresseContactUsager });
+        await editEntite.mutateAsync(values);
         toastManager.add({
           title: 'Entité administrative modifiée avec succès',
           description: 'Les modifications ont bien été enregistrées.',

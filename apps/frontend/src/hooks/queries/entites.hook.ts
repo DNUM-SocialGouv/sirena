@@ -1,10 +1,10 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
-  type CreateChildEntiteAdminInput,
   type CreateDirectionAdminLocalInput,
+  type CreateDirectionOrServiceAdminInput,
   type CreateServiceAdminLocalInput,
-  createChildEntiteAdmin,
   createDirectionAdminLocal,
+  createDirectionOrServiceAdmin,
   createServiceAdminLocal,
   type EditDirectionServiceAdminLocalInput,
   type EditEntiteAdminInput,
@@ -139,10 +139,10 @@ export const useEditEntiteAdmin = () =>
     },
   });
 
-export const useCreateChildEntiteAdmin = () =>
+export const useCreateDirectionOrServiceAdmin = () =>
   useMutation({
-    mutationFn: ({ id, input }: { id: string; input: CreateChildEntiteAdminInput }) =>
-      createChildEntiteAdmin(id, input),
+    mutationFn: ({ id, input }: { id: string; input: CreateDirectionOrServiceAdminInput }) =>
+      createDirectionOrServiceAdmin(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entites'] });
     },

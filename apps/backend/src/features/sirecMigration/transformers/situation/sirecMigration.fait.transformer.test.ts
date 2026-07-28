@@ -6,12 +6,11 @@ vi.mock('../../transco/motifsDeclaratifs.transco.js', () => ({
   transcodeMotifsDeclaratifs: vi.fn((ids: number[]) => ids.map(String)),
 }));
 
-vi.mock('../../transco/dest.transco.js', () => ({
-  transcodeDest: vi.fn((id: number | null) => (id === null ? null : 'Courriel')),
-}));
-
-vi.mock('../../transco/courrierSignal.transco.js', () => ({
-  transcodeCourrierSignal: vi.fn((id: number | null) => (id === null ? null : 'Courrier')),
+vi.mock('../../transco/simpleField.transco.js', () => ({
+  transcodeSimpleField: vi.fn((id: number | null, tableName: string) => {
+    if (id === null) return null;
+    return tableName === 'dest' ? 'Courriel' : 'Courrier';
+  }),
 }));
 
 describe('sirecMigration.fait.transformer.ts', () => {
@@ -73,12 +72,12 @@ describe('sirecMigration.fait.transformer.ts', () => {
     expect(result.autresPrecisions).toBe('Destinataire(s) de la réclamation : Courriel');
   });
 
-  it('should delegate dest transcoding to transcodeDest', async () => {
-    const { transcodeDest } = await import('../../transco/dest.transco.js');
+  it('should delegate dest transcoding to transcodeSimpleField', async () => {
+    const { transcodeSimpleField } = await import('../../transco/simpleField.transco.js');
 
     transformSirecFait({ ...sirecData, reclamation: { ...sirecData.reclamation, dest: 12 } });
 
-    expect(transcodeDest).toHaveBeenCalledWith(12);
+    expect(transcodeSimpleField).toHaveBeenCalledWith(12, 'dest');
   });
 
   it('should map description to autresPrecisions', () => {
@@ -176,12 +175,12 @@ describe('sirecMigration.fait.transformer.ts', () => {
     expect(result.autresPrecisions).toBe('');
   });
 
-  it('should delegate courrier_signal transcoding to transcodeCourrierSignal', async () => {
-    const { transcodeCourrierSignal } = await import('../../transco/courrierSignal.transco.js');
+  it('should delegate courrier_signal transcoding to transcodeSimpleField', async () => {
+    const { transcodeSimpleField } = await import('../../transco/simpleField.transco.js');
 
     transformSirecFait({ ...sirecData, reclamation: { ...sirecData.reclamation, courrier_signal: 10 } });
 
-    expect(transcodeCourrierSignal).toHaveBeenCalledWith(10);
+    expect(transcodeSimpleField).toHaveBeenCalledWith(10, 'courrierSignal');
   });
 
   it('should default motifs to an empty array', () => {

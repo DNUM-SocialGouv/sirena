@@ -14,7 +14,7 @@ export const Route = createFileRoute('/_auth/admin/directions-services/direction
 });
 
 export function RouteComponent() {
-  const form = useLocalEntiteForm('direction');
+  const form = useLocalEntiteForm('direction', 'create');
   const router = useRouter();
   const createDirectionAdminLocal = useCreateDirectionAdminLocal();
   const toastManager = Toast.useToastManager();
