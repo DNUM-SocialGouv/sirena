@@ -1,3 +1,25 @@
+# Pourquoi ce wrapper — c'est-à-dire pourquoi DEUX niveaux de sous-chart
+# (sirena → charts/valkey → charts/valkey/charts/valkey, le chart officiel) ?
+#
+# Parce que le `Service redis-master` (templates/Service-alias.yaml) est un
+# manifest À NOUS, qui ne peut pas vivre dans un chart tiers, et qu'il n'y a
+# qu'un seul endroit d'où la CI récupère le rendu :
+#
+#     mv helm_charts/generated_manifests/sirena/charts/* <gitops>/deployment-targets/<env>/
+#
+# `.github/actions/deploy-gitops/action.yml` ne déplace que `charts/*`. Un
+# template rendu à la racine du chart `sirena` (dans generated_manifests/sirena/
+# templates/) serait donc silencieusement PERDU, jamais déployé. Il faut par
+# conséquent un sous-chart local pour héberger nos propres templates à côté de
+# la dépendance externe.
+#
+# C'est exactement la structure déjà utilisée par `charts/external-secrets`
+# (dépendance SDPSN-devops-charts + 3 templates propres, dont redis-secret.yaml).
+#
+# ⚠️ Ne pas « simplifier » en mettant le chart officiel en dépendance directe du
+# chart racine : on y perdrait le Service alias, donc le nom `redis-master` que
+# l'application code en dur (cf. charts/external-secrets/templates/redis-secret.yaml),
+# donc l'accès au cache.
 apiVersion: v2
 name: valkey
 version: 0.1.0
