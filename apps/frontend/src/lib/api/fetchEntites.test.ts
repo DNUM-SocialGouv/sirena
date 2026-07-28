@@ -66,19 +66,25 @@ describe('local Entité administrative API adapter', () => {
 });
 
 describe('local Direction and Service API adapter', () => {
-  it('loads and patches an edit target through its local endpoint', async () => {
+  it('loads an edit target and patches exactly its contact fields through the local endpoint', async () => {
     const target = {
       id: 'service-pa',
       entiteType: 'service' as const,
       ...visibleInput,
       parentDirection: { id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' },
     };
-    const editInput = { ...visibleInput, nomComplet: 'Service Personnes âgées' };
+    const editInput = {
+      email: 'notification-pa@ars.fr',
+      emailContactUsager: 'contact-pa@ars.fr',
+      telContactUsager: '0102030405',
+      adresseContactUsager: '1 rue de la Santé, Paris',
+    };
+    const updatedTarget = { ...target, ...editInput };
     directionServiceGet.mockResolvedValueOnce({ json: async () => ({ data: target }) });
-    directionServicePatch.mockResolvedValueOnce({ json: async () => ({ data: { ...target, ...editInput } }) });
+    directionServicePatch.mockResolvedValueOnce({ json: async () => ({ data: updatedTarget }) });
 
     await expect(fetchDirectionServiceAdminLocal(target.id)).resolves.toEqual(target);
-    await expect(editDirectionServiceAdminLocal(target.id, editInput)).resolves.toEqual({ ...target, ...editInput });
+    await expect(editDirectionServiceAdminLocal(target.id, editInput)).resolves.toEqual(updatedTarget);
     expect(directionServiceGet).toHaveBeenCalledWith({ param: { id: target.id } });
     expect(directionServicePatch).toHaveBeenCalledWith({ param: { id: target.id }, json: editInput });
   });

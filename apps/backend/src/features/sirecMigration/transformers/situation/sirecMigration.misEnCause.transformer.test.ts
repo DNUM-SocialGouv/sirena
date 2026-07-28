@@ -24,7 +24,7 @@ vi.mock('./sirecMigration.affectation.transformer.js', () => ({
 
 vi.mock('./sirecMigration.situation.transformer.js', () => ({
   transformSirecSituation: vi.fn((_sirecData: unknown, entiteIds: string[]) => ({
-    fait: { commentaire: 'Commentaire', autresPrecisions: 'Description', motifsDeclaratifs: ['MOTIF_A'], motifs: [] },
+    fait: { autresPrecisions: 'Description', motifsDeclaratifs: ['MOTIF_A'], motifs: [] },
     entiteIds,
     demarchesIds: [],
     misEnCauseData: null,
@@ -740,26 +740,6 @@ describe('sirecMigration.misEnCause.transformer.ts', () => {
       );
 
       expect(result[0].fait.motifs).toEqual(['MOTIF_OUT_153']);
-    });
-
-    it('should append the entry motifs commentaire suffix to the base commentaire', () => {
-      const result = transformSirecMisEnCauseSituations(
-        makeData(
-          [],
-          [
-            makeMisEnCause({
-              id_data: 10,
-              motifsIgas: [
-                { id_igas: 153, igas_type: 'out' },
-                { id_igas: 122, igas_type: 'in' },
-              ],
-            }),
-          ],
-        ),
-        [],
-      );
-
-      expect(result[0].fait.commentaire).toBe("Commentaire\nMotifs IGAS d'entrée :\n- MOTIF_IN_122");
     });
 
     it('should resolve motifs independently for each mis en cause', () => {
