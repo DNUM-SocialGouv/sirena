@@ -490,6 +490,7 @@ describe('requeteEtapes.controller.ts', () => {
       requete: {
         createdById: string | null;
         dematSocialId: number | null;
+        sirecId: number | null;
         thirdPartyAccountId: string | null;
         createdBy: { prenom: string; nom: string } | null;
       };
@@ -500,7 +501,7 @@ describe('requeteEtapes.controller.ts', () => {
       clotureReason: [],
       createdBy: null,
       uploadedFiles: [],
-      requete: { createdById: null, dematSocialId: null, thirdPartyAccountId: null, createdBy: null },
+      requete: { createdById: null, dematSocialId: null, sirecId: null, thirdPartyAccountId: null, createdBy: null },
       editable: true,
       canOnlyEditNotes: false,
       notes: [
