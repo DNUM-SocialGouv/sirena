@@ -38,7 +38,16 @@ valkey:
   dataStorage:
     enabled: true
     requestedSize: 2Gi
-    className: csi-cinder-sc-delete
+    # Classe de stockage volontairement NON figée : on prend celle par défaut du
+    # cluster. C'est ce que fait déjà tout l'existant (le StatefulSet du redis
+    # sortant ne déclarait aucune `storageClassName`, pas plus que le mariadb du
+    # chart services) — et ce chart doit rester plateforme-agnostique : coder ici
+    # `csi-cinder-sc-delete` créerait une adhérence à Atlas v1 (OpenStack/Cinder)
+    # qui ne survivrait pas à la migration Atlas v2.
+    # Vérifié sur les deux clusters Atlas v1 (dev et prod) : la classe par défaut
+    # est `csi-cinder-sc-delete`, reclaimPolicy `Delete` (le volume est supprimé
+    # avec le PVC — voulu pour un cache) et `allowVolumeExpansion: true`.
+    className: ""
 
   resources:
     requests:
