@@ -137,7 +137,7 @@ function LocalEntiteContactFields({ formData, validationErrors, onChange }: Cont
         <Alert
           severity="info"
           small
-          description="Si vous ne renseignez pas ces informations, l’adresse e-mail de notification sera transmise au déclarant, dans l’accusé de réception, afin qu’il puisse vous contacter."
+          description="Information : si vous ne renseignez pas ces informations, l’adresse e-mail de notification sera transmise au déclarant, dans l’accusé de réception, afin qu’il puisse vous contacter."
         />
       </div>
 
