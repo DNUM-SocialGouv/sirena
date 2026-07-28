@@ -29,6 +29,7 @@ import {
   CreateDirectionAdminLocalInputSchema,
   CreateDirectionOrServiceAdminInputSchema,
   CreateServiceAdminLocalInputSchema,
+  EditEntiteAdministrativeAdminLocalInputSchema,
   EditEntiteContactInputSchema,
   EditEntiteInputSchema,
   GetEntitesListAdminQuerySchema,
@@ -145,7 +146,7 @@ const app = factoryWithLogs
     '/admin/local',
     roleMiddleware([ROLES.ENTITY_ADMIN]),
     adminLocalDirectionsServicesFeatureFlagMiddleware,
-    zValidator('json', EditEntiteContactInputSchema),
+    zValidator('json', EditEntiteAdministrativeAdminLocalInputSchema),
     editEntiteAdministrativeAdminLocalRoute,
     async (c) => {
       const assignedEntiteId = c.get('assignedEntiteId');
