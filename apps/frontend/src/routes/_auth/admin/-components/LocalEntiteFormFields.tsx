@@ -65,7 +65,7 @@ function LocalEntiteSirenaFields({
               <ReadOnlyField
                 id={nameReadOnlyId}
                 label={`Nom ${wording.name}`}
-                hintText={`Nom complet sans abréviation ou acronyme. Exemple : ${wording.nameExample}`}
+                hintText="Ce champ n’est pas modifiable ici."
                 value={formData.nomComplet}
               />
             </div>
@@ -91,7 +91,7 @@ function LocalEntiteSirenaFields({
               <ReadOnlyField
                 id={abbreviationReadOnlyId}
                 label="Abréviation"
-                hintText={`Sigle, acronyme ou forme abrégée du nom. Exemple : ${wording.abbreviationExample}`}
+                hintText="Ce champ n’est pas modifiable ici."
                 value={formData.label}
               />
             </div>
