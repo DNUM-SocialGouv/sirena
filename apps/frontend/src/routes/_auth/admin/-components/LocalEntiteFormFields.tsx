@@ -2,11 +2,12 @@ import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import Input from '@codegouvfr/react-dsfr/Input';
 import { type ReactNode, useId } from 'react';
 import { ReadOnlyField } from '@/components/common/ReadOnlyField';
-import type { LocalEntiteFormType, LocalEntiteFormValues } from './useLocalEntiteForm';
+import type { LocalEntiteFormMode, LocalEntiteFormType, LocalEntiteFormValues } from './useLocalEntiteForm';
 
 type FieldChangeHandler = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 type FormFieldsState = {
   entiteType: LocalEntiteFormType;
+  mode: LocalEntiteFormMode;
   values: LocalEntiteFormValues;
   validationErrors: Record<string, string>;
   onChange: (field: keyof LocalEntiteFormValues) => FieldChangeHandler;
@@ -14,6 +15,7 @@ type FormFieldsState = {
 
 type SirenaFieldsProps = {
   entiteType: LocalEntiteFormType;
+  mode: LocalEntiteFormMode;
   formData: LocalEntiteFormValues;
   validationErrors: Record<string, string>;
   onChange: FormFieldsState['onChange'];
@@ -22,12 +24,13 @@ type SirenaFieldsProps = {
 
 function LocalEntiteSirenaFields({
   entiteType,
+  mode,
   formData,
   validationErrors,
   onChange,
   leadingField,
 }: SirenaFieldsProps) {
-  const identityFieldsReadOnly = entiteType === 'entite-administrative';
+  const identityFieldsReadOnly = mode === 'edit';
   const nameReadOnlyId = useId();
   const abbreviationReadOnlyId = useId();
   const wording =
@@ -62,7 +65,7 @@ function LocalEntiteSirenaFields({
               <ReadOnlyField
                 id={nameReadOnlyId}
                 label={`Nom ${wording.name}`}
-                hintText={`Nom complet sans abréviation ou acronyme. Exemple : ${wording.nameExample}`}
+                hintText="Ce champ n’est pas modifiable ici."
                 value={formData.nomComplet}
               />
             </div>
@@ -88,7 +91,7 @@ function LocalEntiteSirenaFields({
               <ReadOnlyField
                 id={abbreviationReadOnlyId}
                 label="Abréviation"
-                hintText={`Sigle, acronyme ou forme abrégée du nom. Exemple : ${wording.abbreviationExample}`}
+                hintText="Ce champ n’est pas modifiable ici."
                 value={formData.label}
               />
             </div>
@@ -134,7 +137,7 @@ function LocalEntiteContactFields({ formData, validationErrors, onChange }: Cont
         <Alert
           severity="info"
           small
-          description="Si vous ne renseignez pas ces informations, l’adresse e-mail de notification sera transmise au déclarant, dans l’accusé de réception, afin qu’il puisse vous contacter."
+          description="Information : si vous ne renseignez pas ces informations, l’adresse e-mail de notification sera transmise au déclarant, dans l’accusé de réception, afin qu’il puisse vous contacter."
         />
       </div>
 
@@ -203,7 +206,7 @@ export function LocalEntiteFormFields({ form, leadingField }: LocalEntiteFormFie
 
   return (
     <>
-      <LocalEntiteSirenaFields entiteType={form.entiteType} {...fields} leadingField={leadingField} />
+      <LocalEntiteSirenaFields entiteType={form.entiteType} mode={form.mode} {...fields} leadingField={leadingField} />
       <LocalEntiteContactFields {...fields} />
     </>
   );
