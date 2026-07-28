@@ -311,7 +311,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
 
         <div className="fr-col-auto">
           <MotifsQualified situation={situation} />
-          {receptionType === RECEPTION_TYPE.FORMULAIRE ? <MotifsDeclared situation={situation} /> : null}
+          <MotifsDeclared situation={situation} />
         </div>
         {hasTraitementDesFaits ? <TraitementDesFaits situation={situation} details={false} /> : null}
       </div>
