@@ -67,12 +67,10 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
       const values = form.validate();
       if (!values) return;
 
-      const { email, emailContactUsager, telContactUsager, adresseContactUsager } = values;
-
       try {
         await editDirectionService.mutateAsync({
           id: target.id,
-          input: { email, emailContactUsager, telContactUsager, adresseContactUsager },
+          input: values,
         });
         toastManager.add({
           title: wording.successTitle,
