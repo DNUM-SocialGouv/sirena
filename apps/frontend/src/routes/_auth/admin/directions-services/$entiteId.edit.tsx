@@ -48,7 +48,7 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
   const editDirectionService = useEditDirectionServiceAdminLocal();
   const toastManager = Toast.useToastManager();
   const router = useRouter();
-  const form = useLocalEntiteForm(target.entiteType, {
+  const form = useLocalEntiteForm(target.entiteType, 'edit', {
     nomComplet: target.nomComplet,
     label: target.label,
     email: target.email,
@@ -68,7 +68,10 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
       if (!values) return;
 
       try {
-        await editDirectionService.mutateAsync({ id: target.id, input: values });
+        await editDirectionService.mutateAsync({
+          id: target.id,
+          input: values,
+        });
         toastManager.add({
           title: wording.successTitle,
           description: 'Les modifications ont bien été enregistrées.',
