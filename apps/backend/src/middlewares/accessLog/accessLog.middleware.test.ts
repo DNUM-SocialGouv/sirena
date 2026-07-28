@@ -63,10 +63,34 @@ describe('accessLog.middleware.ts', () => {
       entityId: 'requete-1',
       action: AccessLogAction.EXPORT_ENTITY_PDF,
       userId: 'user123',
+      topEntiteId: null,
       requestId: 'request-123',
       path: '/:id/export-pdf',
       dataKeys: ['declarant.identite.nom'],
     });
+  });
+
+  it('should record the topEntiteId from the request context', async () => {
+    const accessLogMiddleware = createAccessLogMiddleware({
+      entity: 'Requete',
+      action: AccessLogAction.EXPORT_ENTITY_PDF,
+    });
+
+    const route = appWithAuth
+      .createApp()
+      .use((c, next) => {
+        c.set('logger', { warn: mockLoggerWarn, error: mockLoggerError } as unknown as PinoLogger);
+        c.set('userId', 'user123');
+        c.set('topEntiteId', 'entite-42');
+        return next();
+      })
+      .get('/:id/export-pdf', accessLogMiddleware, async (c) => c.json({ ok: true }));
+
+    const app = testClient(route);
+    const response = await app[':id']['export-pdf'].$get({ param: { id: 'requete-1' } });
+
+    expect(response.status).toBe(200);
+    expect(mockCreateAccessLog).toHaveBeenCalledWith(expect.objectContaining({ topEntiteId: 'entite-42' }));
   });
 
   it('should not create an access log when the request fails', async () => {
