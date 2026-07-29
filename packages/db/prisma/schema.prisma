@@ -656,19 +656,23 @@ model ChangeLog {
 }
 
 model AccessLog {
-  id        String   @id @default(cuid())
-  entity    String
-  entityId  String
-  action    String // e.g. "EXPORT_ENTITY_PDF"
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
-  requestId String?
-  path      String
-  dataKeys  String[] @default([])
-  createdAt DateTime @default(now())
+  id       String @id @default(cuid())
+  entity   String
+  entityId String
+  action   String // e.g. "EXPORT_ENTITY_PDF"
+  userId   String?
+  user     User?   @relation(fields: [userId], references: [id])
+  // Acting entite (topEntiteId) the accessed data was filtered by, e.g. for a PDF export.
+  // Kept as a plain value (no FK) so the audit record survives entite deletion.
+  topEntiteId String?
+  requestId   String?
+  path        String
+  dataKeys    String[] @default([])
+  createdAt   DateTime @default(now())
 
   @@index([entity, entityId])
   @@index([userId, createdAt])
+  @@index([topEntiteId])
   @@index([createdAt])
 }
 
