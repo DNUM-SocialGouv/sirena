@@ -299,6 +299,19 @@ export const Default: Story = {
   },
 };
 
+export const WithColumnScrollControls: Story = {
+  render: (args) => <DataTable {...args} />,
+  args: {
+    title: 'A table with horizontal column navigation',
+    id: 'my-scroll-table',
+    rowId: 'id',
+    columns: mockColumns,
+    data: mockData,
+    cells: mockCells,
+    showColumnScrollControls: true,
+  },
+};
+
 export const fullExample: Story = {
   render: () => {
     const [users, setUsers] = useState<MyRow[]>([

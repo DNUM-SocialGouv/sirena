@@ -599,6 +599,7 @@ describe('requetes.service.ts', () => {
         updatedAt: new Date(),
         lienAutrePrecision: null,
         estSignalementProfessionnel: null,
+        estPersonneMorale: null,
         aAutrePersonnes: null,
       });
 
@@ -636,6 +637,7 @@ describe('requetes.service.ts', () => {
         updatedAt: new Date(),
         lienAutrePrecision: null,
         estSignalementProfessionnel: null,
+        estPersonneMorale: null,
         aAutrePersonnes: null,
       });
 
@@ -709,6 +711,7 @@ describe('requetes.service.ts', () => {
           domainesFonctionnelsId: null,
           estLieAuSignalement: null,
           numerosSignalement: '',
+          sirecDepartement: null,
         });
 
         situation.faits.forEach((fait) => {
@@ -879,6 +882,7 @@ describe('requetes.service.ts', () => {
         dateNaissance: new Date(),
         lienAutrePrecision: null,
         estSignalementProfessionnel: null,
+        estPersonneMorale: null,
         aAutrePersonnes: null,
       });
 
@@ -905,6 +909,7 @@ describe('requetes.service.ts', () => {
         dateNaissance: new Date(),
         lienAutrePrecision: null,
         estSignalementProfessionnel: null,
+        estPersonneMorale: null,
         aAutrePersonnes: null,
       });
 
@@ -954,6 +959,7 @@ describe('requetes.service.ts', () => {
           domainesFonctionnelsId: null,
           estLieAuSignalement: null,
           numerosSignalement: '',
+          sirecDepartement: null,
         });
 
         situation.faits.forEach((fait) => {

@@ -52,6 +52,28 @@ const deleteFlagModal = createModal({
   isOpenedByDefault: false,
 });
 
+type FeatureFlagActionsProps = {
+  flag: FeatureFlag;
+  onEdit: (flag: FeatureFlag) => void;
+  onDelete: (flag: FeatureFlag) => void;
+};
+
+function FeatureFlagActions({ flag, onEdit, onDelete }: FeatureFlagActionsProps) {
+  const handleEditClick = useCallback(() => onEdit(flag), [onEdit, flag]);
+  const handleDeleteClick = useCallback(() => onDelete(flag), [onDelete, flag]);
+
+  return (
+    <div style={{ display: 'flex', gap: '0.5rem' }}>
+      <Button priority="secondary" size="small" onClick={handleEditClick}>
+        Modifier <span className="fr-sr-only">la fonctionnalité {flag.name}</span>
+      </Button>
+      <Button priority="tertiary" size="small" onClick={handleDeleteClick}>
+        Supprimer <span className="fr-sr-only">la fonctionnalité {flag.name}</span>
+      </Button>
+    </div>
+  );
+}
+
 function RouteComponent() {
   const toastManager = Toast.useToastManager();
   const { data: featureFlags, isFetching } = useFeatureFlags();
@@ -97,6 +119,10 @@ function RouteComponent() {
     setFormData(emptyForm);
   }, []);
 
+  const handleEnabledChange = useCallback((checked: boolean) => {
+    setFormData((prev) => ({ ...prev, enabled: checked }));
+  }, []);
+
   const notifySuccess = useCallback(
     (title: string, description: string) => {
       toastManager.add({
@@ -109,28 +135,31 @@ function RouteComponent() {
     [toastManager],
   );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
 
-    const payload = {
-      name: formData.name,
-      description: formData.description,
-      enabled: formData.enabled,
-      userEmails: parseIds(formData.userEmails),
-      entiteIds: parseIds(formData.entiteIds),
-    };
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        enabled: formData.enabled,
+        userEmails: parseIds(formData.userEmails),
+        entiteIds: parseIds(formData.entiteIds),
+      };
 
-    if (editingId) {
-      const { name: _, ...patchPayload } = payload;
-      await patchFlag.mutateAsync({ id: editingId, json: patchPayload });
-      notifySuccess('Fonctionnalité modifiée avec succès', `Le flag "${formData.name}" a été mis à jour.`);
-    } else {
-      await createFlag.mutateAsync(payload);
-      notifySuccess('Fonctionnalité créée avec succès', `Le flag "${formData.name}" a été créé.`);
-    }
+      if (editingId) {
+        const { name: _, ...patchPayload } = payload;
+        await patchFlag.mutateAsync({ id: editingId, json: patchPayload });
+        notifySuccess('Fonctionnalité modifiée avec succès', `Le flag "${formData.name}" a été mis à jour.`);
+      } else {
+        await createFlag.mutateAsync(payload);
+        notifySuccess('Fonctionnalité créée avec succès', `Le flag "${formData.name}" a été créé.`);
+      }
 
-    handleCancel();
-  };
+      handleCancel();
+    },
+    [formData, editingId, patchFlag, createFlag, notifySuccess, handleCancel],
+  );
 
   const handleDelete = useCallback((flag: FeatureFlag) => {
     setFlagToDelete(flag);
@@ -165,14 +194,7 @@ function RouteComponent() {
       return parts.join(', ');
     },
     'custom:actions': (row: FeatureFlag) => (
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
-        <Button priority="secondary" size="small" onClick={() => handleEdit(row)}>
-          Modifier <span className="fr-sr-only">la fonctionnalité {row.name}</span>
-        </Button>
-        <Button priority="tertiary" size="small" onClick={() => handleDelete(row)}>
-          Supprimer <span className="fr-sr-only">la fonctionnalité {row.name}</span>
-        </Button>
-      </div>
+      <FeatureFlagActions flag={row} onEdit={handleEdit} onDelete={handleDelete} />
     ),
   };
 
@@ -190,7 +212,7 @@ function RouteComponent() {
         </div>
       )}
 
-      {showForm && (
+      {showForm ? (
         <div
           className="fr-mb-4w fr-p-3w"
           style={{ border: '1px solid var(--border-default-grey)', borderRadius: '4px' }}
@@ -220,7 +242,7 @@ function RouteComponent() {
               label="Activer la fonctionnalité par défaut"
               helperText="Utilisé uniquement si aucun utilisateur ou entité n’est ciblé"
               checked={formData.enabled}
-              onChange={(checked) => setFormData((prev) => ({ ...prev, enabled: checked }))}
+              onChange={handleEnabledChange}
             />
             <Input
               label="Emails utilisateurs ciblés (séparés par des virgules)"
@@ -248,7 +270,7 @@ function RouteComponent() {
             </div>
           </form>
         </div>
-      )}
+      ) : null}
 
       <DataTable
         title="Liste des feature flags"

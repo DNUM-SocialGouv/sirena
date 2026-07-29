@@ -1,6 +1,6 @@
 import { Notice } from '@codegouvfr/react-dsfr/Notice';
 import { FEATURE_FLAGS } from '@sirena/common/constants';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { APP_VERSION } from '@/config/version.constant';
 import { useHasFeature } from '@/hooks/useHasFeature';
 
@@ -29,13 +29,13 @@ export function UpdateBanner() {
   const isEnabled = useHasFeature(FEATURE_FLAGS.UPDATE_BANNER, false);
   const [dismissedVersion, setDismissedVersion] = useState<string | null>(readDismissedVersion);
 
-  if (!isEnabled) return null;
-  if (dismissedVersion === APP_VERSION) return null;
-
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     writeDismissedVersion(APP_VERSION);
     setDismissedVersion(APP_VERSION);
-  };
+  }, []);
+
+  if (!isEnabled) return null;
+  if (dismissedVersion === APP_VERSION) return null;
 
   return (
     <Notice

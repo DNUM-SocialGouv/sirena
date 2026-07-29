@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useCallback, useId } from 'react';
 import { BackButton } from './BackButton';
 import { CategoryButton } from './CategoryButton';
 import { CheckboxOption } from './CheckboxOption';
@@ -17,6 +17,70 @@ import { useKeyboardNavigation } from './useKeyboardNavigation';
 import { useSelectNavigation } from './useSelectNavigation';
 
 export type { SelectWithChildrenOption, SelectWithChildrenProps };
+
+type CategoryOptionItemProps = {
+  option: SelectWithChildrenOption;
+  adjustedIndex: number;
+  selectedCount: number;
+  isFocused: boolean;
+  onNavigateInto: (option: SelectWithChildrenOption, currentFocusIndex: number) => void;
+  onKeyDown: (event: React.KeyboardEvent) => void;
+  setRef: (el: HTMLButtonElement | null) => void;
+};
+
+const CategoryOptionItem = ({
+  option,
+  adjustedIndex,
+  selectedCount,
+  isFocused,
+  onNavigateInto,
+  onKeyDown,
+  setRef,
+}: CategoryOptionItemProps) => {
+  const handleClick = useCallback(() => onNavigateInto(option, adjustedIndex), [onNavigateInto, option, adjustedIndex]);
+
+  return (
+    <CategoryButton
+      option={option}
+      selectedCount={selectedCount}
+      onClick={handleClick}
+      onKeyDown={onKeyDown}
+      setRef={setRef}
+      isFocused={isFocused}
+    />
+  );
+};
+
+type CheckboxOptionItemProps = {
+  option: SelectWithChildrenOption;
+  isSelected: boolean;
+  isFocused: boolean;
+  onToggleSelection: (optionValue: string) => void;
+  onKeyDown: (event: React.KeyboardEvent) => void;
+  setRef: (el: HTMLDivElement | null) => void;
+};
+
+const CheckboxOptionItem = ({
+  option,
+  isSelected,
+  isFocused,
+  onToggleSelection,
+  onKeyDown,
+  setRef,
+}: CheckboxOptionItemProps) => {
+  const handleToggle = useCallback(() => onToggleSelection(option.value), [onToggleSelection, option.value]);
+
+  return (
+    <CheckboxOption
+      option={option}
+      isSelected={isSelected}
+      onToggle={handleToggle}
+      onKeyDown={onKeyDown}
+      setRef={setRef}
+      isFocused={isFocused}
+    />
+  );
+};
 
 export function SelectWithChildren({
   value,
@@ -40,27 +104,33 @@ export function SelectWithChildren({
   const currentOptions = getCurrentOptions(options, navigationPath);
   const totalOptions = getTotalOptionsCount(currentOptions, navigationPath.length > 0);
 
-  const toggleSelection = (optionValue: string) => {
-    // Build full hierarchical value: PARENT/CHILD
-    const fullValue =
-      navigationPath.length > 0 ? `${navigationPath.map((p) => p.value).join('/')}/${optionValue}` : optionValue;
+  const toggleSelection = useCallback(
+    (optionValue: string) => {
+      // Build full hierarchical value: PARENT/CHILD
+      const fullValue =
+        navigationPath.length > 0 ? `${navigationPath.map((p) => p.value).join('/')}/${optionValue}` : optionValue;
 
-    if (value.includes(fullValue)) {
-      onChange(value.filter((v) => v !== fullValue));
-    } else {
-      onChange([...value, fullValue]);
-    }
-  };
+      if (value.includes(fullValue)) {
+        onChange(value.filter((v) => v !== fullValue));
+      } else {
+        onChange([...value, fullValue]);
+      }
+    },
+    [navigationPath, value, onChange],
+  );
 
-  const handleNavigateInto = (option: SelectWithChildrenOption, currentFocusIndex: number) => {
-    const newFocusIndex = navigateInto(option, currentFocusIndex);
-    setFocusedIndex(newFocusIndex);
-  };
+  const handleNavigateInto = useCallback(
+    (option: SelectWithChildrenOption, currentFocusIndex: number) => {
+      const newFocusIndex = navigateInto(option, currentFocusIndex);
+      setFocusedIndex(newFocusIndex);
+    },
+    [navigateInto, setFocusedIndex],
+  );
 
-  const handleNavigateBack = () => {
+  const handleNavigateBack = useCallback(() => {
     const restoredIndex = navigateBack();
     setFocusedIndex(restoredIndex);
-  };
+  }, [navigateBack, setFocusedIndex]);
 
   const { handleKeyDown } = useKeyboardNavigation({
     isOpen,
@@ -76,6 +146,11 @@ export function SelectWithChildren({
     buttonRef,
   });
 
+  const handleButtonClick = useCallback(
+    () => !disabled && !readOnly && setIsOpen(!isOpen),
+    [disabled, readOnly, setIsOpen, isOpen],
+  );
+
   const labelsMap = getAllLabelsMap(options);
   const displayText = getDisplayText(value, labelsMap);
 
@@ -83,7 +158,7 @@ export function SelectWithChildren({
     <div className="fr-select-group">
       <label className="fr-label" htmlFor={buttonId}>
         {label}
-        {hint && <span className="fr-hint-text">{hint}</span>}
+        {hint ? <span className="fr-hint-text">{hint}</span> : null}
       </label>
 
       <div className={styles.selectWrapper} ref={dropdownRef}>
@@ -92,7 +167,7 @@ export function SelectWithChildren({
           type="button"
           className={`${styles.selectButton} ${readOnly ? styles.selectButtonReadOnly : ''}`}
           id={buttonId}
-          onClick={() => !disabled && !readOnly && setIsOpen(!isOpen)}
+          onClick={handleButtonClick}
           onKeyDown={disabled || readOnly ? undefined : handleKeyDown}
           onBlur={handleBlur}
           aria-haspopup="listbox"
@@ -106,7 +181,7 @@ export function SelectWithChildren({
           <span className={isOpen ? 'fr-icon-arrow-up-s-line' : 'fr-icon-arrow-down-s-line'} aria-hidden="true" />
         </button>
 
-        {isOpen && (
+        {isOpen ? (
           <div
             id={dropdownId}
             className={styles.dropdown}
@@ -135,14 +210,15 @@ export function SelectWithChildren({
                 if (hasChildren) {
                   const selectedInCategory = getSelectedCountInCategory(option, value);
                   return (
-                    <CategoryButton
+                    <CategoryOptionItem
                       key={option.value}
                       option={option}
+                      adjustedIndex={adjustedIndex}
                       selectedCount={selectedInCategory}
-                      onClick={() => handleNavigateInto(option, adjustedIndex)}
+                      isFocused={focusedIndex === adjustedIndex}
+                      onNavigateInto={handleNavigateInto}
                       onKeyDown={handleKeyDown}
                       setRef={setOptionRef(adjustedIndex)}
-                      isFocused={focusedIndex === adjustedIndex}
                     />
                   );
                 }
@@ -154,20 +230,20 @@ export function SelectWithChildren({
                     : option.value;
 
                 return (
-                  <CheckboxOption
+                  <CheckboxOptionItem
                     key={option.value}
                     option={option}
                     isSelected={value.includes(fullValue)}
-                    onToggle={() => toggleSelection(option.value)}
+                    isFocused={focusedIndex === adjustedIndex}
+                    onToggleSelection={toggleSelection}
                     onKeyDown={handleKeyDown}
                     setRef={setOptionRef(adjustedIndex)}
-                    isFocused={focusedIndex === adjustedIndex}
                   />
                 );
               })}
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

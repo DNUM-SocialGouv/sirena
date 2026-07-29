@@ -41,6 +41,7 @@ describe('sirecMigration.declarant.transformer.ts', () => {
       identite: null,
       commentaire: '',
       estSignalementProfessionnel: null,
+      estPersonneMorale: null,
     });
   });
 
@@ -56,6 +57,7 @@ describe('sirecMigration.declarant.transformer.ts', () => {
       identite: null,
       commentaire: '',
       estSignalementProfessionnel: null,
+      estPersonneMorale: null,
     });
   });
 
@@ -75,6 +77,7 @@ describe('sirecMigration.declarant.transformer.ts', () => {
       identite: null,
       commentaire: 'Le requérant est anonyme : oui',
       estSignalementProfessionnel: null,
+      estPersonneMorale: null,
     });
   });
 
@@ -100,6 +103,7 @@ describe('sirecMigration.declarant.transformer.ts', () => {
       identite: null,
       commentaire: '',
       estSignalementProfessionnel: null,
+      estPersonneMorale: null,
     });
   });
 
@@ -167,6 +171,33 @@ describe('sirecMigration.declarant.transformer.ts', () => {
 
   it('should return null when plaignant_type is null', () => {
     expect(transformSirecDeclarant(reclamation)).toBeNull();
+  });
+
+  describe('estPersonneMorale', () => {
+    it('should be true when plaignant_type=22 (Personne moral)', () => {
+      expect(transformSirecDeclarant({ ...reclamation, plaignant_type: 22 })?.estPersonneMorale).toBe(true);
+    });
+
+    it('should be false when plaignant_type=106 (Autre)', () => {
+      expect(transformSirecDeclarant({ ...reclamation, plaignant_type: 106 })?.estPersonneMorale).toBe(false);
+    });
+
+    it('should be false when plaignant_type=24 (Personne physique)', () => {
+      // plaignant_type=24 alone does not create a declarant, so pair it with data that does
+      expect(
+        transformSirecDeclarant({ ...reclamation, plaignant_type: 24, plaignant_est_anonyme: 1 })?.estPersonneMorale,
+      ).toBe(false);
+    });
+
+    it('should be null when plaignant_type is null', () => {
+      expect(transformSirecDeclarant({ ...reclamation, plaignant_est_anonyme: 1 })?.estPersonneMorale).toBeNull();
+    });
+
+    it('should be null when the declarant is the victim', () => {
+      expect(
+        transformSirecDeclarant({ ...reclamation, plaignant: 34, plaignant_type: 22 })?.estPersonneMorale,
+      ).toBeNull();
+    });
   });
 
   it('should set adresse when plaignant_type is physical (not in PLAIGNANT_TYPE_PAS_PHYSIQUE)', () => {
@@ -456,6 +487,7 @@ describe('sirecMigration.declarant.transformer.ts', () => {
       identite: null,
       commentaire: '',
       estSignalementProfessionnel: true,
+      estPersonneMorale: null,
     });
   });
 

@@ -389,6 +389,10 @@ export const FileDownloadLink = ({
     window.open(href, '_blank');
   };
 
+  const handleRiskDownload = () => {
+    window.open(href, '_blank');
+  };
+
   const renderStatusBadge = () => {
     if (!fileStatus) return null;
 
@@ -517,7 +521,7 @@ export const FileDownloadLink = ({
         fileName={fileName}
         cancelLabel="Annuler"
         confirmLabel="Télécharger malgré le risque"
-        onConfirm={() => window.open(href, '_blank')}
+        onConfirm={handleRiskDownload}
         resetRef={resetRiskModalRef}
       />
 

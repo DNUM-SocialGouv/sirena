@@ -1,5 +1,5 @@
 import { throwHTTPException403Forbidden } from '@sirena/backend-utils/helpers';
-import { ERROR_KIND, ROLES_READ } from '@sirena/common/constants';
+import { ERROR_KIND, ROLES_STATISTICS } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
@@ -16,7 +16,7 @@ const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
   .use(userStatusMiddleware)
-  .use(roleMiddleware([...ROLES_READ]))
+  .use(roleMiddleware([...ROLES_STATISTICS]))
   .use(entitesMiddleware)
   .use(async (c, next) => {
     const entiteIds = c.get('entiteIds');
@@ -66,8 +66,14 @@ const app = factoryWithLogs
   .get('/dashboard', getStatisticsDashboardRoute, zValidator('query', StatisticsDashboardQuerySchema), async (c) => {
     const logger = c.get('logger');
     const userId = c.get('userId');
+    const entiteIds = c.get('entiteIds');
     const topEntiteId = c.get('topEntiteId');
     const { startDate, endDate } = c.req.valid('query');
+
+    if (entiteIds === null) {
+      const cards = await fetchDashboardCardsData({}, { start_date: startDate, end_date: endDate }, 'national');
+      return c.json({ data: { cards } });
+    }
 
     if (!topEntiteId) {
       throwHTTPException403Forbidden('User must be linked to an entity to access the statistics dashboard', {

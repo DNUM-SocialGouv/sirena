@@ -1,6 +1,6 @@
 import { ROLES } from '@sirena/common/constants';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { CloseRequeteModal, type CloseRequeteModalRef } from '@/components/requestId/processing/CloseRequeteModal';
@@ -42,63 +42,61 @@ function RouteComponent() {
     }>;
   } | null>(null);
 
+  const { handleSave } = useSituationSave({
+    requestId,
+    situationId: undefined,
+    onRefetch: () => requestQuery.refetch(),
+    onSuccess: (result) => {
+      if (result.shouldCloseRequeteStatus?.willUserBeUnassignedAfterSave) {
+        setShouldCloseRequeteStatus(result.shouldCloseRequeteStatus);
+        closeRequeteModalRef.current?.openModal();
+      } else {
+        navigate({ to: '/request/$requestId', params: { requestId } });
+      }
+    },
+  });
+
+  const handleCloseModalCancel = useCallback(async () => {
+    setShouldCloseRequeteStatus(null);
+    navigate({ to: '/request/$requestId', params: { requestId } });
+  }, [navigate, requestId]);
+
+  const handleBeforeClose = useCallback(async () => {
+    navigate({ to: '/request/$requestId', params: { requestId } });
+  }, [navigate, requestId]);
+
+  const handleCloseModalSuccess = useCallback(() => {
+    setShouldCloseRequeteStatus(null);
+    navigate({ to: '/request/$requestId', params: { requestId } });
+  }, [navigate, requestId]);
+
+  const handleModalDismiss = useCallback(() => {
+    setShouldCloseRequeteStatus(null);
+  }, []);
+
   return (
     <QueryStateHandler query={requestQuery}>
-      {() => {
-        const { handleSave } = useSituationSave({
-          requestId,
-          situationId: undefined,
-          onRefetch: () => requestQuery.refetch(),
-          onSuccess: (result) => {
-            if (result.shouldCloseRequeteStatus?.willUserBeUnassignedAfterSave) {
-              setShouldCloseRequeteStatus(result.shouldCloseRequeteStatus);
-              closeRequeteModalRef.current?.openModal();
-            } else {
-              navigate({ to: '/request/$requestId', params: { requestId } });
-            }
-          },
-        });
-
-        const handleCloseModalCancel = async () => {
-          setShouldCloseRequeteStatus(null);
-          navigate({ to: '/request/$requestId', params: { requestId } });
-        };
-
-        const handleBeforeClose = async () => {
-          navigate({ to: '/request/$requestId', params: { requestId } });
-        };
-
-        const handleCloseModalSuccess = () => {
-          setShouldCloseRequeteStatus(null);
-          navigate({ to: '/request/$requestId', params: { requestId } });
-        };
-
-        const handleModalDismiss = () => {
-          setShouldCloseRequeteStatus(null);
-        };
-
-        return (
-          <>
-            <SituationForm
-              mode="edit"
-              requestId={requestId}
-              situationId={undefined}
-              onSave={handleSave}
-              saveButtonRef={saveButtonRef}
-            />
-            <CloseRequeteModal
-              ref={closeRequeteModalRef}
-              requestId={requestId}
-              otherEntitiesAffected={shouldCloseRequeteStatus?.otherEntitiesAffected ?? []}
-              triggerButtonRef={saveButtonRef}
-              onBeforeClose={handleBeforeClose}
-              onCancel={handleCloseModalCancel}
-              onSuccess={handleCloseModalSuccess}
-              onDismiss={handleModalDismiss}
-            />
-          </>
-        );
-      }}
+      {() => (
+        <>
+          <SituationForm
+            mode="edit"
+            requestId={requestId}
+            situationId={undefined}
+            onSave={handleSave}
+            saveButtonRef={saveButtonRef}
+          />
+          <CloseRequeteModal
+            ref={closeRequeteModalRef}
+            requestId={requestId}
+            otherEntitiesAffected={shouldCloseRequeteStatus?.otherEntitiesAffected ?? []}
+            triggerButtonRef={saveButtonRef}
+            onBeforeClose={handleBeforeClose}
+            onCancel={handleCloseModalCancel}
+            onSuccess={handleCloseModalSuccess}
+            onDismiss={handleModalDismiss}
+          />
+        </>
+      )}
     </QueryStateHandler>
   );
 }

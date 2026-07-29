@@ -6,7 +6,7 @@
  * backups so dashboard changes are diffable.
  *
  * Usage:
- *   pnpm op:metabase:export-dashboard               # uses METABASE_DASHBOARD_ID from env
+ *   pnpm op:metabase:export-dashboard               # exports METABASE_DASHBOARD_ID + METABASE_DASHBOARD_ID_ADMIN
  *   pnpm op:metabase:export-dashboard 4             # explicit dashboard id
  *
  * Requires env vars:
@@ -44,7 +44,7 @@ const VOLATILE_KEYS = new Set([
 
 const siteUrl = process.env.METABASE_SITE_URL;
 const apiKey = process.env.METABASE_API_KEY;
-const dashboardIdArg = process.argv[2] ?? process.env.METABASE_DASHBOARD_ID;
+const [, , dashboardIdArg] = process.argv;
 
 if (!siteUrl) {
   console.error('Missing METABASE_SITE_URL');
@@ -54,16 +54,28 @@ if (!apiKey) {
   console.error('Missing METABASE_API_KEY (Metabase Admin -> Authentication -> API keys)');
   process.exit(1);
 }
-if (!dashboardIdArg) {
-  console.error('Missing dashboard id (pass as CLI arg or set METABASE_DASHBOARD_ID)');
+
+// An explicit CLI arg exports a single dashboard; otherwise export every
+// configured dashboard (main + admin).
+const rawDashboardIds = dashboardIdArg
+  ? [dashboardIdArg]
+  : [process.env.METABASE_DASHBOARD_ID, process.env.METABASE_DASHBOARD_ID_ADMIN].filter((id): id is string =>
+      Boolean(id),
+    );
+
+if (rawDashboardIds.length === 0) {
+  console.error('Missing dashboard id (pass as CLI arg or set METABASE_DASHBOARD_ID / METABASE_DASHBOARD_ID_ADMIN)');
   process.exit(1);
 }
 
-const dashboardId = Number.parseInt(dashboardIdArg, 10);
-if (!Number.isFinite(dashboardId) || dashboardId <= 0) {
-  console.error(`Invalid dashboard id: ${dashboardIdArg}`);
-  process.exit(1);
-}
+const dashboardIds = rawDashboardIds.map((raw) => {
+  const id = Number.parseInt(raw, 10);
+  if (!Number.isFinite(id) || id <= 0) {
+    console.error(`Invalid dashboard id: ${raw}`);
+    process.exit(1);
+  }
+  return id;
+});
 
 const apiBase = siteUrl.replace(/\/$/, '');
 
@@ -117,18 +129,24 @@ async function writeJson(path: string, payload: unknown): Promise<void> {
   await writeFile(path, `${JSON.stringify(payload, null, 2)}\n`);
 }
 
-console.log(`→ Exporting dashboard ${dashboardId} from ${apiBase}`);
+async function exportDashboard(dashboardId: number): Promise<void> {
+  console.log(`→ Exporting dashboard ${dashboardId} from ${apiBase}`);
 
-const dashboardRaw = await apiGet<unknown>(`/api/dashboard/${dashboardId}`);
-const cardIds = extractCardIds(dashboardRaw);
-console.log(`  dashboard fetched, ${cardIds.length} unique card(s) referenced`);
+  const dashboardRaw = await apiGet<unknown>(`/api/dashboard/${dashboardId}`);
+  const cardIds = extractCardIds(dashboardRaw);
+  console.log(`  dashboard fetched, ${cardIds.length} unique card(s) referenced`);
 
-const cards = await Promise.all(cardIds.map(async (id) => ({ id, raw: await apiGet<unknown>(`/api/card/${id}`) })));
+  const cards = await Promise.all(cardIds.map(async (id) => ({ id, raw: await apiGet<unknown>(`/api/card/${id}`) })));
 
-const outDir = resolve(OUTPUT_ROOT, String(dashboardId));
-await writeJson(resolve(outDir, 'dashboard.json'), normalize(dashboardRaw));
-for (const { id, raw } of cards) {
-  await writeJson(resolve(outDir, 'cards', `${id}.json`), normalize(raw));
+  const outDir = resolve(OUTPUT_ROOT, String(dashboardId));
+  await writeJson(resolve(outDir, 'dashboard.json'), normalize(dashboardRaw));
+  for (const { id, raw } of cards) {
+    await writeJson(resolve(outDir, 'cards', `${id}.json`), normalize(raw));
+  }
+
+  console.log(`✓ Wrote ${1 + cards.length} file(s) under docs/metabase_dashboards/${dashboardId}/`);
 }
 
-console.log(`✓ Wrote ${1 + cards.length} file(s) under docs/metabase_dashboards/${dashboardId}/`);
+for (const dashboardId of dashboardIds) {
+  await exportDashboard(dashboardId);
+}

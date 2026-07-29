@@ -106,7 +106,7 @@ describe('QueryStateHandler', () => {
           {mockChildren}
         </QueryStateHandler>,
       );
-      expect(screen.getByText('Erreur lors du chargement des données')).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent('Erreur lors du chargement des données');
     });
 
     it('should display custom error component when provided', () => {

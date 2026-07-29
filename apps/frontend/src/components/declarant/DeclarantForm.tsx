@@ -8,7 +8,7 @@ import { Select } from '@codegouvfr/react-dsfr/Select';
 import { mappers } from '@sirena/common';
 import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { z } from 'zod';
 import type { DeclarantData } from '@/lib/declarant';
 import { declarantFieldMetadata } from '@/lib/fieldMetadata';
@@ -71,7 +71,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
 
   const estPersonneConcernee = formData.estPersonneConcernee ?? false;
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     setHasAttemptedSave(true);
 
     let hasErrors = false;
@@ -115,9 +115,9 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [formData, mode, requestId, onSave]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     if (mode === 'create' && !requestId) {
       navigate({ to: '/request/create' });
     } else if (requestId) {
@@ -125,7 +125,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
     } else {
       window.history.back();
     }
-  };
+  }, [mode, requestId, navigate]);
 
   const backUrl = mode === 'create' && !requestId ? '/request/create' : requestId ? `/request/${requestId}` : '/home';
 
@@ -174,7 +174,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                 },
               ]}
             />
-            {estPersonneConcernee && showPCWarning && (
+            {estPersonneConcernee && showPCWarning ? (
               <div className="fr-mt-2w fr-mb-2w">
                 <Alert
                   severity="warning"
@@ -183,7 +183,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                   small
                 />
               </div>
-            )}
+            ) : null}
             {estPersonneConcernee && !showPCWarning && (
               <div className="fr-mt-2w">
                 <CallOut>Enregistrez puis complétez la section "Personne concernée".</CallOut>

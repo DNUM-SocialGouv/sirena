@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { fetchPractitioners, type Practitioner } from '@/lib/api/fetchPractitioners';
 import styles from './PractitionerSearchField.module.css';
 import { SearchField } from './SearchField';
@@ -19,6 +20,18 @@ const buildPractitionerQuery = (searchTerm: string, mode: 'rpps' | 'name') => {
   return mode === 'rpps' ? { identifier: searchTerm.trim() } : { fullName: searchTerm };
 };
 
+const renderPractitionerItem = (practitioner: Practitioner) => (
+  <div className={styles.itemContent}>
+    <div className={styles.itemName}>
+      {practitioner.prefix ? <span className={styles.prefix}>{practitioner.prefix} </span> : null}
+      <strong>{practitioner.fullName}</strong>
+    </div>
+    <div className={styles.itemRpps}>RPPS: {practitioner.rpps}</div>
+  </div>
+);
+
+const getPractitionerKey = (practitioner: Practitioner) => practitioner.rpps;
+
 export function PractitionerSearchField({
   value = '',
   onChange,
@@ -31,40 +44,39 @@ export function PractitionerSearchField({
   minSearchLength = 3,
   debounceMs = 300,
 }: PractitionerSearchFieldProps) {
-  const fetchFn = (searchTerm: string) => fetchPractitioners(buildPractitionerQuery(searchTerm, searchMode));
-
-  const formatDisplay = (practitioner: Practitioner) => {
-    if (searchMode === 'rpps') {
-      return practitioner.rpps;
-    }
-    if (searchMode === 'name') {
-      const prefix = practitioner.prefix ? `${practitioner.prefix} ` : '';
-      return `${prefix}${practitioner.fullName}`;
-    }
-    const prefix = practitioner.prefix ? `${practitioner.prefix} ` : '';
-    return `${prefix}${practitioner.fullName} (RPPS: ${practitioner.rpps})`;
-  };
-
-  const renderItem = (practitioner: Practitioner) => (
-    <div className={styles.itemContent}>
-      <div className={styles.itemName}>
-        {practitioner.prefix && <span className={styles.prefix}>{practitioner.prefix} </span>}
-        <strong>{practitioner.fullName}</strong>
-      </div>
-      <div className={styles.itemRpps}>RPPS: {practitioner.rpps}</div>
-    </div>
+  const fetchFn = useCallback(
+    (searchTerm: string) => fetchPractitioners(buildPractitionerQuery(searchTerm, searchMode)),
+    [searchMode],
   );
 
-  const getItemId = (practitioner: Practitioner) => {
-    if (searchMode === 'rpps') {
-      return practitioner.rpps;
-    }
-    if (searchMode === 'name') {
+  const formatDisplay = useCallback(
+    (practitioner: Practitioner) => {
+      if (searchMode === 'rpps') {
+        return practitioner.rpps;
+      }
+      if (searchMode === 'name') {
+        const prefix = practitioner.prefix ? `${practitioner.prefix} ` : '';
+        return `${prefix}${practitioner.fullName}`;
+      }
       const prefix = practitioner.prefix ? `${practitioner.prefix} ` : '';
-      return `${prefix}${practitioner.fullName}`;
-    }
-    return practitioner.rpps;
-  };
+      return `${prefix}${practitioner.fullName} (RPPS: ${practitioner.rpps})`;
+    },
+    [searchMode],
+  );
+
+  const getItemId = useCallback(
+    (practitioner: Practitioner) => {
+      if (searchMode === 'rpps') {
+        return practitioner.rpps;
+      }
+      if (searchMode === 'name') {
+        const prefix = practitioner.prefix ? `${practitioner.prefix} ` : '';
+        return `${prefix}${practitioner.fullName}`;
+      }
+      return practitioner.rpps;
+    },
+    [searchMode],
+  );
 
   return (
     <SearchField<Practitioner>
@@ -78,8 +90,8 @@ export function PractitionerSearchField({
       queryKey="practitioners"
       fetchFn={fetchFn}
       formatDisplay={formatDisplay}
-      renderItem={renderItem}
-      getItemKey={(practitioner) => practitioner.rpps}
+      renderItem={renderPractitionerItem}
+      getItemKey={getPractitionerKey}
       getItemId={getItemId}
       noResultsMessage="Aucun praticien trouvé"
       minSearchLength={minSearchLength}

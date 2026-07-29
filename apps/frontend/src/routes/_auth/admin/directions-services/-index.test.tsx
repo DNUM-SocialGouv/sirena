@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useDirectionsServicesList } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
-import { requireAdminLocalDirectionsServices } from './-route-guard';
+import { requireAdminLocalAccess } from '../-admin-local-route-guard';
 import { Route, RouteComponent } from './index';
 
 const { authGuardSpy } = vi.hoisted(() => ({
@@ -60,9 +60,9 @@ afterEach(() => {
 });
 
 describe('Admin directions and services route', () => {
-  it('uses the entity-admin local Directions and Services guard', () => {
+  it('uses the shared Admin-local access guard', () => {
     expect(vi.mocked(requireAuthAndRoles)).toHaveBeenCalledWith([ROLES.ENTITY_ADMIN]);
-    expect((Route as unknown as { beforeLoad: unknown }).beforeLoad).toBe(requireAdminLocalDirectionsServices);
+    expect((Route as unknown as { beforeLoad: unknown }).beforeLoad).toBe(requireAdminLocalAccess);
   });
 
   it('renders an accessible page title with the admin local affectation organization', () => {
@@ -84,7 +84,7 @@ describe('Admin directions and services route', () => {
     expect(document.title).toBe('Directions et services (ARS Normandie) - Espace administrateur - SIRENA');
   });
 
-  it('shows a dedicated assigned-Entité action without inserting it into the descendant table', () => {
+  it('keeps root-level descendant management without offering root editing', () => {
     vi.mocked(useProfile).mockReturnValue({
       data: {
         affectationChain: [{ id: 'root-ars', nomComplet: 'ARS Normandie' }],
@@ -110,10 +110,7 @@ describe('Admin directions and services route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.getByRole('link', { name: 'Modifier mon entité' })).toHaveAttribute(
-      'href',
-      '/admin/directions-services/root-ars/edit',
-    );
+    expect(screen.queryByRole('link', { name: 'Modifier mon entité' })).not.toBeInTheDocument();
     expect(screen.queryByRole('cell', { name: 'ARS Normandie' })).not.toBeInTheDocument();
     expect(screen.getByRole('cell', { name: 'Direction Autonomie' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ajouter une direction' })).toBeInTheDocument();

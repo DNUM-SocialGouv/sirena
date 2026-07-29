@@ -1,5 +1,39 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import styles from './EntiteCombobox.module.css';
+
+type EntiteOptionData = { id: string; nomComplet: string };
+
+interface EntiteOptionProps {
+  entite: EntiteOptionData;
+  optionId: string;
+  isActive: boolean;
+  isSelected: boolean;
+  onSelect: (entite: EntiteOptionData) => void;
+}
+
+const EntiteOption = ({ entite, optionId, isActive, isSelected, onSelect }: EntiteOptionProps) => {
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      // onMouseDown plutôt que onClick pour précéder le onBlur de l'input
+      e.preventDefault();
+      onSelect(entite);
+    },
+    [entite, onSelect],
+  );
+
+  return (
+    <div
+      id={optionId}
+      role="option"
+      aria-selected={isSelected}
+      tabIndex={-1}
+      className={`${styles.item} ${isActive ? styles.active : ''}`}
+      onMouseDown={handleMouseDown}
+    >
+      {entite.nomComplet}
+    </div>
+  );
+};
 
 interface EntiteComboboxProps {
   entites: Array<{ id: string; nomComplet: string }>;
@@ -90,93 +124,123 @@ export function EntiteCombobox({
     }
   }, [activeIndex, uid]);
 
-  const selectEntite = (entite: { id: string; nomComplet: string }) => {
-    setInputValue(entite.nomComplet);
-    onChange(entite.id);
-    setIsOpen(false);
-    setActiveIndex(-1);
-    // Empêche onFocus de rouvrir le dropdown sur mobile (focus programmatique)
-    skipNextFocus.current = true;
-    inputRef.current?.focus();
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-    setHasTyped(true);
-    setIsOpen(true);
-    setActiveIndex(-1);
-    if (e.target.value === '') {
-      onChange('');
-    }
-  };
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    // Nettoyer le flag ici : si la sélection s'est faite au clavier (Enter), .focus() était
-    // un no-op et skipNextFocus serait resté true indéfiniment sans ce reset.
-    skipNextFocus.current = false;
-    if (!wrapperRef.current?.contains(e.relatedTarget as Node)) {
+  const selectEntite = useCallback(
+    (entite: EntiteOptionData) => {
+      setInputValue(entite.nomComplet);
+      onChange(entite.id);
       setIsOpen(false);
       setActiveIndex(-1);
-      const entite = entites.find((ent) => ent.id === value);
-      // Restaurer uniquement si une entité était sélectionnée ; sinon préserver la saisie partielle
-      if (entite) setInputValue(entite.nomComplet);
-    }
-  };
+      // Empêche onFocus de rouvrir le dropdown sur mobile (focus programmatique)
+      skipNextFocus.current = true;
+      inputRef.current?.focus();
+    },
+    [onChange],
+  );
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        if (!isOpen) {
-          setIsOpen(true);
-          setActiveIndex(0);
-        } else {
-          setActiveIndex((prev) => Math.min(prev + 1, filteredEntites.length - 1));
-        }
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        if (!isOpen) {
-          setIsOpen(true);
-          setActiveIndex(filteredEntites.length - 1);
-        } else if (activeIndex <= 0) {
-          setActiveIndex(-1);
-        } else {
-          setActiveIndex((prev) => prev - 1);
-        }
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (isOpen && activeIndex >= 0 && filteredEntites[activeIndex]) {
-          selectEntite(filteredEntites[activeIndex]);
-        }
-        break;
-      case 'Escape': {
-        e.preventDefault();
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setInputValue(e.target.value);
+      setHasTyped(true);
+      setIsOpen(true);
+      setActiveIndex(-1);
+      if (e.target.value === '') {
+        onChange('');
+      }
+    },
+    [onChange],
+  );
+
+  const handleBlur = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      // Nettoyer le flag ici : si la sélection s'est faite au clavier (Enter), .focus() était
+      // un no-op et skipNextFocus serait resté true indéfiniment sans ce reset.
+      skipNextFocus.current = false;
+      if (!wrapperRef.current?.contains(e.relatedTarget as Node)) {
         setIsOpen(false);
         setActiveIndex(-1);
         const entite = entites.find((ent) => ent.id === value);
-        setInputValue(entite?.nomComplet ?? '');
-        break;
+        // Restaurer uniquement si une entité était sélectionnée ; sinon préserver la saisie partielle
+        if (entite) setInputValue(entite.nomComplet);
       }
-      case 'Home':
-        if (isOpen && filteredEntites.length > 0) {
-          e.preventDefault();
-          setActiveIndex(0);
-        }
-        break;
-      case 'End':
-        if (isOpen && filteredEntites.length > 0) {
-          e.preventDefault();
-          setActiveIndex(filteredEntites.length - 1);
-        }
-        break;
-      case 'Tab':
-        setIsOpen(false);
-        setActiveIndex(-1);
-        break;
+    },
+    [entites, value],
+  );
+
+  const handleFocus = useCallback(() => {
+    if (skipNextFocus.current) {
+      skipNextFocus.current = false;
+      return;
     }
-  };
+    if (!disabled) {
+      setIsOpen(true);
+      setHasTyped(!value && inputValue.length >= MIN_FILTER_LENGTH);
+    }
+  }, [disabled, value, inputValue]);
+
+  const handleClick = useCallback(() => {
+    if (!disabled) {
+      setIsOpen(true);
+      setHasTyped(!value && inputValue.length >= MIN_FILTER_LENGTH);
+    }
+  }, [disabled, value, inputValue]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          if (!isOpen) {
+            setIsOpen(true);
+            setActiveIndex(0);
+          } else {
+            setActiveIndex((prev) => Math.min(prev + 1, filteredEntites.length - 1));
+          }
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          if (!isOpen) {
+            setIsOpen(true);
+            setActiveIndex(filteredEntites.length - 1);
+          } else if (activeIndex <= 0) {
+            setActiveIndex(-1);
+          } else {
+            setActiveIndex((prev) => prev - 1);
+          }
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (isOpen && activeIndex >= 0 && filteredEntites[activeIndex]) {
+            selectEntite(filteredEntites[activeIndex]);
+          }
+          break;
+        case 'Escape': {
+          e.preventDefault();
+          setIsOpen(false);
+          setActiveIndex(-1);
+          const entite = entites.find((ent) => ent.id === value);
+          setInputValue(entite?.nomComplet ?? '');
+          break;
+        }
+        case 'Home':
+          if (isOpen && filteredEntites.length > 0) {
+            e.preventDefault();
+            setActiveIndex(0);
+          }
+          break;
+        case 'End':
+          if (isOpen && filteredEntites.length > 0) {
+            e.preventDefault();
+            setActiveIndex(filteredEntites.length - 1);
+          }
+          break;
+        case 'Tab':
+          setIsOpen(false);
+          setActiveIndex(-1);
+          break;
+      }
+    },
+    [isOpen, activeIndex, filteredEntites, value, entites, selectEntite],
+  );
 
   const hasError = state === 'error';
   const inputGroupClass = ['fr-input-group', hasError ? 'fr-input-group--error' : ''].filter(Boolean).join(' ');
@@ -220,31 +284,17 @@ export function EntiteCombobox({
             value={inputValue}
             onChange={handleInputChange}
             onBlur={handleBlur}
-            onFocus={() => {
-              if (skipNextFocus.current) {
-                skipNextFocus.current = false;
-                return;
-              }
-              if (!disabled) {
-                setIsOpen(true);
-                setHasTyped(!value && inputValue.length >= MIN_FILTER_LENGTH);
-              }
-            }}
-            onClick={() => {
-              if (!disabled) {
-                setIsOpen(true);
-                setHasTyped(!value && inputValue.length >= MIN_FILTER_LENGTH);
-              }
-            }}
+            onFocus={handleFocus}
+            onClick={handleClick}
             onKeyDown={handleKeyDown}
           />
         </div>
 
-        {hasError && stateRelatedMessage && (
+        {hasError && stateRelatedMessage ? (
           <p id={errorId} className="fr-message fr-message--error">
             {stateRelatedMessage}
           </p>
-        )}
+        ) : null}
       </div>
 
       {/* Toujours dans le DOM pour que aria-controls soit toujours résolu */}
@@ -262,21 +312,14 @@ export function EntiteCombobox({
           </div>
         ) : (
           filteredEntites.map((entite, index) => (
-            <div
+            <EntiteOption
               key={entite.id}
-              id={`option-${uid}-${index}`}
-              role="option"
-              aria-selected={entite.id === value}
-              tabIndex={-1}
-              className={`${styles.item} ${index === activeIndex ? styles.active : ''}`}
-              onMouseDown={(e) => {
-                // onMouseDown plutôt que onClick pour précéder le onBlur de l'input
-                e.preventDefault();
-                selectEntite(entite);
-              }}
-            >
-              {entite.nomComplet}
-            </div>
+              entite={entite}
+              optionId={`option-${uid}-${index}`}
+              isActive={index === activeIndex}
+              isSelected={entite.id === value}
+              onSelect={selectEntite}
+            />
           ))
         )}
       </div>

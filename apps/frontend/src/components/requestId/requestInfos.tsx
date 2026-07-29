@@ -63,7 +63,7 @@ export const RequestInfos = ({
               <div className={style['request-left']}>
                 <h1>{requestId ? `Requête ${requestId}` : 'Nouvelle requête'}</h1>
 
-                {requestId && (
+                {requestId ? (
                   <>
                     <RequeteStatutTag className={style['requete-statut-tag']} statut={statutId} noIcon />
                     <PrioriteMenu
@@ -74,7 +74,7 @@ export const RequestInfos = ({
                       }
                     />
 
-                    {showPriseEnCompteToggle && (
+                    {showPriseEnCompteToggle ? (
                       <div className={`${style['toggle-line']} fr-text--md`}>
                         <Checkbox
                           options={[
@@ -89,25 +89,25 @@ export const RequestInfos = ({
                           ]}
                         />
                       </div>
-                    )}
+                    ) : null}
                   </>
-                )}
+                ) : null}
               </div>
-              {requestId && (
+              {requestId ? (
                 <div className={style['download-menu-wrapper']}>
                   <DownloadMenu requestId={requestId} disabled={!hasAttachments} hasUnsafeFiles={hasUnsafeFiles} />
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
-        {fullName && (
+        {fullName ? (
           <div className={style['legend-display']}>
             <ContactInfo icon="fr-icon-user-line" ariaLabel="Identité - personne concernée">
               {fullName}
             </ContactInfo>
           </div>
-        )}
+        ) : null}
         {motifs.length > 0 && (
           <div className={`${style['legend-display']} ${style['motifs-display']}`}>
             <ContactInfo icon="fr-icon-todo-line" ariaLabel="Motif de la requête">

@@ -317,6 +317,8 @@ const Panel = ({ className, style, width, titleId, children, ...rest }: PanelPro
     return () => document.removeEventListener('mousedown', handleClickOutside, true);
   }, [open, onClickOutside, setOpen, isModal]);
 
+  const handleClose = useCallback(() => setOpen(false), [setOpen]);
+
   const onKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
     if (!shouldTrapFocus || e.key !== 'Tab') return;
 
@@ -355,17 +357,17 @@ const Panel = ({ className, style, width, titleId, children, ...rest }: PanelPro
         onKeyDown={onKeyDown}
         {...rest}
       >
-        {withCloseButton && (
+        {withCloseButton ? (
           <Button
             iconId="fr-icon-close-line"
             priority="tertiary no outline"
             aria-label="Annuler et fermer le panneau"
             className={s.close}
-            onClick={() => setOpen(false)}
+            onClick={handleClose}
           >
             Annuler <span className="fr-sr-only">et fermer le panneau</span>
           </Button>
-        )}
+        ) : null}
         {children}
       </aside>
     </div>

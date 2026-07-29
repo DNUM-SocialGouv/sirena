@@ -33,7 +33,7 @@ export function EntityHierarchySelectorComponent({ id, setLevel }: EntityHierarc
           nullPlaceholder="Pas d'entité administrative sélectionnée"
         />
       </fieldset>
-      {level1 && (
+      {level1 ? (
         <fieldset className="fr-fieldset">
           <EntityLevelSelect
             level={level2}
@@ -45,8 +45,8 @@ export function EntityHierarchySelectorComponent({ id, setLevel }: EntityHierarc
             nullPlaceholder="Pas de service direction sélectionné"
           />
         </fieldset>
-      )}
-      {level2 && (
+      ) : null}
+      {level2 ? (
         <fieldset className="fr-fieldset">
           <EntityLevelSelect
             level={level3}
@@ -58,7 +58,7 @@ export function EntityHierarchySelectorComponent({ id, setLevel }: EntityHierarc
             nullPlaceholder="Pas de service sélectionné"
           />
         </fieldset>
-      )}
+      ) : null}
     </>
   );
 }

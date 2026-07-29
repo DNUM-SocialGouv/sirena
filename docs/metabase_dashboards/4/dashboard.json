@@ -43,27 +43,27 @@
             {
               "lib/type": "mbql.stage/native",
               "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'CLOTUREE'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]];",
-              "template-tags": {
-                "end_date": {
-                  "display-name": "End Date",
-                  "id": "f4098765-99bf-4fa5-a062-f5784b68228d",
-                  "name": "end_date",
-                  "type": "date"
-                },
-                "entity_label": {
+              "template-tags": [
+                {
                   "display-name": "Entity Label",
                   "id": "cc23122a-24e6-4299-91ae-a3d6e6e3e71c",
                   "name": "entity_label",
                   "required": true,
                   "type": "text"
                 },
-                "start_date": {
+                {
                   "display-name": "Start Date",
                   "id": "1b5c1e68-6b21-4d5c-8d50-9af1862a4303",
                   "name": "start_date",
                   "type": "date"
+                },
+                {
+                  "display-name": "End Date",
+                  "id": "f4098765-99bf-4fa5-a062-f5784b68228d",
+                  "name": "end_date",
+                  "type": "date"
                 }
-              }
+              ]
             }
           ]
         },
@@ -196,7 +196,7 @@
         }
       },
       "card_id": 45,
-      "col": 18,
+      "col": 14,
       "collection_authority_level": null,
       "dashboard_id": 4,
       "dashboard_tab_id": null,
@@ -240,8 +240,8 @@
       ],
       "row": 0,
       "series": [],
-      "size_x": 6,
-      "size_y": 4,
+      "size_x": 5,
+      "size_y": 3,
       "visualization_settings": {}
     },
     {
@@ -264,220 +264,28 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "SELECT\n    cr.label              AS raison_cloture,\n    COUNT(DISTINCT et.id) AS nb_requetes\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\" e\n    ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r\n    ON r.id = re.\"requeteId\"\n  JOIN \"RequeteEtape\" et\n    ON et.\"requeteId\" = re.\"requeteId\"\n   AND et.\"entiteId\"  = re.\"entiteId\"\n   AND et.\"statutId\"  = 'CLOTUREE'\n  JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j\n    ON j.\"B\" = et.id\n  JOIN \"RequeteClotureReasonEnum\" cr\n    ON cr.id = j.\"A\"\n  WHERE re.\"statutId\" = 'CLOTUREE'\n    AND e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day')]]\n  GROUP BY cr.label\n  ORDER BY nb_requetes DESC;",
-              "template-tags": {
-                "end_date": {
-                  "display-name": "End Date",
-                  "id": "e5b95869-3dca-4960-bd80-6a4c9591551b",
-                  "name": "end_date",
-                  "type": "date"
-                },
-                "entity_label": {
-                  "display-name": "Entity Label",
-                  "id": "28575bb8-65aa-4594-bf0f-ebf58b62922f",
-                  "name": "entity_label",
-                  "type": "text"
-                },
-                "start_date": {
-                  "display-name": "Start Date",
-                  "id": "ad253bd1-6d23-4662-84b1-f893a1945044",
-                  "name": "start_date",
-                  "type": "date"
-                }
-              }
-            }
-          ]
-        },
-        "description": null,
-        "dimension_mappings": null,
-        "dimensions": null,
-        "display": "table",
-        "document_id": null,
-        "download_perms": "full",
-        "embedding_params": null,
-        "embedding_type": null,
-        "enable_embedding": false,
-        "entity_id": "AhmL1ImfBecTkedR2qyJB",
-        "id": 47,
-        "legacy_query": null,
-        "made_public_by_id": null,
-        "metabase_version": "v0.60.4.4 (65c9d32)",
-        "moderation_reviews": [],
-        "name": "Répartition par raison de clôture",
-        "parameter_mappings": [],
-        "parameters": [
-          {
-            "id": "28575bb8-65aa-4594-bf0f-ebf58b62922f",
-            "isMultiSelect": false,
-            "name": "Entity Label",
-            "slug": "entity_label",
-            "target": [
-              "variable",
-              [
-                "template-tag",
-                "entity_label"
-              ]
-            ],
-            "type": "string/="
-          },
-          {
-            "id": "ad253bd1-6d23-4662-84b1-f893a1945044",
-            "isMultiSelect": false,
-            "name": "Start Date",
-            "slug": "start_date",
-            "target": [
-              "variable",
-              [
-                "template-tag",
-                "start_date"
-              ]
-            ],
-            "type": "date/single"
-          },
-          {
-            "id": "e5b95869-3dca-4960-bd80-6a4c9591551b",
-            "isMultiSelect": false,
-            "name": "End Date",
-            "slug": "end_date",
-            "target": [
-              "variable",
-              [
-                "template-tag",
-                "end_date"
-              ]
-            ],
-            "type": "date/single"
-          }
-        ],
-        "public_uuid": null,
-        "query_average_duration": 2,
-        "query_type": "native",
-        "result_metadata": null,
-        "source_card_id": null,
-        "table_id": null,
-        "type": "question",
-        "visualization_settings": {
-          "table.cell_column": "raison_cloture",
-          "table.pivot_column": "nb_requetes"
-        }
-      },
-      "card_id": 47,
-      "col": 0,
-      "collection_authority_level": null,
-      "dashboard_id": 4,
-      "dashboard_tab_id": null,
-      "entity_id": "7nc5Orii4CcuXZOy_4TmY",
-      "id": 43,
-      "inline_parameters": [],
-      "parameter_mappings": [
-        {
-          "card_id": 47,
-          "parameter_id": "cfaa17bb",
-          "target": [
-            "variable",
-            [
-              "template-tag",
-              "entity_label"
-            ]
-          ]
-        },
-        {
-          "card_id": 47,
-          "parameter_id": "4e8d9288",
-          "target": [
-            "variable",
-            [
-              "template-tag",
-              "start_date"
-            ]
-          ]
-        },
-        {
-          "card_id": 47,
-          "parameter_id": "5bf40cdc",
-          "target": [
-            "variable",
-            [
-              "template-tag",
-              "end_date"
-            ]
-          ]
-        }
-      ],
-      "row": 4,
-      "series": [],
-      "size_x": 13,
-      "size_y": 11,
-      "visualization_settings": {
-        "visualization": {
-          "columnValuesMapping": {
-            "COLUMN_1": [
-              {
-                "name": "COLUMN_1",
-                "originalName": "raison_cloture",
-                "sourceId": "card:47"
-              }
-            ],
-            "COLUMN_2": [
-              {
-                "name": "COLUMN_2",
-                "originalName": "nb_requetes",
-                "sourceId": "card:47"
-              }
-            ]
-          },
-          "display": "pie",
-          "settings": {
-            "pie.dimension": "COLUMN_1",
-            "pie.metric": "COLUMN_2",
-            "table.cell_column": "raison_cloture",
-            "table.pivot_column": "nb_requetes"
-          }
-        }
-      }
-    },
-    {
-      "action_id": null,
-      "card": {
-        "archived": false,
-        "archived_directly": false,
-        "cache_ttl": null,
-        "can_write": true,
-        "card_schema": 23,
-        "collection_id": null,
-        "collection_position": null,
-        "collection_preview": true,
-        "creator_id": 3,
-        "dashboard_id": 4,
-        "database_id": 4,
-        "dataset_query": {
-          "database": 4,
-          "lib/type": "mbql/query",
-          "stages": [
-            {
-              "lib/type": "mbql.stage/native",
               "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'NOUVEAU'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]];",
-              "template-tags": {
-                "end_date": {
-                  "display-name": "End Date",
-                  "id": "63e6a5b7-a326-4ae5-9ab6-6b6c9b0db210",
-                  "name": "end_date",
-                  "type": "date"
-                },
-                "entity_label": {
+              "template-tags": [
+                {
                   "display-name": "Entity Label",
                   "id": "fe2fc655-5100-4c24-85ce-9d3bb93488eb",
                   "name": "entity_label",
                   "required": false,
                   "type": "text"
                 },
-                "start_date": {
+                {
                   "display-name": "Start Date",
                   "id": "99a9d6ba-6cb9-4199-a794-06fbf3296075",
                   "name": "start_date",
                   "type": "date"
+                },
+                {
+                  "display-name": "End Date",
+                  "id": "63e6a5b7-a326-4ae5-9ab6-6b6c9b0db210",
+                  "name": "end_date",
+                  "type": "date"
                 }
-              }
+              ]
             }
           ]
         },
@@ -578,13 +386,13 @@
               },
               "type": {
                 "type/Number": {
-                  "avg": 109,
+                  "avg": 489,
                   "excess-kurtosis": null,
-                  "max": 109,
-                  "min": 109,
+                  "max": 489,
+                  "min": 489,
                   "mode-fraction": 1,
-                  "q1": 109,
-                  "q3": 109,
+                  "q1": 489,
+                  "q3": 489,
                   "sd": 0,
                   "skewness": null,
                   "top-3-fraction": 1,
@@ -611,7 +419,7 @@
         }
       },
       "card_id": 48,
-      "col": 6,
+      "col": 5,
       "collection_authority_level": null,
       "dashboard_id": 4,
       "dashboard_tab_id": null,
@@ -655,8 +463,8 @@
       ],
       "row": 0,
       "series": [],
-      "size_x": 6,
-      "size_y": 4,
+      "size_x": 4,
+      "size_y": 3,
       "visualization_settings": {}
     },
     {
@@ -680,26 +488,26 @@
             {
               "lib/type": "mbql.stage/native",
               "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'EN_COURS'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]];",
-              "template-tags": {
-                "end_date": {
-                  "display-name": "End Date",
-                  "id": "52c02cb9-93a4-40bb-a052-8ef8ad4988c5",
-                  "name": "end_date",
-                  "type": "date"
-                },
-                "entity_label": {
+              "template-tags": [
+                {
                   "display-name": "Entity Label",
                   "id": "ec0c9ad1-7a80-42ab-b6c9-5ee27007e7fb",
                   "name": "entity_label",
                   "type": "text"
                 },
-                "start_date": {
+                {
                   "display-name": "Start Date",
                   "id": "7ecfa54a-5d0e-4afd-832b-0e2e2aa62ff7",
                   "name": "start_date",
                   "type": "date"
+                },
+                {
+                  "display-name": "End Date",
+                  "id": "52c02cb9-93a4-40bb-a052-8ef8ad4988c5",
+                  "name": "end_date",
+                  "type": "date"
                 }
-              }
+              ]
             }
           ]
         },
@@ -799,13 +607,13 @@
               },
               "type": {
                 "type/Number": {
-                  "avg": 169,
+                  "avg": 318,
                   "excess-kurtosis": null,
-                  "max": 169,
-                  "min": 169,
+                  "max": 318,
+                  "min": 318,
                   "mode-fraction": 1,
-                  "q1": 169,
-                  "q3": 169,
+                  "q1": 318,
+                  "q3": 318,
                   "sd": 0,
                   "skewness": null,
                   "top-3-fraction": 1,
@@ -831,7 +639,7 @@
         }
       },
       "card_id": 49,
-      "col": 12,
+      "col": 9,
       "collection_authority_level": null,
       "dashboard_id": 4,
       "dashboard_tab_id": null,
@@ -875,8 +683,8 @@
       ],
       "row": 0,
       "series": [],
-      "size_x": 6,
-      "size_y": 4,
+      "size_x": 5,
+      "size_y": 3,
       "visualization_settings": {}
     },
     {
@@ -900,26 +708,26 @@
             {
               "lib/type": "mbql.stage/native",
               "native": "  SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]];",
-              "template-tags": {
-                "end_date": {
-                  "display-name": "End Date",
-                  "id": "3411f4eb-2d32-4849-8b7c-438328f9938a",
-                  "name": "end_date",
-                  "type": "date"
-                },
-                "entity_label": {
+              "template-tags": [
+                {
                   "display-name": "Entity Label",
                   "id": "3a350622-7615-4473-91ce-4b96b1b8ce2b",
                   "name": "entity_label",
                   "type": "text"
                 },
-                "start_date": {
+                {
                   "display-name": "Start Date",
                   "id": "e3ebe751-0c1d-48a7-82d1-6387312ba30a",
                   "name": "start_date",
                   "type": "date"
+                },
+                {
+                  "display-name": "End Date",
+                  "id": "3411f4eb-2d32-4849-8b7c-438328f9938a",
+                  "name": "end_date",
+                  "type": "date"
                 }
-              }
+              ]
             }
           ]
         },
@@ -997,7 +805,7 @@
           }
         ],
         "public_uuid": null,
-        "query_average_duration": null,
+        "query_average_duration": 275,
         "query_type": "native",
         "result_metadata": [
           {
@@ -1019,13 +827,13 @@
               },
               "type": {
                 "type/Number": {
-                  "avg": 307,
+                  "avg": 866,
                   "excess-kurtosis": null,
-                  "max": 307,
-                  "min": 307,
+                  "max": 866,
+                  "min": 866,
                   "mode-fraction": 1,
-                  "q1": 307,
-                  "q3": 307,
+                  "q1": 866,
+                  "q3": 866,
                   "sd": 0,
                   "skewness": null,
                   "top-3-fraction": 1,
@@ -1095,8 +903,8 @@
       ],
       "row": 0,
       "series": [],
-      "size_x": 6,
-      "size_y": 4,
+      "size_x": 5,
+      "size_y": 3,
       "visualization_settings": {}
     },
     {
@@ -1120,26 +928,26 @@
             {
               "lib/type": "mbql.stage/native",
               "native": "-- Nombre de requêtes de l'entité de l'agent connecté qui sont en compétence partagée,\n-- c.-à-d. affectées à au moins une AUTRE entité administrative « réellement » compétente.\n-- Une autre entité est ignorée si elle a clôturé la requête pour motif « Hors compétence ».\nSELECT\n  COUNT(DISTINCT re_self.\"requeteId\") AS nombre_requetes_competence_partagee\nFROM \"RequeteEntite\" re_self\nJOIN \"Entite\"   e ON e.id = re_self.\"entiteId\"\nJOIN \"Requete\"  r ON r.id = re_self.\"requeteId\"\nWHERE\n  e.label = {{entity_label}}\n  AND EXISTS (\n    -- une autre entité affectée à la même requête...\n    SELECT 1\n    FROM \"RequeteEntite\" re_other\n    WHERE re_other.\"requeteId\" = re_self.\"requeteId\"\n      AND re_other.\"entiteId\" <> re_self.\"entiteId\"\n      -- ...qui n'est PAS clôturée « Hors compétence »\n      AND NOT (\n        re_other.\"statutId\" = 'CLOTUREE'\n        AND EXISTS (\n          SELECT 1\n          FROM \"RequeteEtape\" et\n          JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n          WHERE et.\"requeteId\" = re_other.\"requeteId\"\n            AND et.\"entiteId\"  = re_other.\"entiteId\"\n            AND et.\"statutId\"  = 'CLOTUREE'\n            AND j.\"A\"          = 'HORS_COMPETENCE'\n        )\n      )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]];",
-              "template-tags": {
-                "end_date": {
-                  "display-name": "End Date",
-                  "id": "1d20b736-898e-4a78-8bdd-ff198232d8e3",
-                  "name": "end_date",
-                  "type": "date"
-                },
-                "entity_label": {
+              "template-tags": [
+                {
                   "display-name": "Entity Label",
                   "id": "fd677468-a4da-47d0-8c73-87bd90cafe61",
                   "name": "entity_label",
                   "type": "text"
                 },
-                "start_date": {
+                {
                   "display-name": "Start Date",
                   "id": "39685465-f3f0-40e4-9a14-ae74670e2eed",
                   "name": "start_date",
                   "type": "date"
+                },
+                {
+                  "display-name": "End Date",
+                  "id": "1d20b736-898e-4a78-8bdd-ff198232d8e3",
+                  "name": "end_date",
+                  "type": "date"
                 }
-              }
+              ]
             }
           ]
         },
@@ -1224,7 +1032,7 @@
           }
         ],
         "public_uuid": null,
-        "query_average_duration": 1,
+        "query_average_duration": null,
         "query_type": "native",
         "result_metadata": [
           {
@@ -1278,7 +1086,7 @@
         }
       },
       "card_id": 51,
-      "col": 13,
+      "col": 19,
       "collection_authority_level": null,
       "dashboard_id": 4,
       "dashboard_tab_id": null,
@@ -1320,10 +1128,10 @@
           ]
         }
       ],
-      "row": 4,
+      "row": 0,
       "series": [],
-      "size_x": 6,
-      "size_y": 4,
+      "size_x": 5,
+      "size_y": 3,
       "visualization_settings": {}
     },
     {
@@ -1346,27 +1154,27 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "-- Carte : « Répartition du nombre de requêtes par motif (qualifié, dernier niveau) »\n-- + ligne « Aucun motif » pour les requêtes sans motif qualifié.\n-- entity_label = paramètre Metabase Locked, cf. docs/metabase_dashboards/FILTERS.md\nWITH requetes_entite AS (\n  SELECT DISTINCT r.id AS requete_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE e.label = {{entity_label}}\n    [[ AND r.\"receptionDate\" >= {{start_date}} ]]\n    [[ AND r.\"receptionDate\" <= {{end_date}} ]]\n),\ntotal AS (\n  SELECT COUNT(*) AS nb_total FROM requetes_entite\n),\nrequete_motif AS (\n  -- 1 ligne par (requête, motif qualifié dernier niveau)\n  SELECT DISTINCT re.requete_id, m.label AS motif\n  FROM requetes_entite re\n  JOIN \"Situation\" s  ON s.\"requeteId\"    = re.requete_id\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  JOIN \"MotifEnum\" m  ON m.id             = fm.\"motifId\"\n),\npar_motif AS (\n  SELECT motif, COUNT(*) AS nb_requetes\n  FROM requete_motif\n  GROUP BY motif\n\n  UNION ALL\n\n  -- Requêtes de l'entité sans aucun motif qualifié\n  SELECT 'Aucun motif' AS motif, COUNT(*) AS nb_requetes\n  FROM requetes_entite re\n  WHERE NOT EXISTS (\n    SELECT 1 FROM requete_motif rm WHERE rm.requete_id = re.requete_id\n  )\n)\nSELECT\n  pm.motif                                                 AS \"Motif\",\n  pm.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * pm.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part (%)\"\nFROM par_motif pm\nCROSS JOIN total t\nWHERE pm.nb_requetes > 0\nORDER BY pm.nb_requetes DESC",
-              "template-tags": {
-                "end_date": {
-                  "display-name": "End Date",
-                  "id": "b0523a73-b7ca-4593-8c70-cdcadff8cc6c",
-                  "name": "end_date",
-                  "type": "date"
-                },
-                "entity_label": {
+              "native": "-- Carte 52 : « Répartition des requêtes par motif (dernier niveau) »\n-- + ligne « Aucun motif qualifié » pour les requêtes sans motif qualifié.\n-- Une requête peut porter plusieurs motifs : la part est calculée sur le nombre de requêtes\n-- rattachées à cette entité, la somme des parts dépasse donc 100 %.\n-- NB : ne jamais mettre ni apostrophe ni double crochet dans ces commentaires. Metabase les\n-- analyse comme du SQL : une apostrophe isolée ou un bloc optionnel vide fait échouer la carte\n-- sur \"clauses must contain at least one {{...}} clause\".\n-- entity_label = paramètre Metabase Locked, cf. docs/metabase_dashboards/FILTERS.md\nWITH requetes_entite AS (\n  SELECT DISTINCT r.id AS requete_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n),\ntotal AS (\n  SELECT COUNT(*) AS nb_total FROM requetes_entite\n),\n-- MotifEnum ne contient que les feuilles (id = PARENT/ENFANT) ; les libellés des catégories\n-- parentes ne sont pas en base, cf. packages/common/src/constants/motifs.constant.ts\nmotif_parent (code, label) AS (\n  VALUES\n    ('ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES', 'Activités d''esthétique non réglementées'),\n    ('MEDICAMENTS', 'Médicaments'),\n    ('FACTURATIONS_HONORAIRES', 'Facturations et honoraires'),\n    ('HOTELLERIE_LOCAUX_RESTAURATION', 'Hôtellerie locaux restauration'),\n    ('INFORMATIONS_DROITS_USAGERS', 'Informations et droits des usagers'),\n    ('MAUVAISE_ATTITUDE_PROFESSIONNELS', 'Mauvaise attitude des professionnels'),\n    ('PRATIQUE_NON_CONVENTIONNELLE', 'Pratique non conventionnelle'),\n    ('PROBLEMES_ORGANISATION_RESSOURCES_HUMAINES', 'Problèmes d''organisation ou de ressources humaines'),\n    ('QUALITE_ACCOMPAGNEMENT_SERVICE', 'Qualité de l''accompagnement ou du service'),\n    ('QUALITE_SOINS', 'Qualité des soins'),\n    ('DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE', 'Difficulté de recherche d''établissement ou d''un professionnel ou de service'),\n    ('PROBLEMES_ENVIRONNEMENTAUX', 'Problèmes environnementaux'),\n    ('PROBLEMES_TRANSPORT_SANITAIRE', 'Problèmes liés au transport Sanitaire')\n),\n-- Libellés portés par plusieurs motifs du référentiel (« Autres » x8) : à préciser par leur\n-- catégorie parente, sinon deux lignes homonymes sont indiscernables.\nlabel_ambigu AS (\n  SELECT label FROM \"MotifEnum\" GROUP BY label HAVING COUNT(*) > 1\n),\nrequete_motif AS (\n  -- 1 ligne par (requête, motif) : dédoublonne les situations multiples pour une même requête\n  SELECT DISTINCT re.requete_id, m.id AS motif_id, m.label AS motif_label\n  FROM requetes_entite re\n  JOIN \"Situation\" s  ON s.\"requeteId\"    = re.requete_id\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  JOIN \"MotifEnum\" m  ON m.id             = fm.\"motifId\"\n),\npar_motif AS (\n  SELECT\n    CASE\n      WHEN rm.motif_label IN (SELECT label FROM label_ambigu)\n        THEN rm.motif_label || ' (' || COALESCE(mp.label, split_part(rm.motif_id, '/', 1)) || ')'\n      ELSE rm.motif_label\n    END      AS motif,\n    COUNT(*) AS nb_requetes\n  FROM requete_motif rm\n  LEFT JOIN motif_parent mp ON mp.code = split_part(rm.motif_id, '/', 1)\n  GROUP BY rm.motif_id, rm.motif_label, mp.label\n\n  UNION ALL\n\n  SELECT 'Aucun motif qualifié', COUNT(*)\n  FROM requetes_entite re\n  WHERE NOT EXISTS (\n    SELECT 1 FROM requete_motif rm WHERE rm.requete_id = re.requete_id\n  )\n)\nSELECT\n  pm.motif                                                 AS \"Motif (dernier niveau)\",\n  pm.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * pm.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes (%)\"\nFROM par_motif pm\nCROSS JOIN total t\nWHERE pm.nb_requetes > 0\nORDER BY pm.nb_requetes DESC;\n",
+              "template-tags": [
+                {
                   "display-name": "Entity Label",
                   "id": "60af393b-c4ce-49eb-b2f3-2d9cae5e35b1",
                   "name": "entity_label",
                   "type": "text"
                 },
-                "start_date": {
+                {
                   "display-name": "Start Date",
                   "id": "aa7e985e-ef83-4a8e-9ea9-c3256778f674",
                   "name": "start_date",
                   "type": "date"
+                },
+                {
+                  "display-name": "End Date",
+                  "id": "b0523a73-b7ca-4593-8c70-cdcadff8cc6c",
+                  "name": "end_date",
+                  "type": "date"
                 }
-              }
+              ]
             }
           ]
         },
@@ -1453,14 +1261,57 @@
         "public_uuid": null,
         "query_average_duration": null,
         "query_type": "native",
-        "result_metadata": null,
+        "result_metadata": [
+          {
+            "base_type": "type/Text",
+            "database_type": "text",
+            "display_name": "Motif (dernier niveau)",
+            "field_ref": [
+              "field",
+              "Motif (dernier niveau)",
+              {
+                "base-type": "type/Text"
+              }
+            ],
+            "name": "Motif (dernier niveau)"
+          },
+          {
+            "base_type": "type/BigInteger",
+            "database_type": "int8",
+            "display_name": "Nombre de requêtes",
+            "field_ref": [
+              "field",
+              "Nombre de requêtes",
+              {
+                "base-type": "type/BigInteger"
+              }
+            ],
+            "name": "Nombre de requêtes"
+          },
+          {
+            "base_type": "type/Decimal",
+            "database_type": "numeric",
+            "display_name": "Part des requêtes (%)",
+            "field_ref": [
+              "field",
+              "Part des requêtes (%)",
+              {
+                "base-type": "type/Decimal"
+              }
+            ],
+            "name": "Part des requêtes (%)"
+          }
+        ],
         "source_card_id": null,
         "table_id": null,
         "type": "question",
-        "visualization_settings": {}
+        "visualization_settings": {
+          "table.cell_column": "Part des requêtes (%)",
+          "table.pivot_column": "Nombre de requêtes"
+        }
       },
       "card_id": 52,
-      "col": 0,
+      "col": 14,
       "collection_authority_level": null,
       "dashboard_id": 4,
       "dashboard_tab_id": null,
@@ -1502,9 +1353,202 @@
           ]
         }
       ],
-      "row": 15,
+      "row": 3,
       "series": [],
-      "size_x": 12,
+      "size_x": 10,
+      "size_y": 9,
+      "visualization_settings": {}
+    },
+    {
+      "action_id": null,
+      "card": {
+        "archived": false,
+        "archived_directly": false,
+        "cache_ttl": null,
+        "can_write": true,
+        "card_schema": 23,
+        "collection_id": null,
+        "collection_position": null,
+        "collection_preview": true,
+        "creator_id": 3,
+        "dashboard_id": 4,
+        "database_id": 4,
+        "dataset_query": {
+          "database": 4,
+          "lib/type": "mbql/query",
+          "stages": [
+            {
+              "lib/type": "mbql.stage/native",
+              "native": "-- Carte : « Répartition des requêtes clôturées par motif de clôture »\n-- Une requête peut avoir plusieurs motifs de clôture : la part est calculée sur le nombre de\n-- requêtes clôturées, la somme des parts dépasse donc 100 %.\nWITH requetes_cloturees AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, re.\"entiteId\" AS entite_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE re.\"statutId\" = 'CLOTUREE'\n    AND e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n),\ntotal AS (\n  SELECT COUNT(*) AS nb_total FROM requetes_cloturees\n),\nrequete_motif AS (\n  -- 1 ligne par (requête, motif) : dédoublonne les étapes de clôture multiples\n  SELECT DISTINCT rc.requete_id, cr.label AS motif\n  FROM requetes_cloturees rc\n  JOIN \"RequeteEtape\" et\n    ON et.\"requeteId\" = rc.requete_id\n   AND et.\"entiteId\"  = rc.entite_id\n   AND et.\"statutId\"  = 'CLOTUREE'\n  JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n  JOIN \"RequeteClotureReasonEnum\" cr               ON cr.id = j.\"A\"\n),\npar_motif AS (\n  SELECT motif, COUNT(*) AS nb_requetes\n  FROM requete_motif\n  GROUP BY motif\n)\nSELECT\n  pm.motif                                                 AS \"Motif de clôture\",\n  pm.nb_requetes                                           AS \"Nombre de requêtes clôturées\",\n  ROUND(100.0 * pm.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes clôturées (%)\"\nFROM par_motif pm\nCROSS JOIN total t\nWHERE pm.nb_requetes > 0\nORDER BY pm.nb_requetes DESC;",
+              "template-tags": [
+                {
+                  "display-name": "Entity Label",
+                  "id": "28575bb8-65aa-4594-bf0f-ebf58b62922f",
+                  "name": "entity_label",
+                  "type": "text"
+                },
+                {
+                  "display-name": "Start Date",
+                  "id": "ad253bd1-6d23-4662-84b1-f893a1945044",
+                  "name": "start_date",
+                  "type": "date"
+                },
+                {
+                  "display-name": "End Date",
+                  "id": "e5b95869-3dca-4960-bd80-6a4c9591551b",
+                  "name": "end_date",
+                  "type": "date"
+                }
+              ]
+            }
+          ]
+        },
+        "description": null,
+        "dimension_mappings": null,
+        "dimensions": null,
+        "display": "table",
+        "document_id": null,
+        "download_perms": "full",
+        "embedding_params": null,
+        "embedding_type": null,
+        "enable_embedding": false,
+        "entity_id": "AhmL1ImfBecTkedR2qyJB",
+        "id": 47,
+        "legacy_query": null,
+        "made_public_by_id": null,
+        "metabase_version": "v0.60.4.4 (65c9d32)",
+        "moderation_reviews": [],
+        "name": "Répartition par raison de clôture",
+        "parameter_mappings": [],
+        "parameters": [
+          {
+            "id": "28575bb8-65aa-4594-bf0f-ebf58b62922f",
+            "isMultiSelect": false,
+            "name": "Entity Label",
+            "slug": "entity_label",
+            "target": [
+              "variable",
+              [
+                "template-tag",
+                "entity_label"
+              ]
+            ],
+            "type": "string/=",
+            "values_query_type": "list",
+            "values_source_config": {
+              "card_id": 46,
+              "label_field": [
+                "field",
+                "nomComplet",
+                {
+                  "base-type": "type/Text"
+                }
+              ],
+              "value_field": [
+                "field",
+                "label",
+                {
+                  "base-type": "type/Text"
+                }
+              ]
+            },
+            "values_source_type": "card"
+          },
+          {
+            "id": "ad253bd1-6d23-4662-84b1-f893a1945044",
+            "isMultiSelect": false,
+            "name": "Start Date",
+            "slug": "start_date",
+            "target": [
+              "variable",
+              [
+                "template-tag",
+                "start_date"
+              ]
+            ],
+            "type": "date/single"
+          },
+          {
+            "id": "e5b95869-3dca-4960-bd80-6a4c9591551b",
+            "isMultiSelect": false,
+            "name": "End Date",
+            "slug": "end_date",
+            "target": [
+              "variable",
+              [
+                "template-tag",
+                "end_date"
+              ]
+            ],
+            "type": "date/single"
+          }
+        ],
+        "public_uuid": null,
+        "query_average_duration": 2,
+        "query_type": "native",
+        "result_metadata": null,
+        "source_card_id": null,
+        "table_id": null,
+        "type": "question",
+        "visualization_settings": {
+          "column_settings": {
+            "[\"name\",\"nb_requetes\"]": {
+              "column_title": "Nombre de requêtes"
+            },
+            "[\"name\",\"raison_cloture\"]": {
+              "column_title": "Raison de cloture"
+            }
+          },
+          "table.cell_column": "raison_cloture",
+          "table.pivot_column": "nb_requetes"
+        }
+      },
+      "card_id": 47,
+      "col": 0,
+      "collection_authority_level": null,
+      "dashboard_id": 4,
+      "dashboard_tab_id": null,
+      "entity_id": "el1ze82zgTRT146S81HbS",
+      "id": 66,
+      "inline_parameters": [],
+      "parameter_mappings": [
+        {
+          "card_id": 47,
+          "parameter_id": "cfaa17bb",
+          "target": [
+            "variable",
+            [
+              "template-tag",
+              "entity_label"
+            ]
+          ]
+        },
+        {
+          "card_id": 47,
+          "parameter_id": "4e8d9288",
+          "target": [
+            "variable",
+            [
+              "template-tag",
+              "start_date"
+            ]
+          ]
+        },
+        {
+          "card_id": 47,
+          "parameter_id": "5bf40cdc",
+          "target": [
+            "variable",
+            [
+              "template-tag",
+              "end_date"
+            ]
+          ]
+        }
+      ],
+      "row": 3,
+      "series": [],
+      "size_x": 14,
       "size_y": 9,
       "visualization_settings": {}
     }
@@ -1521,10 +1565,10 @@
   "id": 4,
   "is_remote_synced": false,
   "last_used_param_values": {},
-  "last_viewed_at": "2026-07-03T13:54:59.103391Z",
+  "last_viewed_at": "2026-07-29T07:27:21.121944Z",
   "made_public_by_id": null,
   "moderation_reviews": [],
-  "name": "[integrated] Sirena",
+  "name": "[integration] Dashboard local",
   "param_fields": {},
   "parameters": [
     {

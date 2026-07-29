@@ -122,7 +122,7 @@ export function DropdownCheckboxFilter({
         )}
       </button>
 
-      {isOpen && (
+      {isOpen ? (
         <div id={menuId} ref={panelRef} className="dropdown-checkbox-filter__dropdown fr-card fr-px-3w fr-py-2w">
           <Checkbox
             legend={legend}
@@ -137,7 +137,7 @@ export function DropdownCheckboxFilter({
             }))}
           />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

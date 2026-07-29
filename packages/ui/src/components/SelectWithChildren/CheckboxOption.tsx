@@ -1,4 +1,5 @@
 import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
+import { useCallback } from 'react';
 import styles from './SelectWithChildren.module.css';
 import type { SelectWithChildrenOption } from './SelectWithChildren.types';
 
@@ -12,6 +13,18 @@ interface CheckboxOptionProps {
 }
 
 export const CheckboxOption = ({ option, isSelected, onToggle, onKeyDown, setRef, isFocused }: CheckboxOptionProps) => {
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onToggle();
+      } else {
+        onKeyDown(e);
+      }
+    },
+    [onToggle, onKeyDown],
+  );
+
   return (
     <div
       ref={setRef}
@@ -19,14 +32,7 @@ export const CheckboxOption = ({ option, isSelected, onToggle, onKeyDown, setRef
       role="option"
       aria-selected={isSelected}
       tabIndex={isFocused ? 0 : -1}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onToggle();
-        } else {
-          onKeyDown(e);
-        }
-      }}
+      onKeyDown={handleKeyDown}
     >
       <Checkbox
         options={[

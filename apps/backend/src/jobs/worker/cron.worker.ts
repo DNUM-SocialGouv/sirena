@@ -45,3 +45,36 @@ export const cronWorker = new Worker(
   },
   { connection, concurrency: 5 },
 );
+
+const eventLogger = createDefaultLogger().child({ context: 'cron-worker' });
+
+cronWorker.on('completed', (job) => {
+  eventLogger.info({ jobName: job.name, jobId: job.id, attemptsMade: job.attemptsMade }, 'Cron worker job completed');
+});
+
+// Catches BullMQ-level failures that never reach withCronLifecycle's try/catch
+// (stalled jobs, lock-renewal loss, OOM-killed or restarted process mid-run).
+// Without this, a stalled cron job produces no logs at all.
+cronWorker.on('failed', (job, err) => {
+  eventLogger.error(
+    {
+      jobName: job?.name,
+      jobId: job?.id,
+      attemptsMade: job?.attemptsMade,
+      failedReason: job?.failedReason,
+      err,
+    },
+    'Cron worker job failed',
+  );
+});
+
+cronWorker.on('stalled', (jobId) => {
+  eventLogger.warn(
+    { jobId },
+    'Cron worker job stalled (lock not renewed — likely blocked event loop or process restart)',
+  );
+});
+
+cronWorker.on('error', (err) => {
+  eventLogger.error({ err }, 'Cron worker error');
+});

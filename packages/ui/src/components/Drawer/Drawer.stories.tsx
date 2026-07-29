@@ -1,7 +1,9 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Fragment, useState } from 'react';
+import { Fragment, useCallback, useState } from 'react';
 import Drawer from './Drawer';
+
+const handleOutsideClickAlert = () => alert('Clicked outside!');
 
 const meta: Meta<typeof Drawer.Root> = {
   title: 'Components/Drawer',
@@ -83,6 +85,7 @@ type Story = StoryObj<typeof Drawer.Root>;
 export const Default: Story = {
   render: (args) => {
     const [isOpen, setIsOpen] = useState(false);
+    const handleClose = useCallback(() => setIsOpen(false), []);
     return (
       <Drawer.Root {...args} open={isOpen} onOpenChange={setIsOpen}>
         <Drawer.Trigger priority="primary">Open drawer</Drawer.Trigger>
@@ -94,7 +97,7 @@ export const Default: Story = {
               <p className="fr-text">Focus is trapped inside the drawer for accessibility. Press Escape to close it.</p>
               <p className="fr-text">CSS Modules transitions, DSFR button, zero motion libs</p>
               <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                <Button onClick={() => setIsOpen(false)}>Close</Button>
+                <Button onClick={handleClose}>Close</Button>
               </div>
             </div>
           </Drawer.Panel>
@@ -141,6 +144,7 @@ export const LeftSide: Story = {
 export const NonModalWithoutOverlay: Story = {
   render: (args) => {
     const [isOpen, setIsOpen] = useState(false);
+    const handleClose = useCallback(() => setIsOpen(false), []);
     return (
       <Fragment>
         <div style={{ padding: 12 }}>
@@ -153,7 +157,7 @@ export const NonModalWithoutOverlay: Story = {
             <Drawer.Panel width={args.width} titleId="Non-Modal Drawer">
               <div style={{ padding: 16 }}>
                 <p>Focus is free, ESC closes, background interactive. Overlay purely visual.</p>
-                <Button onClick={() => setIsOpen(false)}>Close</Button>
+                <Button onClick={handleClose}>Close</Button>
               </div>
             </Drawer.Panel>
           </Drawer.Portal>
@@ -200,14 +204,15 @@ export const Uncontrolled: Story = {
 export const CustomOutsideClick: Story = {
   render: (args) => {
     const [isOpen, setIsOpen] = useState(false);
+    const handleClose = useCallback(() => setIsOpen(false), []);
     return (
-      <Drawer.Root {...args} open={isOpen} onOpenChange={setIsOpen} onClickOutside={() => alert('Clicked outside!')}>
+      <Drawer.Root {...args} open={isOpen} onOpenChange={setIsOpen} onClickOutside={handleOutsideClickAlert}>
         <Drawer.Trigger priority="primary">Open drawer</Drawer.Trigger>
         <Drawer.Portal>
           <Drawer.Panel titleId="Outside Click Demo">
             <div style={{ padding: 16 }}>
               <p>Clicking outside triggers the onClickOutside callback and closes the drawer.</p>
-              <Button onClick={() => setIsOpen(false)}>Close</Button>
+              <Button onClick={handleClose}>Close</Button>
             </div>
           </Drawer.Panel>
         </Drawer.Portal>

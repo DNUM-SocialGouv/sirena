@@ -1,7 +1,8 @@
 import { REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
-import { generateSirenaIdFromSirecReclamation } from '../../../helpers/sirecMigration.js';
+import { generateSirenaIdFromSirecReclamation, toSirecLocalDate } from '../../../helpers/sirecMigration.js';
 import type { SirecReclamationData } from '../sirecMigration.repository.js';
 import { filterArsEntiteIds } from '../transco/affectation/affectation.transco.js';
+import { transcodeProvenance } from '../transco/provenance.transco.js';
 import { transcodeReceptionType } from '../transco/receptionType.transco.js';
 import { transformSirecAccuseReception } from './etapes/sirecMigration.accuseReception.transformer.js';
 import { transformSirecCloture } from './etapes/sirecMigration.cloture.transformer.js';
@@ -30,6 +31,7 @@ export interface SirenaRequeteData {
   receptionDate: Date | null;
   receptionTypeId: string | null;
   prioriteId: string | null;
+  provenanceId: string | null;
   requeteStatutId: string;
   sysLastModDate: Date;
   sysCreationDate: Date;
@@ -48,17 +50,20 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
   const declarant = transformSirecDeclarant(sirecData.reclamation);
   const victime = transformSirecVictime(sirecData.reclamation);
   const { requeteStatutId, etapes: clotureEtapes } = transformSirecCloture(sirecData, arsEntiteIds);
-
+  const premiereProvenance = sirecData.provenances[0];
   return {
     sirenaId: generateSirenaIdFromSirecReclamation(sirecData.reclamation),
     sirecId: sirecData.reclamation.id_data,
-    receptionDate: sirecData.reclamation.r_recept_date,
+    receptionDate: sirecData.reclamation.r_recept_date ? toSirecLocalDate(sirecData.reclamation.r_recept_date) : null,
     receptionTypeId: transcodeReceptionType(sirecData.reclamation.reception),
     prioriteId: sirecData.reclamation.prioritaire === 1 ? REQUETE_PRIORITE_TYPES.HAUTE : null,
+    provenanceId: transcodeProvenance(premiereProvenance?.id_provenance ?? null),
     requeteStatutId,
     sysLastModDate: sirecData.reclamation.sys_last_mod_date,
     sysCreationDate: sirecData.reclamation.sys_creation_date,
-    dateDemandeDeclarant: sirecData.reclamation.date_ecriture,
+    dateDemandeDeclarant: sirecData.reclamation.date_ecriture
+      ? toSirecLocalDate(sirecData.reclamation.date_ecriture)
+      : null,
     declarant,
     victime,
     requeteEntiteIds,
@@ -75,6 +80,6 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
       ...transformSirecMesuresPrises(sirecData, arsEntiteIds),
       ...clotureEtapes,
     ],
-    situations: transformSirecMisEnCauseSituations(sirecData, situationEntiteIds),
+    situations: transformSirecMisEnCauseSituations(sirecData, situationEntiteIds, requeteEntiteIds, declarant),
   };
 }

@@ -115,46 +115,49 @@ function RouteComponent() {
     setFormData((prev) => ({ ...prev, entiteId: id }));
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const validationResult = userFormSchema.safeParse(formData);
-    if (!validationResult.success) {
-      const errors: Record<string, string> = {};
-      validationResult.error.issues.forEach((error) => {
-        const field = error.path[0] as string;
-        errors[field] = error.message;
-      });
-      setValidationErrors(errors);
-      return;
-    }
-
-    setValidationErrors({});
-
-    await patchUser.mutateAsync({
-      id: userId,
-      json: {
-        roleId: validationResult.data.roleId,
-        statutId: validationResult.data.statutId,
-        entiteId: validationResult.data.entiteId || null,
-      },
-    });
-    toastManager.add({
-      title: 'Utilisateur modifié',
-      description: 'Les modifications ont été enregistrées avec succès.',
-      timeout: 0,
-      data: { icon: 'fr-alert--success' },
-    });
-    handleBack();
-  };
-
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     if (window.history.length > 1) {
       router.history.back();
     } else {
       router.navigate({ to: '/admin/users' });
     }
-  };
+  }, [router]);
+
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+
+      const validationResult = userFormSchema.safeParse(formData);
+      if (!validationResult.success) {
+        const errors: Record<string, string> = {};
+        validationResult.error.issues.forEach((error) => {
+          const field = error.path[0] as string;
+          errors[field] = error.message;
+        });
+        setValidationErrors(errors);
+        return;
+      }
+
+      setValidationErrors({});
+
+      await patchUser.mutateAsync({
+        id: userId,
+        json: {
+          roleId: validationResult.data.roleId,
+          statutId: validationResult.data.statutId,
+          entiteId: validationResult.data.entiteId || null,
+        },
+      });
+      toastManager.add({
+        title: 'Utilisateur modifié',
+        description: 'Les modifications ont été enregistrées avec succès.',
+        timeout: 0,
+        data: { icon: 'fr-alert--success' },
+      });
+      handleBack();
+    },
+    [formData, patchUser, userId, toastManager, handleBack],
+  );
 
   // TODO: remove this once we want to allow national steering (Pilotage national) role
   const filteredRoles = useMemo(

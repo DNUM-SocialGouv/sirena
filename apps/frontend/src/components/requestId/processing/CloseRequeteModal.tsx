@@ -285,13 +285,13 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
             label="Raisons de la clôture"
             options={reasonOptions}
             value={reasonIds}
-            onChange={(values) => setReasonIds(values)}
+            onChange={setReasonIds}
           />
-          {errors.reasonIds && (
+          {errors.reasonIds ? (
             <p className="fr-message fr-message--error" id={reasonErrorId}>
               {errors.reasonIds}
             </p>
-          )}
+          ) : null}
         </div>
 
         <div className="fr-mb-4w">

@@ -2,11 +2,11 @@ import { redirect } from '@tanstack/react-router';
 import { fetchDirectionsServicesList } from '@/lib/api/fetchEntites';
 import type { BeforeLoad } from '@/lib/auth-guards';
 import { queryClient } from '@/lib/queryClient';
-import { requireAdminLocalDirectionsServices } from './-route-guard';
+import { requireAdminLocalAccess } from '../-admin-local-route-guard';
 
 const requireCreationCapability =
   (capability: 'canCreateDirection' | 'canCreateService') => async (ctx: BeforeLoad) => {
-    await requireAdminLocalDirectionsServices(ctx);
+    await requireAdminLocalAccess(ctx);
 
     const { capabilities } = await queryClient.fetchQuery({
       queryKey: ['entites', 'admin', 'directions-services', {}],

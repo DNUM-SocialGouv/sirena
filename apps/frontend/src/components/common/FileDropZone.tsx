@@ -1,5 +1,5 @@
 import { fr } from '@codegouvfr/react-dsfr';
-import { useId, useRef, useState } from 'react';
+import { useCallback, useId, useRef, useState } from 'react';
 
 import { ACCEPTED_FILE_TYPES, FILE_UPLOAD_HINT } from '@/utils/fileHelpers';
 import type { FileValidationError } from '@/utils/fileValidation';
@@ -26,6 +26,11 @@ interface FileDropZoneProps {
   className?: string;
   errorTextClassName?: string;
 }
+
+const handleDragOver = (e: React.DragEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+};
 
 export function FileDropZone({
   canEdit = true,
@@ -59,7 +64,7 @@ export function FileDropZone({
   const [isDragging, setIsDragging] = useState(false);
   const dragCounterRef = useRef(0);
 
-  const openFileDialog = () => {
+  const openFileDialog = useCallback(() => {
     if (!canEdit || isUploading) {
       return;
     }
@@ -68,48 +73,57 @@ export function FileDropZone({
     if (input instanceof HTMLInputElement) {
       input.click();
     }
-  };
+  }, [canEdit, isUploading, inputRef, inputId]);
 
-  const handleDragEnter = (e: React.DragEvent) => {
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     dragCounterRef.current++;
     if (e.dataTransfer.types.includes('Files')) {
       setIsDragging(true);
     }
-  };
+  }, []);
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     dragCounterRef.current--;
     if (dragCounterRef.current === 0) {
       setIsDragging(false);
     }
-  };
+  }, []);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+      dragCounterRef.current = 0;
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    dragCounterRef.current = 0;
+      if (isUploading) return;
 
-    if (isUploading) return;
+      const { files } = e.dataTransfer;
+      if (files.length > 0) {
+        onFilesSelect(Array.from(files));
+      }
+    },
+    [isUploading, onFilesSelect],
+  );
 
-    const { files } = e.dataTransfer;
-    if (files.length > 0) {
-      onFilesSelect(Array.from(files));
-    }
-  };
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (files) {
+        onFilesSelect(Array.from(files));
+      }
+      e.target.value = '';
+    },
+    [onFilesSelect],
+  );
 
   return (
     <>
-      {canEdit && (
+      {canEdit ? (
         <div className={className}>
           <button
             type="button"
@@ -137,16 +151,10 @@ export function FileDropZone({
             multiple={multiple}
             className={styles.dropZoneInput}
             accept={accept}
-            onChange={(e) => {
-              const files = e.target.files;
-              if (files) {
-                onFilesSelect(Array.from(files));
-              }
-              e.target.value = '';
-            }}
+            onChange={handleInputChange}
           />
         </div>
-      )}
+      ) : null}
 
       {hasGlobalError && (
         <p

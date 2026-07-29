@@ -44,14 +44,14 @@ export const FileUploadSection = ({
 
   return (
     <div className="fr-grid-row fr-grid-row--gutters">
-      {hasExistingFiles && (
+      {hasExistingFiles ? (
         <FileList
           files={existingFiles}
           getFileUrl={getFileUrl}
           getSafeFileUrl={getSafeFileUrl}
           title={existingFilesTitle}
         />
-      )}
+      ) : null}
 
       <div className="fr-col-12">
         <Upload

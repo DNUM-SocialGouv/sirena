@@ -1,11 +1,29 @@
 import { Menu } from '@sirena/ui';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import styles from './statusMenu.module.css';
 
 type Badge = {
   type: string;
   text: string;
   value: string;
+};
+
+type StatusMenuItemProps = {
+  badge: Badge;
+  onBadgeClick?: (value: string) => void;
+};
+
+const StatusMenuItem = ({ badge, onBadgeClick }: StatusMenuItemProps) => {
+  const handleClick = useCallback(() => onBadgeClick?.(badge.value), [onBadgeClick, badge.value]);
+
+  return (
+    <Menu.Item
+      className={`${styles['status-menu__item']} fr-badge fr-badge--no-icon fr-badge--sm fr-badge--${badge.type}`}
+      onClick={handleClick}
+    >
+      {badge.text}
+    </Menu.Item>
+  );
 };
 
 type StatutMenuProps = {
@@ -44,13 +62,7 @@ export const StatusMenu = ({ badges, value, onBadgeClick, isLoading, disabled }:
         <Menu.Positioner align="start">
           <Menu.Popup className={styles['status-menu']}>
             {badgesFiltred.map((badge) => (
-              <Menu.Item
-                key={badge.value}
-                className={`${styles['status-menu__item']} fr-badge fr-badge--no-icon fr-badge--sm fr-badge--${badge.type}`}
-                onClick={() => onBadgeClick?.(badge.value)}
-              >
-                {badge.text}
-              </Menu.Item>
+              <StatusMenuItem key={badge.value} badge={badge} onBadgeClick={onBadgeClick} />
             ))}
           </Menu.Popup>
         </Menu.Positioner>

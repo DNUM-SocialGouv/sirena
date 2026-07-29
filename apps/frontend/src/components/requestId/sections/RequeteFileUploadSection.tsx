@@ -76,6 +76,62 @@ interface RequeteFileUploadProps {
   existingFiles?: UploadedFile[];
 }
 
+interface UploadedFileCardProps {
+  file: UploadedFile;
+  requeteId?: string;
+  canEdit: boolean;
+  onRequestDelete: (file: UploadedFile, trigger: HTMLElement) => void;
+}
+
+function UploadedFileCard({ file, requeteId, canEdit, onRequestDelete }: UploadedFileCardProps) {
+  const fileWithMetadata = file as UploadedFile & { metadata?: { originalName?: string } };
+  const originalName = getOriginalFileName({
+    id: file.id,
+    fileName: fileWithMetadata.fileName,
+    size: file.size,
+    metadata: fileWithMetadata.metadata,
+  });
+  const extension = originalName?.split('.').pop()?.toUpperCase();
+  const metaText = `${extension ? `${extension} – ` : ''}${formatFileSize(file.size)}`;
+
+  const handleDeleteClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      onRequestDelete(file, e.currentTarget);
+    },
+    [onRequestDelete, file],
+  );
+
+  return (
+    <li className={styles.fileCard}>
+      <div className={styles.fileCardHeader}>
+        <FileDownloadLink
+          href={`/api/requetes-entite/${requeteId}/file/${file.id}`}
+          safeHref={`/api/requetes-entite/${requeteId}/file/${file.id}/safe`}
+          fileName={originalName}
+          fileId={file.id}
+          fileSize={file.size}
+          status={file.status}
+          scanStatus={file.scanStatus}
+          sanitizeStatus={file.sanitizeStatus}
+          className={`${fr.cx('fr-link', 'fr-text--sm')} ${styles.fileNameLink}`}
+        />
+        {canEdit && file.canDelete ? (
+          <Button
+            aria-label="Supprimer le fichier"
+            title="Supprimer le fichier"
+            type="button"
+            className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
+            onClick={handleDeleteClick}
+          >
+            <span className={fr.cx('fr-sr-only')}>Supprimer le fichier</span>
+          </Button>
+        ) : null}
+      </div>
+      <p className={styles.fileMeta}>{metaText}</p>
+    </li>
+  );
+}
+
 export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFiles = [] }: RequeteFileUploadProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [files, setFiles] = useState<UploadedFile[]>(existingFiles);
@@ -234,56 +290,29 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
     }
   }, [fileToDelete, deleteFileMutation, files, toastManager, deleteFileModal]);
 
+  const handleRequestDelete = useCallback(
+    (file: UploadedFile, trigger: HTMLElement) => {
+      registerTrigger(trigger);
+      setFileToDelete(file);
+      deleteFileModal.open();
+    },
+    [registerTrigger, deleteFileModal],
+  );
+
   return (
     <div className={`${fr.cx('fr-mb-3w')} ${styles.requeteFileUploadSection}`}>
       {files.length > 0 && (
         <div className={fr.cx('fr-mt-3w')} style={{ width: '100%' }}>
           <ul className={styles.fileList}>
-            {files.map((file) => {
-              const fileWithMetadata = file as UploadedFile & { metadata?: { originalName?: string } };
-              const originalName = getOriginalFileName({
-                id: file.id,
-                fileName: fileWithMetadata.fileName,
-                size: file.size,
-                metadata: fileWithMetadata.metadata,
-              });
-              const extension = originalName?.split('.').pop()?.toUpperCase();
-              const metaText = `${extension ? `${extension} – ` : ''}${formatFileSize(file.size)}`;
-
-              return (
-                <li key={file.id} className={styles.fileCard}>
-                  <div className={styles.fileCardHeader}>
-                    <FileDownloadLink
-                      href={`/api/requetes-entite/${requeteId}/file/${file.id}`}
-                      safeHref={`/api/requetes-entite/${requeteId}/file/${file.id}/safe`}
-                      fileName={originalName}
-                      fileId={file.id}
-                      fileSize={file.size}
-                      status={file.status}
-                      scanStatus={file.scanStatus}
-                      sanitizeStatus={file.sanitizeStatus}
-                      className={`${fr.cx('fr-link', 'fr-text--sm')} ${styles.fileNameLink}`}
-                    />
-                    {canEdit && file.canDelete && (
-                      <Button
-                        aria-label="Supprimer le fichier"
-                        title="Supprimer le fichier"
-                        type="button"
-                        className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
-                        onClick={(e) => {
-                          registerTrigger(e.currentTarget);
-                          setFileToDelete(file);
-                          deleteFileModal.open();
-                        }}
-                      >
-                        <span className={fr.cx('fr-sr-only')}>Supprimer le fichier</span>
-                      </Button>
-                    )}
-                  </div>
-                  <p className={styles.fileMeta}>{metaText}</p>
-                </li>
-              );
-            })}
+            {files.map((file) => (
+              <UploadedFileCard
+                key={file.id}
+                file={file}
+                requeteId={requeteId}
+                canEdit={canEdit}
+                onRequestDelete={handleRequestDelete}
+              />
+            ))}
           </ul>
         </div>
       )}

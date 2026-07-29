@@ -11,6 +11,48 @@ export function pick<T extends object, K extends keyof T>(obj: T, keys: K[]): Pi
   return result as Pick<T, K>;
 }
 
+const DEFAULT_MAX_DEPTH = 5;
+
+const flattenKeys = (value: unknown, prefix: string, depth: number, keys: Set<string>): void => {
+  if (value === null || value === undefined) {
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      flattenKeys(item, prefix, depth, keys);
+    }
+    return;
+  }
+
+  if (typeof value === 'object' && !(value instanceof Date)) {
+    if (depth === 0) {
+      if (prefix) {
+        keys.add(prefix);
+      }
+      return;
+    }
+    for (const [key, child] of Object.entries(value)) {
+      flattenKeys(child, prefix ? `${prefix}.${key}` : key, depth - 1, keys);
+    }
+    return;
+  }
+
+  if (prefix) {
+    keys.add(prefix);
+  }
+};
+
+/**
+ * @description Collects the dot-separated paths of the non-null leaves of an object.
+ * Array items are merged under the same path, paths deeper than maxDepth are truncated to the object node.
+ */
+export function collectDataKeys(value: unknown, maxDepth: number = DEFAULT_MAX_DEPTH): string[] {
+  const keys = new Set<string>();
+  flattenKeys(value, '', maxDepth, keys);
+  return [...keys].sort();
+}
+
 /**
  * @description Checks if two values are deeply equal (simple cases, does not handle set/map/function/symbol/regexp, class instances or recursive references).
  * Useful for comparing objects before/after saving to a database

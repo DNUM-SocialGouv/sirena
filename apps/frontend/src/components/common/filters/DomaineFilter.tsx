@@ -4,6 +4,8 @@ import { DropdownCheckboxFilter } from './DropdownCheckboxFilter';
 
 type CountsMap = Record<string, number>;
 
+const selectedValuesLabel = (count: number) => `domaine${count > 1 ? 's' : ''} sélectionné${count > 1 ? 's' : ''}`;
+
 type Props = {
   selectedIds: string[];
   counts: CountsMap | null;
@@ -30,7 +32,7 @@ export function DomaineFilter({ selectedIds, counts, onChange, onOpen, onClose }
   return (
     <DropdownCheckboxFilter
       buttonLabel="Domaine fonctionnel"
-      selectedValuesLabel={(count) => `domaine${count > 1 ? 's' : ''} sélectionné${count > 1 ? 's' : ''}`}
+      selectedValuesLabel={selectedValuesLabel}
       legend="Filtrer les requêtes par domaine fonctionnel"
       hintText="Domaine fonctionnel (nombre de requêtes)"
       options={options}

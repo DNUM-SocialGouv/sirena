@@ -1,14 +1,25 @@
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import type { SituationData } from '@sirena/common/schemas';
+import { useId } from 'react';
+import { ReadOnlyField } from '@/components/common/ReadOnlyField';
 
 type IdentificationProps = {
   formData: SituationData;
   setFormData: React.Dispatch<React.SetStateAction<SituationData>>;
   isSaving: boolean;
+  isFromSirec?: boolean;
+  sirecDepartement?: string | null;
 };
 
-export function Identification({ formData, setFormData, isSaving }: IdentificationProps) {
+export function Identification({
+  formData,
+  setFormData,
+  isSaving,
+  isFromSirec,
+  sirecDepartement,
+}: IdentificationProps) {
+  const departementEnChargeId = useId();
   const estLieAuSignalement = formData.estLieAuSignalement;
 
   const handleEstLieChange = (value: boolean) => {
@@ -69,6 +80,15 @@ export function Identification({ formData, setFormData, isSaving }: Identificati
             }}
           />
         )}
+
+        {isFromSirec ? (
+          <ReadOnlyField
+            id={departementEnChargeId}
+            label="Département en charge"
+            hintText="Donnée héritée de Sirec"
+            value={sirecDepartement ?? ''}
+          />
+        ) : null}
       </fieldset>
     </div>
   );

@@ -1,5 +1,26 @@
 import { fr } from '@codegouvfr/react-dsfr';
+import { useCallback } from 'react';
 import { formatFileSize } from '@/utils/fileHelpers';
+
+interface RemoveFileButtonProps {
+  fileName: string;
+  onRemove: (fileName: string) => void;
+}
+
+const RemoveFileButton = ({ fileName, onRemove }: RemoveFileButtonProps) => {
+  const handleClick = useCallback(() => onRemove(fileName), [fileName, onRemove]);
+
+  return (
+    <button
+      type="button"
+      className={fr.cx('fr-btn', 'fr-btn--tertiary-no-outline', 'fr-btn--sm', 'fr-icon-delete-line')}
+      aria-label={`Supprimer ${fileName}`}
+      title={`Supprimer ${fileName}`}
+      onClick={handleClick}
+      style={{ flexShrink: 0 }}
+    />
+  );
+};
 
 interface SelectedFilesListProps {
   files: File[];
@@ -38,16 +59,7 @@ export const SelectedFilesList = ({
                 <span>
                   {file.name} ({formatFileSize(file.size)})
                 </span>
-                {onRemove && (
-                  <button
-                    type="button"
-                    className={fr.cx('fr-btn', 'fr-btn--tertiary-no-outline', 'fr-btn--sm', 'fr-icon-delete-line')}
-                    aria-label={`Supprimer ${file.name}`}
-                    title={`Supprimer ${file.name}`}
-                    onClick={() => onRemove(file.name)}
-                    style={{ flexShrink: 0 }}
-                  />
-                )}
+                {onRemove ? <RemoveFileButton fileName={file.name} onRemove={onRemove} /> : null}
               </div>
             </li>
           ))}
@@ -66,16 +78,7 @@ export const SelectedFilesList = ({
               <span>
                 {file.name} ({formatFileSize(file.size)})
               </span>
-              {onRemove && (
-                <button
-                  type="button"
-                  className={fr.cx('fr-btn', 'fr-btn--tertiary-no-outline', 'fr-btn--sm', 'fr-icon-delete-line')}
-                  aria-label={`Supprimer ${file.name}`}
-                  title={`Supprimer ${file.name}`}
-                  onClick={() => onRemove(file.name)}
-                  style={{ flexShrink: 0 }}
-                />
-              )}
+              {onRemove ? <RemoveFileButton fileName={file.name} onRemove={onRemove} /> : null}
             </div>
           </li>
         ))}

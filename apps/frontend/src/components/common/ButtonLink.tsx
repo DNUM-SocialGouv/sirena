@@ -12,7 +12,7 @@ interface ButtonLinkProps {
 export const ButtonLink = ({ children, onClick, icon, className, disabled }: ButtonLinkProps) => {
   return (
     <button type="button" className={`${styles.buttonLink} ${className || ''}`} onClick={onClick} disabled={disabled}>
-      {icon && <span className={icon} aria-hidden="true"></span>}
+      {icon ? <span className={icon} aria-hidden="true"></span> : null}
       <span>{children}</span>
     </button>
   );

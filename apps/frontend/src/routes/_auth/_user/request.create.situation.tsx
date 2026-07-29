@@ -1,6 +1,6 @@
 import { ROLES } from '@sirena/common/constants';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CloseRequeteModal, type CloseRequeteModalRef } from '@/components/requestId/processing/CloseRequeteModal';
 import { SituationForm } from '@/components/situation/SituationForm';
 import { useSituationCreate } from '@/hooks/mutations/useSituationCreate';
@@ -56,35 +56,35 @@ function RouteComponent() {
     return () => clearTimeout(t);
   }, [createdRequeteId, shouldCloseRequeteStatus]);
 
-  const handleCloseModalCancel = async () => {
+  const handleCloseModalCancel = useCallback(async () => {
     if (createdRequeteId) {
       setShouldCloseRequeteStatus(null);
       navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId } });
     }
-  };
+  }, [createdRequeteId, navigate]);
 
-  const handleBeforeClose = async () => {
+  const handleBeforeClose = useCallback(async () => {
     if (createdRequeteId) {
       navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId } });
     }
-  };
+  }, [createdRequeteId, navigate]);
 
-  const handleCloseModalSuccess = () => {
+  const handleCloseModalSuccess = useCallback(() => {
     if (createdRequeteId) {
       setShouldCloseRequeteStatus(null);
       navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId } });
     }
-  };
+  }, [createdRequeteId, navigate]);
 
-  const handleModalDismiss = () => {
+  const handleModalDismiss = useCallback(() => {
     setShouldCloseRequeteStatus(null);
-  };
+  }, []);
 
   const showModal = createdRequeteId && shouldCloseRequeteStatus;
   return (
     <>
       <SituationForm mode="create" onSave={handleSave} saveButtonRef={saveButtonRef} />
-      {showModal && (
+      {showModal ? (
         <CloseRequeteModal
           ref={closeRequeteModalRef}
           requestId={createdRequeteId}
@@ -95,7 +95,7 @@ function RouteComponent() {
           onSuccess={handleCloseModalSuccess}
           onDismiss={handleModalDismiss}
         />
-      )}
+      ) : null}
     </>
   );
 }
