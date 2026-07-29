@@ -857,6 +857,26 @@ describe('Entites endpoints: /entites', () => {
       expect(rejectedRes.status).toBe(400);
     });
 
+    it.each(['nomComplet', 'label'] as const)('rejects a blank %s', async (field) => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+
+      const res = await app.request('/admin/directions-services/directions', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          nomComplet: 'Direction Autonomie',
+          label: 'DA',
+          email: 'direction-autonomie@ars.fr',
+          [field]: '   ',
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      expect(createDirectionAdminLocal).not.toHaveBeenCalled();
+    });
+
     it('rejects caller-controlled active status', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
 
@@ -969,6 +989,24 @@ describe('Entites endpoints: /entites', () => {
       expect(createServiceAdminLocal).toHaveBeenCalledOnce();
       expect(createServiceAdminLocal).toHaveBeenCalledWith('dir-autonomie', createServicePayload);
       expect(rejectedRes.status).toBe(400);
+    });
+
+    it.each(['nomComplet', 'label'] as const)('rejects a blank Service %s', async (field) => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+
+      const res = await app.request('/admin/directions-services/services', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          nomComplet: 'Service Autonomie',
+          label: 'SA',
+          email: 'service-autonomie@ars.fr',
+          [field]: '   ',
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      expect(createServiceAdminLocal).not.toHaveBeenCalled();
     });
 
     it('rejects caller-controlled Service activation status', async () => {

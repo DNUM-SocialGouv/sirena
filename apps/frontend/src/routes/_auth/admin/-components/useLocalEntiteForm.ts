@@ -35,20 +35,19 @@ const contactShape = {
   adresseContactUsager: z.string(),
 };
 
-const editFormSchema = (entiteType: LocalEntiteFormType) => {
-  if (entiteType !== 'entite-administrative') {
-    return z.object({ email: contactShape.email });
-  }
+const editDirectionServiceFormSchema = z.object({ email: contactShape.email });
 
-  return z.object({
-    ...contactShape,
-    email: z
-      .string()
-      .trim()
-      .min(1, 'Le champ "Adresse e-mail de notification" est vide. Veuillez le renseigner.')
-      .pipe(emailSchema),
-  });
-};
+const editEntiteAdministrativeFormSchema = z.object({
+  ...contactShape,
+  email: z
+    .string()
+    .trim()
+    .min(1, 'Le champ "Adresse e-mail de notification" est vide. Veuillez le renseigner.')
+    .pipe(emailSchema),
+});
+
+const editFormSchema = (entiteType: LocalEntiteFormType) =>
+  entiteType === 'entite-administrative' ? editEntiteAdministrativeFormSchema : editDirectionServiceFormSchema;
 
 const createFormSchema = (entiteType: LocalEntiteCreateFormType) => {
   const entityName = entiteType === 'direction' ? 'de la direction' : 'du service';
@@ -60,7 +59,8 @@ const createFormSchema = (entiteType: LocalEntiteCreateFormType) => {
   });
 };
 
-type EditFormValues = z.infer<ReturnType<typeof editFormSchema>>;
+type EditDirectionServiceFormValues = z.infer<typeof editDirectionServiceFormSchema>;
+type EditEntiteAdministrativeFormValues = z.infer<typeof editEntiteAdministrativeFormSchema>;
 type CreateFormValues = z.infer<ReturnType<typeof createFormSchema>>;
 
 type LocalEntiteForm<ValidatedValues> = {
@@ -76,10 +76,15 @@ type LocalEntiteForm<ValidatedValues> = {
 };
 
 export function useLocalEntiteForm(
-  entiteType: LocalEntiteFormType,
+  entiteType: 'entite-administrative',
   mode: 'edit',
   initialValues?: Partial<LocalEntiteFormValues>,
-): LocalEntiteForm<EditFormValues>;
+): LocalEntiteForm<EditEntiteAdministrativeFormValues>;
+export function useLocalEntiteForm(
+  entiteType: LocalEntiteCreateFormType,
+  mode: 'edit',
+  initialValues?: Partial<LocalEntiteFormValues>,
+): LocalEntiteForm<EditDirectionServiceFormValues>;
 export function useLocalEntiteForm(
   entiteType: LocalEntiteCreateFormType,
   mode: 'create',
@@ -89,7 +94,7 @@ export function useLocalEntiteForm(
   entiteType: LocalEntiteFormType,
   mode: LocalEntiteFormMode,
   initialValues: Partial<LocalEntiteFormValues> = {},
-): LocalEntiteForm<EditFormValues | CreateFormValues> {
+): LocalEntiteForm<EditEntiteAdministrativeFormValues | EditDirectionServiceFormValues | CreateFormValues> {
   const schema = useMemo(
     () => (mode === 'edit' ? editFormSchema(entiteType) : createFormSchema(entiteType as LocalEntiteCreateFormType)),
     [entiteType, mode],

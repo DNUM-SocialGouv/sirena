@@ -184,8 +184,10 @@ export const CreateDirectionOrServiceAdminResponseSchema = CreateDirectionOrServ
   id: z.string(),
 });
 
-export const CreateDirectionAdminLocalInputSchema = EntiteIdentityFieldsSchema.extend({
-  email: z.string(),
+export const CreateDirectionAdminLocalInputSchema = CreateDirectionOrServiceAdminInputSchema.pick({
+  nomComplet: true,
+  label: true,
+  email: true,
 }).strict();
 
 export const CreateDirectionOrServiceAdminLocalResponseSchema = CreateDirectionAdminLocalInputSchema.extend({
