@@ -3571,6 +3571,10 @@ describe('requetesEntite.service', () => {
           ...mockRequeteEntite.requete,
           receptionType: null,
           provenance: null,
+          // Manually created request: no ingestion source id.
+          dematSocialId: null,
+          sirecId: null,
+          thirdPartyAccountId: null,
           createdBy: { prenom: 'Bob', nom: 'DURAND' },
           declarant: null,
           participant: null,
@@ -3624,6 +3628,102 @@ describe('requetesEntite.service', () => {
       expect(paragraphs).toContain('Requête créée le 10/06/2026 par Bob Durand');
       expect(paragraphs).toContain('Envoyé le 13/06/2026 par Claire Petit');
       expect(paragraphs.some((text) => typeof text === 'string' && text.startsWith('Ajouté le'))).toBe(false);
+    });
+
+    it('labels the creation step of an automatically-created request as "Fait automatiquement"', async () => {
+      const paragraphSpy = vi.spyOn(RequetePdfBuilder.prototype, 'paragraph');
+      vi.spyOn(RequetePdfBuilder.prototype, 'toBuffer').mockResolvedValue(Buffer.from('%PDF-test'));
+
+      vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statut: { id: 'EN_COURS', label: 'En cours' },
+        priorite: null,
+        requete: {
+          ...mockRequeteEntite.requete,
+          receptionType: null,
+          provenance: null,
+          // Ingested from DematSocial (dematSocialId set): created automatically, no author agent.
+          dematSocialId: 123,
+          sirecId: null,
+          thirdPartyAccountId: null,
+          createdBy: null,
+          declarant: null,
+          participant: null,
+          fichiersRequeteOriginale: [],
+          situations: [],
+        },
+        requeteEtape: [
+          {
+            id: 'etapeCreation',
+            type: REQUETE_ETAPE_TYPES.CREATION,
+            statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+            statut: { id: 'FAIT', label: 'Fait' },
+            clotureReason: [],
+            createdBy: null,
+            nom: 'Création',
+            createdAt: new Date('2026-06-10'),
+            updatedAt: new Date('2026-06-10'),
+            clotureEffectiveDate: null,
+            uploadedFiles: [],
+            notes: [],
+          },
+        ],
+      } as unknown as Awaited<ReturnType<typeof prisma.requeteEntite.findFirst>>);
+
+      await generateRequetePdfBuffer('req123', 'ent123');
+
+      const paragraphs = paragraphSpy.mock.calls.map(([text]) => text);
+      expect(paragraphs).toContain('Fait automatiquement le 10/06/2026');
+      expect(paragraphs.some((text) => typeof text === 'string' && text.startsWith('Requête créée le'))).toBe(false);
+    });
+
+    it('keeps "Requête créée le" (without agent) for a manual request whose author account was deleted', async () => {
+      const paragraphSpy = vi.spyOn(RequetePdfBuilder.prototype, 'paragraph');
+      vi.spyOn(RequetePdfBuilder.prototype, 'toBuffer').mockResolvedValue(Buffer.from('%PDF-test'));
+
+      vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statut: { id: 'EN_COURS', label: 'En cours' },
+        priorite: null,
+        requete: {
+          ...mockRequeteEntite.requete,
+          receptionType: null,
+          provenance: null,
+          // Manually created (no ingestion source id) but the author agent was deleted (createdById SET NULL).
+          dematSocialId: null,
+          sirecId: null,
+          thirdPartyAccountId: null,
+          createdBy: null,
+          declarant: null,
+          participant: null,
+          fichiersRequeteOriginale: [],
+          situations: [],
+        },
+        requeteEtape: [
+          {
+            id: 'etapeCreation',
+            type: REQUETE_ETAPE_TYPES.CREATION,
+            statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+            statut: { id: 'FAIT', label: 'Fait' },
+            clotureReason: [],
+            createdBy: null,
+            nom: 'Création',
+            createdAt: new Date('2026-06-10'),
+            updatedAt: new Date('2026-06-10'),
+            clotureEffectiveDate: null,
+            uploadedFiles: [],
+            notes: [],
+          },
+        ],
+      } as unknown as Awaited<ReturnType<typeof prisma.requeteEntite.findFirst>>);
+
+      await generateRequetePdfBuffer('req123', 'ent123');
+
+      const paragraphs = paragraphSpy.mock.calls.map(([text]) => text);
+      expect(paragraphs).toContain('Requête créée le 10/06/2026');
+      expect(paragraphs.some((text) => typeof text === 'string' && text.startsWith('Fait automatiquement'))).toBe(
+        false,
+      );
     });
   });
 

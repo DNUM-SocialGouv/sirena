@@ -1,3 +1,4 @@
+import { fr } from '@codegouvfr/react-dsfr';
 import { SegmentedControl } from '@codegouvfr/react-dsfr/SegmentedControl';
 import { useId, useMemo, useState } from 'react';
 import { annularSectorPath, CHART_COLORS, numberFormatter, type ParsedCard, percentFormatter } from './chartData';
@@ -20,7 +21,7 @@ export function StatChart({ name, parsed }: StatChartProps) {
   const titleId = useId();
   const legendId = useId();
   const [view, setView] = useState<View>('table');
-  const { items, total, dimensionLabel, metricLabel, percentLabel, hasPrecomputedPercent } = parsed;
+  const { items, total } = parsed;
 
   const slices = useMemo(() => {
     let angle = 0;
@@ -38,7 +39,7 @@ export function StatChart({ name, parsed }: StatChartProps) {
   if (total <= 0 || slices.length === 0) {
     return (
       <figure className={styles.figure} aria-labelledby={titleId}>
-        <h2 id={titleId} className={styles.title}>
+        <h2 id={titleId} className={fr.cx('fr-h5')}>
           {name}
         </h2>
         <p>Aucune donnée à afficher.</p>
@@ -51,7 +52,7 @@ export function StatChart({ name, parsed }: StatChartProps) {
   return (
     <figure className={styles.figure} aria-labelledby={titleId}>
       <div className={styles.header}>
-        <h2 id={titleId} className={styles.title}>
+        <h2 id={titleId} className={fr.cx('fr-h5', 'fr-mb-0')}>
           {name}
         </h2>
 
@@ -119,16 +120,7 @@ export function StatChart({ name, parsed }: StatChartProps) {
           </ul>
         </div>
       ) : (
-        <StatTable
-          caption={name}
-          items={items}
-          total={total}
-          dimensionLabel={dimensionLabel}
-          metricLabel={metricLabel}
-          percentLabel={percentLabel}
-          hasPrecomputedPercent={hasPrecomputedPercent}
-          hideCaption
-        />
+        <StatTable caption={name} parsed={parsed} hideCaption />
       )}
     </figure>
   );

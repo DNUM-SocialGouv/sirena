@@ -7,12 +7,14 @@ import { useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { Route, RouteComponent } from './$entiteId.create';
 
-const { addToastSpy, routerNavigateSpy, createChildEntiteAdminMutateAsyncSpy, routeParamsState } = vi.hoisted(() => ({
-  addToastSpy: vi.fn(),
-  routerNavigateSpy: vi.fn(),
-  createChildEntiteAdminMutateAsyncSpy: vi.fn(),
-  routeParamsState: { entiteId: 'root-ars' },
-}));
+const { addToastSpy, routerNavigateSpy, createDirectionOrServiceAdminMutateAsyncSpy, routeParamsState } = vi.hoisted(
+  () => ({
+    addToastSpy: vi.fn(),
+    routerNavigateSpy: vi.fn(),
+    createDirectionOrServiceAdminMutateAsyncSpy: vi.fn(),
+    routeParamsState: { entiteId: 'root-ars' },
+  }),
+);
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => ({
@@ -31,8 +33,8 @@ vi.mock('@tanstack/react-router', () => ({
 vi.mock('@/hooks/queries/entites.hook', () => ({
   useEntiteByIdAdmin: vi.fn(),
   useEntiteChain: vi.fn(),
-  useCreateChildEntiteAdmin: () => ({
-    mutateAsync: createChildEntiteAdminMutateAsyncSpy,
+  useCreateDirectionOrServiceAdmin: () => ({
+    mutateAsync: createDirectionOrServiceAdminMutateAsyncSpy,
     isPending: false,
   }),
 }));
@@ -81,12 +83,12 @@ const buildErrorQuery = () =>
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
-  createChildEntiteAdminMutateAsyncSpy.mockReset();
+  createDirectionOrServiceAdminMutateAsyncSpy.mockReset();
   routerNavigateSpy.mockReset();
   routeParamsState.entiteId = 'root-ars';
 });
 
-describe('Admin entity child creation route', () => {
+describe('Admin Direction or Service creation route', () => {
   it('restricts the route to SUPER_ADMIN users', () => {
     expect(vi.mocked(requireAuthAndRoles)).toHaveBeenCalledWith([ROLES.SUPER_ADMIN]);
     expect(Route.options.beforeLoad).toBe('mocked-super-admin-guard');
@@ -356,7 +358,7 @@ describe('Admin entity child creation route', () => {
     expect(
       screen.getByText('Le statut actif dans SIRENA est obligatoire. Veuillez sélectionner une option.'),
     ).toBeInTheDocument();
-    expect(createChildEntiteAdminMutateAsyncSpy).not.toHaveBeenCalled();
+    expect(createDirectionOrServiceAdminMutateAsyncSpy).not.toHaveBeenCalled();
   });
 
   it('validates emails and phone number', async () => {
@@ -389,10 +391,10 @@ describe('Admin entity child creation route', () => {
     expect(
       screen.getByText(/Le numéro de téléphone doit être au format national ou international/i),
     ).toBeInTheDocument();
-    expect(createChildEntiteAdminMutateAsyncSpy).not.toHaveBeenCalled();
+    expect(createDirectionOrServiceAdminMutateAsyncSpy).not.toHaveBeenCalled();
   });
 
-  it('submits the child creation form to the admin mutation with a flat payload', async () => {
+  it('submits the Direction or Service creation form to the admin mutation with a flat payload', async () => {
     vi.mocked(useEntiteByIdAdmin).mockReturnValue(
       buildSuccessQuery({
         id: 'root-ars',
@@ -404,7 +406,7 @@ describe('Admin entity child creation route', () => {
     vi.mocked(useEntiteChain).mockReturnValue(
       buildSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
     );
-    createChildEntiteAdminMutateAsyncSpy.mockResolvedValueOnce({
+    createDirectionOrServiceAdminMutateAsyncSpy.mockResolvedValueOnce({
       id: 'direction-1',
       nomComplet: 'Direction de la prévention',
       label: 'DIR PREV',
@@ -430,7 +432,7 @@ describe('Admin entity child creation route', () => {
     await user.click(screen.getByRole('button', { name: 'Créer' }));
 
     await waitFor(() => {
-      expect(createChildEntiteAdminMutateAsyncSpy).toHaveBeenCalledWith({
+      expect(createDirectionOrServiceAdminMutateAsyncSpy).toHaveBeenCalledWith({
         id: 'root-ars',
         input: {
           nomComplet: 'Direction de la prévention',
@@ -445,7 +447,7 @@ describe('Admin entity child creation route', () => {
     });
   });
 
-  it('ignores duplicate submissions while child creation is already in progress', async () => {
+  it('ignores duplicate submissions while Direction or Service creation is already in progress', async () => {
     vi.mocked(useEntiteByIdAdmin).mockReturnValue(
       buildSuccessQuery({
         id: 'root-ars',
@@ -470,7 +472,7 @@ describe('Admin entity child creation route', () => {
           isActive: boolean;
         }) => void)
       | undefined;
-    createChildEntiteAdminMutateAsyncSpy.mockImplementation(
+    createDirectionOrServiceAdminMutateAsyncSpy.mockImplementation(
       () =>
         new Promise((resolve) => {
           resolveCreation = resolve;
@@ -485,7 +487,7 @@ describe('Admin entity child creation route', () => {
     await user.selectOptions(screen.getByRole('combobox', { name: /Actif dans SIRENA/i }), 'oui');
     await user.dblClick(screen.getByRole('button', { name: 'Créer' }));
 
-    expect(createChildEntiteAdminMutateAsyncSpy).toHaveBeenCalledTimes(1);
+    expect(createDirectionOrServiceAdminMutateAsyncSpy).toHaveBeenCalledTimes(1);
     expect(resolveCreation).toBeDefined();
 
     resolveCreation?.({
@@ -507,7 +509,7 @@ describe('Admin entity child creation route', () => {
     });
   });
 
-  it('shows a success toast after creating the child entity', async () => {
+  it('shows a success toast after creating the Direction or Service', async () => {
     vi.mocked(useEntiteByIdAdmin).mockReturnValue(
       buildSuccessQuery({
         id: 'root-ars',
@@ -519,7 +521,7 @@ describe('Admin entity child creation route', () => {
     vi.mocked(useEntiteChain).mockReturnValue(
       buildSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
     );
-    createChildEntiteAdminMutateAsyncSpy.mockResolvedValueOnce({
+    createDirectionOrServiceAdminMutateAsyncSpy.mockResolvedValueOnce({
       id: 'direction-1',
       nomComplet: 'Direction de la prévention',
       label: 'DIR PREV',
@@ -548,7 +550,7 @@ describe('Admin entity child creation route', () => {
     });
   });
 
-  it('navigates to the created entity edit page after creating the child entity', async () => {
+  it('navigates to the created entity edit page after creating the Direction or Service', async () => {
     vi.mocked(useEntiteByIdAdmin).mockReturnValue(
       buildSuccessQuery({
         id: 'root-ars',
@@ -560,7 +562,7 @@ describe('Admin entity child creation route', () => {
     vi.mocked(useEntiteChain).mockReturnValue(
       buildSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
     );
-    createChildEntiteAdminMutateAsyncSpy.mockResolvedValueOnce({
+    createDirectionOrServiceAdminMutateAsyncSpy.mockResolvedValueOnce({
       id: 'direction-1',
       nomComplet: 'Direction de la prévention',
       label: 'DIR PREV',

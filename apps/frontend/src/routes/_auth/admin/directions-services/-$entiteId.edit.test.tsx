@@ -96,11 +96,20 @@ it('leaves the former root edit URL unsupported without redirecting it', () => {
   expect(routerNavigateSpy).not.toHaveBeenCalled();
 });
 
-it('renders a prefilled local Direction form with contact fields and no activation control', () => {
+it('renders prefilled Direction identity as accessible read-only information', () => {
   renderTarget(directionTarget);
 
   expect(screen.getByRole('heading', { name: 'Modifier la direction Direction Autonomie' })).toBeInTheDocument();
-  expect(screen.getByRole('textbox', { name: /Nom de la direction/ })).toHaveValue('Direction Autonomie');
+  const nameInput = screen.getByRole('textbox', { name: /^Nom de la direction/ });
+  const abbreviationInput = screen.getByRole('textbox', { name: /^Abréviation/ });
+  expect(nameInput).toHaveValue('Direction Autonomie');
+  expect(nameInput).toHaveAttribute('readonly');
+  expect(nameInput).not.toBeDisabled();
+  expect(abbreviationInput).toHaveValue('DA');
+  expect(abbreviationInput).toHaveAttribute('readonly');
+  expect(abbreviationInput).not.toBeDisabled();
+  expect(screen.queryByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole('textbox', { name: /Abréviation \(obligatoire\)/ })).not.toBeInTheDocument();
   expect(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ })).toHaveValue('contact-autonomie@ars.fr');
   expect(screen.getByRole('textbox', { name: /Numéro de téléphone/ })).toHaveValue('0102030405');
   expect(screen.queryByRole('combobox', { name: /Actif dans SIRENA/ })).not.toBeInTheDocument();
@@ -108,28 +117,33 @@ it('renders a prefilled local Direction form with contact fields and no activati
   expect(document.title).toBe('Modifier la direction Direction Autonomie - Directions et services - SIRENA');
 });
 
-it('validates and saves visible Direction fields before returning to the list', async () => {
+it('does not validate read-only Direction identity during contact edits', async () => {
+  const user = userEvent.setup();
+  editMutateAsyncSpy.mockResolvedValueOnce({ id: directionTarget.id });
+  renderTarget({ ...directionTarget, nomComplet: '', label: '' });
+
+  await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
+
+  await waitFor(() => expect(editMutateAsyncSpy).toHaveBeenCalledOnce());
+  expect(screen.queryByText(/Le champ "Nom de la direction" est vide/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Le champ "Abréviation" est vide/)).not.toBeInTheDocument();
+});
+
+it('saves exactly the editable Direction contact fields before returning to the list', async () => {
   const user = userEvent.setup();
   editMutateAsyncSpy.mockResolvedValueOnce({ id: directionTarget.id });
   renderTarget(directionTarget);
 
-  const nameInput = screen.getByRole('textbox', { name: /Nom de la direction/ });
-  await user.clear(nameInput);
-  await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
-  expect(editMutateAsyncSpy).not.toHaveBeenCalled();
-  expect(nameInput).toHaveFocus();
-
-  await user.type(nameInput, 'Direction Autonomie et Handicap');
+  await user.clear(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }));
+  await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'new-contact@ars.fr');
   await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
 
   await waitFor(() =>
     expect(editMutateAsyncSpy).toHaveBeenCalledWith({
       id: directionTarget.id,
       input: {
-        nomComplet: 'Direction Autonomie et Handicap',
-        label: directionTarget.label,
         email: directionTarget.email,
-        emailContactUsager: directionTarget.emailContactUsager,
+        emailContactUsager: 'new-contact@ars.fr',
         telContactUsager: directionTarget.telContactUsager,
         adresseContactUsager: directionTarget.adresseContactUsager,
       },
@@ -139,14 +153,24 @@ it('validates and saves visible Direction fields before returning to the list', 
   expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services' });
 });
 
-it('renders a Service with its current Direction first and read-only', () => {
+it('renders a Service with its current Direction and identity read-only', () => {
   renderTarget(serviceTarget);
 
   expect(screen.getByRole('heading', { name: 'Modifier le service Service PA' })).toBeInTheDocument();
   const direction = screen.getByRole('textbox', { name: /Direction \(obligatoire\)/ });
-  const serviceName = screen.getByRole('textbox', { name: /Nom du service \(obligatoire\)/ });
+  const serviceName = screen.getByRole('textbox', { name: /^Nom du service/ });
+  const abbreviation = screen.getByRole('textbox', { name: /^Abréviation/ });
   expect(direction).toHaveValue('Direction Autonomie (DA)');
   expect(direction).toHaveAttribute('readonly');
+  expect(direction).not.toBeDisabled();
+  expect(serviceName).toHaveValue('Service PA');
+  expect(serviceName).toHaveAttribute('readonly');
+  expect(serviceName).not.toBeDisabled();
+  expect(abbreviation).toHaveValue('PA');
+  expect(abbreviation).toHaveAttribute('readonly');
+  expect(abbreviation).not.toBeDisabled();
+  expect(screen.queryByRole('textbox', { name: /Nom du service \(obligatoire\)/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole('textbox', { name: /Abréviation \(obligatoire\)/ })).not.toBeInTheDocument();
   expect(direction.compareDocumentPosition(serviceName) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ })).toHaveValue('contact-pa@ars.fr');
   expect(document.title).toBe('Modifier le service Service PA - Directions et services - SIRENA');
@@ -163,8 +187,6 @@ it('saves Service contact fields without status or replacement Direction', async
     expect(editMutateAsyncSpy).toHaveBeenCalledWith({
       id: serviceTarget.id,
       input: {
-        nomComplet: serviceTarget.nomComplet,
-        label: serviceTarget.label,
         email: serviceTarget.email,
         emailContactUsager: serviceTarget.emailContactUsager,
         telContactUsager: serviceTarget.telContactUsager,
@@ -178,7 +200,7 @@ it('rejects invalid contact values before saving an edit', async () => {
   const user = userEvent.setup();
   renderTarget({ ...serviceTarget, emailContactUsager: '', telContactUsager: '' });
 
-  await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'adresse-invalide');
+  await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'adresse@invalide');
   await user.type(screen.getByRole('textbox', { name: /Numéro de téléphone/ }), '123');
   await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
 

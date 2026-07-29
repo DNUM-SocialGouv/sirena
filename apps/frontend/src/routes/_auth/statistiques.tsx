@@ -8,7 +8,7 @@ import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHand
 import { parseCard } from '@/components/statistics/chartData';
 import { ExportRequetesButton } from '@/components/statistics/ExportRequetesButton';
 import { PeriodFilter } from '@/components/statistics/PeriodFilter';
-import { describePeriod, PERIOD_PRESETS, type PeriodSelection, resolveDateRange } from '@/components/statistics/period';
+import { PERIOD_PRESETS, type PeriodSelection, resolveDateRange } from '@/components/statistics/period';
 import { StatChart } from '@/components/statistics/StatChart';
 import { StatTable } from '@/components/statistics/StatTable';
 import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
@@ -69,8 +69,7 @@ function KpiCard({ card }: { card: StatisticsCard }) {
 
   return (
     <p className={styles['kpi-card']}>
-      <span className={styles['kpi-value']}>{display}</span>
-      <span className={styles['kpi-label']}>{card.name}</span>
+      <span className={styles['kpi-value']}>{display}</span> <span className={styles['kpi-label']}>{card.name}</span>
     </p>
   );
 }
@@ -115,16 +114,7 @@ function ChartCard({ card }: { card: StatisticsCard }) {
   return (
     <>
       <h2 className={fr.cx('fr-h5')}>{card.name}</h2>
-      <StatTable
-        caption={card.name}
-        items={parsed.items}
-        total={parsed.total}
-        dimensionLabel={parsed.dimensionLabel}
-        metricLabel={parsed.metricLabel}
-        percentLabel={parsed.percentLabel}
-        hasPrecomputedPercent={parsed.hasPrecomputedPercent}
-        hideCaption
-      />
+      <StatTable caption={card.name} parsed={parsed} hideCaption />
     </>
   );
 }
@@ -168,12 +158,7 @@ export function RouteComponent() {
     return <Navigate to={isSuperAdmin ? '/admin/users' : '/home'} />;
   }
 
-  const periodLabel = describePeriod(selection);
-  const statusMessage = query.isFetching
-    ? 'Mise à jour des indicateurs en cours…'
-    : query.isSuccess
-      ? `Indicateurs à jour${periodLabel ? ` pour la période : ${periodLabel}` : ''}.`
-      : '';
+  const statusMessage = query.isFetching ? 'Mise à jour des indicateurs en cours…' : '';
 
   return (
     <AuthLayout>

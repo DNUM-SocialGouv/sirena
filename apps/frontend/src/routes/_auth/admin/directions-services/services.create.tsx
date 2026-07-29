@@ -15,7 +15,7 @@ export const Route = createFileRoute('/_auth/admin/directions-services/services/
 });
 
 export function RouteComponent() {
-  const form = useLocalEntiteForm('service');
+  const form = useLocalEntiteForm('service', 'create');
   const [directionId, setDirectionId] = useState('');
   const createServiceAdminLocal = useCreateServiceAdminLocal();
   const directionsServicesQuery = useDirectionsServicesList();
@@ -95,6 +95,7 @@ export function RouteComponent() {
                     nativeSelectProps={{
                       name: 'directionId',
                       value: directionId,
+                      'aria-invalid': form.validationErrors.directionId ? true : undefined,
                       onChange: (event) => {
                         setDirectionId(event.target.value);
                         form.clearError('directionId');

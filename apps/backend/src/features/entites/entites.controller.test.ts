@@ -7,7 +7,7 @@ import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import { Prisma } from '../../libs/prisma.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import EntitesController from './entites.controller.js';
-import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
+import { DirectionOrServiceCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import { GetDirectionServiceAdminLocalResponseSchema } from './entites.schema.js';
 import {
   createDirectionAdminLocal,
@@ -40,7 +40,7 @@ vi.mock('./entites.service.js', () => ({
   getRootEntitesListAdmin: vi.fn(),
   getEditableEntitiesChain: vi.fn(),
   editEntiteAdmin: editEntiteAdminSpy,
-  createChildEntiteAdmin: createChildEntiteAdminSpy,
+  createDirectionOrServiceAdmin: createDirectionOrServiceAdminSpy,
   createDirectionAdminLocal: createDirectionAdminLocalSpy,
   createServiceAdminLocal: createServiceAdminLocalSpy,
 }));
@@ -68,7 +68,7 @@ const {
   hasFeatureSpy,
   getUserByIdSpy,
   patchEntiteAdminByIdSpy: editEntiteAdminSpy,
-  postChildEntiteAdminSpy: createChildEntiteAdminSpy,
+  createDirectionOrServiceAdminSpy,
   createDirectionAdminLocalSpy,
   createServiceAdminLocalSpy,
   assignedEntiteIdState,
@@ -78,7 +78,7 @@ const {
   hasFeatureSpy: vi.fn(),
   getUserByIdSpy: vi.fn(),
   patchEntiteAdminByIdSpy: vi.fn(),
-  postChildEntiteAdminSpy: vi.fn(),
+  createDirectionOrServiceAdminSpy: vi.fn(),
   createDirectionAdminLocalSpy: vi.fn(),
   createServiceAdminLocalSpy: vi.fn(),
   assignedEntiteIdState: { value: 'dir-autonomie' as string | undefined },
@@ -267,6 +267,34 @@ describe('Entites endpoints: /entites', () => {
       expect(getEntiteAdministrativeAdminLocal).toHaveBeenCalledWith('root-ars');
     });
 
+    it('returns a legacy root Entité with an empty notification e-mail', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      vi.mocked(getEntiteAdministrativeAdminLocal).mockResolvedValueOnce({
+        id: 'root-ars',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        email: '',
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+      });
+
+      const res = await app.request('/admin/local');
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        data: {
+          id: 'root-ars',
+          nomComplet: 'ARS Normandie',
+          label: 'ARS NOR',
+          email: '',
+          emailContactUsager: '',
+          telContactUsager: '',
+          adresseContactUsager: '',
+        },
+      });
+    });
+
     it('rejects roles other than entity admin', async () => {
       currentRole.value = ROLES.SUPER_ADMIN;
 
@@ -330,13 +358,35 @@ describe('Entites endpoints: /entites', () => {
     });
 
     it.each([
-      ['email', 'notification-invalide'],
-      ['emailContactUsager', 'contact-invalide'],
-      ['telContactUsager', '123'],
-    ])('rejects invalid contact field %s', async (field, value) => {
+      ['missing', undefined],
+      ['empty', ''],
+      ['invalid', 'notification-invalide'],
+    ])('rejects a %s notification e-mail', async (_case, email) => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       const input = {
-        email: '',
+        ...(email === undefined ? {} : { email }),
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+      };
+
+      const res = await app.request('/admin/local', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+
+      expect(res.status).toBe(400);
+      expect(editEntiteAdministrativeAdminLocal).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['emailContactUsager', 'contact-invalide'],
+      ['telContactUsager', '123'],
+    ])('rejects invalid user-facing contact field %s', async (field, value) => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      const input = {
+        email: 'notification@ars.fr',
         emailContactUsager: '',
         telContactUsager: '',
         adresseContactUsager: '',
@@ -365,10 +415,10 @@ describe('Entites endpoints: /entites', () => {
       ['organizationalUnit', 'other-unit'],
       ['emailDomain', '@other.fr'],
       ['unknownProperty', 'other'],
-    ])('rejects caller-controlled or unknown field %s', async (field, value) => {
+    ])('rejects caller-controlled or unknown field %s with value %j', async (field, value) => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       const input = {
-        email: '',
+        email: 'notification@ars.fr',
         emailContactUsager: '',
         telContactUsager: '',
         adresseContactUsager: '',
@@ -414,7 +464,7 @@ describe('Entites endpoints: /entites', () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       vi.mocked(editEntiteAdministrativeAdminLocal).mockResolvedValueOnce(null);
       const input = {
-        email: '',
+        email: 'notification@ars.fr',
         emailContactUsager: '',
         telContactUsager: '',
         adresseContactUsager: '',
@@ -647,8 +697,6 @@ describe('Entites endpoints: /entites', () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       assignedEntiteIdState.value = 'root-ars';
       const input = {
-        nomComplet: 'Agence régionale de santé Normandie',
-        label: 'ARS Normandie',
         email: 'notification@ars.fr',
         emailContactUsager: 'contact@ars.fr',
         telContactUsager: '0102030405',
@@ -666,28 +714,27 @@ describe('Entites endpoints: /entites', () => {
       expect(editDirectionServiceAdminLocal).toHaveBeenCalledWith('root-ars', 'root-ars', input);
     });
 
-    it('updates an authorized local target and hides a denied target', async () => {
+    it('updates an authorized local target with exactly the contact fields and hides a denied target', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       const input = {
-        nomComplet: 'Service Personnes âgées',
-        label: 'PA',
         email: 'notification-pa@ars.fr',
         emailContactUsager: 'contact-pa@ars.fr',
         telContactUsager: '0102030405',
         adresseContactUsager: '1 rue de la Santé, Paris',
       };
-      vi.mocked(editDirectionServiceAdminLocal)
-        .mockResolvedValueOnce({
-          id: 'service-pa',
-          entiteType: 'service',
-          ...input,
-          parentDirection: {
-            id: 'dir-autonomie',
-            nomComplet: 'Direction Autonomie',
-            label: 'DA',
-          },
-        })
-        .mockResolvedValueOnce(null);
+      const updatedTarget = {
+        id: 'service-pa',
+        entiteType: 'service' as const,
+        nomComplet: 'Service Personnes âgées',
+        label: 'PA',
+        ...input,
+        parentDirection: {
+          id: 'dir-autonomie',
+          nomComplet: 'Direction Autonomie',
+          label: 'DA',
+        },
+      };
+      vi.mocked(editDirectionServiceAdminLocal).mockResolvedValueOnce(updatedTarget).mockResolvedValueOnce(null);
 
       const authorizedRes = await app.request('/admin/directions-services/service-pa', {
         method: 'PATCH',
@@ -701,45 +748,46 @@ describe('Entites endpoints: /entites', () => {
       });
 
       expect(authorizedRes.status).toBe(200);
-      expect(await authorizedRes.json()).toEqual({
-        data: {
-          id: 'service-pa',
-          entiteType: 'service',
-          ...input,
-          parentDirection: {
-            id: 'dir-autonomie',
-            nomComplet: 'Direction Autonomie',
-            label: 'DA',
-          },
-        },
-      });
+      expect(await authorizedRes.json()).toEqual({ data: updatedTarget });
       expect(deniedRes.status).toBe(404);
       expect(editDirectionServiceAdminLocal).toHaveBeenNthCalledWith(1, 'dir-autonomie', 'service-pa', input);
       expect(editDirectionServiceAdminLocal).toHaveBeenNthCalledWith(2, 'dir-autonomie', 'service-outside', input);
     });
 
-    it('rejects caller-controlled status and Service parent changes', async () => {
+    it.each([
+      ['email', 'invalid-email'],
+      ['emailContactUsager', 'invalid-email'],
+      ['telContactUsager', '123'],
+      ['adresseContactUsager', 'a'.repeat(501)],
+      ['nomComplet', 'Service renommé'],
+      ['label', 'SR'],
+      ['isActive', false],
+      ['directionId', 'dir-enfance'],
+      ['entiteMereId', 'dir-enfance'],
+      ['parentDirection', { id: 'dir-enfance' }],
+      ['entiteTypeId', 'ARS'],
+      ['regionCode', '99'],
+      ['organizationalUnit', 'other-unit'],
+      ['emailDomain', '@other.fr'],
+      ['unknownProperty', 'other'],
+    ])('rejects invalid, caller-controlled, or unknown field %s', async (field, value) => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       const input = {
-        nomComplet: 'Service Personnes âgées',
-        label: 'PA',
         email: 'notification-pa@ars.fr',
         emailContactUsager: 'contact-pa@ars.fr',
         telContactUsager: '0102030405',
         adresseContactUsager: '1 rue de la Santé, Paris',
+        [field]: value,
       };
 
-      for (const forbiddenField of [{ isActive: false }, { directionId: 'dir-enfance' }]) {
-        vi.mocked(editDirectionServiceAdminLocal).mockClear();
-        const res = await app.request('/admin/directions-services/service-pa', {
-          method: 'PATCH',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ ...input, ...forbiddenField }),
-        });
+      const res = await app.request('/admin/directions-services/service-pa', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      });
 
-        expect(res.status).toBe(400);
-        expect(editDirectionServiceAdminLocal).not.toHaveBeenCalled();
-      }
+      expect(res.status).toBe(400);
+      expect(editDirectionServiceAdminLocal).not.toHaveBeenCalled();
     });
   });
 
@@ -828,7 +876,7 @@ describe('Entites endpoints: /entites', () => {
         label: 'DA',
         email: 'direction-autonomie@ars.fr',
       };
-      vi.mocked(createDirectionAdminLocal).mockRejectedValueOnce(new EntiteChildCreationForbiddenError());
+      vi.mocked(createDirectionAdminLocal).mockRejectedValueOnce(new DirectionOrServiceCreationForbiddenError());
 
       const res = await app.request('/admin/directions-services/directions', {
         method: 'POST',
@@ -840,7 +888,7 @@ describe('Entites endpoints: /entites', () => {
 
       expect(res.status).toBe(400);
       expect(await res.json()).toEqual({
-        message: 'Child entite creation is not allowed for this parent',
+        message: 'Direction or Service creation is not allowed for this parent',
         cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(createDirectionAdminLocal).toHaveBeenCalledWith('dir-autonomie', {
@@ -1002,7 +1050,7 @@ describe('Entites endpoints: /entites', () => {
 
     it('returns 400 when the assigned entity cannot parent a Service', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
-      vi.mocked(createServiceAdminLocal).mockRejectedValueOnce(new EntiteChildCreationForbiddenError());
+      vi.mocked(createServiceAdminLocal).mockRejectedValueOnce(new DirectionOrServiceCreationForbiddenError());
 
       const res = await app.request('/admin/directions-services/services', {
         method: 'POST',
@@ -1019,7 +1067,7 @@ describe('Entites endpoints: /entites', () => {
 
       expect(res.status).toBe(400);
       expect(await res.json()).toEqual({
-        message: 'Child entite creation is not allowed for this parent',
+        message: 'Direction or Service creation is not allowed for this parent',
         cause: { kind: ERROR_KIND.BUSINESS },
       });
     });
@@ -1180,7 +1228,7 @@ describe('Entites endpoints: /entites', () => {
   });
 
   describe('POST /admin/:id/children', () => {
-    const createChildEntitePayload = {
+    const createDirectionOrServicePayload = {
       nomComplet: 'Direction de la prévention',
       label: 'DIR PREV',
       email: 'direction@example.fr',
@@ -1190,10 +1238,10 @@ describe('Entites endpoints: /entites', () => {
       isActive: true,
     };
 
-    it('creates a child entity from a root parent for SUPER_ADMIN', async () => {
-      createChildEntiteAdminSpy.mockResolvedValueOnce({
+    it('creates a Direction from a root Entité for SUPER_ADMIN', async () => {
+      createDirectionOrServiceAdminSpy.mockResolvedValueOnce({
         id: 'direction-1',
-        ...createChildEntitePayload,
+        ...createDirectionOrServicePayload,
       });
 
       const res = await app.request('/admin/root-ars/children', {
@@ -1201,52 +1249,52 @@ describe('Entites endpoints: /entites', () => {
         headers: {
           'content-type': 'application/json',
         },
-        body: JSON.stringify(createChildEntitePayload),
+        body: JSON.stringify(createDirectionOrServicePayload),
       });
 
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({
         data: {
           id: 'direction-1',
-          ...createChildEntitePayload,
+          ...createDirectionOrServicePayload,
         },
       });
-      expect(createChildEntiteAdminSpy).toHaveBeenCalledWith('root-ars', createChildEntitePayload);
+      expect(createDirectionOrServiceAdminSpy).toHaveBeenCalledWith('root-ars', createDirectionOrServicePayload);
     });
 
     it('returns 404 when the parent entity is not found', async () => {
-      createChildEntiteAdminSpy.mockRejectedValueOnce(new EntiteNotFoundError());
+      createDirectionOrServiceAdminSpy.mockRejectedValueOnce(new EntiteNotFoundError());
 
       const res = await app.request('/admin/unknown/children', {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
         },
-        body: JSON.stringify(createChildEntitePayload),
+        body: JSON.stringify(createDirectionOrServicePayload),
       });
 
       expect(res.status).toBe(404);
       expect(await res.json()).toEqual({ message: 'Entite not found', cause: { kind: ERROR_KIND.BUSINESS } });
-      expect(createChildEntiteAdminSpy).toHaveBeenCalledWith('unknown', createChildEntitePayload);
+      expect(createDirectionOrServiceAdminSpy).toHaveBeenCalledWith('unknown', createDirectionOrServicePayload);
     });
 
-    it('returns 400 when the parent entity cannot create children', async () => {
-      createChildEntiteAdminSpy.mockRejectedValueOnce(new EntiteChildCreationForbiddenError());
+    it('returns 400 when the parent Entité cannot create a Direction or Service', async () => {
+      createDirectionOrServiceAdminSpy.mockRejectedValueOnce(new DirectionOrServiceCreationForbiddenError());
 
       const res = await app.request('/admin/service-1/children', {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
         },
-        body: JSON.stringify(createChildEntitePayload),
+        body: JSON.stringify(createDirectionOrServicePayload),
       });
 
       expect(res.status).toBe(400);
       expect(await res.json()).toEqual({
-        message: 'Child entite creation is not allowed for this parent',
+        message: 'Direction or Service creation is not allowed for this parent',
         cause: { kind: ERROR_KIND.BUSINESS },
       });
-      expect(createChildEntiteAdminSpy).toHaveBeenCalledWith('service-1', createChildEntitePayload);
+      expect(createDirectionOrServiceAdminSpy).toHaveBeenCalledWith('service-1', createDirectionOrServicePayload);
     });
   });
 

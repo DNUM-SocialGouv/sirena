@@ -6,13 +6,13 @@ import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
-import { useCreateChildEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
+import { useCreateDirectionOrServiceAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 import { EntiteAdminFormFields } from './-components/EntiteAdminFormFields';
 import { getCreateEntiteTitle } from './-helpers';
 
-const CreateChildEntiteFormSchema = z.object({
+const CreateDirectionOrServiceFormSchema = z.object({
   nomComplet: z.string().trim().min(1, 'Le champ "Nom - libellé long" est vide. Veuillez le renseigner.'),
   label: z.string().trim().min(1, 'Le champ "Nom court" est vide. Veuillez le renseigner.'),
   email: optionalEmailSchema,
@@ -31,7 +31,7 @@ export function RouteComponent() {
   const router = useRouter();
   const { entiteId } = (Route.useParams as () => { entiteId: string })();
   const toastManager = Toast.useToastManager();
-  const createEntiteAdminChild = useCreateChildEntiteAdmin();
+  const createDirectionOrServiceMutation = useCreateDirectionOrServiceAdmin();
   const isSubmittingRef = useRef(false);
   const entiteQuery = useEntiteByIdAdmin(entiteId);
   const entiteChainQuery = useEntiteChain(entiteId);
@@ -76,7 +76,7 @@ export function RouteComponent() {
           };
 
           if (hasSubmitted && validationErrors[field]) {
-            const fieldError = getFieldError(CreateChildEntiteFormSchema, updatedData, field);
+            const fieldError = getFieldError(CreateDirectionOrServiceFormSchema, updatedData, field);
 
             setValidationErrors((prevErrors) => {
               const next = { ...prevErrors };
@@ -101,11 +101,11 @@ export function RouteComponent() {
     async (e: SubmitEvent<HTMLFormElement>) => {
       e.preventDefault();
 
-      if (isSubmittingRef.current || createEntiteAdminChild.isPending) return;
+      if (isSubmittingRef.current || createDirectionOrServiceMutation.isPending) return;
 
       setHasSubmitted(true);
 
-      const result = CreateChildEntiteFormSchema.safeParse(formData);
+      const result = CreateDirectionOrServiceFormSchema.safeParse(formData);
 
       if (!result.success) {
         const errors = zodIssuesToFieldErrors(result.error);
@@ -123,7 +123,7 @@ export function RouteComponent() {
       isSubmittingRef.current = true;
 
       try {
-        const createdEntite = await createEntiteAdminChild.mutateAsync({
+        const createdEntite = await createDirectionOrServiceMutation.mutateAsync({
           id: entiteId,
           input: {
             ...result.data,
@@ -149,7 +149,7 @@ export function RouteComponent() {
         isSubmittingRef.current = false;
       }
     },
-    [createEntiteAdminChild, formData, entiteId, toastManager, router],
+    [createDirectionOrServiceMutation, formData, entiteId, toastManager, router],
   );
 
   if (entiteQuery.isPending || entiteChainQuery.isPending) {
@@ -202,7 +202,7 @@ export function RouteComponent() {
           />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
-            <Button type="submit" disabled={createEntiteAdminChild.isPending}>
+            <Button type="submit" disabled={createDirectionOrServiceMutation.isPending}>
               Créer
             </Button>
           </div>

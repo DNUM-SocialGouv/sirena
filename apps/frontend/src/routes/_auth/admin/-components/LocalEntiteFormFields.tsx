@@ -2,11 +2,17 @@ import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import Input from '@codegouvfr/react-dsfr/Input';
 import { type ReactNode, useId } from 'react';
 import { ReadOnlyField } from '@/components/common/ReadOnlyField';
-import type { LocalEntiteFormType, LocalEntiteFormValues } from './useLocalEntiteForm';
+import {
+  isNotificationEmailRequired,
+  type LocalEntiteFormMode,
+  type LocalEntiteFormType,
+  type LocalEntiteFormValues,
+} from './useLocalEntiteForm';
 
 type FieldChangeHandler = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 type FormFieldsState = {
   entiteType: LocalEntiteFormType;
+  mode: LocalEntiteFormMode;
   values: LocalEntiteFormValues;
   validationErrors: Record<string, string>;
   onChange: (field: keyof LocalEntiteFormValues) => FieldChangeHandler;
@@ -14,6 +20,7 @@ type FormFieldsState = {
 
 type SirenaFieldsProps = {
   entiteType: LocalEntiteFormType;
+  mode: LocalEntiteFormMode;
   formData: LocalEntiteFormValues;
   validationErrors: Record<string, string>;
   onChange: FormFieldsState['onChange'];
@@ -22,12 +29,14 @@ type SirenaFieldsProps = {
 
 function LocalEntiteSirenaFields({
   entiteType,
+  mode,
   formData,
   validationErrors,
   onChange,
   leadingField,
 }: SirenaFieldsProps) {
-  const identityFieldsReadOnly = entiteType === 'entite-administrative';
+  const identityFieldsReadOnly = mode === 'edit';
+  const notificationEmailRequired = isNotificationEmailRequired(entiteType, mode);
   const nameReadOnlyId = useId();
   const abbreviationReadOnlyId = useId();
   const wording =
@@ -62,7 +71,7 @@ function LocalEntiteSirenaFields({
               <ReadOnlyField
                 id={nameReadOnlyId}
                 label={`Nom ${wording.name}`}
-                hintText={`Nom complet sans abréviation ou acronyme. Exemple : ${wording.nameExample}`}
+                hintText="Ce champ n’est pas modifiable ici."
                 value={formData.nomComplet}
               />
             </div>
@@ -76,6 +85,7 @@ function LocalEntiteSirenaFields({
               nativeInputProps={{
                 name: 'nomComplet',
                 value: formData.nomComplet,
+                'aria-invalid': validationErrors.nomComplet ? true : undefined,
                 onChange: onChange('nomComplet'),
               }}
             />
@@ -88,7 +98,7 @@ function LocalEntiteSirenaFields({
               <ReadOnlyField
                 id={abbreviationReadOnlyId}
                 label="Abréviation"
-                hintText={`Sigle, acronyme ou forme abrégée du nom. Exemple : ${wording.abbreviationExample}`}
+                hintText="Ce champ n’est pas modifiable ici."
                 value={formData.label}
               />
             </div>
@@ -99,7 +109,12 @@ function LocalEntiteSirenaFields({
               hintText={`Sigle, acronyme ou forme abrégée du nom. Exemple : ${wording.abbreviationExample}`}
               state={validationErrors.label ? 'error' : 'default'}
               stateRelatedMessage={validationErrors.label}
-              nativeInputProps={{ name: 'label', value: formData.label, onChange: onChange('label') }}
+              nativeInputProps={{
+                name: 'label',
+                value: formData.label,
+                'aria-invalid': validationErrors.label ? true : undefined,
+                onChange: onChange('label'),
+              }}
             />
           )}
         </div>
@@ -107,11 +122,17 @@ function LocalEntiteSirenaFields({
         <div className="fr-col-12 fr-col-md-7">
           <Input
             className="fr-fieldset__content"
-            label="Adresse e-mail de notification"
+            label={`Adresse e-mail de notification${notificationEmailRequired ? ' (obligatoire)' : ''}`}
             hintText="Adresse générique pour la notification des nouvelles requêtes. Exemple : reclamations@direction.fr"
             state={validationErrors.email ? 'error' : 'default'}
             stateRelatedMessage={validationErrors.email}
-            nativeInputProps={{ name: 'email', value: formData.email, onChange: onChange('email') }}
+            nativeInputProps={{
+              name: 'email',
+              type: 'email',
+              value: formData.email,
+              'aria-invalid': validationErrors.email ? true : undefined,
+              onChange: onChange('email'),
+            }}
           />
         </div>
       </div>
@@ -134,7 +155,7 @@ function LocalEntiteContactFields({ formData, validationErrors, onChange }: Cont
         <Alert
           severity="info"
           small
-          description="Si vous ne renseignez pas ces informations, l’adresse e-mail de notification sera transmise au déclarant, dans l’accusé de réception, afin qu’il puisse vous contacter."
+          description="Information : si vous ne renseignez pas ces informations, l’adresse e-mail de notification sera transmise au déclarant, dans l’accusé de réception, afin qu’il puisse vous contacter."
         />
       </div>
 
@@ -148,7 +169,9 @@ function LocalEntiteContactFields({ formData, validationErrors, onChange }: Cont
             stateRelatedMessage={validationErrors.emailContactUsager}
             nativeInputProps={{
               name: 'emailContactUsager',
+              type: 'email',
               value: formData.emailContactUsager,
+              'aria-invalid': validationErrors.emailContactUsager ? true : undefined,
               onChange: onChange('emailContactUsager'),
             }}
           />
@@ -165,6 +188,7 @@ function LocalEntiteContactFields({ formData, validationErrors, onChange }: Cont
               name: 'telContactUsager',
               type: 'tel',
               value: formData.telContactUsager,
+              'aria-invalid': validationErrors.telContactUsager ? true : undefined,
               onChange: onChange('telContactUsager'),
             }}
           />
@@ -203,7 +227,7 @@ export function LocalEntiteFormFields({ form, leadingField }: LocalEntiteFormFie
 
   return (
     <>
-      <LocalEntiteSirenaFields entiteType={form.entiteType} {...fields} leadingField={leadingField} />
+      <LocalEntiteSirenaFields entiteType={form.entiteType} mode={form.mode} {...fields} leadingField={leadingField} />
       <LocalEntiteContactFields {...fields} />
     </>
   );

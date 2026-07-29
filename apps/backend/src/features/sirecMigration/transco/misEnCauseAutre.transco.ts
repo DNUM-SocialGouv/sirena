@@ -18,9 +18,9 @@ const AUTRES_MC_TYPE_TRANSCO: Record<number, AutreMcTranscoResult> = {
     misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL,
     misEnCauseTypePrecisionId: AUTRE_PROFESSIONNEL_PRECISION.CHIROPRACTEUR,
   },
-  122: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL, misEnCauseTypePrecisionId: null },
-  123: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL, misEnCauseTypePrecisionId: null },
-  124: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL, misEnCauseTypePrecisionId: null },
+  122: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.ETABLISSEMENT_FICTIF, misEnCauseTypePrecisionId: null },
+  123: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.EXERCICE_ILLEGAL, misEnCauseTypePrecisionId: null },
+  124: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.MAISON_ARRET, misEnCauseTypePrecisionId: null },
   125: {
     misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL,
     misEnCauseTypePrecisionId: AUTRE_PROFESSIONNEL_PRECISION.OSTEOPATHE,
@@ -35,8 +35,8 @@ const AUTRES_MC_TYPE_TRANSCO: Record<number, AutreMcTranscoResult> = {
     misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL,
     misEnCauseTypePrecisionId: AUTRE_PROFESSIONNEL_PRECISION.TATOUEUR,
   },
-  130: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL, misEnCauseTypePrecisionId: null },
-  131: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL, misEnCauseTypePrecisionId: null },
+  130: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.TRANSPORTEUR_SANITAIRE, misEnCauseTypePrecisionId: null },
+  131: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE, misEnCauseTypePrecisionId: null },
 };
 
 export function transcodeAutresMcType(autresMcType: number | null): AutreMcTranscoResult {
