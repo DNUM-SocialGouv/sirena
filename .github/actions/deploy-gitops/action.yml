@@ -53,7 +53,11 @@ runs:
         
         # Suppression du repertoire anonymize quand il existe
         rm -r gitops-repo/deployment-targets/${{ inputs.environment }}/anonymize || true
-        
+
+        # Idem valkey : present uniquement sur les environnements ou le cache est
+        # deploye dans le cluster (valkey.enabled). Ailleurs le cache est manage.
+        rm -r gitops-repo/deployment-targets/${{ inputs.environment }}/valkey || true
+
         mv helm_charts/generated_manifests/sirena/charts/* gitops-repo/deployment-targets/${{ inputs.environment }}/
 
         git config --global user.name "github-actions[bot]"
