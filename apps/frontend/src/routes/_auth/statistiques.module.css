@@ -16,6 +16,7 @@
 
 .mb-cell {
   min-width: 0;
+  position: relative;
 }
 
 @media (min-width: 48em) {

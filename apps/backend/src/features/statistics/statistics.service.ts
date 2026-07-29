@@ -49,6 +49,7 @@ export type DashboardCardData = {
   id: number;
   dashcardId: number;
   name: string;
+  description: string | null;
   display: string | null;
   layout: CardLayout | null;
   data: CardData;
@@ -149,7 +150,13 @@ const fetchJson = async (url: string, logContext: Record<string, unknown>): Prom
 type RawDashcard = {
   id?: unknown;
   card_id?: unknown;
-  card?: { id?: unknown; name?: unknown; display?: unknown; visualization_settings?: unknown } | null;
+  card?: {
+    id?: unknown;
+    name?: unknown;
+    description?: unknown;
+    display?: unknown;
+    visualization_settings?: unknown;
+  } | null;
   visualization_settings?: { visualization?: { display?: unknown } | null; column_settings?: unknown } | null;
   col?: unknown;
   row?: unknown;
@@ -177,6 +184,7 @@ type DashcardDescriptor = {
   dashcardId: number;
   cardId: number;
   name: string;
+  description: string | null;
   display: string | null;
   layout: CardLayout | null;
   columnTitles: Map<string, string>;
@@ -247,10 +255,12 @@ const toDashcardDescriptor = (raw: RawDashcard): DashcardDescriptor | null => {
   const dashcardId = typeof raw.id === 'number' ? raw.id : null;
   if (cardId == null || dashcardId == null) return null;
   const name = typeof raw.card?.name === 'string' ? raw.card.name : `Carte ${cardId}`;
+  const rawDescription = raw.card?.description;
+  const description = typeof rawDescription === 'string' && rawDescription.trim() !== '' ? rawDescription : null;
   const display = extractDisplay(raw);
   const layout = extractLayout(raw);
   const columnTitles = extractColumnTitles(raw);
-  return { dashcardId, cardId, name, display, layout, columnTitles };
+  return { dashcardId, cardId, name, description, display, layout, columnTitles };
 };
 
 type RawMetabaseColumn = {
@@ -335,7 +345,7 @@ export const fetchDashboardCardsData = async (
   // allSettled (et non all) : une dashcard en échec ne doit pas rendre tout le dashboard
   // inaccessible. La carte fautive est renvoyée avec des données vides et le reste s'affiche.
   const settled = await Promise.allSettled(
-    dashcards.map(async ({ dashcardId, cardId, name, display, layout, columnTitles }) => {
+    dashcards.map(async ({ dashcardId, cardId, name, description, display, layout, columnTitles }) => {
       const cardUrl = `${base}/api/embed/dashboard/${token}/dashcard/${dashcardId}/card/${cardId}${filterSuffix}`;
       const payload = await fetchJson(cardUrl, { dashboardId, dashcardId, cardId, step: 'card-data' });
       const data = applyColumnTitles(extractCardData(payload), columnTitles);
@@ -347,14 +357,14 @@ export const fetchDashboardCardsData = async (
         );
       }
 
-      return { id: cardId, dashcardId, name, display, layout, data };
+      return { id: cardId, dashcardId, name, description, display, layout, data };
     }),
   );
 
   return settled.map((result, index) => {
     if (result.status === 'fulfilled') return result.value;
 
-    const { dashcardId, cardId, name, display, layout } = dashcards[index];
+    const { dashcardId, cardId, name, description, display, layout } = dashcards[index];
     logger.warn(
       {
         dashboardId,
@@ -364,6 +374,6 @@ export const fetchDashboardCardsData = async (
       },
       '[statistics] dashcard fetch failed, returning empty data',
     );
-    return { id: cardId, dashcardId, name, display, layout, data: EMPTY_CARD_DATA };
+    return { id: cardId, dashcardId, name, description, display, layout, data: EMPTY_CARD_DATA };
   });
 };

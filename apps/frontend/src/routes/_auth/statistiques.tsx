@@ -5,6 +5,7 @@ import { type CSSProperties, useCallback } from 'react';
 import { z } from 'zod';
 import { AuthLayout } from '@/components/layout/auth/layout';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
+import { CardHelp } from '@/components/statistics/CardHelp';
 import { parseCard } from '@/components/statistics/chartData';
 import { ExportRequetesButton } from '@/components/statistics/ExportRequetesButton';
 import { PeriodFilter } from '@/components/statistics/PeriodFilter';
@@ -168,9 +169,7 @@ export function RouteComponent() {
           {!isSuperAdmin && <ExportRequetesButton />}
         </div>
         <PeriodFilter value={selection} onChange={handlePeriodChange} />
-        <p role="status" className="fr-sr-only">
-          {statusMessage}
-        </p>
+        <output className="fr-sr-only">{statusMessage}</output>
         <QueryStateHandler query={query} noDataComponent={<p>Aucune carte configurée dans le dashboard Metabase.</p>}>
           {({ data }) => {
             const cards = Array.isArray(data.cards) ? data.cards : [];
@@ -185,6 +184,7 @@ export function RouteComponent() {
                 {sortedCards.map((card) => (
                   <section key={`${card.dashcardId}-${card.id}`} className={styles['mb-cell']} style={cellStyle(card)}>
                     <CardContent card={card} />
+                    <CardHelp description={card.description} position="top-right" />
                   </section>
                 ))}
               </div>

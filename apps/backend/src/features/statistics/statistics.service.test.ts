@@ -139,6 +139,7 @@ describe('statistics.service.ts', () => {
           id: 42,
           dashcardId: 100,
           name: 'Requêtes par mois',
+          description: null,
           display: null,
           layout: null,
           data: cardResult(
@@ -153,6 +154,7 @@ describe('statistics.service.ts', () => {
           id: 43,
           dashcardId: 101,
           name: 'Top entités',
+          description: null,
           display: null,
           layout: null,
           data: cardResult(
@@ -197,6 +199,7 @@ describe('statistics.service.ts', () => {
           id: 50,
           dashcardId: 200,
           name: 'Legacy',
+          description: null,
           display: null,
           layout: null,
           data: cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]).data,
@@ -287,11 +290,20 @@ describe('statistics.service.ts', () => {
           id: 42,
           dashcardId: 100,
           name: 'OK',
+          description: null,
           display: null,
           layout: null,
           data: cardResult([{ name: 'total', base_type: 'type/Integer' }], [[12]]).data,
         },
-        { id: 43, dashcardId: 101, name: 'KO', display: null, layout: null, data: { cols: [], rows: [] } },
+        {
+          id: 43,
+          dashcardId: 101,
+          name: 'KO',
+          description: null,
+          display: null,
+          layout: null,
+          data: { cols: [], rows: [] },
+        },
       ]);
     });
 
@@ -308,7 +320,15 @@ describe('statistics.service.ts', () => {
       const result = await fetchDashboardCardsData();
 
       expect(result).toEqual([
-        { id: 42, dashcardId: 100, name: 'Card', display: null, layout: null, data: { cols: [], rows: [] } },
+        {
+          id: 42,
+          dashcardId: 100,
+          name: 'Card',
+          description: null,
+          display: null,
+          layout: null,
+          data: { cols: [], rows: [] },
+        },
       ]);
     });
 
@@ -333,11 +353,47 @@ describe('statistics.service.ts', () => {
           id: 42,
           dashcardId: 100,
           name: 'Carte 42',
+          description: null,
           display: null,
           layout: null,
           data: cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]).data,
         },
       ]);
+    });
+
+    it('extracts the card description, leaving it null when absent or blank', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            dashcards: [
+              { id: 100, card_id: 42, card: { id: 42, name: 'Avec desc', description: 'Nombre total de requêtes' } },
+              { id: 101, card_id: 43, card: { id: 43, name: 'Sans desc' } },
+              { id: 102, card_id: 44, card: { id: 44, name: 'Desc vide', description: '   ' } },
+            ],
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[2]]),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[3]]),
+        });
+
+      const { fetchDashboardCardsData } = await import('./statistics.service.js');
+      const result = await fetchDashboardCardsData();
+
+      expect(result.map((card) => card.description)).toEqual(['Nombre total de requêtes', null, null]);
     });
 
     it('extracts the Metabase grid layout (col/row/size) and leaves it null when incomplete', async () => {
