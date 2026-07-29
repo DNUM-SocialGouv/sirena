@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 264.20367278797994,
+  "average_query_time": 281.2028836251287,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -25,7 +25,7 @@
   "dashboard": {
     "id": 4,
     "moderation_status": null,
-    "name": "[integrated] Sirena"
+    "name": "[integration] Dashboard local"
   },
   "dashboard_count": 1,
   "dashboard_id": 4,
@@ -36,27 +36,27 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "SELECT\n    cr.label              AS raison_cloture,\n    COUNT(DISTINCT et.id) AS nb_requetes\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\" e\n    ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r\n    ON r.id = re.\"requeteId\"\n  JOIN \"RequeteEtape\" et\n    ON et.\"requeteId\" = re.\"requeteId\"\n   AND et.\"entiteId\"  = re.\"entiteId\"\n   AND et.\"statutId\"  = 'CLOTUREE'\n  JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j\n    ON j.\"B\" = et.id\n  JOIN \"RequeteClotureReasonEnum\" cr\n    ON cr.id = j.\"A\"\n  WHERE re.\"statutId\" = 'CLOTUREE'\n    AND e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day')]]\n  GROUP BY cr.label\n  ORDER BY nb_requetes DESC;",
-        "template-tags": {
-          "end_date": {
-            "display-name": "End Date",
-            "id": "e5b95869-3dca-4960-bd80-6a4c9591551b",
-            "name": "end_date",
-            "type": "date"
-          },
-          "entity_label": {
+        "native": "-- Carte : « Répartition des requêtes clôturées par motif de clôture »\n-- Une requête peut avoir plusieurs motifs de clôture : la part est calculée sur le nombre de\n-- requêtes clôturées, la somme des parts dépasse donc 100 %.\nWITH requetes_cloturees AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, re.\"entiteId\" AS entite_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE re.\"statutId\" = 'CLOTUREE'\n    AND e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n),\ntotal AS (\n  SELECT COUNT(*) AS nb_total FROM requetes_cloturees\n),\nrequete_motif AS (\n  -- 1 ligne par (requête, motif) : dédoublonne les étapes de clôture multiples\n  SELECT DISTINCT rc.requete_id, cr.label AS motif\n  FROM requetes_cloturees rc\n  JOIN \"RequeteEtape\" et\n    ON et.\"requeteId\" = rc.requete_id\n   AND et.\"entiteId\"  = rc.entite_id\n   AND et.\"statutId\"  = 'CLOTUREE'\n  JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n  JOIN \"RequeteClotureReasonEnum\" cr               ON cr.id = j.\"A\"\n),\npar_motif AS (\n  SELECT motif, COUNT(*) AS nb_requetes\n  FROM requete_motif\n  GROUP BY motif\n)\nSELECT\n  pm.motif                                                 AS \"Motif de clôture\",\n  pm.nb_requetes                                           AS \"Nombre de requêtes clôturées\",\n  ROUND(100.0 * pm.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes clôturées (%)\"\nFROM par_motif pm\nCROSS JOIN total t\nWHERE pm.nb_requetes > 0\nORDER BY pm.nb_requetes DESC;",
+        "template-tags": [
+          {
             "display-name": "Entity Label",
             "id": "28575bb8-65aa-4594-bf0f-ebf58b62922f",
             "name": "entity_label",
             "type": "text"
           },
-          "start_date": {
+          {
             "display-name": "Start Date",
             "id": "ad253bd1-6d23-4662-84b1-f893a1945044",
             "name": "start_date",
             "type": "date"
+          },
+          {
+            "display-name": "End Date",
+            "id": "e5b95869-3dca-4960-bd80-6a4c9591551b",
+            "name": "end_date",
+            "type": "date"
           }
-        }
+        ]
       }
     ]
   },
@@ -71,7 +71,7 @@
   "entity_id": "AhmL1ImfBecTkedR2qyJB",
   "id": 47,
   "is_remote_synced": false,
-  "last_query_start": "2026-07-03T13:54:59.187947Z",
+  "last_query_start": "2026-07-29T07:27:21.219586Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.60.4.4 (65c9d32)",
@@ -93,7 +93,26 @@
           "entity_label"
         ]
       ],
-      "type": "string/="
+      "type": "string/=",
+      "values_query_type": "list",
+      "values_source_config": {
+        "card_id": 46,
+        "label_field": [
+          "field",
+          "nomComplet",
+          {
+            "base-type": "type/Text"
+          }
+        ],
+        "value_field": [
+          "field",
+          "label",
+          {
+            "base-type": "type/Text"
+          }
+        ]
+      },
+      "values_source_type": "card"
     },
     {
       "id": "ad253bd1-6d23-4662-84b1-f893a1945044",
@@ -131,6 +150,14 @@
   "table_id": null,
   "type": "question",
   "visualization_settings": {
+    "column_settings": {
+      "[\"name\",\"nb_requetes\"]": {
+        "column_title": "Nombre de requêtes"
+      },
+      "[\"name\",\"raison_cloture\"]": {
+        "column_title": "Raison de cloture"
+      }
+    },
     "table.cell_column": "raison_cloture",
     "table.pivot_column": "nb_requetes"
   }
