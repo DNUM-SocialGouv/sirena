@@ -78,7 +78,10 @@ describe('Admin local Service create route', () => {
     expect(direction).toHaveAttribute('readonly');
     expect(direction.compareDocumentPosition(serviceName) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByText(/Nom complet sans abréviation ou acronyme.*Professions Médicales/)).toBeVisible();
-    expect(screen.getByRole('group', { name: 'Informations de contact pour l’usager' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Informations de contact pour l’usager' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: /Adresse e-mail de contact/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: /Numéro de téléphone/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: /Adresse postale/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: /Actif dans SIRENA/ })).not.toBeInTheDocument();
     expect(document.title).toBe('Ajouter un service - Directions et services - SIRENA');
   });
@@ -91,9 +94,6 @@ describe('Admin local Service create route', () => {
 
     await fillRequiredFields(user);
     await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de notification/ }), 'service@ars.fr');
-    await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'contact@ars.fr');
-    await user.type(screen.getByRole('textbox', { name: /Numéro de téléphone/ }), '0102030405');
-    await user.type(screen.getByRole('textbox', { name: /Adresse postale/ }), '1 rue de la Santé, Paris');
     await user.click(screen.getByRole('button', { name: 'Ajouter le service' }));
 
     await waitFor(() => {
@@ -101,9 +101,6 @@ describe('Admin local Service create route', () => {
         nomComplet: 'Service Autonomie',
         label: 'SA',
         email: 'service@ars.fr',
-        emailContactUsager: 'contact@ars.fr',
-        telContactUsager: '0102030405',
-        adresseContactUsager: '1 rue de la Santé, Paris',
       });
       expect(addToastSpy).toHaveBeenCalledWith(expect.objectContaining({ title: 'Service créé avec succès' }));
       expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services' });
@@ -136,29 +133,23 @@ describe('Admin local Service create route', () => {
       nomComplet: 'Service Autonomie',
       label: 'SA',
       email: '',
-      emailContactUsager: '',
-      telContactUsager: '',
-      adresseContactUsager: '',
       directionId: parentDirection.id,
     });
   });
 
-  it('rejects invalid contact values', async () => {
+  it('rejects an invalid notification e-mail', async () => {
     const user = userEvent.setup();
     const mutateAsync = vi.fn();
     vi.mocked(useCreateServiceAdminLocal).mockReturnValue({ mutateAsync, isPending: false } as never);
     render(<RouteComponent />);
     await fillRequiredFields(user);
-    await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'adresse@invalide');
-    await user.type(screen.getByRole('textbox', { name: /Numéro de téléphone/ }), '123');
+    const notificationEmail = screen.getByRole('textbox', { name: /Adresse e-mail de notification/ });
+    await user.type(notificationEmail, 'adresse@invalide');
 
     await user.click(screen.getByRole('button', { name: 'Ajouter le service' }));
 
-    expect(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ })).toHaveFocus();
+    expect(notificationEmail).toHaveFocus();
     expect(screen.getByText(/L’adresse e-mail est invalide/)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Le numéro de téléphone doit être au format national ou international/),
-    ).toBeInTheDocument();
     expect(mutateAsync).not.toHaveBeenCalled();
   });
 

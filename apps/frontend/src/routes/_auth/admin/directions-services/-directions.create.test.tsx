@@ -64,8 +64,10 @@ describe('Admin local Direction create route', () => {
     expect(screen.getByRole('textbox', { name: /Abréviation/ })).toBeEnabled();
     expect(screen.getByText(/Sigle, acronyme ou forme abrégée du nom.*DOS/)).toBeVisible();
     expect(screen.getByRole('textbox', { name: /Adresse e-mail de notification/ })).toHaveAttribute('type', 'email');
-    expect(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ })).toHaveAttribute('type', 'email');
-    expect(screen.getByRole('group', { name: 'Informations de contact pour l’usager' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Informations de contact pour l’usager' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: /Adresse e-mail de contact/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: /Numéro de téléphone/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: /Adresse postale/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: /Actif dans SIRENA/ })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Annuler' })).toHaveAttribute('href', '/admin/directions-services');
     expect(document.title).toBe('Ajouter une direction - Directions et services - SIRENA');
@@ -92,20 +94,16 @@ describe('Admin local Direction create route', () => {
     expect(label).not.toHaveAttribute('aria-invalid');
   });
 
-  it.each([
-    ['Adresse e-mail de notification', 'invalid@email', /L’adresse e-mail est invalide/],
-    ['Adresse e-mail de contact', 'invalid-contact@email', /L’adresse e-mail est invalide/],
-    ['Numéro de téléphone', '123', /Le numéro de téléphone doit être au format national ou international/],
-  ] as const)('rejects an invalid %s', async (fieldName, value, message) => {
+  it('rejects an invalid notification e-mail', async () => {
     const user = userEvent.setup();
     render(<RouteComponent />);
     await fillRequiredFields(user);
-    const field = screen.getByRole('textbox', { name: new RegExp(fieldName) });
-    await user.type(field, value);
+    const field = screen.getByRole('textbox', { name: /Adresse e-mail de notification/ });
+    await user.type(field, 'invalid@email');
 
     await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
 
-    expect(screen.getByText(message)).toBeInTheDocument();
+    expect(screen.getByText(/L’adresse e-mail est invalide/)).toBeInTheDocument();
     expect(field).toHaveAttribute('aria-invalid', 'true');
   });
 
@@ -120,9 +118,6 @@ describe('Admin local Direction create route', () => {
       screen.getByRole('textbox', { name: /Adresse e-mail de notification/ }),
       'reclamations@direction.fr',
     );
-    await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'contact@direction.fr');
-    await user.type(screen.getByRole('textbox', { name: /Numéro de téléphone/ }), '0102030405');
-    await user.type(screen.getByRole('textbox', { name: /Adresse postale/ }), '1 rue de la République, 75000 Paris');
     await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
 
     await waitFor(() => {
@@ -130,9 +125,6 @@ describe('Admin local Direction create route', () => {
         nomComplet: 'Direction Autonomie',
         label: 'DA',
         email: 'reclamations@direction.fr',
-        emailContactUsager: 'contact@direction.fr',
-        telContactUsager: '0102030405',
-        adresseContactUsager: '1 rue de la République, 75000 Paris',
       });
       expect(addToastSpy).toHaveBeenCalledWith(expect.objectContaining({ title: 'Direction créée avec succès' }));
       expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services' });
