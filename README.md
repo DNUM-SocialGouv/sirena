@@ -235,7 +235,7 @@ The `op:metabase:export-dashboard` script snapshots a Metabase dashboard (and ev
 
 ### Setup
 
-Add the API key to your local `.env` (the existing `METABASE_SITE_URL` and `METABASE_DASHBOARD_ID` are reused):
+Add the API key to your local `.env` (the existing `METABASE_SITE_URL`, `METABASE_DASHBOARD_ID` and `METABASE_DASHBOARD_ID_ADMIN` are reused):
 
 ```bash
 # Metabase Admin → Authentication → API keys (requires Metabase ≥ 0.49)
@@ -245,10 +245,10 @@ METABASE_API_KEY=mb_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ### Usage
 
 ```bash
-# Uses METABASE_DASHBOARD_ID from .env
+# Exports both METABASE_DASHBOARD_ID and METABASE_DASHBOARD_ID_ADMIN from .env
 pnpm op:metabase:export-dashboard
 
-# Explicit dashboard id (overrides the env value)
+# Explicit dashboard id (overrides the env values)
 pnpm op:metabase:export-dashboard 4
 ```
 

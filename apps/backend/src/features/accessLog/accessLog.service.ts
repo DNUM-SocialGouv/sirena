@@ -8,6 +8,7 @@ export const createAccessLog = async (data: CreateAccessLogDto) => {
       entityId: data.entityId,
       action: data.action,
       userId: data.userId,
+      topEntiteId: data.topEntiteId,
       requestId: data.requestId,
       path: data.path,
       dataKeys: data.dataKeys,

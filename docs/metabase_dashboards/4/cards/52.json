@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 417.55172413793105,
+  "average_query_time": 336.5,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -25,7 +25,7 @@
   "dashboard": {
     "id": 4,
     "moderation_status": null,
-    "name": "[integrated] Sirena"
+    "name": "[integration] Dashboard local"
   },
   "dashboard_count": 1,
   "dashboard_id": 4,
@@ -36,27 +36,27 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "-- Carte : « Répartition du nombre de requêtes par motif (qualifié, dernier niveau) »\n-- + ligne « Aucun motif » pour les requêtes sans motif qualifié.\n-- entity_label = paramètre Metabase Locked, cf. docs/metabase_dashboards/FILTERS.md\nWITH requetes_entite AS (\n  SELECT DISTINCT r.id AS requete_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE e.label = {{entity_label}}\n    [[ AND r.\"receptionDate\" >= {{start_date}} ]]\n    [[ AND r.\"receptionDate\" <= {{end_date}} ]]\n),\ntotal AS (\n  SELECT COUNT(*) AS nb_total FROM requetes_entite\n),\nrequete_motif AS (\n  -- 1 ligne par (requête, motif qualifié dernier niveau)\n  SELECT DISTINCT re.requete_id, m.label AS motif\n  FROM requetes_entite re\n  JOIN \"Situation\" s  ON s.\"requeteId\"    = re.requete_id\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  JOIN \"MotifEnum\" m  ON m.id             = fm.\"motifId\"\n),\npar_motif AS (\n  SELECT motif, COUNT(*) AS nb_requetes\n  FROM requete_motif\n  GROUP BY motif\n\n  UNION ALL\n\n  -- Requêtes de l'entité sans aucun motif qualifié\n  SELECT 'Aucun motif' AS motif, COUNT(*) AS nb_requetes\n  FROM requetes_entite re\n  WHERE NOT EXISTS (\n    SELECT 1 FROM requete_motif rm WHERE rm.requete_id = re.requete_id\n  )\n)\nSELECT\n  pm.motif                                                 AS \"Motif\",\n  pm.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * pm.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part (%)\"\nFROM par_motif pm\nCROSS JOIN total t\nWHERE pm.nb_requetes > 0\nORDER BY pm.nb_requetes DESC",
-        "template-tags": {
-          "end_date": {
-            "display-name": "End Date",
-            "id": "b0523a73-b7ca-4593-8c70-cdcadff8cc6c",
-            "name": "end_date",
-            "type": "date"
-          },
-          "entity_label": {
+        "native": "-- Carte 52 : « Répartition des requêtes par motif (dernier niveau) »\n-- + ligne « Aucun motif qualifié » pour les requêtes sans motif qualifié.\n-- Une requête peut porter plusieurs motifs : la part est calculée sur le nombre de requêtes\n-- rattachées à cette entité, la somme des parts dépasse donc 100 %.\n-- NB : ne jamais mettre ni apostrophe ni double crochet dans ces commentaires. Metabase les\n-- analyse comme du SQL : une apostrophe isolée ou un bloc optionnel vide fait échouer la carte\n-- sur \"clauses must contain at least one {{...}} clause\".\n-- entity_label = paramètre Metabase Locked, cf. docs/metabase_dashboards/FILTERS.md\nWITH requetes_entite AS (\n  SELECT DISTINCT r.id AS requete_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n),\ntotal AS (\n  SELECT COUNT(*) AS nb_total FROM requetes_entite\n),\n-- MotifEnum ne contient que les feuilles (id = PARENT/ENFANT) ; les libellés des catégories\n-- parentes ne sont pas en base, cf. packages/common/src/constants/motifs.constant.ts\nmotif_parent (code, label) AS (\n  VALUES\n    ('ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES', 'Activités d''esthétique non réglementées'),\n    ('MEDICAMENTS', 'Médicaments'),\n    ('FACTURATIONS_HONORAIRES', 'Facturations et honoraires'),\n    ('HOTELLERIE_LOCAUX_RESTAURATION', 'Hôtellerie locaux restauration'),\n    ('INFORMATIONS_DROITS_USAGERS', 'Informations et droits des usagers'),\n    ('MAUVAISE_ATTITUDE_PROFESSIONNELS', 'Mauvaise attitude des professionnels'),\n    ('PRATIQUE_NON_CONVENTIONNELLE', 'Pratique non conventionnelle'),\n    ('PROBLEMES_ORGANISATION_RESSOURCES_HUMAINES', 'Problèmes d''organisation ou de ressources humaines'),\n    ('QUALITE_ACCOMPAGNEMENT_SERVICE', 'Qualité de l''accompagnement ou du service'),\n    ('QUALITE_SOINS', 'Qualité des soins'),\n    ('DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE', 'Difficulté de recherche d''établissement ou d''un professionnel ou de service'),\n    ('PROBLEMES_ENVIRONNEMENTAUX', 'Problèmes environnementaux'),\n    ('PROBLEMES_TRANSPORT_SANITAIRE', 'Problèmes liés au transport Sanitaire')\n),\n-- Libellés portés par plusieurs motifs du référentiel (« Autres » x8) : à préciser par leur\n-- catégorie parente, sinon deux lignes homonymes sont indiscernables.\nlabel_ambigu AS (\n  SELECT label FROM \"MotifEnum\" GROUP BY label HAVING COUNT(*) > 1\n),\nrequete_motif AS (\n  -- 1 ligne par (requête, motif) : dédoublonne les situations multiples pour une même requête\n  SELECT DISTINCT re.requete_id, m.id AS motif_id, m.label AS motif_label\n  FROM requetes_entite re\n  JOIN \"Situation\" s  ON s.\"requeteId\"    = re.requete_id\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  JOIN \"MotifEnum\" m  ON m.id             = fm.\"motifId\"\n),\npar_motif AS (\n  SELECT\n    CASE\n      WHEN rm.motif_label IN (SELECT label FROM label_ambigu)\n        THEN rm.motif_label || ' (' || COALESCE(mp.label, split_part(rm.motif_id, '/', 1)) || ')'\n      ELSE rm.motif_label\n    END      AS motif,\n    COUNT(*) AS nb_requetes\n  FROM requete_motif rm\n  LEFT JOIN motif_parent mp ON mp.code = split_part(rm.motif_id, '/', 1)\n  GROUP BY rm.motif_id, rm.motif_label, mp.label\n\n  UNION ALL\n\n  SELECT 'Aucun motif qualifié', COUNT(*)\n  FROM requetes_entite re\n  WHERE NOT EXISTS (\n    SELECT 1 FROM requete_motif rm WHERE rm.requete_id = re.requete_id\n  )\n)\nSELECT\n  pm.motif                                                 AS \"Motif (dernier niveau)\",\n  pm.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * pm.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes (%)\"\nFROM par_motif pm\nCROSS JOIN total t\nWHERE pm.nb_requetes > 0\nORDER BY pm.nb_requetes DESC;\n",
+        "template-tags": [
+          {
             "display-name": "Entity Label",
             "id": "60af393b-c4ce-49eb-b2f3-2d9cae5e35b1",
             "name": "entity_label",
             "type": "text"
           },
-          "start_date": {
+          {
             "display-name": "Start Date",
             "id": "aa7e985e-ef83-4a8e-9ea9-c3256778f674",
             "name": "start_date",
             "type": "date"
+          },
+          {
+            "display-name": "End Date",
+            "id": "b0523a73-b7ca-4593-8c70-cdcadff8cc6c",
+            "name": "end_date",
+            "type": "date"
           }
-        }
+        ]
       }
     ]
   },
@@ -71,7 +71,7 @@
   "entity_id": "MmxPkcVOEKaX9pyTrPVfM",
   "id": 52,
   "is_remote_synced": false,
-  "last_query_start": "2026-07-03T13:53:54.790115Z",
+  "last_query_start": "2026-07-29T07:27:21.117794Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.62.3.3 (686cac9)",
@@ -145,9 +145,52 @@
   ],
   "public_uuid": null,
   "query_type": "native",
-  "result_metadata": null,
+  "result_metadata": [
+    {
+      "base_type": "type/Text",
+      "database_type": "text",
+      "display_name": "Motif (dernier niveau)",
+      "field_ref": [
+        "field",
+        "Motif (dernier niveau)",
+        {
+          "base-type": "type/Text"
+        }
+      ],
+      "name": "Motif (dernier niveau)"
+    },
+    {
+      "base_type": "type/BigInteger",
+      "database_type": "int8",
+      "display_name": "Nombre de requêtes",
+      "field_ref": [
+        "field",
+        "Nombre de requêtes",
+        {
+          "base-type": "type/BigInteger"
+        }
+      ],
+      "name": "Nombre de requêtes"
+    },
+    {
+      "base_type": "type/Decimal",
+      "database_type": "numeric",
+      "display_name": "Part des requêtes (%)",
+      "field_ref": [
+        "field",
+        "Part des requêtes (%)",
+        {
+          "base-type": "type/Decimal"
+        }
+      ],
+      "name": "Part des requêtes (%)"
+    }
+  ],
   "source_card_id": null,
   "table_id": null,
   "type": "question",
-  "visualization_settings": {}
+  "visualization_settings": {
+    "table.cell_column": "Part des requêtes (%)",
+    "table.pivot_column": "Nombre de requêtes"
+  }
 }
