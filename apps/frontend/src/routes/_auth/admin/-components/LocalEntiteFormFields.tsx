@@ -2,7 +2,12 @@ import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import Input from '@codegouvfr/react-dsfr/Input';
 import { type ReactNode, useId } from 'react';
 import { ReadOnlyField } from '@/components/common/ReadOnlyField';
-import type { LocalEntiteFormMode, LocalEntiteFormType, LocalEntiteFormValues } from './useLocalEntiteForm';
+import {
+  isNotificationEmailRequired,
+  type LocalEntiteFormMode,
+  type LocalEntiteFormType,
+  type LocalEntiteFormValues,
+} from './useLocalEntiteForm';
 
 type FieldChangeHandler = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 type FormFieldsState = {
@@ -31,7 +36,7 @@ function LocalEntiteSirenaFields({
   leadingField,
 }: SirenaFieldsProps) {
   const identityFieldsReadOnly = mode === 'edit';
-  const notificationEmailRequired = entiteType === 'entite-administrative' && mode === 'edit';
+  const notificationEmailRequired = isNotificationEmailRequired(entiteType, mode);
   const nameReadOnlyId = useId();
   const abbreviationReadOnlyId = useId();
   const wording =
@@ -80,6 +85,7 @@ function LocalEntiteSirenaFields({
               nativeInputProps={{
                 name: 'nomComplet',
                 value: formData.nomComplet,
+                'aria-invalid': validationErrors.nomComplet ? true : undefined,
                 onChange: onChange('nomComplet'),
               }}
             />
@@ -103,7 +109,12 @@ function LocalEntiteSirenaFields({
               hintText={`Sigle, acronyme ou forme abrégée du nom. Exemple : ${wording.abbreviationExample}`}
               state={validationErrors.label ? 'error' : 'default'}
               stateRelatedMessage={validationErrors.label}
-              nativeInputProps={{ name: 'label', value: formData.label, onChange: onChange('label') }}
+              nativeInputProps={{
+                name: 'label',
+                value: formData.label,
+                'aria-invalid': validationErrors.label ? true : undefined,
+                onChange: onChange('label'),
+              }}
             />
           )}
         </div>
@@ -115,7 +126,13 @@ function LocalEntiteSirenaFields({
             hintText="Adresse générique pour la notification des nouvelles requêtes. Exemple : reclamations@direction.fr"
             state={validationErrors.email ? 'error' : 'default'}
             stateRelatedMessage={validationErrors.email}
-            nativeInputProps={{ name: 'email', value: formData.email, onChange: onChange('email') }}
+            nativeInputProps={{
+              name: 'email',
+              type: 'email',
+              value: formData.email,
+              'aria-invalid': validationErrors.email ? true : undefined,
+              onChange: onChange('email'),
+            }}
           />
         </div>
       </div>
@@ -152,7 +169,9 @@ function LocalEntiteContactFields({ formData, validationErrors, onChange }: Cont
             stateRelatedMessage={validationErrors.emailContactUsager}
             nativeInputProps={{
               name: 'emailContactUsager',
+              type: 'email',
               value: formData.emailContactUsager,
+              'aria-invalid': validationErrors.emailContactUsager ? true : undefined,
               onChange: onChange('emailContactUsager'),
             }}
           />
@@ -169,6 +188,7 @@ function LocalEntiteContactFields({ formData, validationErrors, onChange }: Cont
               name: 'telContactUsager',
               type: 'tel',
               value: formData.telContactUsager,
+              'aria-invalid': validationErrors.telContactUsager ? true : undefined,
               onChange: onChange('telContactUsager'),
             }}
           />

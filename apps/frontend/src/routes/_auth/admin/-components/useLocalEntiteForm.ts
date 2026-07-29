@@ -7,6 +7,9 @@ export type LocalEntiteFormType = 'entite-administrative' | 'direction' | 'servi
 export type LocalEntiteFormMode = 'create' | 'edit';
 type LocalEntiteCreateFormType = 'direction' | 'service';
 
+export const isNotificationEmailRequired = (entiteType: LocalEntiteFormType, mode: LocalEntiteFormMode) =>
+  entiteType === 'entite-administrative' && mode === 'edit';
+
 export type LocalEntiteFormValues = {
   nomComplet: string;
   label: string;
@@ -35,13 +38,13 @@ const contactShape = {
 const editFormSchema = (entiteType: LocalEntiteFormType) =>
   z.object({
     ...contactShape,
-    email:
-      entiteType === 'entite-administrative'
-        ? z
-            .string()
-            .min(1, 'Le champ "Adresse e-mail de notification" est vide. Veuillez le renseigner.')
-            .pipe(emailSchema)
-        : contactShape.email,
+    email: isNotificationEmailRequired(entiteType, 'edit')
+      ? z
+          .string()
+          .trim()
+          .min(1, 'Le champ "Adresse e-mail de notification" est vide. Veuillez le renseigner.')
+          .pipe(emailSchema)
+      : contactShape.email,
   });
 
 const createFormSchema = (entiteType: LocalEntiteCreateFormType) => {
@@ -101,9 +104,9 @@ export function useLocalEntiteForm(
         if (hasSubmitted && validationErrors[field]) {
           const fieldError = getFieldError(schema, updated, field);
           setValidationErrors((previousErrors) => {
+            if (fieldError) return previousErrors;
             const next = { ...previousErrors };
-            if (fieldError) next[field] = fieldError;
-            else delete next[field];
+            delete next[field];
             return next;
           });
         }

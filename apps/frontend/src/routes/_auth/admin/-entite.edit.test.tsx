@@ -235,7 +235,7 @@ describe('Admin local Entité edit route', () => {
     expect(editMutateAsyncSpy).not.toHaveBeenCalled();
   });
 
-  it('defers validation for a legacy empty notification e-mail, retains values, focuses it, and allows repair', async () => {
+  it('defers validation for a legacy empty notification e-mail, retains values, and avoids intermediate errors during repair', async () => {
     const user = userEvent.setup();
     editMutateAsyncSpy.mockResolvedValueOnce({ ...assignedEntite, email: 'notification@ars.fr' });
     vi.mocked(useEntiteAdministrativeAdminLocal).mockReturnValue({
@@ -267,7 +267,12 @@ describe('Admin local Entité edit route', () => {
     expect(contactEmail).toHaveValue('usagers@ars.fr');
     expect(postalAddress).toHaveValue('2 rue de Paris');
 
-    await user.type(notificationEmail, 'notification@ars.fr');
+    await user.type(notificationEmail, 'n');
+    expect(screen.getByText(/Adresse e-mail de notification.*vide/)).toBeInTheDocument();
+    expect(screen.queryByText(/L’adresse e-mail est invalide/)).not.toBeInTheDocument();
+
+    await user.type(notificationEmail, 'otification@ars.fr');
+    expect(screen.queryByText(/Adresse e-mail de notification.*vide/)).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
 
     await waitFor(() =>
@@ -338,8 +343,8 @@ describe('Admin local Entité edit route', () => {
     render(<RouteComponent />);
     const notificationEmail = screen.getByRole('textbox', { name: /Adresse e-mail de notification/ });
 
-    await user.type(notificationEmail, 'notification-invalide');
-    await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'contact-invalide');
+    await user.type(notificationEmail, 'notification@invalide');
+    await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'contact@invalide');
     await user.type(screen.getByRole('textbox', { name: /Numéro de téléphone/ }), '123');
     await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
 

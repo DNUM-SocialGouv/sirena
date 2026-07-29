@@ -63,6 +63,8 @@ describe('Admin local Direction create route', () => {
     expect(screen.getByText(/Direction de l’Offre de Soins/)).toBeVisible();
     expect(screen.getByRole('textbox', { name: /Abréviation/ })).toBeEnabled();
     expect(screen.getByText(/Sigle, acronyme ou forme abrégée du nom.*DOS/)).toBeVisible();
+    expect(screen.getByRole('textbox', { name: /Adresse e-mail de notification/ })).toHaveAttribute('type', 'email');
+    expect(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ })).toHaveAttribute('type', 'email');
     expect(screen.getByRole('group', { name: 'Informations de contact pour l’usager' })).toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: /Actif dans SIRENA/ })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Annuler' })).toHaveAttribute('href', '/admin/directions-services');
@@ -78,27 +80,33 @@ describe('Admin local Direction create route', () => {
     const label = screen.getByRole('textbox', { name: /Abréviation/ });
     expect(name).toHaveFocus();
     expect(name).toHaveAccessibleDescription('Le champ "Nom de la direction" est vide. Veuillez le renseigner.');
+    expect(name).toHaveAttribute('aria-invalid', 'true');
     expect(label).toHaveAccessibleDescription('Le champ "Abréviation" est vide. Veuillez le renseigner.');
+    expect(label).toHaveAttribute('aria-invalid', 'true');
 
     await user.type(name, 'Direction Autonomie');
     await user.type(label, 'DA');
     expect(name).not.toHaveAccessibleDescription();
+    expect(name).not.toHaveAttribute('aria-invalid');
     expect(label).not.toHaveAccessibleDescription();
+    expect(label).not.toHaveAttribute('aria-invalid');
   });
 
   it.each([
-    ['Adresse e-mail de notification', 'invalid-email', /L’adresse e-mail est invalide/],
-    ['Adresse e-mail de contact', 'invalid-contact-email', /L’adresse e-mail est invalide/],
+    ['Adresse e-mail de notification', 'invalid@email', /L’adresse e-mail est invalide/],
+    ['Adresse e-mail de contact', 'invalid-contact@email', /L’adresse e-mail est invalide/],
     ['Numéro de téléphone', '123', /Le numéro de téléphone doit être au format national ou international/],
   ] as const)('rejects an invalid %s', async (fieldName, value, message) => {
     const user = userEvent.setup();
     render(<RouteComponent />);
     await fillRequiredFields(user);
-    await user.type(screen.getByRole('textbox', { name: new RegExp(fieldName) }), value);
+    const field = screen.getByRole('textbox', { name: new RegExp(fieldName) });
+    await user.type(field, value);
 
     await user.click(screen.getByRole('button', { name: 'Ajouter la direction' }));
 
     expect(screen.getByText(message)).toBeInTheDocument();
+    expect(field).toHaveAttribute('aria-invalid', 'true');
   });
 
   it('submits visible fields, shows success and returns to the list', async () => {
