@@ -37,6 +37,31 @@ export const REQUETE_ETAPE_TYPES = {
 
 export type RequeteEtapeType = keyof typeof REQUETE_ETAPE_TYPES;
 
+export const REQUETE_ETAPE_RAPPEL_TYPES = {
+  JOURS_7: 'JOURS_7',
+  JOURS_15: 'JOURS_15',
+  JOURS_30: 'JOURS_30',
+  PERSONNALISE: 'PERSONNALISE',
+} as const;
+
+export type RequeteEtapeRappelType = keyof typeof REQUETE_ETAPE_RAPPEL_TYPES;
+
+export const requeteEtapeRappelType: Record<RequeteEtapeRappelType, string> = {
+  [REQUETE_ETAPE_RAPPEL_TYPES.JOURS_7]: '7 jours',
+  [REQUETE_ETAPE_RAPPEL_TYPES.JOURS_15]: '15 jours',
+  [REQUETE_ETAPE_RAPPEL_TYPES.JOURS_30]: '30 jours',
+  [REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE]: 'Date personnalisée',
+} as const;
+
+export const RAPPEL_DATE_REQUIRED_MESSAGE =
+  'Le champ « Rappeler cette étape le » est obligatoire lorsque vous choisissez une date personnalisée.';
+
+export const requeteEtapeRappelDelaiJours = {
+  [REQUETE_ETAPE_RAPPEL_TYPES.JOURS_7]: 7,
+  [REQUETE_ETAPE_RAPPEL_TYPES.JOURS_15]: 15,
+  [REQUETE_ETAPE_RAPPEL_TYPES.JOURS_30]: 30,
+} as const;
+
 export const REQUETE_PRIORITE_TYPES = {
   BASSE: 'BASSE',
   MOYENNE: 'MOYENNE',

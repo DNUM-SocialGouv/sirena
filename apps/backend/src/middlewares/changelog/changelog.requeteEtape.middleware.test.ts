@@ -33,6 +33,8 @@ describe('changelog.requeteEtapes.middleware.ts', () => {
     updatedAt: new Date(),
     createdById: 'user-1',
     clotureEffectiveDate: null,
+    rappelType: null,
+    rappelDate: null,
   };
 
   beforeEach(() => {
@@ -126,11 +128,15 @@ describe('changelog.requeteEtapes.middleware.ts', () => {
           nom: testRequeteEtape.nom,
           statutId: testRequeteEtape.statutId,
           dateRealisation: testRequeteEtape.dateRealisation,
+          rappelType: testRequeteEtape.rappelType,
+          rappelDate: testRequeteEtape.rappelDate,
         },
         after: {
           nom: updatedRequeteEtape.nom,
           statutId: updatedRequeteEtape.statutId,
           dateRealisation: updatedRequeteEtape.dateRealisation,
+          rappelType: updatedRequeteEtape.rappelType,
+          rappelDate: updatedRequeteEtape.rappelDate,
         },
       });
     });

@@ -131,6 +131,8 @@ const fakeRequeteEtape: RequeteEtape = {
   dateRealisation: null,
   createdById: null,
   clotureEffectiveDate: null,
+  rappelType: null,
+  rappelDate: null,
 };
 
 const fakeUpdatedNomRequeteEtape: RequeteEtape = {
@@ -459,6 +461,8 @@ describe('requeteEtapes.controller.ts', () => {
       updatedAt: new Date(),
       createdById: null,
       clotureEffectiveDate: null,
+      rappelType: null,
+      rappelDate: null,
     };
 
     const note: RequeteEtapeNote = {
@@ -560,6 +564,8 @@ describe('requeteEtapes.controller.ts', () => {
         dateRealisation: null,
         createdById: null,
         clotureEffectiveDate: null,
+        rappelType: null,
+        rappelDate: null,
       };
 
       vi.mocked(createProcessingEtape).mockResolvedValueOnce(fakeStep);
@@ -583,6 +589,16 @@ describe('requeteEtapes.controller.ts', () => {
         },
         expect.anything(),
       );
+    });
+
+    it('should reject a custom reminder without a date', async () => {
+      const res = await client[':id']['processing-steps'].$post({
+        param: { id: '1' },
+        json: { nom: 'Step 1', rappelType: 'PERSONNALISE' },
+      });
+
+      expect(res.status).toBe(400);
+      expect(createProcessingEtape).not.toHaveBeenCalled();
     });
 
     it('should return 404 if hasAccessToRequete returns false', async () => {

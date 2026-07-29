@@ -645,6 +645,8 @@ describe('RequetesEntite endpoints: /', () => {
         entiteId: 'e1',
         createdById: 'id1',
         clotureEffectiveDate: null,
+        rappelType: null,
+        rappelDate: null,
         createdAt: new Date('2024-01-01T10:00:00.000Z'),
         updatedAt: new Date('2024-01-01T10:00:00.000Z'),
       },
@@ -704,6 +706,8 @@ describe('RequetesEntite endpoints: /', () => {
           entiteId: 'e1',
           createdById: 'id1',
           clotureEffectiveDate: null,
+          rappelType: null,
+          rappelDate: null,
           createdAt: new Date('2024-01-01T10:00:00.000Z'),
           updatedAt: new Date('2024-01-01T10:00:00.000Z'),
         },
@@ -1071,6 +1075,8 @@ describe('RequetesEntite endpoints: /', () => {
           dateRealisation: null,
           createdById: 'id1',
           clotureEffectiveDate: null,
+          rappelType: null,
+          rappelDate: null,
         },
       };
 

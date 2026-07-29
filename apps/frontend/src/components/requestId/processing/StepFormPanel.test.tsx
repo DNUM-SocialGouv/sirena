@@ -1,4 +1,4 @@
-import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
+import { REQUETE_ETAPE_RAPPEL_TYPES, REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { createRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -60,6 +60,8 @@ const makeStep = (overrides: Record<string, any> = {}): any => ({
   type: REQUETE_ETAPE_TYPES.MANUAL,
   statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
   dateRealisation: null,
+  rappelType: null,
+  rappelDate: null,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
   clotureEffectiveDate: null,
@@ -310,5 +312,130 @@ describe('StepFormPanel', () => {
     // ...but status and date remain editable since the AR has not been sent.
     expect(screen.getByLabelText('Fait')).toBeEnabled();
     expect(screen.getByLabelText('À faire')).toBeEnabled();
+  });
+
+  describe('rappel', () => {
+    const getRappelSelect = () =>
+      screen.getByLabelText('Mettre un rappel pour cette étape (alertes, relances etc.)') as HTMLSelectElement;
+
+    it('defaults to « Désactivé » and hides the custom date field', () => {
+      const ref = createRef<StepFormPanelRef>();
+      render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+      act(() => ref.current?.openCreate());
+
+      expect(getRappelSelect().value).toBe('');
+      expect(screen.queryByLabelText(/Rappeler cette étape le/)).not.toBeInTheDocument();
+    });
+
+    it('sends the selected delay without a date, letting the server compute the due date', async () => {
+      const ref = createRef<StepFormPanelRef>();
+      render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+      act(() => ref.current?.openCreate());
+
+      fireEvent.change(screen.getByLabelText("Nom de l'étape (obligatoire)"), { target: { value: 'Relance' } });
+      fireEvent.change(getRappelSelect(), { target: { value: REQUETE_ETAPE_RAPPEL_TYPES.JOURS_15 } });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+      });
+
+      const payload = addMutateAsync.mock.calls[0][0];
+      expect(payload.rappelType).toBe(REQUETE_ETAPE_RAPPEL_TYPES.JOURS_15);
+      expect(payload.rappelDate).toBeUndefined();
+    });
+
+    it('shows the custom date field when « Date personnalisée » is selected', () => {
+      const ref = createRef<StepFormPanelRef>();
+      render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+      act(() => ref.current?.openCreate());
+      fireEvent.change(getRappelSelect(), { target: { value: REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE } });
+
+      expect(screen.getByLabelText(/Rappeler cette étape le/)).toBeInTheDocument();
+    });
+
+    it('blocks saving when « Date personnalisée » is selected without a date', async () => {
+      const ref = createRef<StepFormPanelRef>();
+      render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+      act(() => ref.current?.openCreate());
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      fireEvent.change(screen.getByLabelText("Nom de l'étape (obligatoire)"), { target: { value: 'Relance' } });
+      fireEvent.change(getRappelSelect(), { target: { value: REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE } });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+      });
+
+      expect(addMutateAsync).not.toHaveBeenCalled();
+      expect(screen.getByLabelText(/Rappeler cette étape le/)).toHaveAccessibleDescription(
+        /« Rappeler cette étape le » est obligatoire/,
+      );
+      expect(document.activeElement).toBe(screen.getByLabelText(/Rappeler cette étape le/));
+    });
+
+    it('sends the custom date when one is filled in', async () => {
+      const ref = createRef<StepFormPanelRef>();
+      render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+      act(() => ref.current?.openCreate());
+      fireEvent.change(screen.getByLabelText("Nom de l'étape (obligatoire)"), { target: { value: 'Relance' } });
+      fireEvent.change(getRappelSelect(), { target: { value: REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE } });
+      fireEvent.change(screen.getByLabelText(/Rappeler cette étape le/), {
+        target: { value: '2026-09-01' },
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+      });
+
+      const payload = addMutateAsync.mock.calls[0][0];
+      expect(payload.rappelType).toBe(REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE);
+      expect(payload.rappelDate).toBe('2026-09-01');
+    });
+
+    it('prefills an existing reminder in edit mode', () => {
+      const ref = createRef<StepFormPanelRef>();
+      render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+      act(() =>
+        ref.current?.openEdit(
+          makeStep({ rappelType: REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE, rappelDate: '2026-09-01T00:00:00.000Z' }),
+        ),
+      );
+
+      expect(getRappelSelect().value).toBe(REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE);
+      expect(screen.getByLabelText(/Rappeler cette étape le/)).toHaveValue('2026-09-01');
+    });
+
+    it('locks the reminder on a sent acknowledgment step', () => {
+      const ref = createRef<StepFormPanelRef>();
+      render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+      act(() =>
+        ref.current?.openEdit(
+          makeStep({ type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT, statutId: 'FAIT', canOnlyEditNotes: true }),
+        ),
+      );
+
+      expect(getRappelSelect()).toBeDisabled();
+    });
+
+    it('disables an existing reminder when « Désactivé » is selected back', async () => {
+      const ref = createRef<StepFormPanelRef>();
+      render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+      act(() => ref.current?.openEdit(makeStep({ rappelType: REQUETE_ETAPE_RAPPEL_TYPES.JOURS_30 })));
+      fireEvent.change(getRappelSelect(), { target: { value: '' } });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+      });
+
+      const payload = updateMutateAsync.mock.calls[0][0];
+      expect(payload.rappelType).toBeNull();
+      expect(payload.rappelDate).toBeUndefined();
+    });
   });
 });
