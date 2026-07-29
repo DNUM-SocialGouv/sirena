@@ -5,7 +5,7 @@ import { Select } from '@codegouvfr/react-dsfr/Select';
 import { mappers } from '@sirena/common';
 import { type MesureProtection, optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { z } from 'zod';
 import { personneConcerneeFieldMetadata } from '@/lib/fieldMetadata';
 import type { PersonneConcerneeData } from '@/lib/personneConcernee';
@@ -68,7 +68,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
     setFormData((prev: PersonneConcerneeData) => ({ ...prev, mesureProtection: value }));
   };
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     setHasAttemptedSave(true);
 
     let hasErrors = false;
@@ -112,9 +112,9 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [formData, mode, requestId, onSave]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     if (mode === 'create' && !requestId) {
       navigate({ to: '/request/create' });
     } else if (requestId) {
@@ -122,7 +122,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
     } else {
       window.history.back();
     }
-  };
+  }, [mode, requestId, navigate]);
 
   const backUrl = mode === 'create' && !requestId ? '/request/create' : requestId ? `/request/${requestId}` : '/home';
 
@@ -453,7 +453,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
               />
             </div>
 
-            {formData.aAutrePersonnes && (
+            {formData.aAutrePersonnes ? (
               <Input
                 label={personneConcerneeFieldMetadata.autrePersonnes.label}
                 hintText="Nom, prénom, lien avec la personne concernée, etc."
@@ -464,7 +464,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                   rows: 3,
                 }}
               />
-            )}
+            ) : null}
 
             <Input
               label={personneConcerneeFieldMetadata.commentaire.label}

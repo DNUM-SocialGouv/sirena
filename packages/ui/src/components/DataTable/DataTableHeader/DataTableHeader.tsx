@@ -27,7 +27,7 @@ export const DataTableHeaderComponent = <T extends RowWithId<string>>({
   return (
     <thead>
       <tr>
-        {isSelectable && (
+        {isSelectable ? (
           <th className="fr-cell--fixed" scope="col">
             <div className="fr-checkbox-group fr-checkbox-group--sm">
               <input
@@ -43,7 +43,7 @@ export const DataTableHeaderComponent = <T extends RowWithId<string>>({
               </label>
             </div>
           </th>
-        )}
+        ) : null}
         {columns.map((column) => {
           const isActive = sort.sort === column.key;
 
@@ -75,7 +75,7 @@ export const DataTableHeaderComponent = <T extends RowWithId<string>>({
               <div className="fr-cell--sort">
                 <span className="fr-cell__title">{column.label}</span>
 
-                {column.isSortable && (
+                {column.isSortable ? (
                   <SortButton<ColumnKey<T>>
                     sort={sort.sort}
                     sortKey={column.key}
@@ -85,7 +85,7 @@ export const DataTableHeaderComponent = <T extends RowWithId<string>>({
                     label={label}
                     sortLabels={column.sortLabels}
                   />
-                )}
+                ) : null}
               </div>
             </th>
           );

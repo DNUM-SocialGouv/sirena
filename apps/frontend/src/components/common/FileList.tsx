@@ -24,7 +24,7 @@ export const FileList = ({
 
   return (
     <div className={className}>
-      {title && <p className="fr-text--sm fr-text--bold fr-mb-1w">{title}</p>}
+      {title ? <p className="fr-text--sm fr-text--bold fr-mb-1w">{title}</p> : null}
       <ul>
         {files.map((file) => (
           <li key={file.id}>

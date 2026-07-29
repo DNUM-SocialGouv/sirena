@@ -34,9 +34,10 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
-    "@storybook/addon-docs": "^10.4.6",
-    "@storybook/react-vite": "^10.4.6",
+    "@storybook/addon-docs": "^10.5.3",
+    "@storybook/react-vite": "^10.5.3",
     "@tanstack/react-router": "catalog:",
+    "@testing-library/dom": "catalog:",
     "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "catalog:",
     "@testing-library/user-event": "catalog:",
@@ -47,7 +48,7 @@
     "@vitest/browser": "catalog:",
     "jsdom": "catalog:",
     "react-dom": "catalog:",
-    "storybook": "^10.4.6",
+    "storybook": "^10.5.3",
     "vite": "catalog:",
     "vitest": "catalog:",
     "vitest-browser-react": "^2.2.0"

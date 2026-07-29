@@ -4,10 +4,28 @@ import { useState } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { Identification } from './Identification';
 
-function ControlledIdentification({ initialData = {} }: { initialData?: SituationData }) {
+function ControlledIdentification({
+  initialData = {},
+  isFromSirec,
+  sirecDepartement,
+}: {
+  initialData?: SituationData;
+  isFromSirec?: boolean;
+  sirecDepartement?: string | null;
+}) {
   const [formData, setFormData] = useState<SituationData>(initialData);
-  return <Identification formData={formData} setFormData={setFormData} isSaving={false} />;
+  return (
+    <Identification
+      formData={formData}
+      setFormData={setFormData}
+      isSaving={false}
+      isFromSirec={isFromSirec}
+      sirecDepartement={sirecDepartement}
+    />
+  );
 }
+
+const departementLabel = /Département en charge/i;
 
 const numeroLabel = /Numéro de signalement associé/i;
 
@@ -51,5 +69,24 @@ describe('Identification', () => {
       />,
     );
     expect(screen.getByLabelText(numeroLabel)).toHaveValue('SIG-2024/098-655, ABC.123');
+  });
+
+  it("n'affiche pas le champ Département en charge quand la requête n'est pas une reprise SIREC", () => {
+    render(<ControlledIdentification />);
+    expect(screen.queryByLabelText(departementLabel)).not.toBeInTheDocument();
+  });
+
+  it('affiche le champ Département en charge en lecture seule quand la requête est une reprise SIREC', () => {
+    render(<ControlledIdentification isFromSirec sirecDepartement="75 - Paris" />);
+    const input = screen.getByLabelText(departementLabel);
+    expect(input).toBeInTheDocument();
+    expect(input).toHaveValue('75 - Paris');
+    expect(input).toHaveAttribute('readonly');
+    expect(screen.getByText(/Donnée héritée de Sirec/i)).toBeInTheDocument();
+  });
+
+  it('affiche le champ Département en charge vide quand la valeur héritée est nulle', () => {
+    render(<ControlledIdentification isFromSirec sirecDepartement={null} />);
+    expect(screen.getByLabelText(departementLabel)).toHaveValue('');
   });
 });

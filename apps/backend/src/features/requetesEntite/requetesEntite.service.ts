@@ -15,10 +15,16 @@ import {
   type RequeteStatutType,
 } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
-import { getDateTodayInParis, getLieuPrecisionLabel, getMesureProtectionShortLabel } from '@sirena/common/utils';
+import {
+  getDateTodayInParis,
+  getLieuPrecisionLabel,
+  getMesureProtectionShortLabel,
+  isAutomaticRequest,
+} from '@sirena/common/utils';
 import { ZipArchive } from 'archiver';
 import type { z } from 'zod';
 import { getFileEncryptionParams, getOriginalFileName, getSafeFileEncryptionParams } from '../../helpers/file.js';
+import { collectDataKeys } from '../../helpers/object.js';
 import { sortObject } from '../../helpers/prisma/sort.js';
 import { createSearchConditionsForRequeteEntite } from '../../helpers/search.js';
 import { sseEventManager } from '../../helpers/sse.js';
@@ -2157,11 +2163,20 @@ type EtapePdfSubtitleInput = {
   uploadedFiles: { canDelete: boolean; createdAt: Date; uploadedBy: Agent | null }[];
 };
 
+type EtapePdfSubtitleRequete = {
+  createdBy: Agent | null;
+  dematSocialId: number | null;
+  sirecId: number | null;
+  thirdPartyAccountId: string | null;
+};
+
 const getEtapePdfSubtitle = (
   etape: EtapePdfSubtitleInput,
-  requeteCreatedBy: Agent | null | undefined,
+  requete: EtapePdfSubtitleRequete | null | undefined,
 ): string | null => {
   const { type, statutId, createdAt, updatedAt, clotureEffectiveDate, createdBy, notes, uploadedFiles } = etape;
+  const requeteCreatedBy = requete?.createdBy;
+  const isAutomatic = isAutomaticRequest(requete);
 
   if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
     const agentName = formatAgentPdf(createdBy ?? notes[0]?.author);
@@ -2170,8 +2185,13 @@ const getEtapePdfSubtitle = (
   }
 
   if (type === REQUETE_ETAPE_TYPES.CREATION) {
-    const agentName = formatAgentPdf(requeteCreatedBy);
     const date = formatDateFr(createdAt);
+    // An ingested request (DematSocial, SIREC, third-party API) was created automatically.
+    if (isAutomatic) {
+      return `Fait automatiquement le ${date}`;
+    }
+    // Otherwise the request was created manually; the author agent may be missing if the account was deleted.
+    const agentName = formatAgentPdf(requeteCreatedBy);
     return agentName ? `Requête créée le ${date} par ${agentName}` : `Requête créée le ${date}`;
   }
 
@@ -2191,9 +2211,9 @@ const getEtapePdfSubtitle = (
       if (arFile) {
         return `Envoyé automatiquement le ${formatDateFr(arFile.createdAt)}`;
       }
-      return requeteCreatedBy
-        ? `Marqué comme fait le ${formatDateFr(updatedAt)}`
-        : `Envoyé automatiquement le ${formatDateFr(updatedAt)}`;
+      return isAutomatic
+        ? `Envoyé automatiquement le ${formatDateFr(updatedAt)}`
+        : `Marqué comme fait le ${formatDateFr(updatedAt)}`;
     }
     return `Ajouté automatiquement le ${formatDateFr(createdAt)}`;
   }
@@ -2203,7 +2223,10 @@ const getEtapePdfSubtitle = (
   return agentName ? `Ajouté par ${agentName} le ${date}` : `Ajouté automatiquement le ${date}`;
 };
 
-export const generateRequetePdfBuffer = async (requeteId: string, entiteId: string | null): Promise<Buffer | null> => {
+export const generateRequetePdfBuffer = async (
+  requeteId: string,
+  entiteId: string | null,
+): Promise<{ buffer: Buffer; dataKeys: string[] } | null> => {
   if (!entiteId) return null;
 
   const result = await prisma.requeteEntite.findFirst({
@@ -2555,7 +2578,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         etape.nom,
       );
 
-      const subtitle = getEtapePdfSubtitle(etape, requete.createdBy);
+      const subtitle = getEtapePdfSubtitle(etape, requete);
 
       pdf.subsection(etapeTitle).field('Statut', etape.statut?.label || etape.statutId);
 
@@ -2591,5 +2614,5 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
     }
   }
 
-  return pdf.toBuffer();
+  return { buffer: await pdf.toBuffer(), dataKeys: collectDataKeys(requeteEntite) };
 };

@@ -3,16 +3,16 @@ import { ROLES } from '@sirena/common/constants';
 import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Loader, Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
-import { type SubmitEvent, useEffect, useRef, useState } from 'react';
+import { type SubmitEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
-import { useCreateChildEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
+import { useCreateDirectionOrServiceAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 import { EntiteAdminFormFields } from './-components/EntiteAdminFormFields';
 import { getCreateEntiteTitle } from './-helpers';
 
-const CreateChildEntiteFormSchema = z.object({
+const CreateDirectionOrServiceFormSchema = z.object({
   nomComplet: z.string().trim().min(1, 'Le champ "Nom - libellé long" est vide. Veuillez le renseigner.'),
   label: z.string().trim().min(1, 'Le champ "Nom court" est vide. Veuillez le renseigner.'),
   email: optionalEmailSchema,
@@ -31,7 +31,7 @@ export function RouteComponent() {
   const router = useRouter();
   const { entiteId } = (Route.useParams as () => { entiteId: string })();
   const toastManager = Toast.useToastManager();
-  const createEntiteAdminChild = useCreateChildEntiteAdmin();
+  const createDirectionOrServiceMutation = useCreateDirectionOrServiceAdmin();
   const isSubmittingRef = useRef(false);
   const entiteQuery = useEntiteByIdAdmin(entiteId);
   const entiteChainQuery = useEntiteChain(entiteId);
@@ -64,6 +64,94 @@ export function RouteComponent() {
     }
   }, [entiteDepth, entiteId, router]);
 
+  const handleInputChange = useCallback(
+    (field: keyof typeof formData) =>
+      (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const value = e.target.value;
+
+        setFormData((prev) => {
+          const updatedData = {
+            ...prev,
+            [field]: value,
+          };
+
+          if (hasSubmitted && validationErrors[field]) {
+            const fieldError = getFieldError(CreateDirectionOrServiceFormSchema, updatedData, field);
+
+            setValidationErrors((prevErrors) => {
+              const next = { ...prevErrors };
+
+              if (fieldError) {
+                next[field] = fieldError;
+              } else {
+                delete next[field];
+              }
+
+              return next;
+            });
+          }
+
+          return updatedData;
+        });
+      },
+    [hasSubmitted, validationErrors],
+  );
+
+  const handleSubmit = useCallback(
+    async (e: SubmitEvent<HTMLFormElement>) => {
+      e.preventDefault();
+
+      if (isSubmittingRef.current || createDirectionOrServiceMutation.isPending) return;
+
+      setHasSubmitted(true);
+
+      const result = CreateDirectionOrServiceFormSchema.safeParse(formData);
+
+      if (!result.success) {
+        const errors = zodIssuesToFieldErrors(result.error);
+        setValidationErrors(errors);
+
+        const firstField = Object.keys(errors)[0];
+
+        const el = document.querySelector<HTMLElement>(`[name="${firstField}"]`);
+        el?.focus();
+
+        return;
+      }
+
+      setValidationErrors({});
+      isSubmittingRef.current = true;
+
+      try {
+        const createdEntite = await createDirectionOrServiceMutation.mutateAsync({
+          id: entiteId,
+          input: {
+            ...result.data,
+            email: result.data.email ?? '',
+            emailContactUsager: result.data.emailContactUsager ?? '',
+            telContactUsager: result.data.telContactUsager ?? '',
+            isActive: result.data.isActive === 'oui',
+          },
+        });
+
+        toastManager.add({
+          title: 'Entité créée avec succès',
+          description: 'La nouvelle entité a bien été enregistrée.',
+          timeout: 0,
+          data: { icon: 'fr-alert--success' },
+        });
+
+        await router.navigate({
+          to: '/admin/entites/$entiteId',
+          params: { entiteId: createdEntite.id },
+        });
+      } finally {
+        isSubmittingRef.current = false;
+      }
+    },
+    [createDirectionOrServiceMutation, formData, entiteId, toastManager, router],
+  );
+
   if (entiteQuery.isPending || entiteChainQuery.isPending) {
     return (
       <div className="fr-container fr-mt-4w">
@@ -85,89 +173,6 @@ export function RouteComponent() {
   if (entiteDepth >= 3) {
     return null;
   }
-
-  const handleInputChange =
-    (field: keyof typeof formData) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-      const value = e.target.value;
-
-      setFormData((prev) => {
-        const updatedData = {
-          ...prev,
-          [field]: value,
-        };
-
-        if (hasSubmitted && validationErrors[field]) {
-          const fieldError = getFieldError(CreateChildEntiteFormSchema, updatedData, field);
-
-          setValidationErrors((prevErrors) => {
-            const next = { ...prevErrors };
-
-            if (fieldError) {
-              next[field] = fieldError;
-            } else {
-              delete next[field];
-            }
-
-            return next;
-          });
-        }
-
-        return updatedData;
-      });
-    };
-
-  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (isSubmittingRef.current || createEntiteAdminChild.isPending) return;
-
-    setHasSubmitted(true);
-
-    const result = CreateChildEntiteFormSchema.safeParse(formData);
-
-    if (!result.success) {
-      const errors = zodIssuesToFieldErrors(result.error);
-      setValidationErrors(errors);
-
-      const firstField = Object.keys(errors)[0];
-
-      const el = document.querySelector<HTMLElement>(`[name="${firstField}"]`);
-      el?.focus();
-
-      return;
-    }
-
-    setValidationErrors({});
-    isSubmittingRef.current = true;
-
-    try {
-      const createdEntite = await createEntiteAdminChild.mutateAsync({
-        id: entiteId,
-        input: {
-          ...result.data,
-          email: result.data.email ?? '',
-          emailContactUsager: result.data.emailContactUsager ?? '',
-          telContactUsager: result.data.telContactUsager ?? '',
-          isActive: result.data.isActive === 'oui',
-        },
-      });
-
-      toastManager.add({
-        title: 'Entité créée avec succès',
-        description: 'La nouvelle entité a bien été enregistrée.',
-        timeout: 0,
-        data: { icon: 'fr-alert--success' },
-      });
-
-      await router.navigate({
-        to: '/admin/entites/$entiteId',
-        params: { entiteId: createdEntite.id },
-      });
-    } finally {
-      isSubmittingRef.current = false;
-    }
-  };
 
   return (
     <div className="fr-container fr-mt-4w">
@@ -197,7 +202,7 @@ export function RouteComponent() {
           />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
-            <Button type="submit" disabled={createEntiteAdminChild.isPending}>
+            <Button type="submit" disabled={createDirectionOrServiceMutation.isPending}>
               Créer
             </Button>
           </div>

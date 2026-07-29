@@ -9,8 +9,8 @@ export interface SirenaRppsMisEnCauseData {
   prenom: string;
   codePostal: string | null;
   ville: string | null;
-  misEnCauseTypeId: string;
-  misEnCauseTypePrecisionId: string;
+  misEnCauseTypeId: string | null;
+  misEnCauseTypePrecisionId: string | null;
   autrePrecision?: string;
 }
 

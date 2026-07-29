@@ -15,6 +15,10 @@ export const ROLES_WRITE = [ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.W
 
 export const ROLES_ADMIN = [ROLES.SUPER_ADMIN, ROLES.ENTITY_ADMIN] as const;
 
+// Rôles autorisés à accéder aux indicateurs : lecture entité-scopée (ROLES_READ) + super admin
+// (périmètre national). Source unique partagée par le middleware backend, le guard de route et le bandeau.
+export const ROLES_STATISTICS = [...ROLES_READ, ROLES.SUPER_ADMIN] as const;
+
 export const roles: Record<Role, string> = {
   [ROLES.PENDING]: "En attente d'affectation",
   [ROLES.READER]: 'Agent en lecture',

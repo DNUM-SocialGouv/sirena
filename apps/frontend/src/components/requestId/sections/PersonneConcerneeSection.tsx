@@ -71,16 +71,16 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, editHref }: 
             {fullName}
           </ContactInfo>
         )}
-        {personneIdentite?.email && (
+        {personneIdentite?.email ? (
           <ContactInfo icon="fr-icon-mail-line" ariaLabel="Courrier électronique">
             {personneIdentite.email}
           </ContactInfo>
-        )}
-        {personneIdentite?.telephone && (
+        ) : null}
+        {personneIdentite?.telephone ? (
           <ContactInfo icon="fr-icon-phone-line" ariaLabel="Numéro de téléphone">
             {personneIdentite.telephone}
           </ContactInfo>
-        )}
+        ) : null}
       </div>
     );
   };
@@ -111,10 +111,12 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, editHref }: 
           <>
             <SectionTitle level={4}>Identité</SectionTitle>
             {fullName && <p className="fr-mb-1w">{fullName}</p>}
-            {personne?.age?.label && <p className="fr-text--sm fr-text--grey fr-mb-1w">Âge : {personne.age.label}</p>}
-            {dateNaissanceFormatted && (
+            {personne?.age?.label ? (
+              <p className="fr-text--sm fr-text--grey fr-mb-1w">Âge : {personne.age.label}</p>
+            ) : null}
+            {dateNaissanceFormatted ? (
               <p className="fr-text--sm fr-text--grey fr-mb-2w">Date de naissance : {dateNaissanceFormatted}</p>
-            )}
+            ) : null}
           </>
         )}
 
@@ -128,16 +130,16 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, editHref }: 
         {hasContactSection && (
           <>
             <SectionTitle level={4}>Contact</SectionTitle>
-            {personneIdentite?.email && (
+            {personneIdentite?.email ? (
               <p className="fr-mb-1w">
                 Courrier électronique : <a href={`mailto:${personneIdentite.email}`}>{personneIdentite.email}</a>
               </p>
-            )}
-            {personneIdentite?.telephone && <p className="fr-mb-2w">Téléphone : {personneIdentite.telephone}</p>}
+            ) : null}
+            {personneIdentite?.telephone ? <p className="fr-mb-2w">Téléphone : {personneIdentite.telephone}</p> : null}
           </>
         )}
 
-        {hasComplementaryInfo && (
+        {hasComplementaryInfo ? (
           <>
             <SectionTitle level={4}>Informations complémentaires</SectionTitle>
             <ul className="fr-mb-2w">
@@ -159,17 +161,19 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, editHref }: 
                 Raison pour laquelle il/elle n&apos;est pas informé(e) : {personne.victimeInformeeCommentaire}
               </p>
             )}
-            {personne?.aAutrePersonnes && (
+            {personne?.aAutrePersonnes ? (
               <>
                 <p className="fr-mb-1w">
                   D'autres personnes sont concernées par la requête : {personne.aAutrePersonnes ? 'Oui' : 'Non'}
                 </p>
-                {personne.autrePersonnes && <p className="fr-mb-1w">{personne.autrePersonnes}</p>}
+                {personne.autrePersonnes ? <p className="fr-mb-1w">{personne.autrePersonnes}</p> : null}
               </>
-            )}
-            {personne?.commentaire && <p className="fr-mb-2w">Précisions supplémentaires : {personne.commentaire}</p>}
+            ) : null}
+            {personne?.commentaire ? (
+              <p className="fr-mb-2w">Précisions supplémentaires : {personne.commentaire}</p>
+            ) : null}
           </>
-        )}
+        ) : null}
       </>
     );
   };

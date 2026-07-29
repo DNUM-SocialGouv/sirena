@@ -6,6 +6,9 @@ vi.mock('../../config/env.js', () => ({
     CRON_RETRY_AFFECTATION: '60',
     CRON_RETRY_IMPORT_REQUETES: '60',
     CRON_QUEUE_UNPROCESSED_FILES: '60',
+    CRON_FILE_INTEGRITY_CHECK: '60',
+    CRON_PURGE_ACCESS_LOGS: '60',
+    ACCESS_LOG_RETENTION_DAYS: 365,
   },
 }));
 
@@ -23,6 +26,10 @@ vi.mock('../tasks/retryImportRequetes.task.js', () => ({
 
 vi.mock('../tasks/queueUnprocessedFiles.task.js', () => ({
   queueUnprocessedFiles: vi.fn(),
+}));
+
+vi.mock('../tasks/purgeAccessLogs.task.js', () => ({
+  purgeAccessLogs: vi.fn(),
 }));
 
 describe('job.definitions', () => {

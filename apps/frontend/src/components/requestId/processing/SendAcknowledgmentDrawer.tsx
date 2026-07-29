@@ -3,7 +3,7 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Drawer, Toast } from '@sirena/ui';
 import { Link, useParams } from '@tanstack/react-router';
 
-import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
 import { useSendAcknowledgment } from '@/hooks/mutations/updateProcessingStep.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { fetchAcknowledgmentMessage } from '@/lib/api/processingSteps';
@@ -132,6 +132,8 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
       );
     };
 
+    const handleClose = useCallback(() => setIsOpen(false), []);
+
     const isLoading = isLoadingMessage || isSubmitting;
 
     return (
@@ -146,7 +148,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                       type="button"
                       priority="tertiary no outline"
                       iconId="fr-icon-close-line"
-                      onClick={() => setIsOpen(false)}
+                      onClick={handleClose}
                       disabled={isLoading}
                     >
                       Fermer
@@ -215,7 +217,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                           type="button"
                           priority="secondary"
                           size="small"
-                          onClick={() => setIsOpen(false)}
+                          onClick={handleClose}
                           disabled={isLoading}
                         >
                           Annuler

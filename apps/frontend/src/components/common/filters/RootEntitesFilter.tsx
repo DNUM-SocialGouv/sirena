@@ -13,6 +13,9 @@ type Props = {
   onChange: (rootEntiteIds: string[]) => void;
 };
 
+const selectedValuesLabel = (count: number) =>
+  `entité${count > 1 ? 's' : ''} administrative${count > 1 ? 's' : ''} sélectionnée${count > 1 ? 's' : ''}`;
+
 export function RootEntitesFilter({ rootEntites, selectedRootEntiteIds, onChange }: Props) {
   const options = useMemo(
     () =>
@@ -26,9 +29,7 @@ export function RootEntitesFilter({ rootEntites, selectedRootEntiteIds, onChange
   return (
     <DropdownCheckboxFilter
       buttonLabel="Entité administrative"
-      selectedValuesLabel={(count) =>
-        `entité${count > 1 ? 's' : ''} administrative${count > 1 ? 's' : ''} sélectionnée${count > 1 ? 's' : ''}`
-      }
+      selectedValuesLabel={selectedValuesLabel}
       legend="Filtrer les entités par entité administrative"
       hintText="Entité administrative"
       options={options}

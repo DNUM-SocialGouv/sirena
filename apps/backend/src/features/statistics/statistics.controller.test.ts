@@ -4,11 +4,13 @@ import { pinoLogger } from 'hono-pino';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
+import { getEntiteById } from '../entites/entites.service.js';
 import { generateExportRequetesCsv } from './exportRequetes/exportRequetes.service.js';
 import StatisticsController from './statistics.controller.js';
+import { fetchDashboardCardsData } from './statistics.service.js';
 
 const entitesMiddlewareState = vi.hoisted(() => ({
-  entiteIds: ['root-entite'],
+  entiteIds: ['root-entite'] as string[] | null,
   topEntiteId: null as string | null,
 }));
 
@@ -148,6 +150,50 @@ describe('statistics.controller.ts', () => {
         },
         '[statistics] export requêtes generation failed',
       );
+    });
+  });
+
+  describe('GET /dashboard', () => {
+    it('serves the national dashboard for a super admin (entiteIds === null), without entity lock', async () => {
+      authMiddlewareState.roleId = 'SUPER_ADMIN';
+      entitesMiddlewareState.entiteIds = null;
+      entitesMiddlewareState.topEntiteId = null;
+      vi.mocked(fetchDashboardCardsData).mockResolvedValueOnce([]);
+
+      const response = await client.dashboard.$get({ query: {} });
+
+      expect(response.status).toBe(200);
+      expect(fetchDashboardCardsData).toHaveBeenCalledWith(
+        {},
+        { start_date: undefined, end_date: undefined },
+        'national',
+      );
+      expect(getEntiteById).not.toHaveBeenCalled();
+    });
+
+    it('scopes the dashboard to the user entity for a business role', async () => {
+      entitesMiddlewareState.entiteIds = ['root-entite'];
+      entitesMiddlewareState.topEntiteId = 'root-entite';
+      vi.mocked(getEntiteById).mockResolvedValueOnce({ label: 'ARS Île-de-France' } as never);
+      vi.mocked(fetchDashboardCardsData).mockResolvedValueOnce([]);
+
+      const response = await client.dashboard.$get({ query: {} });
+
+      expect(response.status).toBe(200);
+      expect(fetchDashboardCardsData).toHaveBeenCalledWith(
+        { entity_label: 'ARS Île-de-France' },
+        { start_date: undefined, end_date: undefined },
+      );
+    });
+
+    it('rejects a business role with no root entity', async () => {
+      entitesMiddlewareState.entiteIds = ['root-entite'];
+      entitesMiddlewareState.topEntiteId = null;
+
+      const response = await client.dashboard.$get({ query: {} });
+
+      expect(response.status).toBe(403);
+      expect(fetchDashboardCardsData).not.toHaveBeenCalled();
     });
   });
 });

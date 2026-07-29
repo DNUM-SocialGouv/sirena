@@ -65,16 +65,16 @@ export const DeclarantSection = ({ requestId, id, declarant, editHref }: Declara
             {fullName}
           </ContactInfo>
         )}
-        {declarantIdentite?.email && (
+        {declarantIdentite?.email ? (
           <ContactInfo icon="fr-icon-mail-line" ariaLabel="Courrier électronique">
             {declarantIdentite.email}
           </ContactInfo>
-        )}
-        {declarantIdentite?.telephone && (
+        ) : null}
+        {declarantIdentite?.telephone ? (
           <ContactInfo icon="fr-icon-phone-line" ariaLabel="Numéro de téléphone">
             {declarantIdentite.telephone}
           </ContactInfo>
-        )}
+        ) : null}
       </div>
     );
   };
@@ -98,7 +98,7 @@ export const DeclarantSection = ({ requestId, id, declarant, editHref }: Declara
 
     return (
       <>
-        {hasIdentitySection && (
+        {hasIdentitySection ? (
           <>
             {fullName && (
               <>
@@ -106,10 +106,10 @@ export const DeclarantSection = ({ requestId, id, declarant, editHref }: Declara
                 <p className="fr-mb-2w">{fullName}</p>
               </>
             )}
-            {declarant?.lienVictime && <p className="fr-mb-2w">{declarant.lienVictime.label}</p>}
-            {declarant?.lienAutrePrecision && <p className="fr-mb-2w">{declarant.lienAutrePrecision}</p>}
+            {declarant?.lienVictime ? <p className="fr-mb-2w">{declarant.lienVictime.label}</p> : null}
+            {declarant?.lienAutrePrecision ? <p className="fr-mb-2w">{declarant.lienAutrePrecision}</p> : null}
           </>
-        )}
+        ) : null}
 
         {hasAddressSection && (
           <>
@@ -121,16 +121,18 @@ export const DeclarantSection = ({ requestId, id, declarant, editHref }: Declara
         {hasContactSection && (
           <>
             <SectionTitle level={4}>Contact</SectionTitle>
-            {declarantIdentite?.email && (
+            {declarantIdentite?.email ? (
               <p className="fr-mb-1w">
                 Courrier électronique : <a href={`mailto:${declarantIdentite.email}`}>{declarantIdentite.email}</a>
               </p>
-            )}
-            {declarantIdentite?.telephone && <p className="fr-mb-2w">Téléphone : {declarantIdentite.telephone}</p>}
+            ) : null}
+            {declarantIdentite?.telephone ? (
+              <p className="fr-mb-2w">Téléphone : {declarantIdentite.telephone}</p>
+            ) : null}
           </>
         )}
 
-        {hasComplementaryInfo && declarant && (
+        {hasComplementaryInfo && declarant ? (
           <>
             <SectionTitle level={4}>Informations complémentaires</SectionTitle>
             <ul className="fr-mb-2w">
@@ -149,11 +151,11 @@ export const DeclarantSection = ({ requestId, id, declarant, editHref }: Declara
                   graves (EIG)
                 </li>
               )}
-              {declarant.isTuteur && <li>Le déclarant est curateur ou tuteur de la personne concernée</li>}
+              {declarant.isTuteur ? <li>Le déclarant est curateur ou tuteur de la personne concernée</li> : null}
             </ul>
-            {declarant.commentaire && <p className="fr-mb-2w">{declarant.commentaire}</p>}
+            {declarant.commentaire ? <p className="fr-mb-2w">{declarant.commentaire}</p> : null}
           </>
-        )}
+        ) : null}
       </>
     );
   };

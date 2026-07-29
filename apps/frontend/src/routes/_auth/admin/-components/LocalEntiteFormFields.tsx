@@ -1,0 +1,234 @@
+import { Alert } from '@codegouvfr/react-dsfr/Alert';
+import Input from '@codegouvfr/react-dsfr/Input';
+import { type ReactNode, useId } from 'react';
+import { ReadOnlyField } from '@/components/common/ReadOnlyField';
+import {
+  isNotificationEmailRequired,
+  type LocalEntiteFormMode,
+  type LocalEntiteFormType,
+  type LocalEntiteFormValues,
+} from './useLocalEntiteForm';
+
+type FieldChangeHandler = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+type FormFieldsState = {
+  entiteType: LocalEntiteFormType;
+  mode: LocalEntiteFormMode;
+  values: LocalEntiteFormValues;
+  validationErrors: Record<string, string>;
+  onChange: (field: keyof LocalEntiteFormValues) => FieldChangeHandler;
+};
+
+type SirenaFieldsProps = {
+  entiteType: LocalEntiteFormType;
+  mode: LocalEntiteFormMode;
+  formData: LocalEntiteFormValues;
+  validationErrors: Record<string, string>;
+  onChange: FormFieldsState['onChange'];
+  leadingField?: ReactNode;
+};
+
+function LocalEntiteSirenaFields({
+  entiteType,
+  mode,
+  formData,
+  validationErrors,
+  onChange,
+  leadingField,
+}: SirenaFieldsProps) {
+  const identityFieldsReadOnly = mode === 'edit';
+  const notificationEmailRequired = isNotificationEmailRequired(entiteType, mode);
+  const nameReadOnlyId = useId();
+  const abbreviationReadOnlyId = useId();
+  const wording =
+    entiteType === 'entite-administrative'
+      ? {
+          name: 'de l’entité administrative',
+          nameExample: 'Agence régionale de santé Normandie',
+          abbreviationExample: 'ARS NOR',
+        }
+      : entiteType === 'direction'
+        ? {
+            name: 'de la direction',
+            nameExample: 'Direction de l’Offre de Soins',
+            abbreviationExample: 'DOS',
+          }
+        : {
+            name: 'du service',
+            nameExample: 'Professions Médicales',
+            abbreviationExample: 'PM',
+          };
+
+  return (
+    <fieldset className="fr-fieldset fr-mb-3w">
+      <legend className="fr-fieldset__legend">Informations utilisées dans SIRENA</legend>
+
+      <div className="fr-grid-row fr-grid-row--gutters">
+        {leadingField}
+
+        <div className="fr-col-12 fr-col-md-7">
+          {identityFieldsReadOnly ? (
+            <div className="fr-fieldset__content">
+              <ReadOnlyField
+                id={nameReadOnlyId}
+                label={`Nom ${wording.name}`}
+                hintText="Ce champ n’est pas modifiable ici."
+                value={formData.nomComplet}
+              />
+            </div>
+          ) : (
+            <Input
+              className="fr-fieldset__content"
+              label={`Nom ${wording.name} (obligatoire)`}
+              hintText={`Nom complet sans abréviation ou acronyme. Exemple : ${wording.nameExample}`}
+              state={validationErrors.nomComplet ? 'error' : 'default'}
+              stateRelatedMessage={validationErrors.nomComplet}
+              nativeInputProps={{
+                name: 'nomComplet',
+                value: formData.nomComplet,
+                'aria-invalid': validationErrors.nomComplet ? true : undefined,
+                onChange: onChange('nomComplet'),
+              }}
+            />
+          )}
+        </div>
+
+        <div className="fr-col-12 fr-col-md-5">
+          {identityFieldsReadOnly ? (
+            <div className="fr-fieldset__content">
+              <ReadOnlyField
+                id={abbreviationReadOnlyId}
+                label="Abréviation"
+                hintText="Ce champ n’est pas modifiable ici."
+                value={formData.label}
+              />
+            </div>
+          ) : (
+            <Input
+              className="fr-fieldset__content"
+              label="Abréviation (obligatoire)"
+              hintText={`Sigle, acronyme ou forme abrégée du nom. Exemple : ${wording.abbreviationExample}`}
+              state={validationErrors.label ? 'error' : 'default'}
+              stateRelatedMessage={validationErrors.label}
+              nativeInputProps={{
+                name: 'label',
+                value: formData.label,
+                'aria-invalid': validationErrors.label ? true : undefined,
+                onChange: onChange('label'),
+              }}
+            />
+          )}
+        </div>
+
+        <div className="fr-col-12 fr-col-md-7">
+          <Input
+            className="fr-fieldset__content"
+            label={`Adresse e-mail de notification${notificationEmailRequired ? ' (obligatoire)' : ''}`}
+            hintText="Adresse générique pour la notification des nouvelles requêtes. Exemple : reclamations@direction.fr"
+            state={validationErrors.email ? 'error' : 'default'}
+            stateRelatedMessage={validationErrors.email}
+            nativeInputProps={{
+              name: 'email',
+              type: 'email',
+              value: formData.email,
+              'aria-invalid': validationErrors.email ? true : undefined,
+              onChange: onChange('email'),
+            }}
+          />
+        </div>
+      </div>
+    </fieldset>
+  );
+}
+
+type ContactFieldsProps = {
+  formData: LocalEntiteFormValues;
+  validationErrors: Record<string, string>;
+  onChange: FormFieldsState['onChange'];
+};
+
+function LocalEntiteContactFields({ formData, validationErrors, onChange }: ContactFieldsProps) {
+  return (
+    <fieldset className="fr-fieldset">
+      <legend className="fr-fieldset__legend fr-mb-3w fr-pb-0">Informations de contact pour l’usager</legend>
+
+      <div className="fr-pl-1w fr-mb-3w">
+        <Alert
+          severity="info"
+          small
+          description="Information : si vous ne renseignez pas ces informations, l’adresse e-mail de notification sera transmise au déclarant, dans l’accusé de réception, afin qu’il puisse vous contacter."
+        />
+      </div>
+
+      <div className="fr-grid-row fr-grid-row--gutters">
+        <div className="fr-col-12 fr-col-md-7">
+          <Input
+            className="fr-fieldset__content"
+            label="Adresse e-mail de contact"
+            hintText="Adresse transmise à l’usager pour vous contacter. Exemple : contact@direction.fr"
+            state={validationErrors.emailContactUsager ? 'error' : 'default'}
+            stateRelatedMessage={validationErrors.emailContactUsager}
+            nativeInputProps={{
+              name: 'emailContactUsager',
+              type: 'email',
+              value: formData.emailContactUsager,
+              'aria-invalid': validationErrors.emailContactUsager ? true : undefined,
+              onChange: onChange('emailContactUsager'),
+            }}
+          />
+        </div>
+
+        <div className="fr-col-12 fr-col-md-5">
+          <Input
+            className="fr-fieldset__content"
+            label="Numéro de téléphone"
+            hintText="Format attendu : 10 chiffres ou +33XXXXXXXXXX (international)"
+            state={validationErrors.telContactUsager ? 'error' : 'default'}
+            stateRelatedMessage={validationErrors.telContactUsager}
+            nativeInputProps={{
+              name: 'telContactUsager',
+              type: 'tel',
+              value: formData.telContactUsager,
+              'aria-invalid': validationErrors.telContactUsager ? true : undefined,
+              onChange: onChange('telContactUsager'),
+            }}
+          />
+        </div>
+
+        <div className="fr-col-12">
+          <Input
+            className="fr-fieldset__content"
+            label="Adresse postale"
+            hintText="Adresse postale complète : service, numéro et libellé de voie, code postal, ville. Exemple : Sous-direction de l’autonomie, Direction des Solidarités (DSOL), 5 bd Diderot, 75012 Paris."
+            textArea
+            nativeTextAreaProps={{
+              name: 'adresseContactUsager',
+              rows: 4,
+              value: formData.adresseContactUsager,
+              onChange: onChange('adresseContactUsager'),
+            }}
+          />
+        </div>
+      </div>
+    </fieldset>
+  );
+}
+
+type LocalEntiteFormFieldsProps = {
+  form: FormFieldsState;
+  leadingField?: ReactNode;
+};
+
+export function LocalEntiteFormFields({ form, leadingField }: LocalEntiteFormFieldsProps) {
+  const fields = {
+    formData: form.values,
+    validationErrors: form.validationErrors,
+    onChange: form.onChange,
+  };
+
+  return (
+    <>
+      <LocalEntiteSirenaFields entiteType={form.entiteType} mode={form.mode} {...fields} leadingField={leadingField} />
+      <LocalEntiteContactFields {...fields} />
+    </>
+  );
+}

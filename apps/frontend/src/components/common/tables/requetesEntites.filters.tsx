@@ -141,17 +141,24 @@ export function RequetesEntiteQuickFilters() {
     [navigate],
   );
 
+  const openDepartementDropdown = useCallback(() => setIsDepartementDropdownOpen(true), []);
+  const closeDepartementDropdown = useCallback(() => setIsDepartementDropdownOpen(false), []);
+  const openDomaineDropdown = useCallback(() => setIsDomaineDropdownOpen(true), []);
+  const closeDomaineDropdown = useCallback(() => setIsDomaineDropdownOpen(false), []);
+  const openStatutDropdown = useCallback(() => setIsStatutDropdownOpen(true), []);
+  const closeStatutDropdown = useCallback(() => setIsStatutDropdownOpen(false), []);
+
   return (
     <fieldset className="requetesEntitesTable__filters fr-mb-2w">
       <legend className="fr-label fr-mb-1v">Filtrer les requêtes</legend>
       <div className="requetesEntitesTable__quick-filters">
-        {quickFilters.affectation.isVisible && (
+        {quickFilters.affectation.isVisible ? (
           <CheckboxFilter
             label={quickFilters.affectation.label}
             checked={quickFilters.affectation.isChecked}
             onChange={handleAffectationChange}
           />
-        )}
+        ) : null}
 
         <CheckboxFilter
           label="Priorité haute"
@@ -165,8 +172,8 @@ export function RequetesEntiteQuickFilters() {
             selectedCodes={selectedDepartements}
             counts={departementCounts}
             onChange={handleDepartementChange}
-            onOpen={() => setIsDepartementDropdownOpen(true)}
-            onClose={() => setIsDepartementDropdownOpen(false)}
+            onOpen={openDepartementDropdown}
+            onClose={closeDepartementDropdown}
           />
         )}
 
@@ -174,16 +181,16 @@ export function RequetesEntiteQuickFilters() {
           selectedIds={selectedDomaines}
           counts={domaineCounts}
           onChange={handleDomaineChange}
-          onOpen={() => setIsDomaineDropdownOpen(true)}
-          onClose={() => setIsDomaineDropdownOpen(false)}
+          onOpen={openDomaineDropdown}
+          onClose={closeDomaineDropdown}
         />
 
         <StatutFilter
           selectedIds={selectedStatuts}
           counts={statutCounts}
           onChange={handleStatutChange}
-          onOpen={() => setIsStatutDropdownOpen(true)}
-          onClose={() => setIsStatutDropdownOpen(false)}
+          onOpen={openStatutDropdown}
+          onClose={closeStatutDropdown}
         />
       </div>
     </fieldset>

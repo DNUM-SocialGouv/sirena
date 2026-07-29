@@ -3,16 +3,19 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import {
+  NON_SELECTABLE_RECEPTION_TYPES,
   RECEPTION_TYPE,
   REQUETE_PROVENANCE_NEEDS_PRECISION,
   type ReceptionType,
   type RequeteProvenance,
   receptionTypeLabels,
   requeteProvenanceLabels,
+  SIREC_ONLY_RECEPTION_TYPE_IDS,
+  type SirecOnlyReceptionType,
 } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
 import { clsx } from 'clsx';
-import { useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useCreateRequeteEntite } from '@/hooks/mutations/createRequeteEntite.hook';
 import { useRequeteDateTypeSave } from '@/hooks/mutations/useRequeteDateTypeSave';
 import { useCanEdit } from '@/hooks/useCanEdit';
@@ -45,13 +48,13 @@ const RenderExtraInfos = ({
 
   return (
     <dl className={fr.cx('fr-mb-0')}>
-      {dateDemandeDeclarant && (
+      {dateDemandeDeclarant ? (
         <>
           <dt>Date de la demande par le déclarant</dt>
           <dd>{new Date(dateDemandeDeclarant).toLocaleDateString('fr-FR')}</dd>
         </>
-      )}
-      {provenanceId && (
+      ) : null}
+      {provenanceId ? (
         <>
           <dt>Provenance</dt>
           <dd>
@@ -61,7 +64,7 @@ const RenderExtraInfos = ({
               ` – ${provenancePrecision}`}
           </dd>
         </>
-      )}
+      ) : null}
     </dl>
   );
 };
@@ -186,10 +189,13 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
   const normalizeReceptionType = (value: ReceptionType | '') =>
     value === RECEPTION_TYPE.FORMULAIRE ? null : value || null;
 
+  const isSirecOnlyReceptionType = (value: ReceptionType): value is SirecOnlyReceptionType =>
+    (SIREC_ONLY_RECEPTION_TYPE_IDS as readonly ReceptionType[]).includes(value);
+
   const receptionOptions = useMemo(
     () =>
       Object.values(RECEPTION_TYPE).flatMap((value) => {
-        if (value === RECEPTION_TYPE.FORMULAIRE) return [];
+        if (NON_SELECTABLE_RECEPTION_TYPES.includes(value)) return [];
         return [
           {
             value,
@@ -215,7 +221,12 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
 
     try {
       if (!requestId) {
-        const createdRequete = await createRequeteMutation.mutateAsync(payload);
+        // SIREC-only types can't be picked in the create dropdown; coerce to satisfy the strict type.
+        const { receptionTypeId } = payload;
+        const createdRequete = await createRequeteMutation.mutateAsync({
+          ...payload,
+          receptionTypeId: receptionTypeId && !isSirecOnlyReceptionType(receptionTypeId) ? receptionTypeId : null,
+        });
         navigate({ to: '/request/$requestId', params: { requestId: createdRequete.id } });
         setIsEdit(false);
         onEdit?.();
@@ -229,6 +240,13 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
       setIsSaving(false);
     }
   };
+
+  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    handleSubmit();
+  };
+
+  const handleEditClick = useCallback(() => setIsEdit(true), []);
 
   const hasRequestData = Boolean(dateValue || typeValue || provenanceValue || dateDemandeDeclarantValue);
 
@@ -244,12 +262,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
         style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
       >
         {isEdit ? (
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              handleSubmit();
-            }}
-          >
+          <form onSubmit={handleFormSubmit}>
             <div className={fr.cx('fr-grid-row')}>
               <div className={fr.cx('fr-col-12', 'fr-mb-2w')}>
                 <Input
@@ -282,6 +295,11 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
                   }}
                 >
                   <option value="">Sélectionnez une option</option>
+                  {typeValue && NON_SELECTABLE_RECEPTION_TYPES.includes(typeValue) && (
+                    <option value={typeValue} disabled>
+                      {receptionTypeLabels[typeValue]}
+                    </option>
+                  )}
                   {receptionOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -313,7 +331,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
                       ))}
                     </Select>
                   </div>
-                  {showProvenancePrecision && (
+                  {showProvenancePrecision ? (
                     <div className={fr.cx('fr-col-12', 'fr-mb-2w')}>
                       <Input
                         label="Précision (optionnel)"
@@ -324,7 +342,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
                         }}
                       />
                     </div>
-                  )}
+                  ) : null}
                 </>
               )}
               <div className={clsx(fr.cx('fr-col-12'), 'display-end')}>
@@ -357,7 +375,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
                 nativeButtonProps={{
                   'aria-label': dateValue && typeValue ? 'Modifier' : 'Compléter',
                 }}
-                onClick={() => setIsEdit(true)}
+                onClick={handleEditClick}
               >
                 <span className="fr-sr-only">{dateValue && typeValue ? 'Modifier' : 'Compléter'}</span>
               </Button>

@@ -29,7 +29,7 @@ const dataTableRowComponent = <Datum extends RowWithId<RowId>, RowId extends str
 }: DataTableRowProps<Datum, RowId>) => {
   return (
     <tr key={row[rowId]} id={`${id}-row-key-${rowIndex}`} data-row-key={row[rowId]} aria-selected={selected}>
-      {isSelectable && (
+      {isSelectable ? (
         <CheckboxCell
           id={id}
           row={row}
@@ -38,7 +38,7 @@ const dataTableRowComponent = <Datum extends RowWithId<RowId>, RowId extends str
           selected={selected}
           onToggleSelect={onToggleSelect}
         />
-      )}
+      ) : null}
       {columns.map((column) => (
         <DataCell key={column.key} column={column} row={row} getCell={getCell} />
       ))}

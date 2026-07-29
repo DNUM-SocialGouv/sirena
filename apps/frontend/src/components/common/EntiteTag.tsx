@@ -21,14 +21,14 @@ export const EntiteTag = ({ entiteTypeId, label, statut, children }: EntiteTagPr
       <div className={fr.cx('fr-ml-2w')}>
         <div className={style['entiteTag-text']}>{label}</div>
         {children}
-        {statut && (
+        {statut ? (
           <div>
             Statut de la requête:
             <div className={fr.cx('fr-mt-1w')}>
               <RequeteStatutTag statut={statut} />
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

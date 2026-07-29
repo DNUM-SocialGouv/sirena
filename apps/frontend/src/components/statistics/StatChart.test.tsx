@@ -20,7 +20,7 @@ vi.mock('@codegouvfr/react-dsfr/SegmentedControl', () => ({
           <input
             type="radio"
             checked={Boolean(segment.nativeInputProps?.checked)}
-            onChange={() => segment.nativeInputProps?.onChange?.()}
+            onChange={segment.nativeInputProps?.onChange}
           />
           {segment.label}
         </label>

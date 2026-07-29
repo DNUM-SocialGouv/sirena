@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SirecReclamationData } from '../../sirecMigration.repository.js';
+import { SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import { transformSirecSituation } from './sirecMigration.situation.transformer.js';
 
 describe('sirecMigration.situation.transformer.ts', () => {
@@ -17,6 +18,7 @@ describe('sirecMigration.situation.transformer.ts', () => {
       domaine: null as number | null,
       ei_avere: null as number | null,
       num_sign_assoc: null as string | null,
+      departement: null as number | null,
     },
     motifsDeclaresIdDicos: [809],
     groupIds: [],
@@ -30,7 +32,7 @@ describe('sirecMigration.situation.transformer.ts', () => {
   it('should map description to fait.autresPrecisions', () => {
     const result = transformSirecSituation(sirecData, []);
 
-    expect(result.fait.autresPrecisions).toBe('Ma réclamation');
+    expect(result.fait.autresPrecisions).toBe('Description de la Pré-identification : Ma réclamation');
   });
 
   it('should transcode motifsDeclaresIdDicos into fait.motifsDeclaratifs', () => {
@@ -149,6 +151,29 @@ describe('sirecMigration.situation.transformer.ts', () => {
       const result = transformSirecSituation(sirecData, []);
 
       expect(result.numerosSignalement).toBe('');
+    });
+  });
+
+  describe('sirecDepartement', () => {
+    it('should transcode departement to its label', () => {
+      const result = transformSirecSituation(
+        { ...sirecData, reclamation: { ...sirecData.reclamation, departement: 740 } },
+        [],
+      );
+
+      expect(result.sirecDepartement).toBe('Paris');
+    });
+
+    it('should be null when departement is null', () => {
+      const result = transformSirecSituation(sirecData, []);
+
+      expect(result.sirecDepartement).toBeNull();
+    });
+
+    it('should throw SirecTranscoError when departement has an unknown id', () => {
+      expect(() =>
+        transformSirecSituation({ ...sirecData, reclamation: { ...sirecData.reclamation, departement: 99999 } }, []),
+      ).toThrow(SirecTranscoError);
     });
   });
 });

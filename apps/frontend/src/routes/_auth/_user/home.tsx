@@ -47,13 +47,13 @@ function RouteComponent() {
           <div className={styles.header}>
             <h1 className={styles.title}>Bienvenue {label}</h1>
             <div style={{ display: 'flex', gap: '1rem' }}>
-              {canEdit && (
+              {canEdit ? (
                 <Link to="/request/create">
                   <Button iconId="fr-icon-add-line" iconPosition="left">
                     Créer une requête
                   </Button>
                 </Link>
-              )}
+              ) : null}
             </div>
           </div>
           <RequetesEntite />

@@ -547,6 +547,7 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
               select: { prenom: true, nom: true },
             },
             dematSocialId: true,
+            sirecId: true,
             thirdPartyAccountId: true,
           },
         },

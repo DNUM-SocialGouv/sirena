@@ -1,5 +1,8 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
+import { SearchBar, type SearchBarProps } from '@codegouvfr/react-dsfr/SearchBar';
+import { useCallback } from 'react';
+
+type SearchInputParams = Parameters<NonNullable<SearchBarProps['renderInput']>>[0];
 
 type TableSearchBarProps = {
   label: string;
@@ -22,6 +25,20 @@ export function TableSearchBar({
   onClear,
   inputContainerClassName = 'fr-col-12 fr-col-md-5',
 }: TableSearchBarProps) {
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onValueChange(e.target.value);
+    },
+    [onValueChange],
+  );
+
+  const renderInput = useCallback(
+    (inputProps: SearchInputParams) => (
+      <input {...inputProps} placeholder="" value={value} onChange={handleInputChange} />
+    ),
+    [value, handleInputChange],
+  );
+
   return (
     <div className="fr-mb-1w">
       <p className="fr-label fr-mb-1v" aria-hidden="true">
@@ -29,13 +46,7 @@ export function TableSearchBar({
       </p>
       <div className="fr-grid-row">
         <div className={inputContainerClassName}>
-          <SearchBar
-            label={label}
-            onButtonClick={onSearch}
-            renderInput={(inputProps) => (
-              <input {...inputProps} placeholder="" value={value} onChange={(e) => onValueChange(e.target.value)} />
-            )}
-          />
+          <SearchBar label={label} onButtonClick={onSearch} renderInput={renderInput} />
         </div>
       </div>
       <div aria-live="polite" aria-atomic="true">

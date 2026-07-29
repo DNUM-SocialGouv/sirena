@@ -1,5 +1,5 @@
 import { Header } from '@codegouvfr/react-dsfr/Header';
-import { FEATURE_FLAGS, ROLES_READ, type Role } from '@sirena/common/constants';
+import { FEATURE_FLAGS, ROLES, ROLES_STATISTICS, type Role } from '@sirena/common/constants';
 import { Link, useLocation } from '@tanstack/react-router';
 import { useId } from 'react';
 import { useFeatureFlagStore } from '@/stores/featureFlagStore';
@@ -22,13 +22,18 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
   const { pathname } = useLocation();
   const isStatisticsEnabled = useFeatureFlagStore((s) => s.flags[FEATURE_FLAGS.STATISTICS] ?? false);
 
-  const canAccessRequests = userStore.role != null && (ROLES_READ as readonly Role[]).includes(userStore.role);
-  const showStatisticsLink = userStore.isLogged && isStatisticsEnabled && canAccessRequests;
+  const isSuperAdmin = userStore.role === ROLES.SUPER_ADMIN;
+  const canAccessStatistics = userStore.role != null && (ROLES_STATISTICS as readonly Role[]).includes(userStore.role);
+  const showStatisticsLink = userStore.isLogged && isStatisticsEnabled && canAccessStatistics;
   const isOnStatistics = pathname === '/statistiques';
 
+  // Lien retour : le super admin revient vers son espace ; les autres vers la liste des requêtes.
+  const backTo = isSuperAdmin ? '/admin/users' : '/home';
+  const backLabel = isSuperAdmin ? 'Espace administrateur' : 'Liste des requêtes';
+
   const statisticsLink = !showStatisticsLink ? null : isOnStatistics ? (
-    <Link key="statistics" className={`${STATISTICS_LINK_CLASS} fr-icon-arrow-left-line`} to="/home">
-      Liste des requêtes
+    <Link key="statistics" className={`${STATISTICS_LINK_CLASS} fr-icon-arrow-left-line`} to={backTo}>
+      {backLabel}
     </Link>
   ) : (
     <Link key="statistics" className={`${STATISTICS_LINK_CLASS} fr-icon-line-chart-line`} to="/statistiques">
