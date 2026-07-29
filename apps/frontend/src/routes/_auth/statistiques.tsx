@@ -7,6 +7,7 @@ import { AuthLayout } from '@/components/layout/auth/layout';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { CardHelp } from '@/components/statistics/CardHelp';
 import { parseCard } from '@/components/statistics/chartData';
+import { DownloadCsvButton } from '@/components/statistics/DownloadCsvButton';
 import { ExportRequetesButton } from '@/components/statistics/ExportRequetesButton';
 import { PeriodFilter } from '@/components/statistics/PeriodFilter';
 import { PERIOD_PRESETS, type PeriodSelection, resolveDateRange } from '@/components/statistics/period';
@@ -115,7 +116,14 @@ function ChartCard({ card }: { card: StatisticsCard }) {
   }
 
   if (card.display === 'pie') {
-    return <StatChart name={card.name} description={card.description} parsed={parsed} />;
+    return (
+      <StatChart
+        name={card.name}
+        description={card.description}
+        parsed={parsed}
+        action={<DownloadCsvButton card={card} />}
+      />
+    );
   }
 
   return (
@@ -123,6 +131,7 @@ function ChartCard({ card }: { card: StatisticsCard }) {
       <div className={styles['card-title']}>
         <h2 className={fr.cx('fr-h5', 'fr-mb-0')}>{card.name}</h2>
         <CardHelp description={card.description} />
+        <DownloadCsvButton card={card} />
       </div>
       <StatTable caption={card.name} parsed={parsed} hideCaption />
     </>

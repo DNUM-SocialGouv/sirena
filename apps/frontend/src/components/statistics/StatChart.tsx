@@ -1,6 +1,6 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { SegmentedControl } from '@codegouvfr/react-dsfr/SegmentedControl';
-import { useId, useMemo, useState } from 'react';
+import { type ReactNode, useId, useMemo, useState } from 'react';
 import { CardHelp } from './CardHelp';
 import { annularSectorPath, CHART_COLORS, numberFormatter, type ParsedCard, percentFormatter } from './chartData';
 import { StatTable } from './StatTable';
@@ -17,9 +17,10 @@ interface StatChartProps {
   name: string;
   description?: string | null;
   parsed: ParsedCard;
+  action?: ReactNode;
 }
 
-export function StatChart({ name, description, parsed }: StatChartProps) {
+export function StatChart({ name, description, parsed, action }: StatChartProps) {
   const titleId = useId();
   const legendId = useId();
   const [view, setView] = useState<View>('table');
@@ -46,6 +47,7 @@ export function StatChart({ name, description, parsed }: StatChartProps) {
             {name}
           </h2>
           <CardHelp description={description} />
+          {action}
         </div>
         <p>Aucune donnée à afficher.</p>
       </figure>
@@ -62,6 +64,7 @@ export function StatChart({ name, description, parsed }: StatChartProps) {
             {name}
           </h2>
           <CardHelp description={description} />
+          {action}
         </div>
 
         <SegmentedControl
