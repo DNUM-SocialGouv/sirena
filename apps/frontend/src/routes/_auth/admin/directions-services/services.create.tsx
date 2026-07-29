@@ -95,6 +95,7 @@ export function RouteComponent() {
                     nativeSelectProps={{
                       name: 'directionId',
                       value: directionId,
+                      'aria-invalid': form.validationErrors.directionId ? true : undefined,
                       onChange: (event) => {
                         setDirectionId(event.target.value);
                         form.clearError('directionId');
