@@ -7,9 +7,8 @@ import {
   openApiResponses,
 } from '@sirena/backend-utils/helpers';
 import {
-  CreateDirectionAdminLocalResponseSchema,
+  CreateDirectionOrServiceAdminLocalResponseSchema,
   CreateDirectionOrServiceAdminResponseSchema,
-  CreateServiceAdminLocalResponseSchema,
   EditEntiteAdministrativeAdminLocalResponseSchema,
   EditEntiteAdminResponseSchema,
   GetDirectionServiceAdminLocalResponseSchema,
@@ -93,7 +92,7 @@ export const getEntiteByIdAdminRoute = openApiProtectedRoute({
 export const createDirectionAdminLocalRoute = openApiProtectedRoute({
   description: 'Create Direction for entity admins from local directions and services workflow',
   responses: {
-    ...openApiResponse(CreateDirectionAdminLocalResponseSchema),
+    ...openApiResponse(CreateDirectionOrServiceAdminLocalResponseSchema),
     ...openApi400BadRequest('Direction or Service creation is not allowed for this parent'),
     ...openApi404NotFound('Entite not found'),
   },
@@ -102,7 +101,7 @@ export const createDirectionAdminLocalRoute = openApiProtectedRoute({
 export const createServiceAdminLocalRoute = openApiProtectedRoute({
   description: 'Create Service for entity admins from local directions and services workflow',
   responses: {
-    ...openApiResponse(CreateServiceAdminLocalResponseSchema),
+    ...openApiResponse(CreateDirectionOrServiceAdminLocalResponseSchema),
     ...openApi400BadRequest('Direction or Service creation is not allowed for this parent'),
     ...openApi404NotFound('Entite not found'),
   },

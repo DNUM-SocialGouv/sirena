@@ -117,9 +117,16 @@ export const EditEntiteContactInputSchema = EntiteContactFieldsSchema.extend({
 export const EditEntiteAdministrativeAdminLocalInputSchema = EditEntiteContactInputSchema.extend({
   email: emailSchema,
 }).strict();
+export const EditDirectionServiceAdminLocalInputSchema = z
+  .object({
+    email: emailSchema.or(z.literal('')),
+  })
+  .strict();
 export const EditEntiteAdministrativeAdminLocalResponseSchema = EntiteAdministrativeAdminLocalSchema;
 
-const DirectionServiceAdminLocalFieldsSchema = EntiteDetailsSchema;
+const DirectionServiceAdminLocalFieldsSchema = EntiteReferenceSchema.extend({
+  email: z.string(),
+});
 const ParentDirectionAdminLocalSchema = EntiteReferenceSchema;
 
 export const GetDirectionServiceAdminLocalResponseSchema = z.discriminatedUnion('entiteType', [
@@ -177,20 +184,15 @@ export const CreateDirectionOrServiceAdminResponseSchema = CreateDirectionOrServ
   id: z.string(),
 });
 
-export const CreateDirectionAdminLocalInputSchema = CreateDirectionOrServiceAdminInputSchema.omit({
-  isActive: true,
-})
-  .extend({
-    emailContactUsager: z.string().default(''),
-    adresseContactUsager: z.string().default(''),
-    telContactUsager: z.string().default(''),
-  })
-  .strict();
+export const CreateDirectionAdminLocalInputSchema = EntiteIdentityFieldsSchema.extend({
+  email: z.string(),
+}).strict();
 
-export const CreateDirectionAdminLocalResponseSchema = CreateDirectionOrServiceAdminResponseSchema;
+export const CreateDirectionOrServiceAdminLocalResponseSchema = CreateDirectionAdminLocalInputSchema.extend({
+  id: z.string(),
+  isActive: z.boolean(),
+});
 
 export const CreateServiceAdminLocalInputSchema = CreateDirectionAdminLocalInputSchema.extend({
   directionId: z.string().optional(),
 }).strict();
-
-export const CreateServiceAdminLocalResponseSchema = CreateDirectionOrServiceAdminResponseSchema;
