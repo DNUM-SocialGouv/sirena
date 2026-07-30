@@ -44,11 +44,7 @@ export const MIS_EN_CAUSE_TYPE = {
   MEMBRE_FAMILLE: 'MEMBRE_FAMILLE',
   PROCHE: 'PROCHE',
   AUTRE_PERSONNE_NON_PRO: 'AUTRE_PERSONNE_NON_PRO',
-  // Accused-party types that only exist on requests migrated from SIREC (display only)
-  ETABLISSEMENT_FICTIF: 'ETABLISSEMENT_FICTIF',
-  EXERCICE_ILLEGAL: 'EXERCICE_ILLEGAL',
-  MAISON_ARRET: 'MAISON_ARRET',
-  TRANSPORTEUR_SANITAIRE: 'TRANSPORTEUR_SANITAIRE',
+  // Accused-party type that only exists on requests migrated from SIREC (display only)
   AUTRE: 'AUTRE',
 } as const;
 
@@ -63,22 +59,12 @@ export const misEnCauseTypeLabels: Record<MisEnCauseType, string> = {
   PROFESSIONNEL_SOCIAL: 'Professionnel social (éducateur, assistant social...)',
   ETABLISSEMENT: 'Établissement ou un service',
   AUTRE_PROFESSIONNEL: 'Autre professionnel',
-  ETABLISSEMENT_FICTIF: 'Etablissement fictif',
-  EXERCICE_ILLEGAL: 'Exercice illégal',
-  MAISON_ARRET: "Maison d'arrêt",
-  TRANSPORTEUR_SANITAIRE: 'Transporteur Sanitaire',
   AUTRE: 'Autre',
 };
 
 // Accused-party types not offered in the manual entry form: they only arrive
 // through the SIREC migration and are displayed, not picked.
-export const NON_SELECTABLE_MIS_EN_CAUSE_TYPES: MisEnCauseType[] = [
-  MIS_EN_CAUSE_TYPE.ETABLISSEMENT_FICTIF,
-  MIS_EN_CAUSE_TYPE.EXERCICE_ILLEGAL,
-  MIS_EN_CAUSE_TYPE.MAISON_ARRET,
-  MIS_EN_CAUSE_TYPE.TRANSPORTEUR_SANITAIRE,
-  MIS_EN_CAUSE_TYPE.AUTRE,
-];
+export const NON_SELECTABLE_MIS_EN_CAUSE_TYPES: MisEnCauseType[] = [MIS_EN_CAUSE_TYPE.AUTRE];
 
 // Précisions pour chaque type de mis en cause
 export const MIS_EN_CAUSE_FAMILLE_PRECISION = {
@@ -256,6 +242,9 @@ export const MALTRAITANCE_TYPE = {
   VIOLENCES: 'VIOLENCES',
   MATERIELLE_FINANCIERE: 'MATERIELLE_FINANCIERE',
   SEXUELLE: 'SEXUELLE',
+  // Generic maltraitance value fed only by the SIREC migration (dico 815), so that a
+  // declared "Maltraitance" from SIREC triggers the maltraitance tag like DematSocial does.
+  AUTRE: 'AUTRE',
   NON: 'NON',
 } as const;
 
@@ -267,6 +256,7 @@ export const maltraitanceTypeLabels: Record<MaltraitanceType, string> = {
   MATERIELLE_FINANCIERE: 'Vol d’argent ou d’objets, confiscation',
   SEXUELLE:
     'Contact physique sans accord sur les parties intimes, attouchements forcés, exhibitionnisme, relation sexuelle forcée',
+  AUTRE: "Maltraitance (action ou défaut d'action individuelle, collective ou institutionnelle)",
   NON: 'Aucune de ces situations',
 };
 
@@ -306,6 +296,8 @@ export const LIEU_TYPE = {
   ETABLISSEMENT_SOCIAL: 'ETABLISSEMENT_SOCIAL',
   AUTRES_ETABLISSEMENTS: 'AUTRES_ETABLISSEMENTS',
   TRAJET: 'TRAJET',
+  // Location type that only exists on requests migrated from SIREC (display only)
+  ETABLISSEMENT_FICTIF: 'ETABLISSEMENT_FICTIF',
 } as const;
 
 export type LieuType = keyof typeof LIEU_TYPE;
@@ -318,7 +310,12 @@ export const lieuTypeLabels: Record<LieuType, string> = {
   ETABLISSEMENT_SOCIAL: 'Etablissements sociaux',
   AUTRES_ETABLISSEMENTS: 'Autres établissements',
   TRAJET: 'Trajet',
+  ETABLISSEMENT_FICTIF: 'Etablissement fictif',
 };
+
+// Location types not offered in the manual entry form: they only arrive
+// through the SIREC migration and are displayed, not picked.
+export const NON_SELECTABLE_LIEU_TYPES: LieuType[] = [LIEU_TYPE.ETABLISSEMENT_FICTIF];
 
 // Domicile - Précisions
 export const LIEU_DOMICILE_PRECISION = {
@@ -477,6 +474,8 @@ export const lieuEtablissementSocialPrecisionLabels: Record<LieuEtablissementSoc
 // Autres établissements - Précisions
 export const LIEU_AUTRES_ETABLISSEMENTS_PRECISION = {
   SALON_TATOUAGE_ESTHETIQUE: 'SALON_TATOUAGE_ESTHETIQUE',
+  // Precision only fed by the SIREC migration (display only)
+  MAISON_ARRET: 'MAISON_ARRET',
   AUTRE: 'AUTRE',
 } as const;
 
@@ -484,8 +483,13 @@ export type LieuAutresEtablissementsPrecision = keyof typeof LIEU_AUTRES_ETABLIS
 
 export const lieuAutresEtablissementsPrecisionLabels: Record<LieuAutresEtablissementsPrecision, string> = {
   SALON_TATOUAGE_ESTHETIQUE: "Salon de tatouage, salon d'esthétique",
+  MAISON_ARRET: "Maison d'arrêt",
   AUTRE: 'Autre',
 };
+
+export const NON_SELECTABLE_LIEU_AUTRES_ETABLISSEMENTS_PRECISIONS: LieuAutresEtablissementsPrecision[] = [
+  LIEU_AUTRES_ETABLISSEMENTS_PRECISION.MAISON_ARRET,
+];
 
 // Trajet - Précisions
 export const LIEU_TRAJET_PRECISION = {
@@ -495,6 +499,8 @@ export const LIEU_TRAJET_PRECISION = {
   AMBULANCE: 'AMBULANCE',
   VSL: 'VSL',
   TAXI: 'TAXI',
+  // Precision only fed by the SIREC migration (display only)
+  TRANSPORTEUR_SANITAIRE: 'TRANSPORTEUR_SANITAIRE',
   AUTRE: 'AUTRE',
 } as const;
 
@@ -507,8 +513,13 @@ export const lieuTrajetPrecisionLabels: Record<LieuTrajetPrecision, string> = {
   AMBULANCE: 'Ambulance',
   VSL: 'Véhicule sanitaire léger',
   TAXI: 'Taxi',
+  TRANSPORTEUR_SANITAIRE: 'Transporteur Sanitaire',
   AUTRE: 'Autre',
 };
+
+export const NON_SELECTABLE_LIEU_TRAJET_PRECISIONS: LieuTrajetPrecision[] = [
+  LIEU_TRAJET_PRECISION.TRANSPORTEUR_SANITAIRE,
+];
 
 export const PROFESSION_DOMICILE_TYPE = {
   SESSAD: 'SESSAD',
@@ -681,6 +692,8 @@ export const AUTRE_PROFESSIONNEL_PRECISION = {
   SAPEUR_POMPIER: 'SAPEUR_POMPIER',
   MEDECINE_NON_CONVENTIONNELLE: 'MEDECINE_NON_CONVENTIONNELLE',
   ESTHETICIEN: 'ESTHETICIEN',
+  // Precision only fed by the SIREC migration (display only)
+  EXERCICE_ILLEGAL: 'EXERCICE_ILLEGAL',
   AUTRE: 'AUTRE',
 } as const;
 
@@ -711,8 +724,13 @@ export const autreProfessionnelPrecisionLabels: Record<AutreProfessionnelPrecisi
   SAPEUR_POMPIER: 'Sapeur pompier',
   MEDECINE_NON_CONVENTIONNELLE: 'Médecine non conventionnelle (naturopathe...)',
   ESTHETICIEN: 'Esthéticien',
+  EXERCICE_ILLEGAL: 'Exercice illégal',
   AUTRE: 'Autre',
 };
+
+export const NON_SELECTABLE_AUTRE_PROFESSIONNEL_PRECISIONS: AutreProfessionnelPrecision[] = [
+  AUTRE_PROFESSIONNEL_PRECISION.EXERCICE_ILLEGAL,
+];
 
 export const RECEPTION_TYPE = {
   EMAIL: 'EMAIL',

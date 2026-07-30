@@ -132,6 +132,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
             categLib: lsd.categLib,
             lieuTypeId: lsd.lieuTypeId,
             lieuPrecision: lsd.lieuPrecision,
+            commentaire: lsd.commentaire ?? '',
             adresse: {
               create: {
                 label: lsd.adresse.label,
@@ -183,6 +184,13 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
         data: situationData.fait.motifsDeclaratifs.map((motifDeclaratifId) => ({
           situationId: situation.id,
           motifDeclaratifId,
+        })),
+      });
+
+      await tx.faitMaltraitanceType.createMany({
+        data: situationData.fait.maltraitanceTypes.map((maltraitanceTypeId) => ({
+          situationId: situation.id,
+          maltraitanceTypeId,
         })),
       });
 

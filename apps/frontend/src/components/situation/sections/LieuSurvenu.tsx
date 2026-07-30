@@ -10,6 +10,9 @@ import {
   LIEU_ETABLISSEMENT_SOCIAL_PRECISION,
   LIEU_TRAJET_PRECISION,
   LIEU_TYPE,
+  type LieuAutresEtablissementsPrecision,
+  type LieuTrajetPrecision,
+  type LieuType,
   lieuAutresEtablissementsPrecisionLabels,
   lieuDomicilePrecisionLabels,
   lieuEtablissementHandicapPrecisionLabels,
@@ -18,6 +21,9 @@ import {
   lieuEtablissementSocialPrecisionLabels,
   lieuTrajetPrecisionLabels,
   lieuTypeLabels,
+  NON_SELECTABLE_LIEU_AUTRES_ETABLISSEMENTS_PRECISIONS,
+  NON_SELECTABLE_LIEU_TRAJET_PRECISIONS,
+  NON_SELECTABLE_LIEU_TYPES,
   RECEPTION_TYPE,
   type ReceptionType,
   // TRANSPORT_TYPE,
@@ -103,10 +109,13 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
     [setFormData],
   );
 
-  const lieuTypeOptions = Object.entries(LIEU_TYPE).map(([key, value]) => ({
-    key,
-    value: lieuTypeLabels[value],
-  }));
+  // SIREC-only values are displayed on migrated requests but never offered for manual entry.
+  const lieuTypeOptions = Object.entries(LIEU_TYPE)
+    .filter(([, value]) => !NON_SELECTABLE_LIEU_TYPES.includes(value as LieuType))
+    .map(([key, value]) => ({
+      key,
+      value: lieuTypeLabels[value],
+    }));
   const lieuDomicileOptions = Object.entries(LIEU_DOMICILE_PRECISION).map(([key, value]) => ({
     key,
     value: lieuDomicilePrecisionLabels[value],
@@ -131,14 +140,21 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
     key,
     value: lieuEtablissementSocialPrecisionLabels[value],
   }));
-  const lieuAutresEtablissementsOptions = Object.entries(LIEU_AUTRES_ETABLISSEMENTS_PRECISION).map(([key, value]) => ({
-    key,
-    value: lieuAutresEtablissementsPrecisionLabels[value],
-  }));
-  const lieuTrajetPrecisionOptions = Object.entries(LIEU_TRAJET_PRECISION).map(([key, value]) => ({
-    key,
-    value: lieuTrajetPrecisionLabels[value],
-  }));
+  const lieuAutresEtablissementsOptions = Object.entries(LIEU_AUTRES_ETABLISSEMENTS_PRECISION)
+    .filter(
+      ([, value]) =>
+        !NON_SELECTABLE_LIEU_AUTRES_ETABLISSEMENTS_PRECISIONS.includes(value as LieuAutresEtablissementsPrecision),
+    )
+    .map(([key, value]) => ({
+      key,
+      value: lieuAutresEtablissementsPrecisionLabels[value],
+    }));
+  const lieuTrajetPrecisionOptions = Object.entries(LIEU_TRAJET_PRECISION)
+    .filter(([, value]) => !NON_SELECTABLE_LIEU_TRAJET_PRECISIONS.includes(value as LieuTrajetPrecision))
+    .map(([key, value]) => ({
+      key,
+      value: lieuTrajetPrecisionLabels[value],
+    }));
   // const transportTypeOptions = Object.entries(TRANSPORT_TYPE).map(([key, value]) => ({
   //   key,
   //   value: transportTypeLabels[value],
@@ -169,6 +185,11 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
               }}
             >
               <option value="">Sélectionner une option</option>
+              {lieuType && NON_SELECTABLE_LIEU_TYPES.includes(lieuType as LieuType) && (
+                <option value={lieuType} disabled>
+                  {lieuTypeLabels[lieuType as LieuType]}
+                </option>
+              )}
               {lieuTypeOptions.map(({ key, value }) => (
                 <option key={key} value={key}>
                   {value}
@@ -360,6 +381,14 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                 }}
               >
                 <option value="">Sélectionner une option</option>
+                {lieuPrecision &&
+                  NON_SELECTABLE_LIEU_AUTRES_ETABLISSEMENTS_PRECISIONS.includes(
+                    lieuPrecision as LieuAutresEtablissementsPrecision,
+                  ) && (
+                    <option value={lieuPrecision} disabled>
+                      {lieuAutresEtablissementsPrecisionLabels[lieuPrecision as LieuAutresEtablissementsPrecision]}
+                    </option>
+                  )}
                 {lieuAutresEtablissementsOptions.map(({ key, value }) => (
                   <option key={key} value={key}>
                     {value}
@@ -384,6 +413,12 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                   }}
                 >
                   <option value="">Sélectionner une option</option>
+                  {lieuPrecision &&
+                    NON_SELECTABLE_LIEU_TRAJET_PRECISIONS.includes(lieuPrecision as LieuTrajetPrecision) && (
+                      <option value={lieuPrecision} disabled>
+                        {lieuTrajetPrecisionLabels[lieuPrecision as LieuTrajetPrecision]}
+                      </option>
+                    )}
                   {lieuTrajetPrecisionOptions.map(({ key, value }) => (
                     <option key={key} value={key}>
                       {value}

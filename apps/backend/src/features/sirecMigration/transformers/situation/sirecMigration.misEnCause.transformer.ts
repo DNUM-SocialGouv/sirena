@@ -29,11 +29,6 @@ const SANS_MEC_DATA = {
   autrePrecision: 'Sans mis en cause',
 };
 
-function appendAutrePrecision(data: SirenaMisEnCauseData | null, suffix: string | null): SirenaMisEnCauseData | null {
-  if (!suffix || data === null) return data;
-  return { ...data, autrePrecision: data.autrePrecision ? `${data.autrePrecision}\n${suffix}` : suffix };
-}
-
 function transcodeServiceConcerne(idDico: number): string {
   const label = SIREC_DICO[idDico];
   if (label === undefined) throw new SirecTranscoError(idDico, 'service_concerne');
@@ -46,30 +41,36 @@ function transcodePublicConcerne(idDico: number): string {
   return label;
 }
 
-function applyMisEnCauseAnnotations(
-  data: SirenaMisEnCauseData | null,
-  reclamation: SirecReclamationRow,
-  misEnCause?: SirecMisEnCause,
-): SirenaMisEnCauseData | null {
-  const withServiceConcerne = appendAutrePrecision(
-    data,
-    misEnCause?.serviceConcerne !== null && misEnCause?.serviceConcerne !== undefined
+function buildSirecAnnotations(reclamation: SirecReclamationRow, misEnCause?: SirecMisEnCause): string {
+  return [
+    misEnCause?.serviceConcerne != null
       ? `Service concerné : ${transcodeServiceConcerne(misEnCause.serviceConcerne)}`
       : null,
-  );
-  const withPublicConcerne = appendAutrePrecision(
-    withServiceConcerne,
-    misEnCause?.publicConcerne !== null && misEnCause?.publicConcerne !== undefined
+    misEnCause?.publicConcerne != null
       ? `Public concerné : ${transcodePublicConcerne(misEnCause.publicConcerne)}`
       : null,
-  );
-  const withObservation = appendAutrePrecision(
-    withPublicConcerne,
     reclamation.observation ? `Observations : ${reclamation.observation}` : null,
-  );
-  return transcodeSignalement(reclamation.signalement) === true
-    ? appendAutrePrecision(withObservation, 'Enregistré en tant que Signalement dans SIREC')
-    : withObservation;
+    transcodeSignalement(reclamation.signalement) === true ? 'Enregistré en tant que Signalement dans SIREC' : null,
+  ]
+    .filter((part): part is string => part !== null)
+    .join('\n');
+}
+
+function applyMisEnCauseAnnotations(
+  data: SirenaMisEnCauseData | null,
+  annotations: string,
+): SirenaMisEnCauseData | null {
+  if (data === null || !annotations) return data;
+  return { ...data, autrePrecision: data.autrePrecision ? `${data.autrePrecision}\n${annotations}` : annotations };
+}
+
+// When a SIREC "autre" value maps to a lieu (no mis en cause), keep its SIREC notes on the lieu.
+function applyLieuAnnotations(
+  data: SirenaLieuDeSurvenueData | null,
+  annotations: string,
+): SirenaLieuDeSurvenueData | null {
+  if (data === null || !annotations) return data;
+  return { ...data, commentaire: data.commentaire ? `${data.commentaire}\n${annotations}` : annotations };
 }
 
 function shouldClearMisEnCauseType(
@@ -119,7 +120,7 @@ function resolveMisEnCause(misEnCause: SirecMisEnCause): MisEnCauseResolution {
   }
 
   if (misEnCause.type === SIREC_TYPE_AUTRE) {
-    return { misEnCauseData: transformSirecAutre(misEnCause), lieuDeSurvenueData: null };
+    return transformSirecAutre(misEnCause);
   }
 
   return { misEnCauseData: null, lieuDeSurvenueData: null };
@@ -136,7 +137,9 @@ export function transformSirecMisEnCauseSituations(
   if (misEnCauses.length === 0) {
     const sansMcData = resolveSansMc(reclamation.sans_mc);
     const baseSituationNoMec = transformSirecSituation(sirecData, situationEntiteIds);
-    return [{ ...baseSituationNoMec, misEnCauseData: applyMisEnCauseAnnotations(sansMcData, reclamation) }];
+    // Built even without a mis en cause so an unknown signalement value still fails fast.
+    const annotations = buildSirecAnnotations(reclamation);
+    return [{ ...baseSituationNoMec, misEnCauseData: applyMisEnCauseAnnotations(sansMcData, annotations) }];
   }
 
   const baseSituation = transformSirecSituation(sirecData, []);
@@ -156,7 +159,12 @@ export function transformSirecMisEnCauseSituations(
     const entiteIds = [...new Set([...orphanEntiteIds, ...misEnCauseEntiteIds])];
     const { misEnCauseData, lieuDeSurvenueData } = resolveMisEnCause(misEnCause);
     const { motifs, commentaireSuffix } = resolveMotifsIgas(misEnCause.motifsIgas);
-    const annotatedMisEnCauseData = applyMisEnCauseAnnotations(misEnCauseData, reclamation, misEnCause);
+    // Built once (also validates the signalement value); routed to the mis en cause,
+    // or to the lieu when the SIREC record maps to a lieu (no mis en cause).
+    const annotations = buildSirecAnnotations(reclamation, misEnCause);
+    const annotatedMisEnCauseData = applyMisEnCauseAnnotations(misEnCauseData, annotations);
+    const annotatedLieuData =
+      misEnCauseData === null ? applyLieuAnnotations(lieuDeSurvenueData, annotations) : lieuDeSurvenueData;
     const finalMisEnCauseData =
       annotatedMisEnCauseData &&
       shouldClearMisEnCauseType(requeteEntiteIds, declarant, reclamation.signalement, lieuDeSurvenueData)
@@ -166,7 +174,7 @@ export function transformSirecMisEnCauseSituations(
       ...baseSituation,
       entiteIds,
       misEnCauseData: finalMisEnCauseData,
-      lieuDeSurvenueData,
+      lieuDeSurvenueData: annotatedLieuData,
       fait: {
         ...baseSituation.fait,
         motifs,

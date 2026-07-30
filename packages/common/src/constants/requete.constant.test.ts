@@ -1,11 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AUTRE_PROFESSIONNEL_PRECISION,
+  autreProfessionnelPrecisionLabels,
+  LIEU_AUTRES_ETABLISSEMENTS_PRECISION,
+  LIEU_TRAJET_PRECISION,
+  LIEU_TYPE,
+  lieuAutresEtablissementsPrecisionLabels,
+  lieuTrajetPrecisionLabels,
+  lieuTypeLabels,
+  MALTRAITANCE_TYPE,
   MIS_EN_CAUSE_ETABLISSEMENT_PRECISION,
   MIS_EN_CAUSE_TYPE,
-  MOTIF,
+  maltraitanceTypeLabels,
   misEnCauseEtablissementPrecisionLabels,
-  misEnCauseTypeLabels,
   motifLabels,
+  NON_SELECTABLE_AUTRE_PROFESSIONNEL_PRECISIONS,
+  NON_SELECTABLE_LIEU_AUTRES_ETABLISSEMENTS_PRECISIONS,
+  NON_SELECTABLE_LIEU_TRAJET_PRECISIONS,
+  NON_SELECTABLE_LIEU_TYPES,
   NON_SELECTABLE_MIS_EN_CAUSE_TYPES,
   NON_SELECTABLE_RECEPTION_TYPES,
   RECEPTION_TYPE,
@@ -37,17 +49,16 @@ describe('requete constants', () => {
       expect(motifLabels).toEqual(
         expect.objectContaining({
           DIFFICULTES_ACCES_SOINS: "Difficultés d'accès aux soins (établissement ou professionnel)",
-          MALTRAITANCE: "Maltraitance (action ou défaut d'action individuelle, collective ou institutionnelle)",
           PROBLEME_ORGANISATION_FONCTIONNEMENT:
             "Problème d'organisation ou de fonctionnement de l'établissement ou du service",
         }),
       );
-      expect(MOTIF).toEqual(
-        expect.objectContaining({
-          DIFFICULTES_ACCES_SOINS: 'DIFFICULTES_ACCES_SOINS',
-          MALTRAITANCE: 'MALTRAITANCE',
-          PROBLEME_ORGANISATION_FONCTIONNEMENT: 'PROBLEME_ORGANISATION_FONCTIONNEMENT',
-        }),
+    });
+
+    it('exposes a generic maltraitance value so SIREC "Maltraitance" triggers the maltraitance tag', () => {
+      expect(MALTRAITANCE_TYPE.AUTRE).toBe('AUTRE');
+      expect(maltraitanceTypeLabels.AUTRE).toBe(
+        "Maltraitance (action ou défaut d'action individuelle, collective ou institutionnelle)",
       );
     });
 
@@ -67,23 +78,32 @@ describe('requete constants', () => {
       ]);
     });
 
-    it('exposes the accused-party types coming from SIREC migrations and keeps them non-selectable', () => {
-      expect(misEnCauseTypeLabels).toEqual(
-        expect.objectContaining({
-          ETABLISSEMENT_FICTIF: 'Etablissement fictif',
-          EXERCICE_ILLEGAL: 'Exercice illégal',
-          MAISON_ARRET: "Maison d'arrêt",
-          TRANSPORTEUR_SANITAIRE: 'Transporteur Sanitaire',
-          AUTRE: 'Autre',
-        }),
-      );
-      expect(NON_SELECTABLE_MIS_EN_CAUSE_TYPES).toEqual([
-        MIS_EN_CAUSE_TYPE.ETABLISSEMENT_FICTIF,
-        MIS_EN_CAUSE_TYPE.EXERCICE_ILLEGAL,
-        MIS_EN_CAUSE_TYPE.MAISON_ARRET,
-        MIS_EN_CAUSE_TYPE.TRANSPORTEUR_SANITAIRE,
-        MIS_EN_CAUSE_TYPE.AUTRE,
+    it('keeps only "Autre" as a SIREC-only accused-party type after repositioning', () => {
+      expect(MIS_EN_CAUSE_TYPE).not.toHaveProperty('ETABLISSEMENT_FICTIF');
+      expect(MIS_EN_CAUSE_TYPE).not.toHaveProperty('MAISON_ARRET');
+      expect(MIS_EN_CAUSE_TYPE).not.toHaveProperty('TRANSPORTEUR_SANITAIRE');
+      expect(MIS_EN_CAUSE_TYPE.AUTRE).toBe('AUTRE');
+      expect(NON_SELECTABLE_MIS_EN_CAUSE_TYPES).toEqual([MIS_EN_CAUSE_TYPE.AUTRE]);
+    });
+
+    it('repositions "Établissement fictif" as a non-selectable location type', () => {
+      expect(LIEU_TYPE.ETABLISSEMENT_FICTIF).toBe('ETABLISSEMENT_FICTIF');
+      expect(lieuTypeLabels.ETABLISSEMENT_FICTIF).toBe('Etablissement fictif');
+      expect(NON_SELECTABLE_LIEU_TYPES).toEqual([LIEU_TYPE.ETABLISSEMENT_FICTIF]);
+    });
+
+    it('repositions "Maison d\'arrêt" and "Transporteur Sanitaire" as non-selectable location precisions', () => {
+      expect(lieuAutresEtablissementsPrecisionLabels.MAISON_ARRET).toBe("Maison d'arrêt");
+      expect(NON_SELECTABLE_LIEU_AUTRES_ETABLISSEMENTS_PRECISIONS).toEqual([
+        LIEU_AUTRES_ETABLISSEMENTS_PRECISION.MAISON_ARRET,
       ]);
+      expect(lieuTrajetPrecisionLabels.TRANSPORTEUR_SANITAIRE).toBe('Transporteur Sanitaire');
+      expect(NON_SELECTABLE_LIEU_TRAJET_PRECISIONS).toEqual([LIEU_TRAJET_PRECISION.TRANSPORTEUR_SANITAIRE]);
+    });
+
+    it('repositions "Exercice illégal" as a non-selectable "Autre professionnel" precision', () => {
+      expect(autreProfessionnelPrecisionLabels.EXERCICE_ILLEGAL).toBe('Exercice illégal');
+      expect(NON_SELECTABLE_AUTRE_PROFESSIONNEL_PRECISIONS).toEqual([AUTRE_PROFESSIONNEL_PRECISION.EXERCICE_ILLEGAL]);
     });
   });
 });

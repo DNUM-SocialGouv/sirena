@@ -20,6 +20,7 @@ export interface SirenaLieuDeSurvenueData {
   categLib: string;
   lieuTypeId: string;
   lieuPrecision: string;
+  commentaire?: string;
   adresse: {
     label: string;
     numero: string;

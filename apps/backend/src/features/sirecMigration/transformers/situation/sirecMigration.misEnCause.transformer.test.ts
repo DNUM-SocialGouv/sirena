@@ -103,10 +103,13 @@ vi.mock('../transco/misEnCauseAutre.transco.js', () => ({
 
 vi.mock('./sirecMigration.autre.transformer.js', () => ({
   transformSirecAutre: vi.fn(() => ({
-    kind: 'autre',
-    misEnCauseTypeId: 'AUTRE_PROFESSIONNEL',
-    misEnCauseTypePrecisionId: 'ACUPUNCTEUR',
-    autrePrecision: 'Type de mis en cause : Acuponcteur\nNom / structure : Dr Test\nAdresse : Non renseigné',
+    misEnCauseData: {
+      kind: 'autre',
+      misEnCauseTypeId: 'AUTRE_PROFESSIONNEL',
+      misEnCauseTypePrecisionId: 'ACUPUNCTEUR',
+      autrePrecision: 'Type de mis en cause : Acuponcteur\nNom / structure : Dr Test\nAdresse : Non renseigné',
+    },
+    lieuDeSurvenueData: null,
   })),
 }));
 

@@ -3,6 +3,7 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import {
   AUTRE_PROFESSIONNEL_PRECISION,
+  type AutreProfessionnelPrecision,
   autreProfessionnelPrecisionLabels,
   MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION,
   MIS_EN_CAUSE_ETABLISSEMENT_PRECISION,
@@ -15,6 +16,7 @@ import {
   misEnCauseFamillePrecisionLabels,
   misEnCauseProchePrecisionLabels,
   misEnCauseTypeLabels,
+  NON_SELECTABLE_AUTRE_PROFESSIONNEL_PRECISIONS,
   NON_SELECTABLE_MIS_EN_CAUSE_TYPES,
   PROFESSION_SANTE_PRECISION,
   PROFESSION_SOCIAL_PRECISION,
@@ -36,10 +38,7 @@ type misEnCauseProps = {
   receptionType?: ReceptionType;
 };
 
-type MisEnCauseTypeSansAutreEtNpjm = keyof Omit<
-  typeof MIS_EN_CAUSE_TYPE,
-  'AUTRE' | 'NPJM' | 'ETABLISSEMENT_FICTIF' | 'EXERCICE_ILLEGAL' | 'MAISON_ARRET' | 'TRANSPORTEUR_SANITAIRE'
->;
+type MisEnCauseTypeSansAutreEtNpjm = keyof Omit<typeof MIS_EN_CAUSE_TYPE, 'AUTRE' | 'NPJM'>;
 
 // SIREC-only types are displayed on migrated requests but never offered for manual entry.
 const misEncauses = Object.entries(MIS_EN_CAUSE_TYPE)
@@ -79,10 +78,13 @@ const professionSocialPrecision = Object.entries(PROFESSION_SOCIAL_PRECISION).ma
   value: professionSocialPrecisionLabels[value],
 }));
 
-const autreProfessionnelPrecision = Object.entries(AUTRE_PROFESSIONNEL_PRECISION).map(([key, value]) => ({
-  key,
-  value: autreProfessionnelPrecisionLabels[value],
-}));
+// SIREC-only precisions (e.g. Exercice illégal) are displayed on migrated requests but not offered for manual entry.
+const autreProfessionnelPrecision = Object.entries(AUTRE_PROFESSIONNEL_PRECISION)
+  .filter(([, value]) => !NON_SELECTABLE_AUTRE_PROFESSIONNEL_PRECISIONS.includes(value as AutreProfessionnelPrecision))
+  .map(([key, value]) => ({
+    key,
+    value: autreProfessionnelPrecisionLabels[value],
+  }));
 
 const precisions: Record<MisEnCauseTypeSansAutreEtNpjm, { key: string; value: string }[]> = {
   [MIS_EN_CAUSE_TYPE.MEMBRE_FAMILLE]: misEnCauseFamillePrecision,
@@ -326,6 +328,14 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                 }}
               >
                 <option value="">Sélectionner une option</option>
+                {misEnCausePrecision &&
+                  NON_SELECTABLE_AUTRE_PROFESSIONNEL_PRECISIONS.includes(
+                    misEnCausePrecision as AutreProfessionnelPrecision,
+                  ) && (
+                    <option value={misEnCausePrecision} disabled>
+                      {autreProfessionnelPrecisionLabels[misEnCausePrecision as AutreProfessionnelPrecision]}
+                    </option>
+                  )}
                 {misEnCausePrecisions.map(({ key, value }) => (
                   <option key={key} value={key}>
                     {value}

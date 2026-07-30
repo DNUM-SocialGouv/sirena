@@ -1,11 +1,12 @@
 import type { SirecReclamationData } from '../../sirecMigration.repository.js';
-import { transcodeMotifsDeclaratifs } from '../../transco/motifsDeclaratifs.transco.js';
+import { transcodeMaltraitanceTypes, transcodeMotifsDeclaratifs } from '../../transco/motifsDeclaratifs.transco.js';
 import { transcodeSimpleField } from '../../transco/simpleField.transco.js';
 
 export interface SirenaFaitData {
   commentaire?: string;
   autresPrecisions?: string;
   motifsDeclaratifs: string[];
+  maltraitanceTypes: string[];
   motifs: string[];
 }
 
@@ -28,6 +29,7 @@ export function transformSirecFait(sirecData: SirecReclamationData): SirenaFaitD
   return {
     autresPrecisions: autresPrecisionsParts.join('\n'),
     motifsDeclaratifs: [...new Set(transcodeMotifsDeclaratifs(sirecData.motifsDeclaresIdDicos))],
+    maltraitanceTypes: transcodeMaltraitanceTypes(sirecData.motifsDeclaresIdDicos),
     motifs: [],
   };
 }

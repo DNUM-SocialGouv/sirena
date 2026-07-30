@@ -3,55 +3,65 @@ import { buildAutrePrecision, transcodeAutresMcType } from './misEnCauseAutre.tr
 import { SirecTranscoError } from './sirecTransco.error.js';
 
 describe('transcodeAutresMcType', () => {
-  it('should return null type and precision when autresMcType is null', () => {
-    expect(transcodeAutresMcType(null)).toEqual({ misEnCauseTypeId: null, misEnCauseTypePrecisionId: null });
+  it('should return null when autresMcType is null', () => {
+    expect(transcodeAutresMcType(null)).toBeNull();
   });
 
-  it('should return AUTRE_PROFESSIONNEL / ACUPUNCTEUR for 120', () => {
-    const result = transcodeAutresMcType(120);
-    expect(result.misEnCauseTypeId).toBe('AUTRE_PROFESSIONNEL');
-    expect(result.misEnCauseTypePrecisionId).toBe('ACUPUNCTEUR');
-  });
-
-  it('should return AUTRE_PROFESSIONNEL / CHIROPRACTEUR for 121', () => {
-    const result = transcodeAutresMcType(121);
-    expect(result.misEnCauseTypeId).toBe('AUTRE_PROFESSIONNEL');
-    expect(result.misEnCauseTypePrecisionId).toBe('CHIROPRACTEUR');
-  });
-
-  it('should return AUTRE_PROFESSIONNEL / OSTEOPATHE for 125', () => {
-    const result = transcodeAutresMcType(125);
-    expect(result.misEnCauseTypeId).toBe('AUTRE_PROFESSIONNEL');
-    expect(result.misEnCauseTypePrecisionId).toBe('OSTEOPATHE');
-  });
-
-  it('should return AUTRE_PROFESSIONNEL / PSYCHOTHERAPEUTE for 127', () => {
-    const result = transcodeAutresMcType(127);
-    expect(result.misEnCauseTypeId).toBe('AUTRE_PROFESSIONNEL');
-    expect(result.misEnCauseTypePrecisionId).toBe('PSYCHOTHERAPEUTE');
-  });
-
-  it('should return AUTRE_PROFESSIONNEL / TATOUEUR for 129', () => {
-    const result = transcodeAutresMcType(129);
-    expect(result.misEnCauseTypeId).toBe('AUTRE_PROFESSIONNEL');
-    expect(result.misEnCauseTypePrecisionId).toBe('TATOUEUR');
-  });
-
-  it('should map SIREC-only accused-party types to their dedicated SIRENA types', () => {
-    expect(transcodeAutresMcType(122)).toEqual({
-      misEnCauseTypeId: 'ETABLISSEMENT_FICTIF',
-      misEnCauseTypePrecisionId: null,
+  it('should map professional values to a mis en cause "Autre professionnel" with its precision', () => {
+    expect(transcodeAutresMcType(120)).toEqual({
+      kind: 'misEnCause',
+      misEnCauseTypeId: 'AUTRE_PROFESSIONNEL',
+      misEnCauseTypePrecisionId: 'ACUPUNCTEUR',
     });
+    expect(transcodeAutresMcType(121)).toEqual({
+      kind: 'misEnCause',
+      misEnCauseTypeId: 'AUTRE_PROFESSIONNEL',
+      misEnCauseTypePrecisionId: 'CHIROPRACTEUR',
+    });
+    expect(transcodeAutresMcType(125)).toEqual({
+      kind: 'misEnCause',
+      misEnCauseTypeId: 'AUTRE_PROFESSIONNEL',
+      misEnCauseTypePrecisionId: 'OSTEOPATHE',
+    });
+    expect(transcodeAutresMcType(129)).toEqual({
+      kind: 'misEnCause',
+      misEnCauseTypeId: 'AUTRE_PROFESSIONNEL',
+      misEnCauseTypePrecisionId: 'TATOUEUR',
+    });
+  });
+
+  it('should map "Exercice illégal" to the new "Autre professionnel" precision', () => {
     expect(transcodeAutresMcType(123)).toEqual({
-      misEnCauseTypeId: 'EXERCICE_ILLEGAL',
+      kind: 'misEnCause',
+      misEnCauseTypeId: 'AUTRE_PROFESSIONNEL',
+      misEnCauseTypePrecisionId: 'EXERCICE_ILLEGAL',
+    });
+  });
+
+  it('should map "Autre" to the AUTRE mis en cause type', () => {
+    expect(transcodeAutresMcType(131)).toEqual({
+      kind: 'misEnCause',
+      misEnCauseTypeId: 'AUTRE',
       misEnCauseTypePrecisionId: null,
     });
-    expect(transcodeAutresMcType(124)).toEqual({ misEnCauseTypeId: 'MAISON_ARRET', misEnCauseTypePrecisionId: null });
+  });
+
+  it('should route location-bound values to a lieu instead of a mis en cause', () => {
+    expect(transcodeAutresMcType(122)).toEqual({
+      kind: 'lieu',
+      lieuTypeId: 'ETABLISSEMENT_FICTIF',
+      lieuPrecisionId: null,
+    });
+    expect(transcodeAutresMcType(124)).toEqual({
+      kind: 'lieu',
+      lieuTypeId: 'AUTRES_ETABLISSEMENTS',
+      lieuPrecisionId: 'MAISON_ARRET',
+    });
     expect(transcodeAutresMcType(130)).toEqual({
-      misEnCauseTypeId: 'TRANSPORTEUR_SANITAIRE',
-      misEnCauseTypePrecisionId: null,
+      kind: 'lieu',
+      lieuTypeId: 'TRAJET',
+      lieuPrecisionId: 'TRANSPORTEUR_SANITAIRE',
     });
-    expect(transcodeAutresMcType(131)).toEqual({ misEnCauseTypeId: 'AUTRE', misEnCauseTypePrecisionId: null });
   });
 
   it('should throw SirecTranscoError for unknown autresMcType', () => {

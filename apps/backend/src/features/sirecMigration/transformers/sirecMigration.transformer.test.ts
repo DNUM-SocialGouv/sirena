@@ -149,6 +149,7 @@ describe('sirecMigration.transformer.ts', () => {
             autresPrecisions:
               'Précision sur le caractère prioritaire : Précision prioritaire\nDescription de la Pré-identification : Ma réclamation',
             motifsDeclaratifs: ['PROBLEME_FACTURATION'],
+            maltraitanceTypes: [],
             motifs: [],
           },
           entiteIds: [],

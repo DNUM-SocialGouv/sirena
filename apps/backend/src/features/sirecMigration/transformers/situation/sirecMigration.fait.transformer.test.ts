@@ -4,6 +4,7 @@ import { transformSirecFait } from './sirecMigration.fait.transformer.js';
 
 vi.mock('../../transco/motifsDeclaratifs.transco.js', () => ({
   transcodeMotifsDeclaratifs: vi.fn((ids: number[]) => ids.map(String)),
+  transcodeMaltraitanceTypes: vi.fn(() => []),
 }));
 
 vi.mock('../../transco/simpleField.transco.js', () => ({

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { transcodeMotifsDeclaratifs } from './motifsDeclaratifs.transco.js';
+import { transcodeMaltraitanceTypes, transcodeMotifsDeclaratifs } from './motifsDeclaratifs.transco.js';
 import { SirecTranscoError } from './sirecTransco.error.js';
 
 describe('motifsDeclaratifs.transco.ts', () => {
@@ -15,12 +15,16 @@ describe('motifsDeclaratifs.transco.ts', () => {
     ]);
   });
 
-  it('should transcode SIREC-only declared motifs to their dedicated SIRENA values', () => {
+  it('should transcode SIREC-only declared motifs and drop the maltraitance dico (815)', () => {
     expect(transcodeMotifsDeclaratifs([823, 815, 819])).toEqual([
       'DIFFICULTES_ACCES_SOINS',
-      'MALTRAITANCE',
       'PROBLEME_ORGANISATION_FONCTIONNEMENT',
     ]);
+  });
+
+  it('should turn the SIREC maltraitance dico (815) into a generic maltraitance type', () => {
+    expect(transcodeMaltraitanceTypes([823, 815, 819])).toEqual(['AUTRE']);
+    expect(transcodeMaltraitanceTypes([823, 819])).toEqual([]);
   });
 
   it('should throw SirecTranscoError for an unknown idDico', () => {

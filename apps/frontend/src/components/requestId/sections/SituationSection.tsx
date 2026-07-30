@@ -30,6 +30,7 @@ const ETABLISSEMENTS: string[] = [
   LIEU_TYPE.ETABLISSEMENT_PERSONNES_AGEES,
   LIEU_TYPE.ETABLISSEMENT_HANDICAP,
   LIEU_TYPE.AUTRES_ETABLISSEMENTS,
+  LIEU_TYPE.ETABLISSEMENT_FICTIF,
 ];
 
 const MIS_EN_CAUSE_PROFESSIONNEL_LABELS: string[] = [
@@ -400,6 +401,11 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
             {situation?.lieuDeSurvenue?.finess ? (
               <p className={fr.cx('fr-mb-1w')}>
                 <span>Numéro FINESS :</span> {situation.lieuDeSurvenue.finess}
+              </p>
+            ) : null}
+            {situation?.lieuDeSurvenue?.commentaire ? (
+              <p className={fr.cx('fr-mb-1w')}>
+                <span>Précision supplémentaire :</span> {situation.lieuDeSurvenue.commentaire}
               </p>
             ) : null}
           </>

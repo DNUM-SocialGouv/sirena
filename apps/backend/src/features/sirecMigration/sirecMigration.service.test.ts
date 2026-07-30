@@ -19,6 +19,7 @@ vi.mock('@sirena/db', () => ({
     situation: { create: vi.fn(), findMany: vi.fn() },
     fait: { create: vi.fn() },
     faitMotifDeclaratif: { createMany: vi.fn() },
+    faitMaltraitanceType: { createMany: vi.fn() },
     faitMotif: { createMany: vi.fn() },
     requeteEntite: { createMany: vi.fn() },
     requeteEtape: { create: vi.fn() },
@@ -155,6 +156,7 @@ describe('sirecMigration.service.ts', () => {
             commentaire: 'Précision prioritaire',
             autresPrecisions: 'Ma réclamation',
             motifsDeclaratifs: ['PROBLEME_FACTURATION', 'AUTRE'],
+            maltraitanceTypes: [],
             motifs: ['QUALITE_SOINS/AUTRES'],
           },
           entiteIds: ['service-1', 'ars-1'],
@@ -249,7 +251,13 @@ describe('sirecMigration.service.ts', () => {
         situations: [
           {
             ...data.situations[0],
-            fait: { commentaire: '', autresPrecisions: 'Test', motifsDeclaratifs: [], motifs: [] },
+            fait: {
+              commentaire: '',
+              autresPrecisions: 'Test',
+              motifsDeclaratifs: [],
+              maltraitanceTypes: [],
+              motifs: [],
+            },
           },
         ],
       });
@@ -271,7 +279,13 @@ describe('sirecMigration.service.ts', () => {
         situations: [
           {
             ...data.situations[0],
-            fait: { commentaire: '', autresPrecisions: 'Test', motifsDeclaratifs: [], motifs: [] },
+            fait: {
+              commentaire: '',
+              autresPrecisions: 'Test',
+              motifsDeclaratifs: [],
+              maltraitanceTypes: [],
+              motifs: [],
+            },
           },
         ],
       });
@@ -1356,6 +1370,7 @@ describe('sirecMigration.service.ts', () => {
             categLib: 'CH',
             lieuTypeId: 'ETABLISSEMENT_SANTE',
             lieuPrecision: 'CH',
+            commentaire: '',
             adresse: {
               create: { label: 'Hôpital A', numero: '1', rue: 'RUE de la Paix', codePostal: '75010', ville: 'Paris' },
             },
