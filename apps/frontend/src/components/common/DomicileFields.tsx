@@ -1,6 +1,6 @@
 import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { Input } from '@codegouvfr/react-dsfr/Input';
-import { useCallback, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
 import type { Address } from '@/lib/api/fetchAddresses';
 import { AddressSearchField } from './AddressSearchField';
 
@@ -18,7 +18,6 @@ interface DomicileFieldsProps {
     codePostal: string;
     ville: string;
   };
-  disabled?: boolean;
 }
 
 const MANUAL_TOGGLE_LABEL = "Remplir l'adresse manuellement";
@@ -39,8 +38,9 @@ export const addressToDomicileValues = (address: Address): DomicileValues => ({
   ville: address.city,
 });
 
-export function DomicileFields({ values, onChange, labels, disabled = false }: DomicileFieldsProps) {
+export function DomicileFields({ values, onChange, labels }: DomicileFieldsProps) {
   const [isManual, setIsManual] = useState(false);
+  const manualFieldsId = useId();
 
   const handleSelect = useCallback(
     (address: Address) => {
@@ -66,7 +66,7 @@ export function DomicileFields({ values, onChange, labels, disabled = false }: D
             onSelect={handleSelect}
             onClear={handleClear}
             label="Domicile"
-            disabled={disabled || isManual}
+            disabled={isManual}
           />
         </div>
         <div className="fr-col-12 fr-col-md-6" style={{ display: 'flex', alignItems: 'flex-end' }}>
@@ -77,7 +77,8 @@ export function DomicileFields({ values, onChange, labels, disabled = false }: D
                 nativeInputProps: {
                   checked: isManual,
                   onChange: (e) => setIsManual(e.target.checked),
-                  disabled,
+                  'aria-expanded': isManual,
+                  'aria-controls': manualFieldsId,
                 },
               },
             ]}
@@ -85,54 +86,50 @@ export function DomicileFields({ values, onChange, labels, disabled = false }: D
         </div>
       </div>
 
-      {isManual ? (
-        <>
-          <p
-            className="fr-text--sm fr-mb-2w"
-            style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', color: 'var(--text-default-info)' }}
-          >
-            <span
-              className="fr-icon-info-fill fr-icon--sm"
-              aria-hidden="true"
-              style={{ color: 'var(--text-default-info)', flexShrink: 0 }}
+      {/* Always rendered so aria-controls resolves even when collapsed. */}
+      <div id={manualFieldsId} hidden={!isManual}>
+        <p
+          className="fr-text--sm fr-mb-2w"
+          style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', color: 'var(--text-default-info)' }}
+        >
+          <span
+            className="fr-icon-info-fill fr-icon--sm"
+            aria-hidden="true"
+            style={{ color: 'var(--text-default-info)', flexShrink: 0 }}
+          />
+          <span>Pour rechercher le domicile, décochez la case « {MANUAL_TOGGLE_LABEL} »</span>
+        </p>
+        <div className="fr-grid-row fr-grid-row--gutters">
+          <div className="fr-col-12 fr-col-md-6">
+            <Input
+              label={labels.adresseDomicile}
+              nativeInputProps={{
+                value: values.adresseDomicile,
+                onChange: handleFieldChange('adresseDomicile'),
+              }}
             />
-            <span>Pour rechercher le domicile, décochez la case « {MANUAL_TOGGLE_LABEL} »</span>
-          </p>
-          <div className="fr-grid-row fr-grid-row--gutters">
-            <div className="fr-col-12 fr-col-md-6">
-              <Input
-                label={labels.adresseDomicile}
-                disabled={disabled}
-                nativeInputProps={{
-                  value: values.adresseDomicile,
-                  onChange: handleFieldChange('adresseDomicile'),
-                }}
-              />
-            </div>
-            <div className="fr-col-12 fr-col-md-2">
-              <Input
-                label={labels.codePostal}
-                disabled={disabled}
-                nativeInputProps={{
-                  value: values.codePostal,
-                  onChange: handleFieldChange('codePostal'),
-                  maxLength: 5,
-                }}
-              />
-            </div>
-            <div className="fr-col-12 fr-col-md-4">
-              <Input
-                label={labels.ville}
-                disabled={disabled}
-                nativeInputProps={{
-                  value: values.ville,
-                  onChange: handleFieldChange('ville'),
-                }}
-              />
-            </div>
           </div>
-        </>
-      ) : null}
+          <div className="fr-col-12 fr-col-md-2">
+            <Input
+              label={labels.codePostal}
+              nativeInputProps={{
+                value: values.codePostal,
+                onChange: handleFieldChange('codePostal'),
+                maxLength: 5,
+              }}
+            />
+          </div>
+          <div className="fr-col-12 fr-col-md-4">
+            <Input
+              label={labels.ville}
+              nativeInputProps={{
+                value: values.ville,
+                onChange: handleFieldChange('ville'),
+              }}
+            />
+          </div>
+        </div>
+      </div>
     </>
   );
 }

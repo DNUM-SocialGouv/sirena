@@ -1,4 +1,4 @@
-import { ROLES_WRITE } from '@sirena/common/constants';
+import { ROLES_READ } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
@@ -12,7 +12,7 @@ const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
   .use(userStatusMiddleware)
-  .use(roleMiddleware([...ROLES_WRITE]))
+  .use(roleMiddleware([...ROLES_READ]))
 
   .get('/search', getAddressesRoute, zValidator('query', GetAddressesQuerySchema), async (c) => {
     const { q } = c.req.valid('query');

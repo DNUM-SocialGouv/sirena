@@ -311,7 +311,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                   <div className="fr-col-12 fr-col-md-6">
                     <Input
                       label={declarantFieldMetadata.numeroTelephone.label}
-                      hintText="Format : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
+                      hintText="Format attendu : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
                       state={phoneError ? 'error' : undefined}
                       stateRelatedMessage={phoneError}
                       nativeInputProps={{

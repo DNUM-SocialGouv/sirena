@@ -252,7 +252,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
               <div className="fr-col-12 fr-col-md-6">
                 <Input
                   label={personneConcerneeFieldMetadata.numeroTelephone.label}
-                  hintText="Format : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
+                  hintText="Format attendu : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
                   state={phoneError ? 'error' : undefined}
                   stateRelatedMessage={phoneError}
                   nativeInputProps={{

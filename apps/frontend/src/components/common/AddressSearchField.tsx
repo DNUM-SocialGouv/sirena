@@ -50,7 +50,8 @@ export function AddressSearchField({
   const [searchTerm, setSearchTerm] = useState(value);
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
-  const [hasSelected, setHasSelected] = useState(false);
+  // Start "selected" when hydrated with a value so opening an existing form never fires a BAN query.
+  const [hasSelected, setHasSelected] = useState(value !== '');
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -131,10 +132,14 @@ export function AddressSearchField({
     setSearchTerm(newValue);
     setIsOpen(newValue.length >= minSearchLength);
     setActiveIndex(-1);
-    setHasSelected(false);
-    if (newValue === '') {
+    // Editing the text invalidates a previously selected address: clear the stored value so the
+    // structured fields never keep stale data behind an edited label. Keep initialValueRef in sync
+    // so the hydration effect ignores the resulting empty value echoed back from the parent.
+    if (hasSelected || newValue === '') {
+      initialValueRef.current = '';
       onClear?.();
     }
+    setHasSelected(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -150,7 +155,12 @@ export function AddressSearchField({
         break;
       case 'ArrowUp':
         e.preventDefault();
-        if (isOpen) {
+        if (!isOpen) {
+          // APG combobox pattern: opening with ArrowUp lands the virtual focus on the last option.
+          if (flatItems.length === 0) break;
+          setIsOpen(true);
+          setActiveIndex(flatItems.length - 1);
+        } else {
           setActiveIndex((prev) => (prev <= 0 ? -1 : prev - 1));
         }
         break;
@@ -278,6 +288,7 @@ export function AddressSearchField({
                   {group.items.map((address, indexInGroup) => {
                     const flatIndex = startIndex + indexInGroup;
                     return (
+                      // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard activation is handled on the combobox input (ArrowUp/Down + Enter, APG pattern); options are not tab stops.
                       <div
                         key={address.id}
                         id={`address-option-${uid}-${flatIndex}`}
@@ -285,11 +296,10 @@ export function AddressSearchField({
                         aria-selected={flatIndex === activeIndex}
                         tabIndex={-1}
                         className={`${styles.item} ${flatIndex === activeIndex ? styles.active : ''}`}
-                        onMouseDown={(e) => {
-                          // onMouseDown to run before the input blur.
-                          e.preventDefault();
-                          handleSelect(address);
-                        }}
+                        // onMouseDown only prevents the input blur; the actual selection runs on
+                        // click so assistive tech that synthesizes clicks (VoiceOver, TalkBack…) works.
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => handleSelect(address)}
                       >
                         <span className={styles.itemName}>
                           {address.type === 'municipality' ? address.city : address.name}
@@ -308,7 +318,7 @@ export function AddressSearchField({
           : null}
       </div>
 
-      <p role="status" aria-live="polite" className={styles.srOnly}>
+      <p role="status" aria-live="polite" className="fr-sr-only">
         {statusMessage}
       </p>
     </div>
