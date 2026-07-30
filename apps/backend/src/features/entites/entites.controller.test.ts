@@ -267,6 +267,34 @@ describe('Entites endpoints: /entites', () => {
       expect(getEntiteAdministrativeAdminLocal).toHaveBeenCalledWith('root-ars');
     });
 
+    it('returns a legacy root Entité with an empty notification e-mail', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      vi.mocked(getEntiteAdministrativeAdminLocal).mockResolvedValueOnce({
+        id: 'root-ars',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        email: '',
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+      });
+
+      const res = await app.request('/admin/local');
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        data: {
+          id: 'root-ars',
+          nomComplet: 'ARS Normandie',
+          label: 'ARS NOR',
+          email: '',
+          emailContactUsager: '',
+          telContactUsager: '',
+          adresseContactUsager: '',
+        },
+      });
+    });
+
     it('rejects roles other than entity admin', async () => {
       currentRole.value = ROLES.SUPER_ADMIN;
 
@@ -330,13 +358,35 @@ describe('Entites endpoints: /entites', () => {
     });
 
     it.each([
-      ['email', 'notification-invalide'],
-      ['emailContactUsager', 'contact-invalide'],
-      ['telContactUsager', '123'],
-    ])('rejects invalid contact field %s', async (field, value) => {
+      ['missing', undefined],
+      ['empty', ''],
+      ['invalid', 'notification-invalide'],
+    ])('rejects a %s notification e-mail', async (_case, email) => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       const input = {
-        email: '',
+        ...(email === undefined ? {} : { email }),
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+      };
+
+      const res = await app.request('/admin/local', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+
+      expect(res.status).toBe(400);
+      expect(editEntiteAdministrativeAdminLocal).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['emailContactUsager', 'contact-invalide'],
+      ['telContactUsager', '123'],
+    ])('rejects invalid user-facing contact field %s', async (field, value) => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      const input = {
+        email: 'notification@ars.fr',
         emailContactUsager: '',
         telContactUsager: '',
         adresseContactUsager: '',
@@ -368,7 +418,7 @@ describe('Entites endpoints: /entites', () => {
     ])('rejects caller-controlled or unknown field %s with value %j', async (field, value) => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       const input = {
-        email: '',
+        email: 'notification@ars.fr',
         emailContactUsager: '',
         telContactUsager: '',
         adresseContactUsager: '',
@@ -414,7 +464,7 @@ describe('Entites endpoints: /entites', () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       vi.mocked(editEntiteAdministrativeAdminLocal).mockResolvedValueOnce(null);
       const input = {
-        email: '',
+        email: 'notification@ars.fr',
         emailContactUsager: '',
         telContactUsager: '',
         adresseContactUsager: '',

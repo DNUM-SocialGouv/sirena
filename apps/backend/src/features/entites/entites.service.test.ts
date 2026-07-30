@@ -1537,42 +1537,48 @@ describe('getEntiteAdministrativeAdminLocal()', () => {
     vi.resetAllMocks();
   });
 
-  it.each([true, false])('returns the assigned root Entité when active status is %s', async (isActive) => {
-    vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
-      ...fakeEntite('root-ars'),
-      nomComplet: 'ARS Normandie',
-      label: 'ARS NOR',
-      email: 'notification@ars.fr',
-      emailContactUsager: 'contact@ars.fr',
-      telContactUsager: '0102030405',
-      adresseContactUsager: '1 rue de la Santé, Paris',
-      entiteMereId: null,
-      isActive,
-    });
+  it.each([
+    [true, 'notification@ars.fr'],
+    [false, ''],
+  ])(
+    'returns the assigned root Entité when active status is %s and notification e-mail is %s',
+    async (isActive, email) => {
+      vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
+        ...fakeEntite('root-ars'),
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        email,
+        emailContactUsager: 'contact@ars.fr',
+        telContactUsager: '0102030405',
+        adresseContactUsager: '1 rue de la Santé, Paris',
+        entiteMereId: null,
+        isActive,
+      });
 
-    await expect(getEntiteAdministrativeAdminLocal('root-ars')).resolves.toEqual({
-      id: 'root-ars',
-      nomComplet: 'ARS Normandie',
-      label: 'ARS NOR',
-      email: 'notification@ars.fr',
-      emailContactUsager: 'contact@ars.fr',
-      telContactUsager: '0102030405',
-      adresseContactUsager: '1 rue de la Santé, Paris',
-    });
-    expect(prisma.entite.findUnique).toHaveBeenCalledWith({
-      where: { id: 'root-ars' },
-      select: {
-        id: true,
-        nomComplet: true,
-        label: true,
-        email: true,
-        emailContactUsager: true,
-        telContactUsager: true,
-        adresseContactUsager: true,
-        entiteMereId: true,
-      },
-    });
-  });
+      await expect(getEntiteAdministrativeAdminLocal('root-ars')).resolves.toEqual({
+        id: 'root-ars',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        email,
+        emailContactUsager: 'contact@ars.fr',
+        telContactUsager: '0102030405',
+        adresseContactUsager: '1 rue de la Santé, Paris',
+      });
+      expect(prisma.entite.findUnique).toHaveBeenCalledWith({
+        where: { id: 'root-ars' },
+        select: {
+          id: true,
+          nomComplet: true,
+          label: true,
+          email: true,
+          emailContactUsager: true,
+          telContactUsager: true,
+          adresseContactUsager: true,
+          entiteMereId: true,
+        },
+      });
+    },
+  );
 
   it('does not return missing or non-root assignments', async () => {
     vi.mocked(prisma.entite.findUnique)

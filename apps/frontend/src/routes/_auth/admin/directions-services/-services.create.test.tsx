@@ -126,9 +126,11 @@ describe('Admin local Service create route', () => {
     const select = screen.getByRole('combobox', { name: /Direction \(obligatoire\)/ });
     expect(select).toHaveFocus();
     expect(select).toHaveAccessibleDescription('Veuillez sélectionner la direction à laquelle rattacher le service.');
+    expect(select).toHaveAttribute('aria-invalid', 'true');
     expect(mutateAsync).not.toHaveBeenCalled();
 
     await user.selectOptions(select, parentDirection.id);
+    expect(select).not.toHaveAttribute('aria-invalid');
     await user.click(screen.getByRole('button', { name: 'Ajouter le service' }));
     expect(mutateAsync).toHaveBeenCalledWith({
       nomComplet: 'Service Autonomie',
@@ -147,7 +149,7 @@ describe('Admin local Service create route', () => {
     vi.mocked(useCreateServiceAdminLocal).mockReturnValue({ mutateAsync, isPending: false } as never);
     render(<RouteComponent />);
     await fillRequiredFields(user);
-    await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'adresse-invalide');
+    await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'adresse@invalide');
     await user.type(screen.getByRole('textbox', { name: /Numéro de téléphone/ }), '123');
 
     await user.click(screen.getByRole('button', { name: 'Ajouter le service' }));

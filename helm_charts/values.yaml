@@ -1,0 +1,17 @@
+---
+# Valeurs par défaut du chart `sirena`, communes à tous les environnements.
+# Les fichiers values/<env>.yaml ne surchargent que ce qui leur est propre.
+
+# Cache Valkey déployé dans le cluster.
+#
+# Désactivé par défaut : seuls les environnements de développement l'activent
+# (integration, validation, via `valkey.enabled: true`). En preproduction,
+# formation et production le cache est un Valkey MANAGÉ OVH, déclaré côté gitops
+# (`RedisServer` dans resources/<env>.yaml) et consommé via l'ExternalSecret
+# `redis-secret`.
+#
+# ⚠️ Cette clé doit rester déclarée ICI : Helm résout les `condition` de
+# dépendances depuis les values du chart racine. Si `valkey.enabled` n'y est pas
+# défini, la condition est introuvable et Helm rend le sous-chart *quand même*.
+valkey:
+  enabled: false

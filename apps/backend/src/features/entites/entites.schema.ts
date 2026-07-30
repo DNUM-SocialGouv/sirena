@@ -114,6 +114,9 @@ export const EditEntiteContactInputSchema = EntiteContactFieldsSchema.extend({
   telContactUsager: phoneSchema.or(z.literal('')),
   adresseContactUsager: z.string().max(500),
 }).strict();
+export const EditEntiteAdministrativeAdminLocalInputSchema = EditEntiteContactInputSchema.extend({
+  email: emailSchema,
+}).strict();
 export const EditEntiteAdministrativeAdminLocalResponseSchema = EntiteAdministrativeAdminLocalSchema;
 
 const DirectionServiceAdminLocalFieldsSchema = EntiteDetailsSchema;

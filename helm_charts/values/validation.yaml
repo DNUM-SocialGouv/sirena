@@ -68,3 +68,9 @@ worker:
   SDPSN-devops-charts:
     deployment:
       replicas: 1
+
+# Cache Valkey in-cluster (remplace le redis bitnami historique).
+# Les envs prod/preprod/formation utilisent un Valkey managé OVH et laissent
+# donc ce flag à false (défaut du sous-chart).
+valkey:
+  enabled: true

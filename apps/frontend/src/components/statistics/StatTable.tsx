@@ -1,21 +1,15 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
+import { Table } from '@codegouvfr/react-dsfr/Table';
 import type { MouseEvent, ReactNode } from 'react';
 import { useCallback, useState } from 'react';
-import { useOverflowX } from '@/hooks/useOverflowX';
-import { type ChartItem, numberFormatter, percentFormatter, percentPointFormatter } from './chartData';
-import styles from './statTable.module.css';
+import { type ChartItem, numberFormatter, type ParsedCard, percentFormatter, percentPointFormatter } from './chartData';
 
 const PAGE_SIZE = 10;
 
 interface StatTableProps {
   caption: string;
-  items: ChartItem[];
-  total: number;
-  dimensionLabel: string;
-  metricLabel: string;
-  percentLabel?: string;
-  hasPrecomputedPercent?: boolean;
+  parsed: ParsedCard;
   hideCaption?: boolean;
 }
 
@@ -35,19 +29,8 @@ function formatPercent(item: ChartItem, total: number, hasPrecomputedPercent: bo
   return total > 0 ? percentFormatter.format(item.value / total) : <EmptyCell />;
 }
 
-export function StatTable({
-  caption,
-  items,
-  total,
-  dimensionLabel,
-  metricLabel,
-  percentLabel = 'Part (%)',
-  hasPrecomputedPercent = false,
-  hideCaption,
-}: StatTableProps) {
-  const max = items.reduce((acc, item) => Math.max(acc, item.value), 0);
-  const { ref, isOverflowing } = useOverflowX<HTMLDivElement>();
-
+export function StatTable({ caption, parsed, hideCaption }: StatTableProps) {
+  const { items, total, dimensionLabel, metricLabel, percentLabel, hasPrecomputedPercent } = parsed;
   const [page, setPage] = useState(1);
 
   const [previousItems, setPreviousItems] = useState(items);
@@ -80,49 +63,20 @@ export function StatTable({
     [paginationLabel],
   );
 
+  const data = visibleItems.map((item) => [
+    item.label,
+    numberFormatter.format(item.value),
+    formatPercent(item, total, hasPrecomputedPercent),
+  ]);
+
   return (
-    <div className={styles.container}>
-      <div ref={ref} className={styles.scroll} {...(isOverflowing ? { tabIndex: 0 } : {})}>
-        <table className={styles.table}>
-          <caption className={hideCaption ? fr.cx('fr-sr-only') : styles.caption}>{caption}</caption>
-          <thead>
-            <tr>
-              <th scope="col">{dimensionLabel}</th>
-              <th scope="col" className={styles.numCol}>
-                {metricLabel}
-              </th>
-              <th scope="col" className={styles.numCol}>
-                {percentLabel}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {visibleItems.map((item) => (
-              <tr key={`${item.label}-${item.value}`}>
-                <th scope="row">{item.label}</th>
-                <td className={styles.barCell}>
-                  <span
-                    className={styles.bar}
-                    style={{ inlineSize: max > 0 ? `${(item.value / max) * 100}%` : 0 }}
-                    aria-hidden="true"
-                  />
-                  <span className={styles.barValue}>{numberFormatter.format(item.value)}</span>
-                </td>
-                <td className={styles.numCol}>{formatPercent(item, total, hasPrecomputedPercent)}</td>
-              </tr>
-            ))}
-          </tbody>
-          {!hasPrecomputedPercent && (
-            <tfoot>
-              <tr>
-                <th scope="row">Total</th>
-                <td className={styles.numCol}>{numberFormatter.format(total)}</td>
-                <td className={styles.numCol}>{total > 0 ? percentFormatter.format(1) : <EmptyCell />}</td>
-              </tr>
-            </tfoot>
-          )}
-        </table>
-      </div>
+    <>
+      <Table
+        caption={caption}
+        noCaption={hideCaption}
+        headers={[dimensionLabel, metricLabel, percentLabel]}
+        data={data}
+      />
       {showPagination && (
         <div className={fr.cx('fr-mt-2w', 'fr-grid-row', 'fr-grid-row--center')}>
           <Pagination
@@ -133,6 +87,6 @@ export function StatTable({
           />
         </div>
       )}
-    </div>
+    </>
   );
 }

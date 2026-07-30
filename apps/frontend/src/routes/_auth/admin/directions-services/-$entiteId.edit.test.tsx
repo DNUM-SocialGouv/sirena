@@ -200,7 +200,7 @@ it('rejects invalid contact values before saving an edit', async () => {
   const user = userEvent.setup();
   renderTarget({ ...serviceTarget, emailContactUsager: '', telContactUsager: '' });
 
-  await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'adresse-invalide');
+  await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'adresse@invalide');
   await user.type(screen.getByRole('textbox', { name: /Numéro de téléphone/ }), '123');
   await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
 

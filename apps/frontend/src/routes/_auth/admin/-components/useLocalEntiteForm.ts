@@ -1,4 +1,4 @@
-import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
+import { emailSchema, optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { useMemo, useState } from 'react';
 import { z } from 'zod';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
@@ -6,6 +6,9 @@ import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 export type LocalEntiteFormType = 'entite-administrative' | 'direction' | 'service';
 export type LocalEntiteFormMode = 'create' | 'edit';
 type LocalEntiteCreateFormType = 'direction' | 'service';
+
+export const isNotificationEmailRequired = (entiteType: LocalEntiteFormType, mode: LocalEntiteFormMode) =>
+  entiteType === 'entite-administrative' && mode === 'edit';
 
 export type LocalEntiteFormValues = {
   nomComplet: string;
@@ -32,7 +35,17 @@ const contactShape = {
   adresseContactUsager: z.string(),
 };
 
-const editFormSchema = z.object(contactShape);
+const editFormSchema = (entiteType: LocalEntiteFormType) =>
+  z.object({
+    ...contactShape,
+    email: isNotificationEmailRequired(entiteType, 'edit')
+      ? z
+          .string()
+          .trim()
+          .min(1, 'Le champ "Adresse e-mail de notification" est vide. Veuillez le renseigner.')
+          .pipe(emailSchema)
+      : contactShape.email,
+  });
 
 const createFormSchema = (entiteType: LocalEntiteCreateFormType) => {
   const entityName = entiteType === 'direction' ? 'de la direction' : 'du service';
@@ -44,7 +57,7 @@ const createFormSchema = (entiteType: LocalEntiteCreateFormType) => {
   });
 };
 
-type EditFormValues = z.infer<typeof editFormSchema>;
+type EditFormValues = z.infer<ReturnType<typeof editFormSchema>>;
 type CreateFormValues = z.infer<ReturnType<typeof createFormSchema>>;
 
 type LocalEntiteForm<ValidatedValues> = {
@@ -75,7 +88,7 @@ export function useLocalEntiteForm(
   initialValues: LocalEntiteFormValues = emptyLocalEntiteForm,
 ): LocalEntiteForm<EditFormValues | CreateFormValues> {
   const schema = useMemo(
-    () => (mode === 'edit' ? editFormSchema : createFormSchema(entiteType as LocalEntiteCreateFormType)),
+    () => (mode === 'edit' ? editFormSchema(entiteType) : createFormSchema(entiteType as LocalEntiteCreateFormType)),
     [entiteType, mode],
   );
   const [values, setValues] = useState(initialValues);
@@ -91,9 +104,9 @@ export function useLocalEntiteForm(
         if (hasSubmitted && validationErrors[field]) {
           const fieldError = getFieldError(schema, updated, field);
           setValidationErrors((previousErrors) => {
+            if (fieldError) return previousErrors;
             const next = { ...previousErrors };
-            if (fieldError) next[field] = fieldError;
-            else delete next[field];
+            delete next[field];
             return next;
           });
         }

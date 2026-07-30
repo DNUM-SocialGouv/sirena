@@ -1,5 +1,5 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { type RefObject, useCallback, useLayoutEffect, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useState } from 'react';
 import './ColumnScrollControls.css';
 
 export type ColumnScrollControlsProps = {
@@ -34,9 +34,7 @@ export const ColumnScrollControls = ({ containerRef, tableId }: ColumnScrollCont
     setCanScrollNext(scrollLeft + clientWidth < scrollWidth - SCROLL_EPSILON);
   }, [containerRef]);
 
-  // useLayoutEffect so the initial overflow measurement runs before paint, avoiding a one-frame
-  // flash where both buttons render disabled before the real scroll state is known.
-  useLayoutEffect(() => {
+  useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
@@ -75,11 +73,8 @@ export const ColumnScrollControls = ({ containerRef, tableId }: ColumnScrollCont
   }, [containerRef]);
 
   return (
-    <div
-      className="data-table-column-scroll"
-      role="toolbar"
-      aria-label="Navigation horizontale des colonnes du tableau"
-    >
+    // biome-ignore lint/a11y/useSemanticElements: <fieldset> is for form controls; this is a labelled group of navigation buttons
+    <div className="data-table-column-scroll" role="group" aria-label="Navigation horizontale des colonnes du tableau">
       <Button
         type="button"
         priority="tertiary no outline"

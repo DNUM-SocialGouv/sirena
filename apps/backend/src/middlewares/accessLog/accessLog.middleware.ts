@@ -44,6 +44,7 @@ const createAccessLogMiddleware = (config: AccessLogConfig) => {
         entityId,
         action: config.action,
         userId,
+        topEntiteId: c.get('topEntiteId') ?? null,
         requestId: c.res.headers.get('x-request-id'),
         path: c.req.routePath,
         dataKeys: c.get('accessLogDataKeys') ?? [],
