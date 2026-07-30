@@ -146,6 +146,9 @@ export function AddressSearchField({
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
+        // Without options there is nothing to focus: keep activeIndex at -1 so
+        // aria-activedescendant never points to a non-existent option.
+        if (flatItems.length === 0) break;
         if (!isOpen) {
           setIsOpen(true);
           setActiveIndex(0);
@@ -227,7 +230,9 @@ export function AddressSearchField({
             aria-expanded={showDropdown}
             aria-autocomplete="list"
             aria-controls={listboxId}
-            aria-activedescendant={activeIndex >= 0 ? `address-option-${uid}-${activeIndex}` : undefined}
+            aria-activedescendant={
+              activeIndex >= 0 && flatItems[activeIndex] ? `address-option-${uid}-${activeIndex}` : undefined
+            }
             aria-invalid={hasError ? 'true' : undefined}
             aria-describedby={hasError ? errorId : undefined}
             autoComplete="off"
