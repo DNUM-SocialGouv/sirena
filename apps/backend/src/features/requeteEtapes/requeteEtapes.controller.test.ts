@@ -9,12 +9,14 @@ import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import { getFileStream } from '../../libs/minio.js';
 import type { RequeteEntite, RequeteEtape, RequeteEtapeNote, UploadedFile } from '../../libs/prisma.js';
 import { convertDatesToStrings } from '../../tests/formatter.js';
+import { hasFeature } from '../featureFlags/featureFlags.service.js';
 import {
   getRequeteEntiteById,
   hasAccessToRequete,
   updateStatusRequete,
 } from '../requetesEntite/requetesEntite.service.js';
 import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
+import { getUserById } from '../users/users.service.js';
 import { requeteEtapeAuthorization } from './requetesEtapes.authorization.js';
 import RequeteEtapesController from './requetesEtapes.controller.js';
 import {
@@ -43,6 +45,14 @@ vi.mock('../requeteEtapes/requetesEtapes.service.js', () => ({
   EtapeNotEditableError: class EtapeNotEditableError extends Error {},
   FilesNotOwnedError: class FilesNotOwnedError extends Error {},
   getRequeteEtapes: vi.fn(),
+}));
+
+vi.mock('../featureFlags/featureFlags.service.js', () => ({
+  hasFeature: vi.fn(),
+}));
+
+vi.mock('../users/users.service.js', () => ({
+  getUserById: vi.fn(),
 }));
 
 vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
@@ -151,6 +161,8 @@ describe('requeteEtapes.controller.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getRequeteEtapeById).mockResolvedValue(fakeRequeteEtape);
+    vi.mocked(getUserById).mockResolvedValue({ email: 'agent@example.test', entiteId: 'e1' } as never);
+    vi.mocked(hasFeature).mockResolvedValue(false);
     vi.mocked(hasAccessToRequete).mockResolvedValue(true);
     vi.mocked(getRequeteEntiteById).mockResolvedValue(fakeRequeteEntite);
     vi.mocked(updateStatusRequete).mockResolvedValue({
@@ -541,7 +553,18 @@ describe('requeteEtapes.controller.ts', () => {
         meta: { total: 2 },
       });
 
-      expect(getRequeteEtapes).toHaveBeenCalledWith('1', 'e1', {});
+      expect(getRequeteEtapes).toHaveBeenCalledWith('1', 'e1', {}, false);
+    });
+
+    it('requests the shared chronology only when the targeted feature is enabled', async () => {
+      vi.mocked(hasFeature).mockResolvedValueOnce(true);
+      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({ data: [], total: 0 });
+
+      const res = await client[':id']['processing-steps'].$get({ param: { id: '1' } });
+
+      expect(res.status).toBe(200);
+      expect(hasFeature).toHaveBeenCalledWith('SHARED_PROCESSING_STEPS', false, 'agent@example.test', 'e1');
+      expect(getRequeteEtapes).toHaveBeenCalledWith('1', 'e1', {}, true);
     });
 
     it('should return 400 if topEntiteId is missing', async () => {
@@ -594,7 +617,57 @@ describe('requeteEtapes.controller.ts', () => {
           nom: 'Step 1',
           notes: [],
           fileIds: [],
+          estPartagee: false,
         },
+        expect.anything(),
+      );
+    });
+
+    it('requires an explicit sharing choice when the feature is enabled', async () => {
+      vi.mocked(hasFeature).mockResolvedValueOnce(true);
+
+      const res = await client[':id']['processing-steps'].$post({
+        param: { id: '1' },
+        json: { nom: 'Step 1' },
+      });
+
+      expect(res.status).toBe(400);
+      expect(createProcessingEtape).not.toHaveBeenCalled();
+    });
+
+    it('persists the sharing choice atomically when the feature is enabled', async () => {
+      vi.mocked(hasFeature).mockResolvedValueOnce(true);
+      vi.mocked(createProcessingEtape).mockResolvedValueOnce(fakeRequeteEtape);
+
+      const res = await client[':id']['processing-steps'].$post({
+        param: { id: '1' },
+        json: { nom: 'Step 1', estPartagee: true },
+      });
+
+      expect(res.status).toBe(201);
+      expect(createProcessingEtape).toHaveBeenCalledWith(
+        '1',
+        'e1',
+        'test-user-id',
+        { nom: 'Step 1', notes: [], fileIds: [], estPartagee: true },
+        expect.anything(),
+      );
+    });
+
+    it('cannot force sharing through a direct request when the feature is disabled', async () => {
+      vi.mocked(createProcessingEtape).mockResolvedValueOnce(fakeRequeteEtape);
+
+      const res = await client[':id']['processing-steps'].$post({
+        param: { id: '1' },
+        json: { nom: 'Step 1', estPartagee: true },
+      });
+
+      expect(res.status).toBe(201);
+      expect(createProcessingEtape).toHaveBeenCalledWith(
+        '1',
+        'e1',
+        'test-user-id',
+        { nom: 'Step 1', notes: [], fileIds: [], estPartagee: false },
         expect.anything(),
       );
     });
@@ -634,6 +707,7 @@ describe('requeteEtapes.controller.ts', () => {
           nom: 'Step 1',
           notes: [],
           fileIds: [],
+          estPartagee: false,
         },
         expect.anything(),
       );
@@ -652,7 +726,30 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(200);
       const json = await res.json();
       expect(json).toEqual({ data: convertDatesToStrings(fakeUpdatedNomRequeteEtape) });
-      expect(updateProcessingEtape).toHaveBeenCalledWith('step1', 'test-user-id', validBody, expect.anything());
+      expect(updateProcessingEtape).toHaveBeenCalledWith(
+        'step1',
+        'test-user-id',
+        { ...validBody, estPartagee: undefined },
+        expect.anything(),
+      );
+    });
+
+    it('updates sharing on an owned manual step when the feature is enabled', async () => {
+      vi.mocked(hasFeature).mockResolvedValueOnce(true);
+      vi.mocked(updateProcessingEtape).mockResolvedValueOnce({ ...fakeUpdatedNomRequeteEtape, estPartagee: false });
+
+      const res = await client[':id'].$patch({
+        param: { id: 'step1' },
+        json: { ...validBody, estPartagee: false },
+      });
+
+      expect(res.status).toBe(200);
+      expect(updateProcessingEtape).toHaveBeenCalledWith(
+        'step1',
+        'test-user-id',
+        { ...validBody, estPartagee: false },
+        expect.anything(),
+      );
     });
 
     it('denies updates rejected by the common authorization policy', async () => {

@@ -105,7 +105,12 @@ describe('changelog.requeteEtapes.middleware.ts', () => {
 
   describe('requeteEtapesChangelogMiddleware', () => {
     it('should track changes to RequeteEtape fields with params', async () => {
-      const updatedRequeteEtape = { ...testRequeteEtape, nom: 'Updated Step', statutId: 'EN_COURS' };
+      const updatedRequeteEtape = {
+        ...testRequeteEtape,
+        nom: 'Updated Step',
+        statutId: 'EN_COURS',
+        estPartagee: true,
+      };
 
       mockGetRequeteEtapeById.mockResolvedValueOnce(testRequeteEtape).mockResolvedValueOnce(updatedRequeteEtape);
 
@@ -126,11 +131,13 @@ describe('changelog.requeteEtapes.middleware.ts', () => {
           nom: testRequeteEtape.nom,
           statutId: testRequeteEtape.statutId,
           dateRealisation: testRequeteEtape.dateRealisation,
+          estPartagee: false,
         },
         after: {
           nom: updatedRequeteEtape.nom,
           statutId: updatedRequeteEtape.statutId,
           dateRealisation: updatedRequeteEtape.dateRealisation,
+          estPartagee: true,
         },
       });
     });

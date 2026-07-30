@@ -100,6 +100,7 @@ export const AddProcessingStepBodySchema = z
       .optional()
       .default([]),
     fileIds: fileIdsSchema.optional().default([]),
+    estPartagee: z.boolean().optional(),
   })
   .refine(requireDateWhenFait, { path: ['dateRealisation'], message: 'La date de réalisation est obligatoire.' });
 
@@ -111,6 +112,7 @@ export const UpdateProcessingStepBodySchema = z
 
     notes: z.array(z.object({ id: z.string().optional(), texte: noteTexteSchema })).default([]),
     fileIds: fileIdsSchema.default([]),
+    estPartagee: z.boolean().optional(),
   })
   .refine(requireDateWhenFait, { path: ['dateRealisation'], message: 'La date de réalisation est obligatoire.' });
 

@@ -2,7 +2,7 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
-import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
+import { FEATURE_FLAGS, REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
 import { Drawer, Toast } from '@sirena/ui';
 import { forwardRef, useCallback, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
@@ -15,6 +15,7 @@ import {
 } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
+import { useHasFeature } from '@/hooks/useHasFeature';
 import type { ProcessingStepStatut } from '@/lib/api/processingSteps';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 import styles from './StepFormPanel.module.css';
@@ -59,6 +60,7 @@ const NOTE_MAX_LENGTH_ERROR =
   'Le champ "Ajouter une note à l\'étape" ne doit pas dépasser 10 000 caractères. Supprimer les caractères excédentaires.';
 const NOM_REQUIRED_ERROR = "Le champ 'Nom de l'étape' est obligatoire. Veuillez le renseigner pour ajouter une étape.";
 const DATE_REQUIRED_ERROR = "La date de réalisation est obligatoire lorsque le statut de l'étape est « Fait ».";
+const EST_PARTAGEE_REQUIRED_ERROR = "Veuillez choisir si l'étape doit être affichée pour les autres entités affectées.";
 
 let noteKeySeq = 0;
 const nextNoteKey = () => {
@@ -205,6 +207,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   const headingRef = useRef<HTMLHeadingElement>(null);
   const nomInputRef = useRef<HTMLInputElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const estPartageeInputRef = useRef<HTMLInputElement>(null);
   // Key of a freshly added note whose textarea should receive focus once it mounts.
   const pendingFocusNoteKey = useRef<string | null>(null);
 
@@ -216,12 +219,15 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   // An acknowledgment step is a system step: its name and deletion stay locked even before the AR is sent
   // (like pre-release prod). Only its status/date become editable while the AR has not been sent.
   const [isAcknowledgment, setIsAcknowledgment] = useState(false);
+  const [isManualStep, setIsManualStep] = useState(true);
 
   const [nom, setNom] = useState('');
   const [nomError, setNomError] = useState<string | null>(null);
   const [statutId, setStatutId] = useState<ProcessingStepStatut | null>(null);
   const [dateRealisation, setDateRealisation] = useState('');
   const [dateError, setDateError] = useState<string | null>(null);
+  const [estPartagee, setEstPartagee] = useState<boolean | null>(null);
+  const [estPartageeError, setEstPartageeError] = useState<string | null>(null);
 
   const [notes, setNotes] = useState<EditableNote[]>([]);
   const [readOnlyNotes, setReadOnlyNotes] = useState<ReadOnlyNote[]>([]);
@@ -237,6 +243,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   const deleteStepMutation = useDeleteProcessingStep(requestId);
   const uploadFileMutation = useUploadFile({ silentToastError: true });
   const toastManager = Toast.useToastManager();
+  const estPartageeEnabled = useHasFeature(FEATURE_FLAGS.SHARED_PROCESSING_STEPS, false);
 
   const resetForm = () => {
     setNom('');
@@ -245,6 +252,8 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
     setStatutId(null);
     setDateRealisation('');
     setDateError(null);
+    setEstPartagee(null);
+    setEstPartageeError(null);
     setNotes([]);
     setReadOnlyNotes([]);
     setExistingFiles([]);
@@ -259,6 +268,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
     setEditStepId(null);
     setCanOnlyEditNotes(false);
     setIsAcknowledgment(false);
+    setIsManualStep(true);
     setNotes([{ key: nextNoteKey(), texte: '' }]);
     setIsOpen(true);
   };
@@ -271,6 +281,8 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
     setEditStepNom(step.nom);
     setCanOnlyEditNotes(step.canOnlyEditNotes);
     setIsAcknowledgment(step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT);
+    setIsManualStep(step.type === REQUETE_ETAPE_TYPES.MANUAL);
+    setEstPartagee(step.estPartagee);
     setNom(step.nom);
 
     const initialStatut =
@@ -379,6 +391,12 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
       valid = false;
     }
 
+    if (estPartageeEnabled && isManualStep && estPartagee === null) {
+      setEstPartageeError(EST_PARTAGEE_REQUIRED_ERROR);
+      firstErrorField = firstErrorField ?? estPartageeInputRef.current;
+      valid = false;
+    }
+
     if (notes.some((note) => note.texte.length > NOTE_MAX_LENGTH)) {
       valid = false;
     }
@@ -429,6 +447,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
           ...(isFait ? { dateRealisation } : {}),
           notes: cleanedNotes.map((note) => ({ texte: note.texte })),
           fileIds: uploadedIds,
+          ...(estPartageeEnabled && estPartagee !== null ? { estPartagee } : {}),
         });
         toastManager.add({
           title: 'Étape ajoutée',
@@ -444,6 +463,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
           ...(isFait ? { dateRealisation: dateRealisation || todayInputDate() } : {}),
           notes: cleanedNotes.map((note) => ({ ...(note.id ? { id: note.id } : {}), texte: note.texte })),
           fileIds,
+          ...(estPartageeEnabled && isManualStep && estPartagee !== null ? { estPartagee } : {}),
         });
         toastManager.add({
           title: 'Étape modifiée',
@@ -599,6 +619,41 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                         />
                       </div>
                     )}
+
+                    {estPartageeEnabled && isManualStep ? (
+                      <div className={styles.fieldBlock}>
+                        <RadioButtons
+                          legend="Afficher l’étape pour les autres entités affectées (obligatoire)"
+                          orientation="horizontal"
+                          disabled={isLoading}
+                          state={estPartageeError ? 'error' : 'default'}
+                          stateRelatedMessage={estPartageeError ?? undefined}
+                          options={[
+                            {
+                              label: 'Oui',
+                              nativeInputProps: {
+                                ref: estPartageeInputRef,
+                                checked: estPartagee === true,
+                                onChange: () => {
+                                  setEstPartagee(true);
+                                  setEstPartageeError(null);
+                                },
+                              },
+                            },
+                            {
+                              label: 'Non',
+                              nativeInputProps: {
+                                checked: estPartagee === false,
+                                onChange: () => {
+                                  setEstPartagee(false);
+                                  setEstPartageeError(null);
+                                },
+                              },
+                            },
+                          ]}
+                        />
+                      </div>
+                    ) : null}
 
                     <section className={styles.notesSection}>
                       {mode === 'edit' && <p className={`fr-label ${styles.attachmentTitle}`}>Notes</p>}

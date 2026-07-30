@@ -226,6 +226,7 @@ export const createProcessingEtape = async (
         statutId,
         dateRealisation,
         createdById: userId,
+        estPartagee: data.estPartagee ?? false,
       },
     });
 
@@ -411,7 +412,12 @@ export const updateProcessingEtape = async (
     if (!canOnlyEditNotes) {
       await tx.requeteEtape.update({
         where: { id: stepId },
-        data: { nom: data.nom, statutId, dateRealisation },
+        data: {
+          nom: data.nom,
+          statutId,
+          dateRealisation,
+          ...(data.estPartagee !== undefined ? { estPartagee: data.estPartagee } : {}),
+        },
       });
     }
 
@@ -466,7 +472,12 @@ export const addClotureEtapeFiles = async (
   return prisma.requeteEtape.findUnique({ where: { id: stepId } });
 };
 
-export const getRequeteEtapes = async (requeteId: string, entiteId: string | null, query: GetRequeteEtapesQuery) => {
+export const getRequeteEtapes = async (
+  requeteId: string,
+  entiteId: string | null,
+  query: GetRequeteEtapesQuery,
+  estPartageeEnabled = false,
+) => {
   if (!entiteId) {
     return { data: [], total: 0 };
   }
@@ -475,7 +486,11 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
 
   const where: Prisma.RequeteEtapeWhereInput = {
     requeteId,
-    entiteId,
+    // Sharing never grants access to the Requête SIRENA: the reader must already be affected.
+    requete: { requeteEntites: { some: { entiteId } } },
+    ...(estPartageeEnabled
+      ? { OR: [{ entiteId }, { estPartagee: true, type: REQUETE_ETAPE_TYPES.MANUAL }] }
+      : { entiteId }),
   };
 
   const [raw, total] = await Promise.all([
@@ -488,6 +503,7 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
         id: true,
         nom: true,
         type: true,
+        estPartagee: true,
         statutId: true,
         dateRealisation: true,
         clotureReason: {
@@ -565,15 +581,16 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
 
   // closure / creation = not editable; a sent ACR (AR PDF attached) = statut/name/date locked, notes OK; else full.
   const data = raw.map((etape) => {
-    const { editable, canOnlyEditNotes } = getEtapePermissions({
+    const permissions = getEtapePermissions({
       type: etape.type,
       statutId: etape.statutId,
       uploadedFiles: etape.uploadedFiles,
     });
+    const isOwner = etape.entiteId === entiteId;
     return {
       ...etape,
-      editable,
-      canOnlyEditNotes,
+      editable: isOwner && permissions.editable,
+      canOnlyEditNotes: isOwner && permissions.canOnlyEditNotes,
       uploadedFiles: etape.uploadedFiles.map(sanitizeFile),
     };
   });

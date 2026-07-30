@@ -457,11 +457,16 @@ describe('RequeteEtapes.service.ts', () => {
       ]);
       expect(result.total).toBe(1);
       expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith({
-        where: { requeteId: 'requeteId', entiteId: 'entiteId' },
+        where: {
+          requeteId: 'requeteId',
+          entiteId: 'entiteId',
+          requete: { requeteEntites: { some: { entiteId: 'entiteId' } } },
+        },
         select: {
           id: true,
           nom: true,
           type: true,
+          estPartagee: true,
           statutId: true,
           clotureEffectiveDate: true,
           dateRealisation: true,
@@ -551,11 +556,16 @@ describe('RequeteEtapes.service.ts', () => {
       ]);
       expect(result.total).toBe(1);
       expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith({
-        where: { requeteId: 'requeteId', entiteId: 'entiteId' },
+        where: {
+          requeteId: 'requeteId',
+          entiteId: 'entiteId',
+          requete: { requeteEntites: { some: { entiteId: 'entiteId' } } },
+        },
         select: {
           id: true,
           nom: true,
           type: true,
+          estPartagee: true,
           statutId: true,
           clotureEffectiveDate: true,
           dateRealisation: true,
@@ -667,6 +677,26 @@ describe('RequeteEtapes.service.ts', () => {
       expect(result.data[0]).toMatchObject({ editable: false, canOnlyEditNotes: false });
       expect(result.data[1]).toMatchObject({ editable: true, canOnlyEditNotes: true });
       expect(result.data[2]).toMatchObject({ editable: true, canOnlyEditNotes: false });
+    });
+
+    it('selects owner and shared foreign steps in one paginated query and makes foreign steps read-only', async () => {
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
+        { ...requeteEtapeWithNotesAndFiles, entiteId: 'foreign-entite', estPartagee: true },
+      ]);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
+
+      const result = await getRequeteEtapes('requeteId', 'reader-entite', { offset: 5, limit: 10 }, true);
+
+      expect(result.data[0]).toMatchObject({ entiteId: 'foreign-entite', editable: false, canOnlyEditNotes: false });
+      const sharedWhere = {
+        requeteId: 'requeteId',
+        requete: { requeteEntites: { some: { entiteId: 'reader-entite' } } },
+        OR: [{ entiteId: 'reader-entite' }, { estPartagee: true, type: 'MANUAL' }],
+      };
+      expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: sharedWhere, skip: 5, take: 10 }),
+      );
+      expect(prisma.requeteEtape.count).toHaveBeenCalledWith({ where: sharedWhere });
     });
   });
 
@@ -963,12 +993,15 @@ describe('RequeteEtapes.service.ts', () => {
           dateRealisation: new Date('2026-05-20'),
           notes: [{ texte: 'note 1' }],
           fileIds: ['file-1'],
+          estPartagee: true,
         },
         logger,
       );
 
       expect(result).toEqual(createdEtape);
-      expect(tx.requeteEtape.create).toHaveBeenCalledTimes(1);
+      expect(tx.requeteEtape.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ estPartagee: true }),
+      });
       expect(tx.requeteEtapeNote.create).toHaveBeenCalledTimes(1);
       expect(setEtapeFile).toHaveBeenCalledWith('new-step', ['file-1'], 'e1', 'user-1', tx);
     });
@@ -1061,13 +1094,17 @@ describe('RequeteEtapes.service.ts', () => {
         {
           nom: 'X',
           statutId: 'A_FAIRE',
+          estPartagee: false,
           notes: [{ id: 'keep', texte: 'updated' }, { texte: 'new note' }],
           fileIds: ['fA', 'fC'],
         },
         logger,
       );
 
-      expect(tx.requeteEtape.update).toHaveBeenCalledTimes(1);
+      expect(tx.requeteEtape.update).toHaveBeenCalledWith({
+        where: { id: 'step-1' },
+        data: { nom: 'X', statutId: 'A_FAIRE', dateRealisation: null, estPartagee: false },
+      });
       expect(tx.requeteEtapeNote.update).toHaveBeenCalledWith({ where: { id: 'keep' }, data: { texte: 'updated' } });
       expect(tx.requeteEtapeNote.create).toHaveBeenCalledTimes(1);
       expect(tx.requeteEtapeNote.delete).toHaveBeenCalledWith({ where: { id: 'remove' } });

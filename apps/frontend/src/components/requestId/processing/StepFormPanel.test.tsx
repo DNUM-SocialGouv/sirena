@@ -2,12 +2,14 @@ import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { createRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useFeatureFlagStore } from '@/stores/featureFlagStore';
 import { StepFormPanel, type StepFormPanelRef } from './StepFormPanel';
 
 const addMutateAsync = vi.fn();
 const updateMutateAsync = vi.fn();
 const deleteMutateAsync = vi.fn();
 const uploadMutateAsync = vi.fn();
+const EST_PARTAGEE_REQUIRED_ERROR = "Veuillez choisir si l'étape doit être affichée pour les autres entités affectées.";
 
 vi.mock('@/hooks/mutations/updateProcessingStep.hook', () => ({
   useAddProcessingStep: () => ({ mutateAsync: addMutateAsync }),
@@ -63,6 +65,7 @@ const makeStep = (overrides: Record<string, any> = {}): any => ({
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
   clotureEffectiveDate: null,
+  estPartagee: false,
   clotureReason: [],
   createdBy: { prenom: 'cam', nom: 'd' },
   notes: [],
@@ -79,6 +82,7 @@ describe('StepFormPanel', () => {
     updateMutateAsync.mockReset().mockResolvedValue({ data: {} });
     deleteMutateAsync.mockReset().mockResolvedValue(undefined);
     uploadMutateAsync.mockReset().mockResolvedValue({ id: 'file-1' });
+    useFeatureFlagStore.getState().reset();
   });
 
   it('creates a step with no status selected by default (spec)', async () => {
@@ -97,6 +101,59 @@ describe('StepFormPanel', () => {
     expect(addMutateAsync).toHaveBeenCalledTimes(1);
     expect(addMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ nom: 'Nouvelle étape', fileIds: [] }));
     expect(addMutateAsync.mock.calls[0][0].statutId).toBeUndefined();
+  });
+
+  it('requires an explicit sharing choice when enabled, focuses the radio group, and sends the choice', async () => {
+    useFeatureFlagStore.getState().setFlags({ SHARED_PROCESSING_STEPS: true });
+    const ref = createRef<StepFormPanelRef>();
+    render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+    act(() => ref.current?.openCreate());
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
+    fireEvent.change(screen.getByLabelText("Nom de l'étape (obligatoire)"), {
+      target: { value: 'Étape partagée' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+
+    expect(addMutateAsync).not.toHaveBeenCalled();
+    expect(screen.getByText(EST_PARTAGEE_REQUIRED_ERROR)).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: /Afficher l’étape/ })).toHaveAccessibleName(
+      expect.stringContaining(EST_PARTAGEE_REQUIRED_ERROR),
+    );
+    expect(document.activeElement).toBe(screen.getByLabelText('Oui'));
+
+    fireEvent.click(screen.getByLabelText('Oui'));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    });
+
+    expect(addMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ estPartagee: true }));
+  });
+
+  it('prefills and updates the persisted sharing choice when editing', async () => {
+    useFeatureFlagStore.getState().setFlags({ SHARED_PROCESSING_STEPS: true });
+    const ref = createRef<StepFormPanelRef>();
+    render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+    act(() => ref.current?.openEdit(makeStep({ estPartagee: false })));
+
+    expect(screen.getByLabelText('Non')).toBeChecked();
+    fireEvent.click(screen.getByLabelText('Oui'));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    });
+
+    expect(updateMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ estPartagee: true }));
+  });
+
+  it('hides sharing controls and omits the value when the feature is disabled', () => {
+    const ref = createRef<StepFormPanelRef>();
+    render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+    act(() => ref.current?.openCreate());
+
+    expect(screen.queryByText(/Afficher l’étape pour les autres entités affectées/)).not.toBeInTheDocument();
   });
 
   it('sends statut and date when « Fait » is selected', async () => {
