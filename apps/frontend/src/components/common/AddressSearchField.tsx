@@ -250,17 +250,13 @@ export function AddressSearchField({
       >
         {isLoading ? (
           <div className={styles.message}>
-            <span
-              className="fr-icon-refresh-line fr-icon--sm"
-              aria-hidden="true"
-              style={{ animation: 'spin 1s linear infinite' }}
-            />
+            <span className={`fr-icon-refresh-line fr-icon--sm ${styles.spinner}`} aria-hidden="true" />
             Recherche en cours...{failureCount > 0 && ' (nouvelle tentative)'}
           </div>
         ) : null}
 
         {isError ? (
-          <div className={styles.message} style={{ color: 'var(--text-default-error)' }}>
+          <div className={`${styles.message} ${styles.messageError}`}>
             <span className="fr-icon-error-warning-line fr-icon--sm" aria-hidden="true" />
             {error instanceof Error && error.message.includes('timed out')
               ? 'Le service ne répond pas. Veuillez réessayer.'
@@ -268,7 +264,7 @@ export function AddressSearchField({
           </div>
         ) : null}
 
-        {!isLoading && !isError && !hasResults ? <div className={styles.message}>Aucune adresse trouvée</div> : null}
+        {!isLoading && !isError && !hasResults ? <p className={styles.message}>Aucune adresse trouvée</p> : null}
 
         {!isLoading && !isError && hasResults
           ? groups.map((group) => {
@@ -312,9 +308,9 @@ export function AddressSearchField({
           : null}
       </div>
 
-      <output aria-live="polite" className={styles.srOnly}>
+      <p role="status" aria-live="polite" className={styles.srOnly}>
         {statusMessage}
-      </output>
+      </p>
     </div>
   );
 }

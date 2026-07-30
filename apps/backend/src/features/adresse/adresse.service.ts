@@ -37,7 +37,7 @@ export const searchAddresses = async (q: string): Promise<Address[]> => {
     if (!response.ok) {
       if (response.status === 400) {
         logger.warn({ url, status: response.status }, 'Bad request to BAN address API');
-        throwHTTPException400BadRequest('Bad request to address API. Please check your parameters.');
+        return throwHTTPException400BadRequest('Bad request to address API. Please check your parameters.');
       }
       logger.error({ url, status: response.status }, 'Error response from BAN address API');
       throwHTTPException503ServiceUnavailable('Address service is currently unavailable. Please try again later.');
