@@ -15,6 +15,7 @@ import {
   updateStatusRequete,
 } from '../requetesEntite/requetesEntite.service.js';
 import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
+import { requeteEtapeAuthorization } from './requetesEtapes.authorization.js';
 import RequeteEtapesController from './requetesEtapes.controller.js';
 import {
   addClotureEtapeFiles,
@@ -304,6 +305,19 @@ describe('requeteEtapes.controller.ts', () => {
       expect(bodyText).toBe('');
 
       expect(getFileStream).not.toHaveBeenCalled();
+    });
+
+    it('denies file reads rejected by the common authorization policy', async () => {
+      vi.spyOn(requeteEtapeAuthorization, 'canRead').mockReturnValueOnce(false);
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(403);
+      expect(requeteEtapeAuthorization.canRead).toHaveBeenCalledWith('e1', fakeRequeteEtape);
+      expect(hasAccessToRequete).not.toHaveBeenCalled();
+      expect(getUploadedFileById).not.toHaveBeenCalled();
     });
 
     it('returns 404 when RequeteEtape not found', async () => {
@@ -639,6 +653,17 @@ describe('requeteEtapes.controller.ts', () => {
       const json = await res.json();
       expect(json).toEqual({ data: convertDatesToStrings(fakeUpdatedNomRequeteEtape) });
       expect(updateProcessingEtape).toHaveBeenCalledWith('step1', 'test-user-id', validBody, expect.anything());
+    });
+
+    it('denies updates rejected by the common authorization policy', async () => {
+      vi.spyOn(requeteEtapeAuthorization, 'canWrite').mockReturnValueOnce(false);
+
+      const res = await client[':id'].$patch({ param: { id: 'step1' }, json: validBody });
+
+      expect(res.status).toBe(403);
+      expect(requeteEtapeAuthorization.canWrite).toHaveBeenCalledWith('e1', fakeRequeteEtape);
+      expect(hasAccessToRequete).not.toHaveBeenCalled();
+      expect(updateProcessingEtape).not.toHaveBeenCalled();
     });
 
     it('returns 404 if RequeteEtape not found', async () => {

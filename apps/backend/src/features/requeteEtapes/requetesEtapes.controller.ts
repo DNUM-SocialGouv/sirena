@@ -32,6 +32,7 @@ import {
   updateStatusRequete,
 } from '../requetesEntite/requetesEntite.service.js';
 import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
+import { requeteEtapeAuthorization } from './requetesEtapes.authorization.js';
 import {
   addClotureFilesRoute,
   addProcessingStepRoute,
@@ -97,7 +98,7 @@ const app = factoryWithLogs
       throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
-    if (topEntiteId !== requeteEtape.entiteId) {
+    if (!requeteEtapeAuthorization.canRead(topEntiteId, requeteEtape)) {
       throwHTTPException403Forbidden('You are not allowed to read this file for this requete etape', {
         res: c.res,
         kind: ERROR_KIND.BUSINESS,
@@ -143,7 +144,7 @@ const app = factoryWithLogs
       throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
-    if (topEntiteId !== requeteEtape.entiteId) {
+    if (!requeteEtapeAuthorization.canRead(topEntiteId, requeteEtape)) {
       throwHTTPException403Forbidden('You are not allowed to read this file for this requete etape', {
         res: c.res,
         kind: ERROR_KIND.BUSINESS,
@@ -265,7 +266,7 @@ const app = factoryWithLogs
       if (!etape) {
         throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
-      if (topEntiteId !== etape.entiteId) {
+      if (!requeteEtapeAuthorization.canWrite(topEntiteId, etape)) {
         throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
           res: c.res,
           kind: ERROR_KIND.BUSINESS,
@@ -333,7 +334,7 @@ const app = factoryWithLogs
       throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
-    if (topEntiteId !== requeteEtape.entiteId) {
+    if (!requeteEtapeAuthorization.canWrite(topEntiteId, requeteEtape)) {
       throwHTTPException403Forbidden('You are not allowed to add files to this requete etape', {
         res: c.res,
         kind: ERROR_KIND.BUSINESS,
@@ -415,7 +416,7 @@ const app = factoryWithLogs
         });
       }
 
-      if (topEntiteId !== requeteEtape.entiteId) {
+      if (!requeteEtapeAuthorization.canWrite(topEntiteId, requeteEtape)) {
         throwHTTPException403Forbidden('You are not allowed to delete this requete etape', {
           res: c.res,
           kind: ERROR_KIND.BUSINESS,
@@ -452,7 +453,7 @@ const app = factoryWithLogs
       throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
-    if (topEntiteId !== requeteEtape.entiteId) {
+    if (!requeteEtapeAuthorization.canRead(topEntiteId, requeteEtape)) {
       throwHTTPException403Forbidden('You are not allowed to access this requete etape', {
         res: c.res,
         kind: ERROR_KIND.BUSINESS,
@@ -520,7 +521,7 @@ const app = factoryWithLogs
         throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
 
-      if (topEntiteId !== requeteEtape.entiteId) {
+      if (!requeteEtapeAuthorization.canWrite(topEntiteId, requeteEtape)) {
         throwHTTPException403Forbidden('You are not allowed to act on this requete etape', {
           res: c.res,
           kind: ERROR_KIND.BUSINESS,
