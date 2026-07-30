@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 284.3929503916449,
+  "average_query_time": 285.66190998902306,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -36,7 +36,7 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'NOUVEAU'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]];",
+        "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'NOUVEAU'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]];",
         "template-tags": [
           {
             "display-name": "Entity Label",
@@ -56,12 +56,18 @@
             "id": "63e6a5b7-a326-4ae5-9ab6-6b6c9b0db210",
             "name": "end_date",
             "type": "date"
+          },
+          {
+            "display-name": "Domaine Fonctionnel",
+            "id": "ff9d7869-5acf-409d-87ca-1960d5a8a194",
+            "name": "domaine_fonctionnel",
+            "type": "text"
           }
         ]
       }
     ]
   },
-  "description": null,
+  "description": "Nombre de requêtes affectées à mon entité administrative et au statut “nouveau”",
   "dimension_mappings": null,
   "dimensions": null,
   "display": "scalar",
@@ -72,7 +78,7 @@
   "entity_id": "iB2FCamFXsLUqH2gYr9AC",
   "id": 48,
   "is_remote_synced": false,
-  "last_query_start": "2026-07-29T07:27:20.823019Z",
+  "last_query_start": "2026-07-30T14:18:13.317584Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.60.4.4 (65c9d32)",
@@ -136,6 +142,131 @@
         ]
       ],
       "type": "date/single"
+    },
+    {
+      "id": "ff9d7869-5acf-409d-87ca-1960d5a8a194",
+      "isMultiSelect": true,
+      "name": "Domaine Fonctionnel",
+      "slug": "domaine_fonctionnel",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "domaine_fonctionnel"
+        ]
+      ],
+      "type": "string/=",
+      "values_query_type": "list",
+      "values_source_config": {
+        "values": [
+          [
+            "ACCUEIL_DEMANDEURS_ASILE",
+            "Accueil des demandeurs et des bénéficiaires de l'asile"
+          ],
+          [
+            "AMBULATOIRE_GENERAL",
+            "Ambulatoire - Général"
+          ],
+          [
+            "AMBULATOIRE_TRANSPORT_SANITAIRE",
+            "Ambulatoire - Transport sanitaire"
+          ],
+          [
+            "AUTRES",
+            "Autres"
+          ],
+          [
+            "DEFAUT_OFFRE_SOINS_CAS_CRITIQUE",
+            "Défaut d'offre de soins - Cas critique"
+          ],
+          [
+            "DEFAUT_OFFRE_SOINS_GENERAL",
+            "Défaut d'offre de soins - Général"
+          ],
+          [
+            "DOMICILE_HORS_PRO_PA",
+            "Domicile hors professionnel - Personnes âgées"
+          ],
+          [
+            "Dlehors professionnel - Personnes"
+          ],
+          [
+            "h"
+          ],
+          [
+            "ETABLISSEMENT_PENITENCIAIRE",
+            "Et"
+          ],
+          [
+            "a"
+          ],
+          [
+            "HEBERGEMENT_VEILLE_SOCIALE",
+            "Héb"
+          ],
+          [
+            "e"
+          ],
+          [
+            "HOSPITALISATIONS_CONTRAINTE",
+            "Ho"
+          ],
+          [
+            "snte"
+          ],
+          [
+            "LOGEMENT_ADAPTE",
+            "Logement"
+          ],
+          [
+            "a"
+          ],
+          [
+            "MEDICO_SOCIAL_HANDICAPES_ADULT"
+          ],
+          [
+            "Eésadultes"
+          ],
+          [
+            "MFANTS",
+            "Médico-Social - Handicapés"
+          ],
+          [
+            "e"
+          ],
+          [
+            "MEDICO_SOCIAL_PA",
+            "Médico-Social"
+          ],
+          [
+            "-"
+          ],
+          [
+            "PERSONNES_DIFFICULTES_SPECIFIQ"
+          ],
+          [
+            "Usspécifiques (ARS)"
+          ],
+          [
+            "Prmacies-Laboratoires"
+          ],
+          [
+            "Pondes majeurs"
+          ],
+          [
+            "S"
+          ],
+          [
+            "SANTE_ENVIRONNEMENT",
+            "Santé e"
+          ],
+          [
+            "SOCIAL",
+            "Social"
+          ]
+        ]
+      },
+      "values_source_type": "static-list"
     }
   ],
   "public_uuid": null,
@@ -145,7 +276,6 @@
       "base_type": "type/BigInteger",
       "database_type": "int8",
       "display_name": "nombre_requetes",
-      "effective_type": "type/BigInteger",
       "field_ref": [
         "field",
         "nombre_requetes",
@@ -153,35 +283,7 @@
           "base-type": "type/BigInteger"
         }
       ],
-      "fingerprint": {
-        "global": {
-          "distinct-count": 1,
-          "nil%": 0
-        },
-        "type": {
-          "type/Number": {
-            "avg": 489,
-            "excess-kurtosis": null,
-            "max": 489,
-            "min": 489,
-            "mode-fraction": 1,
-            "q1": 489,
-            "q3": 489,
-            "sd": 0,
-            "skewness": null,
-            "top-3-fraction": 1,
-            "zero-fraction": 0
-          }
-        }
-      },
-      "lib/deduplicated-name": "nombre_requetes",
-      "lib/desired-column-alias": "nombre_requetes",
-      "lib/original-name": "nombre_requetes",
-      "lib/source": "source/native",
-      "lib/source-column-alias": "nombre_requetes",
-      "name": "nombre_requetes",
-      "semantic_type": null,
-      "source": "native"
+      "name": "nombre_requetes"
     }
   ],
   "source_card_id": null,

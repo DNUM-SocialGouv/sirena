@@ -8,13 +8,21 @@ const selectedValuesLabel = (count: number) => `domaine${count > 1 ? 's' : ''} s
 
 type Props = {
   selectedIds: string[];
-  counts: CountsMap | null;
+  counts?: CountsMap | null;
+  legend?: string;
   onChange: (ids: string[]) => void;
   onOpen?: () => void;
   onClose?: () => void;
 };
 
-export function DomaineFilter({ selectedIds, counts, onChange, onOpen, onClose }: Props) {
+export function DomaineFilter({
+  selectedIds,
+  counts,
+  legend = 'Filtrer les requêtes par domaine fonctionnel',
+  onChange,
+  onOpen,
+  onClose,
+}: Props) {
   const options = useMemo(
     () =>
       Object.entries(domainesFonctionnelsLabels)
@@ -33,8 +41,8 @@ export function DomaineFilter({ selectedIds, counts, onChange, onOpen, onClose }
     <DropdownCheckboxFilter
       buttonLabel="Domaine fonctionnel"
       selectedValuesLabel={selectedValuesLabel}
-      legend="Filtrer les requêtes par domaine fonctionnel"
-      hintText="Domaine fonctionnel (nombre de requêtes)"
+      legend={legend}
+      hintText={counts === undefined ? undefined : 'Domaine fonctionnel (nombre de requêtes)'}
       options={options}
       selectedValues={selectedIds}
       onChange={onChange}

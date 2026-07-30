@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 304.60377358490564,
+  "average_query_time": 285.3125,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -36,7 +36,7 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "SELECT\n    COUNT(DISTINCT r.id) AS nombre_requetes\nFROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\nWHERE\n    TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]];",
+        "native": "SELECT\n    COUNT(DISTINCT r.id) AS nombre_requetes\nFROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\nWHERE\n    TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]];",
         "template-tags": [
           {
             "display-name": "Entity Label",
@@ -55,6 +55,12 @@
             "id": "3273b579-c81e-4987-a609-87facb773f3d",
             "name": "end_date",
             "type": "date"
+          },
+          {
+            "display-name": "Domaine Fonctionnel",
+            "id": "b9b04180-c3d1-4d83-a057-3607ac41c3ae",
+            "name": "domaine_fonctionnel",
+            "type": "text"
           }
         ]
       }
@@ -71,7 +77,7 @@
   "entity_id": "2z5eiukXf6jmI88kBaqxj",
   "id": 65,
   "is_remote_synced": false,
-  "last_query_start": "2026-07-28T14:27:33.432853Z",
+  "last_query_start": "2026-07-30T14:21:08.921792Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.62.3.3 (686cac9)",
@@ -141,6 +147,131 @@
         ]
       ],
       "type": "date/single"
+    },
+    {
+      "id": "b9b04180-c3d1-4d83-a057-3607ac41c3ae",
+      "isMultiSelect": true,
+      "name": "Domaine Fonctionnel",
+      "slug": "domaine_fonctionnel",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "domaine_fonctionnel"
+        ]
+      ],
+      "type": "string/=",
+      "values_query_type": "list",
+      "values_source_config": {
+        "values": [
+          [
+            "ACCUEIL_DEMANDEURS_ASILE",
+            "Accueil des demandeurs et des bénéficiaires de l'asile"
+          ],
+          [
+            "AMBULATOIRE_GENERAL",
+            "Ambulatoire - Général"
+          ],
+          [
+            "AMBULATOIRE_TRANSPORT_SANITAIRE",
+            "Ambulatoire - Transport sanitaire"
+          ],
+          [
+            "AUTRES",
+            "Autres"
+          ],
+          [
+            "DEFAUT_OFFRE_SOINS_CAS_CRITIQUE",
+            "Défaut d'offre de soins - Cas critique"
+          ],
+          [
+            "DEFAUT_OFFRE_SOINS_GENERAL",
+            "Défaut d'offre de soins - Général"
+          ],
+          [
+            "DOMICILE_HORS_PRO_PA",
+            "Domicile hors professionnel - Personnes âgées"
+          ],
+          [
+            "Dlehors professionnel - Personnes"
+          ],
+          [
+            "h"
+          ],
+          [
+            "ETABLISSEMENT_PENITENCIAIRE",
+            "Et"
+          ],
+          [
+            "a"
+          ],
+          [
+            "HEBERGEMENT_VEILLE_SOCIALE",
+            "Héb"
+          ],
+          [
+            "e"
+          ],
+          [
+            "HOSPITALISATIONS_CONTRAINTE",
+            "Ho"
+          ],
+          [
+            "snte"
+          ],
+          [
+            "LOGEMENT_ADAPTE",
+            "Logement"
+          ],
+          [
+            "a"
+          ],
+          [
+            "MEDICO_SOCIAL_HANDICAPES_ADULT"
+          ],
+          [
+            "Eésadultes"
+          ],
+          [
+            "MFANTS",
+            "Médico-Social - Handicapés"
+          ],
+          [
+            "e"
+          ],
+          [
+            "MEDICO_SOCIAL_PA",
+            "Médico-Social"
+          ],
+          [
+            "-"
+          ],
+          [
+            "PERSONNES_DIFFICULTES_SPECIFIQ"
+          ],
+          [
+            "Usspécifiques (ARS)"
+          ],
+          [
+            "Prmacies-Laboratoires"
+          ],
+          [
+            "Pondes majeurs"
+          ],
+          [
+            "S"
+          ],
+          [
+            "SANTE_ENVIRONNEMENT",
+            "Santé e"
+          ],
+          [
+            "SOCIAL",
+            "Social"
+          ]
+        ]
+      },
+      "values_source_type": "static-list"
     }
   ],
   "public_uuid": null,
@@ -165,13 +296,13 @@
         },
         "type": {
           "type/Number": {
-            "avg": 657,
+            "avg": 661,
             "excess-kurtosis": null,
-            "max": 657,
-            "min": 657,
+            "max": 661,
+            "min": 661,
             "mode-fraction": 1,
-            "q1": 657,
-            "q3": 657,
+            "q1": 661,
+            "q3": 661,
             "sd": 0,
             "skewness": null,
             "top-3-fraction": 1,

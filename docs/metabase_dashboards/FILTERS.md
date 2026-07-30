@@ -5,7 +5,8 @@ exposé sur la page **Indicateurs** (`/statistiques`), comment en **définir de 
 côté Metabase, et comment **adapter les requêtes SQL** des cartes pour qu'elles en tiennent
 compte.
 
-Le premier filtre implémenté est un **filtre de période** (date de début / date de fin).
+Deux filtres sont implémentés, **cumulables** entre eux : un **filtre de période** (date de
+début / date de fin) et un **filtre de domaine fonctionnel** (multi-sélection).
 
 ---
 
@@ -67,6 +68,7 @@ fonctionner exactement comme avant (cf. § sécurité).
 | --- | --- | --- | --- |
 | `startDate` | `start_date` | **Enabled** (optionnel) | query string |
 | `endDate` | `end_date` | **Enabled** (optionnel) | query string |
+| `domaineIds` | `domaine_fonctionnel` | **Enabled** (optionnel) | query string |
 | _(périmètre entité)_ | `entity_label` | **Locked** (imposé serveur) | JWT (token) |
 
 > ⚠️ La visibilité **doit** être cohérente avec le mode de transmission : un paramètre
@@ -82,7 +84,8 @@ personnalisée) via `validateSearch` de TanStack Router. Elle est donc **conserv
 rechargement** et **partageable** via l'URL, et chaque changement relance automatiquement la
 requête (la `queryKey` inclut les dates). En revanche, elle n'est **pas** automatiquement
 conservée lors d'une navigation vers une autre page de l'application puis d'un retour sur
-`/statistiques`.
+`/statistiques`. Le filtre de domaine fonctionnel suit exactement la même mécanique
+(`?domaineIds=SOCIAL,SANITAIRE`).
 
 ---
 
@@ -262,6 +265,109 @@ ORDER BY pm.nb_requetes DESC;
 
 ---
 
+## 4 bis. Le filtre de domaine fonctionnel (multi-sélection)
+
+Le domaine fonctionnel est porté par la **situation** de la requête
+(`Situation."domainesFonctionnelsId"`). Une requête peut avoir **plusieurs** situations, donc
+plusieurs domaines : le filtre est un **OU** (les requêtes retenues ont *au moins un* domaine
+parmi ceux cochés), et il se cumule en **ET** avec la période.
+
+C'est le premier filtre **multivalué** du dashboard, ce qui change deux choses par rapport aux
+filtres de date : la variable est réglée sur « plusieurs valeurs », et elle se transmet en
+**paramètre répété** au lieu d'une valeur unique.
+
+### Une variable multivaluée, à utiliser dans un `IN (…)`
+
+Une variable de base Metabase peut accepter plusieurs valeurs (réglage « les utilisateurs
+peuvent choisir → plusieurs valeurs »). Elle s'expanse alors en **liste de littéraux** —
+`'SOCIAL', 'SANITAIRE'` — et non en valeur unique : le tag **doit** donc être entouré d'un
+`IN (…)`.
+
+```sql
+AND s_df."domainesFonctionnelsId" IN ({{domaine_fonctionnel}})
+```
+
+> ⚠️ Sans les parenthèses du `IN`, la carte échoue sur `ERROR: syntax error at or near ","` dès
+> qu'au moins deux valeurs sont sélectionnées : la liste est injectée là où une seule valeur est
+> attendue. C'est le symptôme à reconnaître.
+
+Ce montage garde la cible `["variable", …]` des trois filtres existants — inutile de passer par
+un *Field Filter*, qui imposerait un mapping sur une colonne réelle, interdirait les alias de
+table et compliquerait le SQL sans rien apporter ici.
+
+### Transmission : un paramètre répété
+
+Côté backend, la valeur n'est pas une chaîne CSV mais un **tableau** :
+`fetchDashboardCardsData` sérialise chaque élément en paramètre répété
+(`?domaine_fonctionnel=SOCIAL&domaine_fonctionnel=SANITAIRE`), la façon dont Metabase reconstitue
+une liste de valeurs. Une valeur CSV unique serait au contraire interprétée comme **un seul**
+domaine nommé `SOCIAL,SANITAIRE`, qui ne correspondrait à rien — sans lever d'erreur.
+
+Un tableau **vide** n'est pas transmis du tout : sans cette garde, le filtre porterait sur
+l'ensemble vide et viderait toutes les cartes au lieu d'être désactivé.
+
+L'API SIRENA, elle, garde une liste CSV (`?domaineIds=SOCIAL,SANITAIRE`), cohérente avec les
+autres filtres de l'application ; le contrôleur la découpe avant de la passer au service.
+
+### Le bloc à ajouter : un `EXISTS`
+
+Le filtre s'ajoute à **toutes** les cartes sous la forme d'un unique bloc optionnel, à coller
+dans le `WHERE` qui délimite déjà le périmètre des requêtes (dans la CTE de périmètre pour les
+cartes qui en ont une) :
+
+```sql
+[[ AND EXISTS (SELECT 1 FROM "Situation" s_df
+               WHERE s_df."requeteId" = r.id
+                 AND s_df."domainesFonctionnelsId" IN ({{domaine_fonctionnel}})) ]]
+```
+
+> ⚠️ **Ne pas joindre `Situation` dans le `FROM` principal.** Une requête peut avoir plusieurs
+> situations : une jointure multiplie ses lignes et fausse tout `COUNT(*)` — y compris quand
+> *aucun* domaine n'est sélectionné, puisque la jointure, elle, s'applique toujours. Un
+> `LEFT JOIN` évite de perdre les requêtes sans situation mais impose alors de convertir chaque
+> `COUNT(*)` en `COUNT(DISTINCT …)`, carte par carte.
+>
+> La semi-jointure `EXISTS` évite les deux pièges d'un coup : elle ne duplique aucune ligne, ne
+> supprime rien quand le filtre est absent (le bloc `[[ ]]` disparaît entièrement), et reste un
+> ajout **purement additif** — aucun `FROM`, `SELECT` ni `COUNT` existant n'est à retoucher.
+
+L'alias `s_df` est délibérément distinct de `s` : les cartes 52 et 69 utilisent déjà `s` pour
+`Situation` dans une autre CTE.
+
+Le rattachement se fait au niveau de la **requête**, pas de la situation : une requête est
+retenue dès qu'*une* de ses situations porte un domaine coché, conformément à la règle de
+gestion.
+
+### Configuration côté Metabase
+
+**Sur chaque carte** — coller le SQL crée le template tag. Le régler ainsi :
+
+| Réglage | Valeur | Pourquoi |
+| --- | --- | --- |
+| Nom de la variable | `domaine_fonctionnel` | doit être le slug exact envoyé par le backend |
+| Type de variable | **Texte** | pas un Field Filter : inutile ici, et incompatible avec les alias de table |
+| Les utilisateurs peuvent choisir | **plusieurs valeurs** | sans quoi la sélection multiple casse les cartes |
+| Obligatoire | **non** | sinon Metabase exige une valeur par défaut et le filtre s'applique en permanence |
+| Valeur par défaut | aucune | |
+
+**Sur chaque dashboard** — un filtre **Texte ou catégorie → est égal à**, de slug
+**`domaine_fonctionnel`** (Metabase le dérive du libellé : « Domaine fonctionnel » produit le bon
+slug, à vérifier dans le JSON après export), en sélection multiple, puis **le mapper sur toutes
+les cartes**. Une carte non mappée ignore le filtre **silencieusement** : les KPI deviennent
+incohérents entre eux, sans aucune erreur.
+
+Une **custom list** `ID,Libellé` sur le paramètre rend le dashboard confortable à recetter
+directement dans Metabase. Elle ne sert qu'à ce widget : SIRENA n'affiche jamais celui de
+Metabase, ses cases à cocher viennent du référentiel applicatif.
+
+**Visibilité d'embedding** — Partage → Embedding → Paramètres : `domaine_fonctionnel` →
+**Enabled**.
+
+> ⚠️ Ne pas se servir de « Disabled » comme interrupteur. La découverte dynamique lit le tableau
+> `parameters` du dashboard, **pas** `embedding_params` : un paramètre déclaré mais non *Enabled*
+> risque d'être transmis en query string puis refusé par Metabase, ce qui ferait tomber tout le
+> dashboard en 503. Pour désactiver le filtre, retirer le paramètre du dashboard.
+
 ## 5. Ajouter un nouveau filtre
 
 Le filtre de période sert de modèle. Pour un nouveau filtre (ex. un statut), répéter les mêmes
@@ -278,6 +384,9 @@ couches :
 4. **Metabase** — créer le(s) template tag(s), le paramètre de dashboard (même `slug` que le nom
    envoyé), le mapper sur les cartes, le passer en **Enabled**, puis re-exporter.
 5. **SQL** — ajouter la clause optionnelle `[[ ... {{mon_param}} ... ]]` aux cartes concernées.
+   Un filtre **multivalué** se règle sur « plusieurs valeurs », s'écrit `IN ({{mon_param}})` et se
+   transmet en paramètre répété ; si la dimension filtrée est en relation 1-N avec la requête,
+   l'appliquer via un `EXISTS` — cf. § 4 bis.
 
 ---
 
@@ -286,14 +395,14 @@ couches :
 - **`entity_label` doit rester `Locked`.** C'est lui qui restreint les statistiques au
   périmètre de l'entité de l'utilisateur ; il est imposé côté serveur et ne doit jamais être
   pilotable par le client.
-- **Les filtres de consultation (date, etc.) sont `Enabled`.** Ils ne changent pas le périmètre
+- **Les filtres de consultation (date, domaine fonctionnel) sont `Enabled`.** Ils ne changent pas le périmètre
   de sécurité, seulement le sous-ensemble temporel affiché. Le backend les signe lui-même après
   validation Zod ; aucune valeur brute du client n'atteint Metabase sans passer par cette
   validation.
 - **Si le dashboard n'expose pas encore les paramètres, les filtres sont simplement ignorés et
   le dashboard continue de fonctionner normalement.** Le backend découvre les filtres déclarés
-  par le dashboard et ne transmet `start_date` / `end_date` (en query string) que s'ils sont
-  fournis **et** déclarés. Sélectionner une date sur un dashboard qui n'expose pas encore ces
+  par le dashboard et ne transmet `start_date` / `end_date` / `domaine_fonctionnel` (en query
+  string) que s'ils sont fournis **et** déclarés. Sélectionner une date sur un dashboard qui n'expose pas encore ces
   paramètres est donc sans effet (filtre ignoré), et non plus une erreur Metabase. Activer le
   filtre côté Metabase (§ 3) suffit à le rendre opérant, sans changement de code.
 - **Token vs query string.** En embedding signé, un paramètre **« Enabled »** ne se lit que
