@@ -52,9 +52,6 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
     nomComplet: target.nomComplet,
     label: target.label,
     email: target.email,
-    emailContactUsager: target.emailContactUsager,
-    telContactUsager: target.telContactUsager,
-    adresseContactUsager: target.adresseContactUsager,
   });
 
   useEffect(() => {

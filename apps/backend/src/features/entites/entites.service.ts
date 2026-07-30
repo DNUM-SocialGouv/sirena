@@ -8,6 +8,7 @@ import type {
   CreateDirectionAdminLocalInput,
   CreateDirectionOrServiceAdminInput,
   CreateServiceAdminLocalInput,
+  EditDirectionServiceAdminLocalInput,
   EditEntiteContactInput,
   EntiteChain,
   EntiteTraitement,
@@ -254,9 +255,6 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
         nomComplet: true,
         label: true,
         email: true,
-        emailContactUsager: true,
-        telContactUsager: true,
-        adresseContactUsager: true,
         entiteMereId: true,
       },
     }),
@@ -327,9 +325,6 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
     nomComplet: targetEntite.nomComplet,
     label: targetEntite.label,
     email: targetEntite.email,
-    emailContactUsager: targetEntite.emailContactUsager,
-    telContactUsager: targetEntite.telContactUsager,
-    adresseContactUsager: targetEntite.adresseContactUsager,
   };
 
   if (entiteType === 'service') {
@@ -345,7 +340,7 @@ export const getDirectionServiceAdminLocal = async (assignedEntiteId: string, ta
 export const editDirectionServiceAdminLocal = async (
   assignedEntiteId: string,
   targetEntiteId: string,
-  data: EditEntiteContactInput,
+  data: EditDirectionServiceAdminLocalInput,
 ) => {
   const target = await getDirectionServiceAdminLocal(assignedEntiteId, targetEntiteId);
 
@@ -353,17 +348,16 @@ export const editDirectionServiceAdminLocal = async (
     return null;
   }
 
-  const updatedEntite = await updateEntiteInformation(targetEntiteId, data);
-
-  const updatedFields = {
-    id: updatedEntite.id,
-    nomComplet: updatedEntite.nomComplet,
-    label: updatedEntite.label,
-    email: updatedEntite.email,
-    emailContactUsager: updatedEntite.emailContactUsager,
-    telContactUsager: updatedEntite.telContactUsager,
-    adresseContactUsager: updatedEntite.adresseContactUsager,
-  };
+  const updatedFields = await prisma.entite.update({
+    where: { id: targetEntiteId },
+    data,
+    select: {
+      id: true,
+      nomComplet: true,
+      label: true,
+      email: true,
+    },
+  });
 
   return target.entiteType === 'service'
     ? { ...updatedFields, entiteType: target.entiteType, parentDirection: target.parentDirection }
@@ -474,7 +468,19 @@ export const getDirectionsServicesList = async (
 };
 
 export const createDirectionAdminLocal = async (assignedEntiteId: string, data: CreateDirectionAdminLocalInput) => {
-  return createDirectionOrServiceAdmin(assignedEntiteId, { ...data, isActive: true }, { requireRootParent: true });
+  const { id, nomComplet, label, email, isActive } = await createDirectionOrServiceAdmin(
+    assignedEntiteId,
+    {
+      ...data,
+      emailContactUsager: '',
+      telContactUsager: '',
+      adresseContactUsager: '',
+      isActive: true,
+    },
+    { requireRootParent: true },
+  );
+
+  return { id, nomComplet, label, email, isActive };
 };
 
 export const createServiceAdminLocal = async (
@@ -482,38 +488,43 @@ export const createServiceAdminLocal = async (
   data: Omit<CreateServiceAdminLocalInput, 'directionId'>,
   directionId?: string,
 ) => {
-  const activeServiceData = { ...data, isActive: true };
+  const activeServiceData = {
+    ...data,
+    emailContactUsager: '',
+    telContactUsager: '',
+    adresseContactUsager: '',
+    isActive: true,
+  };
+  let parentId = assignedEntiteId;
 
-  if (!directionId) {
-    return createDirectionOrServiceAdmin(assignedEntiteId, activeServiceData, {
-      requireActiveParent: true,
-      requireDirectionParent: true,
-    });
+  if (directionId) {
+    const [assignedEntite, parentDirection] = await Promise.all([
+      prisma.entite.findUnique({
+        where: { id: assignedEntiteId },
+        select: { entiteMereId: true },
+      }),
+      prisma.entite.findUnique({
+        where: { id: directionId },
+        select: { entiteMereId: true, isActive: true },
+      }),
+    ]);
+
+    if (
+      assignedEntite?.entiteMereId !== null ||
+      parentDirection?.entiteMereId !== assignedEntiteId ||
+      !parentDirection?.isActive
+    ) {
+      throw new DirectionOrServiceCreationForbiddenError();
+    }
+
+    parentId = directionId;
   }
 
-  const [assignedEntite, parentDirection] = await Promise.all([
-    prisma.entite.findUnique({
-      where: { id: assignedEntiteId },
-      select: { entiteMereId: true },
-    }),
-    prisma.entite.findUnique({
-      where: { id: directionId },
-      select: { entiteMereId: true, isActive: true },
-    }),
-  ]);
-
-  if (
-    assignedEntite?.entiteMereId !== null ||
-    parentDirection?.entiteMereId !== assignedEntiteId ||
-    !parentDirection?.isActive
-  ) {
-    throw new DirectionOrServiceCreationForbiddenError();
-  }
-
-  return createDirectionOrServiceAdmin(directionId, activeServiceData, {
+  const { id, nomComplet, label, email, isActive } = await createDirectionOrServiceAdmin(parentId, activeServiceData, {
     requireActiveParent: true,
     requireDirectionParent: true,
   });
+  return { id, nomComplet, label, email, isActive };
 };
 
 export const createDirectionOrServiceAdmin = async (

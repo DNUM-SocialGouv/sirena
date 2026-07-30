@@ -614,7 +614,7 @@ describe('Entites endpoints: /entites', () => {
   });
 
   describe('GET /admin/directions-services/:id', () => {
-    it('publishes only Direction and Service edit target kinds', () => {
+    it('publishes only the Direction and Service local detail contract', () => {
       const fields = {
         id: 'root-ars',
         nomComplet: 'ARS Normandie',
@@ -625,9 +625,21 @@ describe('Entites endpoints: /entites', () => {
         adresseContactUsager: '1 rue de la Santé, Paris',
       };
 
-      expect(
-        GetDirectionServiceAdminLocalResponseSchema.safeParse({ ...fields, entiteType: 'direction' }).success,
-      ).toBe(true);
+      const result = GetDirectionServiceAdminLocalResponseSchema.safeParse({
+        ...fields,
+        entiteType: 'direction',
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toEqual({
+          id: 'root-ars',
+          nomComplet: 'ARS Normandie',
+          label: 'ARS NOR',
+          email: 'notification@ars.fr',
+          entiteType: 'direction',
+        });
+      }
       expect(
         GetDirectionServiceAdminLocalResponseSchema.safeParse({ ...fields, entiteType: 'entite-administrative' })
           .success,
@@ -645,7 +657,7 @@ describe('Entites endpoints: /entites', () => {
       expect(getDirectionServiceAdminLocal).toHaveBeenCalledWith('root-ars', 'root-ars');
     });
 
-    it('returns an authorized local edit target and hides a denied target', async () => {
+    it('returns an authorized local edit target without contact-usager fields and hides a denied target', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       vi.mocked(getDirectionServiceAdminLocal)
         .mockResolvedValueOnce({
@@ -654,9 +666,6 @@ describe('Entites endpoints: /entites', () => {
           nomComplet: 'Service PA',
           label: 'PA',
           email: 'service-pa@ars.fr',
-          emailContactUsager: 'contact-pa@ars.fr',
-          telContactUsager: '0102030405',
-          adresseContactUsager: '1 rue de la Santé, Paris',
           parentDirection: {
             id: 'dir-autonomie',
             nomComplet: 'Direction Autonomie',
@@ -676,9 +685,6 @@ describe('Entites endpoints: /entites', () => {
           nomComplet: 'Service PA',
           label: 'PA',
           email: 'service-pa@ars.fr',
-          emailContactUsager: 'contact-pa@ars.fr',
-          telContactUsager: '0102030405',
-          adresseContactUsager: '1 rue de la Santé, Paris',
           parentDirection: {
             id: 'dir-autonomie',
             nomComplet: 'Direction Autonomie',
@@ -698,9 +704,6 @@ describe('Entites endpoints: /entites', () => {
       assignedEntiteIdState.value = 'root-ars';
       const input = {
         email: 'notification@ars.fr',
-        emailContactUsager: 'contact@ars.fr',
-        telContactUsager: '0102030405',
-        adresseContactUsager: '1 rue de la Santé, Paris',
       };
       vi.mocked(editDirectionServiceAdminLocal).mockResolvedValueOnce(null);
 
@@ -714,13 +717,10 @@ describe('Entites endpoints: /entites', () => {
       expect(editDirectionServiceAdminLocal).toHaveBeenCalledWith('root-ars', 'root-ars', input);
     });
 
-    it('updates an authorized local target with exactly the contact fields and hides a denied target', async () => {
+    it('updates an authorized local target with only the notification e-mail and hides a denied target', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       const input = {
         email: 'notification-pa@ars.fr',
-        emailContactUsager: 'contact-pa@ars.fr',
-        telContactUsager: '0102030405',
-        adresseContactUsager: '1 rue de la Santé, Paris',
       };
       const updatedTarget = {
         id: 'service-pa',
@@ -756,9 +756,9 @@ describe('Entites endpoints: /entites', () => {
 
     it.each([
       ['email', 'invalid-email'],
-      ['emailContactUsager', 'invalid-email'],
-      ['telContactUsager', '123'],
-      ['adresseContactUsager', 'a'.repeat(501)],
+      ['emailContactUsager', 'contact-pa@ars.fr'],
+      ['telContactUsager', '0102030405'],
+      ['adresseContactUsager', '1 rue de la Santé, Paris'],
       ['nomComplet', 'Service renommé'],
       ['label', 'SR'],
       ['isActive', false],
@@ -774,9 +774,6 @@ describe('Entites endpoints: /entites', () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       const input = {
         email: 'notification-pa@ars.fr',
-        emailContactUsager: 'contact-pa@ars.fr',
-        telContactUsager: '0102030405',
-        adresseContactUsager: '1 rue de la Santé, Paris',
         [field]: value,
       };
 
@@ -814,15 +811,12 @@ describe('Entites endpoints: /entites', () => {
       expect(createDirectionAdminLocal).not.toHaveBeenCalled();
     });
 
-    it('creates a Direction from the assigned entite administrative for ENTITY_ADMIN', async () => {
+    it('exposes only the local Direction creation contract', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       const createDirectionPayload = {
         nomComplet: 'Direction Autonomie',
         label: 'DA',
         email: 'direction-autonomie@ars.fr',
-        emailContactUsager: 'contact-usager@direction.fr',
-        adresseContactUsager: '1 rue de la République, 75000 Paris',
-        telContactUsager: '0102030405',
       };
       vi.mocked(createDirectionAdminLocal).mockResolvedValueOnce({
         id: 'dir-autonomie',
@@ -830,23 +824,57 @@ describe('Entites endpoints: /entites', () => {
         isActive: true,
       });
 
-      const res = await app.request('/admin/directions-services/directions', {
+      const successRes = await app.request('/admin/directions-services/directions', {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
         },
         body: JSON.stringify(createDirectionPayload),
       });
+      const rejectedRes = await app.request('/admin/directions-services/directions', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...createDirectionPayload,
+          emailContactUsager: 'contact-usager@direction.fr',
+          adresseContactUsager: '1 rue de la République, 75000 Paris',
+          telContactUsager: '0102030405',
+        }),
+      });
 
-      expect(res.status).toBe(200);
-      expect(await res.json()).toEqual({
+      expect(successRes.status).toBe(200);
+      expect(await successRes.json()).toEqual({
         data: {
           id: 'dir-autonomie',
           ...createDirectionPayload,
           isActive: true,
         },
       });
+      expect(createDirectionAdminLocal).toHaveBeenCalledOnce();
       expect(createDirectionAdminLocal).toHaveBeenCalledWith('dir-autonomie', createDirectionPayload);
+      expect(rejectedRes.status).toBe(400);
+    });
+
+    it.each(['nomComplet', 'label'] as const)('rejects a blank %s', async (field) => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+
+      const res = await app.request('/admin/directions-services/directions', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          nomComplet: 'Direction Autonomie',
+          label: 'DA',
+          email: 'direction-autonomie@ars.fr',
+          [field]: '   ',
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      expect(createDirectionAdminLocal).not.toHaveBeenCalled();
     });
 
     it('rejects caller-controlled active status', async () => {
@@ -891,12 +919,7 @@ describe('Entites endpoints: /entites', () => {
         message: 'Direction or Service creation is not allowed for this parent',
         cause: { kind: ERROR_KIND.BUSINESS },
       });
-      expect(createDirectionAdminLocal).toHaveBeenCalledWith('dir-autonomie', {
-        ...createDirectionPayload,
-        emailContactUsager: '',
-        adresseContactUsager: '',
-        telContactUsager: '',
-      });
+      expect(createDirectionAdminLocal).toHaveBeenCalledWith('dir-autonomie', createDirectionPayload);
     });
 
     it('returns 400 without calling the service when no assigned entity is available', async () => {
@@ -926,37 +949,64 @@ describe('Entites endpoints: /entites', () => {
   });
 
   describe('POST /admin/directions-services/services', () => {
-    it('forwards every visible Service contact field and creates it active under the assigned Direction', async () => {
+    it('exposes only the local Service creation contract', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
-      const visiblePayload = {
+      const createServicePayload = {
         nomComplet: 'Service Autonomie',
         label: 'SA',
         email: 'service-autonomie@ars.fr',
-        emailContactUsager: 'contact-autonomie@ars.fr',
-        adresseContactUsager: '1 rue de la Santé, Paris',
-        telContactUsager: '0102030405',
       };
       vi.mocked(createServiceAdminLocal).mockResolvedValueOnce({
         id: 'service-autonomie',
-        ...visiblePayload,
+        ...createServicePayload,
         isActive: true,
       });
+
+      const successRes = await app.request('/admin/directions-services/services', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(createServicePayload),
+      });
+      const rejectedRes = await app.request('/admin/directions-services/services', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          ...createServicePayload,
+          emailContactUsager: 'contact-autonomie@ars.fr',
+          adresseContactUsager: '1 rue de la Santé, Paris',
+          telContactUsager: '0102030405',
+        }),
+      });
+
+      expect(successRes.status).toBe(200);
+      expect(await successRes.json()).toEqual({
+        data: {
+          id: 'service-autonomie',
+          ...createServicePayload,
+          isActive: true,
+        },
+      });
+      expect(createServiceAdminLocal).toHaveBeenCalledOnce();
+      expect(createServiceAdminLocal).toHaveBeenCalledWith('dir-autonomie', createServicePayload);
+      expect(rejectedRes.status).toBe(400);
+    });
+
+    it.each(['nomComplet', 'label'] as const)('rejects a blank Service %s', async (field) => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
 
       const res = await app.request('/admin/directions-services/services', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(visiblePayload),
+        body: JSON.stringify({
+          nomComplet: 'Service Autonomie',
+          label: 'SA',
+          email: 'service-autonomie@ars.fr',
+          [field]: '   ',
+        }),
       });
 
-      expect(res.status).toBe(200);
-      expect(await res.json()).toEqual({
-        data: {
-          id: 'service-autonomie',
-          ...visiblePayload,
-          isActive: true,
-        },
-      });
-      expect(createServiceAdminLocal).toHaveBeenCalledWith('dir-autonomie', visiblePayload);
+      expect(res.status).toBe(400);
+      expect(createServiceAdminLocal).not.toHaveBeenCalled();
     });
 
     it('rejects caller-controlled Service activation status', async () => {
@@ -969,9 +1019,6 @@ describe('Entites endpoints: /entites', () => {
           nomComplet: 'Service Autonomie',
           label: 'SA',
           email: '',
-          emailContactUsager: '',
-          adresseContactUsager: '',
-          telContactUsager: '',
           isActive: false,
         }),
       });
@@ -987,9 +1034,6 @@ describe('Entites endpoints: /entites', () => {
         nomComplet: 'Service Enfance',
         label: 'SE',
         email: '',
-        emailContactUsager: '',
-        adresseContactUsager: '',
-        telContactUsager: '',
         directionId: 'dir-enfance',
       };
       vi.mocked(createServiceAdminLocal).mockResolvedValueOnce({
@@ -998,9 +1042,6 @@ describe('Entites endpoints: /entites', () => {
         label: 'SE',
         email: '',
         isActive: true,
-        emailContactUsager: '',
-        adresseContactUsager: '',
-        telContactUsager: '',
       });
 
       const res = await app.request('/admin/directions-services/services', {
@@ -1016,9 +1057,6 @@ describe('Entites endpoints: /entites', () => {
           nomComplet: 'Service Enfance',
           label: 'SE',
           email: '',
-          emailContactUsager: '',
-          adresseContactUsager: '',
-          telContactUsager: '',
         },
         'dir-enfance',
       );
@@ -1035,9 +1073,6 @@ describe('Entites endpoints: /entites', () => {
           nomComplet: 'Service Autonomie',
           label: 'SA',
           email: '',
-          emailContactUsager: '',
-          adresseContactUsager: '',
-          telContactUsager: '',
         }),
       });
 
@@ -1059,9 +1094,6 @@ describe('Entites endpoints: /entites', () => {
           nomComplet: 'Service refusé',
           label: 'SR',
           email: '',
-          emailContactUsager: '',
-          adresseContactUsager: '',
-          telContactUsager: '',
         }),
       });
 

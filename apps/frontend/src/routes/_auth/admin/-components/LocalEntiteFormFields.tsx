@@ -219,6 +219,7 @@ type LocalEntiteFormFieldsProps = {
 };
 
 export function LocalEntiteFormFields({ form, leadingField }: LocalEntiteFormFieldsProps) {
+  const showContactFields = form.entiteType === 'entite-administrative';
   const fields = {
     formData: form.values,
     validationErrors: form.validationErrors,
@@ -228,7 +229,7 @@ export function LocalEntiteFormFields({ form, leadingField }: LocalEntiteFormFie
   return (
     <>
       <LocalEntiteSirenaFields entiteType={form.entiteType} mode={form.mode} {...fields} leadingField={leadingField} />
-      <LocalEntiteContactFields {...fields} />
+      {showContactFields ? <LocalEntiteContactFields {...fields} /> : null}
     </>
   );
 }

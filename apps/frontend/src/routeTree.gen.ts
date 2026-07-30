@@ -9,77 +9,91 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as PublicRouteRouteImport } from './routes/_public/route'
-import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as PublicMentionsLegalesRouteImport } from './routes/_public/mentions-legales'
-import { Route as PublicGestionCookiesRouteImport } from './routes/_public/gestion-cookies'
-import { Route as PublicDonneesPersonnellesRouteImport } from './routes/_public/donnees-personnelles'
-import { Route as PublicAccessibiliteRouteImport } from './routes/_public/accessibilite'
-import { Route as AuthStatistiquesRouteImport } from './routes/_auth/statistiques'
-import { Route as AuthInactiveRouteRouteImport } from './routes/_auth/inactive/route'
-import { Route as AuthAdminRouteRouteImport } from './routes/_auth/admin/route'
+import { Route as AuthRouteRouteImport } from './routes/_auth/route'
+import { Route as PublicRouteRouteImport } from './routes/_public/route'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthUserRouteRouteImport } from './routes/_auth/_user/route'
-import { Route as AuthAdminIndexRouteImport } from './routes/_auth/admin/index'
-import { Route as AuthAdminSirecMigrationRouteImport } from './routes/_auth/admin/sirec-migration'
-import { Route as AuthAdminFeatureFlagsRouteImport } from './routes/_auth/admin/feature-flags'
-import { Route as AuthAdminEntiteRouteImport } from './routes/_auth/admin/entite'
+import { Route as AuthAdminRouteRouteImport } from './routes/_auth/admin/route'
+import { Route as AuthInactiveRouteRouteImport } from './routes/_auth/inactive/route'
+import { Route as AuthStatistiquesRouteImport } from './routes/_auth/statistiques'
+import { Route as PublicAccessibiliteRouteImport } from './routes/_public/accessibilite'
+import { Route as PublicDonneesPersonnellesRouteImport } from './routes/_public/donnees-personnelles'
+import { Route as PublicGestionCookiesRouteImport } from './routes/_public/gestion-cookies'
+import { Route as PublicMentionsLegalesRouteImport } from './routes/_public/mentions-legales'
 import { Route as AuthUserHomeRouteImport } from './routes/_auth/_user/home'
+import { Route as AuthAdminIndexRouteImport } from './routes/_auth/admin/index'
+import { Route as AuthAdminEntiteRouteImport } from './routes/_auth/admin/entite'
+import { Route as AuthAdminFeatureFlagsRouteImport } from './routes/_auth/admin/feature-flags'
+import { Route as AuthAdminSirecMigrationRouteImport } from './routes/_auth/admin/sirec-migration'
 import { Route as AuthAdminUsersRouteRouteImport } from './routes/_auth/admin/users/route'
-import { Route as AuthAdminUsersIndexRouteImport } from './routes/_auth/admin/users/index'
-import { Route as AuthAdminEntitesIndexRouteImport } from './routes/_auth/admin/entites/index'
-import { Route as AuthAdminEntiteIndexRouteImport } from './routes/_auth/admin/entite.index'
-import { Route as AuthAdminDirectionsServicesIndexRouteImport } from './routes/_auth/admin/directions-services/index'
-import { Route as AuthAdminUsersAllRouteImport } from './routes/_auth/admin/users/all'
-import { Route as AuthAdminUserUserIdRouteImport } from './routes/_auth/admin/user/$userId'
-import { Route as AuthAdminEntitesEntiteIdRouteImport } from './routes/_auth/admin/entites/$entiteId'
-import { Route as AuthAdminEntiteEditRouteImport } from './routes/_auth/admin/entite.edit'
-import { Route as AuthUserRequestCreateRouteImport } from './routes/_auth/_user/request.create'
 import { Route as AuthUserRequestRequestIdRouteImport } from './routes/_auth/_user/request.$requestId'
-import { Route as AuthAdminEntitesEntiteIdIndexRouteImport } from './routes/_auth/admin/entites/$entiteId.index'
-import { Route as AuthUserRequestCreateIndexRouteImport } from './routes/_auth/_user/request.create.index'
+import { Route as AuthUserRequestCreateRouteImport } from './routes/_auth/_user/request.create'
+import { Route as AuthAdminDirectionsServicesIndexRouteImport } from './routes/_auth/admin/directions-services/index'
+import { Route as AuthAdminEntiteIndexRouteImport } from './routes/_auth/admin/entite.index'
+import { Route as AuthAdminEntiteEditRouteImport } from './routes/_auth/admin/entite.edit'
+import { Route as AuthAdminEntitesIndexRouteImport } from './routes/_auth/admin/entites/index'
+import { Route as AuthAdminEntitesEntiteIdRouteImport } from './routes/_auth/admin/entites/$entiteId'
+import { Route as AuthAdminUserUserIdRouteImport } from './routes/_auth/admin/user/$userId'
+import { Route as AuthAdminUsersIndexRouteImport } from './routes/_auth/admin/users/index'
+import { Route as AuthAdminUsersAllRouteImport } from './routes/_auth/admin/users/all'
 import { Route as AuthUserRequestRequestIdIndexRouteImport } from './routes/_auth/_user/request.$requestId.index'
-import { Route as AuthAdminEntitesEntiteIdCreateRouteImport } from './routes/_auth/admin/entites/$entiteId.create'
-import { Route as AuthAdminDirectionsServicesServicesCreateRouteImport } from './routes/_auth/admin/directions-services/services.create'
-import { Route as AuthAdminDirectionsServicesDirectionsCreateRouteImport } from './routes/_auth/admin/directions-services/directions.create'
-import { Route as AuthAdminDirectionsServicesEntiteIdEditRouteImport } from './routes/_auth/admin/directions-services/$entiteId.edit'
-import { Route as AuthUserRequestCreateSituationRouteImport } from './routes/_auth/_user/request.create.situation'
-import { Route as AuthUserRequestCreatePersonneConcerneeRouteImport } from './routes/_auth/_user/request.create.personne-concernee'
-import { Route as AuthUserRequestCreateDeclarantRouteImport } from './routes/_auth/_user/request.create.declarant'
-import { Route as AuthUserRequestRequestIdSituationRouteImport } from './routes/_auth/_user/request.$requestId.situation'
-import { Route as AuthUserRequestRequestIdProcessingRouteImport } from './routes/_auth/_user/request.$requestId/processing'
-import { Route as AuthUserRequestRequestIdPersonneConcerneeRouteImport } from './routes/_auth/_user/request.$requestId.personne-concernee'
 import { Route as AuthUserRequestRequestIdDeclarantRouteImport } from './routes/_auth/_user/request.$requestId.declarant'
+import { Route as AuthUserRequestRequestIdPersonneConcerneeRouteImport } from './routes/_auth/_user/request.$requestId.personne-concernee'
+import { Route as AuthUserRequestRequestIdProcessingRouteImport } from './routes/_auth/_user/request.$requestId/processing'
+import { Route as AuthUserRequestRequestIdSituationRouteImport } from './routes/_auth/_user/request.$requestId.situation'
+import { Route as AuthUserRequestCreateIndexRouteImport } from './routes/_auth/_user/request.create.index'
+import { Route as AuthUserRequestCreateDeclarantRouteImport } from './routes/_auth/_user/request.create.declarant'
+import { Route as AuthUserRequestCreatePersonneConcerneeRouteImport } from './routes/_auth/_user/request.create.personne-concernee'
+import { Route as AuthUserRequestCreateSituationRouteImport } from './routes/_auth/_user/request.create.situation'
+import { Route as AuthAdminDirectionsServicesEntiteIdEditRouteImport } from './routes/_auth/admin/directions-services/$entiteId.edit'
+import { Route as AuthAdminDirectionsServicesDirectionsCreateRouteImport } from './routes/_auth/admin/directions-services/directions.create'
+import { Route as AuthAdminDirectionsServicesServicesCreateRouteImport } from './routes/_auth/admin/directions-services/services.create'
+import { Route as AuthAdminEntitesEntiteIdIndexRouteImport } from './routes/_auth/admin/entites/$entiteId.index'
+import { Route as AuthAdminEntitesEntiteIdCreateRouteImport } from './routes/_auth/admin/entites/$entiteId.create'
 import { Route as AuthUserRequestRequestIdSituationIndexRouteImport } from './routes/_auth/_user/request.$requestId.situation.index'
 import { Route as AuthUserRequestRequestIdSituationSituationIdRouteImport } from './routes/_auth/_user/request.$requestId.situation.$situationId'
 
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PublicRouteRoute = PublicRouteRouteImport.update({
-  id: '/_public',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/_auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const PublicRouteRoute = PublicRouteRouteImport.update({
+  id: '/_public',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PublicMentionsLegalesRoute = PublicMentionsLegalesRouteImport.update({
-  id: '/mentions-legales',
-  path: '/mentions-legales',
-  getParentRoute: () => PublicRouteRoute,
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const PublicGestionCookiesRoute = PublicGestionCookiesRouteImport.update({
-  id: '/gestion-cookies',
-  path: '/gestion-cookies',
+const AuthUserRouteRoute = AuthUserRouteRouteImport.update({
+  id: '/_user',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthAdminRouteRoute = AuthAdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthInactiveRouteRoute = AuthInactiveRouteRouteImport.update({
+  id: '/inactive',
+  path: '/inactive',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthStatistiquesRoute = AuthStatistiquesRouteImport.update({
+  id: '/statistiques',
+  path: '/statistiques',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const PublicAccessibiliteRoute = PublicAccessibiliteRouteImport.update({
+  id: '/accessibilite',
+  path: '/accessibilite',
   getParentRoute: () => PublicRouteRoute,
 } as any)
 const PublicDonneesPersonnellesRoute =
@@ -88,43 +102,24 @@ const PublicDonneesPersonnellesRoute =
     path: '/donnees-personnelles',
     getParentRoute: () => PublicRouteRoute,
   } as any)
-const PublicAccessibiliteRoute = PublicAccessibiliteRouteImport.update({
-  id: '/accessibilite',
-  path: '/accessibilite',
+const PublicGestionCookiesRoute = PublicGestionCookiesRouteImport.update({
+  id: '/gestion-cookies',
+  path: '/gestion-cookies',
   getParentRoute: () => PublicRouteRoute,
 } as any)
-const AuthStatistiquesRoute = AuthStatistiquesRouteImport.update({
-  id: '/statistiques',
-  path: '/statistiques',
-  getParentRoute: () => AuthRouteRoute,
+const PublicMentionsLegalesRoute = PublicMentionsLegalesRouteImport.update({
+  id: '/mentions-legales',
+  path: '/mentions-legales',
+  getParentRoute: () => PublicRouteRoute,
 } as any)
-const AuthInactiveRouteRoute = AuthInactiveRouteRouteImport.update({
-  id: '/inactive',
-  path: '/inactive',
-  getParentRoute: () => AuthRouteRoute,
-} as any)
-const AuthAdminRouteRoute = AuthAdminRouteRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AuthRouteRoute,
-} as any)
-const AuthUserRouteRoute = AuthUserRouteRouteImport.update({
-  id: '/_user',
-  getParentRoute: () => AuthRouteRoute,
+const AuthUserHomeRoute = AuthUserHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => AuthUserRouteRoute,
 } as any)
 const AuthAdminIndexRoute = AuthAdminIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthAdminRouteRoute,
-} as any)
-const AuthAdminSirecMigrationRoute = AuthAdminSirecMigrationRouteImport.update({
-  id: '/sirec-migration',
-  path: '/sirec-migration',
-  getParentRoute: () => AuthAdminRouteRoute,
-} as any)
-const AuthAdminFeatureFlagsRoute = AuthAdminFeatureFlagsRouteImport.update({
-  id: '/feature-flags',
-  path: '/feature-flags',
   getParentRoute: () => AuthAdminRouteRoute,
 } as any)
 const AuthAdminEntiteRoute = AuthAdminEntiteRouteImport.update({
@@ -132,30 +127,31 @@ const AuthAdminEntiteRoute = AuthAdminEntiteRouteImport.update({
   path: '/entite',
   getParentRoute: () => AuthAdminRouteRoute,
 } as any)
-const AuthUserHomeRoute = AuthUserHomeRouteImport.update({
-  id: '/home',
-  path: '/home',
-  getParentRoute: () => AuthUserRouteRoute,
+const AuthAdminFeatureFlagsRoute = AuthAdminFeatureFlagsRouteImport.update({
+  id: '/feature-flags',
+  path: '/feature-flags',
+  getParentRoute: () => AuthAdminRouteRoute,
+} as any)
+const AuthAdminSirecMigrationRoute = AuthAdminSirecMigrationRouteImport.update({
+  id: '/sirec-migration',
+  path: '/sirec-migration',
+  getParentRoute: () => AuthAdminRouteRoute,
 } as any)
 const AuthAdminUsersRouteRoute = AuthAdminUsersRouteRouteImport.update({
   id: '/users',
   path: '/users',
   getParentRoute: () => AuthAdminRouteRoute,
 } as any)
-const AuthAdminUsersIndexRoute = AuthAdminUsersIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthAdminUsersRouteRoute,
-} as any)
-const AuthAdminEntitesIndexRoute = AuthAdminEntitesIndexRouteImport.update({
-  id: '/entites/',
-  path: '/entites/',
-  getParentRoute: () => AuthAdminRouteRoute,
-} as any)
-const AuthAdminEntiteIndexRoute = AuthAdminEntiteIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthAdminEntiteRoute,
+const AuthUserRequestRequestIdRoute =
+  AuthUserRequestRequestIdRouteImport.update({
+    id: '/request/$requestId',
+    path: '/request/$requestId',
+    getParentRoute: () => AuthUserRouteRoute,
+  } as any)
+const AuthUserRequestCreateRoute = AuthUserRequestCreateRouteImport.update({
+  id: '/request/create',
+  path: '/request/create',
+  getParentRoute: () => AuthUserRouteRoute,
 } as any)
 const AuthAdminDirectionsServicesIndexRoute =
   AuthAdminDirectionsServicesIndexRouteImport.update({
@@ -163,14 +159,19 @@ const AuthAdminDirectionsServicesIndexRoute =
     path: '/directions-services/',
     getParentRoute: () => AuthAdminRouteRoute,
   } as any)
-const AuthAdminUsersAllRoute = AuthAdminUsersAllRouteImport.update({
-  id: '/all',
-  path: '/all',
-  getParentRoute: () => AuthAdminUsersRouteRoute,
+const AuthAdminEntiteIndexRoute = AuthAdminEntiteIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthAdminEntiteRoute,
 } as any)
-const AuthAdminUserUserIdRoute = AuthAdminUserUserIdRouteImport.update({
-  id: '/user/$userId',
-  path: '/user/$userId',
+const AuthAdminEntiteEditRoute = AuthAdminEntiteEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => AuthAdminEntiteRoute,
+} as any)
+const AuthAdminEntitesIndexRoute = AuthAdminEntitesIndexRouteImport.update({
+  id: '/entites/',
+  path: '/entites/',
   getParentRoute: () => AuthAdminRouteRoute,
 } as any)
 const AuthAdminEntitesEntiteIdRoute =
@@ -179,92 +180,31 @@ const AuthAdminEntitesEntiteIdRoute =
     path: '/entites/$entiteId',
     getParentRoute: () => AuthAdminRouteRoute,
   } as any)
-const AuthAdminEntiteEditRoute = AuthAdminEntiteEditRouteImport.update({
-  id: '/edit',
-  path: '/edit',
-  getParentRoute: () => AuthAdminEntiteRoute,
+const AuthAdminUserUserIdRoute = AuthAdminUserUserIdRouteImport.update({
+  id: '/user/$userId',
+  path: '/user/$userId',
+  getParentRoute: () => AuthAdminRouteRoute,
 } as any)
-const AuthUserRequestCreateRoute = AuthUserRequestCreateRouteImport.update({
-  id: '/request/create',
-  path: '/request/create',
-  getParentRoute: () => AuthUserRouteRoute,
+const AuthAdminUsersIndexRoute = AuthAdminUsersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthAdminUsersRouteRoute,
 } as any)
-const AuthUserRequestRequestIdRoute =
-  AuthUserRequestRequestIdRouteImport.update({
-    id: '/request/$requestId',
-    path: '/request/$requestId',
-    getParentRoute: () => AuthUserRouteRoute,
-  } as any)
-const AuthAdminEntitesEntiteIdIndexRoute =
-  AuthAdminEntitesEntiteIdIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthAdminEntitesEntiteIdRoute,
-  } as any)
-const AuthUserRequestCreateIndexRoute =
-  AuthUserRequestCreateIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthUserRequestCreateRoute,
-  } as any)
+const AuthAdminUsersAllRoute = AuthAdminUsersAllRouteImport.update({
+  id: '/all',
+  path: '/all',
+  getParentRoute: () => AuthAdminUsersRouteRoute,
+} as any)
 const AuthUserRequestRequestIdIndexRoute =
   AuthUserRequestRequestIdIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthUserRequestRequestIdRoute,
   } as any)
-const AuthAdminEntitesEntiteIdCreateRoute =
-  AuthAdminEntitesEntiteIdCreateRouteImport.update({
-    id: '/create',
-    path: '/create',
-    getParentRoute: () => AuthAdminEntitesEntiteIdRoute,
-  } as any)
-const AuthAdminDirectionsServicesServicesCreateRoute =
-  AuthAdminDirectionsServicesServicesCreateRouteImport.update({
-    id: '/directions-services/services/create',
-    path: '/directions-services/services/create',
-    getParentRoute: () => AuthAdminRouteRoute,
-  } as any)
-const AuthAdminDirectionsServicesDirectionsCreateRoute =
-  AuthAdminDirectionsServicesDirectionsCreateRouteImport.update({
-    id: '/directions-services/directions/create',
-    path: '/directions-services/directions/create',
-    getParentRoute: () => AuthAdminRouteRoute,
-  } as any)
-const AuthAdminDirectionsServicesEntiteIdEditRoute =
-  AuthAdminDirectionsServicesEntiteIdEditRouteImport.update({
-    id: '/directions-services/$entiteId/edit',
-    path: '/directions-services/$entiteId/edit',
-    getParentRoute: () => AuthAdminRouteRoute,
-  } as any)
-const AuthUserRequestCreateSituationRoute =
-  AuthUserRequestCreateSituationRouteImport.update({
-    id: '/situation',
-    path: '/situation',
-    getParentRoute: () => AuthUserRequestCreateRoute,
-  } as any)
-const AuthUserRequestCreatePersonneConcerneeRoute =
-  AuthUserRequestCreatePersonneConcerneeRouteImport.update({
-    id: '/personne-concernee',
-    path: '/personne-concernee',
-    getParentRoute: () => AuthUserRequestCreateRoute,
-  } as any)
-const AuthUserRequestCreateDeclarantRoute =
-  AuthUserRequestCreateDeclarantRouteImport.update({
+const AuthUserRequestRequestIdDeclarantRoute =
+  AuthUserRequestRequestIdDeclarantRouteImport.update({
     id: '/declarant',
     path: '/declarant',
-    getParentRoute: () => AuthUserRequestCreateRoute,
-  } as any)
-const AuthUserRequestRequestIdSituationRoute =
-  AuthUserRequestRequestIdSituationRouteImport.update({
-    id: '/situation',
-    path: '/situation',
-    getParentRoute: () => AuthUserRequestRequestIdRoute,
-  } as any)
-const AuthUserRequestRequestIdProcessingRoute =
-  AuthUserRequestRequestIdProcessingRouteImport.update({
-    id: '/processing',
-    path: '/processing',
     getParentRoute: () => AuthUserRequestRequestIdRoute,
   } as any)
 const AuthUserRequestRequestIdPersonneConcerneeRoute =
@@ -273,11 +213,71 @@ const AuthUserRequestRequestIdPersonneConcerneeRoute =
     path: '/personne-concernee',
     getParentRoute: () => AuthUserRequestRequestIdRoute,
   } as any)
-const AuthUserRequestRequestIdDeclarantRoute =
-  AuthUserRequestRequestIdDeclarantRouteImport.update({
+const AuthUserRequestRequestIdProcessingRoute =
+  AuthUserRequestRequestIdProcessingRouteImport.update({
+    id: '/processing',
+    path: '/processing',
+    getParentRoute: () => AuthUserRequestRequestIdRoute,
+  } as any)
+const AuthUserRequestRequestIdSituationRoute =
+  AuthUserRequestRequestIdSituationRouteImport.update({
+    id: '/situation',
+    path: '/situation',
+    getParentRoute: () => AuthUserRequestRequestIdRoute,
+  } as any)
+const AuthUserRequestCreateIndexRoute =
+  AuthUserRequestCreateIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthUserRequestCreateRoute,
+  } as any)
+const AuthUserRequestCreateDeclarantRoute =
+  AuthUserRequestCreateDeclarantRouteImport.update({
     id: '/declarant',
     path: '/declarant',
-    getParentRoute: () => AuthUserRequestRequestIdRoute,
+    getParentRoute: () => AuthUserRequestCreateRoute,
+  } as any)
+const AuthUserRequestCreatePersonneConcerneeRoute =
+  AuthUserRequestCreatePersonneConcerneeRouteImport.update({
+    id: '/personne-concernee',
+    path: '/personne-concernee',
+    getParentRoute: () => AuthUserRequestCreateRoute,
+  } as any)
+const AuthUserRequestCreateSituationRoute =
+  AuthUserRequestCreateSituationRouteImport.update({
+    id: '/situation',
+    path: '/situation',
+    getParentRoute: () => AuthUserRequestCreateRoute,
+  } as any)
+const AuthAdminDirectionsServicesEntiteIdEditRoute =
+  AuthAdminDirectionsServicesEntiteIdEditRouteImport.update({
+    id: '/directions-services/$entiteId/edit',
+    path: '/directions-services/$entiteId/edit',
+    getParentRoute: () => AuthAdminRouteRoute,
+  } as any)
+const AuthAdminDirectionsServicesDirectionsCreateRoute =
+  AuthAdminDirectionsServicesDirectionsCreateRouteImport.update({
+    id: '/directions-services/directions/create',
+    path: '/directions-services/directions/create',
+    getParentRoute: () => AuthAdminRouteRoute,
+  } as any)
+const AuthAdminDirectionsServicesServicesCreateRoute =
+  AuthAdminDirectionsServicesServicesCreateRouteImport.update({
+    id: '/directions-services/services/create',
+    path: '/directions-services/services/create',
+    getParentRoute: () => AuthAdminRouteRoute,
+  } as any)
+const AuthAdminEntitesEntiteIdIndexRoute =
+  AuthAdminEntitesEntiteIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthAdminEntitesEntiteIdRoute,
+  } as any)
+const AuthAdminEntitesEntiteIdCreateRoute =
+  AuthAdminEntitesEntiteIdCreateRouteImport.update({
+    id: '/create',
+    path: '/create',
+    getParentRoute: () => AuthAdminEntitesEntiteIdRoute,
   } as any)
 const AuthUserRequestRequestIdSituationIndexRoute =
   AuthUserRequestRequestIdSituationIndexRouteImport.update({
@@ -555,18 +555,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_public': {
-      id: '/_public'
-      path: ''
+    '/': {
+      id: '/'
+      path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof PublicRouteRouteImport
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_auth': {
@@ -576,53 +569,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
+    '/_public': {
+      id: '/_public'
+      path: ''
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof PublicRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_public/mentions-legales': {
-      id: '/_public/mentions-legales'
-      path: '/mentions-legales'
-      fullPath: '/mentions-legales'
-      preLoaderRoute: typeof PublicMentionsLegalesRouteImport
-      parentRoute: typeof PublicRouteRoute
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_public/gestion-cookies': {
-      id: '/_public/gestion-cookies'
-      path: '/gestion-cookies'
-      fullPath: '/gestion-cookies'
-      preLoaderRoute: typeof PublicGestionCookiesRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
-    '/_public/donnees-personnelles': {
-      id: '/_public/donnees-personnelles'
-      path: '/donnees-personnelles'
-      fullPath: '/donnees-personnelles'
-      preLoaderRoute: typeof PublicDonneesPersonnellesRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
-    '/_public/accessibilite': {
-      id: '/_public/accessibilite'
-      path: '/accessibilite'
-      fullPath: '/accessibilite'
-      preLoaderRoute: typeof PublicAccessibiliteRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
-    '/_auth/statistiques': {
-      id: '/_auth/statistiques'
-      path: '/statistiques'
-      fullPath: '/statistiques'
-      preLoaderRoute: typeof AuthStatistiquesRouteImport
-      parentRoute: typeof AuthRouteRoute
-    }
-    '/_auth/inactive': {
-      id: '/_auth/inactive'
-      path: '/inactive'
-      fullPath: '/inactive'
-      preLoaderRoute: typeof AuthInactiveRouteRouteImport
+    '/_auth/_user': {
+      id: '/_auth/_user'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthUserRouteRouteImport
       parentRoute: typeof AuthRouteRoute
     }
     '/_auth/admin': {
@@ -632,32 +597,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAdminRouteRouteImport
       parentRoute: typeof AuthRouteRoute
     }
-    '/_auth/_user': {
-      id: '/_auth/_user'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthUserRouteRouteImport
+    '/_auth/inactive': {
+      id: '/_auth/inactive'
+      path: '/inactive'
+      fullPath: '/inactive'
+      preLoaderRoute: typeof AuthInactiveRouteRouteImport
       parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/statistiques': {
+      id: '/_auth/statistiques'
+      path: '/statistiques'
+      fullPath: '/statistiques'
+      preLoaderRoute: typeof AuthStatistiquesRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_public/accessibilite': {
+      id: '/_public/accessibilite'
+      path: '/accessibilite'
+      fullPath: '/accessibilite'
+      preLoaderRoute: typeof PublicAccessibiliteRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/donnees-personnelles': {
+      id: '/_public/donnees-personnelles'
+      path: '/donnees-personnelles'
+      fullPath: '/donnees-personnelles'
+      preLoaderRoute: typeof PublicDonneesPersonnellesRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/gestion-cookies': {
+      id: '/_public/gestion-cookies'
+      path: '/gestion-cookies'
+      fullPath: '/gestion-cookies'
+      preLoaderRoute: typeof PublicGestionCookiesRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/mentions-legales': {
+      id: '/_public/mentions-legales'
+      path: '/mentions-legales'
+      fullPath: '/mentions-legales'
+      preLoaderRoute: typeof PublicMentionsLegalesRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_auth/_user/home': {
+      id: '/_auth/_user/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof AuthUserHomeRouteImport
+      parentRoute: typeof AuthUserRouteRoute
     }
     '/_auth/admin/': {
       id: '/_auth/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthAdminIndexRouteImport
-      parentRoute: typeof AuthAdminRouteRoute
-    }
-    '/_auth/admin/sirec-migration': {
-      id: '/_auth/admin/sirec-migration'
-      path: '/sirec-migration'
-      fullPath: '/admin/sirec-migration'
-      preLoaderRoute: typeof AuthAdminSirecMigrationRouteImport
-      parentRoute: typeof AuthAdminRouteRoute
-    }
-    '/_auth/admin/feature-flags': {
-      id: '/_auth/admin/feature-flags'
-      path: '/feature-flags'
-      fullPath: '/admin/feature-flags'
-      preLoaderRoute: typeof AuthAdminFeatureFlagsRouteImport
       parentRoute: typeof AuthAdminRouteRoute
     }
     '/_auth/admin/entite': {
@@ -667,12 +660,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAdminEntiteRouteImport
       parentRoute: typeof AuthAdminRouteRoute
     }
-    '/_auth/_user/home': {
-      id: '/_auth/_user/home'
-      path: '/home'
-      fullPath: '/home'
-      preLoaderRoute: typeof AuthUserHomeRouteImport
-      parentRoute: typeof AuthUserRouteRoute
+    '/_auth/admin/feature-flags': {
+      id: '/_auth/admin/feature-flags'
+      path: '/feature-flags'
+      fullPath: '/admin/feature-flags'
+      preLoaderRoute: typeof AuthAdminFeatureFlagsRouteImport
+      parentRoute: typeof AuthAdminRouteRoute
+    }
+    '/_auth/admin/sirec-migration': {
+      id: '/_auth/admin/sirec-migration'
+      path: '/sirec-migration'
+      fullPath: '/admin/sirec-migration'
+      preLoaderRoute: typeof AuthAdminSirecMigrationRouteImport
+      parentRoute: typeof AuthAdminRouteRoute
     }
     '/_auth/admin/users': {
       id: '/_auth/admin/users'
@@ -681,18 +681,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAdminUsersRouteRouteImport
       parentRoute: typeof AuthAdminRouteRoute
     }
-    '/_auth/admin/users/': {
-      id: '/_auth/admin/users/'
-      path: '/'
-      fullPath: '/admin/users/'
-      preLoaderRoute: typeof AuthAdminUsersIndexRouteImport
-      parentRoute: typeof AuthAdminUsersRouteRoute
+    '/_auth/_user/request/$requestId': {
+      id: '/_auth/_user/request/$requestId'
+      path: '/request/$requestId'
+      fullPath: '/request/$requestId'
+      preLoaderRoute: typeof AuthUserRequestRequestIdRouteImport
+      parentRoute: typeof AuthUserRouteRoute
     }
-    '/_auth/admin/entites/': {
-      id: '/_auth/admin/entites/'
-      path: '/entites'
-      fullPath: '/admin/entites/'
-      preLoaderRoute: typeof AuthAdminEntitesIndexRouteImport
+    '/_auth/_user/request/create': {
+      id: '/_auth/_user/request/create'
+      path: '/request/create'
+      fullPath: '/request/create'
+      preLoaderRoute: typeof AuthUserRequestCreateRouteImport
+      parentRoute: typeof AuthUserRouteRoute
+    }
+    '/_auth/admin/directions-services/': {
+      id: '/_auth/admin/directions-services/'
+      path: '/directions-services'
+      fullPath: '/admin/directions-services/'
+      preLoaderRoute: typeof AuthAdminDirectionsServicesIndexRouteImport
       parentRoute: typeof AuthAdminRouteRoute
     }
     '/_auth/admin/entite/': {
@@ -702,25 +709,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAdminEntiteIndexRouteImport
       parentRoute: typeof AuthAdminEntiteRoute
     }
-    '/_auth/admin/directions-services/': {
-      id: '/_auth/admin/directions-services/'
-      path: '/directions-services'
-      fullPath: '/admin/directions-services/'
-      preLoaderRoute: typeof AuthAdminDirectionsServicesIndexRouteImport
-      parentRoute: typeof AuthAdminRouteRoute
+    '/_auth/admin/entite/edit': {
+      id: '/_auth/admin/entite/edit'
+      path: '/edit'
+      fullPath: '/admin/entite/edit'
+      preLoaderRoute: typeof AuthAdminEntiteEditRouteImport
+      parentRoute: typeof AuthAdminEntiteRoute
     }
-    '/_auth/admin/users/all': {
-      id: '/_auth/admin/users/all'
-      path: '/all'
-      fullPath: '/admin/users/all'
-      preLoaderRoute: typeof AuthAdminUsersAllRouteImport
-      parentRoute: typeof AuthAdminUsersRouteRoute
-    }
-    '/_auth/admin/user/$userId': {
-      id: '/_auth/admin/user/$userId'
-      path: '/user/$userId'
-      fullPath: '/admin/user/$userId'
-      preLoaderRoute: typeof AuthAdminUserUserIdRouteImport
+    '/_auth/admin/entites/': {
+      id: '/_auth/admin/entites/'
+      path: '/entites'
+      fullPath: '/admin/entites/'
+      preLoaderRoute: typeof AuthAdminEntitesIndexRouteImport
       parentRoute: typeof AuthAdminRouteRoute
     }
     '/_auth/admin/entites/$entiteId': {
@@ -730,40 +730,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAdminEntitesEntiteIdRouteImport
       parentRoute: typeof AuthAdminRouteRoute
     }
-    '/_auth/admin/entite/edit': {
-      id: '/_auth/admin/entite/edit'
-      path: '/edit'
-      fullPath: '/admin/entite/edit'
-      preLoaderRoute: typeof AuthAdminEntiteEditRouteImport
-      parentRoute: typeof AuthAdminEntiteRoute
+    '/_auth/admin/user/$userId': {
+      id: '/_auth/admin/user/$userId'
+      path: '/user/$userId'
+      fullPath: '/admin/user/$userId'
+      preLoaderRoute: typeof AuthAdminUserUserIdRouteImport
+      parentRoute: typeof AuthAdminRouteRoute
     }
-    '/_auth/_user/request/create': {
-      id: '/_auth/_user/request/create'
-      path: '/request/create'
-      fullPath: '/request/create'
-      preLoaderRoute: typeof AuthUserRequestCreateRouteImport
-      parentRoute: typeof AuthUserRouteRoute
-    }
-    '/_auth/_user/request/$requestId': {
-      id: '/_auth/_user/request/$requestId'
-      path: '/request/$requestId'
-      fullPath: '/request/$requestId'
-      preLoaderRoute: typeof AuthUserRequestRequestIdRouteImport
-      parentRoute: typeof AuthUserRouteRoute
-    }
-    '/_auth/admin/entites/$entiteId/': {
-      id: '/_auth/admin/entites/$entiteId/'
+    '/_auth/admin/users/': {
+      id: '/_auth/admin/users/'
       path: '/'
-      fullPath: '/admin/entites/$entiteId/'
-      preLoaderRoute: typeof AuthAdminEntitesEntiteIdIndexRouteImport
-      parentRoute: typeof AuthAdminEntitesEntiteIdRoute
+      fullPath: '/admin/users/'
+      preLoaderRoute: typeof AuthAdminUsersIndexRouteImport
+      parentRoute: typeof AuthAdminUsersRouteRoute
     }
-    '/_auth/_user/request/create/': {
-      id: '/_auth/_user/request/create/'
-      path: '/'
-      fullPath: '/request/create/'
-      preLoaderRoute: typeof AuthUserRequestCreateIndexRouteImport
-      parentRoute: typeof AuthUserRequestCreateRoute
+    '/_auth/admin/users/all': {
+      id: '/_auth/admin/users/all'
+      path: '/all'
+      fullPath: '/admin/users/all'
+      preLoaderRoute: typeof AuthAdminUsersAllRouteImport
+      parentRoute: typeof AuthAdminUsersRouteRoute
     }
     '/_auth/_user/request/$requestId/': {
       id: '/_auth/_user/request/$requestId/'
@@ -772,67 +758,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthUserRequestRequestIdIndexRouteImport
       parentRoute: typeof AuthUserRequestRequestIdRoute
     }
-    '/_auth/admin/entites/$entiteId/create': {
-      id: '/_auth/admin/entites/$entiteId/create'
-      path: '/create'
-      fullPath: '/admin/entites/$entiteId/create'
-      preLoaderRoute: typeof AuthAdminEntitesEntiteIdCreateRouteImport
-      parentRoute: typeof AuthAdminEntitesEntiteIdRoute
-    }
-    '/_auth/admin/directions-services/services/create': {
-      id: '/_auth/admin/directions-services/services/create'
-      path: '/directions-services/services/create'
-      fullPath: '/admin/directions-services/services/create'
-      preLoaderRoute: typeof AuthAdminDirectionsServicesServicesCreateRouteImport
-      parentRoute: typeof AuthAdminRouteRoute
-    }
-    '/_auth/admin/directions-services/directions/create': {
-      id: '/_auth/admin/directions-services/directions/create'
-      path: '/directions-services/directions/create'
-      fullPath: '/admin/directions-services/directions/create'
-      preLoaderRoute: typeof AuthAdminDirectionsServicesDirectionsCreateRouteImport
-      parentRoute: typeof AuthAdminRouteRoute
-    }
-    '/_auth/admin/directions-services/$entiteId/edit': {
-      id: '/_auth/admin/directions-services/$entiteId/edit'
-      path: '/directions-services/$entiteId/edit'
-      fullPath: '/admin/directions-services/$entiteId/edit'
-      preLoaderRoute: typeof AuthAdminDirectionsServicesEntiteIdEditRouteImport
-      parentRoute: typeof AuthAdminRouteRoute
-    }
-    '/_auth/_user/request/create/situation': {
-      id: '/_auth/_user/request/create/situation'
-      path: '/situation'
-      fullPath: '/request/create/situation'
-      preLoaderRoute: typeof AuthUserRequestCreateSituationRouteImport
-      parentRoute: typeof AuthUserRequestCreateRoute
-    }
-    '/_auth/_user/request/create/personne-concernee': {
-      id: '/_auth/_user/request/create/personne-concernee'
-      path: '/personne-concernee'
-      fullPath: '/request/create/personne-concernee'
-      preLoaderRoute: typeof AuthUserRequestCreatePersonneConcerneeRouteImport
-      parentRoute: typeof AuthUserRequestCreateRoute
-    }
-    '/_auth/_user/request/create/declarant': {
-      id: '/_auth/_user/request/create/declarant'
+    '/_auth/_user/request/$requestId/declarant': {
+      id: '/_auth/_user/request/$requestId/declarant'
       path: '/declarant'
-      fullPath: '/request/create/declarant'
-      preLoaderRoute: typeof AuthUserRequestCreateDeclarantRouteImport
-      parentRoute: typeof AuthUserRequestCreateRoute
-    }
-    '/_auth/_user/request/$requestId/situation': {
-      id: '/_auth/_user/request/$requestId/situation'
-      path: '/situation'
-      fullPath: '/request/$requestId/situation'
-      preLoaderRoute: typeof AuthUserRequestRequestIdSituationRouteImport
-      parentRoute: typeof AuthUserRequestRequestIdRoute
-    }
-    '/_auth/_user/request/$requestId/processing': {
-      id: '/_auth/_user/request/$requestId/processing'
-      path: '/processing'
-      fullPath: '/request/$requestId/processing'
-      preLoaderRoute: typeof AuthUserRequestRequestIdProcessingRouteImport
+      fullPath: '/request/$requestId/declarant'
+      preLoaderRoute: typeof AuthUserRequestRequestIdDeclarantRouteImport
       parentRoute: typeof AuthUserRequestRequestIdRoute
     }
     '/_auth/_user/request/$requestId/personne-concernee': {
@@ -842,12 +772,82 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthUserRequestRequestIdPersonneConcerneeRouteImport
       parentRoute: typeof AuthUserRequestRequestIdRoute
     }
-    '/_auth/_user/request/$requestId/declarant': {
-      id: '/_auth/_user/request/$requestId/declarant'
-      path: '/declarant'
-      fullPath: '/request/$requestId/declarant'
-      preLoaderRoute: typeof AuthUserRequestRequestIdDeclarantRouteImport
+    '/_auth/_user/request/$requestId/processing': {
+      id: '/_auth/_user/request/$requestId/processing'
+      path: '/processing'
+      fullPath: '/request/$requestId/processing'
+      preLoaderRoute: typeof AuthUserRequestRequestIdProcessingRouteImport
       parentRoute: typeof AuthUserRequestRequestIdRoute
+    }
+    '/_auth/_user/request/$requestId/situation': {
+      id: '/_auth/_user/request/$requestId/situation'
+      path: '/situation'
+      fullPath: '/request/$requestId/situation'
+      preLoaderRoute: typeof AuthUserRequestRequestIdSituationRouteImport
+      parentRoute: typeof AuthUserRequestRequestIdRoute
+    }
+    '/_auth/_user/request/create/': {
+      id: '/_auth/_user/request/create/'
+      path: '/'
+      fullPath: '/request/create/'
+      preLoaderRoute: typeof AuthUserRequestCreateIndexRouteImport
+      parentRoute: typeof AuthUserRequestCreateRoute
+    }
+    '/_auth/_user/request/create/declarant': {
+      id: '/_auth/_user/request/create/declarant'
+      path: '/declarant'
+      fullPath: '/request/create/declarant'
+      preLoaderRoute: typeof AuthUserRequestCreateDeclarantRouteImport
+      parentRoute: typeof AuthUserRequestCreateRoute
+    }
+    '/_auth/_user/request/create/personne-concernee': {
+      id: '/_auth/_user/request/create/personne-concernee'
+      path: '/personne-concernee'
+      fullPath: '/request/create/personne-concernee'
+      preLoaderRoute: typeof AuthUserRequestCreatePersonneConcerneeRouteImport
+      parentRoute: typeof AuthUserRequestCreateRoute
+    }
+    '/_auth/_user/request/create/situation': {
+      id: '/_auth/_user/request/create/situation'
+      path: '/situation'
+      fullPath: '/request/create/situation'
+      preLoaderRoute: typeof AuthUserRequestCreateSituationRouteImport
+      parentRoute: typeof AuthUserRequestCreateRoute
+    }
+    '/_auth/admin/directions-services/$entiteId/edit': {
+      id: '/_auth/admin/directions-services/$entiteId/edit'
+      path: '/directions-services/$entiteId/edit'
+      fullPath: '/admin/directions-services/$entiteId/edit'
+      preLoaderRoute: typeof AuthAdminDirectionsServicesEntiteIdEditRouteImport
+      parentRoute: typeof AuthAdminRouteRoute
+    }
+    '/_auth/admin/directions-services/directions/create': {
+      id: '/_auth/admin/directions-services/directions/create'
+      path: '/directions-services/directions/create'
+      fullPath: '/admin/directions-services/directions/create'
+      preLoaderRoute: typeof AuthAdminDirectionsServicesDirectionsCreateRouteImport
+      parentRoute: typeof AuthAdminRouteRoute
+    }
+    '/_auth/admin/directions-services/services/create': {
+      id: '/_auth/admin/directions-services/services/create'
+      path: '/directions-services/services/create'
+      fullPath: '/admin/directions-services/services/create'
+      preLoaderRoute: typeof AuthAdminDirectionsServicesServicesCreateRouteImport
+      parentRoute: typeof AuthAdminRouteRoute
+    }
+    '/_auth/admin/entites/$entiteId/': {
+      id: '/_auth/admin/entites/$entiteId/'
+      path: '/'
+      fullPath: '/admin/entites/$entiteId/'
+      preLoaderRoute: typeof AuthAdminEntitesEntiteIdIndexRouteImport
+      parentRoute: typeof AuthAdminEntitesEntiteIdRoute
+    }
+    '/_auth/admin/entites/$entiteId/create': {
+      id: '/_auth/admin/entites/$entiteId/create'
+      path: '/create'
+      fullPath: '/admin/entites/$entiteId/create'
+      preLoaderRoute: typeof AuthAdminEntitesEntiteIdCreateRouteImport
+      parentRoute: typeof AuthAdminEntitesEntiteIdRoute
     }
     '/_auth/_user/request/$requestId/situation/': {
       id: '/_auth/_user/request/$requestId/situation/'

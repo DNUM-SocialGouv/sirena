@@ -41,9 +41,6 @@ const directionTarget = {
   nomComplet: 'Direction Autonomie',
   label: 'DA',
   email: 'direction-autonomie@ars.fr',
-  emailContactUsager: 'contact-autonomie@ars.fr',
-  telContactUsager: '0102030405',
-  adresseContactUsager: '1 rue de la Santé, Paris',
 };
 
 const serviceTarget = {
@@ -53,7 +50,6 @@ const serviceTarget = {
   nomComplet: 'Service PA',
   label: 'PA',
   email: 'service-pa@ars.fr',
-  emailContactUsager: 'contact-pa@ars.fr',
   parentDirection: { id: 'dir-autonomie', nomComplet: 'Direction Autonomie', label: 'DA' },
 };
 
@@ -110,14 +106,16 @@ it('renders prefilled Direction identity as accessible read-only information', (
   expect(abbreviationInput).not.toBeDisabled();
   expect(screen.queryByRole('textbox', { name: /Nom de la direction \(obligatoire\)/ })).not.toBeInTheDocument();
   expect(screen.queryByRole('textbox', { name: /Abréviation \(obligatoire\)/ })).not.toBeInTheDocument();
-  expect(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ })).toHaveValue('contact-autonomie@ars.fr');
-  expect(screen.getByRole('textbox', { name: /Numéro de téléphone/ })).toHaveValue('0102030405');
+  expect(screen.queryByRole('group', { name: 'Informations de contact pour l’usager' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('textbox', { name: /Adresse e-mail de contact/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole('textbox', { name: /Numéro de téléphone/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole('textbox', { name: /Adresse postale/ })).not.toBeInTheDocument();
   expect(screen.queryByRole('combobox', { name: /Actif dans SIRENA/ })).not.toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Annuler' })).toHaveAttribute('href', '/admin/directions-services');
   expect(document.title).toBe('Modifier la direction Direction Autonomie - Directions et services - SIRENA');
 });
 
-it('does not validate read-only Direction identity during contact edits', async () => {
+it('does not validate read-only Direction identity during notification e-mail edits', async () => {
   const user = userEvent.setup();
   editMutateAsyncSpy.mockResolvedValueOnce({ id: directionTarget.id });
   renderTarget({ ...directionTarget, nomComplet: '', label: '' });
@@ -129,23 +127,21 @@ it('does not validate read-only Direction identity during contact edits', async 
   expect(screen.queryByText(/Le champ "Abréviation" est vide/)).not.toBeInTheDocument();
 });
 
-it('saves exactly the editable Direction contact fields before returning to the list', async () => {
+it('saves only the editable Direction notification e-mail before returning to the list', async () => {
   const user = userEvent.setup();
   editMutateAsyncSpy.mockResolvedValueOnce({ id: directionTarget.id });
   renderTarget(directionTarget);
 
-  await user.clear(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }));
-  await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'new-contact@ars.fr');
+  const notificationEmail = screen.getByRole('textbox', { name: /Adresse e-mail de notification/ });
+  await user.clear(notificationEmail);
+  await user.type(notificationEmail, 'new-notification@ars.fr');
   await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
 
   await waitFor(() =>
     expect(editMutateAsyncSpy).toHaveBeenCalledWith({
       id: directionTarget.id,
       input: {
-        email: directionTarget.email,
-        emailContactUsager: 'new-contact@ars.fr',
-        telContactUsager: directionTarget.telContactUsager,
-        adresseContactUsager: directionTarget.adresseContactUsager,
+        email: 'new-notification@ars.fr',
       },
     }),
   );
@@ -172,11 +168,14 @@ it('renders a Service with its current Direction and identity read-only', () => 
   expect(screen.queryByRole('textbox', { name: /Nom du service \(obligatoire\)/ })).not.toBeInTheDocument();
   expect(screen.queryByRole('textbox', { name: /Abréviation \(obligatoire\)/ })).not.toBeInTheDocument();
   expect(direction.compareDocumentPosition(serviceName) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  expect(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ })).toHaveValue('contact-pa@ars.fr');
+  expect(screen.queryByRole('group', { name: 'Informations de contact pour l’usager' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('textbox', { name: /Adresse e-mail de contact/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole('textbox', { name: /Numéro de téléphone/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole('textbox', { name: /Adresse postale/ })).not.toBeInTheDocument();
   expect(document.title).toBe('Modifier le service Service PA - Directions et services - SIRENA');
 });
 
-it('saves Service contact fields without status or replacement Direction', async () => {
+it('saves only the Service notification e-mail without status or replacement Direction', async () => {
   const user = userEvent.setup();
   editMutateAsyncSpy.mockResolvedValueOnce({ id: serviceTarget.id });
   renderTarget(serviceTarget);
@@ -188,25 +187,21 @@ it('saves Service contact fields without status or replacement Direction', async
       id: serviceTarget.id,
       input: {
         email: serviceTarget.email,
-        emailContactUsager: serviceTarget.emailContactUsager,
-        telContactUsager: serviceTarget.telContactUsager,
-        adresseContactUsager: serviceTarget.adresseContactUsager,
       },
     }),
   );
 });
 
-it('rejects invalid contact values before saving an edit', async () => {
+it('rejects an invalid Service notification e-mail before saving an edit', async () => {
   const user = userEvent.setup();
-  renderTarget({ ...serviceTarget, emailContactUsager: '', telContactUsager: '' });
+  renderTarget({ ...serviceTarget, email: '' });
+  const notificationEmail = screen.getByRole('textbox', { name: /Adresse e-mail de notification/ });
 
-  await user.type(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ }), 'adresse@invalide');
-  await user.type(screen.getByRole('textbox', { name: /Numéro de téléphone/ }), '123');
+  await user.type(notificationEmail, 'adresse@invalide');
   await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
 
-  expect(screen.getByRole('textbox', { name: /Adresse e-mail de contact/ })).toHaveFocus();
+  expect(notificationEmail).toHaveFocus();
   expect(screen.getByText(/L’adresse e-mail est invalide/)).toBeInTheDocument();
-  expect(screen.getByText(/Le numéro de téléphone doit être au format national ou international/)).toBeInTheDocument();
   expect(editMutateAsyncSpy).not.toHaveBeenCalled();
 });
 
