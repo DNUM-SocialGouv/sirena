@@ -2,6 +2,7 @@ import { REQUETE_ETAPE_RAPPEL_TYPES, REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_T
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { createRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useHasFeature } from '@/hooks/useHasFeature';
 import { StepFormPanel, type StepFormPanelRef } from './StepFormPanel';
 
 const addMutateAsync = vi.fn();
@@ -18,6 +19,12 @@ vi.mock('@/hooks/mutations/updateProcessingStep.hook', () => ({
 vi.mock('@/hooks/mutations/updateUploadedFiles.hook', () => ({
   useUploadFile: () => ({ mutateAsync: uploadMutateAsync }),
 }));
+
+vi.mock('@/hooks/useHasFeature', () => ({
+  useHasFeature: vi.fn(),
+}));
+
+const mockedUseHasFeature = vi.mocked(useHasFeature);
 
 vi.mock('@/components/common/FileDownloadLink', () => ({
   FileDownloadLink: ({ fileName }: { fileName: string }) => <span>{fileName}</span>,
@@ -81,6 +88,7 @@ describe('StepFormPanel', () => {
     updateMutateAsync.mockReset().mockResolvedValue({ data: {} });
     deleteMutateAsync.mockReset().mockResolvedValue(undefined);
     uploadMutateAsync.mockReset().mockResolvedValue({ id: 'file-1' });
+    mockedUseHasFeature.mockReset().mockReturnValue(true);
   });
 
   it('creates a step with no status selected by default (spec)', async () => {
@@ -436,6 +444,42 @@ describe('StepFormPanel', () => {
       const payload = updateMutateAsync.mock.calls[0][0];
       expect(payload.rappelType).toBeNull();
       expect(payload.rappelDate).toBeUndefined();
+    });
+
+    describe('when the feature flag is disabled', () => {
+      beforeEach(() => {
+        mockedUseHasFeature.mockReturnValue(false);
+      });
+
+      it('hides the reminder fields', () => {
+        const ref = createRef<StepFormPanelRef>();
+        render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+        act(() => ref.current?.openCreate());
+
+        expect(
+          screen.queryByLabelText('Mettre un rappel pour cette étape (alertes, relances etc.)'),
+        ).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/Rappeler cette étape le/)).not.toBeInTheDocument();
+      });
+
+      it('keeps an existing reminder untouched when the step is edited', async () => {
+        const ref = createRef<StepFormPanelRef>();
+        render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+        act(() =>
+          ref.current?.openEdit(
+            makeStep({ rappelType: REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE, rappelDate: '2026-09-01T00:00:00.000Z' }),
+          ),
+        );
+        await act(async () => {
+          fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+        });
+
+        const payload = updateMutateAsync.mock.calls[0][0];
+        expect(payload.rappelType).toBe(REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE);
+        expect(payload.rappelDate).toBe('2026-09-01');
+      });
     });
   });
 });

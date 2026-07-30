@@ -3,6 +3,7 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import {
+  FEATURE_FLAGS,
   RAPPEL_DATE_REQUIRED_MESSAGE,
   REQUETE_ETAPE_RAPPEL_TYPES,
   REQUETE_ETAPE_STATUT_TYPES,
@@ -20,6 +21,7 @@ import {
 } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
+import { useHasFeature } from '@/hooks/useHasFeature';
 import type { ProcessingStepStatut } from '@/lib/api/processingSteps';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 import styles from './StepFormPanel.module.css';
@@ -238,6 +240,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   const [rappelType, setRappelType] = useState<RappelSelectValue>(RAPPEL_DISABLED);
   const [rappelDate, setRappelDate] = useState('');
   const [rappelDateError, setRappelDateError] = useState<string | null>(null);
+  const isRappelEnabled = useHasFeature(FEATURE_FLAGS.ETAPE_RAPPEL, false);
 
   const [notes, setNotes] = useState<EditableNote[]>([]);
   const [readOnlyNotes, setReadOnlyNotes] = useState<ReadOnlyNote[]>([]);
@@ -401,7 +404,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
       valid = false;
     }
 
-    if (!fieldsLocked && rappelType === REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE && !rappelDate) {
+    if (isRappelEnabled && !fieldsLocked && rappelType === REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE && !rappelDate) {
       setRappelDateError(RAPPEL_DATE_REQUIRED_MESSAGE);
       firstErrorField = firstErrorField ?? rappelDateInputRef.current;
       valid = false;
@@ -573,8 +576,9 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
 
                   {fieldsLocked ? (
                     <p className={`fr-text--sm ${styles.lockHint}`}>
-                      Cette étape correspond à un accusé de réception : le statut, le nom, la date et le rappel ne sont
-                      pas modifiables ; vous pouvez uniquement ajouter des notes et des pièces jointes.
+                      Cette étape correspond à un accusé de réception : le statut, le nom
+                      {isRappelEnabled ? ', la date et le rappel' : ' et la date'} ne sont pas modifiables ; vous pouvez
+                      uniquement ajouter des notes et des pièces jointes.
                     </p>
                   ) : null}
 
@@ -724,15 +728,17 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                       />
                     </section>
 
-                    <StepRappelFields
-                      rappelType={rappelType}
-                      rappelDate={rappelDate}
-                      dateError={rappelDateError}
-                      disabled={isLoading || fieldsLocked}
-                      dateInputRef={rappelDateInputRef}
-                      onTypeChange={handleRappelTypeChange}
-                      onDateChange={handleRappelDateChange}
-                    />
+                    {isRappelEnabled && (
+                      <StepRappelFields
+                        rappelType={rappelType}
+                        rappelDate={rappelDate}
+                        dateError={rappelDateError}
+                        disabled={isLoading || fieldsLocked}
+                        dateInputRef={rappelDateInputRef}
+                        onTypeChange={handleRappelTypeChange}
+                        onDateChange={handleRappelDateChange}
+                      />
+                    )}
 
                     <div className={styles.footerActions}>
                       {mode === 'edit' && !fieldsLocked && !isAcknowledgment && (
