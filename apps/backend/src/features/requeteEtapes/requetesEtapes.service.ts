@@ -84,6 +84,7 @@ export const createDefaultRequeteEtapes = async (
       statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
       nom: creationStepName,
       type: REQUETE_ETAPE_TYPES.CREATION,
+      estPartagee: true,
     },
   });
 
@@ -94,6 +95,7 @@ export const createDefaultRequeteEtapes = async (
       statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
       nom: ACKNOWLEDGMENT_STEP_NAME,
       type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+      estPartagee: false,
     },
   });
 
@@ -488,9 +490,7 @@ export const getRequeteEtapes = async (
     requeteId,
     // Sharing never grants access to the Requête SIRENA: the reader must already be affected.
     requete: { requeteEntites: { some: { entiteId } } },
-    ...(estPartageeEnabled
-      ? { OR: [{ entiteId }, { estPartagee: true, type: REQUETE_ETAPE_TYPES.MANUAL }] }
-      : { entiteId }),
+    ...(estPartageeEnabled ? { OR: [{ entiteId }, { estPartagee: true }] } : { entiteId }),
   };
 
   const [raw, total] = await Promise.all([
@@ -641,6 +641,7 @@ export const updateAcknowledgmentStep = async (
           nom: etape.nom,
           statutId: etape.statutId,
           dateRealisation: etape.dateRealisation?.toISOString() ?? null,
+          estPartagee: etape.estPartagee,
           requeteId: etape.requeteId,
           entiteId: etape.entiteId,
           createdAt: etape.createdAt.toISOString(),
@@ -652,6 +653,7 @@ export const updateAcknowledgmentStep = async (
           data: {
             statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
             dateRealisation: sentDate,
+            estPartagee: true,
           },
         });
 
@@ -660,6 +662,7 @@ export const updateAcknowledgmentStep = async (
           nom: updatedEtape.nom,
           statutId: updatedEtape.statutId,
           dateRealisation: updatedEtape.dateRealisation?.toISOString() ?? null,
+          estPartagee: updatedEtape.estPartagee,
           requeteId: updatedEtape.requeteId,
           entiteId: updatedEtape.entiteId,
           createdAt: updatedEtape.createdAt.toISOString(),

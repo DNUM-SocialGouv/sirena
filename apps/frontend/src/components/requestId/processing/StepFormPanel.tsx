@@ -1,3 +1,4 @@
+import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
@@ -551,6 +552,15 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                       Cette étape correspond à un accusé de réception : le statut, le nom et la date ne sont pas
                       modifiables ; vous pouvez uniquement ajouter des notes et des pièces jointes.
                     </p>
+                  ) : null}
+
+                  {isAcknowledgment ? (
+                    <Alert
+                      className="fr-mb-3w"
+                      small={true}
+                      severity="info"
+                      description="Cette étape sera visible par les autres entités affectées"
+                    />
                   ) : null}
 
                   <form onSubmit={handleFormSubmit}>

@@ -6,6 +6,7 @@ import { sendTipimailEmail } from '../../libs/mail/tipimail.js';
 import { uploadFileToMinio } from '../../libs/minio.js';
 import { prisma } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
+import { updateAcknowledgmentStep } from '../requeteEtapes/requetesEtapes.service.js';
 import { createUploadedFile } from '../uploadedFiles/uploadedFiles.service.js';
 import { sendDeclarantAcknowledgmentEmail, sendManualAcknowledgmentEmail } from './declarants.notification.service.js';
 
@@ -71,6 +72,7 @@ const mockedPrismaRequete = vi.mocked(prisma.requete);
 const mockedPrismaEntite = vi.mocked(prisma.entite);
 const mockedSendTipimailEmail = vi.mocked(sendTipimailEmail);
 const mockedCreateChangeLog = vi.mocked(createChangeLog);
+const mockedUpdateAcknowledgmentStep = vi.mocked(updateAcknowledgmentStep);
 
 describe('sendDeclarantAcknowledgmentEmail()', () => {
   beforeEach(() => {
@@ -97,6 +99,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
     await sendDeclarantAcknowledgmentEmail('req1');
 
     expect(mockedSendTipimailEmail).not.toHaveBeenCalled();
+    expect(mockedUpdateAcknowledgmentStep).not.toHaveBeenCalled();
   });
 
   it('should return early if requete reception type is null', async () => {
@@ -226,6 +229,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
     // child entity should not appear in the signature
     expect(call.text).not.toContain('UA 14');
     expect(typeof call.html).toBe('string');
+    expect(mockedUpdateAcknowledgmentStep).toHaveBeenCalledWith('req1', ['e1', 'e2'], expect.any(Date));
 
     expect(mockedCreateChangeLog).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -487,8 +491,37 @@ describe('sendManualAcknowledgmentEmail() — PDF attachment', () => {
 
     expect(mockedRequeteEtape.updateMany).toHaveBeenCalledWith({
       where: { id: 'etapeAck', statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
-      data: { statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT, dateRealisation: expect.any(Date) },
+      data: {
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        dateRealisation: expect.any(Date),
+        estPartagee: true,
+      },
     });
+  });
+
+  it('keeps a non-sent Accusé de réception private when email sending is disabled', async () => {
+    mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'disabled' } as any);
+
+    await expect(
+      sendManualAcknowledgmentEmail({
+        etapeId: 'etapeAck',
+        requeteId: 'req1',
+        entiteId: 'ent1',
+        userId: 'user123',
+      }),
+    ).rejects.toThrow("L'accusé de réception n'a pas été envoyé.");
+
+    expect(mockedRequeteEtape.update).toHaveBeenCalledWith({
+      where: { id: 'etapeAck' },
+      data: {
+        statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
+        dateRealisation: null,
+        estPartagee: false,
+      },
+    });
+    expect(mockedCreateChangeLog).not.toHaveBeenCalledWith(
+      expect.objectContaining({ entity: 'RequeteEtape', entityId: 'etapeAck' }),
+    );
   });
 
   it('clears dateRealisation when rolling back after a send failure', async () => {
@@ -505,7 +538,30 @@ describe('sendManualAcknowledgmentEmail() — PDF attachment', () => {
 
     expect(mockedRequeteEtape.update).toHaveBeenCalledWith({
       where: { id: 'etapeAck' },
-      data: { statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE, dateRealisation: null },
+      data: {
+        statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
+        dateRealisation: null,
+        estPartagee: false,
+      },
     });
+  });
+
+  it('records the semi-manual sharing transition with the sending agent', async () => {
+    await sendManualAcknowledgmentEmail({
+      etapeId: 'etapeAck',
+      requeteId: 'req1',
+      entiteId: 'ent1',
+      userId: 'user123',
+    });
+
+    expect(mockedCreateChangeLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entity: 'RequeteEtape',
+        entityId: 'etapeAck',
+        changedById: 'user123',
+        before: expect.objectContaining({ estPartagee: false }),
+        after: expect.objectContaining({ estPartagee: true }),
+      }),
+    );
   });
 });

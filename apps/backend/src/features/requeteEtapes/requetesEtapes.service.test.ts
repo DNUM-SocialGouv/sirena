@@ -22,6 +22,7 @@ import {
   getEtapePermissions,
   getRequeteEtapeById,
   getRequeteEtapes,
+  updateAcknowledgmentStep,
   updateProcessingEtape,
 } from './requetesEtapes.service.js';
 
@@ -52,6 +53,14 @@ vi.mock('../../libs/prisma.js', () => ({
 
 vi.mock('../changelog/changelog.service.js', () => ({
   createChangeLog: vi.fn(),
+}));
+
+vi.mock('../../libs/asyncLocalStorage.js', () => ({
+  getLoggerStore: vi.fn(() => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
+  })),
 }));
 
 vi.mock('../../libs/minio.js', () => ({
@@ -169,6 +178,7 @@ describe('RequeteEtapes.service.ts', () => {
           statutId: 'FAIT',
           nom: expect.stringContaining('Création de la requête'),
           type: 'CREATION',
+          estPartagee: true,
         }),
       });
 
@@ -179,6 +189,7 @@ describe('RequeteEtapes.service.ts', () => {
           statutId: 'A_FAIRE',
           nom: "Envoi de l'accusé de réception",
           type: 'ACKNOWLEDGMENT',
+          estPartagee: false,
         },
       });
     });
@@ -328,6 +339,7 @@ describe('RequeteEtapes.service.ts', () => {
           statutId: 'A_FAIRE',
           nom: "Envoi de l'accusé de réception",
           type: 'ACKNOWLEDGMENT',
+          estPartagee: false,
         },
       });
     });
@@ -691,12 +703,58 @@ describe('RequeteEtapes.service.ts', () => {
       const sharedWhere = {
         requeteId: 'requeteId',
         requete: { requeteEntites: { some: { entiteId: 'reader-entite' } } },
-        OR: [{ entiteId: 'reader-entite' }, { estPartagee: true, type: 'MANUAL' }],
+        OR: [{ entiteId: 'reader-entite' }, { estPartagee: true }],
       };
       expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: sharedWhere, skip: 5, take: 10 }),
       );
       expect(prisma.requeteEtape.count).toHaveBeenCalledWith({ where: sharedWhere });
+    });
+  });
+
+  describe('updateAcknowledgmentStep()', () => {
+    it('shares an automatically sent Accusé de réception in the same update and records the system transition', async () => {
+      const sentDate = new Date('2026-07-31T09:30:00.000Z');
+      const pendingEtape = {
+        ...requeteEtape,
+        id: 'ack-1',
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'A_FAIRE',
+        estPartagee: false,
+      };
+      const updatedEtape = {
+        ...pendingEtape,
+        statutId: 'FAIT',
+        dateRealisation: sentDate,
+        estPartagee: true,
+        updatedAt: sentDate,
+      };
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([pendingEtape]);
+      vi.mocked(prisma.requeteEtape.update).mockResolvedValueOnce(updatedEtape);
+
+      await updateAcknowledgmentStep('requeteId', ['entiteId'], sentDate);
+
+      expect(prisma.requeteEtape.update).toHaveBeenCalledWith({
+        where: { id: 'ack-1' },
+        data: { statutId: 'FAIT', dateRealisation: sentDate, estPartagee: true },
+      });
+      expect(createChangeLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entityId: 'ack-1',
+          changedById: null,
+          before: expect.objectContaining({ estPartagee: false }),
+          after: expect.objectContaining({ estPartagee: true }),
+        }),
+      );
+    });
+
+    it('does not reinterpret an already completed historical Accusé de réception', async () => {
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([]);
+
+      await updateAcknowledgmentStep('requeteId', ['entiteId']);
+
+      expect(prisma.requeteEtape.update).not.toHaveBeenCalled();
+      expect(createChangeLog).not.toHaveBeenCalled();
     });
   });
 

@@ -290,7 +290,11 @@ export async function sendManualAcknowledgmentEmail({
   const markedDoneAt = new Date();
   const claimResult = await prisma.requeteEtape.updateMany({
     where: { id: etapeId, statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
-    data: { statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT, dateRealisation: markedDoneAt },
+    data: {
+      statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+      dateRealisation: markedDoneAt,
+      estPartagee: true,
+    },
   });
 
   if (claimResult.count === 0) {
@@ -335,12 +339,16 @@ export async function sendManualAcknowledgmentEmail({
     const from = { address: fromAddress, personalName: fromPersonalName };
     const sentDate = new Date();
 
-    await sendTipimailEmail({
+    const sendResult = await sendTipimailEmail({
       to: declarantEmail,
       subject: ACKNOWLEDGMENT_EMAIL_SUBJECT,
       text: message,
       html: buildAcknowledgmentMessageHtml(message),
     });
+
+    if (sendResult.status === 'disabled') {
+      throw new Error("L'accusé de réception n'a pas été envoyé.");
+    }
 
     logger.info({ requeteId, entiteId, declarantEmail }, 'Manual acknowledgment email sent successfully');
 
@@ -349,8 +357,16 @@ export async function sendManualAcknowledgmentEmail({
         entity: 'RequeteEtape',
         entityId: etapeId,
         action: ChangeLogAction.UPDATED,
-        before: { statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE, dateRealisation: null },
-        after: { statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT, dateRealisation: markedDoneAt.toISOString() },
+        before: {
+          statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
+          dateRealisation: null,
+          estPartagee: false,
+        },
+        after: {
+          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          dateRealisation: markedDoneAt.toISOString(),
+          estPartagee: true,
+        },
         changedById: userId,
       });
     } catch (changelogError) {
@@ -410,7 +426,11 @@ export async function sendManualAcknowledgmentEmail({
     try {
       await prisma.requeteEtape.update({
         where: { id: etapeId },
-        data: { statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE, dateRealisation: null },
+        data: {
+          statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
+          dateRealisation: null,
+          estPartagee: false,
+        },
       });
     } catch (rollbackError) {
       logger.error(

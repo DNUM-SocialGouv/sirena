@@ -337,6 +337,8 @@ describe('StepFormPanel', () => {
       ),
     );
 
+    expect(screen.getByText('Cette étape sera visible par les autres entités affectées')).toBeInTheDocument();
+    expect(screen.queryByText(/Afficher l’étape pour les autres entités affectées/)).not.toBeInTheDocument();
     // Step metadata stays locked...
     expect(screen.getByLabelText("Nom de l'étape (obligatoire)")).toBeDisabled();
     expect(screen.getByLabelText('Fait')).toBeDisabled();
@@ -361,6 +363,8 @@ describe('StepFormPanel', () => {
       ),
     );
 
+    expect(screen.getByText('Cette étape sera visible par les autres entités affectées')).toBeInTheDocument();
+    expect(screen.queryByText(/Afficher l’étape pour les autres entités affectées/)).not.toBeInTheDocument();
     // Name and deletion stay locked (acknowledgment = system step)...
     expect(screen.getByLabelText("Nom de l'étape (obligatoire)")).toBeDisabled();
     expect(screen.queryByRole('button', { name: "Supprimer l'étape" })).not.toBeInTheDocument();
