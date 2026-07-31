@@ -288,12 +288,13 @@ export async function sendManualAcknowledgmentEmail({
   const logger = getLoggerStore();
 
   const markedDoneAt = new Date();
+  let emailSent = false;
   const claimResult = await prisma.requeteEtape.updateMany({
     where: { id: etapeId, statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
     data: {
       statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
       dateRealisation: markedDoneAt,
-      estPartagee: true,
+      estPartagee: false,
     },
   });
 
@@ -349,6 +350,12 @@ export async function sendManualAcknowledgmentEmail({
     if (sendResult.status === 'disabled') {
       throw new Error("L'accusé de réception n'a pas été envoyé.");
     }
+
+    emailSent = true;
+    await prisma.requeteEtape.update({
+      where: { id: etapeId },
+      data: { estPartagee: true },
+    });
 
     logger.info({ requeteId, entiteId, declarantEmail }, 'Manual acknowledgment email sent successfully');
 
@@ -419,6 +426,14 @@ export async function sendManualAcknowledgmentEmail({
       logger.error({ requeteId, error: changelogError }, 'Failed to create changelog for manual acknowledgment email');
     }
   } catch (error) {
+    if (emailSent) {
+      logger.error(
+        { requeteId, entiteId, etapeId, error },
+        'Acknowledgment email was sent but the step could not be finalized',
+      );
+      throw error;
+    }
+
     logger.error(
       { requeteId, entiteId, etapeId, error },
       'Failed to send manual acknowledgment email, rolling back step to A_FAIRE',

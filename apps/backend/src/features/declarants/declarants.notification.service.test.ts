@@ -481,21 +481,60 @@ describe('sendManualAcknowledgmentEmail() — PDF attachment', () => {
     expect(mockedRequeteEtapeNote.create).not.toHaveBeenCalled();
   });
 
-  it('stamps dateRealisation when claiming the step as FAIT', async () => {
-    await sendManualAcknowledgmentEmail({
+  it('keeps the claimed step private until the email is effectively sent', async () => {
+    let resolveSend: ((value: { status: string }) => void) | undefined;
+    mockedSendTipimailEmail.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveSend = resolve;
+      }),
+    );
+
+    const sending = sendManualAcknowledgmentEmail({
       etapeId: 'etapeAck',
       requeteId: 'req1',
       entiteId: 'ent1',
       userId: 'user123',
     });
 
+    await vi.waitFor(() => expect(mockedSendTipimailEmail).toHaveBeenCalled());
     expect(mockedRequeteEtape.updateMany).toHaveBeenCalledWith({
       where: { id: 'etapeAck', statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
       data: {
         statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
         dateRealisation: expect.any(Date),
-        estPartagee: true,
+        estPartagee: false,
       },
+    });
+    expect(mockedRequeteEtape.update).not.toHaveBeenCalledWith({
+      where: { id: 'etapeAck' },
+      data: { estPartagee: true },
+    });
+
+    resolveSend?.({ status: 'success' });
+    await sending;
+
+    expect(mockedRequeteEtape.update).toHaveBeenCalledWith({
+      where: { id: 'etapeAck' },
+      data: { estPartagee: true },
+    });
+  });
+
+  it('does not reopen the step for a duplicate send when sharing finalization fails after the email was sent', async () => {
+    mockedRequeteEtape.update.mockRejectedValueOnce(new Error('database unavailable'));
+
+    await expect(
+      sendManualAcknowledgmentEmail({
+        etapeId: 'etapeAck',
+        requeteId: 'req1',
+        entiteId: 'ent1',
+        userId: 'user123',
+      }),
+    ).rejects.toThrow('database unavailable');
+
+    expect(mockedRequeteEtape.update).toHaveBeenCalledTimes(1);
+    expect(mockedRequeteEtape.update).toHaveBeenCalledWith({
+      where: { id: 'etapeAck' },
+      data: { estPartagee: true },
     });
   });
 

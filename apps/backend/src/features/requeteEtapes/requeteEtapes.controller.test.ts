@@ -580,6 +580,19 @@ describe('requeteEtapes.controller.ts', () => {
       expect(deleteRequeteEtape).not.toHaveBeenCalled();
     });
 
+    it('forbids deleting a foreign shared processing step', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        entiteId: 'other-entite',
+        estPartagee: true,
+      });
+
+      const res = await client[':id'].$delete({ param: { id: 'step1' } });
+
+      expect(res.status).toBe(403);
+      expect(deleteRequeteEtape).not.toHaveBeenCalled();
+    });
+
     it('should handle service errors gracefully', async () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
       vi.mocked(deleteRequeteEtape).mockRejectedValueOnce(new Error('Database error'));
@@ -897,10 +910,21 @@ describe('requeteEtapes.controller.ts', () => {
       expect(updateProcessingEtape).not.toHaveBeenCalled();
     });
 
-    it('returns 403 if the step belongs to another entite', async () => {
-      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({ ...fakeRequeteEtape, entiteId: 'other-entite' });
+    it('forbids changing notes or files on a foreign shared processing step', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        entiteId: 'other-entite',
+        estPartagee: true,
+      });
 
-      const res = await client[':id'].$patch({ param: { id: 'step1' }, json: validBody });
+      const res = await client[':id'].$patch({
+        param: { id: 'step1' },
+        json: {
+          ...validBody,
+          notes: [{ texte: 'Foreign note' }],
+          fileIds: ['foreign-file'],
+        },
+      });
 
       expect(res.status).toBe(403);
       expect(updateProcessingEtape).not.toHaveBeenCalled();
