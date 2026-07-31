@@ -261,18 +261,20 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
                     <p>Cette étape sera visible par toute autre entité administrative affectée à la requête.</p>
                   ) : activeOtherEntityNames.length === 1 ? (
                     <>
-                      <p>{`Cette étape sera visible par l'autre entité administrative affectée : ${activeOtherEntityNames[0]}.`}</p>
-                      <p>{`Le traitement de la requête sera toujours en cours pour l'entité administrative ${activeOtherEntityNames[0]}.`}</p>
+                      <p>{`Le traitement de la requête sera toujours en cours pour ${activeOtherEntityNames[0]}.`}</p>
+                      <p>{`Cette étape sera visible par ${activeOtherEntityNames[0]}.`}</p>
                     </>
                   ) : (
                     <>
-                      <p>Cette étape sera visible par les autres entités administratives affectées :</p>
+                      <p>
+                        Le traitement de la requête sera toujours en cours pour les entités administratives suivantes :
+                      </p>
                       <ul>
                         {activeOtherEntityNames.map((entityName) => (
                           <li key={entityName}>{entityName}</li>
                         ))}
                       </ul>
-                      <p>Le traitement de la requête sera toujours en cours pour ces entités administratives.</p>
+                      <p>{`Cette étape sera visible par les entités administratives suivantes : ${activeOtherEntityNames.join(', ')}.`}</p>
                     </>
                   )}
                 </div>

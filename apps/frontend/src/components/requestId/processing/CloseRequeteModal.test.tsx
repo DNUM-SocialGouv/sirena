@@ -71,12 +71,11 @@ describe('CloseRequeteModal', () => {
 
     expect(screen.getByText('Information : vous allez clôturer la requête REQ-354.')).toBeInTheDocument();
     expect(screen.queryByText(/votre entité n'est plus en charge du traitement/)).not.toBeInTheDocument();
-    expect(
-      screen.getByText("Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne."),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Cette étape sera visible par l'autre entité administrative affectée : ARS Bretagne."),
-    ).toBeInTheDocument();
+    const treatmentMessage = screen.getByText('Le traitement de la requête sera toujours en cours pour ARS Bretagne.');
+    const visibilityMessage = screen.getByText('Cette étape sera visible par ARS Bretagne.');
+    expect(treatmentMessage).toBeInTheDocument();
+    expect(visibilityMessage).toBeInTheDocument();
+    expect(treatmentMessage.compareDocumentPosition(visibilityMessage) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
     expect(screen.queryByText(/Attention/)).not.toBeInTheDocument();
     expect(
@@ -100,7 +99,7 @@ describe('CloseRequeteModal', () => {
     expect(screen.queryByText(/mis en cause/)).not.toBeInTheDocument();
     expect(screen.getByText('Information : vous allez clôturer la requête REQ-354.')).toBeInTheDocument();
     expect(
-      screen.getByText("Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne."),
+      screen.getByText('Le traitement de la requête sera toujours en cours pour ARS Bretagne.'),
     ).toBeInTheDocument();
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
   });
@@ -122,12 +121,15 @@ describe('CloseRequeteModal', () => {
 
     render(<CloseRequeteModal requestId="REQ-354" />);
 
-    expect(
-      screen.getByText('Cette étape sera visible par les autres entités administratives affectées :'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Le traitement de la requête sera toujours en cours pour ces entités administratives.'),
-    ).toBeInTheDocument();
+    const treatmentMessage = screen.getByText(
+      'Le traitement de la requête sera toujours en cours pour les entités administratives suivantes :',
+    );
+    const visibilityMessage = screen.getByText(
+      'Cette étape sera visible par les entités administratives suivantes : ARS Bretagne, DDETS 35.',
+    );
+    expect(treatmentMessage).toBeInTheDocument();
+    expect(visibilityMessage).toBeInTheDocument();
+    expect(treatmentMessage.compareDocumentPosition(visibilityMessage) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole('list')).toBeInTheDocument();
     expect(screen.getByText('ARS Bretagne')).toBeInTheDocument();
     expect(screen.getByText('DDETS 35')).toBeInTheDocument();
@@ -174,7 +176,7 @@ describe('CloseRequeteModal', () => {
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne."),
+      screen.getByText('Le traitement de la requête sera toujours en cours pour ARS Bretagne.'),
     ).toBeInTheDocument();
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
     expect(useRequeteOtherEntitiesAffected).toHaveBeenCalledWith('REQ-354', { enabled: false });
@@ -308,7 +310,7 @@ describe('CloseRequeteModal', () => {
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne."),
+      screen.getByText('Le traitement de la requête sera toujours en cours pour ARS Bretagne.'),
     ).toBeInTheDocument();
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
     expect(useRequeteOtherEntitiesAffected).toHaveBeenCalledWith('REQ-354', { enabled: false });

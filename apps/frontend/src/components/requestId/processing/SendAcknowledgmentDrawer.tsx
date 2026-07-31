@@ -159,7 +159,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                     Envoyer l'accusé de réception
                   </h3>
                   <Alert
-                    className="fr-mb-3w"
+                    className={`${drawerStyles.sharingAlert} fr-mb-3w`}
                     small={true}
                     severity="info"
                     description="Cette étape sera visible par les autres entités affectées"
