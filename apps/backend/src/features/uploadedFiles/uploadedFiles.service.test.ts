@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../libs/prisma.js';
-import { createUploadedFile, deleteUploadedFile, getUploadedFileById, isUserOwner } from './uploadedFiles.service.js';
+import {
+  createUploadedFile,
+  deleteUploadedFile,
+  getRequeteEtapeUploadedFile,
+  getUploadedFileById,
+  isUserOwner,
+} from './uploadedFiles.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
@@ -86,6 +92,22 @@ describe('uploadedFiles.service.ts', () => {
       const result = await getUploadedFileById('file1', ['entite1']);
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('getRequeteEtapeUploadedFile()', () => {
+    it('only returns the requested file when it belongs to the exact processing step', async () => {
+      mockedUploadedFile.findFirst.mockResolvedValueOnce(mockUploadedFile);
+
+      const result = await getRequeteEtapeUploadedFile('step1', 'file1');
+
+      expect(mockedUploadedFile.findFirst).toHaveBeenCalledWith({
+        where: {
+          id: 'file1',
+          requeteEtapeId: 'step1',
+        },
+      });
+      expect(result).toEqual(mockUploadedFile);
     });
   });
 

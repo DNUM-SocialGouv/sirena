@@ -33,7 +33,7 @@ import {
   hasAccessToRequete,
   updateStatusRequete,
 } from '../requetesEntite/requetesEntite.service.js';
-import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
+import { getRequeteEtapeUploadedFile } from '../uploadedFiles/uploadedFiles.service.js';
 import { getUserById } from '../users/users.service.js';
 import { requeteEtapeAuthorization } from './requetesEtapes.authorization.js';
 import {
@@ -95,6 +95,7 @@ const app = factoryWithLogs
     const logger = c.get('logger');
     const { id, fileId } = c.req.param();
     const topEntiteId = c.get('topEntiteId');
+    const userId = c.get('userId');
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
         res: c.res,
@@ -108,53 +109,8 @@ const app = factoryWithLogs
       throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
-    if (!requeteEtapeAuthorization.canRead(topEntiteId, requeteEtape)) {
-      throwHTTPException403Forbidden('You are not allowed to read this file for this requete etape', {
-        res: c.res,
-        kind: ERROR_KIND.BUSINESS,
-      });
-    }
-
-    const hasAccessToReq = await hasAccessToRequete({
-      requeteId: requeteEtape.requeteId,
-      entiteId: topEntiteId,
-    });
-
-    if (!hasAccessToReq) {
-      throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
-        res: c.res,
-        kind: ERROR_KIND.BUSINESS,
-      });
-    }
-
-    const file = await getUploadedFileById(fileId, [topEntiteId]);
-
-    if (!file) {
-      throwHTTPException404NotFound('File not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
-    }
-
-    logger.info({ requeteEtapeId: id, fileId }, 'Retrieving file for requete etape');
-
-    return streamFileResponse(c, file);
-  })
-  .get('/:id/file/:fileId/safe', async (c) => {
-    const logger = c.get('logger');
-    const { id, fileId } = c.req.param();
-    const topEntiteId = c.get('topEntiteId');
-    if (!topEntiteId) {
-      throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
-        res: c.res,
-        kind: ERROR_KIND.BUSINESS,
-      });
-    }
-
-    const requeteEtape = await getRequeteEtapeById(id);
-
-    if (!requeteEtape) {
-      throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
-    }
-
-    if (!requeteEtapeAuthorization.canRead(topEntiteId, requeteEtape)) {
+    const estPartageeEnabled = await isEstPartageeEnabledForUser(userId);
+    if (!requeteEtapeAuthorization.canRead(topEntiteId, requeteEtape, estPartageeEnabled)) {
       throwHTTPException403Forbidden('You are not allowed to read this file for this requete etape', {
         res: c.res,
         kind: ERROR_KIND.BUSINESS,
@@ -173,7 +129,55 @@ const app = factoryWithLogs
       });
     }
 
-    const file = await getUploadedFileById(fileId, [topEntiteId]);
+    const file = await getRequeteEtapeUploadedFile(id, fileId);
+
+    if (!file) {
+      throwHTTPException404NotFound('File not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+    }
+
+    logger.info({ requeteEtapeId: id, fileId }, 'Retrieving file for requete etape');
+
+    return streamFileResponse(c, file);
+  })
+  .get('/:id/file/:fileId/safe', async (c) => {
+    const logger = c.get('logger');
+    const { id, fileId } = c.req.param();
+    const topEntiteId = c.get('topEntiteId');
+    const userId = c.get('userId');
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
+    }
+
+    const requeteEtape = await getRequeteEtapeById(id);
+
+    if (!requeteEtape) {
+      throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+    }
+
+    const estPartageeEnabled = await isEstPartageeEnabledForUser(userId);
+    if (!requeteEtapeAuthorization.canRead(topEntiteId, requeteEtape, estPartageeEnabled)) {
+      throwHTTPException403Forbidden('You are not allowed to read this file for this requete etape', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
+    }
+
+    const hasAccessToReq = await hasAccessToRequete({
+      requeteId: requeteEtape.requeteId,
+      entiteId: topEntiteId,
+    });
+
+    if (!hasAccessToReq) {
+      throwHTTPException403Forbidden('You are not allowed to access this file', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
+    }
+
+    const file = await getRequeteEtapeUploadedFile(id, fileId);
 
     if (!file) {
       throwHTTPException404NotFound('File not found', { res: c.res, kind: ERROR_KIND.BUSINESS });

@@ -74,6 +74,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                 <Step
                   key={step.id}
                   requestId={requestId}
+                  isOwner={step.entiteId === requestQuery.data?.entiteId}
                   {...step}
                   isAcknowledgmentSendable={isAcknowledgmentSendable}
                   onSendAcknowledgment={

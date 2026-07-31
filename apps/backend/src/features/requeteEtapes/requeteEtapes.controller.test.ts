@@ -15,7 +15,7 @@ import {
   hasAccessToRequete,
   updateStatusRequete,
 } from '../requetesEntite/requetesEntite.service.js';
-import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
+import { getRequeteEtapeUploadedFile } from '../uploadedFiles/uploadedFiles.service.js';
 import { getUserById } from '../users/users.service.js';
 import { requeteEtapeAuthorization } from './requetesEtapes.authorization.js';
 import RequeteEtapesController from './requetesEtapes.controller.js';
@@ -56,7 +56,7 @@ vi.mock('../users/users.service.js', () => ({
 }));
 
 vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
-  getUploadedFileById: vi.fn(),
+  getRequeteEtapeUploadedFile: vi.fn(),
   isFileBelongsToRequete: vi.fn(() => Promise.resolve(true)),
 }));
 
@@ -201,6 +201,22 @@ describe('requeteEtapes.controller.ts', () => {
       expect(addClotureEtapeFiles).not.toHaveBeenCalled();
     });
 
+    it('forbids attaching files to a foreign Étape de traitement partagée', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        entiteId: 'e2',
+        estPartagee: true,
+      });
+
+      const res = await client[':id']['cloture-files'].$post({
+        param: { id: 'step1' },
+        json: { fileIds: ['file1'] },
+      });
+
+      expect(res.status).toBe(403);
+      expect(addClotureEtapeFiles).not.toHaveBeenCalled();
+    });
+
     it('should return 403 if user has no access to requete', async () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
 
@@ -276,7 +292,7 @@ describe('requeteEtapes.controller.ts', () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(requeteEtapeWithE1);
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
 
-      vi.mocked(getUploadedFileById).mockResolvedValueOnce(baseFile);
+      vi.mocked(getRequeteEtapeUploadedFile).mockResolvedValueOnce(baseFile);
 
       const nodeReadable = Readable.from(Buffer.from('hello'));
       vi.mocked(getFileStream).mockResolvedValueOnce({ stream: nodeReadable, metadata: { encrypted: false } });
@@ -293,8 +309,79 @@ describe('requeteEtapes.controller.ts', () => {
 
       expect(bodyText).toBe('hello');
 
-      expect(getUploadedFileById).toHaveBeenCalledWith('file1', ['e1']);
+      expect(getRequeteEtapeUploadedFile).toHaveBeenCalledWith('step1', 'file1');
       expect(getFileStream).toHaveBeenCalledWith('/uploads/test.pdf', undefined);
+    });
+
+    it('allows an affected reader with sharing enabled to download a foreign Étape de traitement partagée file', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        entiteId: 'e2',
+        estPartagee: true,
+      });
+      vi.mocked(hasFeature).mockResolvedValueOnce(true);
+      vi.mocked(getRequeteEtapeUploadedFile).mockResolvedValueOnce(baseFile);
+      vi.mocked(getFileStream).mockResolvedValueOnce({
+        stream: Readable.from(Buffer.from('shared')),
+        metadata: { encrypted: false },
+      });
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(200);
+      expect(await res.text()).toBe('shared');
+      expect(hasFeature).toHaveBeenCalledWith('SHARED_PROCESSING_STEPS', false, 'agent@example.test', 'e1');
+      expect(getRequeteEtapeUploadedFile).toHaveBeenCalledWith('step1', 'file1');
+    });
+
+    it('denies a foreign Étape de traitement partagée file when the reader feature flag is disabled', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        entiteId: 'e2',
+        estPartagee: true,
+      });
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(403);
+      expect(getRequeteEtapeUploadedFile).not.toHaveBeenCalled();
+    });
+
+    it('revokes a known foreign file URL as soon as the step becomes private', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        entiteId: 'e2',
+        estPartagee: false,
+      });
+      vi.mocked(hasFeature).mockResolvedValueOnce(true);
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(403);
+      expect(getRequeteEtapeUploadedFile).not.toHaveBeenCalled();
+    });
+
+    it('denies a foreign Étape de traitement partagée file when the reader is not affected to the Requête SIRENA', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        entiteId: 'e2',
+        estPartagee: true,
+      });
+      vi.mocked(hasFeature).mockResolvedValueOnce(true);
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(403);
+      expect(getRequeteEtapeUploadedFile).not.toHaveBeenCalled();
     });
 
     it('returns 200 with empty body when file size is 0 (no streaming)', async () => {
@@ -303,7 +390,7 @@ describe('requeteEtapes.controller.ts', () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
 
       const emptyFile = { ...baseFile, size: 0 };
-      vi.mocked(getUploadedFileById).mockResolvedValueOnce(emptyFile);
+      vi.mocked(getRequeteEtapeUploadedFile).mockResolvedValueOnce(emptyFile);
 
       const res = await client[':id'].file[':fileId'].$get({
         param: { id: 'step1', fileId: 'file1' },
@@ -327,9 +414,9 @@ describe('requeteEtapes.controller.ts', () => {
       });
 
       expect(res.status).toBe(403);
-      expect(requeteEtapeAuthorization.canRead).toHaveBeenCalledWith('e1', fakeRequeteEtape);
+      expect(requeteEtapeAuthorization.canRead).toHaveBeenCalledWith('e1', fakeRequeteEtape, false);
       expect(hasAccessToRequete).not.toHaveBeenCalled();
-      expect(getUploadedFileById).not.toHaveBeenCalled();
+      expect(getRequeteEtapeUploadedFile).not.toHaveBeenCalled();
     });
 
     it('returns 404 when RequeteEtape not found', async () => {
@@ -344,7 +431,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(404);
       expect(body).toEqual({ message: 'RequeteEtape not found', cause: { kind: ERROR_KIND.BUSINESS } });
 
-      expect(getUploadedFileById).not.toHaveBeenCalled();
+      expect(getRequeteEtapeUploadedFile).not.toHaveBeenCalled();
       expect(getFileStream).not.toHaveBeenCalled();
     });
 
@@ -364,16 +451,16 @@ describe('requeteEtapes.controller.ts', () => {
         cause: { kind: ERROR_KIND.BUSINESS },
       });
 
-      expect(getUploadedFileById).not.toHaveBeenCalled();
+      expect(getRequeteEtapeUploadedFile).not.toHaveBeenCalled();
       expect(getFileStream).not.toHaveBeenCalled();
       expect(hasAccessToRequete).not.toHaveBeenCalled();
     });
 
-    it('returns 404 when file not found', async () => {
+    it('returns 404 when the file does not belong to the exact processing step', async () => {
       const requeteEtapeWithE1 = { ...fakeRequeteEtape, entiteId: 'e1' };
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(requeteEtapeWithE1);
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
-      vi.mocked(getUploadedFileById).mockResolvedValueOnce(null);
+      vi.mocked(getRequeteEtapeUploadedFile).mockResolvedValueOnce(null);
 
       const res = await client[':id'].file[':fileId'].$get({
         param: { id: 'step1', fileId: 'file1' },
@@ -393,7 +480,7 @@ describe('requeteEtapes.controller.ts', () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
 
       const fileNoMeta = { ...baseFile, metadata: null, fileName: 'fallback.pdf' };
-      vi.mocked(getUploadedFileById).mockResolvedValueOnce(fileNoMeta);
+      vi.mocked(getRequeteEtapeUploadedFile).mockResolvedValueOnce(fileNoMeta);
 
       const nodeReadable = Readable.from(Buffer.from('x'));
       vi.mocked(getFileStream).mockResolvedValueOnce({ stream: nodeReadable, metadata: { encrypted: false } });
@@ -404,6 +491,44 @@ describe('requeteEtapes.controller.ts', () => {
 
       expect(res.status).toBe(200);
       expect(res.headers.get('content-disposition')).toBe('inline; filename="fallback.pdf"');
+    });
+
+    it('streams the safe version of a foreign Étape de traitement partagée file when available', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        entiteId: 'e2',
+        estPartagee: true,
+      });
+      vi.mocked(hasFeature).mockResolvedValueOnce(true);
+      vi.mocked(getRequeteEtapeUploadedFile).mockResolvedValueOnce({
+        ...baseFile,
+        safeFilePath: '/uploads/safe-test.pdf',
+      });
+      vi.mocked(getFileStream).mockResolvedValueOnce({
+        stream: Readable.from(Buffer.from('safe')),
+        metadata: { encrypted: false },
+      });
+
+      const res = await client[':id'].file[':fileId'].safe.$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(200);
+      expect(await res.text()).toBe('safe');
+      expect(getRequeteEtapeUploadedFile).toHaveBeenCalledWith('step1', 'file1');
+      expect(getFileStream).toHaveBeenCalledWith('/uploads/safe-test.pdf', undefined);
+    });
+
+    it('keeps the safe file unavailable when no sanitized version exists', async () => {
+      vi.mocked(getRequeteEtapeUploadedFile).mockResolvedValueOnce(baseFile);
+
+      const res = await client[':id'].file[':fileId'].safe.$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(404);
+      expect(await res.json()).toEqual({ message: 'Safe file not available', cause: { kind: ERROR_KIND.BUSINESS } });
+      expect(getFileStream).not.toHaveBeenCalled();
     });
   });
 

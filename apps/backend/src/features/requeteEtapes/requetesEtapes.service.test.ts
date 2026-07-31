@@ -679,7 +679,7 @@ describe('RequeteEtapes.service.ts', () => {
       expect(result.data[2]).toMatchObject({ editable: true, canOnlyEditNotes: false });
     });
 
-    it('selects owner and shared foreign steps in one paginated query and makes foreign steps read-only', async () => {
+    it('selects owner and foreign Étapes de traitement partagées in one paginated query and makes foreign steps read-only', async () => {
       vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
         { ...requeteEtapeWithNotesAndFiles, entiteId: 'foreign-entite', estPartagee: true },
       ]);

@@ -28,6 +28,17 @@ export const getUploadedFileById = async (
   });
 };
 
+export const getRequeteEtapeUploadedFile = async (
+  requeteEtapeId: string,
+  fileId: UploadedFile['id'],
+): Promise<UploadedFileByIdResult> =>
+  prisma.uploadedFile.findFirst({
+    where: {
+      id: fileId,
+      requeteEtapeId,
+    },
+  });
+
 export const deleteUploadedFile = async (id: UploadedFile['id']): Promise<UploadedFileDeleteResult> => {
   return prisma.uploadedFile.delete({ where: { id } });
 };
