@@ -1727,18 +1727,6 @@ export const closeRequeteForEntite = async (
     throw new Error('REASON_INVALID');
   }
 
-  if (fileIds && fileIds.length > 0) {
-    const files = await prisma.uploadedFile.findMany({
-      where: {
-        id: { in: fileIds },
-      },
-    });
-
-    if (files.length !== fileIds.length) {
-      throw new Error('FILES_INVALID');
-    }
-  }
-
   const result = await prisma.$transaction(async (tx) => {
     const etape = await tx.requeteEtape.create({
       data: {
@@ -1767,14 +1755,24 @@ export const closeRequeteForEntite = async (
       : null;
 
     if (fileIds && fileIds.length > 0) {
-      await tx.uploadedFile.updateMany({
+      const attachedFiles = await tx.uploadedFile.updateMany({
         where: {
           id: { in: fileIds },
+          uploadedById: authorId,
+          entiteId,
+          requeteId: null,
+          requeteEtapeId: null,
+          faitSituationId: null,
+          demarchesEngageesId: null,
         },
         data: {
           requeteEtapeId: etape.id,
         },
       });
+
+      if (attachedFiles.count !== fileIds.length) {
+        throw new Error('FILES_INVALID');
+      }
     }
 
     await updateStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.CLOTUREE, tx);
