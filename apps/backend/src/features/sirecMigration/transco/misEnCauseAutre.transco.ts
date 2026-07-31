@@ -12,11 +12,11 @@ export const SIREC_TYPE_AUTRE = 67;
 
 // A SIREC "autre mis en cause" value can land either on the accused party (mis en cause)
 // or on the location (lieu), depending on the SIREC referential mapping.
-export type AutreMcTarget =
+export type AutreMisEnCauseTarget =
   | { kind: 'misEnCause'; misEnCauseTypeId: string; misEnCauseTypePrecisionId: string | null }
   | { kind: 'lieu'; lieuTypeId: string; lieuPrecisionId: string | null };
 
-const AUTRES_MC_TYPE_TRANSCO: Record<number, AutreMcTarget> = {
+const AUTRES_MC_TYPE_TRANSCO: Record<number, AutreMisEnCauseTarget> = {
   120: {
     kind: 'misEnCause',
     misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL,
@@ -63,7 +63,7 @@ const AUTRES_MC_TYPE_TRANSCO: Record<number, AutreMcTarget> = {
   131: { kind: 'misEnCause', misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE, misEnCauseTypePrecisionId: null },
 };
 
-export function transcodeAutresMcType(autresMcType: number | null): AutreMcTarget | null {
+export function transcodeAutresMcType(autresMcType: number | null): AutreMisEnCauseTarget | null {
   if (autresMcType === null) return null;
   const result = AUTRES_MC_TYPE_TRANSCO[autresMcType];
   if (result === undefined) throw new SirecTranscoError(autresMcType, 'autresMcType');

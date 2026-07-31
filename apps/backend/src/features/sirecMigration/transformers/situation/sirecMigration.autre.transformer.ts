@@ -1,6 +1,6 @@
 import type { SirecMisEnCause } from '../../sirecMigration.repository.js';
 import {
-  type AutreMcTarget,
+  type AutreMisEnCauseTarget,
   buildAutrePrecision,
   transcodeAutresMcType,
 } from '../../transco/misEnCauseAutre.transco.js';
@@ -18,10 +18,10 @@ export interface SirecAutreResult {
   lieuDeSurvenueData: SirenaLieuDeSurvenueData | null;
 }
 
-// SIREC "autre" values that map to a location carry a name/address on the SIREC record;
-// they are moved onto the lieu so nothing is lost when there is no mis en cause.
+// Some SIREC "autre" values actually represent a location.
+// In that case, the name and address are stored on the lieu because no misEnCause is created.
 function buildAutreLieu(
-  target: Extract<AutreMcTarget, { kind: 'lieu' }>,
+  target: Extract<AutreMisEnCauseTarget, { kind: 'lieu' }>,
   misEnCause: SirecMisEnCause,
 ): SirenaLieuDeSurvenueData {
   return {
