@@ -143,7 +143,14 @@ describe('Step', () => {
       clotureEffectiveDate: '2024-05-18',
       createdBy: null,
       dateRealisation: null,
-      notes: [],
+      notes: [
+        {
+          id: 'closure-precision',
+          texte: 'Contrôles terminés sans anomalie.',
+          createdAt: '2024-05-20T12:00:00.000Z',
+          author: { prenom: 'camille', nom: 'dupont' },
+        },
+      ],
       uploadedFiles: [
         {
           id: 'foreign-file',
@@ -166,11 +173,14 @@ describe('Step', () => {
         thirdPartyAccountId: null,
         createdBy: null,
       },
-      clotureReason: [],
+      clotureReason: [{ id: 'HORS_COMPETENCE', label: 'Hors compétence' }],
     };
 
     render(<Step {...foreignEtapePartagee} />);
 
+    expect(screen.getByText(/Requête clôturée le 18\/05\/2024/)).toBeInTheDocument();
+    expect(screen.getByText('Hors compétence')).toBeInTheDocument();
+    expect(screen.getByText('Contrôles terminés sans anomalie.')).toBeInTheDocument();
     expect(screen.getByText('preuve.pdf')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Ajouter un fichier/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Supprimer le fichier preuve\.pdf/ })).not.toBeInTheDocument();

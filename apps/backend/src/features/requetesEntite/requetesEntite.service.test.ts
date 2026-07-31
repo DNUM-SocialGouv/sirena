@@ -1623,7 +1623,10 @@ describe('requetesEntite.service', () => {
 
       expect(createRequeteEtape).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ clotureEffectiveDate: new Date('2024-01-01') }),
+          data: expect.objectContaining({
+            clotureEffectiveDate: new Date('2024-01-01'),
+            estPartagee: true,
+          }),
         }),
       );
 

@@ -142,14 +142,23 @@ describe('changelog.requeteEtapes.middleware.ts', () => {
       });
     });
 
-    it('should track changes to RequeteEtape fields with context', async () => {
-      mockGetRequeteEtapeById.mockResolvedValueOnce(testRequeteEtape);
+    it('should audit the sharing state of a created RequeteEtape from context', async () => {
+      const createdRequeteEtape = { ...testRequeteEtape, id: 'rs-2', estPartagee: true };
+      mockGetRequeteEtapeById.mockResolvedValueOnce(createdRequeteEtape);
 
       const app = createRequeteEtapeTestAppWithContext();
 
       await app.index.$patch();
 
       expect(mockGetRequeteEtapeById).toHaveBeenCalledWith('rs-2');
+      expect(mockCreateChangeLog).toHaveBeenCalledWith({
+        action: ChangeLogAction.CREATED,
+        entity: 'RequeteEtape',
+        entityId: 'rs-2',
+        changedById: 'user123',
+        before: null,
+        after: createdRequeteEtape,
+      });
     });
 
     it('should handle entity not found', async () => {

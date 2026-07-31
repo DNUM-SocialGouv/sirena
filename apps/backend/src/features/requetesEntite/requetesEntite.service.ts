@@ -1745,6 +1745,7 @@ export const closeRequeteForEntite = async (
         requeteId,
         entiteId,
         statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
+        estPartagee: true,
         clotureEffectiveDate: new Date(clotureEffectiveDate),
         clotureReason: {
           connect: uniqueReasonIds.map((id) => ({ id })),

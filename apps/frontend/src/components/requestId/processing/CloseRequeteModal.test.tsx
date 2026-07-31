@@ -74,6 +74,9 @@ describe('CloseRequeteModal', () => {
     expect(
       screen.getByText("Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne."),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText("Cette étape sera visible par l'autre entité administrative affectée : ARS Bretagne."),
+    ).toBeInTheDocument();
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
     expect(screen.queryByText(/Attention/)).not.toBeInTheDocument();
     expect(
@@ -120,7 +123,10 @@ describe('CloseRequeteModal', () => {
     render(<CloseRequeteModal requestId="REQ-354" />);
 
     expect(
-      screen.getByText("Le traitement de la requête sera toujours en cours pour l'entité administrative :"),
+      screen.getByText('Cette étape sera visible par les autres entités administratives affectées :'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Le traitement de la requête sera toujours en cours pour ces entités administratives.'),
     ).toBeInTheDocument();
     expect(screen.getByRole('list')).toBeInTheDocument();
     expect(screen.getByText('ARS Bretagne')).toBeInTheDocument();
@@ -135,6 +141,9 @@ describe('CloseRequeteModal', () => {
     render(<CloseRequeteModal requestId="REQ-354" />);
 
     expect(screen.getByText('Chargement des informations de la requête...')).toBeInTheDocument();
+    expect(
+      screen.getByText('Cette étape sera visible par toute autre entité administrative affectée à la requête.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Raisons de la clôture')).toBeInTheDocument();
   });
 
@@ -146,6 +155,9 @@ describe('CloseRequeteModal', () => {
     render(<CloseRequeteModal requestId="REQ-354" />);
 
     expect(screen.getByText('Information : vous allez clôturer la requête REQ-354.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Cette étape sera visible par toute autre entité administrative affectée à la requête.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Raisons de la clôture')).toBeInTheDocument();
   });
 
@@ -179,6 +191,9 @@ describe('CloseRequeteModal', () => {
 
     render(<CloseRequeteModal requestId="REQ-354" />);
 
+    expect(
+      screen.getByText('Cette étape sera visible par toute autre entité administrative affectée à la requête.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Sauf mention contraire, tous les champs sont obligatoires.')).toBeInTheDocument();
     expect(screen.getByText('Raisons de la clôture')).toBeInTheDocument();
     expect(screen.getByText('Précisions (facultatif)')).toBeInTheDocument();
