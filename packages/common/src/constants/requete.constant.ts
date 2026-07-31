@@ -250,6 +250,10 @@ export const MALTRAITANCE_TYPE = {
 
 export type MaltraitanceType = keyof typeof MALTRAITANCE_TYPE;
 
+// Maltraitance values that only reach SIRENA through the SIREC migration. They must not be
+// advertised by the third-party enum endpoints (the third-party FaitSchema rejects them).
+export const SIREC_ONLY_MALTRAITANCE_TYPE_IDS: MaltraitanceType[] = [MALTRAITANCE_TYPE.AUTRE];
+
 export const maltraitanceTypeLabels: Record<MaltraitanceType, string> = {
   NEGLIGENCES: 'Manque de soins, de nourriture, d’hygiène ou de sécurité',
   VIOLENCES: 'Insultes, coups, soin médical ou isolement forcé, autres violences',
