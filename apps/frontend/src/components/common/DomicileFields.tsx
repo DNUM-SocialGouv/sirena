@@ -53,6 +53,15 @@ export function DomicileFields({ values, onChange, labels }: DomicileFieldsProps
     onChange({ adresseDomicile: '', codePostal: '', ville: '' });
   }, [onChange]);
 
+  // Free text that was never matched to a BAN suggestion is kept in the street field
+  // rather than being dropped (matches the plain text input this replaced).
+  const handleTextCommit = useCallback(
+    (text: string) => {
+      onChange({ adresseDomicile: text, codePostal: '', ville: '' });
+    },
+    [onChange],
+  );
+
   const handleFieldChange = (field: keyof DomicileValues) => (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange({ ...values, [field]: e.target.value });
   };
@@ -65,6 +74,7 @@ export function DomicileFields({ values, onChange, labels }: DomicileFieldsProps
             value={toDisplayValue(values)}
             onSelect={handleSelect}
             onClear={handleClear}
+            onTextCommit={handleTextCommit}
             label="Domicile"
             readOnly={isManual}
           />

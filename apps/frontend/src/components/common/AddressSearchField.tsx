@@ -24,6 +24,11 @@ interface AddressSearchFieldProps {
   onSelect: (address: Address) => void;
   /** Called when the input is cleared, so the caller can reset any stored address. */
   onClear?: () => void;
+  /**
+   * Called on blur with the raw text when the user typed an address but never picked a
+   * suggestion, so free-text input is preserved instead of silently dropped.
+   */
+  onTextCommit?: (text: string) => void;
   label: string;
   hintText?: string;
   disabled?: boolean;
@@ -39,6 +44,7 @@ export function AddressSearchField({
   value = '',
   onSelect,
   onClear,
+  onTextCommit,
   label,
   hintText = 'Saisir une adresse, une voie, un code postal ou une commune',
   disabled = false,
@@ -63,6 +69,9 @@ export function AddressSearchField({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const initialValueRef = useRef(value);
+  // Set right before we push a value change to the parent (select/clear/commit) so the
+  // echoed value prop is ignored by the hydration effect instead of clobbering local state.
+  const isSelfUpdate = useRef(false);
 
   const debouncedSearchTerm = useDebounce(searchTerm, debounceMs);
   const isSearchEnabled = debouncedSearchTerm.length >= minSearchLength && !hasSelected;
@@ -81,14 +90,21 @@ export function AddressSearchField({
     retry: 1,
   });
 
-  // Sync when the value is changed from the outside (e.g. edit mode hydration).
+  // Sync when the value is changed from the outside (e.g. edit mode hydration, manual-mode preview).
   // hasSelected keeps the query disabled so this hydration never triggers a search.
   useEffect(() => {
-    if (value !== initialValueRef.current) {
-      setSearchTerm(value);
-      initialValueRef.current = value;
-      setHasSelected(true);
+    if (value === initialValueRef.current) {
+      return;
     }
+    initialValueRef.current = value;
+    // Ignore the value the parent echoes back from our own select/clear/commit calls; only
+    // genuine external changes should re-sync the input, regardless of what onClear resets to.
+    if (isSelfUpdate.current) {
+      isSelfUpdate.current = false;
+      return;
+    }
+    setSearchTerm(value);
+    setHasSelected(true);
   }, [value]);
 
   useEffect(() => {
@@ -128,6 +144,7 @@ export function AddressSearchField({
       setHasSelected(true);
       setIsOpen(false);
       setActiveIndex(-1);
+      isSelfUpdate.current = true;
       onSelect(address);
     },
     [onSelect],
@@ -139,10 +156,9 @@ export function AddressSearchField({
     setIsOpen(newValue.length >= minSearchLength);
     setActiveIndex(-1);
     // Editing the text invalidates a previously selected address: clear the stored value so the
-    // structured fields never keep stale data behind an edited label. Keep initialValueRef in sync
-    // so the hydration effect ignores the resulting empty value echoed back from the parent.
+    // structured fields never keep stale data behind an edited label.
     if (hasSelected || newValue === '') {
-      initialValueRef.current = '';
+      isSelfUpdate.current = true;
       onClear?.();
     }
     setHasSelected(false);
@@ -260,6 +276,13 @@ export function AddressSearchField({
             value={searchTerm}
             onChange={handleInputChange}
             onFocus={() => !readOnly && !hasSelected && searchTerm.length >= minSearchLength && setIsOpen(true)}
+            onBlur={() => {
+              // Preserve free text the user typed but never turned into a selection.
+              if (!disabled && !readOnly && !hasSelected && searchTerm !== '') {
+                isSelfUpdate.current = true;
+                onTextCommit?.(searchTerm);
+              }
+            }}
             onKeyDown={readOnly ? undefined : handleKeyDown}
           />
         </div>
