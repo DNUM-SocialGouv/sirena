@@ -16,6 +16,9 @@ export const formatAddressDisplay = (address: Address): string => {
   return location ? `${address.name}, ${location}` : address.name;
 };
 
+/** Single label shared by the visible dropdown and the screen-reader announcement. */
+const NO_RESULTS_MESSAGE = 'Aucune adresse trouvée';
+
 interface AddressSearchFieldProps {
   value?: string;
   onSelect: (address: Address) => void;
@@ -204,12 +207,22 @@ export function AddressSearchField({
   const inputGroupClass = ['fr-input-group', hasError ? 'fr-input-group--error' : ''].filter(Boolean).join(' ');
   const inputClass = ['fr-input', hasError ? 'fr-input--error' : ''].filter(Boolean).join(' ');
 
-  const statusMessage =
-    showDropdown && !isLoading && !isError
-      ? hasResults
-        ? `${flatItems.length} résultat${flatItems.length > 1 ? 's' : ''} disponible${flatItems.length > 1 ? 's' : ''}`
-        : 'Aucun résultat'
-      : '';
+  const errorMessage =
+    error instanceof Error && error.message.includes('timed out')
+      ? 'Le service ne répond pas. Veuillez réessayer.'
+      : 'Une erreur est survenue lors de la recherche.';
+
+  // Single announcement covering every state so a screen reader hears the search
+  // progress, failures and results, not only the final count.
+  const statusMessage = !showDropdown
+    ? ''
+    : isLoading
+      ? `Recherche en cours...${failureCount > 0 ? ' (nouvelle tentative)' : ''}`
+      : isError
+        ? errorMessage
+        : hasResults
+          ? `${flatItems.length} résultat${flatItems.length > 1 ? 's' : ''} disponible${flatItems.length > 1 ? 's' : ''}`
+          : NO_RESULTS_MESSAGE;
 
   return (
     <div ref={wrapperRef} className={styles.wrapper}>
@@ -254,34 +267,36 @@ export function AddressSearchField({
         ) : null}
       </div>
 
-      {/* Kept in the DOM so aria-controls always resolves. */}
+      {/* Loading / error / empty feedback, kept OUTSIDE the listbox (which must only hold
+          option/group). aria-hidden because the status region below carries the announcement. */}
+      {showDropdown && (isLoading || isError || !hasResults) ? (
+        <div className={styles.dropdown} aria-hidden="true">
+          {isLoading ? (
+            <div className={styles.message}>
+              <span className={`fr-icon-refresh-line fr-icon--sm ${styles.spinner}`} aria-hidden="true" />
+              Recherche en cours...{failureCount > 0 && ' (nouvelle tentative)'}
+            </div>
+          ) : isError ? (
+            <div className={`${styles.message} ${styles.messageError}`}>
+              <span className="fr-icon-error-warning-line fr-icon--sm" aria-hidden="true" />
+              {errorMessage}
+            </div>
+          ) : (
+            <div className={styles.message}>{NO_RESULTS_MESSAGE}</div>
+          )}
+        </div>
+      ) : null}
+
+      {/* Kept in the DOM so aria-controls always resolves; only ever holds option/group. */}
       <div
         ref={listRef}
         id={listboxId}
         role="listbox"
         aria-label={label}
         className={styles.dropdown}
-        hidden={!showDropdown}
+        hidden={!showDropdown || isLoading || isError || !hasResults}
       >
-        {isLoading ? (
-          <div className={styles.message}>
-            <span className={`fr-icon-refresh-line fr-icon--sm ${styles.spinner}`} aria-hidden="true" />
-            Recherche en cours...{failureCount > 0 && ' (nouvelle tentative)'}
-          </div>
-        ) : null}
-
-        {isError ? (
-          <div className={`${styles.message} ${styles.messageError}`}>
-            <span className="fr-icon-error-warning-line fr-icon--sm" aria-hidden="true" />
-            {error instanceof Error && error.message.includes('timed out')
-              ? 'Le service ne répond pas. Veuillez réessayer.'
-              : 'Une erreur est survenue lors de la recherche.'}
-          </div>
-        ) : null}
-
-        {!isLoading && !isError && !hasResults ? <p className={styles.message}>Aucune adresse trouvée</p> : null}
-
-        {!isLoading && !isError && hasResults
+        {showDropdown && !isLoading && !isError && hasResults
           ? groups.map((group) => {
               const startIndex = flatItems.indexOf(group.items[0]);
               return (
