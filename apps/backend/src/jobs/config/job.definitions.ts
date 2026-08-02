@@ -57,6 +57,6 @@ export const jobHandlers = [
     data: {
       retentionDays: envVars.ACCESS_LOG_RETENTION_DAYS,
     },
-    runOnStart: false,
+    runOnStart: true,
   },
 ] as const;

@@ -1,0 +1,67 @@
+---
+# Cache Valkey in-cluster.
+#
+# Désactivé par défaut : seuls les environnements de développement l'activent
+# (integration, validation), en posant `valkey.enabled: true` dans
+# values/<env>.yaml. En preproduction, formation et production le cache est un
+# Valkey MANAGÉ OVH, déclaré côté gitops (`RedisServer` dans resources/<env>.yaml)
+# et consommé via l'ExternalSecret `redis-secret` du sous-chart external-secrets.
+#
+# Les deux modes exposent le même pivot applicatif : le Secret `redis-secret`,
+# qui pointe sur le nom de service `redis-master` (cf. templates/Service-alias.yaml
+# et charts/external-secrets/templates/redis-secret.yaml).
+enabled: false
+
+# Values transmises au chart officiel valkey-io/valkey-helm (clé = nom du
+# sous-chart). Volontairement centralisées ici : les values d'environnement
+# n'ont qu'à basculer `enabled`.
+valkey:
+  # Les objets s'appellent `valkey` ; le Service `redis-master` (alias, rendu par
+  # ce wrapper) porte le contrat applicatif.
+  fullnameOverride: valkey
+
+  # Image épinglée par digest, et pas seulement par tag : ce namespace a déjà
+  # laissé tourner un `bitnami/redis:latest` pendant 286 jours avant qu'il ne
+  # devienne non démarrable. Le digest rend le rendu strictement reproductible
+  # et fait apparaître tout changement d'image dans le diff gitops.
+  image:
+    tag: "9.1.1@sha256:3acc0687f2a2e1091fae6450d7842dd658c941338cf0a873ddd9e14b9e4ea4dd"
+
+  # Ce chart ne sait pas rendre un StatefulSet à une seule instance : son
+  # StatefulSet est conditionné à `replica.enabled`, qui impose au minimum
+  # 2 pods et une persistance par réplica. On reste donc sur un Deployment.
+  # `Recreate` est alors obligatoire : avec un PVC ReadWriteOnce, un rolling
+  # update bloquerait en Multi-Attach (le nouveau pod ne peut pas monter le
+  # volume que l'ancien détient encore).
+  deploymentStrategy: Recreate
+
+  dataStorage:
+    enabled: true
+    requestedSize: 2Gi
+    # Classe de stockage volontairement NON figée : on prend celle par défaut du
+    # cluster. C'est ce que fait déjà tout l'existant (le StatefulSet du redis
+    # sortant ne déclarait aucune `storageClassName`, pas plus que le mariadb du
+    # chart services) — et ce chart doit rester plateforme-agnostique : coder ici
+    # `csi-cinder-sc-delete` créerait une adhérence à Atlas v1 (OpenStack/Cinder)
+    # qui ne survivrait pas à la migration Atlas v2.
+    # Vérifié sur les deux clusters Atlas v1 (dev et prod) : la classe par défaut
+    # est `csi-cinder-sc-delete`, reclaimPolicy `Delete` (le volume est supprimé
+    # avec le PVC — voulu pour un cache) et `allowVolumeExpansion: true`.
+    className: ""
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 150m
+      memory: 256Mi
+
+  # Équivalent de la NetworkPolicy qui protégeait le redis précédent :
+  # entrée sur 6379 uniquement, sortie libre.
+  networkPolicy:
+    ingress:
+      - ports:
+          - port: 6379
+    egress:
+      - {}

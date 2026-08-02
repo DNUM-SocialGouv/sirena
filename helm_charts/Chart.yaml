@@ -2,3 +2,13 @@ apiVersion: v2
 name: sirena
 version: 0.2.4
 type: application
+dependencies:
+  # Seul sous-chart déclaré ici, parce qu'il est le seul à être conditionnel :
+  # les autres (backend, frontend, worker, external-secrets, anonymize) sont
+  # rendus dans tous les environnements et Helm les charge automatiquement
+  # depuis charts/. Sans cette déclaration, Helm n'évalue PAS la condition d'un
+  # sous-chart et le rend systématiquement.
+  - name: valkey
+    version: 0.1.0
+    repository: "file://charts/valkey"
+    condition: valkey.enabled

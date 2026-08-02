@@ -6,7 +6,7 @@ export IMAGE_TAG=${2}
 
 rm -rf ./generated_manifests || true
 
-for subchart in backend frontend worker external-secrets; do
+for subchart in backend frontend worker external-secrets valkey; do
   cd charts/${subchart}
   helm dependency update
   cd -

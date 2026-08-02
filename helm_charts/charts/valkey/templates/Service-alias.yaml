@@ -1,0 +1,30 @@
+{{- if .Values.enabled }}
+# Service ALIAS `redis-master`.
+#
+# L'application ne connaît le cache que par le nom `redis-master` : c'est ce que
+# porte le Secret `redis-secret` (REDIS_HOST / REDIS_URL, codés en dur dans
+# charts/external-secrets/templates/redis-secret.yaml) et que consomment backend
+# et worker en envFrom. Ce Service découple donc ce nom historique de
+# l'implémentation, qui s'appelle désormais `valkey`.
+#
+# Le selector reproduit `valkey.selectorLabels` du sous-chart officiel
+# (app.kubernetes.io/name = nom du chart, instance = nom de la release).
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-master
+  labels:
+    app.kubernetes.io/name: valkey
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: alias
+spec:
+  type: ClusterIP
+  ports:
+    - name: tcp
+      port: 6379
+      targetPort: tcp
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: valkey
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
