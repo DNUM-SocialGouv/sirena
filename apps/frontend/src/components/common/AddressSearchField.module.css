@@ -75,6 +75,14 @@
   background-color: var(--background-alt-blue-france);
 }
 
+/* The keyboard-active option has no real DOM focus (virtual focus via
+   aria-activedescendant), so an outline gives it a visible focus indicator
+   distinct from mouse hover (WCAG 2.4.7). */
+.item.active {
+  outline: 2px solid var(--border-active-blue-france);
+  outline-offset: -2px;
+}
+
 .itemName {
   font-weight: 500;
 }

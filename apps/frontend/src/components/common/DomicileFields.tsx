@@ -66,7 +66,7 @@ export function DomicileFields({ values, onChange, labels }: DomicileFieldsProps
             onSelect={handleSelect}
             onClear={handleClear}
             label="Domicile"
-            disabled={isManual}
+            readOnly={isManual}
           />
         </div>
         <div className="fr-col-12 fr-col-md-6" style={{ display: 'flex', alignItems: 'flex-end' }}>

@@ -27,6 +27,8 @@ interface AddressSearchFieldProps {
   label: string;
   hintText?: string;
   disabled?: boolean;
+  /** Locks the field while keeping normal text contrast and screen-reader support (unlike disabled). */
+  readOnly?: boolean;
   state?: 'default' | 'error';
   stateRelatedMessage?: string;
   minSearchLength?: number;
@@ -40,6 +42,7 @@ export function AddressSearchField({
   label,
   hintText = 'Saisir une adresse, une voie, un code postal ou une commune',
   disabled = false,
+  readOnly = false,
   state = 'default',
   stateRelatedMessage,
   minSearchLength = 3,
@@ -200,7 +203,7 @@ export function AddressSearchField({
     }
   };
 
-  const showDropdown = isOpen && searchTerm.length >= minSearchLength && !disabled;
+  const showDropdown = isOpen && searchTerm.length >= minSearchLength && !disabled && !readOnly;
   const hasResults = flatItems.length > 0;
 
   const hasError = state === 'error';
@@ -253,10 +256,11 @@ export function AddressSearchField({
             autoCapitalize="off"
             spellCheck={false}
             disabled={disabled}
+            readOnly={readOnly}
             value={searchTerm}
             onChange={handleInputChange}
-            onFocus={() => !hasSelected && searchTerm.length >= minSearchLength && setIsOpen(true)}
-            onKeyDown={handleKeyDown}
+            onFocus={() => !readOnly && !hasSelected && searchTerm.length >= minSearchLength && setIsOpen(true)}
+            onKeyDown={readOnly ? undefined : handleKeyDown}
           />
         </div>
 
@@ -313,7 +317,11 @@ export function AddressSearchField({
                         key={address.id}
                         id={`address-option-${uid}-${flatIndex}`}
                         role="option"
-                        aria-selected={flatIndex === activeIndex}
+                        // The highlighted option is the "active" one (virtual focus), conveyed by
+                        // aria-activedescendant + the .active class. Nothing is ever "selected" while
+                        // the list is open (selecting closes it), so aria-selected stays false to keep
+                        // the two states distinct — mixing them breaks announcements on some SR/browsers.
+                        aria-selected={false}
                         tabIndex={-1}
                         className={`${styles.item} ${flatIndex === activeIndex ? styles.active : ''}`}
                         // onMouseDown only prevents the input blur; the actual selection runs on
