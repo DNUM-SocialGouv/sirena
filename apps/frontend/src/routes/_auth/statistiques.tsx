@@ -70,7 +70,10 @@ function KpiCard({ card }: { card: StatisticsCard }) {
 
   return (
     <p className={styles['kpi-card']}>
-      <span className={styles['kpi-value']}>{display}</span> <span className={styles['kpi-label']}>{card.name}</span>
+      <span className={styles['kpi-value']}>{display}</span>{' '}
+      <span className={styles['kpi-label']}>
+        {card.name} <CardHelp description={card.description} />
+      </span>
     </p>
   );
 }
@@ -102,19 +105,25 @@ function ChartCard({ card }: { card: StatisticsCard }) {
   if (!parsed) {
     return (
       <>
-        <h2 className={fr.cx('fr-h5')}>{card.name}</h2>
+        <div className={styles['card-title']}>
+          <h2 className={fr.cx('fr-h5', 'fr-mb-0')}>{card.name}</h2>
+          <CardHelp description={card.description} />
+        </div>
         <p>Données non disponibles.</p>
       </>
     );
   }
 
   if (card.display === 'pie') {
-    return <StatChart name={card.name} parsed={parsed} />;
+    return <StatChart name={card.name} description={card.description} parsed={parsed} />;
   }
 
   return (
     <>
-      <h2 className={fr.cx('fr-h5')}>{card.name}</h2>
+      <div className={styles['card-title']}>
+        <h2 className={fr.cx('fr-h5', 'fr-mb-0')}>{card.name}</h2>
+        <CardHelp description={card.description} />
+      </div>
       <StatTable caption={card.name} parsed={parsed} hideCaption />
     </>
   );
@@ -169,7 +178,9 @@ export function RouteComponent() {
           {!isSuperAdmin && <ExportRequetesButton />}
         </div>
         <PeriodFilter value={selection} onChange={handlePeriodChange} />
-        <output className="fr-sr-only">{statusMessage}</output>
+        <output className="fr-sr-only" aria-live="polite">
+          {statusMessage}
+        </output>
         <QueryStateHandler query={query} noDataComponent={<p>Aucune carte configurée dans le dashboard Metabase.</p>}>
           {({ data }) => {
             const cards = Array.isArray(data.cards) ? data.cards : [];
@@ -184,7 +195,6 @@ export function RouteComponent() {
                 {sortedCards.map((card) => (
                   <section key={`${card.dashcardId}-${card.id}`} className={styles['mb-cell']} style={cellStyle(card)}>
                     <CardContent card={card} />
-                    <CardHelp description={card.description} position="top-right" />
                   </section>
                 ))}
               </div>

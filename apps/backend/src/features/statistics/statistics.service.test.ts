@@ -368,7 +368,11 @@ describe('statistics.service.ts', () => {
           status: 200,
           json: async () => ({
             dashcards: [
-              { id: 100, card_id: 42, card: { id: 42, name: 'Avec desc', description: 'Nombre total de requêtes' } },
+              {
+                id: 100,
+                card_id: 42,
+                card: { id: 42, name: 'Avec desc', description: '  Nombre total de requêtes  ' },
+              },
               { id: 101, card_id: 43, card: { id: 43, name: 'Sans desc' } },
               { id: 102, card_id: 44, card: { id: 44, name: 'Desc vide', description: '   ' } },
             ],

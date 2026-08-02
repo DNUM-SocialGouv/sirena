@@ -256,7 +256,8 @@ const toDashcardDescriptor = (raw: RawDashcard): DashcardDescriptor | null => {
   if (cardId == null || dashcardId == null) return null;
   const name = typeof raw.card?.name === 'string' ? raw.card.name : `Carte ${cardId}`;
   const rawDescription = raw.card?.description;
-  const description = typeof rawDescription === 'string' && rawDescription.trim() !== '' ? rawDescription : null;
+  const trimmedDescription = typeof rawDescription === 'string' ? rawDescription.trim() : '';
+  const description = trimmedDescription === '' ? null : trimmedDescription;
   const display = extractDisplay(raw);
   const layout = extractLayout(raw);
   const columnTitles = extractColumnTitles(raw);
