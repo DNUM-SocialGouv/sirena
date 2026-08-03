@@ -1,10 +1,5 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
-import {
-  RECEPTION_TYPE,
-  REQUETE_PRIORITE_TYPES,
-  REQUETE_STATUT_TYPES,
-  SIREC_ONLY_RECEPTION_TYPE_IDS,
-} from '@sirena/common/constants';
+import { RECEPTION_TYPE, REQUETE_PRIORITE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import { z } from 'zod';
 import { splitCsv } from '../../helpers/string.js';
@@ -129,18 +124,14 @@ export const GetOtherEntitesAffectedResponseSchema = z.object({
 
 const receptionDate = z.iso.date().nullable().optional();
 const dateDemandeDeclarant = z.iso.date().nullable().optional();
-const CREATABLE_RECEPTION_TYPE_IDS = [
-  RECEPTION_TYPE.EMAIL,
-  RECEPTION_TYPE.COURRIER,
-  RECEPTION_TYPE.AUTRE,
-  RECEPTION_TYPE.PLATEFORME,
-  RECEPTION_TYPE.TELEPHONE,
-] as const;
-
-// Strict at creation; SIREC-only values accepted only when editing a migrated request.
-const receptionTypeId = z.enum(CREATABLE_RECEPTION_TYPE_IDS).nullable().optional();
-const receptionTypeIdWithSirec = z
-  .enum([...CREATABLE_RECEPTION_TYPE_IDS, ...SIREC_ONLY_RECEPTION_TYPE_IDS])
+const receptionTypeId = z
+  .enum([
+    RECEPTION_TYPE.EMAIL,
+    RECEPTION_TYPE.COURRIER,
+    RECEPTION_TYPE.AUTRE,
+    RECEPTION_TYPE.PLATEFORME,
+    RECEPTION_TYPE.TELEPHONE,
+  ])
   .nullable()
   .optional();
 const requeteControl = z.object({
@@ -213,7 +204,7 @@ export const UpdateSituationBodySchema = z.object({
 export const UpdateTypeAndDateRequeteBodySchema = z.object({
   receptionDate,
   dateDemandeDeclarant,
-  receptionTypeId: receptionTypeIdWithSirec,
+  receptionTypeId,
   provenanceId: provenanceIdOptional,
   provenancePrecision: provenancePrecisionOptional,
   controls: requeteControl.optional(),
