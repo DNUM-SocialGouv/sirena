@@ -15,12 +15,8 @@ describe('motifsDeclaratifs.transco.ts', () => {
     ]);
   });
 
-  it('should transcode SIREC-only declared motifs to their dedicated SIRENA values', () => {
-    expect(transcodeMotifsDeclaratifs([823, 815, 819])).toEqual([
-      'DIFFICULTES_ACCES_SOINS',
-      'MALTRAITANCE',
-      'PROBLEME_ORGANISATION_FONCTIONNEMENT',
-    ]);
+  it('should transcode multiple ids mapping to the same SIRENA value', () => {
+    expect(transcodeMotifsDeclaratifs([823, 815, 819])).toEqual(['AUTRE', 'AUTRE', 'AUTRE']);
   });
 
   it('should throw SirecTranscoError for an unknown idDico', () => {
