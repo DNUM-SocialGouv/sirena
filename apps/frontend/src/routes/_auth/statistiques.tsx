@@ -178,7 +178,6 @@ export function RouteComponent() {
           {!isSuperAdmin && <ExportRequetesButton />}
         </div>
         <PeriodFilter value={selection} onChange={handlePeriodChange} />
-        {/** biome-ignore lint/a11y/useSemanticElements: <a11y recommandation> */}
         <p role="status" className="fr-sr-only" aria-live="polite">
           {statusMessage}
         </p>
