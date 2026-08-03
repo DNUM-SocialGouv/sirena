@@ -73,8 +73,6 @@ export function DomicileFields({ values, onChange, labels }: DomicileFieldsProps
       <div className="fr-grid-row fr-grid-row--gutters fr-mb-3w">
         <div className="fr-col-12 fr-col-md-6">
           {isManual ? (
-            // In manual mode the search is locked: show it as a read-only field (shared component)
-            // rather than a disabled search input.
             <ReadOnlyField id={domicileReadOnlyId} label="Domicile" value={toDisplayValue(values)} />
           ) : (
             <AddressSearchField
