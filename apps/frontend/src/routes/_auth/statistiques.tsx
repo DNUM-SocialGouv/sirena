@@ -178,9 +178,10 @@ export function RouteComponent() {
           {!isSuperAdmin && <ExportRequetesButton />}
         </div>
         <PeriodFilter value={selection} onChange={handlePeriodChange} />
-        <output className="fr-sr-only" aria-live="polite">
+        {/** biome-ignore lint/a11y/useSemanticElements: <a11y recommandation> */}
+        <p role="status" className="fr-sr-only" aria-live="polite">
           {statusMessage}
-        </output>
+        </p>
         <QueryStateHandler query={query} noDataComponent={<p>Aucune carte configurée dans le dashboard Metabase.</p>}>
           {({ data }) => {
             const cards = Array.isArray(data.cards) ? data.cards : [];
