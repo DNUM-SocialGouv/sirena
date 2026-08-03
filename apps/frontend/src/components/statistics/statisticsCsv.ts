@@ -12,9 +12,11 @@ export const buildCardCsv = (card: StatisticsCard): string => {
 
 export const buildCardCsvFilename = (name: string): string => {
   const slug = name
+    .normalize('NFC')
     .trim()
     .replace(/[^\p{L}\p{N}]+/gu, '-')
-    .replace(/^-+|-+$/g, '')
-    .toLowerCase();
+    .toLowerCase()
+    .slice(0, 100)
+    .replace(/^-+|-+$/g, '');
   return `${slug || 'indicateur'}.csv`;
 };

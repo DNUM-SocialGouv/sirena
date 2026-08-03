@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import { toastManager } from '@/lib/toastManager';
+import { mockBrowserDownload } from '@/test-utils/mockBrowserDownload';
 import { ExportRequetesButton } from './ExportRequetesButton';
 
 vi.mock('@/lib/toastManager', () => ({
@@ -10,27 +10,6 @@ vi.mock('@/lib/toastManager', () => ({
     add: vi.fn(),
   },
 }));
-
-function mockBrowserDownload(objectUrl = 'blob:export-requetes') {
-  const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue(objectUrl);
-  const revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-  let clickedLink: HTMLAnchorElement | undefined;
-  const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
-    this: HTMLAnchorElement,
-  ) {
-    clickedLink = this;
-  });
-
-  return {
-    clickSpy,
-    createObjectURLSpy,
-    get clickedLink() {
-      return clickedLink;
-    },
-    objectUrl,
-    revokeObjectURLSpy,
-  };
-}
 
 describe('ExportRequetesButton', () => {
   afterEach(() => {

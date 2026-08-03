@@ -37,4 +37,17 @@ describe('buildCardCsvFilename', () => {
   it('falls back to a default when the name has no usable characters', () => {
     expect(buildCardCsvFilename('  ---  ')).toBe('indicateur.csv');
   });
+
+  it('normalizes decomposed accents (NFD) so combining marks are kept as letters', () => {
+    // 'Re' + combining acute accent (U+0301) + 'partition' -> 'Répartition' once normalized to NFC.
+    expect(buildCardCsvFilename('Re\u0301partition')).toBe('répartition.csv');
+  });
+
+  it('caps the slug length to keep the filename within filesystem limits', () => {
+    expect(buildCardCsvFilename('a'.repeat(150))).toBe(`${'a'.repeat(100)}.csv`);
+  });
+
+  it('does not leave a trailing separator when the length cap cuts on a boundary', () => {
+    expect(buildCardCsvFilename(`${'a'.repeat(99)} suffixe`)).toBe(`${'a'.repeat(99)}.csv`);
+  });
 });

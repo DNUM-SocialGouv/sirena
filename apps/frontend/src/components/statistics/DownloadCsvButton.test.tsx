@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { StatisticsCard } from '@/lib/api/fetchStatistics';
+import { mockBrowserDownload } from '@/test-utils/mockBrowserDownload';
 import { DownloadCsvButton } from './DownloadCsvButton';
 
 const card = {
@@ -12,29 +13,29 @@ const card = {
   },
 } as unknown as StatisticsCard;
 
+const label = 'Télécharger le tableau « Répartition » au format CSV';
+
 describe('DownloadCsvButton', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('exposes the accessible name "Télécharger au format CSV"', () => {
+  it('exposes a per-card accessible name mentioning the table', () => {
     render(<DownloadCsvButton card={card} />);
-    expect(screen.getByRole('button', { name: 'Télécharger au format CSV' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
   });
 
   it('triggers a CSV download on click and revokes the object URL', async () => {
-    const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:card');
-    const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    const browserDownload = mockBrowserDownload('blob:card');
 
     render(<DownloadCsvButton card={card} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Télécharger au format CSV' }));
+    await userEvent.click(screen.getByRole('button', { name: label }));
 
-    expect(createObjectURL).toHaveBeenCalledOnce();
-    const blob = createObjectURL.mock.calls[0][0] as Blob;
+    expect(browserDownload.createObjectURLSpy).toHaveBeenCalledOnce();
+    const [blob] = browserDownload.createObjectURLSpy.mock.calls[0] as [Blob];
     expect(blob).toBeInstanceOf(Blob);
     expect(blob.type).toContain('text/csv');
-    expect(clickSpy).toHaveBeenCalledOnce();
-    expect(revokeObjectURL).toHaveBeenCalledWith('blob:card');
+    expect(browserDownload.clickSpy).toHaveBeenCalledOnce();
+    expect(browserDownload.revokeObjectURLSpy).toHaveBeenCalledWith(browserDownload.objectUrl);
   });
 });

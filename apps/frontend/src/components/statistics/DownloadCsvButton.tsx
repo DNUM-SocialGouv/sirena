@@ -1,9 +1,12 @@
+import { fr } from '@codegouvfr/react-dsfr';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { useCallback } from 'react';
 import type { StatisticsCard } from '@/lib/api/fetchStatistics';
 import { buildCardCsv, buildCardCsvFilename } from './statisticsCsv';
 
 export function DownloadCsvButton({ card }: { card: StatisticsCard }) {
+  const label = `Télécharger le tableau « ${card.name} » au format CSV`;
+
   const handleDownload = useCallback(() => {
     const csv = buildCardCsv(card);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -27,8 +30,10 @@ export function DownloadCsvButton({ card }: { card: StatisticsCard }) {
       priority="tertiary no outline"
       size="small"
       iconId="fr-icon-download-line"
-      title="Télécharger au format CSV"
+      title={label}
       onClick={handleDownload}
-    />
+    >
+      <span className={fr.cx('fr-sr-only')}>{label}</span>
+    </Button>
   );
 }
