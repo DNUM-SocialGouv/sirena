@@ -32,8 +32,6 @@ interface AddressSearchFieldProps {
   label: string;
   hintText?: string;
   disabled?: boolean;
-  /** Locks the field while keeping normal text contrast and screen-reader support (unlike disabled). */
-  readOnly?: boolean;
   state?: 'default' | 'error';
   stateRelatedMessage?: string;
   minSearchLength?: number;
@@ -46,9 +44,8 @@ export function AddressSearchField({
   onClear,
   onTextCommit,
   label,
-  hintText = 'Saisir une adresse, une voie, un code postal ou une commune',
+  hintText = 'Saisir au moins 3 caractères : une adresse, une voie, un code postal ou une commune',
   disabled = false,
-  readOnly = false,
   state = 'default',
   stateRelatedMessage,
   minSearchLength = 3,
@@ -219,7 +216,7 @@ export function AddressSearchField({
     }
   };
 
-  const showDropdown = isOpen && searchTerm.length >= minSearchLength && !disabled && !readOnly;
+  const showDropdown = isOpen && searchTerm.length >= minSearchLength && !disabled;
   const hasResults = flatItems.length > 0;
 
   const hasError = state === 'error';
@@ -272,18 +269,17 @@ export function AddressSearchField({
             autoCapitalize="off"
             spellCheck={false}
             disabled={disabled}
-            readOnly={readOnly}
             value={searchTerm}
             onChange={handleInputChange}
-            onFocus={() => !readOnly && !hasSelected && searchTerm.length >= minSearchLength && setIsOpen(true)}
+            onFocus={() => !hasSelected && searchTerm.length >= minSearchLength && setIsOpen(true)}
             onBlur={() => {
               // Preserve free text the user typed but never turned into a selection.
-              if (!disabled && !readOnly && !hasSelected && searchTerm !== '') {
+              if (!disabled && !hasSelected && searchTerm !== '') {
                 isSelfUpdate.current = true;
                 onTextCommit?.(searchTerm);
               }
             }}
-            onKeyDown={readOnly ? undefined : handleKeyDown}
+            onKeyDown={handleKeyDown}
           />
         </div>
 
@@ -299,17 +295,17 @@ export function AddressSearchField({
       {showDropdown && (isLoading || isError || !hasResults) ? (
         <div className={styles.dropdown} aria-hidden="true">
           {isLoading ? (
-            <div className={styles.message}>
+            <p className={styles.message}>
               <span className={`fr-icon-refresh-line fr-icon--sm ${styles.spinner}`} aria-hidden="true" />
               Recherche en cours...{failureCount > 0 && ' (nouvelle tentative)'}
-            </div>
+            </p>
           ) : isError ? (
-            <div className={`${styles.message} ${styles.messageError}`}>
+            <p className={`${styles.message} ${styles.messageError}`}>
               <span className="fr-icon-error-warning-line fr-icon--sm" aria-hidden="true" />
               {errorMessage}
-            </div>
+            </p>
           ) : (
-            <div className={styles.message}>{NO_RESULTS_MESSAGE}</div>
+            <p className={styles.message}>{NO_RESULTS_MESSAGE}</p>
           )}
         </div>
       ) : null}

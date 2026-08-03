@@ -3,6 +3,7 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import { useCallback, useId, useState } from 'react';
 import type { Address } from '@/lib/api/fetchAddresses';
 import { AddressSearchField } from './AddressSearchField';
+import { ReadOnlyField } from './ReadOnlyField';
 
 export interface DomicileValues {
   adresseDomicile: string;
@@ -41,6 +42,7 @@ export const addressToDomicileValues = (address: Address): DomicileValues => ({
 export function DomicileFields({ values, onChange, labels }: DomicileFieldsProps) {
   const [isManual, setIsManual] = useState(false);
   const manualFieldsId = useId();
+  const domicileReadOnlyId = useId();
 
   const handleSelect = useCallback(
     (address: Address) => {
@@ -70,14 +72,19 @@ export function DomicileFields({ values, onChange, labels }: DomicileFieldsProps
     <>
       <div className="fr-grid-row fr-grid-row--gutters fr-mb-3w">
         <div className="fr-col-12 fr-col-md-6">
-          <AddressSearchField
-            value={toDisplayValue(values)}
-            onSelect={handleSelect}
-            onClear={handleClear}
-            onTextCommit={handleTextCommit}
-            label="Domicile"
-            readOnly={isManual}
-          />
+          {isManual ? (
+            // In manual mode the search is locked: show it as a read-only field (shared component)
+            // rather than a disabled search input.
+            <ReadOnlyField id={domicileReadOnlyId} label="Domicile" value={toDisplayValue(values)} />
+          ) : (
+            <AddressSearchField
+              value={toDisplayValue(values)}
+              onSelect={handleSelect}
+              onClear={handleClear}
+              onTextCommit={handleTextCommit}
+              label="Domicile"
+            />
+          )}
         </div>
         <div className="fr-col-12 fr-col-md-6" style={{ display: 'flex', alignItems: 'flex-end' }}>
           <Checkbox

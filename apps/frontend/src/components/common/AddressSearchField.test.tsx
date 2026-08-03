@@ -107,16 +107,4 @@ describe('AddressSearchField', () => {
     await userEvent.keyboard('{Enter}');
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
-
-  it('does not open suggestions or query when readOnly', async () => {
-    renderField({ readOnly: true, value: 'Rue de Boulogne, 59800 Lille' });
-    const input = screen.getByRole('combobox');
-
-    expect(input).toHaveAttribute('readonly');
-    await userEvent.click(input);
-    await new Promise((resolve) => setTimeout(resolve, 20));
-
-    expect(screen.queryByRole('option')).not.toBeInTheDocument();
-    expect(mockedFetch).not.toHaveBeenCalled();
-  });
 });
