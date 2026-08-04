@@ -8,7 +8,12 @@ import { prisma } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { updateAcknowledgmentStep } from '../requeteEtapes/requetesEtapes.service.js';
 import { createUploadedFile } from '../uploadedFiles/uploadedFiles.service.js';
-import { sendDeclarantAcknowledgmentEmail, sendManualAcknowledgmentEmail } from './declarants.notification.service.js';
+import {
+  AcknowledgmentStepAlreadyProcessedError,
+  EmailSendingDisabledError,
+  sendDeclarantAcknowledgmentEmail,
+  sendManualAcknowledgmentEmail,
+} from './declarants.notification.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
@@ -462,6 +467,21 @@ describe('sendManualAcknowledgmentEmail() — PDF attachment', () => {
     mockedCreateUploadedFile.mockResolvedValue({ id: 'file123', fileName: 'AR_req1.pdf' } as any);
   });
 
+  it('rejects a step that has already been claimed with a typed error', async () => {
+    mockedRequeteEtape.updateMany.mockResolvedValueOnce({ count: 0 } as any);
+
+    await expect(
+      sendManualAcknowledgmentEmail({
+        etapeId: 'etapeAck',
+        requeteId: 'req1',
+        entiteId: 'ent1',
+        userId: 'user123',
+      }),
+    ).rejects.toBeInstanceOf(AcknowledgmentStepAlreadyProcessedError);
+
+    expect(mockedSendTipimailEmail).not.toHaveBeenCalled();
+  });
+
   it('attaches the AR PDF directly to the étape with the sender as uploadedById and creates no system note', async () => {
     await sendManualAcknowledgmentEmail({
       etapeId: 'etapeAck',
@@ -548,7 +568,7 @@ describe('sendManualAcknowledgmentEmail() — PDF attachment', () => {
         entiteId: 'ent1',
         userId: 'user123',
       }),
-    ).rejects.toThrow("L'accusé de réception n'a pas été envoyé.");
+    ).rejects.toBeInstanceOf(EmailSendingDisabledError);
 
     expect(mockedRequeteEtape.update).toHaveBeenCalledWith({
       where: { id: 'etapeAck' },

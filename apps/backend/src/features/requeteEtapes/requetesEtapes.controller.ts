@@ -3,6 +3,7 @@ import {
   throwHTTPException403Forbidden,
   throwHTTPException404NotFound,
   throwHTTPException409Conflict,
+  throwHTTPException503ServiceUnavailable,
 } from '@sirena/backend-utils/helpers';
 import {
   ERROR_KIND,
@@ -24,7 +25,9 @@ import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import {
+  AcknowledgmentStepAlreadyProcessedError,
   buildAcknowledgmentMessageText,
+  EmailSendingDisabledError,
   sendManualAcknowledgmentEmail,
 } from '../declarants/declarants.notification.service.js';
 import { hasFeature } from '../featureFlags/featureFlags.service.js';
@@ -599,8 +602,15 @@ const app = factoryWithLogs
           comment: body.comment,
         });
       } catch (error) {
-        if (error instanceof Error && (error as unknown as { code: string }).code === 'STEP_ALREADY_PROCESSED') {
+        if (error instanceof AcknowledgmentStepAlreadyProcessedError) {
           throwHTTPException409Conflict("L'accusé de réception a déjà été envoyé pour cette étape.", {
+            res: c.res,
+            kind: ERROR_KIND.BUSINESS,
+          });
+        }
+
+        if (error instanceof EmailSendingDisabledError) {
+          throwHTTPException503ServiceUnavailable(error.message, {
             res: c.res,
             kind: ERROR_KIND.BUSINESS,
           });

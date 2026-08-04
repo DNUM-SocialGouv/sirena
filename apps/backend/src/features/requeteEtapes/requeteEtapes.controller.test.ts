@@ -9,6 +9,11 @@ import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import { getFileStream } from '../../libs/minio.js';
 import type { RequeteEntite, RequeteEtape, RequeteEtapeNote, UploadedFile } from '../../libs/prisma.js';
 import { convertDatesToStrings } from '../../tests/formatter.js';
+import {
+  AcknowledgmentStepAlreadyProcessedError,
+  EmailSendingDisabledError,
+  sendManualAcknowledgmentEmail,
+} from '../declarants/declarants.notification.service.js';
 import { hasFeature } from '../featureFlags/featureFlags.service.js';
 import {
   getRequeteEntiteById,
@@ -46,6 +51,14 @@ vi.mock('../requeteEtapes/requetesEtapes.service.js', () => ({
   FilesNotOwnedError: class FilesNotOwnedError extends Error {},
   getRequeteEtapes: vi.fn(),
 }));
+
+vi.mock('../declarants/declarants.notification.service.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../declarants/declarants.notification.service.js')>();
+  return {
+    ...actual,
+    sendManualAcknowledgmentEmail: vi.fn(),
+  };
+});
 
 vi.mock('../featureFlags/featureFlags.service.js', () => ({
   hasFeature: vi.fn(),
@@ -851,6 +864,52 @@ describe('requeteEtapes.controller.ts', () => {
         },
         expect.anything(),
       );
+    });
+  });
+
+  describe('POST /:id/send-acknowledgment', () => {
+    it('returns a conflict when the acknowledgment step has already been processed', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: 'ACKNOWLEDGMENT',
+      });
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce({
+        requete: { declarant: { identite: { email: 'declarant@example.test' } } },
+      } as never);
+      vi.mocked(sendManualAcknowledgmentEmail).mockRejectedValueOnce(new AcknowledgmentStepAlreadyProcessedError());
+
+      const res = await client[':id']['send-acknowledgment'].$post({
+        param: { id: 'step1' },
+        json: {},
+      });
+
+      expect(res.status).toBe(409);
+      expect(await res.json()).toEqual({
+        message: "L'accusé de réception a déjà été envoyé pour cette étape.",
+        cause: { kind: ERROR_KIND.BUSINESS },
+      });
+    });
+
+    it('returns a service unavailable business error when email sending is disabled', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: 'ACKNOWLEDGMENT',
+      });
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce({
+        requete: { declarant: { identite: { email: 'declarant@example.test' } } },
+      } as never);
+      vi.mocked(sendManualAcknowledgmentEmail).mockRejectedValueOnce(new EmailSendingDisabledError());
+
+      const res = await client[':id']['send-acknowledgment'].$post({
+        param: { id: 'step1' },
+        json: {},
+      });
+
+      expect(res.status).toBe(503);
+      expect(await res.json()).toEqual({
+        message: "L'envoi des e-mails est actuellement désactivé.",
+        cause: { kind: ERROR_KIND.BUSINESS },
+      });
     });
   });
 
