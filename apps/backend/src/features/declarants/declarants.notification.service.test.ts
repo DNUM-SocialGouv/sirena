@@ -539,7 +539,7 @@ describe('sendManualAcknowledgmentEmail() — PDF attachment', () => {
     });
   });
 
-  it('does not reopen the step for a duplicate send when sharing finalization fails after the email was sent', async () => {
+  it('keeps the step claimed to prevent a duplicate sending attempt when sharing finalization fails after the email was sent', async () => {
     mockedRequeteEtape.update.mockRejectedValueOnce(new Error('database unavailable'));
 
     await expect(
