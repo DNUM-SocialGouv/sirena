@@ -1,4 +1,4 @@
-import { type CsvValue, serializeCsv } from './csvSerializer.js';
+import { type CsvValue, serializeCsv } from '@sirena/common/utils';
 import { EXPORT_REQUETES_HEADERS } from './exportRequetesColumns.js';
 import {
   type BuildExportRequetesRowsOptions,
