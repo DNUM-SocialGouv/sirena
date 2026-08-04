@@ -3,7 +3,7 @@ import type { Primitive } from '../../utils/types';
 import type { OnSortChangeParams as BaseSortParams } from './SortButton/SortButton';
 
 export type Row = {
-  [key: string]: Primitive | Row | unknown[];
+  [key: string]: Primitive | Row | unknown[] | undefined;
 };
 
 export type RowWithId<RowId extends string> = Row & {
