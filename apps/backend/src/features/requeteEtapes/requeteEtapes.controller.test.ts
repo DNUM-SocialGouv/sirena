@@ -788,6 +788,28 @@ describe('requeteEtapes.controller.ts', () => {
       expect(createProcessingEtape).not.toHaveBeenCalled();
     });
 
+    it('checks access before requiring a sharing choice', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValue(false);
+      vi.mocked(hasFeature).mockResolvedValue(true);
+
+      const res = await client[':id']['processing-steps'].$post({
+        param: { id: 'inaccessible' },
+        json: { nom: 'Step 1' },
+      });
+
+      vi.mocked(hasAccessToRequete).mockResolvedValue(true);
+      vi.mocked(hasFeature).mockResolvedValue(false);
+
+      expect(res.status).toBe(404);
+      expect(await res.json()).toEqual({
+        message: 'Requete entite not found',
+        cause: { kind: ERROR_KIND.BUSINESS },
+      });
+      expect(hasAccessToRequete).toHaveBeenCalledWith({ requeteId: 'inaccessible', entiteId: 'e1' });
+      expect(hasFeature).not.toHaveBeenCalled();
+      expect(createProcessingEtape).not.toHaveBeenCalled();
+    });
+
     it('persists the sharing choice atomically when the feature is enabled', async () => {
       vi.mocked(hasFeature).mockResolvedValueOnce(true);
       vi.mocked(createProcessingEtape).mockResolvedValueOnce(fakeRequeteEtape);

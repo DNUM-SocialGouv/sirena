@@ -201,14 +201,6 @@ const app = factoryWithLogs
       const { id: requeteId } = c.req.param();
       const body = c.req.valid('json');
       const userId = c.get('userId');
-      const estPartageeEnabled = await isEstPartageeEnabledForUser(c.get('user'));
-      if (estPartageeEnabled && body.estPartagee === undefined) {
-        throwHTTPException400BadRequest('Le choix de partage est obligatoire.', {
-          res: c.res,
-          kind: ERROR_KIND.BUSINESS,
-        });
-      }
-      const creationData = { ...body, estPartagee: estPartageeEnabled ? body.estPartagee : false };
       const topEntiteId = c.get('topEntiteId');
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
@@ -228,6 +220,15 @@ const app = factoryWithLogs
           kind: ERROR_KIND.BUSINESS,
         });
       }
+
+      const estPartageeEnabled = await isEstPartageeEnabledForUser(c.get('user'));
+      if (estPartageeEnabled && body.estPartagee === undefined) {
+        throwHTTPException400BadRequest('Le choix de partage est obligatoire.', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+      const creationData = { ...body, estPartagee: estPartageeEnabled ? body.estPartagee : false };
 
       const requete = await getRequeteEntiteById(requeteId, topEntiteId);
 
