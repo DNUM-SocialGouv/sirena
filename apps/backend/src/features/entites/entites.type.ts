@@ -3,12 +3,14 @@ import type {
   CreateDirectionAdminLocalInputSchema,
   CreateDirectionOrServiceAdminInputSchema,
   CreateServiceAdminLocalInputSchema,
+  EditDirectionServiceAdminLocalInputSchema,
   EditEntiteContactInputSchema,
 } from './entites.schema.js';
 
 export type CreateDirectionOrServiceAdminInput = z.infer<typeof CreateDirectionOrServiceAdminInputSchema>;
 export type CreateDirectionAdminLocalInput = z.infer<typeof CreateDirectionAdminLocalInputSchema>;
 export type CreateServiceAdminLocalInput = z.infer<typeof CreateServiceAdminLocalInputSchema>;
+export type EditDirectionServiceAdminLocalInput = z.infer<typeof EditDirectionServiceAdminLocalInputSchema>;
 export type EditEntiteContactInput = z.infer<typeof EditEntiteContactInputSchema>;
 
 export type EntiteChain = {
