@@ -57,6 +57,10 @@ export const createUploadedFile = async (
   });
 };
 
+export class FilesNotOwnedError extends Error {
+  code = 'FILES_NOT_OWNED' as const;
+}
+
 export const isUserOwner = async (
   userId: string,
   uploadedFileIds: UploadedFile['id'][],
@@ -79,6 +83,7 @@ const updateFilesWithRelation = async (
   entiteId: string | null = null,
   changedById?: string,
   tx?: Prisma.TransactionClient,
+  relationWhere?: Prisma.UploadedFileWhereInput,
 ) => {
   const client = tx ?? prisma;
   const filesBefore = changedById
@@ -96,10 +101,14 @@ const updateFilesWithRelation = async (
       })
     : [];
 
-  await client.uploadedFile.updateMany({
-    where: { id: { in: uploadedFileIds } },
+  const updatedFiles = await client.uploadedFile.updateMany({
+    where: { id: { in: uploadedFileIds }, ...relationWhere },
     data: { ...relationData, status: 'COMPLETED', entiteId } as Prisma.UploadedFileUpdateManyMutationInput,
   });
+
+  if (relationWhere && updatedFiles.count !== uploadedFileIds.length) {
+    throw new FilesNotOwnedError('FILES_NOT_OWNED');
+  }
 
   const filesAfter = await client.uploadedFile.findMany({ where: { id: { in: uploadedFileIds } } });
 
@@ -139,11 +148,21 @@ const updateFilesWithRelation = async (
 export const setEtapeFile = async (
   requeteEtapeId: string,
   uploadedFileId: UploadedFile['id'][],
-  entiteId: string | null = null,
-  changedById?: string,
+  entiteId: string | null,
+  changedById: string,
   tx?: Prisma.TransactionClient,
 ) => {
-  return updateFilesWithRelation(uploadedFileId, { requeteEtapeId }, entiteId, changedById, tx);
+  const attachFiles = (client: Prisma.TransactionClient) =>
+    updateFilesWithRelation(uploadedFileId, { requeteEtapeId }, entiteId, changedById, client, {
+      uploadedById: changedById,
+      entiteId,
+      requeteId: null,
+      requeteEtapeId: null,
+      faitSituationId: null,
+      demarchesEngageesId: null,
+    });
+
+  return tx ? attachFiles(tx) : prisma.$transaction(attachFiles);
 };
 
 export const setRequeteFile = async (

@@ -8,8 +8,10 @@ import type { Prisma } from '../../libs/prisma.js';
 import { prisma, type RequeteEtape } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
-import { isUserOwner, setEtapeFile } from '../uploadedFiles/uploadedFiles.service.js';
+import { setEtapeFile } from '../uploadedFiles/uploadedFiles.service.js';
 import type { AddProcessingStepDto, GetRequeteEtapesQuery, UpdateProcessingStepDto } from './requetesEtapes.type.js';
+
+export { FilesNotOwnedError } from '../uploadedFiles/uploadedFiles.service.js';
 
 export const CREATION_STEP_NAME_PREFIX = 'Création de la requête';
 export const AUTOMATIC_CREATION_STEP_NAME_PREFIX = 'Création de la requête';
@@ -172,10 +174,6 @@ export class EtapeNotEditableError extends Error {
   code = 'ETAPE_NOT_EDITABLE' as const;
 }
 
-export class FilesNotOwnedError extends Error {
-  code = 'FILES_NOT_OWNED' as const;
-}
-
 const logNoteChangelog = async (
   action: ChangeLogAction,
   noteId: string,
@@ -240,9 +238,6 @@ export const createProcessingEtape = async (
     }
 
     if (data.fileIds.length > 0) {
-      if (!(await isUserOwner(userId, data.fileIds, tx))) {
-        throw new FilesNotOwnedError('FILES_NOT_OWNED');
-      }
       await setEtapeFile(etape.id, data.fileIds, entiteId, userId, tx);
     }
 
@@ -426,9 +421,6 @@ export const updateProcessingEtape = async (
     noteChangelogs = await applyEtapeNoteChanges(tx, stepId, userId, data.notes, notesDiff);
 
     if (fileIdsToAttach.length > 0) {
-      if (!(await isUserOwner(userId, fileIdsToAttach, tx))) {
-        throw new FilesNotOwnedError('FILES_NOT_OWNED');
-      }
       await setEtapeFile(stepId, fileIdsToAttach, etape.entiteId, userId, tx);
     }
     if (filesToRemove.length > 0) {
@@ -465,11 +457,9 @@ export const addClotureEtapeFiles = async (
     throw new EtapeNotEditableError('ETAPE_NOT_EDITABLE');
   }
 
-  if (!(await isUserOwner(userId, fileIds))) {
-    throw new FilesNotOwnedError('FILES_NOT_OWNED');
-  }
-
-  await setEtapeFile(stepId, fileIds, entiteId, userId);
+  await prisma.$transaction(async (tx) => {
+    await setEtapeFile(stepId, fileIds, entiteId, userId, tx);
+  });
 
   return prisma.requeteEtape.findUnique({ where: { id: stepId } });
 };

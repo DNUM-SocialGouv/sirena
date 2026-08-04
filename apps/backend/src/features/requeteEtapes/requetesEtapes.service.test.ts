@@ -11,7 +11,7 @@ import {
   type UploadedFile,
 } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
-import { isUserOwner, setEtapeFile } from '../uploadedFiles/uploadedFiles.service.js';
+import { setEtapeFile } from '../uploadedFiles/uploadedFiles.service.js';
 import {
   addClotureEtapeFiles,
   createDefaultRequeteEtapes,
@@ -68,7 +68,7 @@ vi.mock('../../libs/minio.js', () => ({
 }));
 
 vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
-  isUserOwner: vi.fn(() => Promise.resolve(true)),
+  FilesNotOwnedError: class FilesNotOwnedError extends Error {},
   setEtapeFile: vi.fn(() => Promise.resolve([])),
 }));
 
@@ -787,14 +787,15 @@ describe('RequeteEtapes.service.ts', () => {
   describe('addClotureEtapeFiles()', () => {
     const closureEtape: RequeteEtape = { ...requeteEtape, statutId: 'CLOTUREE' };
 
-    it('should attach files at the step level after ownership check on a closure step', async () => {
+    it('atomically attaches eligible files at the step level on a closure step', async () => {
+      const tx = {};
       vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(closureEtape).mockResolvedValueOnce(closureEtape);
-      vi.mocked(isUserOwner).mockResolvedValueOnce(true);
+      vi.mocked(prisma.$transaction).mockImplementation((async (cb: (t: unknown) => unknown) => cb(tx)) as never);
 
       const result = await addClotureEtapeFiles('requeteEtapeId', 'userId', 'entiteId', ['file1', 'file2']);
 
-      expect(isUserOwner).toHaveBeenCalledWith('userId', ['file1', 'file2']);
-      expect(setEtapeFile).toHaveBeenCalledWith('requeteEtapeId', ['file1', 'file2'], 'entiteId', 'userId');
+      expect(prisma.$transaction).toHaveBeenCalledOnce();
+      expect(setEtapeFile).toHaveBeenCalledWith('requeteEtapeId', ['file1', 'file2'], 'entiteId', 'userId', tx);
       expect(result).toEqual(closureEtape);
     });
 
@@ -804,7 +805,6 @@ describe('RequeteEtapes.service.ts', () => {
       const result = await addClotureEtapeFiles('999', 'userId', 'entiteId', ['file1']);
 
       expect(result).toBeNull();
-      expect(isUserOwner).not.toHaveBeenCalled();
       expect(setEtapeFile).not.toHaveBeenCalled();
     });
 
@@ -814,18 +814,18 @@ describe('RequeteEtapes.service.ts', () => {
       await expect(addClotureEtapeFiles('requeteEtapeId', 'userId', 'entiteId', ['file1'])).rejects.toBeInstanceOf(
         EtapeNotEditableError,
       );
-      expect(isUserOwner).not.toHaveBeenCalled();
       expect(setEtapeFile).not.toHaveBeenCalled();
     });
 
-    it('should throw FilesNotOwnedError when the user does not own the files', async () => {
+    it('rejects a closure attachment when a file is not eligible', async () => {
+      const tx = {};
       vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(closureEtape);
-      vi.mocked(isUserOwner).mockResolvedValueOnce(false);
+      vi.mocked(prisma.$transaction).mockImplementation((async (cb: (t: unknown) => unknown) => cb(tx)) as never);
+      vi.mocked(setEtapeFile).mockRejectedValueOnce(new FilesNotOwnedError('FILES_NOT_OWNED'));
 
       await expect(addClotureEtapeFiles('requeteEtapeId', 'userId', 'entiteId', ['file1'])).rejects.toBeInstanceOf(
         FilesNotOwnedError,
       );
-      expect(setEtapeFile).not.toHaveBeenCalled();
     });
   });
 
@@ -1026,7 +1026,6 @@ describe('RequeteEtapes.service.ts', () => {
 
     it('creates the step, its notes and attaches files in one transaction', async () => {
       const createdEtape = { ...requeteEtape, id: 'new-step' };
-      vi.mocked(isUserOwner).mockResolvedValue(true);
       vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({ id: 'req-1' } as Requete);
       vi.mocked(prisma.requeteEntite.upsert).mockResolvedValueOnce({} as RequeteEntite);
 
@@ -1064,10 +1063,10 @@ describe('RequeteEtapes.service.ts', () => {
       expect(setEtapeFile).toHaveBeenCalledWith('new-step', ['file-1'], 'e1', 'user-1', tx);
     });
 
-    it('throws FilesNotOwnedError when the user does not own the files', async () => {
+    it('rejects step creation when a file is not eligible', async () => {
       vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({ id: 'req-1' } as Requete);
       vi.mocked(prisma.requeteEntite.upsert).mockResolvedValueOnce({} as RequeteEntite);
-      vi.mocked(isUserOwner).mockResolvedValue(false);
+      vi.mocked(setEtapeFile).mockRejectedValueOnce(new FilesNotOwnedError('FILES_NOT_OWNED'));
 
       const tx = {
         requeteEtape: { create: vi.fn().mockResolvedValue({ ...requeteEtape, id: 'new-step' }) },
@@ -1121,6 +1120,29 @@ describe('RequeteEtapes.service.ts', () => {
       ).rejects.toBeInstanceOf(EtapeNotEditableError);
     });
 
+    it('rejects a step update when a newly attached file is not eligible', async () => {
+      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce({
+        id: 'step-1',
+        type: 'MANUAL',
+        statutId: 'A_FAIRE',
+        entiteId: 'e1',
+        notes: [],
+        uploadedFiles: [],
+      } as never);
+      const tx = makeTx();
+      vi.mocked(prisma.$transaction).mockImplementation((async (cb: (t: unknown) => unknown) => cb(tx)) as never);
+      vi.mocked(setEtapeFile).mockRejectedValueOnce(new FilesNotOwnedError('FILES_NOT_OWNED'));
+
+      await expect(
+        updateProcessingEtape(
+          'step-1',
+          'user-1',
+          { nom: 'X', statutId: 'A_FAIRE', notes: [], fileIds: ['already-attached'] },
+          logger,
+        ),
+      ).rejects.toBeInstanceOf(FilesNotOwnedError);
+    });
+
     it('diffs notes (update/create/delete, protecting system notes) and files', async () => {
       vi.mocked(prisma.requeteEtape.findUnique)
         .mockResolvedValueOnce({
@@ -1142,7 +1164,6 @@ describe('RequeteEtapes.service.ts', () => {
         .mockResolvedValueOnce({ ...requeteEtape, id: 'step-1' });
 
       const tx = makeTx();
-      vi.mocked(isUserOwner).mockResolvedValue(true);
       vi.mocked(prisma.$transaction).mockImplementation((async (cb: (t: unknown) => unknown) => cb(tx)) as never);
       vi.mocked(deleteFileFromMinio).mockResolvedValue();
 
@@ -1189,7 +1210,6 @@ describe('RequeteEtapes.service.ts', () => {
         .mockResolvedValueOnce({ ...requeteEtape, id: 'ack' });
 
       const tx = makeTx();
-      vi.mocked(isUserOwner).mockResolvedValue(true);
       vi.mocked(prisma.$transaction).mockImplementation((async (cb: (t: unknown) => unknown) => cb(tx)) as never);
       vi.mocked(deleteFileFromMinio).mockResolvedValue();
 
