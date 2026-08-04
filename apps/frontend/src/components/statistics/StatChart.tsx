@@ -1,6 +1,7 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { SegmentedControl } from '@codegouvfr/react-dsfr/SegmentedControl';
-import { useId, useMemo, useState } from 'react';
+import { type ReactNode, useId, useMemo, useState } from 'react';
+import { CardHelp } from './CardHelp';
 import { annularSectorPath, CHART_COLORS, numberFormatter, type ParsedCard, percentFormatter } from './chartData';
 import { StatTable } from './StatTable';
 import styles from './statChart.module.css';
@@ -14,10 +15,12 @@ const R_INNER = 68;
 
 interface StatChartProps {
   name: string;
+  description?: string | null;
   parsed: ParsedCard;
+  action?: ReactNode;
 }
 
-export function StatChart({ name, parsed }: StatChartProps) {
+export function StatChart({ name, description, parsed, action }: StatChartProps) {
   const titleId = useId();
   const legendId = useId();
   const [view, setView] = useState<View>('table');
@@ -39,9 +42,13 @@ export function StatChart({ name, parsed }: StatChartProps) {
   if (total <= 0 || slices.length === 0) {
     return (
       <figure className={styles.figure} aria-labelledby={titleId}>
-        <h2 id={titleId} className={fr.cx('fr-h5')}>
-          {name}
-        </h2>
+        <div className={styles.titleGroup}>
+          <h2 id={titleId} className={fr.cx('fr-h5', 'fr-mb-0')}>
+            {name}
+          </h2>
+          <CardHelp description={description} />
+          {action}
+        </div>
         <p>Aucune donnée à afficher.</p>
       </figure>
     );
@@ -52,9 +59,13 @@ export function StatChart({ name, parsed }: StatChartProps) {
   return (
     <figure className={styles.figure} aria-labelledby={titleId}>
       <div className={styles.header}>
-        <h2 id={titleId} className={fr.cx('fr-h5', 'fr-mb-0')}>
-          {name}
-        </h2>
+        <div className={styles.titleGroup}>
+          <h2 id={titleId} className={fr.cx('fr-h5', 'fr-mb-0')}>
+            {name}
+          </h2>
+          <CardHelp description={description} />
+          {action}
+        </div>
 
         <SegmentedControl
           small

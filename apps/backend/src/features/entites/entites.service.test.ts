@@ -1069,7 +1069,7 @@ describe('createDirectionAdminLocal()', () => {
     vi.resetAllMocks();
   });
 
-  it('creates a Direction under the assigned entite administrative with contact-usager fields', async () => {
+  it('initializes hidden contact-usager fields and returns only the local Direction contract', async () => {
     vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
       entiteTypeId: 'ARS',
       departementCode: '14',
@@ -1085,9 +1085,9 @@ describe('createDirectionAdminLocal()', () => {
       nomComplet: 'Direction Autonomie',
       label: 'DA',
       email: 'direction-autonomie@ars.fr',
-      emailContactUsager: 'contact-usager@direction.fr',
-      adresseContactUsager: '1 rue de la République, 75000 Paris',
-      telContactUsager: '0102030405',
+      emailContactUsager: '',
+      adresseContactUsager: '',
+      telContactUsager: '',
       isActive: true,
     } as never);
 
@@ -1095,9 +1095,6 @@ describe('createDirectionAdminLocal()', () => {
       nomComplet: 'Direction Autonomie',
       label: 'DA',
       email: 'direction-autonomie@ars.fr',
-      emailContactUsager: 'contact-usager@direction.fr',
-      adresseContactUsager: '1 rue de la République, 75000 Paris',
-      telContactUsager: '0102030405',
     });
 
     expect(prisma.entite.create).toHaveBeenCalledWith({
@@ -1106,9 +1103,9 @@ describe('createDirectionAdminLocal()', () => {
         label: 'DA',
         email: 'direction-autonomie@ars.fr',
         isActive: true,
-        emailContactUsager: 'contact-usager@direction.fr',
-        adresseContactUsager: '1 rue de la République, 75000 Paris',
-        telContactUsager: '0102030405',
+        emailContactUsager: '',
+        adresseContactUsager: '',
+        telContactUsager: '',
         entiteMereId: 'root-ars',
         entiteTypeId: 'ARS',
         departementCode: '14',
@@ -1133,9 +1130,6 @@ describe('createDirectionAdminLocal()', () => {
       nomComplet: 'Direction Autonomie',
       label: 'DA',
       email: 'direction-autonomie@ars.fr',
-      emailContactUsager: 'contact-usager@direction.fr',
-      adresseContactUsager: '1 rue de la République, 75000 Paris',
-      telContactUsager: '0102030405',
       isActive: true,
     });
   });
@@ -1157,9 +1151,6 @@ describe('createDirectionAdminLocal()', () => {
         nomComplet: 'Direction Enfance',
         label: 'DE',
         email: 'direction-enfance@ars.fr',
-        emailContactUsager: '',
-        adresseContactUsager: '',
-        telContactUsager: '',
       }),
     ).rejects.toBeInstanceOf(DirectionOrServiceCreationForbiddenError);
 
@@ -1172,16 +1163,13 @@ describe('createServiceAdminLocal()', () => {
     nomComplet: 'Service Autonomie',
     label: 'SA',
     email: 'service-autonomie@ars.fr',
-    emailContactUsager: 'contact-autonomie@ars.fr',
-    adresseContactUsager: '1 rue de la Santé, Paris',
-    telContactUsager: '0102030405',
   };
 
   beforeEach(() => {
     vi.resetAllMocks();
   });
 
-  it('creates a Service under the assigned active Direction as its implicit parent', async () => {
+  it('initializes hidden contact-usager fields and returns only the local Service contract', async () => {
     vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
       entiteTypeId: 'ARS',
       departementCode: '14',
@@ -1204,19 +1192,26 @@ describe('createServiceAdminLocal()', () => {
       isActive: true,
     } as never);
 
-    await createServiceAdminLocal('dir-autonomie', serviceInput);
+    const result = await createServiceAdminLocal('dir-autonomie', serviceInput);
 
     expect(prisma.entite.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           entiteMereId: 'dir-autonomie',
-          emailContactUsager: 'contact-autonomie@ars.fr',
-          adresseContactUsager: '1 rue de la Santé, Paris',
-          telContactUsager: '0102030405',
+          emailContactUsager: '',
+          adresseContactUsager: '',
+          telContactUsager: '',
           isActive: true,
         }),
       }),
     );
+    expect(result).toEqual({
+      id: 'service-autonomie',
+      nomComplet: 'Service Autonomie',
+      label: 'SA',
+      email: 'service-autonomie@ars.fr',
+      isActive: true,
+    });
   });
 
   it.each([
@@ -1277,16 +1272,18 @@ describe('createServiceAdminLocal() for an Entité administrative assignment', (
         nomComplet: 'Service Autonomie',
         label: 'SA',
         email: '',
-        emailContactUsager: '',
-        adresseContactUsager: '',
-        telContactUsager: '',
       },
       'dir-autonomie',
     );
 
     expect(prisma.entite.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ entiteMereId: 'dir-autonomie' }),
+        data: expect.objectContaining({
+          entiteMereId: 'dir-autonomie',
+          emailContactUsager: '',
+          adresseContactUsager: '',
+          telContactUsager: '',
+        }),
       }),
     );
   });
@@ -1296,9 +1293,6 @@ describe('createServiceAdminLocal() for an Entité administrative assignment', (
       nomComplet: 'Service refusé',
       label: 'SR',
       email: '',
-      emailContactUsager: '',
-      adresseContactUsager: '',
-      telContactUsager: '',
     };
     const deniedParents = [
       { entiteMereId: 'root-ars', isActive: false },
@@ -1359,9 +1353,6 @@ describe('editDirectionServiceAdminLocal()', () => {
     };
     const input = {
       email: 'notification@ars.fr',
-      emailContactUsager: 'contact@ars.fr',
-      telContactUsager: '0102030405',
-      adresseContactUsager: '2 rue de Paris',
     };
     vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(assignedEntite).mockResolvedValueOnce(assignedEntite);
     vi.mocked(prisma.entite.update).mockResolvedValueOnce({ id: 'root-ars', ...input } as never);
@@ -1370,7 +1361,7 @@ describe('editDirectionServiceAdminLocal()', () => {
     expect(prisma.entite.update).not.toHaveBeenCalled();
   });
 
-  it('self-edits an assigned Direction by persisting only contact fields', async () => {
+  it('self-edits an assigned Direction notification e-mail without selecting or changing contact-usager fields', async () => {
     const assignedDirection = {
       ...fakeEntite('dir-autonomie'),
       nomComplet: 'Direction Autonomie',
@@ -1383,9 +1374,6 @@ describe('editDirectionServiceAdminLocal()', () => {
     };
     const input = {
       email: 'notification@direction.fr',
-      emailContactUsager: 'nouveau-contact@direction.fr',
-      telContactUsager: '0605040302',
-      adresseContactUsager: '2 rue de Paris',
     };
     const updatedDirection = {
       id: 'dir-autonomie',
@@ -1413,25 +1401,22 @@ describe('editDirectionServiceAdminLocal()', () => {
         nomComplet: true,
         label: true,
         email: true,
-        emailContactUsager: true,
-        telContactUsager: true,
-        adresseContactUsager: true,
       },
     });
   });
 
-  it('self-edits an assigned Service without writing identity, status, or parent Direction', async () => {
+  it('self-edits an assigned Service notification e-mail without changing contact-usager fields', async () => {
     const input = {
       email: 'notification-pa@ars.fr',
-      emailContactUsager: 'contact-pa@ars.fr',
-      telContactUsager: '0102030405',
-      adresseContactUsager: '1 rue de la Santé, Paris',
     };
     const assignedService = {
       ...fakeEntite('service-pa'),
       nomComplet: 'Service Personnes âgées',
       label: 'PA',
       entiteMereId: 'dir-autonomie',
+      emailContactUsager: 'contact-pa@ars.fr',
+      telContactUsager: '0102030405',
+      adresseContactUsager: '1 rue de la Santé, Paris',
       isActive: true,
     };
     vi.mocked(prisma.entite.findUnique)
@@ -1630,15 +1615,12 @@ describe('getDirectionServiceAdminLocal()', () => {
       nomComplet: 'Direction Autonomie',
       label: 'DA',
       email: 'direction-autonomie@ars.fr',
-      emailContactUsager: '',
-      telContactUsager: '',
-      adresseContactUsager: '',
     });
     expect(prisma.entite.findMany).not.toHaveBeenCalled();
     expect(prisma.entite.findUnique).toHaveBeenCalledTimes(2);
   });
 
-  it('returns a descendant Service with contact-usager fields and its current Direction context', async () => {
+  it('returns a descendant Service without loading contact-usager fields and with its current Direction context', async () => {
     vi.mocked(prisma.entite.findUnique)
       .mockResolvedValueOnce({ id: 'root-ars', entiteMereId: null } as never)
       .mockResolvedValueOnce({
@@ -1665,13 +1647,20 @@ describe('getDirectionServiceAdminLocal()', () => {
       nomComplet: 'Service PA',
       label: 'PA',
       email: 'service-pa@ars.fr',
-      emailContactUsager: 'contact-pa@ars.fr',
-      telContactUsager: '0102030405',
-      adresseContactUsager: '1 rue de la Santé, Paris',
       parentDirection: {
         id: 'dir-autonomie',
         nomComplet: 'Direction Autonomie',
         label: 'DA',
+      },
+    });
+    expect(prisma.entite.findUnique).toHaveBeenNthCalledWith(2, {
+      where: { id: 'service-pa' },
+      select: {
+        id: true,
+        nomComplet: true,
+        label: true,
+        email: true,
+        entiteMereId: true,
       },
     });
   });
@@ -1698,9 +1687,6 @@ describe('getDirectionServiceAdminLocal()', () => {
       nomComplet: 'Direction Autonomie',
       label: 'DA',
       email: 'direction-autonomie@ars.fr',
-      emailContactUsager: 'contact-autonomie@ars.fr',
-      telContactUsager: '0102030405',
-      adresseContactUsager: '1 rue de la Santé, Paris',
     });
   });
 
@@ -1728,9 +1714,6 @@ describe('getDirectionServiceAdminLocal()', () => {
       nomComplet: 'Service PA',
       label: 'PA',
       email: 'service-pa@ars.fr',
-      emailContactUsager: '',
-      telContactUsager: '',
-      adresseContactUsager: '',
       parentDirection: {
         id: 'dir-autonomie',
         nomComplet: 'Direction Autonomie',
@@ -1767,9 +1750,6 @@ describe('getDirectionServiceAdminLocal()', () => {
       nomComplet: 'Service PA',
       label: 'PA',
       email: 'service-pa@ars.fr',
-      emailContactUsager: 'contact-pa@ars.fr',
-      telContactUsager: '0102030405',
-      adresseContactUsager: '1 rue de la Santé, Paris',
       parentDirection: {
         id: 'dir-autonomie',
         nomComplet: 'Direction Autonomie',

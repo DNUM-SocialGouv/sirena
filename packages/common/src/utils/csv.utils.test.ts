@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { serializeCsv } from './csvSerializer.js';
+import { serializeCsv } from './csv.utils.js';
 
 describe('serializeCsv', () => {
   it('produces a UTF-8 BOM-prefixed semicolon CSV with a header row and one data row', () => {

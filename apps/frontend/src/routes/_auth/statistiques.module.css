@@ -18,6 +18,13 @@
   min-width: 0;
 }
 
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
 @media (min-width: 48em) {
   .mb-grid {
     grid-template-columns: repeat(24, minmax(0, 1fr));

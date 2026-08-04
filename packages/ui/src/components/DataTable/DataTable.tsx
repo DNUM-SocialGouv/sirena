@@ -33,7 +33,7 @@ export type DataTableProps<K extends string, T extends RowWithId<K>> = {
   showColumnScrollControls?: boolean;
 };
 
-function isRow(x: Row | Primitive | unknown[]): x is Row {
+function isRow(x: Row | Primitive | unknown[] | undefined): x is Row {
   return x !== null && typeof x === 'object' && !Array.isArray(x);
 }
 

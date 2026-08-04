@@ -1,5 +1,6 @@
 import { csrf } from 'hono/csrf';
 import { envVars } from './config/env.js';
+import AdresseController from './features/adresse/adresse.controller.js';
 import AuthController from './features/auth/auth.controller.js';
 import EntitesController from './features/entites/entites.controller.js';
 import EsanteController from './features/esante/esante.controller.js';
@@ -38,6 +39,7 @@ export const app = baseApp
   .route('/users', UsersController)
   .route('/entites', EntitesController)
   .route('/esante', EsanteController)
+  .route('/adresse', AdresseController)
   .route('/uploaded-files', UploadedFilesController)
   .route('/requetes-entite', RequetesEntiteController)
   .route('/requete-etapes', RequeteEtapesController)

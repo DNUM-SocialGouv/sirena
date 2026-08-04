@@ -9,13 +9,11 @@ import {
   MIS_EN_CAUSE_FAMILLE_PRECISION,
   MIS_EN_CAUSE_PROCHE_PRECISION,
   MIS_EN_CAUSE_TYPE,
-  type MisEnCauseType,
   misEnCauseAutreNonProPrecisionLabels,
   misEnCauseEtablissementPrecisionLabels,
   misEnCauseFamillePrecisionLabels,
   misEnCauseProchePrecisionLabels,
   misEnCauseTypeLabels,
-  NON_SELECTABLE_MIS_EN_CAUSE_TYPES,
   PROFESSION_SANTE_PRECISION,
   PROFESSION_SOCIAL_PRECISION,
   professionSantePrecisionLabels,
@@ -36,18 +34,12 @@ type misEnCauseProps = {
   receptionType?: ReceptionType;
 };
 
-type MisEnCauseTypeSansAutreEtNpjm = keyof Omit<
-  typeof MIS_EN_CAUSE_TYPE,
-  'AUTRE' | 'NPJM' | 'ETABLISSEMENT_FICTIF' | 'EXERCICE_ILLEGAL' | 'MAISON_ARRET' | 'TRANSPORTEUR_SANITAIRE'
->;
+type MisEnCauseTypeSansAutreEtNpjm = keyof Omit<typeof MIS_EN_CAUSE_TYPE, 'AUTRE' | 'NPJM'>;
 
-// SIREC-only types are displayed on migrated requests but never offered for manual entry.
-const misEncauses = Object.entries(MIS_EN_CAUSE_TYPE)
-  .filter(([, value]) => !NON_SELECTABLE_MIS_EN_CAUSE_TYPES.includes(value as MisEnCauseType))
-  .map(([key, value]) => ({
-    key,
-    value: misEnCauseTypeLabels[value],
-  }));
+const misEncauses = Object.entries(MIS_EN_CAUSE_TYPE).map(([key, value]) => ({
+  key,
+  value: misEnCauseTypeLabels[value],
+}));
 
 const misEnCauseProchePrecision = Object.entries(MIS_EN_CAUSE_PROCHE_PRECISION).map(([key, value]) => ({
   key,
@@ -292,11 +284,6 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
               }}
             >
               <option value="">Sélectionner une option</option>
-              {misEnCauseType && NON_SELECTABLE_MIS_EN_CAUSE_TYPES.includes(misEnCauseType as MisEnCauseType) && (
-                <option value={misEnCauseType} disabled>
-                  {misEnCauseTypeLabels[misEnCauseType as MisEnCauseType]}
-                </option>
-              )}
               {misEncauses.map(({ key, value }) => (
                 <option key={key} value={key}>
                   {value}

@@ -1369,6 +1369,101 @@ describe('requetesEntite.service', () => {
       expect(prisma.requete.update).toHaveBeenCalled();
     });
 
+    const mockDeclarantForAdresse = (): PersonneConcernee => ({
+      id: 'declarant123',
+      estNonIdentifiee: null,
+      estHandicapee: null,
+      estSignalementProfessionnel: null,
+      estPersonneMorale: null,
+      estIdentifie: true,
+      estVictime: false,
+      estVictimeInformee: null,
+      victimeInformeeCommentaire: '',
+      veutGarderAnonymat: false,
+      commentaire: '',
+      autrePersonnes: '',
+      ageId: null,
+      dateNaissance: null,
+      lienVictimeId: null,
+      lienAutrePrecision: null,
+      declarantDeId: 'req123',
+      participantDeId: null,
+      aAutrePersonnes: false,
+      createdAt: new Date('2024-01-01T10:00:00Z'),
+      updatedAt: new Date('2024-01-01T10:00:00Z'),
+      isTuteur: null,
+      mesureProtection: null,
+    });
+
+    const mockRequeteWithDeclarantAdresse = (adresse: unknown) =>
+      ({
+        id: 'req123',
+        dematSocialId: null,
+        sirecId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        createdById: null,
+        commentaire: '',
+        receptionDate: new Date(),
+        dateDemandeDeclarant: null,
+        receptionTypeId: 'EMAIL',
+        provenanceId: null,
+        provenancePrecision: null,
+        thirdPartyAccountId: null,
+        declarant: { ...mockDeclarantForAdresse(), adresse },
+      }) as unknown as Requete;
+
+    const getUpdatedDeclarantAdresse = () =>
+      (
+        vi.mocked(prisma.requete.update).mock.calls[0][0] as {
+          data: { declarant: { update: { adresse: unknown } } };
+        }
+      ).data.declarant.update.adresse;
+
+    it('deletes the existing adresse when the declarant address is cleared', async () => {
+      vi.clearAllMocks();
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(
+        mockRequeteWithDeclarantAdresse({
+          id: 'adr1',
+          rue: '8 Rue de Magny',
+          codePostal: '77700',
+          ville: 'Bailly-Romainvilliers',
+        }),
+      );
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+
+      await updateRequete('req123', { declarant: { adresseDomicile: '', codePostal: '', ville: '' } });
+
+      expect(getUpdatedDeclarantAdresse()).toEqual({ delete: true });
+    });
+
+    it('leaves the adresse untouched when clearing an address that never existed', async () => {
+      vi.clearAllMocks();
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteWithDeclarantAdresse(null));
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+
+      await updateRequete('req123', { declarant: { adresseDomicile: '', codePostal: '', ville: '' } });
+
+      expect(getUpdatedDeclarantAdresse()).toBeUndefined();
+    });
+
+    it('upserts the adresse when the declarant address is provided', async () => {
+      vi.clearAllMocks();
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteWithDeclarantAdresse(null));
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+
+      await updateRequete('req123', {
+        declarant: { adresseDomicile: '8 Rue de Magny', codePostal: '77700', ville: 'Bailly-Romainvilliers' },
+      });
+
+      expect(getUpdatedDeclarantAdresse()).toEqual({
+        upsert: {
+          create: { rue: '8 Rue de Magny', codePostal: '77700', ville: 'Bailly-Romainvilliers' },
+          update: { rue: '8 Rue de Magny', codePostal: '77700', ville: 'Bailly-Romainvilliers' },
+        },
+      });
+    });
+
     it('should return requete unchanged when no data provided', async () => {
       vi.clearAllMocks();
 

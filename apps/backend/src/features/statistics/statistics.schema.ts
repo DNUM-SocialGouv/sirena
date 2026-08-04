@@ -36,6 +36,7 @@ export const StatisticsDashboardCardSchema = z.object({
   id: z.number().int(),
   dashcardId: z.number().int(),
   name: z.string(),
+  description: z.string().nullable(),
   display: z.string().nullable(),
   layout: StatisticsDashboardCardLayoutSchema.nullable(),
   data: MetabaseCardDataSchema,
