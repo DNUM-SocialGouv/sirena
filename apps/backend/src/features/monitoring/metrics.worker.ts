@@ -203,6 +203,23 @@ export function recordFileIntegrity(result: {
   fileIntegrityOrphanS3SizeGauge.set(result.s3FilesWithoutDbSize);
 }
 
+export const accessLogsTotalGauge = new Gauge({
+  name: 'sirena_access_logs_total',
+  help: 'Number of access logs currently stored in database',
+  registers: [register],
+});
+
+export const accessLogsOldestTimestampGauge = new Gauge({
+  name: 'sirena_access_logs_oldest_timestamp_seconds',
+  help: 'Creation date of the oldest access log (Unix timestamp in seconds, 0 when the table is empty)',
+  registers: [register],
+});
+
+export function recordAccessLogPurge(result: { remainingCount: number; oldestCreatedAt: Date | null }): void {
+  accessLogsTotalGauge.set(result.remainingCount);
+  accessLogsOldestTimestampGauge.set(result.oldestCreatedAt ? result.oldestCreatedAt.getTime() / 1000 : 0);
+}
+
 export async function getPrometheusMetrics(): Promise<string> {
   return await register.metrics();
 }
