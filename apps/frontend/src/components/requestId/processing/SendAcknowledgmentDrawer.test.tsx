@@ -49,7 +49,9 @@ describe('SendAcknowledgmentDrawer', () => {
       await ref.current?.openDrawer({ id: 'ack-1' } as never);
     });
 
-    expect(screen.getByText('Cette étape sera visible par les autres entités affectées')).toBeInTheDocument();
+    expect(
+      screen.getByText('Information : cette étape sera visible par les autres entités affectées.'),
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: "Envoyer l'accusé" })).toBeInTheDocument();
   });
 });

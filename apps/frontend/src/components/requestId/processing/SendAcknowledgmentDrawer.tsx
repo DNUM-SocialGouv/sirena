@@ -162,7 +162,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                     className={`${drawerStyles.sharingAlert} fr-mb-3w`}
                     small={true}
                     severity="info"
-                    description="Cette étape sera visible par les autres entités affectées"
+                    description="Information : cette étape sera visible par les autres entités affectées."
                   />
                   {isLoadingMessage ? (
                     <p className="fr-text--sm fr-text-mention--grey">Chargement du message...</p>

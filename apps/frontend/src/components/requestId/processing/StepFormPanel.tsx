@@ -559,7 +559,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                       className="fr-mb-3w"
                       small={true}
                       severity="info"
-                      description="Cette étape sera visible par les autres entités affectées"
+                      description="Information : cette étape sera visible par les autres entités affectées."
                     />
                   ) : null}
 
