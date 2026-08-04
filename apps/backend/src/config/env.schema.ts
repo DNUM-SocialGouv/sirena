@@ -109,6 +109,11 @@ export const AppEnvSchema = z.object({
     error: (issue) =>
       issue.input === undefined ? "La variable d'environnement ANNUAIRE_SANTE_API_URL est requise" : 'Not a string',
   }),
+  ADDRESS_API_URL: z
+    .string()
+    .optional()
+    .default('https://api-adresse.data.gouv.fr')
+    .describe("URL de base de l'API BAN (Base Adresse Nationale) utilisée pour l'autocomplétion d'adresses"),
   DEMAT_SOCIAL_API_URL: z.string({
     error: (issue) =>
       issue.input === undefined ? "La variable d'environnement DEMAT_SOCIAL_API_URL est requise" : 'Not a string',
