@@ -643,13 +643,19 @@ interface UpdateRequeteControls {
   participant?: { updatedAt?: string };
 }
 
-const buildPersonneAdresseUpsert = (data: {
-  adresseDomicile?: string | null;
-  codePostal?: string | null;
-  ville?: string | null;
-}) => {
+const buildPersonneAdresseUpsert = (
+  data: {
+    adresseDomicile?: string | null;
+    codePostal?: string | null;
+    ville?: string | null;
+  },
+  hasExistingAdresse: boolean,
+) => {
   if (!data.adresseDomicile && !data.codePostal && !data.ville) {
-    return undefined;
+    // Address cleared: delete the existing record so the change is persisted. Returning
+    // undefined would leave the relation untouched (Prisma treats it as "no change") and
+    // keep the stale address.
+    return hasExistingAdresse ? { delete: true } : undefined;
   }
 
   const payload = {
@@ -756,7 +762,7 @@ export const updateRequete = async (requeteId: string, data: UpdateRequeteInput,
               lienAutrePrecision: lienAutrePrecisionValue,
               updatedAt: new Date(),
               identite: identiteUpsert,
-              adresse: buildPersonneAdresseUpsert(declarantData),
+              adresse: buildPersonneAdresseUpsert(declarantData, Boolean(requete.declarant?.adresse)),
             },
           },
         },
@@ -959,7 +965,7 @@ export const updateRequeteParticipant = async (
             dateNaissance: participantData.dateNaissance ? new Date(participantData.dateNaissance) : null,
             updatedAt: new Date(),
             identite: identiteUpsert,
-            adresse: buildPersonneAdresseUpsert(participantData),
+            adresse: buildPersonneAdresseUpsert(participantData, Boolean(requete.participant?.adresse)),
           },
         },
       },

@@ -36,6 +36,12 @@
   margin-bottom: 1.5rem;
 }
 
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .layout {
   display: flex;
   flex-wrap: wrap;

@@ -1,0 +1,93 @@
+.wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: var(--background-default-grey);
+  border: 1px solid var(--border-default-grey);
+  border-radius: 0.25rem;
+  margin-top: 0.25rem;
+  max-height: 320px;
+  overflow-y: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.message {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-mention-grey);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.messageError {
+  color: var(--text-default-error);
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.group {
+  border-bottom: 1px solid var(--border-default-grey);
+}
+
+.group:last-child {
+  border-bottom: none;
+}
+
+.groupLabel {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-title-blue-france);
+  background-color: var(--background-alt-grey);
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.item:hover,
+.item.active {
+  background-color: var(--background-alt-blue-france);
+}
+
+/* The keyboard-active option has no real DOM focus (virtual focus via
+   aria-activedescendant), so an outline gives it a visible focus indicator
+   distinct from mouse hover (WCAG 2.4.7). */
+.item.active {
+  outline: 2px solid var(--border-active-blue-france);
+  outline-offset: -2px;
+}
+
+.itemName {
+  font-weight: 500;
+}
+
+.itemMeta {
+  font-size: 0.875rem;
+  color: var(--text-mention-grey);
+}

@@ -7,6 +7,7 @@ import { type MesureProtection, optionalEmailSchema, optionalPhoneSchema } from 
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useCallback, useState } from 'react';
 import { z } from 'zod';
+import { DomicileFields } from '@/components/common/DomicileFields';
 import { personneConcerneeFieldMetadata } from '@/lib/fieldMetadata';
 import type { PersonneConcerneeData } from '@/lib/personneConcernee';
 
@@ -234,36 +235,19 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
             <legend>
               <h2 className="fr-h6 fr-mb-3w">Informations de contact</h2>
             </legend>
-            <div className="fr-grid-row fr-grid-row--gutters">
-              <div className="fr-col-12 fr-col-md-6">
-                <Input
-                  label={personneConcerneeFieldMetadata.adresseDomicile.label}
-                  nativeInputProps={{
-                    value: formData.adresseDomicile || '',
-                    onChange: handleInputChange('adresseDomicile'),
-                  }}
-                />
-              </div>
-              <div className="fr-col-12 fr-col-md-2">
-                <Input
-                  label={personneConcerneeFieldMetadata.codePostal.label}
-                  nativeInputProps={{
-                    value: formData.codePostal || '',
-                    onChange: handleInputChange('codePostal'),
-                    maxLength: 5,
-                  }}
-                />
-              </div>
-              <div className="fr-col-12 fr-col-md-4">
-                <Input
-                  label={personneConcerneeFieldMetadata.ville.label}
-                  nativeInputProps={{
-                    value: formData.ville || '',
-                    onChange: handleInputChange('ville'),
-                  }}
-                />
-              </div>
-            </div>
+            <DomicileFields
+              values={{
+                adresseDomicile: formData.adresseDomicile || '',
+                codePostal: formData.codePostal || '',
+                ville: formData.ville || '',
+              }}
+              onChange={(v) => setFormData((prev) => ({ ...prev, ...v }))}
+              labels={{
+                adresseDomicile: personneConcerneeFieldMetadata.adresseDomicile.label,
+                codePostal: personneConcerneeFieldMetadata.codePostal.label,
+                ville: personneConcerneeFieldMetadata.ville.label,
+              }}
+            />
             <div className="fr-grid-row fr-grid-row--gutters">
               <div className="fr-col-12 fr-col-md-6">
                 <Input
