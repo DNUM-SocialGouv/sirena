@@ -34,7 +34,6 @@ import {
   updateStatusRequete,
 } from '../requetesEntite/requetesEntite.service.js';
 import { getRequeteEtapeUploadedFile } from '../uploadedFiles/uploadedFiles.service.js';
-import { getUserById } from '../users/users.service.js';
 import { requeteEtapeAuthorization } from './requetesEtapes.authorization.js';
 import {
   addClotureFilesRoute,
@@ -60,10 +59,8 @@ import {
   updateProcessingEtape,
 } from './requetesEtapes.service.js';
 
-const isEstPartageeEnabledForUser = async (userId: string): Promise<boolean> => {
-  const user = await getUserById(userId, null, null);
-  return user ? hasFeature(FEATURE_FLAGS.SHARED_PROCESSING_STEPS, false, user.email, user.entiteId) : false;
-};
+const isEstPartageeEnabledForUser = async (user: { email: string; entiteId: string | null }): Promise<boolean> =>
+  hasFeature(FEATURE_FLAGS.SHARED_PROCESSING_STEPS, false, user.email, user.entiteId);
 
 const app = factoryWithLogs
   .createApp()
@@ -76,7 +73,6 @@ const app = factoryWithLogs
     const logger = c.get('logger');
     const { id: requeteId } = c.req.param();
     const topEntiteId = c.get('topEntiteId');
-    const userId = c.get('userId');
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
         res: c.res,
@@ -84,7 +80,7 @@ const app = factoryWithLogs
       });
     }
 
-    const estPartageeEnabled = await isEstPartageeEnabledForUser(userId);
+    const estPartageeEnabled = await isEstPartageeEnabledForUser(c.get('user'));
     const { data, total } = await getRequeteEtapes(requeteId, topEntiteId, {}, estPartageeEnabled);
 
     logger.info({ requestId: requeteId, stepCount: total }, 'Processing steps retrieved successfully');
@@ -95,7 +91,6 @@ const app = factoryWithLogs
     const logger = c.get('logger');
     const { id, fileId } = c.req.param();
     const topEntiteId = c.get('topEntiteId');
-    const userId = c.get('userId');
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
         res: c.res,
@@ -109,7 +104,7 @@ const app = factoryWithLogs
       throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
-    const estPartageeEnabled = await isEstPartageeEnabledForUser(userId);
+    const estPartageeEnabled = await isEstPartageeEnabledForUser(c.get('user'));
     if (!requeteEtapeAuthorization.canRead(topEntiteId, requeteEtape, estPartageeEnabled)) {
       throwHTTPException403Forbidden('You are not allowed to read this file for this requete etape', {
         res: c.res,
@@ -143,7 +138,6 @@ const app = factoryWithLogs
     const logger = c.get('logger');
     const { id, fileId } = c.req.param();
     const topEntiteId = c.get('topEntiteId');
-    const userId = c.get('userId');
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
         res: c.res,
@@ -157,7 +151,7 @@ const app = factoryWithLogs
       throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
-    const estPartageeEnabled = await isEstPartageeEnabledForUser(userId);
+    const estPartageeEnabled = await isEstPartageeEnabledForUser(c.get('user'));
     if (!requeteEtapeAuthorization.canRead(topEntiteId, requeteEtape, estPartageeEnabled)) {
       throwHTTPException403Forbidden('You are not allowed to read this file for this requete etape', {
         res: c.res,
@@ -204,7 +198,7 @@ const app = factoryWithLogs
       const { id: requeteId } = c.req.param();
       const body = c.req.valid('json');
       const userId = c.get('userId');
-      const estPartageeEnabled = await isEstPartageeEnabledForUser(userId);
+      const estPartageeEnabled = await isEstPartageeEnabledForUser(c.get('user'));
       if (estPartageeEnabled && body.estPartagee === undefined) {
         throwHTTPException400BadRequest('Le choix de partage est obligatoire.', {
           res: c.res,
@@ -303,7 +297,7 @@ const app = factoryWithLogs
         });
       }
 
-      const estPartageeEnabled = await isEstPartageeEnabledForUser(userId);
+      const estPartageeEnabled = await isEstPartageeEnabledForUser(c.get('user'));
       if (etape.type === REQUETE_ETAPE_TYPES.MANUAL && estPartageeEnabled && body.estPartagee === undefined) {
         throwHTTPException400BadRequest('Le choix de partage est obligatoire.', {
           res: c.res,

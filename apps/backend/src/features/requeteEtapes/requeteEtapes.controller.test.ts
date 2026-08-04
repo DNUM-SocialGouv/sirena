@@ -68,7 +68,8 @@ vi.mock('../requetesEntite/requetesEntite.service.js', () => ({
 
 vi.mock('../../middlewares/userStatus.middleware.js', () => {
   return {
-    default: (_: Context, next: Next) => {
+    default: (c: Context, next: Next) => {
+      c.set('user', { email: 'agent@example.test', entiteId: 'e1' });
       return next();
     },
   };
@@ -702,6 +703,7 @@ describe('requeteEtapes.controller.ts', () => {
 
       expect(res.status).toBe(200);
       expect(hasFeature).toHaveBeenCalledWith('SHARED_PROCESSING_STEPS', false, 'agent@example.test', 'e1');
+      expect(getUserById).not.toHaveBeenCalled();
       expect(getRequeteEtapes).toHaveBeenCalledWith('1', 'e1', {}, true);
     });
 

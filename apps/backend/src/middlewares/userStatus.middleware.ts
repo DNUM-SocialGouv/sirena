@@ -27,6 +27,7 @@ const userStatusMiddleware = factoryWithAuth.createMiddleware(async (c, next) =>
     });
   }
 
+  c.set('user', user);
   return next();
 });
 
