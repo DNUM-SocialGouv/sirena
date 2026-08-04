@@ -82,6 +82,13 @@ const makeStep = (overrides: Record<string, any> = {}): any => ({
   ...overrides,
 });
 
+const markAsBadInput = (element: HTMLElement) => {
+  Object.defineProperty(element, 'validity', {
+    value: { badInput: true },
+    configurable: true,
+  });
+};
+
 describe('StepFormPanel', () => {
   beforeEach(() => {
     addMutateAsync.mockReset().mockResolvedValue({ data: {} });
@@ -127,6 +134,27 @@ describe('StepFormPanel', () => {
     const payload = addMutateAsync.mock.calls[0][0];
     expect(payload.statutId).toBe(REQUETE_ETAPE_STATUT_TYPES.FAIT);
     expect(payload.dateRealisation).toBeTruthy();
+  });
+
+  it('blocks creation with an inline message when « Fait le » holds an incomplete date', async () => {
+    const ref = createRef<StepFormPanelRef>();
+    render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+    act(() => ref.current?.openCreate());
+
+    fireEvent.change(screen.getByLabelText("Nom de l'étape (obligatoire)"), {
+      target: { value: 'Étape faite' },
+    });
+    fireEvent.click(screen.getByLabelText('Fait'));
+    markAsBadInput(screen.getByLabelText(/Fait le/));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    });
+
+    expect(addMutateAsync).not.toHaveBeenCalled();
+    expect(screen.getByLabelText(/Fait le/)).toHaveAccessibleDescription(
+      /« Fait le » est incomplet ou contient une date non valide\. Format attendu : JJ-MM-AAAA\./,
+    );
   });
 
   it('blocks creation when the name is empty', async () => {
@@ -381,6 +409,29 @@ describe('StepFormPanel', () => {
       expect(addMutateAsync).not.toHaveBeenCalled();
       expect(screen.getByLabelText(/Rappeler cette étape le/)).toHaveAccessibleDescription(
         /« Rappeler cette étape le » est obligatoire/,
+      );
+      expect(document.activeElement).toBe(screen.getByLabelText(/Rappeler cette étape le/));
+    });
+
+    it('blocks saving with an inline message when the custom date is incomplete', async () => {
+      const ref = createRef<StepFormPanelRef>();
+      render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+      act(() => ref.current?.openCreate());
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      fireEvent.change(screen.getByLabelText("Nom de l'étape (obligatoire)"), { target: { value: 'Relance' } });
+      fireEvent.change(getRappelSelect(), { target: { value: REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE } });
+      markAsBadInput(screen.getByLabelText(/Rappeler cette étape le/));
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+      });
+
+      expect(addMutateAsync).not.toHaveBeenCalled();
+      expect(screen.getByLabelText(/Rappeler cette étape le/)).toHaveAccessibleDescription(
+        /« Rappeler cette étape le » est incomplet ou contient une date non valide\. Format attendu : JJ-MM-AAAA\./,
       );
       expect(document.activeElement).toBe(screen.getByLabelText(/Rappeler cette étape le/));
     });

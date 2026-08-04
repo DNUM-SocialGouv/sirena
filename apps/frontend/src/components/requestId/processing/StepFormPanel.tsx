@@ -73,6 +73,10 @@ const NOTE_MAX_LENGTH_ERROR =
   'Le champ "Ajouter une note à l\'étape" ne doit pas dépasser 10 000 caractères. Supprimer les caractères excédentaires.';
 const NOM_REQUIRED_ERROR = "Le champ 'Nom de l'étape' est obligatoire. Veuillez le renseigner pour ajouter une étape.";
 const DATE_REQUIRED_ERROR = "La date de réalisation est obligatoire lorsque le statut de l'étape est « Fait ».";
+const DATE_INVALID_ERROR =
+  'Le champ « Fait le » est incomplet ou contient une date non valide. Format attendu : JJ-MM-AAAA.';
+const RAPPEL_DATE_INVALID_ERROR =
+  'Le champ « Rappeler cette étape le » est incomplet ou contient une date non valide. Format attendu : JJ-MM-AAAA.';
 
 let noteKeySeq = 0;
 const nextNoteKey = () => {
@@ -95,6 +99,9 @@ const toInputDate = (value: string | Date | null | undefined): string => {
 };
 
 const todayInputDate = () => formatLocalDate(new Date());
+
+const hasInvalidDateInput = (ref: React.RefObject<HTMLInputElement | null>): boolean =>
+  ref.current?.validity?.badInput ?? false;
 
 const formatNoteDate = (value: string | Date): string => {
   const date = value instanceof Date ? value : new Date(value);
@@ -398,16 +405,22 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
       valid = false;
     }
 
-    if (!fieldsLocked && isFait && !dateRealisation) {
-      setDateError(DATE_REQUIRED_ERROR);
-      firstErrorField = firstErrorField ?? dateInputRef.current;
-      valid = false;
+    if (!fieldsLocked && isFait) {
+      const isDateInvalid = hasInvalidDateInput(dateInputRef);
+      if (isDateInvalid || !dateRealisation) {
+        setDateError(isDateInvalid ? DATE_INVALID_ERROR : DATE_REQUIRED_ERROR);
+        firstErrorField = firstErrorField ?? dateInputRef.current;
+        valid = false;
+      }
     }
 
-    if (isRappelEnabled && !fieldsLocked && rappelType === REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE && !rappelDate) {
-      setRappelDateError(RAPPEL_DATE_REQUIRED_MESSAGE);
-      firstErrorField = firstErrorField ?? rappelDateInputRef.current;
-      valid = false;
+    if (isRappelEnabled && !fieldsLocked && rappelType === REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE) {
+      const isRappelDateInvalid = hasInvalidDateInput(rappelDateInputRef);
+      if (isRappelDateInvalid || !rappelDate) {
+        setRappelDateError(isRappelDateInvalid ? RAPPEL_DATE_INVALID_ERROR : RAPPEL_DATE_REQUIRED_MESSAGE);
+        firstErrorField = firstErrorField ?? rappelDateInputRef.current;
+        valid = false;
+      }
     }
 
     if (notes.some((note) => note.texte.length > NOTE_MAX_LENGTH)) {
@@ -582,7 +595,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                     </p>
                   ) : null}
 
-                  <form onSubmit={handleFormSubmit}>
+                  <form onSubmit={handleFormSubmit} noValidate>
                     <Input
                       label="Nom de l'étape (obligatoire)"
                       disabled={isLoading || fieldsLocked || isAcknowledgment}
