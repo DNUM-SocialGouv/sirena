@@ -2,9 +2,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 2rem;
 }
 
 .title {
   margin: 0;
+}
+
+.greeting {
+  margin: 0.5rem 0 0;
 }

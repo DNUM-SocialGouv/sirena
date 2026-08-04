@@ -7,10 +7,11 @@ type DataCellProps<Datum extends RowWithId<RowId>, RowId extends string> = {
   getCell: (row: Datum, key: ColumnKey<Datum>) => ReactNode;
 };
 
-const EmptyCell = ({ label = 'non renseigné' }: { label?: string }) => (
-  <span aria-hidden="true">
-    -<span className="fr-sr-only">{label}</span>
-  </span>
+const EmptyCell = ({ label = 'Non renseigné' }: { label?: string }) => (
+  <>
+    <span aria-hidden="true">-</span>
+    <span className="fr-sr-only">{label}</span>
+  </>
 );
 
 const isEmpty = (value: ReactNode) => {

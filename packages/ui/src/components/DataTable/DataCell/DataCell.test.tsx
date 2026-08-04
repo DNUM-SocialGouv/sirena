@@ -23,4 +23,15 @@ describe('DataCell Component', () => {
     expect(getCell).toHaveBeenCalledWith(mockRow, 'name');
     expect(screen.getByText('ALICE')).toBeInTheDocument();
   });
+
+  it('exposes the empty cell alternative text outside of the aria-hidden element', () => {
+    render(wrapWithTable(<DataCell row={mockRow} column={{ key: 'name', label: 'Name' }} getCell={() => null} />));
+
+    const dash = screen.getByText('-');
+    expect(dash).toHaveAttribute('aria-hidden', 'true');
+
+    const alternative = screen.getByText('Non renseigné');
+    expect(alternative).toHaveClass('fr-sr-only');
+    expect(alternative.closest('[aria-hidden="true"]')).toBeNull();
+  });
 });
