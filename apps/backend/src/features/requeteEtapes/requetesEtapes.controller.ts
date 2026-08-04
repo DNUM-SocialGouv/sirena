@@ -442,7 +442,7 @@ const app = factoryWithLogs
       });
 
       if (!hasAccessToReq) {
-        throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
+        throwHTTPException403Forbidden('You are not allowed to delete this requete etape', {
           res: c.res,
           kind: ERROR_KIND.BUSINESS,
         });

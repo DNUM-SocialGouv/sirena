@@ -588,7 +588,7 @@ describe('requeteEtapes.controller.ts', () => {
 
       expect(res.status).toBe(403);
       expect(body).toEqual({
-        message: 'You are not allowed to add notes to this requete etape',
+        message: 'You are not allowed to delete this requete etape',
         cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(deleteRequeteEtape).not.toHaveBeenCalled();
