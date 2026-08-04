@@ -9,7 +9,8 @@ const addMutateAsync = vi.fn();
 const updateMutateAsync = vi.fn();
 const deleteMutateAsync = vi.fn();
 const uploadMutateAsync = vi.fn();
-const EST_PARTAGEE_REQUIRED_ERROR = "Veuillez choisir si l'étape doit être affichée pour les autres entités affectées.";
+const EST_PARTAGEE_REQUIRED_ERROR =
+  'Le champ "Afficher l’étape pour les autres entités affectées" est obligatoire. Veuillez sélectionner une option pour ajouter une étape.';
 
 vi.mock('@/hooks/mutations/updateProcessingStep.hook', () => ({
   useAddProcessingStep: () => ({ mutateAsync: addMutateAsync }),

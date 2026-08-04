@@ -61,7 +61,8 @@ const NOTE_MAX_LENGTH_ERROR =
   'Le champ "Ajouter une note à l\'étape" ne doit pas dépasser 10 000 caractères. Supprimer les caractères excédentaires.';
 const NOM_REQUIRED_ERROR = "Le champ 'Nom de l'étape' est obligatoire. Veuillez le renseigner pour ajouter une étape.";
 const DATE_REQUIRED_ERROR = "La date de réalisation est obligatoire lorsque le statut de l'étape est « Fait ».";
-const EST_PARTAGEE_REQUIRED_ERROR = "Veuillez choisir si l'étape doit être affichée pour les autres entités affectées.";
+const EST_PARTAGEE_REQUIRED_ERROR =
+  'Le champ "Afficher l’étape pour les autres entités affectées" est obligatoire. Veuillez sélectionner une option pour ajouter une étape.';
 
 let noteKeySeq = 0;
 const nextNoteKey = () => {
