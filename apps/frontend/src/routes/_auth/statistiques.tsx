@@ -1,4 +1,5 @@
 import { fr } from '@codegouvfr/react-dsfr';
+import { Tag } from '@codegouvfr/react-dsfr/Tag';
 import { FEATURE_FLAGS, ROLES, ROLES_STATISTICS } from '@sirena/common/constants';
 import { createFileRoute, Navigate, useNavigate, useSearch } from '@tanstack/react-router';
 import { type CSSProperties, useCallback, useMemo } from 'react';
@@ -11,7 +12,12 @@ import { parseCard } from '@/components/statistics/chartData';
 import { DownloadCsvButton } from '@/components/statistics/DownloadCsvButton';
 import { ExportRequetesButton } from '@/components/statistics/ExportRequetesButton';
 import { PeriodFilter } from '@/components/statistics/PeriodFilter';
-import { PERIOD_PRESETS, type PeriodSelection, resolveDateRange } from '@/components/statistics/period';
+import {
+  describeCreatedPeriod,
+  PERIOD_PRESETS,
+  type PeriodSelection,
+  resolveDateRange,
+} from '@/components/statistics/period';
 import { StatChart } from '@/components/statistics/StatChart';
 import { StatTable } from '@/components/statistics/StatTable';
 import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
@@ -182,6 +188,13 @@ export function RouteComponent() {
     [navigate],
   );
 
+  const clearPeriod = useCallback(
+    () => handlePeriodChange({ period: undefined, startDate: undefined, endDate: undefined }),
+    [handlePeriodChange],
+  );
+
+  const activePeriodLabel = describeCreatedPeriod(selection);
+
   if (isProfilePending || !areFlagsReady) {
     return null;
   }
@@ -208,6 +221,18 @@ export function RouteComponent() {
               onChange={handleDomaineChange}
             />
           </div>
+          {activePeriodLabel ? (
+            <div className={styles['filters__active']}>
+              <Tag
+                as="button"
+                dismissible
+                onClick={clearPeriod}
+                nativeButtonProps={{ 'aria-label': `${activePeriodLabel}, retirer le filtre` }}
+              >
+                {activePeriodLabel}
+              </Tag>
+            </div>
+          ) : null}
         </fieldset>
         <p role="status" className="fr-sr-only" aria-live="polite">
           {statusMessage}

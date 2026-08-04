@@ -303,7 +303,7 @@ Côté backend, la valeur n'est pas une chaîne CSV mais un **tableau** :
 une liste de valeurs. Une valeur CSV unique serait au contraire interprétée comme **un seul**
 domaine nommé `SOCIAL,SANITAIRE`, qui ne correspondrait à rien — sans lever d'erreur.
 
-Un tableau **vide** n'est pas transmis du tout : sans cette garde, le filtre porterait sur
+Un tableau **vide** n'est pas transmis du tout : sans cette vérification, le filtre porterait sur
 l'ensemble vide et viderait toutes les cartes au lieu d'être désactivé.
 
 L'API SIRENA, elle, garde une liste CSV (`?domaineIds=SOCIAL,SANITAIRE`), cohérente avec les

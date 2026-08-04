@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 241.20689655172413,
+  "average_query_time": 228.83561643835617,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -77,7 +77,7 @@
   "entity_id": "2P4X0t5mBkSBs54R0UTUb",
   "id": 69,
   "is_remote_synced": false,
-  "last_query_start": "2026-07-30T14:21:09.017681Z",
+  "last_query_start": "2026-08-04T15:48:22.318555Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.63.1.2 (b067da1)",
@@ -165,8 +165,68 @@
       "values_source_config": {
         "values": [
           [
+            "SANITAIRE",
+            "Sanitaire"
+          ],
+          [
+            "DOMICILE_HORS_PRO_PH",
+            "Domicile hors professionnel - Personnes handicapées"
+          ],
+          [
+            "DOMICILE_HORS_PRO_PA",
+            "Domicile hors professionnel - Personnes âgées"
+          ],
+          [
+            "HEBERGEMENT_VEILLE_SOCIALE",
+            "Hébergement et Veille sociale"
+          ],
+          [
             "ACCUEIL_DEMANDEURS_ASILE",
             "Accueil des demandeurs et des bénéficiaires de l'asile"
+          ],
+          [
+            "PROTECTION_MAJEURS",
+            "Protection des majeurs"
+          ],
+          [
+            "LOGEMENT_ADAPTE",
+            "Logement adapté"
+          ],
+          [
+            "SOCIAL",
+            "Social"
+          ],
+          [
+            "PERSONNES_DIFFICULTES_SPECIFIQUES",
+            "Personnes en difficultés spécifiques (ARS)"
+          ],
+          [
+            "MEDICO_SOCIAL_PA",
+            "Médico-Social - Personnes âgées"
+          ],
+          [
+            "MEDICO_SOCIAL_HANDICAPES_ADULTES",
+            "Médico-Social - Handicapés adultes"
+          ],
+          [
+            "MEDICO_SOCIAL_HANDICAPES_ENFANTS",
+            "Médico-Social - Handicapés enfants"
+          ],
+          [
+            "SANTE_ENVIRONNEMENT",
+            "Santé environnement"
+          ],
+          [
+            "DEFAUT_OFFRE_SOINS_GENERAL",
+            "Défaut d'offre de soins - Général"
+          ],
+          [
+            "DEFAUT_OFFRE_SOINS_CAS_CRITIQUE",
+            "Défaut d'offre de soins - Cas critique"
+          ],
+          [
+            "HOSPITALISATIONS_CONTRAINTE",
+            "Hospitalisations sous contrainte"
           ],
           [
             "AMBULATOIRE_GENERAL",
@@ -177,97 +237,16 @@
             "Ambulatoire - Transport sanitaire"
           ],
           [
-            "AUTRES",
-            "Autres"
-          ],
-          [
-            "DEFAUT_OFFRE_SOINS_CAS_CRITIQUE",
-            "Défaut d'offre de soins - Cas critique"
-          ],
-          [
-            "DEFAUT_OFFRE_SOINS_GENERAL",
-            "Défaut d'offre de soins - Général"
-          ],
-          [
-            "DOMICILE_HORS_PRO_PA",
-            "Domicile hors professionnel - Personnes âgées"
-          ],
-          [
-            "Dlehors professionnel - Personnes"
-          ],
-          [
-            "h"
+            "PHARMACIES_LABORATOIRES",
+            "Pharmacies-Laboratoires"
           ],
           [
             "ETABLISSEMENT_PENITENCIAIRE",
-            "Et"
+            "Etablissement pénitenciaire"
           ],
           [
-            "a"
-          ],
-          [
-            "HEBERGEMENT_VEILLE_SOCIALE",
-            "Héb"
-          ],
-          [
-            "e"
-          ],
-          [
-            "HOSPITALISATIONS_CONTRAINTE",
-            "Ho"
-          ],
-          [
-            "snte"
-          ],
-          [
-            "LOGEMENT_ADAPTE",
-            "Logement"
-          ],
-          [
-            "a"
-          ],
-          [
-            "MEDICO_SOCIAL_HANDICAPES_ADULT"
-          ],
-          [
-            "Eésadultes"
-          ],
-          [
-            "MFANTS",
-            "Médico-Social - Handicapés"
-          ],
-          [
-            "e"
-          ],
-          [
-            "MEDICO_SOCIAL_PA",
-            "Médico-Social"
-          ],
-          [
-            "-"
-          ],
-          [
-            "PERSONNES_DIFFICULTES_SPECIFIQ"
-          ],
-          [
-            "Usspécifiques (ARS)"
-          ],
-          [
-            "Prmacies-Laboratoires"
-          ],
-          [
-            "Pondes majeurs"
-          ],
-          [
-            "S"
-          ],
-          [
-            "SANTE_ENVIRONNEMENT",
-            "Santé e"
-          ],
-          [
-            "SOCIAL",
-            "Social"
+            "AUTRES",
+            "Autres"
           ]
         ]
       },
@@ -296,13 +275,13 @@
         },
         "type": {
           "type/Number": {
-            "avg": 12,
+            "avg": 13,
             "excess-kurtosis": null,
-            "max": 12,
-            "min": 12,
+            "max": 13,
+            "min": 13,
             "mode-fraction": 1,
-            "q1": 12,
-            "q3": 12,
+            "q1": 13,
+            "q3": 13,
             "sd": 0,
             "skewness": null,
             "top-3-fraction": 1,

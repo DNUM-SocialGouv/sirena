@@ -96,17 +96,6 @@ describe('Statistiques route — filtre Domaine fonctionnel', () => {
     );
   });
 
-  it('shows no request count next to the domaines, and does not promise one', async () => {
-    const user = userEvent.setup();
-    render(<RouteComponent />);
-
-    await user.click(screen.getByRole('button', { name: /Domaine fonctionnel/ }));
-
-    expect(screen.getByRole('checkbox', { name: 'Social' })).toBeInTheDocument();
-    expect(screen.queryByText(/nombre de requêtes/)).not.toBeInTheDocument();
-    expect(screen.queryByRole('checkbox', { name: /\(\d+\)/ })).not.toBeInTheDocument();
-  });
-
   it('names what the page actually filters, at both grouping levels', async () => {
     const user = userEvent.setup();
     render(<RouteComponent />);
@@ -117,5 +106,47 @@ describe('Statistiques route — filtre Domaine fonctionnel', () => {
 
     expect(screen.getByRole('group', { name: /Filtrer les indicateurs par domaine fonctionnel/ })).toBeInTheDocument();
     expect(screen.queryByText(/Filtrer les requêtes par domaine fonctionnel/)).not.toBeInTheDocument();
+  });
+});
+
+describe('Statistiques route — filtres actifs', () => {
+  it('shows the active period as a tag below the filter buttons', () => {
+    searchState.current = { period: 'rolling-month' };
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('button', { name: /^Requêtes créées : Mois glissant/ })).toBeInTheDocument();
+  });
+
+  it('phrases a custom range tag around the request creation date', () => {
+    searchState.current = { startDate: '2026-01-01', endDate: '2026-01-31' };
+
+    render(<RouteComponent />);
+
+    expect(
+      screen.getByRole('button', { name: /^Requêtes créées entre le 01\/01\/2026 et le 31\/01\/2026/ }),
+    ).toBeInTheDocument();
+  });
+
+  it('clears the period when the tag is dismissed', async () => {
+    const user = userEvent.setup();
+    searchState.current = { period: 'rolling-month' };
+    render(<RouteComponent />);
+
+    await user.click(screen.getByRole('button', { name: /^Requêtes créées : Mois glissant/ }));
+
+    const [{ search }] = navigate.mock.calls.at(-1) as [{ search: (prev: object) => object }];
+    expect(search({ period: 'rolling-month', domaineIds: 'SOCIAL' })).toEqual({
+      period: undefined,
+      startDate: undefined,
+      endDate: undefined,
+      domaineIds: 'SOCIAL',
+    });
+  });
+
+  it('shows no tag when no period is selected', () => {
+    render(<RouteComponent />);
+
+    expect(screen.queryByRole('button', { name: /^Requêtes créées/ })).not.toBeInTheDocument();
   });
 });
