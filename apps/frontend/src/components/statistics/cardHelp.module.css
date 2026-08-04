@@ -1,0 +1,6 @@
+/* Center the tooltip button on the text line instead of letting it sit on the baseline. */
+.help {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
