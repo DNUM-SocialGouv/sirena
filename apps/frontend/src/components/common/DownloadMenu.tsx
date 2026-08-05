@@ -1,7 +1,8 @@
 import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
-import { Menu } from '@sirena/ui';
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
+import { useDisclosureMenu } from '@/hooks/useDisclosureMenu';
+import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
 import styles from './DownloadMenu.module.css';
 
 type DownloadMenuProps = {
@@ -15,25 +16,34 @@ const warningModalInstance = createModal({
   isOpenedByDefault: false,
 });
 
+const WARNING_MODAL_IDS = [warningModalInstance.id];
+
 export const DownloadMenu = ({ requestId, disabled, hasUnsafeFiles }: DownloadMenuProps) => {
-  const [isOpen, setIsOpen] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  const { isOpen, close, toggle, triggerRef, panelRef, onPanelBlur } = useDisclosureMenu();
+  const { registerTrigger } = useModalFocusRestore(WARNING_MODAL_IDS);
+  const panelId = useId();
 
   const downloadUrl = useMemo(() => `/api/requetes-entite/${requestId}/files/download-all`, [requestId]);
   const pdfUrl = useMemo(() => `/api/requetes-entite/${requestId}/export-pdf`, [requestId]);
 
   const handleDownloadPdf = () => {
-    setIsOpen(false);
+    close();
     window.open(pdfUrl, '_blank');
   };
 
   const handleDownloadAttachments = () => {
-    setIsOpen(false);
+    if (disabled) return;
+
     if (hasUnsafeFiles) {
+      if (triggerRef.current) registerTrigger(triggerRef.current);
+      close({ restoreFocus: false });
       setAccepted(false);
       warningModalInstance.open();
       return;
     }
+
+    close();
     window.open(downloadUrl, '_blank');
   };
 
@@ -46,27 +56,51 @@ export const DownloadMenu = ({ requestId, disabled, hasUnsafeFiles }: DownloadMe
 
   return (
     <>
-      <Menu.Root onOpenChange={setIsOpen}>
-        <Menu.Trigger isOpen={isOpen} className={styles.trigger}>
-          Télécharger
-        </Menu.Trigger>
-        <Menu.Portal>
-          <Menu.Positioner align="end">
-            <Menu.Popup className={styles.popup}>
-              <Menu.Item className={styles.item} onClick={handleDownloadPdf}>
-                <span className="fr-icon-file-pdf-line fr-icon--sm" aria-hidden="true" />
-                Télécharger le PDF de la requête
-                <span className="fr-icon-external-link-line fr-icon--sm" aria-hidden="true" />
-                <span className="fr-sr-only"> - nouvel onglet</span>
-              </Menu.Item>
-              <Menu.Item className={styles.item} onClick={handleDownloadAttachments} disabled={disabled}>
-                <span className="fr-icon-attachment-line fr-icon--sm" aria-hidden="true" />
-                Télécharger les pièces jointes
-              </Menu.Item>
-            </Menu.Popup>
-          </Menu.Positioner>
-        </Menu.Portal>
-      </Menu.Root>
+      <div className={styles.wrapper}>
+        <button
+          type="button"
+          ref={triggerRef}
+          className={`fr-btn fr-btn--secondary ${styles.trigger}`}
+          aria-expanded={isOpen}
+          aria-controls={panelId}
+          onClick={toggle}
+          onBlur={onPanelBlur}
+        >
+          Télécharger les documents
+          <span
+            aria-hidden="true"
+            className={`fr-icon-arrow-down-s-line ${styles.chevron}${isOpen ? ` ${styles['chevron--is-open']}` : ''}`}
+          />
+        </button>
+
+        {isOpen ? (
+          <div id={panelId} ref={panelRef} className={styles.panel}>
+            <ul className={styles.list}>
+              <li>
+                <button type="button" className={styles.item} onClick={handleDownloadPdf} onBlur={onPanelBlur}>
+                  <span className="fr-icon-file-pdf-line fr-icon--sm" aria-hidden="true" />
+                  Télécharger le PDF de la requête
+                  <span className="fr-icon-external-link-line fr-icon--sm" aria-hidden="true" />
+                  <span className="fr-sr-only"> - nouvel onglet</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className={styles.item}
+                  aria-disabled={disabled || undefined}
+                  onClick={handleDownloadAttachments}
+                  onBlur={onPanelBlur}
+                >
+                  <span className="fr-icon-attachment-line fr-icon--sm" aria-hidden="true" />
+                  Télécharger les pièces jointes
+                  {disabled ? <span className="fr-sr-only">, aucune pièce jointe disponible</span> : null}
+                </button>
+              </li>
+            </ul>
+          </div>
+        ) : null}
+      </div>
 
       <warningModalInstance.Component
         title="Attention : pièces jointes potentiellement dangereuses"
@@ -94,7 +128,7 @@ export const DownloadMenu = ({ requestId, disabled, hasUnsafeFiles }: DownloadMe
           className="fr-mt-2w"
           options={[
             {
-              label: 'Je comprends les risques et souhaite télécharger l\u2019archive',
+              label: 'Je comprends les risques et souhaite télécharger l’archive',
               nativeInputProps: {
                 checked: accepted,
                 onChange: (e) => setAccepted(e.target.checked),

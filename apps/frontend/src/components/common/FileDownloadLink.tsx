@@ -228,6 +228,19 @@ const FILE_TAG_STYLE = {
   },
 } as const;
 
+type FileStatusTagProps = {
+  iconId: React.ComponentProps<typeof Tag>['iconId'];
+  tone: keyof typeof FILE_TAG_STYLE;
+  children: React.ReactNode;
+};
+
+const FileStatusTag = ({ iconId, tone, children }: FileStatusTagProps) => (
+  <Tag as="span" small iconId={iconId} style={FILE_TAG_STYLE[tone]}>
+    <span className="fr-sr-only">Statut du fichier : </span>
+    {children}
+  </Tag>
+);
+
 export const FileDownloadLink = ({
   href,
   safeHref,
@@ -243,6 +256,7 @@ export const FileDownloadLink = ({
   sanitizeStatus: initialSanitizeStatus,
 }: FileDownloadLinkProps) => {
   const modalId = useId();
+  const statusId = useId();
 
   const [fileStatus, setFileStatus] = useState<FileProcessingStatus | null>(() =>
     initialStatus
@@ -401,27 +415,27 @@ export const FileDownloadLink = ({
     switch (scanStatus) {
       case 'PENDING':
         return (
-          <Tag as="span" small iconId="fr-icon-time-fill" style={FILE_TAG_STYLE.intermediate}>
+          <FileStatusTag iconId="fr-icon-time-fill" tone="intermediate">
             En attente d'analyse antivirus
-          </Tag>
+          </FileStatusTag>
         );
       case 'SCANNING':
         return (
-          <Tag as="span" small iconId="fr-icon-refresh-fill" style={FILE_TAG_STYLE.intermediate}>
-            Analyse antivirus en cours...
-          </Tag>
+          <FileStatusTag iconId="fr-icon-refresh-fill" tone="intermediate">
+            Analyse antivirus en cours
+          </FileStatusTag>
         );
       case 'SKIPPED':
         return (
-          <Tag as="span" small iconId="fr-icon-question-fill" style={FILE_TAG_STYLE.intermediate}>
-            Non analysé (antivirus)
-          </Tag>
+          <FileStatusTag iconId="fr-icon-question-fill" tone="intermediate">
+            Non analysé par l'antivirus
+          </FileStatusTag>
         );
       case 'ERROR':
         return (
-          <Tag as="span" small iconId="fr-icon-error-warning-fill" style={FILE_TAG_STYLE.error}>
+          <FileStatusTag iconId="fr-icon-error-warning-fill" tone="error">
             Analyse antivirus échouée
-          </Tag>
+          </FileStatusTag>
         );
     }
 
@@ -429,34 +443,34 @@ export const FileDownloadLink = ({
       switch (sanitizeStatus) {
         case 'PENDING':
           return (
-            <Tag as="span" small iconId="fr-icon-time-fill" style={FILE_TAG_STYLE.intermediate}>
+            <FileStatusTag iconId="fr-icon-time-fill" tone="intermediate">
               En attente de sécurisation
-            </Tag>
+            </FileStatusTag>
           );
         case 'SANITIZING':
           return (
-            <Tag as="span" small iconId="fr-icon-refresh-fill" style={FILE_TAG_STYLE.intermediate}>
-              Sécurisation...
-            </Tag>
+            <FileStatusTag iconId="fr-icon-refresh-fill" tone="intermediate">
+              Sécurisation en cours
+            </FileStatusTag>
           );
         case 'ERROR':
           return (
-            <Tag as="span" small iconId="fr-icon-error-warning-fill" style={FILE_TAG_STYLE.error}>
+            <FileStatusTag iconId="fr-icon-error-warning-fill" tone="error">
               Sécurisation échouée
-            </Tag>
+            </FileStatusTag>
           );
         case 'COMPLETED':
           return (
-            <Tag as="span" small iconId="fr-icon-checkbox-circle-fill" style={FILE_TAG_STYLE.valid}>
-              Sécurisé
-            </Tag>
+            <FileStatusTag iconId="fr-icon-checkbox-circle-fill" tone="valid">
+              Analysé et sécurisé
+            </FileStatusTag>
           );
         case 'SKIPPED':
         case 'NOT_APPLICABLE':
           return (
-            <Tag as="span" small iconId="fr-icon-checkbox-circle-fill" style={FILE_TAG_STYLE.valid}>
-              Vérifié
-            </Tag>
+            <FileStatusTag iconId="fr-icon-checkbox-circle-fill" tone="valid">
+              Analysé, aucun risque détecté
+            </FileStatusTag>
           );
       }
     }
@@ -476,17 +490,26 @@ export const FileDownloadLink = ({
   return (
     <>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-        <a href={displayHref} target={target} rel={rel} className={className} onClick={handleClick}>
+        <a
+          href={displayHref}
+          target={target}
+          rel={rel}
+          className={className}
+          onClick={handleClick}
+          aria-describedby={statusId}
+        >
           {displayName}
           <span className="fr-sr-only"> - nouvel onglet</span>
         </a>
-        {isFileInfected(fileStatus?.scanStatus) ? (
-          <Tag as="span" small iconId="fr-icon-warning-fill" style={FILE_TAG_STYLE.error}>
-            Risque détecté
-          </Tag>
-        ) : (
-          renderStatusBadge()
-        )}
+        <span id={statusId} role="status" aria-live="polite" aria-atomic="true">
+          {isFileInfected(fileStatus?.scanStatus) ? (
+            <FileStatusTag iconId="fr-icon-warning-fill" tone="error">
+              Risque détecté par l'antivirus
+            </FileStatusTag>
+          ) : (
+            renderStatusBadge()
+          )}
+        </span>
       </span>
 
       <downloadModal.Component
