@@ -229,7 +229,9 @@ const FILE_TAG_STYLE = {
 } as const;
 
 type FileStatusTagProps = {
-  iconId: React.ComponentProps<typeof Tag>['iconId'];
+  // NonNullable : les props de Tag sont une union discriminée avec/sans icône,
+  // un iconId potentiellement undefined ne satisfait aucune des deux variantes.
+  iconId: NonNullable<React.ComponentProps<typeof Tag>['iconId']>;
   tone: keyof typeof FILE_TAG_STYLE;
   children: React.ReactNode;
 };
