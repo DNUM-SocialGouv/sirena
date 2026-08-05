@@ -3,7 +3,13 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
-import { FEATURE_FLAGS, REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
+import {
+  FEATURE_FLAGS,
+  RAPPEL_DATE_REQUIRED_MESSAGE,
+  REQUETE_ETAPE_RAPPEL_TYPES,
+  REQUETE_ETAPE_STATUT_TYPES,
+  REQUETE_ETAPE_TYPES,
+} from '@sirena/common/constants';
 import { Drawer, Toast } from '@sirena/ui';
 import { forwardRef, useCallback, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
@@ -20,6 +26,13 @@ import { useHasFeature } from '@/hooks/useHasFeature';
 import type { ProcessingStepStatut } from '@/lib/api/processingSteps';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 import styles from './StepFormPanel.module.css';
+import {
+  RAPPEL_DISABLED,
+  type RappelSelectValue,
+  StepRappelFields,
+  toRappelInputDate,
+  toRappelSelectValue,
+} from './StepRappelFields';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
 
@@ -63,6 +76,10 @@ const NOM_REQUIRED_ERROR = "Le champ 'Nom de l'étape' est obligatoire. Veuillez
 const DATE_REQUIRED_ERROR = "La date de réalisation est obligatoire lorsque le statut de l'étape est « Fait ».";
 const EST_PARTAGEE_REQUIRED_ERROR =
   'Le champ "Afficher l’étape pour les autres entités affectées" est obligatoire. Veuillez sélectionner une option pour ajouter une étape.';
+const DATE_INVALID_ERROR =
+  'Le champ « Fait le » est incomplet ou contient une date non valide. Format attendu : JJ-MM-AAAA.';
+const RAPPEL_DATE_INVALID_ERROR =
+  'Le champ « Rappeler cette étape le » est incomplet ou contient une date non valide. Format attendu : JJ-MM-AAAA.';
 
 let noteKeySeq = 0;
 const nextNoteKey = () => {
@@ -85,6 +102,9 @@ const toInputDate = (value: string | Date | null | undefined): string => {
 };
 
 const todayInputDate = () => formatLocalDate(new Date());
+
+const hasInvalidDateInput = (ref: React.RefObject<HTMLInputElement | null>): boolean =>
+  ref.current?.validity?.badInput ?? false;
 
 const formatNoteDate = (value: string | Date): string => {
   const date = value instanceof Date ? value : new Date(value);
@@ -210,6 +230,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   const nomInputRef = useRef<HTMLInputElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
   const estPartageeInputRef = useRef<HTMLInputElement>(null);
+  const rappelDateInputRef = useRef<HTMLInputElement>(null);
   // Key of a freshly added note whose textarea should receive focus once it mounts.
   const pendingFocusNoteKey = useRef<string | null>(null);
 
@@ -230,6 +251,10 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   const [dateError, setDateError] = useState<string | null>(null);
   const [estPartagee, setEstPartagee] = useState<boolean | null>(null);
   const [estPartageeError, setEstPartageeError] = useState<string | null>(null);
+  const [rappelType, setRappelType] = useState<RappelSelectValue>(RAPPEL_DISABLED);
+  const [rappelDate, setRappelDate] = useState('');
+  const [rappelDateError, setRappelDateError] = useState<string | null>(null);
+  const isRappelEnabled = useHasFeature(FEATURE_FLAGS.ETAPE_RAPPEL, false);
 
   const [notes, setNotes] = useState<EditableNote[]>([]);
   const [readOnlyNotes, setReadOnlyNotes] = useState<ReadOnlyNote[]>([]);
@@ -256,6 +281,9 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
     setDateError(null);
     setEstPartagee(null);
     setEstPartageeError(null);
+    setRappelType(RAPPEL_DISABLED);
+    setRappelDate('');
+    setRappelDateError(null);
     setNotes([]);
     setReadOnlyNotes([]);
     setExistingFiles([]);
@@ -299,6 +327,9 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
           ? todayInputDate()
           : '',
     );
+
+    setRappelType(toRappelSelectValue(step.rappelType));
+    setRappelDate(toRappelInputDate(step.rappelDate as unknown as string));
 
     // Skip empty notes (legacy notes that only held files, since moved to the step level).
     const nonEmptyNotes = step.notes.filter((note) => note.texte?.trim());
@@ -387,10 +418,22 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
       valid = false;
     }
 
-    if (!fieldsLocked && isFait && !dateRealisation) {
-      setDateError(DATE_REQUIRED_ERROR);
-      firstErrorField = firstErrorField ?? dateInputRef.current;
-      valid = false;
+    if (!fieldsLocked && isFait) {
+      const isDateInvalid = hasInvalidDateInput(dateInputRef);
+      if (isDateInvalid || !dateRealisation) {
+        setDateError(isDateInvalid ? DATE_INVALID_ERROR : DATE_REQUIRED_ERROR);
+        firstErrorField = firstErrorField ?? dateInputRef.current;
+        valid = false;
+      }
+    }
+
+    if (isRappelEnabled && !fieldsLocked && rappelType === REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE) {
+      const isRappelDateInvalid = hasInvalidDateInput(rappelDateInputRef);
+      if (isRappelDateInvalid || !rappelDate) {
+        setRappelDateError(isRappelDateInvalid ? RAPPEL_DATE_INVALID_ERROR : RAPPEL_DATE_REQUIRED_MESSAGE);
+        firstErrorField = firstErrorField ?? rappelDateInputRef.current;
+        valid = false;
+      }
     }
 
     if (estPartageeEnabled && isManualStep && estPartagee === null) {
@@ -441,12 +484,18 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
       .map((note) => ({ ...note, texte: note.texte.trim() }))
       .filter((note) => note.texte.length > 0);
 
+    const rappelPayload = {
+      rappelType: rappelType === RAPPEL_DISABLED ? null : rappelType,
+      ...(rappelType === REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE ? { rappelDate } : {}),
+    };
+
     try {
       if (mode === 'create') {
         await addStepMutation.mutateAsync({
           nom: nom.trim(),
           ...(statutId ? { statutId } : {}),
           ...(isFait ? { dateRealisation } : {}),
+          ...rappelPayload,
           notes: cleanedNotes.map((note) => ({ texte: note.texte })),
           fileIds: uploadedIds,
           ...(estPartageeEnabled && estPartagee !== null ? { estPartagee } : {}),
@@ -463,6 +512,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
           nom: nom.trim(),
           statutId,
           ...(isFait ? { dateRealisation: dateRealisation || todayInputDate() } : {}),
+          ...rappelPayload,
           notes: cleanedNotes.map((note) => ({ ...(note.id ? { id: note.id } : {}), texte: note.texte })),
           fileIds,
           ...(estPartageeEnabled && isManualStep && estPartagee !== null ? { estPartagee } : {}),
@@ -523,6 +573,16 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
 
   const handleOpenDeleteModal = useCallback(() => deleteStepModal.open(), []);
 
+  const handleRappelTypeChange = useCallback((value: RappelSelectValue) => {
+    setRappelType(value);
+    setRappelDateError(null);
+  }, []);
+
+  const handleRappelDateChange = useCallback((value: string) => {
+    setRappelDate(value);
+    setRappelDateError(null);
+  }, []);
+
   return (
     <>
       <Drawer.Root variant="nonModal" withCloseButton={false} open={isOpen} onOpenChange={handleOpenChange}>
@@ -550,8 +610,9 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
 
                   {fieldsLocked ? (
                     <p className={`fr-text--sm ${styles.lockHint}`}>
-                      Cette étape correspond à un accusé de réception : le statut, le nom et la date ne sont pas
-                      modifiables ; vous pouvez uniquement ajouter des notes et des pièces jointes.
+                      Cette étape correspond à un accusé de réception : le statut, le nom
+                      {isRappelEnabled ? ', la date et le rappel' : ' et la date'} ne sont pas modifiables ; vous pouvez
+                      uniquement ajouter des notes et des pièces jointes.
                     </p>
                   ) : null}
 
@@ -564,7 +625,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                     />
                   ) : null}
 
-                  <form onSubmit={handleFormSubmit}>
+                  <form onSubmit={handleFormSubmit} noValidate>
                     <Input
                       label="Nom de l'étape (obligatoire)"
                       disabled={isLoading || fieldsLocked || isAcknowledgment}
@@ -744,6 +805,18 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                         onRemove={handleRemoveFileToUpload}
                       />
                     </section>
+
+                    {isRappelEnabled && (
+                      <StepRappelFields
+                        rappelType={rappelType}
+                        rappelDate={rappelDate}
+                        dateError={rappelDateError}
+                        disabled={isLoading || fieldsLocked}
+                        dateInputRef={rappelDateInputRef}
+                        onTypeChange={handleRappelTypeChange}
+                        onDateChange={handleRappelDateChange}
+                      />
+                    )}
 
                     <div className={styles.footerActions}>
                       {mode === 'edit' && !fieldsLocked && !isAcknowledgment && (

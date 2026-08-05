@@ -37,11 +37,12 @@ test.describe('Requete Feature', () => {
 
   test('should display home page with welcome message', async () => {
     const heading = page.getByRole('heading', {
-      name: 'Bienvenue',
+      name: 'Tableau de bord des requêtes',
       level: 1,
     });
 
     await expect(heading).toBeVisible();
+    await expect(page.getByText(/Bienvenue/)).toBeVisible();
   });
 
   test('should display requetes table with at least 1 requete', async () => {

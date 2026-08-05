@@ -12,6 +12,10 @@ externalSecret:
     user: ""
     vaultPath: "databases/mariadb"
     passwordKey: "mariadb-password"
+  migrationBucket:
+    enable: false
+    bucketName: ""
+    targetSecretName: migration-bucket-secret
 
 redis_unmanaged: false
 

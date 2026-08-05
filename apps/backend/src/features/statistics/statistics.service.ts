@@ -325,11 +325,17 @@ export const fetchDashboardCardsData = async (
 
   const declaredSlugs = extractDashboardParameterSlugs(metadata);
   const appliedOptional = Object.entries(optionalParams).filter(
-    ([slug, value]) => value != null && declaredSlugs.has(slug),
+    ([slug, value]) => value != null && declaredSlugs.has(slug) && (!Array.isArray(value) || value.length > 0),
   );
 
   const filterSearch = new URLSearchParams();
   for (const [slug, value] of appliedOptional) {
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        filterSearch.append(slug, String(item));
+      }
+      continue;
+    }
     filterSearch.set(slug, String(value));
   }
   const filterQuery = filterSearch.toString();

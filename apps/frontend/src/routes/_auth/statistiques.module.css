@@ -7,6 +7,26 @@
   margin-bottom: 2rem;
 }
 
+.filters {
+  padding: 0;
+  border: 0;
+  margin: 0 0 2rem;
+}
+
+.filters__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.filters__active {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
 /* Reproduction de la grille Metabase (24 colonnes) : chaque carte occupe col → col + size_x.
    En dessous de 48em, on empile en une seule colonne pour la lisibilité mobile. */
 .mb-grid {

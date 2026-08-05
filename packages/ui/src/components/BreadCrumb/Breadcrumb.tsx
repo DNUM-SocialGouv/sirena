@@ -8,9 +8,15 @@ export function BreadCrumb({ items }: { items: BreadCrumbItem[] }) {
       <ol className="fr-breadcrumb__list">
         {items.map((item) => (
           <li key={item.to} className="fr-breadcrumb__item">
-            <Link to={item.to} className="fr-breadcrumb__link" aria-current={item.current ? 'page' : undefined}>
-              {item.text}
-            </Link>
+            {item.current ? (
+              <span className="fr-breadcrumb__link" aria-current="page">
+                {item.text}
+              </span>
+            ) : (
+              <Link to={item.to} className="fr-breadcrumb__link">
+                {item.text}
+              </Link>
+            )}
           </li>
         ))}
       </ol>

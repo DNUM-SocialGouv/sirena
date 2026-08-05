@@ -1,8 +1,10 @@
 import { fr } from '@codegouvfr/react-dsfr';
+import { Tag } from '@codegouvfr/react-dsfr/Tag';
 import { FEATURE_FLAGS, ROLES, ROLES_STATISTICS } from '@sirena/common/constants';
 import { createFileRoute, Navigate, useNavigate, useSearch } from '@tanstack/react-router';
-import { type CSSProperties, useCallback } from 'react';
+import { type CSSProperties, useCallback, useMemo } from 'react';
 import { z } from 'zod';
+import { DomaineFilter } from '@/components/common/filters/DomaineFilter';
 import { AuthLayout } from '@/components/layout/auth/layout';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { CardHelp } from '@/components/statistics/CardHelp';
@@ -10,7 +12,12 @@ import { parseCard } from '@/components/statistics/chartData';
 import { DownloadCsvButton } from '@/components/statistics/DownloadCsvButton';
 import { ExportRequetesButton } from '@/components/statistics/ExportRequetesButton';
 import { PeriodFilter } from '@/components/statistics/PeriodFilter';
-import { PERIOD_PRESETS, type PeriodSelection, resolveDateRange } from '@/components/statistics/period';
+import {
+  describeCreatedPeriod,
+  PERIOD_PRESETS,
+  type PeriodSelection,
+  resolveDateRange,
+} from '@/components/statistics/period';
 import { StatChart } from '@/components/statistics/StatChart';
 import { StatTable } from '@/components/statistics/StatTable';
 import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
@@ -18,6 +25,7 @@ import { useProfile } from '@/hooks/queries/profile.hook';
 import { useStatisticsDashboard } from '@/hooks/queries/statistics.hook';
 import type { StatisticsCard } from '@/lib/api/fetchStatistics';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
+import { splitCsv } from '@/utils/filters';
 import styles from './statistiques.module.css';
 
 const numberFormatter = new Intl.NumberFormat('fr-FR');
@@ -33,6 +41,7 @@ const StatisticsSearchSchema = z.object({
   period: z.enum(PERIOD_PRESETS).optional().catch(undefined),
   startDate: z.iso.date().optional().catch(undefined),
   endDate: z.iso.date().optional().catch(undefined),
+  domaineIds: z.string().optional().catch(undefined),
 });
 
 export const Route = createFileRoute('/_auth/statistiques')({
@@ -159,7 +168,9 @@ export function RouteComponent() {
   };
   const range = resolveDateRange(selection, new Date());
   const dataDate = formatDataDate(new Date());
-  const query = useStatisticsDashboard(range, areFlagsReady && isEnabled && canView);
+  const canQuery = areFlagsReady && isEnabled && canView;
+  const selectedDomaines = useMemo(() => splitCsv(search.domaineIds), [search.domaineIds]);
+  const query = useStatisticsDashboard({ ...range, domaineIds: search.domaineIds }, canQuery);
 
   const handlePeriodChange = useCallback(
     (next: PeriodSelection) => {
@@ -169,6 +180,20 @@ export function RouteComponent() {
     },
     [navigate],
   );
+
+  const handleDomaineChange = useCallback(
+    (ids: string[]) => {
+      navigate({ search: (prev) => ({ ...prev, domaineIds: ids.length > 0 ? ids.join(',') : undefined }) });
+    },
+    [navigate],
+  );
+
+  const clearPeriod = useCallback(
+    () => handlePeriodChange({ period: undefined, startDate: undefined, endDate: undefined }),
+    [handlePeriodChange],
+  );
+
+  const activePeriodLabel = describeCreatedPeriod(selection);
 
   if (isProfilePending || !areFlagsReady) {
     return null;
@@ -186,7 +211,29 @@ export function RouteComponent() {
           <h1 className="fr-mb-0">Indicateurs</h1>
           {!isSuperAdmin && <ExportRequetesButton />}
         </div>
-        <PeriodFilter value={selection} onChange={handlePeriodChange} />
+        <fieldset className={styles.filters}>
+          <legend className={fr.cx('fr-label', 'fr-mb-1v')}>Filtrer les indicateurs</legend>
+          <div className={styles['filters__controls']}>
+            <PeriodFilter value={selection} onChange={handlePeriodChange} />
+            <DomaineFilter
+              selectedIds={selectedDomaines}
+              legend="Filtrer les indicateurs par domaine fonctionnel"
+              onChange={handleDomaineChange}
+            />
+          </div>
+          {activePeriodLabel ? (
+            <div className={styles['filters__active']}>
+              <Tag
+                as="button"
+                dismissible
+                onClick={clearPeriod}
+                nativeButtonProps={{ 'aria-label': `${activePeriodLabel}, retirer le filtre` }}
+              >
+                {activePeriodLabel}
+              </Tag>
+            </div>
+          ) : null}
+        </fieldset>
         <p role="status" className="fr-sr-only" aria-live="polite">
           {statusMessage}
         </p>

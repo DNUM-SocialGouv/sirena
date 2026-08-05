@@ -7,6 +7,7 @@ export type { StatisticsCard };
 export type StatisticsDashboardFilters = {
   startDate?: string;
   endDate?: string;
+  domaineIds?: string;
 };
 
 export async function fetchStatisticsDashboard(
@@ -15,6 +16,7 @@ export async function fetchStatisticsDashboard(
   const query: Record<string, string> = {};
   if (filters.startDate) query.startDate = filters.startDate;
   if (filters.endDate) query.endDate = filters.endDate;
+  if (filters.domaineIds) query.domaineIds = filters.domaineIds;
 
   const res = await client.statistics.dashboard.$get({ query });
   await handleRequestErrors(res);

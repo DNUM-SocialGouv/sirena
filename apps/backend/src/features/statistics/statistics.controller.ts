@@ -2,6 +2,7 @@ import { throwHTTPException403Forbidden } from '@sirena/backend-utils/helpers';
 import { ERROR_KIND, ROLES_STATISTICS } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
+import { splitCsv } from '../../helpers/string.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
@@ -68,10 +69,16 @@ const app = factoryWithLogs
     const userId = c.get('userId');
     const entiteIds = c.get('entiteIds');
     const topEntiteId = c.get('topEntiteId');
-    const { startDate, endDate } = c.req.valid('query');
+    const { startDate, endDate, domaineIds } = c.req.valid('query');
+
+    const optionalParams = {
+      start_date: startDate,
+      end_date: endDate,
+      domaine_fonctionnel: splitCsv(domaineIds),
+    };
 
     if (entiteIds === null) {
-      const cards = await fetchDashboardCardsData({}, { start_date: startDate, end_date: endDate }, 'national');
+      const cards = await fetchDashboardCardsData({}, optionalParams, 'national');
       return c.json({ data: { cards } });
     }
 
@@ -95,10 +102,7 @@ const app = factoryWithLogs
     // Les bornes de date sont des filtres optionnels : le service ne les signe que si le dashboard
     // les déclare réellement, donc un dashboard sans filtre de date continue de fonctionner.
     // Voir docs/metabase_dashboards/FILTERS.md.
-    const cards = await fetchDashboardCardsData(
-      { entity_label: topEntite.label },
-      { start_date: startDate, end_date: endDate },
-    );
+    const cards = await fetchDashboardCardsData({ entity_label: topEntite.label }, optionalParams);
     return c.json({ data: { cards } });
   });
 

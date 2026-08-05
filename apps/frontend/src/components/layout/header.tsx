@@ -1,6 +1,6 @@
 import { Header } from '@codegouvfr/react-dsfr/Header';
 import { FEATURE_FLAGS, ROLES, ROLES_STATISTICS, type Role } from '@sirena/common/constants';
-import { Link, useLocation } from '@tanstack/react-router';
+import { Link, type LinkProps, useLocation } from '@tanstack/react-router';
 import { useId } from 'react';
 import { useFeatureFlagStore } from '@/stores/featureFlagStore';
 import { useUserStore } from '@/stores/userStore';
@@ -8,7 +8,7 @@ import style from './header.module.css';
 import { UserMenu } from './userMenu';
 
 type HeaderMenuProps = {
-  homeHref: string;
+  homeTo: LinkProps['to'];
 };
 
 const DOCUMENTATION_LINK = 'https://docs.numerique.gouv.fr/docs/541c745d-7a82-4cbf-b792-c15f69ccf2c7/';
@@ -79,7 +79,7 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
           </>
         }
         homeLinkProps={{
-          href: props.homeHref,
+          to: props.homeTo,
           title: 'Accueil - SIRENA',
         }}
         serviceTagline=""

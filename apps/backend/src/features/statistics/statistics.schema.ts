@@ -1,9 +1,27 @@
+import { DOMAINES_FONCTIONNELS } from '@sirena/common/constants';
 import { z } from 'zod';
+import { splitCsv } from '../../helpers/string.js';
+
+const DOMAINE_IDS: string[] = Object.values(DOMAINES_FONCTIONNELS);
+const CSV_FILTER_MAX = 500;
+
+const domaineIdsSchema = z
+  .string()
+  .max(CSV_FILTER_MAX)
+  .refine((value) => splitCsv(value).every((id) => DOMAINE_IDS.includes(id)), {
+    message: 'Domaine(s) fonctionnel(s) invalide(s)',
+  })
+  .optional()
+  .transform((value) => {
+    const ids = [...new Set(splitCsv(value))];
+    return ids.length > 0 ? ids.join(',') : undefined;
+  });
 
 export const StatisticsDashboardQuerySchema = z
   .object({
     startDate: z.iso.date().optional(),
     endDate: z.iso.date().optional(),
+    domaineIds: domaineIdsSchema,
   })
   .refine((q) => !q.startDate || !q.endDate || q.startDate <= q.endDate, {
     message: 'startDate doit être antérieure ou égale à endDate',

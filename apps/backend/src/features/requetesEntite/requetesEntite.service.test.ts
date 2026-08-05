@@ -168,6 +168,8 @@ export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situation
       requeteId: 'req123',
       createdById: 'user123',
       clotureEffectiveDate: null,
+      rappelType: null,
+      rappelDate: null,
     },
   ],
   departementsLieuSurvenue: [],
