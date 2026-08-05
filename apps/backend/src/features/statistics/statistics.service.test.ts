@@ -207,6 +207,55 @@ describe('statistics.service.ts', () => {
       ]);
     });
 
+    it('sends a multi-valued optional filter as a repeated query param', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            parameters: [{ slug: 'domaine_fonctionnel' }, { slug: 'start_date' }],
+            dashcards: [{ id: 100, card_id: 42, card: { id: 42, name: 'KPI' } }],
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]),
+        });
+
+      const { fetchDashboardCardsData } = await import('./statistics.service.js');
+      await fetchDashboardCardsData({}, { start_date: '2026-01-01', domaine_fonctionnel: ['SOCIAL', 'SANITAIRE'] });
+
+      const [, cardCall] = fetchMock.mock.calls;
+      const { searchParams } = new URL(cardCall[0] as string);
+      expect(searchParams.getAll('domaine_fonctionnel')).toEqual(['SOCIAL', 'SANITAIRE']);
+      expect(searchParams.get('start_date')).toBe('2026-01-01');
+    });
+
+    it('omits an empty multi-valued filter instead of filtering on nothing', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            parameters: [{ slug: 'domaine_fonctionnel' }],
+            dashcards: [{ id: 100, card_id: 42, card: { id: 42, name: 'KPI' } }],
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]),
+        });
+
+      const { fetchDashboardCardsData } = await import('./statistics.service.js');
+      await fetchDashboardCardsData({}, { domaine_fonctionnel: [] });
+
+      const [, cardCall] = fetchMock.mock.calls;
+      expect(cardCall[0]).not.toContain('domaine_fonctionnel');
+      expect(cardCall[0]).not.toContain('?');
+    });
+
     it('returns an empty array when the dashboard exposes no readable cards', async () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,

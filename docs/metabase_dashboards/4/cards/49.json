@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 269.380704041721,
+  "average_query_time": 279.0669330669331,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -36,7 +36,7 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'EN_COURS'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]];",
+        "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'EN_COURS'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]];",
         "template-tags": [
           {
             "display-name": "Entity Label",
@@ -55,12 +55,18 @@
             "id": "52c02cb9-93a4-40bb-a052-8ef8ad4988c5",
             "name": "end_date",
             "type": "date"
+          },
+          {
+            "display-name": "Domaine Fonctionnel",
+            "id": "30dcee11-fefc-4306-b9c4-042d3187112d",
+            "name": "domaine_fonctionnel",
+            "type": "text"
           }
         ]
       }
     ]
   },
-  "description": null,
+  "description": "Nombre de requêtes affectées à mon entité administrative et au statut “en cours”",
   "dimension_mappings": null,
   "dimensions": null,
   "display": "scalar",
@@ -71,7 +77,7 @@
   "entity_id": "0W14Ln9t4zIgOyyvNvud6",
   "id": 49,
   "is_remote_synced": false,
-  "last_query_start": "2026-07-29T07:27:21.417961Z",
+  "last_query_start": "2026-08-04T15:46:45.118947Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.60.4.4 (65c9d32)",
@@ -134,6 +140,110 @@
         ]
       ],
       "type": "date/single"
+    },
+    {
+      "id": "30dcee11-fefc-4306-b9c4-042d3187112d",
+      "isMultiSelect": true,
+      "name": "Domaine Fonctionnel",
+      "slug": "domaine_fonctionnel",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "domaine_fonctionnel"
+        ]
+      ],
+      "type": "string/=",
+      "values_query_type": "list",
+      "values_source_config": {
+        "values": [
+          [
+            "SANITAIRE",
+            "Sanitaire"
+          ],
+          [
+            "DOMICILE_HORS_PRO_PH",
+            "Domicile hors professionnel - Personnes handicapées"
+          ],
+          [
+            "DOMICILE_HORS_PRO_PA",
+            "Domicile hors professionnel - Personnes âgées"
+          ],
+          [
+            "HEBERGEMENT_VEILLE_SOCIALE",
+            "Hébergement et Veille sociale"
+          ],
+          [
+            "ACCUEIL_DEMANDEURS_ASILE",
+            "Accueil des demandeurs et des bénéficiaires de l'asile"
+          ],
+          [
+            "PROTECTION_MAJEURS",
+            "Protection des majeurs"
+          ],
+          [
+            "LOGEMENT_ADAPTE",
+            "Logement adapté"
+          ],
+          [
+            "SOCIAL",
+            "Social"
+          ],
+          [
+            "PERSONNES_DIFFICULTES_SPECIFIQUES",
+            "Personnes en difficultés spécifiques (ARS)"
+          ],
+          [
+            "MEDICO_SOCIAL_PA",
+            "Médico-Social - Personnes âgées"
+          ],
+          [
+            "MEDICO_SOCIAL_HANDICAPES_ADULTES",
+            "Médico-Social - Handicapés adultes"
+          ],
+          [
+            "MEDICO_SOCIAL_HANDICAPES_ENFANTS",
+            "Médico-Social - Handicapés enfants"
+          ],
+          [
+            "SANTE_ENVIRONNEMENT",
+            "Santé environnement"
+          ],
+          [
+            "DEFAUT_OFFRE_SOINS_GENERAL",
+            "Défaut d'offre de soins - Général"
+          ],
+          [
+            "DEFAUT_OFFRE_SOINS_CAS_CRITIQUE",
+            "Défaut d'offre de soins - Cas critique"
+          ],
+          [
+            "HOSPITALISATIONS_CONTRAINTE",
+            "Hospitalisations sous contrainte"
+          ],
+          [
+            "AMBULATOIRE_GENERAL",
+            "Ambulatoire - Général"
+          ],
+          [
+            "AMBULATOIRE_TRANSPORT_SANITAIRE",
+            "Ambulatoire - Transport sanitaire"
+          ],
+          [
+            "PHARMACIES_LABORATOIRES",
+            "Pharmacies-Laboratoires"
+          ],
+          [
+            "ETABLISSEMENT_PENITENCIAIRE",
+            "Etablissement pénitenciaire"
+          ],
+          [
+            "AUTRES",
+            "Autres"
+          ]
+        ]
+      },
+      "values_source_type": "static-list"
     }
   ],
   "public_uuid": null,
@@ -158,13 +268,13 @@
         },
         "type": {
           "type/Number": {
-            "avg": 318,
+            "avg": 188,
             "excess-kurtosis": null,
-            "max": 318,
-            "min": 318,
+            "max": 188,
+            "min": 188,
             "mode-fraction": 1,
-            "q1": 318,
-            "q3": 318,
+            "q1": 188,
+            "q3": 188,
             "sd": 0,
             "skewness": null,
             "top-3-fraction": 1,

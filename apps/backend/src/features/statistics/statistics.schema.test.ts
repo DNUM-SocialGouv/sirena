@@ -32,4 +32,40 @@ describe('StatisticsDashboardQuerySchema', () => {
     expect(StatisticsDashboardQuerySchema.safeParse({ startDate: '31-03-2026' }).success).toBe(false);
     expect(StatisticsDashboardQuerySchema.safeParse({ startDate: '2026-13-01' }).success).toBe(false);
   });
+
+  it('accepts one or several known domaines fonctionnels', () => {
+    expect(StatisticsDashboardQuerySchema.safeParse({ domaineIds: 'SOCIAL' }).success).toBe(true);
+    expect(StatisticsDashboardQuerySchema.safeParse({ domaineIds: 'SOCIAL,SANITAIRE' }).success).toBe(true);
+  });
+
+  it('rejects an unknown domaine fonctionnel', () => {
+    expect(StatisticsDashboardQuerySchema.safeParse({ domaineIds: 'NOT_A_DOMAINE' }).success).toBe(false);
+    expect(StatisticsDashboardQuerySchema.safeParse({ domaineIds: 'SOCIAL,NOT_A_DOMAINE' }).success).toBe(false);
+  });
+
+  it('normalises an empty list to undefined so Metabase never receives a blank filter', () => {
+    expect(StatisticsDashboardQuerySchema.parse({ domaineIds: '' }).domaineIds).toBeUndefined();
+    expect(StatisticsDashboardQuerySchema.parse({ domaineIds: ' , ' }).domaineIds).toBeUndefined();
+  });
+
+  it('strips stray whitespace and separators from the list', () => {
+    expect(StatisticsDashboardQuerySchema.parse({ domaineIds: ' SOCIAL , SANITAIRE ' }).domaineIds).toBe(
+      'SOCIAL,SANITAIRE',
+    );
+  });
+
+  it('deduplicates the list so a repeated domaine cannot inflate the outgoing query string', () => {
+    expect(StatisticsDashboardQuerySchema.parse({ domaineIds: 'SOCIAL,SOCIAL,SANITAIRE,SOCIAL' }).domaineIds).toBe(
+      'SOCIAL,SANITAIRE',
+    );
+  });
+
+  it('combines the period and the domaines filters', () => {
+    const result = StatisticsDashboardQuerySchema.safeParse({
+      startDate: '2026-01-01',
+      endDate: '2026-03-31',
+      domaineIds: 'SOCIAL,SANITAIRE',
+    });
+    expect(result.success).toBe(true);
+  });
 });

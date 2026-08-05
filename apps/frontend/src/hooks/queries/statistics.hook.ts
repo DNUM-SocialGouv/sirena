@@ -3,7 +3,13 @@ import { fetchStatisticsDashboard, type StatisticsDashboardFilters } from '@/lib
 
 export const useStatisticsDashboard = (filters: StatisticsDashboardFilters = {}, enabled = true) =>
   useQuery({
-    queryKey: ['statistics', 'dashboard', filters.startDate ?? null, filters.endDate ?? null],
+    queryKey: [
+      'statistics',
+      'dashboard',
+      filters.startDate ?? null,
+      filters.endDate ?? null,
+      filters.domaineIds ?? null,
+    ],
     queryFn: () => fetchStatisticsDashboard(filters),
     enabled,
     staleTime: 5 * 60_000,

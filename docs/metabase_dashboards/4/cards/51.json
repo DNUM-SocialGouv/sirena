@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 277.9482288828338,
+  "average_query_time": 285.75,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -36,7 +36,7 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "-- Nombre de requêtes de l'entité de l'agent connecté qui sont en compétence partagée,\n-- c.-à-d. affectées à au moins une AUTRE entité administrative « réellement » compétente.\n-- Une autre entité est ignorée si elle a clôturé la requête pour motif « Hors compétence ».\nSELECT\n  COUNT(DISTINCT re_self.\"requeteId\") AS nombre_requetes_competence_partagee\nFROM \"RequeteEntite\" re_self\nJOIN \"Entite\"   e ON e.id = re_self.\"entiteId\"\nJOIN \"Requete\"  r ON r.id = re_self.\"requeteId\"\nWHERE\n  e.label = {{entity_label}}\n  AND EXISTS (\n    -- une autre entité affectée à la même requête...\n    SELECT 1\n    FROM \"RequeteEntite\" re_other\n    WHERE re_other.\"requeteId\" = re_self.\"requeteId\"\n      AND re_other.\"entiteId\" <> re_self.\"entiteId\"\n      -- ...qui n'est PAS clôturée « Hors compétence »\n      AND NOT (\n        re_other.\"statutId\" = 'CLOTUREE'\n        AND EXISTS (\n          SELECT 1\n          FROM \"RequeteEtape\" et\n          JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n          WHERE et.\"requeteId\" = re_other.\"requeteId\"\n            AND et.\"entiteId\"  = re_other.\"entiteId\"\n            AND et.\"statutId\"  = 'CLOTUREE'\n            AND j.\"A\"          = 'HORS_COMPETENCE'\n        )\n      )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]];",
+        "native": "-- Nombre de requêtes de l'entité de l'agent connecté qui sont en compétence partagée,\n-- c.-à-d. affectées à au moins une AUTRE entité administrative « réellement » compétente.\n-- Une autre entité est ignorée si elle a clôturé la requête pour motif « Hors compétence ».\nSELECT\n  COUNT(DISTINCT re_self.\"requeteId\") AS nombre_requetes_competence_partagee\nFROM \"RequeteEntite\" re_self\nJOIN \"Entite\"   e ON e.id = re_self.\"entiteId\"\nJOIN \"Requete\"  r ON r.id = re_self.\"requeteId\"\nWHERE\n  e.label = {{entity_label}}\n  AND EXISTS (\n    -- une autre entité affectée à la même requête...\n    SELECT 1\n    FROM \"RequeteEntite\" re_other\n    WHERE re_other.\"requeteId\" = re_self.\"requeteId\"\n      AND re_other.\"entiteId\" <> re_self.\"entiteId\"\n      -- ...qui n'est PAS clôturée « Hors compétence »\n      AND NOT (\n        re_other.\"statutId\" = 'CLOTUREE'\n        AND EXISTS (\n          SELECT 1\n          FROM \"RequeteEtape\" et\n          JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n          WHERE et.\"requeteId\" = re_other.\"requeteId\"\n            AND et.\"entiteId\"  = re_other.\"entiteId\"\n            AND et.\"statutId\"  = 'CLOTUREE'\n            AND j.\"A\"          = 'HORS_COMPETENCE'\n        )\n      )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]];",
         "template-tags": [
           {
             "display-name": "Entity Label",
@@ -55,12 +55,18 @@
             "id": "1d20b736-898e-4a78-8bdd-ff198232d8e3",
             "name": "end_date",
             "type": "date"
+          },
+          {
+            "display-name": "Domaine Fonctionnel",
+            "id": "d9a603fa-2047-44b1-a7bf-d5958709edd7",
+            "name": "domaine_fonctionnel",
+            "type": "text"
           }
         ]
       }
     ]
   },
-  "description": null,
+  "description": "Nombre de requêtes affectées à mon entité administrative et à au moins une autre entité administrative. Les requêtes clôturées avec le statut ‘Hors compétence’ sont exclues du compte. ",
   "dimension_mappings": null,
   "dimensions": null,
   "display": "scalar",
@@ -71,7 +77,7 @@
   "entity_id": "gYpEpTUnIXQCbRJm3uW7a",
   "id": 51,
   "is_remote_synced": false,
-  "last_query_start": "2026-07-29T07:27:20.817777Z",
+  "last_query_start": "2026-08-04T15:46:44.817501Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.62.3.3 (686cac9)",
@@ -141,6 +147,110 @@
         ]
       ],
       "type": "date/single"
+    },
+    {
+      "id": "d9a603fa-2047-44b1-a7bf-d5958709edd7",
+      "isMultiSelect": true,
+      "name": "Domaine Fonctionnel",
+      "slug": "domaine_fonctionnel",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "domaine_fonctionnel"
+        ]
+      ],
+      "type": "string/=",
+      "values_query_type": "list",
+      "values_source_config": {
+        "values": [
+          [
+            "SANITAIRE",
+            "Sanitaire"
+          ],
+          [
+            "DOMICILE_HORS_PRO_PH",
+            "Domicile hors professionnel - Personnes handicapées"
+          ],
+          [
+            "DOMICILE_HORS_PRO_PA",
+            "Domicile hors professionnel - Personnes âgées"
+          ],
+          [
+            "HEBERGEMENT_VEILLE_SOCIALE",
+            "Hébergement et Veille sociale"
+          ],
+          [
+            "ACCUEIL_DEMANDEURS_ASILE",
+            "Accueil des demandeurs et des bénéficiaires de l'asile"
+          ],
+          [
+            "PROTECTION_MAJEURS",
+            "Protection des majeurs"
+          ],
+          [
+            "LOGEMENT_ADAPTE",
+            "Logement adapté"
+          ],
+          [
+            "SOCIAL",
+            "Social"
+          ],
+          [
+            "PERSONNES_DIFFICULTES_SPECIFIQUES",
+            "Personnes en difficultés spécifiques (ARS)"
+          ],
+          [
+            "MEDICO_SOCIAL_PA",
+            "Médico-Social - Personnes âgées"
+          ],
+          [
+            "MEDICO_SOCIAL_HANDICAPES_ADULTES",
+            "Médico-Social - Handicapés adultes"
+          ],
+          [
+            "MEDICO_SOCIAL_HANDICAPES_ENFANTS",
+            "Médico-Social - Handicapés enfants"
+          ],
+          [
+            "SANTE_ENVIRONNEMENT",
+            "Santé environnement"
+          ],
+          [
+            "DEFAUT_OFFRE_SOINS_GENERAL",
+            "Défaut d'offre de soins - Général"
+          ],
+          [
+            "DEFAUT_OFFRE_SOINS_CAS_CRITIQUE",
+            "Défaut d'offre de soins - Cas critique"
+          ],
+          [
+            "HOSPITALISATIONS_CONTRAINTE",
+            "Hospitalisations sous contrainte"
+          ],
+          [
+            "AMBULATOIRE_GENERAL",
+            "Ambulatoire - Général"
+          ],
+          [
+            "AMBULATOIRE_TRANSPORT_SANITAIRE",
+            "Ambulatoire - Transport sanitaire"
+          ],
+          [
+            "PHARMACIES_LABORATOIRES",
+            "Pharmacies-Laboratoires"
+          ],
+          [
+            "ETABLISSEMENT_PENITENCIAIRE",
+            "Etablissement pénitenciaire"
+          ],
+          [
+            "AUTRES",
+            "Autres"
+          ]
+        ]
+      },
+      "values_source_type": "static-list"
     }
   ],
   "public_uuid": null,
@@ -165,13 +275,13 @@
         },
         "type": {
           "type/Number": {
-            "avg": 102,
+            "avg": 105,
             "excess-kurtosis": null,
-            "max": 102,
-            "min": 102,
+            "max": 105,
+            "min": 105,
             "mode-fraction": 1,
-            "q1": 102,
-            "q3": 102,
+            "q1": 105,
+            "q3": 105,
             "sd": 0,
             "skewness": null,
             "top-3-fraction": 1,

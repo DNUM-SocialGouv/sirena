@@ -165,7 +165,7 @@ describe('statistics.controller.ts', () => {
       expect(response.status).toBe(200);
       expect(fetchDashboardCardsData).toHaveBeenCalledWith(
         {},
-        { start_date: undefined, end_date: undefined },
+        { start_date: undefined, end_date: undefined, domaine_fonctionnel: [] },
         'national',
       );
       expect(getEntiteById).not.toHaveBeenCalled();
@@ -182,7 +182,7 @@ describe('statistics.controller.ts', () => {
       expect(response.status).toBe(200);
       expect(fetchDashboardCardsData).toHaveBeenCalledWith(
         { entity_label: 'ARS Île-de-France' },
-        { start_date: undefined, end_date: undefined },
+        { start_date: undefined, end_date: undefined, domaine_fonctionnel: [] },
       );
     });
 
@@ -193,6 +193,31 @@ describe('statistics.controller.ts', () => {
       const response = await client.dashboard.$get({ query: {} });
 
       expect(response.status).toBe(403);
+      expect(fetchDashboardCardsData).not.toHaveBeenCalled();
+    });
+
+    it('forwards the selected domaines to Metabase as a repeatable array param, alongside the period', async () => {
+      entitesMiddlewareState.topEntiteId = 'root-entite';
+      vi.mocked(getEntiteById).mockResolvedValueOnce({ label: 'ARS Île-de-France' } as never);
+      vi.mocked(fetchDashboardCardsData).mockResolvedValueOnce([]);
+
+      const response = await client.dashboard.$get({
+        query: { startDate: '2026-01-01', endDate: '2026-03-31', domaineIds: 'SOCIAL,SANITAIRE' },
+      });
+
+      expect(response.status).toBe(200);
+      expect(fetchDashboardCardsData).toHaveBeenCalledWith(
+        { entity_label: 'ARS Île-de-France' },
+        { start_date: '2026-01-01', end_date: '2026-03-31', domaine_fonctionnel: ['SOCIAL', 'SANITAIRE'] },
+      );
+    });
+
+    it('rejects an unknown domaine fonctionnel', async () => {
+      entitesMiddlewareState.topEntiteId = 'root-entite';
+
+      const response = await client.dashboard.$get({ query: { domaineIds: 'SOCIAL,NOT_A_DOMAINE' } });
+
+      expect(response.status).toBe(400);
       expect(fetchDashboardCardsData).not.toHaveBeenCalled();
     });
   });
