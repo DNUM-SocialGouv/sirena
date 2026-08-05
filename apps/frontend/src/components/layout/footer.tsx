@@ -11,29 +11,29 @@ export function AppFooter() {
       domains={[]}
       accessibility="partially compliant"
       contentDescription={`frontend version: ${APP_VERSION} backend version: ${data?.version}`}
-      accessibilityLinkProps={{ href: '/accessibilite' }}
+      accessibilityLinkProps={{ to: '/accessibilite' }}
       bottomItems={[
         {
           text: 'Mentions légales',
           linkProps: {
-            href: '/mentions-legales',
+            to: '/mentions-legales',
           },
         },
         {
           text: 'Données personnelles',
           linkProps: {
-            href: '/donnees-personnelles',
+            to: '/donnees-personnelles',
           },
         },
         {
           text: 'Gestion des cookies',
           linkProps: {
-            href: '/gestion-cookies',
+            to: '/gestion-cookies',
           },
         },
       ]}
       homeLinkProps={{
-        href: '/',
+        to: '/',
         title: 'Retour à l’accueil du site - SIRENA - Ministère des Solidarités et de la Santé',
       }}
     />
