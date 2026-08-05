@@ -62,7 +62,7 @@ export const DownloadMenu = ({ requestId, disabled, hasUnsafeFiles }: DownloadMe
           ref={triggerRef}
           className={`fr-btn fr-btn--secondary ${styles.trigger}`}
           aria-expanded={isOpen}
-          aria-controls={panelId}
+          aria-controls={isOpen ? panelId : undefined}
           onClick={toggle}
           onBlur={onPanelBlur}
         >
@@ -93,8 +93,12 @@ export const DownloadMenu = ({ requestId, disabled, hasUnsafeFiles }: DownloadMe
                   onBlur={onPanelBlur}
                 >
                   <span className="fr-icon-attachment-line fr-icon--sm" aria-hidden="true" />
-                  Télécharger les pièces jointes
-                  {disabled ? <span className="fr-sr-only">, aucune pièce jointe disponible</span> : null}
+                  <span className={styles.item__label}>
+                    Télécharger les pièces jointes
+                    {/* Motif visible et non porté par la seule couleur : l'item reste focusable
+                        et un clic dessus n'a aucun effet perceptible sans cette mention. */}
+                    {disabled ? <span className={styles.item__hint}>Aucune pièce jointe disponible</span> : null}
+                  </span>
                 </button>
               </li>
             </ul>
@@ -124,6 +128,7 @@ export const DownloadMenu = ({ requestId, disabled, hasUnsafeFiles }: DownloadMe
           détecté. Nous vous recommandons de ne pas télécharger cette archive sans précaution.
         </p>
         <p>Si vous choisissez de continuer, assurez-vous que votre logiciel antivirus est à jour.</p>
+        <p>Le bouton « Télécharger malgré le risque » ne devient actif qu'une fois la case ci-dessous cochée.</p>
         <Checkbox
           className="fr-mt-2w"
           options={[
