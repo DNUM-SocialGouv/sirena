@@ -19,6 +19,7 @@ import {
   getDateTodayInParis,
   getLieuPrecisionLabel,
   getMesureProtectionShortLabel,
+  getOver90DaysCutoffDate,
   isAutomaticRequest,
 } from '@sirena/common/utils';
 import { ZipArchive } from 'archiver';
@@ -184,9 +185,10 @@ const buildRequetesEntiteWhere = async (
     domaineIds?: string;
     statutIds?: string;
     prioriteId?: string;
+    over90Days?: string;
   },
 ): Promise<Prisma.RequeteEntiteWhereInput> => {
-  const { search, entiteId, departementCodes, domaineIds, statutIds, prioriteId } = query;
+  const { search, entiteId, departementCodes, domaineIds, statutIds, prioriteId, over90Days } = query;
   const searchConditions: Prisma.RequeteEntiteWhereInput = search ? createSearchConditionsForRequeteEntite(search) : {};
   const andFilters: Prisma.RequeteEntiteWhereInput[] = [];
 
@@ -237,6 +239,12 @@ const buildRequetesEntiteWhere = async (
   }
   if (prioriteId) {
     andFilters.push({ prioriteId });
+  }
+  if (over90Days) {
+    andFilters.push({
+      statutId: { in: [REQUETE_STATUT_TYPES.NOUVEAU, REQUETE_STATUT_TYPES.EN_COURS] },
+      requete: { createdAt: { lt: getOver90DaysCutoffDate() } },
+    });
   }
 
   return {

@@ -9,6 +9,7 @@ type RequetesQuickFiltersProfile = {
 type RequetesQuickFiltersQueries = {
   entiteId?: string;
   prioriteId?: string;
+  over90Days?: boolean;
 };
 
 export type AffectationQuickFilterConfig = {
@@ -21,6 +22,7 @@ export type AffectationQuickFilterConfig = {
 export type RequetesQuickFiltersViewModel = {
   affectation: AffectationQuickFilterConfig;
   isHautePrioriteOnly: boolean;
+  isOver90DaysOnly: boolean;
 };
 
 export function getAffectationQuickFilterConfig(
@@ -47,5 +49,6 @@ export function getRequetesQuickFiltersViewModel(
   return {
     affectation: getAffectationQuickFilterConfig(profile, queries),
     isHautePrioriteOnly: queries.prioriteId === REQUETE_PRIORITE_TYPES.HAUTE,
+    isOver90DaysOnly: !!queries.over90Days,
   };
 }

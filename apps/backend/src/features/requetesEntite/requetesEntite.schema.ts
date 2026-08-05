@@ -57,6 +57,7 @@ export const GetRequetesEntiteQuerySchema = paginationQueryParamsSchema(columns)
   prioriteId: z
     .enum([REQUETE_PRIORITE_TYPES.BASSE, REQUETE_PRIORITE_TYPES.MOYENNE, REQUETE_PRIORITE_TYPES.HAUTE])
     .optional(),
+  over90Days: z.enum(['true']).optional(),
 });
 
 export const GetDepartementCountsQuerySchema = z.object({
