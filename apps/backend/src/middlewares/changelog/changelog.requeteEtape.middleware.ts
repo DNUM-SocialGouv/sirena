@@ -29,7 +29,7 @@ const requeteEtapesChangelogMiddleware = ({ action }: requeteEtapesChangelogMidd
       }
       return c.req.param('id') ?? null;
     },
-    trackedFields: ['nom', 'statutId', 'dateRealisation', 'rappelType', 'rappelDate'],
+    trackedFields: ['nom', 'statutId', 'dateRealisation', 'estPartagee', 'rappelType', 'rappelDate'],
   });
 
 export default requeteEtapesChangelogMiddleware;

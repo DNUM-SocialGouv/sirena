@@ -25,6 +25,7 @@ export type AddProcessingStepData = {
   rappelDate?: string;
   notes?: { texte: string }[];
   fileIds?: string[];
+  estPartagee?: boolean;
 };
 
 export async function addProcessingStep(requestId: string, data: AddProcessingStepData) {
@@ -38,6 +39,7 @@ export async function addProcessingStep(requestId: string, data: AddProcessingSt
       ...(data.rappelDate ? { rappelDate: data.rappelDate } : {}),
       notes: data.notes ?? [],
       fileIds: data.fileIds ?? [],
+      ...(data.estPartagee !== undefined ? { estPartagee: data.estPartagee } : {}),
     },
   });
   await handleRequestErrors(res);
@@ -52,6 +54,7 @@ export type UpdateProcessingStepData = {
   rappelDate?: string;
   notes: ProcessingStepNoteInput[];
   fileIds: string[];
+  estPartagee?: boolean;
 };
 
 export async function updateProcessingStep(stepId: string, data: UpdateProcessingStepData) {
@@ -65,6 +68,7 @@ export async function updateProcessingStep(stepId: string, data: UpdateProcessin
       ...(data.rappelDate ? { rappelDate: data.rappelDate } : {}),
       notes: data.notes,
       fileIds: data.fileIds,
+      ...(data.estPartagee !== undefined ? { estPartagee: data.estPartagee } : {}),
     },
   });
   await handleRequestErrors(res);

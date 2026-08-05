@@ -9,6 +9,8 @@ export const FEATURE_FLAGS = {
   SIREC_MIGRATION: 'SIREC_MIGRATION',
   // Temporary FF for the Admin local directions/services rollout
   ADMIN_LOCAL_DIRECTIONS_SERVICES: 'ADMIN_LOCAL_DIRECTIONS_SERVICES',
+  // Temporary FF for sharing processing steps between affected root entities
+  SHARED_PROCESSING_STEPS: 'SHARED_PROCESSING_STEPS',
   // Temporary FF to enable/disable the reminder configuration on a processing step
   ETAPE_RAPPEL: 'ETAPE_RAPPEL',
 } as const;

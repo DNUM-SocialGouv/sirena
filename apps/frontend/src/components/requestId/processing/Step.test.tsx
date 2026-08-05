@@ -1,7 +1,7 @@
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, ROLES } from '@sirena/common/constants';
 import { render, screen } from '@testing-library/react';
 import { forwardRef } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Step } from './Step';
 
 vi.mock('./AddFilesClotureDrawer', () => ({
@@ -36,8 +36,9 @@ vi.mock('@/hooks/mutations/updateUploadedFiles.hook', () => ({
   useDeleteUploadedFile: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
+let canEditRequest = false;
 vi.mock('@/hooks/useCanEdit', () => ({
-  useCanEdit: () => ({ canEdit: false }),
+  useCanEdit: () => ({ canEdit: canEditRequest }),
 }));
 
 vi.mock('@/hooks/useModalFocusRestore', () => ({
@@ -52,9 +53,14 @@ type StepProps = React.ComponentProps<typeof Step>;
 type StepFile = StepProps['uploadedFiles'][number];
 
 describe('Step', () => {
+  beforeEach(() => {
+    canEditRequest = false;
+  });
+
   it('displays a closed step using the Date de clôture instead of the technical creation date', () => {
     const closureStep: React.ComponentProps<typeof Step> = {
       requestId: 'REQ-354',
+      isOwner: true,
       requeteId: 'REQ-354',
       entiteId: 'ENTITE-1',
       id: 'step-1',
@@ -89,6 +95,7 @@ describe('Step', () => {
   it('shows the "Ajouter un fichier" button on a closure step without note (no precision)', () => {
     const closureStep: React.ComponentProps<typeof Step> = {
       requestId: 'REQ-354',
+      isOwner: true,
       requeteId: 'REQ-354',
       entiteId: 'ENTITE-1',
       id: 'step-1',
@@ -119,6 +126,66 @@ describe('Step', () => {
     expect(screen.getByRole('button', { name: /Ajouter un fichier/ })).toBeInTheDocument();
   });
 
+  it('hides every closure file mutation action on a foreign Étape de traitement partagée', () => {
+    canEditRequest = true;
+
+    const foreignEtapePartagee: React.ComponentProps<typeof Step> = {
+      requestId: 'REQ-354',
+      isOwner: false,
+      requeteId: 'REQ-354',
+      entiteId: 'FOREIGN-ENTITE',
+      id: 'step-foreign',
+      nom: '',
+      type: REQUETE_ETAPE_TYPES.MANUAL,
+      statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
+      createdAt: '2024-05-20T12:00:00.000Z',
+      updatedAt: '2024-05-20T12:00:00.000Z',
+      clotureEffectiveDate: '2024-05-18',
+      createdBy: null,
+      dateRealisation: null,
+      notes: [
+        {
+          id: 'closure-precision',
+          texte: 'Contrôles terminés sans anomalie.',
+          createdAt: '2024-05-20T12:00:00.000Z',
+          author: { prenom: 'camille', nom: 'dupont' },
+        },
+      ],
+      uploadedFiles: [
+        {
+          id: 'foreign-file',
+          size: 10,
+          fileName: 'preuve.pdf',
+          status: 'READY',
+          scanStatus: 'CLEAN',
+          sanitizeStatus: 'COMPLETED',
+          canDelete: true,
+          createdAt: '2024-05-20T12:00:00.000Z',
+          uploadedBy: null,
+        },
+      ],
+      editable: false,
+      canOnlyEditNotes: false,
+      requete: {
+        dematSocialId: null,
+        sirecId: null,
+        createdById: null,
+        thirdPartyAccountId: null,
+        createdBy: null,
+      },
+      clotureReason: [{ id: 'HORS_COMPETENCE', label: 'Hors compétence' }],
+    };
+
+    render(<Step {...foreignEtapePartagee} />);
+
+    expect(screen.getByText(/Requête clôturée le 18\/05\/2024/)).toBeInTheDocument();
+    expect(screen.getByText('Hors compétence')).toBeInTheDocument();
+    expect(screen.getByText('Contrôles terminés sans anomalie.')).toBeInTheDocument();
+    expect(screen.getByText('preuve.pdf')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Ajouter un fichier/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Supprimer le fichier preuve\.pdf/ })).not.toBeInTheDocument();
+  });
+
   const makeFile = (overrides: Partial<StepFile> = {}): StepFile => ({
     id: 'file-1',
     size: 22528,
@@ -134,6 +201,7 @@ describe('Step', () => {
 
   const makeStep = (overrides: Partial<StepProps> = {}): StepProps => ({
     requestId: 'REQ-1',
+    isOwner: true,
     requeteId: 'REQ-1',
     entiteId: 'ENTITE-1',
     id: 'step-1',

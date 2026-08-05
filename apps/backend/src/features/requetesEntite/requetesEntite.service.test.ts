@@ -1562,34 +1562,60 @@ describe('requetesEntite.service', () => {
       vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
         { id: 'reason123', label: 'Reason 123' },
       ]);
-      vi.mocked(prisma.uploadedFile.findMany).mockResolvedValue([
-        {
-          id: 'file123',
-          fileName: 'File 123',
-          filePath: 'file123.pdf',
-          mimeType: 'application/pdf',
-          size: 1000,
-          status: 'PENDING',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          entiteId: 'ent123',
-          requeteId: 'req123',
-          metadata: null,
-          uploadedById: 'user123',
-          requeteEtapeId: null,
-          faitSituationId: null,
-          demarchesEngageesId: null,
-          canDelete: true,
-          scanStatus: 'PENDING',
-          sanitizeStatus: 'PENDING',
-          safeFilePath: 'file1.pdf',
-          scanResult: null,
-          processingError: null,
-        },
-      ]);
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        const mockTx = {
+          ...prismaMock,
+          requeteEtape: {
+            ...prismaMock.requeteEtape,
+            create: vi.fn().mockResolvedValue({ id: 'etape123' }),
+          },
+          uploadedFile: {
+            ...prismaMock.uploadedFile,
+            updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+          },
+        } as typeof prismaMock;
+        return cb(mockTx);
+      });
+
       await expect(
         closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2024-01-01', '', ['fileid1', 'fileid2']),
       ).rejects.toThrow('FILES_INVALID');
+    });
+
+    it('rejects a file owned by another user or entity before sharing the closure', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
+        { id: 'reason123', label: 'Reason 123' },
+      ]);
+      const createRequeteEtape = vi.fn().mockResolvedValue({
+        id: 'etape123',
+        nom: 'Clôture',
+        statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
+        requeteId: 'req123',
+        entiteId: 'ent123',
+        createdAt: new Date('2024-01-01T10:00:00Z'),
+      });
+      const fileUpdateMany = vi.fn().mockResolvedValue({ count: 0 });
+      const requeteEntiteUpdate = vi.fn().mockResolvedValue(mockRequeteEntite);
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        const mockTx = {
+          ...prismaMock,
+          requeteEtape: { ...prismaMock.requeteEtape, create: createRequeteEtape },
+          requeteEntite: {
+            ...prismaMock.requeteEntite,
+            findUnique: vi.fn().mockResolvedValue(mockRequeteEntite),
+            update: requeteEntiteUpdate,
+          },
+          uploadedFile: { ...prismaMock.uploadedFile, updateMany: fileUpdateMany },
+        } as typeof prismaMock;
+        return cb(mockTx);
+      });
+
+      await expect(
+        closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2024-01-01', undefined, ['foreign-file']),
+      ).rejects.toThrow('FILES_INVALID');
+
+      expect(requeteEntiteUpdate).not.toHaveBeenCalled();
     });
 
     it('should successfully close requete with precision and files', async () => {
@@ -1706,7 +1732,15 @@ describe('requetesEntite.service', () => {
         expect.objectContaining({ data: expect.objectContaining({ texte: 'Test precision' }) }),
       );
       expect(fileUpdateMany).toHaveBeenCalledWith({
-        where: { id: { in: ['fileid1', 'fileid2'] } },
+        where: {
+          id: { in: ['fileid1', 'fileid2'] },
+          uploadedById: 'user123',
+          entiteId: 'ent123',
+          requeteId: null,
+          requeteEtapeId: null,
+          faitSituationId: null,
+          demarchesEngageesId: null,
+        },
         data: { requeteEtapeId: 'etape123' },
       });
       expect(result).toEqual({
@@ -1720,7 +1754,10 @@ describe('requetesEntite.service', () => {
 
       expect(createRequeteEtape).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ clotureEffectiveDate: new Date('2024-01-01') }),
+          data: expect.objectContaining({
+            clotureEffectiveDate: new Date('2024-01-01'),
+            estPartagee: true,
+          }),
         }),
       );
 
@@ -2071,7 +2108,15 @@ describe('requetesEntite.service', () => {
 
       expect(noteCreate).not.toHaveBeenCalled();
       expect(fileUpdateMany).toHaveBeenCalledWith({
-        where: { id: { in: ['fileid1'] } },
+        where: {
+          id: { in: ['fileid1'] },
+          uploadedById: 'user123',
+          entiteId: 'ent123',
+          requeteId: null,
+          requeteEtapeId: null,
+          faitSituationId: null,
+          demarchesEngageesId: null,
+        },
         data: { requeteEtapeId: 'etape123' },
       });
       expect(result).toEqual({

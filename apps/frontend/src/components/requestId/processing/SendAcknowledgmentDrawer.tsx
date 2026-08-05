@@ -1,3 +1,4 @@
+import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Drawer, Toast } from '@sirena/ui';
@@ -157,6 +158,12 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                   <h3 ref={titleRef} id={titleId} className="fr-h6" tabIndex={-1}>
                     Envoyer l'accusé de réception
                   </h3>
+                  <Alert
+                    className={`${drawerStyles.sharingAlert} fr-mb-3w`}
+                    small={true}
+                    severity="info"
+                    description="Information : cette étape sera visible par les autres entités affectées."
+                  />
                   {isLoadingMessage ? (
                     <p className="fr-text--sm fr-text-mention--grey">Chargement du message...</p>
                   ) : (

@@ -107,7 +107,12 @@ describe('changelog.requeteEtapes.middleware.ts', () => {
 
   describe('requeteEtapesChangelogMiddleware', () => {
     it('should track changes to RequeteEtape fields with params', async () => {
-      const updatedRequeteEtape = { ...testRequeteEtape, nom: 'Updated Step', statutId: 'EN_COURS' };
+      const updatedRequeteEtape = {
+        ...testRequeteEtape,
+        nom: 'Updated Step',
+        statutId: 'EN_COURS',
+        estPartagee: true,
+      };
 
       mockGetRequeteEtapeById.mockResolvedValueOnce(testRequeteEtape).mockResolvedValueOnce(updatedRequeteEtape);
 
@@ -128,6 +133,7 @@ describe('changelog.requeteEtapes.middleware.ts', () => {
           nom: testRequeteEtape.nom,
           statutId: testRequeteEtape.statutId,
           dateRealisation: testRequeteEtape.dateRealisation,
+          estPartagee: false,
           rappelType: testRequeteEtape.rappelType,
           rappelDate: testRequeteEtape.rappelDate,
         },
@@ -135,20 +141,30 @@ describe('changelog.requeteEtapes.middleware.ts', () => {
           nom: updatedRequeteEtape.nom,
           statutId: updatedRequeteEtape.statutId,
           dateRealisation: updatedRequeteEtape.dateRealisation,
+          estPartagee: true,
           rappelType: updatedRequeteEtape.rappelType,
           rappelDate: updatedRequeteEtape.rappelDate,
         },
       });
     });
 
-    it('should track changes to RequeteEtape fields with context', async () => {
-      mockGetRequeteEtapeById.mockResolvedValueOnce(testRequeteEtape);
+    it('should audit the sharing state of a created RequeteEtape from context', async () => {
+      const createdRequeteEtape = { ...testRequeteEtape, id: 'rs-2', estPartagee: true };
+      mockGetRequeteEtapeById.mockResolvedValueOnce(createdRequeteEtape);
 
       const app = createRequeteEtapeTestAppWithContext();
 
       await app.index.$patch();
 
       expect(mockGetRequeteEtapeById).toHaveBeenCalledWith('rs-2');
+      expect(mockCreateChangeLog).toHaveBeenCalledWith({
+        action: ChangeLogAction.CREATED,
+        entity: 'RequeteEtape',
+        entityId: 'rs-2',
+        changedById: 'user123',
+        before: null,
+        after: createdRequeteEtape,
+      });
     });
 
     it('should handle entity not found', async () => {

@@ -1,4 +1,5 @@
 import {
+  openApi503Error,
   openApiDeleteResponse,
   openApiProtectedRoute,
   openApiResponse,
@@ -46,5 +47,6 @@ export const sendAcknowledgmentRoute = openApiProtectedRoute({
   description: 'Send an acknowledgment email to the declarant for a manual request',
   responses: {
     ...openApiResponse(RequeteEtapeSchema),
+    ...openApi503Error('Email sending is disabled'),
   },
 });

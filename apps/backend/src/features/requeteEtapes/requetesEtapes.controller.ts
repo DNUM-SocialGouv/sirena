@@ -3,9 +3,11 @@ import {
   throwHTTPException403Forbidden,
   throwHTTPException404NotFound,
   throwHTTPException409Conflict,
+  throwHTTPException503ServiceUnavailable,
 } from '@sirena/backend-utils/helpers';
 import {
   ERROR_KIND,
+  FEATURE_FLAGS,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_ETAPE_TYPES,
   REQUETE_STATUT_TYPES,
@@ -23,15 +25,19 @@ import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import {
+  AcknowledgmentStepAlreadyProcessedError,
   buildAcknowledgmentMessageText,
+  EmailSendingDisabledError,
   sendManualAcknowledgmentEmail,
 } from '../declarants/declarants.notification.service.js';
+import { hasFeature } from '../featureFlags/featureFlags.service.js';
 import {
   getRequeteEntiteById,
   hasAccessToRequete,
   updateStatusRequete,
 } from '../requetesEntite/requetesEntite.service.js';
-import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
+import { getRequeteEtapeUploadedFile } from '../uploadedFiles/uploadedFiles.service.js';
+import { requeteEtapeAuthorization } from './requetesEtapes.authorization.js';
 import {
   addClotureFilesRoute,
   addProcessingStepRoute,
@@ -56,6 +62,9 @@ import {
   updateProcessingEtape,
 } from './requetesEtapes.service.js';
 
+const isEstPartageeEnabledForUser = async (user: { email: string; entiteId: string | null }): Promise<boolean> =>
+  hasFeature(FEATURE_FLAGS.SHARED_PROCESSING_STEPS, false, user.email, user.entiteId);
+
 const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
@@ -74,7 +83,8 @@ const app = factoryWithLogs
       });
     }
 
-    const { data, total } = await getRequeteEtapes(requeteId, topEntiteId, {});
+    const estPartageeEnabled = await isEstPartageeEnabledForUser(c.get('user'));
+    const { data, total } = await getRequeteEtapes(requeteId, topEntiteId, {}, estPartageeEnabled);
 
     logger.info({ requestId: requeteId, stepCount: total }, 'Processing steps retrieved successfully');
 
@@ -97,7 +107,8 @@ const app = factoryWithLogs
       throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
-    if (topEntiteId !== requeteEtape.entiteId) {
+    const estPartageeEnabled = await isEstPartageeEnabledForUser(c.get('user'));
+    if (!requeteEtapeAuthorization.canRead(topEntiteId, requeteEtape, estPartageeEnabled)) {
       throwHTTPException403Forbidden('You are not allowed to read this file for this requete etape', {
         res: c.res,
         kind: ERROR_KIND.BUSINESS,
@@ -110,13 +121,13 @@ const app = factoryWithLogs
     });
 
     if (!hasAccessToReq) {
-      throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
+      throwHTTPException403Forbidden('You are not allowed to access this file', {
         res: c.res,
         kind: ERROR_KIND.BUSINESS,
       });
     }
 
-    const file = await getUploadedFileById(fileId, [topEntiteId]);
+    const file = await getRequeteEtapeUploadedFile(id, fileId);
 
     if (!file) {
       throwHTTPException404NotFound('File not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
@@ -143,7 +154,8 @@ const app = factoryWithLogs
       throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
-    if (topEntiteId !== requeteEtape.entiteId) {
+    const estPartageeEnabled = await isEstPartageeEnabledForUser(c.get('user'));
+    if (!requeteEtapeAuthorization.canRead(topEntiteId, requeteEtape, estPartageeEnabled)) {
       throwHTTPException403Forbidden('You are not allowed to read this file for this requete etape', {
         res: c.res,
         kind: ERROR_KIND.BUSINESS,
@@ -162,7 +174,7 @@ const app = factoryWithLogs
       });
     }
 
-    const file = await getUploadedFileById(fileId, [topEntiteId]);
+    const file = await getRequeteEtapeUploadedFile(id, fileId);
 
     if (!file) {
       throwHTTPException404NotFound('File not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
@@ -209,6 +221,15 @@ const app = factoryWithLogs
         });
       }
 
+      const estPartageeEnabled = await isEstPartageeEnabledForUser(c.get('user'));
+      if (estPartageeEnabled && body.estPartagee === undefined) {
+        throwHTTPException400BadRequest('Le choix de partage est obligatoire.', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+      const creationData = { ...body, estPartagee: estPartageeEnabled ? body.estPartagee : false };
+
       const requete = await getRequeteEntiteById(requeteId, topEntiteId);
 
       if (requete?.statutId === REQUETE_STATUT_TYPES.NOUVEAU) {
@@ -217,7 +238,7 @@ const app = factoryWithLogs
 
       let step: Awaited<ReturnType<typeof createProcessingEtape>>;
       try {
-        step = await createProcessingEtape(requeteId, topEntiteId, userId, body, logger);
+        step = await createProcessingEtape(requeteId, topEntiteId, userId, creationData, logger);
       } catch (err) {
         if (err instanceof FilesNotOwnedError) {
           throwHTTPException403Forbidden('You are not allowed to add these files', {
@@ -265,7 +286,7 @@ const app = factoryWithLogs
       if (!etape) {
         throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
-      if (topEntiteId !== etape.entiteId) {
+      if (!requeteEtapeAuthorization.canWrite(topEntiteId, etape)) {
         throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
           res: c.res,
           kind: ERROR_KIND.BUSINESS,
@@ -280,6 +301,18 @@ const app = factoryWithLogs
         });
       }
 
+      const estPartageeEnabled = await isEstPartageeEnabledForUser(c.get('user'));
+      if (etape.type === REQUETE_ETAPE_TYPES.MANUAL && estPartageeEnabled && body.estPartagee === undefined) {
+        throwHTTPException400BadRequest('Le choix de partage est obligatoire.', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+      const updateData = {
+        ...body,
+        estPartagee: etape.type === REQUETE_ETAPE_TYPES.MANUAL && estPartageeEnabled ? body.estPartagee : undefined,
+      };
+
       // Working on a step moves the requete from NOUVEAU to EN_COURS
       // (parity with the legacy PATCH /:id/nom and /:id/statut, and with the POST).
       const requete = await getRequeteEntiteById(etape.requeteId, topEntiteId);
@@ -289,7 +322,7 @@ const app = factoryWithLogs
 
       let updated: Awaited<ReturnType<typeof updateProcessingEtape>>;
       try {
-        updated = await updateProcessingEtape(stepId, userId, body, logger);
+        updated = await updateProcessingEtape(stepId, userId, updateData, logger);
       } catch (err) {
         if (err instanceof EtapeNotEditableError) {
           throwHTTPException403Forbidden("Cette étape n'est pas modifiable.", {
@@ -333,7 +366,7 @@ const app = factoryWithLogs
       throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
-    if (topEntiteId !== requeteEtape.entiteId) {
+    if (!requeteEtapeAuthorization.canWrite(topEntiteId, requeteEtape)) {
       throwHTTPException403Forbidden('You are not allowed to add files to this requete etape', {
         res: c.res,
         kind: ERROR_KIND.BUSINESS,
@@ -409,13 +442,13 @@ const app = factoryWithLogs
       });
 
       if (!hasAccessToReq) {
-        throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
+        throwHTTPException403Forbidden('You are not allowed to delete this requete etape', {
           res: c.res,
           kind: ERROR_KIND.BUSINESS,
         });
       }
 
-      if (topEntiteId !== requeteEtape.entiteId) {
+      if (!requeteEtapeAuthorization.canWrite(topEntiteId, requeteEtape)) {
         throwHTTPException403Forbidden('You are not allowed to delete this requete etape', {
           res: c.res,
           kind: ERROR_KIND.BUSINESS,
@@ -452,7 +485,7 @@ const app = factoryWithLogs
       throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
-    if (topEntiteId !== requeteEtape.entiteId) {
+    if (!requeteEtapeAuthorization.canRead(topEntiteId, requeteEtape)) {
       throwHTTPException403Forbidden('You are not allowed to access this requete etape', {
         res: c.res,
         kind: ERROR_KIND.BUSINESS,
@@ -520,7 +553,7 @@ const app = factoryWithLogs
         throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
 
-      if (topEntiteId !== requeteEtape.entiteId) {
+      if (!requeteEtapeAuthorization.canWrite(topEntiteId, requeteEtape)) {
         throwHTTPException403Forbidden('You are not allowed to act on this requete etape', {
           res: c.res,
           kind: ERROR_KIND.BUSINESS,
@@ -570,8 +603,15 @@ const app = factoryWithLogs
           comment: body.comment,
         });
       } catch (error) {
-        if (error instanceof Error && (error as unknown as { code: string }).code === 'STEP_ALREADY_PROCESSED') {
+        if (error instanceof AcknowledgmentStepAlreadyProcessedError) {
           throwHTTPException409Conflict("L'accusé de réception a déjà été envoyé pour cette étape.", {
+            res: c.res,
+            kind: ERROR_KIND.BUSINESS,
+          });
+        }
+
+        if (error instanceof EmailSendingDisabledError) {
+          throwHTTPException503ServiceUnavailable(error.message, {
             res: c.res,
             kind: ERROR_KIND.BUSINESS,
           });
