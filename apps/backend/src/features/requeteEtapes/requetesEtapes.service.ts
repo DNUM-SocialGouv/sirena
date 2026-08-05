@@ -1,4 +1,12 @@
-import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import {
+  REQUETE_ETAPE_RAPPEL_TYPES,
+  REQUETE_ETAPE_STATUT_TYPES,
+  REQUETE_ETAPE_TYPES,
+  REQUETE_STATUT_TYPES,
+  type RequeteEtapeRappelType,
+  requeteEtapeRappelDelaiJours,
+} from '@sirena/common/constants';
+import { getDateTodayInParis } from '@sirena/common/utils';
 import type { PinoLogger } from 'hono-pino';
 import { getOriginalFileName } from '../../helpers/file.js';
 import { capitalizeFirst, formatDateFr } from '../../helpers/string.js';
@@ -166,6 +174,26 @@ export const getEtapePermissions = (etape: {
   return { editable: true, canOnlyEditNotes: acknowledgmentSent };
 };
 
+type RappelInput = { rappelType?: RequeteEtapeRappelType | null; rappelDate?: string };
+
+export const resolveEtapeRappel = (data: RappelInput): { rappelType: string | null; rappelDate: Date | null } => {
+  const { rappelType, rappelDate } = data;
+  if (!rappelType) {
+    return { rappelType: null, rappelDate: null };
+  }
+
+  if (rappelType === REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE) {
+    if (!rappelDate) {
+      return { rappelType: null, rappelDate: null };
+    }
+    return { rappelType, rappelDate: new Date(`${rappelDate}T00:00:00.000Z`) };
+  }
+
+  const delaiJours = requeteEtapeRappelDelaiJours[rappelType];
+  const [year, month, day] = getDateTodayInParis().split('-').map(Number);
+  return { rappelType, rappelDate: new Date(Date.UTC(year, month - 1, day + delaiJours)) };
+};
+
 export class EtapeNotEditableError extends Error {
   code = 'ETAPE_NOT_EDITABLE' as const;
 }
@@ -213,6 +241,7 @@ export const createProcessingEtape = async (
 
   const statutId = data.statutId ?? null;
   const dateRealisation = statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT ? (data.dateRealisation ?? new Date()) : null;
+  const { rappelType, rappelDate } = resolveEtapeRappel(data);
 
   const createdNotes: { id: string; texte: string; authorId: string | null; requeteEtapeId: string }[] = [];
 
@@ -225,6 +254,8 @@ export const createProcessingEtape = async (
         type: REQUETE_ETAPE_TYPES.MANUAL,
         statutId,
         dateRealisation,
+        rappelType,
+        rappelDate,
         createdById: userId,
       },
     });
@@ -402,6 +433,7 @@ export const updateProcessingEtape = async (
 
   const statutId = data.statutId ?? null;
   const dateRealisation = statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT ? (data.dateRealisation ?? new Date()) : null;
+  const { rappelType, rappelDate } = resolveEtapeRappel(data);
 
   let noteChangelogs: NoteChangelogEntry[] = [];
 
@@ -411,7 +443,7 @@ export const updateProcessingEtape = async (
     if (!canOnlyEditNotes) {
       await tx.requeteEtape.update({
         where: { id: stepId },
-        data: { nom: data.nom, statutId, dateRealisation },
+        data: { nom: data.nom, statutId, dateRealisation, rappelType, rappelDate },
       });
     }
 
@@ -490,6 +522,8 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
         type: true,
         statutId: true,
         dateRealisation: true,
+        rappelType: true,
+        rappelDate: true,
         clotureReason: {
           select: {
             label: true,

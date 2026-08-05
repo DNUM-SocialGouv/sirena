@@ -1,4 +1,4 @@
-import type { RequeteEtapeStatutType } from '@sirena/common/constants';
+import type { RequeteEtapeRappelType, RequeteEtapeStatutType } from '@sirena/common/constants';
 import { client } from '@/lib/api/hc.ts';
 import { handleRequestErrors } from '@/lib/api/tanstackQuery.ts';
 
@@ -21,6 +21,8 @@ export type AddProcessingStepData = {
   nom: string;
   statutId?: ProcessingStepStatut;
   dateRealisation?: string;
+  rappelType?: RequeteEtapeRappelType | null;
+  rappelDate?: string;
   notes?: { texte: string }[];
   fileIds?: string[];
 };
@@ -32,6 +34,8 @@ export async function addProcessingStep(requestId: string, data: AddProcessingSt
       nom: data.nom,
       ...(data.statutId ? { statutId: data.statutId } : {}),
       ...(data.dateRealisation ? { dateRealisation: data.dateRealisation } : {}),
+      rappelType: data.rappelType ?? null,
+      ...(data.rappelDate ? { rappelDate: data.rappelDate } : {}),
       notes: data.notes ?? [],
       fileIds: data.fileIds ?? [],
     },
@@ -44,6 +48,8 @@ export type UpdateProcessingStepData = {
   nom: string;
   statutId?: ProcessingStepStatut | null;
   dateRealisation?: string;
+  rappelType?: RequeteEtapeRappelType | null;
+  rappelDate?: string;
   notes: ProcessingStepNoteInput[];
   fileIds: string[];
 };
@@ -55,6 +61,8 @@ export async function updateProcessingStep(stepId: string, data: UpdateProcessin
       nom: data.nom,
       statutId: data.statutId ?? null,
       ...(data.dateRealisation ? { dateRealisation: data.dateRealisation } : {}),
+      rappelType: data.rappelType ?? null,
+      ...(data.rappelDate ? { rappelDate: data.rappelDate } : {}),
       notes: data.notes,
       fileIds: data.fileIds,
     },
