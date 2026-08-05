@@ -7,6 +7,7 @@ import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
 import { type FileProcessingStatus, getFileProcessingStatus } from '@/lib/api/fetchUploadedFiles';
 import { HttpError } from '@/lib/api/tanstackQuery';
 import { formatFileSize } from '@/utils/fileHelpers';
+import styles from './FileDownloadLink.module.css';
 
 // Separate component to isolate checkbox state from parent re-renders
 type FrIconId = React.ComponentProps<ReturnType<typeof createModal>['Component']>['iconId'];
@@ -491,7 +492,7 @@ export const FileDownloadLink = ({
 
   return (
     <>
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+      <div className={styles['file-row']}>
         <a
           href={displayHref}
           target={target}
@@ -503,7 +504,7 @@ export const FileDownloadLink = ({
           {displayName}
           <span className="fr-sr-only"> - nouvel onglet</span>
         </a>
-        <span id={statusId} role="status" aria-live="polite" aria-atomic="true">
+        <p id={statusId} className={styles.status} role="status" aria-live="polite" aria-atomic="true">
           {isFileInfected(fileStatus?.scanStatus) ? (
             <FileStatusTag iconId="fr-icon-warning-fill" tone="error">
               Risque détecté par l'antivirus
@@ -511,8 +512,8 @@ export const FileDownloadLink = ({
           ) : (
             renderStatusBadge()
           )}
-        </span>
-      </span>
+        </p>
+      </div>
 
       <downloadModal.Component
         title="Téléchargement de fichier"

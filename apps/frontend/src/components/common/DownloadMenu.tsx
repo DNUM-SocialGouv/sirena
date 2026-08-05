@@ -95,8 +95,6 @@ export const DownloadMenu = ({ requestId, disabled, hasUnsafeFiles }: DownloadMe
                   <span className="fr-icon-attachment-line fr-icon--sm" aria-hidden="true" />
                   <span className={styles.item__label}>
                     Télécharger les pièces jointes
-                    {/* Motif visible et non porté par la seule couleur : l'item reste focusable
-                        et un clic dessus n'a aucun effet perceptible sans cette mention. */}
                     {disabled ? <span className={styles.item__hint}>Aucune pièce jointe disponible</span> : null}
                   </span>
                 </button>

@@ -1,0 +1,10 @@
+.file-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.status {
+  margin: 0;
+}
