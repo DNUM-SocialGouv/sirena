@@ -1,4 +1,8 @@
-import { AUTRE_PROFESSIONNEL_PRECISION, MIS_EN_CAUSE_TYPE } from '@sirena/common/constants';
+import {
+  AUTRE_PROFESSIONNEL_PRECISION,
+  MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION,
+  MIS_EN_CAUSE_TYPE,
+} from '@sirena/common/constants';
 import { SIREC_DICO } from './dictionnaire.transco.js';
 import { SirecTranscoError } from './sirecTransco.error.js';
 
@@ -19,7 +23,10 @@ const AUTRES_MC_TYPE_TRANSCO: Record<number, AutreMcTranscoResult> = {
     misEnCauseTypePrecisionId: AUTRE_PROFESSIONNEL_PRECISION.CHIROPRACTEUR,
   },
   122: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL, misEnCauseTypePrecisionId: null },
-  123: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL, misEnCauseTypePrecisionId: null },
+  123: {
+    misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL,
+    misEnCauseTypePrecisionId: AUTRE_PROFESSIONNEL_PRECISION.EXERCICE_ILLEGAL,
+  },
   124: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL, misEnCauseTypePrecisionId: null },
   125: {
     misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL,
@@ -36,7 +43,10 @@ const AUTRES_MC_TYPE_TRANSCO: Record<number, AutreMcTranscoResult> = {
     misEnCauseTypePrecisionId: AUTRE_PROFESSIONNEL_PRECISION.TATOUEUR,
   },
   130: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL, misEnCauseTypePrecisionId: null },
-  131: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL, misEnCauseTypePrecisionId: null },
+  131: {
+    misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PERSONNE_NON_PRO,
+    misEnCauseTypePrecisionId: MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION.AUTRE,
+  },
 };
 
 export function transcodeAutresMcType(autresMcType: number | null): AutreMcTranscoResult {

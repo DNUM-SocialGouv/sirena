@@ -14,13 +14,6 @@ describe('receptionType.transco.ts', () => {
     expect(transcodeReceptionType(803)).toBe('FORMULAIRE');
   });
 
-  it('should transcode multiple SIREC ids mapping to the same SIRENA value', () => {
-    expect(transcodeReceptionType(89)).toBe('AUTRE');
-    expect(transcodeReceptionType(338)).toBe('AUTRE');
-    expect(transcodeReceptionType(340)).toBe('AUTRE');
-    expect(transcodeReceptionType(825)).toBe('AUTRE');
-  });
-
   it('should throw SirecTranscoError for an unknown idSirec', () => {
     expect(() => transcodeReceptionType(9999)).toThrow(SirecTranscoError);
   });

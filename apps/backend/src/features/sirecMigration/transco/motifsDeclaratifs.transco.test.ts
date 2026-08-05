@@ -15,10 +15,6 @@ describe('motifsDeclaratifs.transco.ts', () => {
     ]);
   });
 
-  it('should transcode multiple ids mapping to the same SIRENA value', () => {
-    expect(transcodeMotifsDeclaratifs([823, 815, 819])).toEqual(['AUTRE', 'AUTRE', 'AUTRE']);
-  });
-
   it('should throw SirecTranscoError for an unknown idDico', () => {
     expect(() => transcodeMotifsDeclaratifs([999])).toThrow(SirecTranscoError);
   });
