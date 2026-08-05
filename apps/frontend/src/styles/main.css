@@ -5,6 +5,16 @@ body {
   height: 100%;
 }
 
+/* RGAA: explicit background on structural containers so no zone stays
+   transparent and lets the user's browser background color show through.*/
+html,
+main,
+header,
+footer,
+dialog {
+  background-color: var(--background-default-grey);
+}
+
 .layout {
   display: flex;
   flex-direction: column;
