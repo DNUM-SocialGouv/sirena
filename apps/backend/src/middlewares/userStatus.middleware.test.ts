@@ -70,6 +70,7 @@ describe('userStatus.middleware.ts', () => {
       await userStatusMiddleware(mockContext as unknown as Context<AppBindings>, next);
 
       expect(mockGetUserById).toHaveBeenCalledWith('user-123', null, null);
+      expect(mockContext.set).toHaveBeenCalledWith('user', mockUser);
       expect(next).toHaveBeenCalled();
       expect(mockThrowHTTPException403Forbidden).not.toHaveBeenCalled();
     });

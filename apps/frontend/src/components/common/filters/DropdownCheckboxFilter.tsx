@@ -11,7 +11,7 @@ type Props = {
   buttonLabel: string;
   selectedValuesLabel: (count: number) => string;
   legend: string;
-  hintText: string;
+  hintText?: string;
   options: Option[];
   selectedValues: string[];
   onChange: (values: string[]) => void;

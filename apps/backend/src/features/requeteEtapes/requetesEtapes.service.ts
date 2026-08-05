@@ -1,4 +1,12 @@
-import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import {
+  REQUETE_ETAPE_RAPPEL_TYPES,
+  REQUETE_ETAPE_STATUT_TYPES,
+  REQUETE_ETAPE_TYPES,
+  REQUETE_STATUT_TYPES,
+  type RequeteEtapeRappelType,
+  requeteEtapeRappelDelaiJours,
+} from '@sirena/common/constants';
+import { getDateTodayInParis } from '@sirena/common/utils';
 import type { PinoLogger } from 'hono-pino';
 import { getOriginalFileName } from '../../helpers/file.js';
 import { capitalizeFirst, formatDateFr } from '../../helpers/string.js';
@@ -8,8 +16,10 @@ import type { Prisma } from '../../libs/prisma.js';
 import { prisma, type RequeteEtape } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
-import { isUserOwner, setEtapeFile } from '../uploadedFiles/uploadedFiles.service.js';
+import { setEtapeFile } from '../uploadedFiles/uploadedFiles.service.js';
 import type { AddProcessingStepDto, GetRequeteEtapesQuery, UpdateProcessingStepDto } from './requetesEtapes.type.js';
+
+export { FilesNotOwnedError } from '../uploadedFiles/uploadedFiles.service.js';
 
 export const CREATION_STEP_NAME_PREFIX = 'Création de la requête';
 export const AUTOMATIC_CREATION_STEP_NAME_PREFIX = 'Création de la requête';
@@ -84,6 +94,7 @@ export const createDefaultRequeteEtapes = async (
       statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
       nom: creationStepName,
       type: REQUETE_ETAPE_TYPES.CREATION,
+      estPartagee: true,
     },
   });
 
@@ -94,6 +105,7 @@ export const createDefaultRequeteEtapes = async (
       statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
       nom: ACKNOWLEDGMENT_STEP_NAME,
       type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+      estPartagee: false,
     },
   });
 
@@ -166,12 +178,28 @@ export const getEtapePermissions = (etape: {
   return { editable: true, canOnlyEditNotes: acknowledgmentSent };
 };
 
+type RappelInput = { rappelType?: RequeteEtapeRappelType | null; rappelDate?: string };
+
+export const resolveEtapeRappel = (data: RappelInput): { rappelType: string | null; rappelDate: Date | null } => {
+  const { rappelType, rappelDate } = data;
+  if (!rappelType) {
+    return { rappelType: null, rappelDate: null };
+  }
+
+  if (rappelType === REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE) {
+    if (!rappelDate) {
+      return { rappelType: null, rappelDate: null };
+    }
+    return { rappelType, rappelDate: new Date(`${rappelDate}T00:00:00.000Z`) };
+  }
+
+  const delaiJours = requeteEtapeRappelDelaiJours[rappelType];
+  const [year, month, day] = getDateTodayInParis().split('-').map(Number);
+  return { rappelType, rappelDate: new Date(Date.UTC(year, month - 1, day + delaiJours)) };
+};
+
 export class EtapeNotEditableError extends Error {
   code = 'ETAPE_NOT_EDITABLE' as const;
-}
-
-export class FilesNotOwnedError extends Error {
-  code = 'FILES_NOT_OWNED' as const;
 }
 
 const logNoteChangelog = async (
@@ -213,6 +241,7 @@ export const createProcessingEtape = async (
 
   const statutId = data.statutId ?? null;
   const dateRealisation = statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT ? (data.dateRealisation ?? new Date()) : null;
+  const { rappelType, rappelDate } = resolveEtapeRappel(data);
 
   const createdNotes: { id: string; texte: string; authorId: string | null; requeteEtapeId: string }[] = [];
 
@@ -225,7 +254,10 @@ export const createProcessingEtape = async (
         type: REQUETE_ETAPE_TYPES.MANUAL,
         statutId,
         dateRealisation,
+        rappelType,
+        rappelDate,
         createdById: userId,
+        estPartagee: data.estPartagee ?? false,
       },
     });
 
@@ -237,9 +269,6 @@ export const createProcessingEtape = async (
     }
 
     if (data.fileIds.length > 0) {
-      if (!(await isUserOwner(userId, data.fileIds, tx))) {
-        throw new FilesNotOwnedError('FILES_NOT_OWNED');
-      }
       await setEtapeFile(etape.id, data.fileIds, entiteId, userId, tx);
     }
 
@@ -402,6 +431,7 @@ export const updateProcessingEtape = async (
 
   const statutId = data.statutId ?? null;
   const dateRealisation = statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT ? (data.dateRealisation ?? new Date()) : null;
+  const { rappelType, rappelDate } = resolveEtapeRappel(data);
 
   let noteChangelogs: NoteChangelogEntry[] = [];
 
@@ -411,16 +441,20 @@ export const updateProcessingEtape = async (
     if (!canOnlyEditNotes) {
       await tx.requeteEtape.update({
         where: { id: stepId },
-        data: { nom: data.nom, statutId, dateRealisation },
+        data: {
+          nom: data.nom,
+          statutId,
+          dateRealisation,
+          rappelType,
+          rappelDate,
+          ...(data.estPartagee !== undefined ? { estPartagee: data.estPartagee } : {}),
+        },
       });
     }
 
     noteChangelogs = await applyEtapeNoteChanges(tx, stepId, userId, data.notes, notesDiff);
 
     if (fileIdsToAttach.length > 0) {
-      if (!(await isUserOwner(userId, fileIdsToAttach, tx))) {
-        throw new FilesNotOwnedError('FILES_NOT_OWNED');
-      }
       await setEtapeFile(stepId, fileIdsToAttach, etape.entiteId, userId, tx);
     }
     if (filesToRemove.length > 0) {
@@ -457,25 +491,30 @@ export const addClotureEtapeFiles = async (
     throw new EtapeNotEditableError('ETAPE_NOT_EDITABLE');
   }
 
-  if (!(await isUserOwner(userId, fileIds))) {
-    throw new FilesNotOwnedError('FILES_NOT_OWNED');
-  }
-
-  await setEtapeFile(stepId, fileIds, entiteId, userId);
+  await prisma.$transaction(async (tx) => {
+    await setEtapeFile(stepId, fileIds, entiteId, userId, tx);
+  });
 
   return prisma.requeteEtape.findUnique({ where: { id: stepId } });
 };
 
-export const getRequeteEtapes = async (requeteId: string, entiteId: string | null, query: GetRequeteEtapesQuery) => {
+export const getRequeteEtapes = async (
+  requeteId: string,
+  entiteId: string | null,
+  query: GetRequeteEtapesQuery,
+  estPartageeEnabled = false,
+) => {
   if (!entiteId) {
     return { data: [], total: 0 };
   }
 
   const { offset = 0, limit, sort = 'createdAt', order = 'desc' } = query;
 
-  const where = {
+  const where: Prisma.RequeteEtapeWhereInput = {
     requeteId,
-    entiteId,
+    // Sharing never grants access to the Requête SIRENA: the reader must already be affected.
+    requete: { requeteEntites: { some: { entiteId } } },
+    ...(estPartageeEnabled ? { OR: [{ entiteId }, { estPartagee: true }] } : { entiteId }),
   };
 
   const [raw, total] = await Promise.all([
@@ -488,8 +527,11 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
         id: true,
         nom: true,
         type: true,
+        estPartagee: true,
         statutId: true,
         dateRealisation: true,
+        rappelType: true,
+        rappelDate: true,
         clotureReason: {
           select: {
             label: true,
@@ -565,15 +607,16 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
 
   // closure / creation = not editable; a sent ACR (AR PDF attached) = statut/name/date locked, notes OK; else full.
   const data = raw.map((etape) => {
-    const { editable, canOnlyEditNotes } = getEtapePermissions({
+    const permissions = getEtapePermissions({
       type: etape.type,
       statutId: etape.statutId,
       uploadedFiles: etape.uploadedFiles,
     });
+    const isOwner = etape.entiteId === entiteId;
     return {
       ...etape,
-      editable,
-      canOnlyEditNotes,
+      editable: isOwner && permissions.editable,
+      canOnlyEditNotes: isOwner && permissions.canOnlyEditNotes,
       uploadedFiles: etape.uploadedFiles.map(sanitizeFile),
     };
   });
@@ -624,6 +667,7 @@ export const updateAcknowledgmentStep = async (
           nom: etape.nom,
           statutId: etape.statutId,
           dateRealisation: etape.dateRealisation?.toISOString() ?? null,
+          estPartagee: etape.estPartagee,
           requeteId: etape.requeteId,
           entiteId: etape.entiteId,
           createdAt: etape.createdAt.toISOString(),
@@ -635,6 +679,7 @@ export const updateAcknowledgmentStep = async (
           data: {
             statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
             dateRealisation: sentDate,
+            estPartagee: true,
           },
         });
 
@@ -643,6 +688,7 @@ export const updateAcknowledgmentStep = async (
           nom: updatedEtape.nom,
           statutId: updatedEtape.statutId,
           dateRealisation: updatedEtape.dateRealisation?.toISOString() ?? null,
+          estPartagee: updatedEtape.estPartagee,
           requeteId: updatedEtape.requeteId,
           entiteId: updatedEtape.entiteId,
           createdAt: updatedEtape.createdAt.toISOString(),

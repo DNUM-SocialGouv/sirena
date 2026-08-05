@@ -255,24 +255,29 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
               small={true}
               severity="info"
               description={
-                isContextLoading || activeOtherEntityNames.length === 0 ? (
-                  descriptionText
-                ) : activeOtherEntityNames.length === 1 ? (
-                  <div>
-                    <p>{descriptionText}</p>
-                    <p>{`Le traitement de la requête sera toujours en cours pour l'entité administrative ${activeOtherEntityNames[0]}.`}</p>
-                  </div>
-                ) : (
-                  <div>
-                    <p>{descriptionText}</p>
-                    <p>Le traitement de la requête sera toujours en cours pour l'entité administrative :</p>
-                    <ul>
-                      {activeOtherEntityNames.map((entityName) => (
-                        <li key={entityName}>{entityName}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )
+                <div>
+                  <p>{descriptionText}</p>
+                  {activeOtherEntityNames.length === 0 ? (
+                    <p>Cette étape sera visible par toute autre entité administrative affectée à la requête.</p>
+                  ) : activeOtherEntityNames.length === 1 ? (
+                    <>
+                      <p>{`Le traitement de la requête sera toujours en cours pour ${activeOtherEntityNames[0]}.`}</p>
+                      <p>{`Cette étape sera visible par ${activeOtherEntityNames[0]}.`}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p>
+                        Le traitement de la requête sera toujours en cours pour les entités administratives suivantes :
+                      </p>
+                      <ul>
+                        {activeOtherEntityNames.map((entityName) => (
+                          <li key={entityName}>{entityName}</li>
+                        ))}
+                      </ul>
+                      <p>{`Cette étape sera visible par les entités administratives suivantes : ${activeOtherEntityNames.join(', ')}.`}</p>
+                    </>
+                  )}
+                </div>
               }
             />
           </div>

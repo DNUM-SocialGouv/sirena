@@ -10,11 +10,19 @@ import { getFileStream } from '../../libs/minio.js';
 import type { RequeteEntite, RequeteEtape, RequeteEtapeNote, UploadedFile } from '../../libs/prisma.js';
 import { convertDatesToStrings } from '../../tests/formatter.js';
 import {
+  AcknowledgmentStepAlreadyProcessedError,
+  EmailSendingDisabledError,
+  sendManualAcknowledgmentEmail,
+} from '../declarants/declarants.notification.service.js';
+import { hasFeature } from '../featureFlags/featureFlags.service.js';
+import {
   getRequeteEntiteById,
   hasAccessToRequete,
   updateStatusRequete,
 } from '../requetesEntite/requetesEntite.service.js';
-import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
+import { getRequeteEtapeUploadedFile } from '../uploadedFiles/uploadedFiles.service.js';
+import { getUserById } from '../users/users.service.js';
+import { requeteEtapeAuthorization } from './requetesEtapes.authorization.js';
 import RequeteEtapesController from './requetesEtapes.controller.js';
 import {
   addClotureEtapeFiles,
@@ -44,8 +52,24 @@ vi.mock('../requeteEtapes/requetesEtapes.service.js', () => ({
   getRequeteEtapes: vi.fn(),
 }));
 
+vi.mock('../declarants/declarants.notification.service.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../declarants/declarants.notification.service.js')>();
+  return {
+    ...actual,
+    sendManualAcknowledgmentEmail: vi.fn(),
+  };
+});
+
+vi.mock('../featureFlags/featureFlags.service.js', () => ({
+  hasFeature: vi.fn(),
+}));
+
+vi.mock('../users/users.service.js', () => ({
+  getUserById: vi.fn(),
+}));
+
 vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
-  getUploadedFileById: vi.fn(),
+  getRequeteEtapeUploadedFile: vi.fn(),
   isFileBelongsToRequete: vi.fn(() => Promise.resolve(true)),
 }));
 
@@ -57,7 +81,8 @@ vi.mock('../requetesEntite/requetesEntite.service.js', () => ({
 
 vi.mock('../../middlewares/userStatus.middleware.js', () => {
   return {
-    default: (_: Context, next: Next) => {
+    default: (c: Context, next: Next) => {
+      c.set('user', { email: 'agent@example.test', entiteId: 'e1' });
       return next();
     },
   };
@@ -131,6 +156,8 @@ const fakeRequeteEtape: RequeteEtape = {
   dateRealisation: null,
   createdById: null,
   clotureEffectiveDate: null,
+  rappelType: null,
+  rappelDate: null,
 };
 
 const fakeUpdatedNomRequeteEtape: RequeteEtape = {
@@ -150,6 +177,8 @@ describe('requeteEtapes.controller.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getRequeteEtapeById).mockResolvedValue(fakeRequeteEtape);
+    vi.mocked(getUserById).mockResolvedValue({ email: 'agent@example.test', entiteId: 'e1' } as never);
+    vi.mocked(hasFeature).mockResolvedValue(false);
     vi.mocked(hasAccessToRequete).mockResolvedValue(true);
     vi.mocked(getRequeteEntiteById).mockResolvedValue(fakeRequeteEntite);
     vi.mocked(updateStatusRequete).mockResolvedValue({
@@ -185,6 +214,22 @@ describe('requeteEtapes.controller.ts', () => {
       });
 
       expect(res.status).toBe(404);
+      expect(addClotureEtapeFiles).not.toHaveBeenCalled();
+    });
+
+    it('forbids attaching files to a foreign Étape de traitement partagée', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        entiteId: 'e2',
+        estPartagee: true,
+      });
+
+      const res = await client[':id']['cloture-files'].$post({
+        param: { id: 'step1' },
+        json: { fileIds: ['file1'] },
+      });
+
+      expect(res.status).toBe(403);
       expect(addClotureEtapeFiles).not.toHaveBeenCalled();
     });
 
@@ -263,7 +308,7 @@ describe('requeteEtapes.controller.ts', () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(requeteEtapeWithE1);
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
 
-      vi.mocked(getUploadedFileById).mockResolvedValueOnce(baseFile);
+      vi.mocked(getRequeteEtapeUploadedFile).mockResolvedValueOnce(baseFile);
 
       const nodeReadable = Readable.from(Buffer.from('hello'));
       vi.mocked(getFileStream).mockResolvedValueOnce({ stream: nodeReadable, metadata: { encrypted: false } });
@@ -280,8 +325,79 @@ describe('requeteEtapes.controller.ts', () => {
 
       expect(bodyText).toBe('hello');
 
-      expect(getUploadedFileById).toHaveBeenCalledWith('file1', ['e1']);
+      expect(getRequeteEtapeUploadedFile).toHaveBeenCalledWith('step1', 'file1');
       expect(getFileStream).toHaveBeenCalledWith('/uploads/test.pdf', undefined);
+    });
+
+    it('allows an affected reader with sharing enabled to download a foreign Étape de traitement partagée file', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        entiteId: 'e2',
+        estPartagee: true,
+      });
+      vi.mocked(hasFeature).mockResolvedValueOnce(true);
+      vi.mocked(getRequeteEtapeUploadedFile).mockResolvedValueOnce(baseFile);
+      vi.mocked(getFileStream).mockResolvedValueOnce({
+        stream: Readable.from(Buffer.from('shared')),
+        metadata: { encrypted: false },
+      });
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(200);
+      expect(await res.text()).toBe('shared');
+      expect(hasFeature).toHaveBeenCalledWith('SHARED_PROCESSING_STEPS', false, 'agent@example.test', 'e1');
+      expect(getRequeteEtapeUploadedFile).toHaveBeenCalledWith('step1', 'file1');
+    });
+
+    it('denies a foreign Étape de traitement partagée file when the reader feature flag is disabled', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        entiteId: 'e2',
+        estPartagee: true,
+      });
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(403);
+      expect(getRequeteEtapeUploadedFile).not.toHaveBeenCalled();
+    });
+
+    it('revokes a known foreign file URL as soon as the step becomes private', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        entiteId: 'e2',
+        estPartagee: false,
+      });
+      vi.mocked(hasFeature).mockResolvedValueOnce(true);
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(403);
+      expect(getRequeteEtapeUploadedFile).not.toHaveBeenCalled();
+    });
+
+    it('denies a foreign Étape de traitement partagée file when the reader is not affected to the Requête SIRENA', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        entiteId: 'e2',
+        estPartagee: true,
+      });
+      vi.mocked(hasFeature).mockResolvedValueOnce(true);
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(403);
+      expect(getRequeteEtapeUploadedFile).not.toHaveBeenCalled();
     });
 
     it('returns 200 with empty body when file size is 0 (no streaming)', async () => {
@@ -290,7 +406,7 @@ describe('requeteEtapes.controller.ts', () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
 
       const emptyFile = { ...baseFile, size: 0 };
-      vi.mocked(getUploadedFileById).mockResolvedValueOnce(emptyFile);
+      vi.mocked(getRequeteEtapeUploadedFile).mockResolvedValueOnce(emptyFile);
 
       const res = await client[':id'].file[':fileId'].$get({
         param: { id: 'step1', fileId: 'file1' },
@@ -306,6 +422,19 @@ describe('requeteEtapes.controller.ts', () => {
       expect(getFileStream).not.toHaveBeenCalled();
     });
 
+    it('denies file reads rejected by the common authorization policy', async () => {
+      vi.spyOn(requeteEtapeAuthorization, 'canRead').mockReturnValueOnce(false);
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(403);
+      expect(requeteEtapeAuthorization.canRead).toHaveBeenCalledWith('e1', fakeRequeteEtape, false);
+      expect(hasAccessToRequete).not.toHaveBeenCalled();
+      expect(getRequeteEtapeUploadedFile).not.toHaveBeenCalled();
+    });
+
     it('returns 404 when RequeteEtape not found', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(null);
 
@@ -318,7 +447,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(404);
       expect(body).toEqual({ message: 'RequeteEtape not found', cause: { kind: ERROR_KIND.BUSINESS } });
 
-      expect(getUploadedFileById).not.toHaveBeenCalled();
+      expect(getRequeteEtapeUploadedFile).not.toHaveBeenCalled();
       expect(getFileStream).not.toHaveBeenCalled();
     });
 
@@ -338,16 +467,16 @@ describe('requeteEtapes.controller.ts', () => {
         cause: { kind: ERROR_KIND.BUSINESS },
       });
 
-      expect(getUploadedFileById).not.toHaveBeenCalled();
+      expect(getRequeteEtapeUploadedFile).not.toHaveBeenCalled();
       expect(getFileStream).not.toHaveBeenCalled();
       expect(hasAccessToRequete).not.toHaveBeenCalled();
     });
 
-    it('returns 404 when file not found', async () => {
+    it('returns 404 when the file does not belong to the exact processing step', async () => {
       const requeteEtapeWithE1 = { ...fakeRequeteEtape, entiteId: 'e1' };
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(requeteEtapeWithE1);
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
-      vi.mocked(getUploadedFileById).mockResolvedValueOnce(null);
+      vi.mocked(getRequeteEtapeUploadedFile).mockResolvedValueOnce(null);
 
       const res = await client[':id'].file[':fileId'].$get({
         param: { id: 'step1', fileId: 'file1' },
@@ -367,7 +496,7 @@ describe('requeteEtapes.controller.ts', () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
 
       const fileNoMeta = { ...baseFile, metadata: null, fileName: 'fallback.pdf' };
-      vi.mocked(getUploadedFileById).mockResolvedValueOnce(fileNoMeta);
+      vi.mocked(getRequeteEtapeUploadedFile).mockResolvedValueOnce(fileNoMeta);
 
       const nodeReadable = Readable.from(Buffer.from('x'));
       vi.mocked(getFileStream).mockResolvedValueOnce({ stream: nodeReadable, metadata: { encrypted: false } });
@@ -378,6 +507,44 @@ describe('requeteEtapes.controller.ts', () => {
 
       expect(res.status).toBe(200);
       expect(res.headers.get('content-disposition')).toBe('inline; filename="fallback.pdf"');
+    });
+
+    it('streams the safe version of a foreign Étape de traitement partagée file when available', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        entiteId: 'e2',
+        estPartagee: true,
+      });
+      vi.mocked(hasFeature).mockResolvedValueOnce(true);
+      vi.mocked(getRequeteEtapeUploadedFile).mockResolvedValueOnce({
+        ...baseFile,
+        safeFilePath: '/uploads/safe-test.pdf',
+      });
+      vi.mocked(getFileStream).mockResolvedValueOnce({
+        stream: Readable.from(Buffer.from('safe')),
+        metadata: { encrypted: false },
+      });
+
+      const res = await client[':id'].file[':fileId'].safe.$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(200);
+      expect(await res.text()).toBe('safe');
+      expect(getRequeteEtapeUploadedFile).toHaveBeenCalledWith('step1', 'file1');
+      expect(getFileStream).toHaveBeenCalledWith('/uploads/safe-test.pdf', undefined);
+    });
+
+    it('keeps the safe file unavailable when no sanitized version exists', async () => {
+      vi.mocked(getRequeteEtapeUploadedFile).mockResolvedValueOnce(baseFile);
+
+      const res = await client[':id'].file[':fileId'].safe.$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(404);
+      expect(await res.json()).toEqual({ message: 'Safe file not available', cause: { kind: ERROR_KIND.BUSINESS } });
+      expect(getFileStream).not.toHaveBeenCalled();
     });
   });
 
@@ -423,9 +590,22 @@ describe('requeteEtapes.controller.ts', () => {
 
       expect(res.status).toBe(403);
       expect(body).toEqual({
-        message: 'You are not allowed to add notes to this requete etape',
+        message: 'You are not allowed to delete this requete etape',
         cause: { kind: ERROR_KIND.BUSINESS },
       });
+      expect(deleteRequeteEtape).not.toHaveBeenCalled();
+    });
+
+    it('forbids deleting a foreign shared processing step', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        entiteId: 'other-entite',
+        estPartagee: true,
+      });
+
+      const res = await client[':id'].$delete({ param: { id: 'step1' } });
+
+      expect(res.status).toBe(403);
       expect(deleteRequeteEtape).not.toHaveBeenCalled();
     });
 
@@ -459,6 +639,8 @@ describe('requeteEtapes.controller.ts', () => {
       updatedAt: new Date(),
       createdById: null,
       clotureEffectiveDate: null,
+      rappelType: null,
+      rappelDate: null,
     };
 
     const note: RequeteEtapeNote = {
@@ -527,7 +709,19 @@ describe('requeteEtapes.controller.ts', () => {
         meta: { total: 2 },
       });
 
-      expect(getRequeteEtapes).toHaveBeenCalledWith('1', 'e1', {});
+      expect(getRequeteEtapes).toHaveBeenCalledWith('1', 'e1', {}, false);
+    });
+
+    it('requests the shared chronology only when the targeted feature is enabled', async () => {
+      vi.mocked(hasFeature).mockResolvedValueOnce(true);
+      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({ data: [], total: 0 });
+
+      const res = await client[':id']['processing-steps'].$get({ param: { id: '1' } });
+
+      expect(res.status).toBe(200);
+      expect(hasFeature).toHaveBeenCalledWith('SHARED_PROCESSING_STEPS', false, 'agent@example.test', 'e1');
+      expect(getUserById).not.toHaveBeenCalled();
+      expect(getRequeteEtapes).toHaveBeenCalledWith('1', 'e1', {}, true);
     });
 
     it('should return 400 if topEntiteId is missing', async () => {
@@ -560,6 +754,8 @@ describe('requeteEtapes.controller.ts', () => {
         dateRealisation: null,
         createdById: null,
         clotureEffectiveDate: null,
+        rappelType: null,
+        rappelDate: null,
       };
 
       vi.mocked(createProcessingEtape).mockResolvedValueOnce(fakeStep);
@@ -580,7 +776,89 @@ describe('requeteEtapes.controller.ts', () => {
           nom: 'Step 1',
           notes: [],
           fileIds: [],
+          estPartagee: false,
         },
+        expect.anything(),
+      );
+    });
+
+    it('requires an explicit sharing choice when the feature is enabled', async () => {
+      vi.mocked(hasFeature).mockResolvedValueOnce(true);
+
+      const res = await client[':id']['processing-steps'].$post({
+        param: { id: '1' },
+        json: { nom: 'Step 1' },
+      });
+
+      expect(res.status).toBe(400);
+      expect(createProcessingEtape).not.toHaveBeenCalled();
+    });
+
+    it('should reject a custom reminder without a date', async () => {
+      const res = await client[':id']['processing-steps'].$post({
+        param: { id: '1' },
+        json: { nom: 'Step 1', rappelType: 'PERSONNALISE' },
+      });
+
+      expect(res.status).toBe(400);
+      expect(createProcessingEtape).not.toHaveBeenCalled();
+    });
+
+    it('checks access before requiring a sharing choice', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValue(false);
+      vi.mocked(hasFeature).mockResolvedValue(true);
+
+      const res = await client[':id']['processing-steps'].$post({
+        param: { id: 'inaccessible' },
+        json: { nom: 'Step 1' },
+      });
+
+      vi.mocked(hasAccessToRequete).mockResolvedValue(true);
+      vi.mocked(hasFeature).mockResolvedValue(false);
+
+      expect(res.status).toBe(404);
+      expect(await res.json()).toEqual({
+        message: 'Requete entite not found',
+        cause: { kind: ERROR_KIND.BUSINESS },
+      });
+      expect(hasAccessToRequete).toHaveBeenCalledWith({ requeteId: 'inaccessible', entiteId: 'e1' });
+      expect(hasFeature).not.toHaveBeenCalled();
+      expect(createProcessingEtape).not.toHaveBeenCalled();
+    });
+
+    it('persists the sharing choice atomically when the feature is enabled', async () => {
+      vi.mocked(hasFeature).mockResolvedValueOnce(true);
+      vi.mocked(createProcessingEtape).mockResolvedValueOnce(fakeRequeteEtape);
+
+      const res = await client[':id']['processing-steps'].$post({
+        param: { id: '1' },
+        json: { nom: 'Step 1', estPartagee: true },
+      });
+
+      expect(res.status).toBe(201);
+      expect(createProcessingEtape).toHaveBeenCalledWith(
+        '1',
+        'e1',
+        'test-user-id',
+        { nom: 'Step 1', notes: [], fileIds: [], estPartagee: true },
+        expect.anything(),
+      );
+    });
+
+    it('cannot force sharing through a direct request when the feature is disabled', async () => {
+      vi.mocked(createProcessingEtape).mockResolvedValueOnce(fakeRequeteEtape);
+
+      const res = await client[':id']['processing-steps'].$post({
+        param: { id: '1' },
+        json: { nom: 'Step 1', estPartagee: true },
+      });
+
+      expect(res.status).toBe(201);
+      expect(createProcessingEtape).toHaveBeenCalledWith(
+        '1',
+        'e1',
+        'test-user-id',
+        { nom: 'Step 1', notes: [], fileIds: [], estPartagee: false },
         expect.anything(),
       );
     });
@@ -620,9 +898,56 @@ describe('requeteEtapes.controller.ts', () => {
           nom: 'Step 1',
           notes: [],
           fileIds: [],
+          estPartagee: false,
         },
         expect.anything(),
       );
+    });
+  });
+
+  describe('POST /:id/send-acknowledgment', () => {
+    it('returns a conflict when the acknowledgment step has already been processed', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: 'ACKNOWLEDGMENT',
+      });
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce({
+        requete: { declarant: { identite: { email: 'declarant@example.test' } } },
+      } as never);
+      vi.mocked(sendManualAcknowledgmentEmail).mockRejectedValueOnce(new AcknowledgmentStepAlreadyProcessedError());
+
+      const res = await client[':id']['send-acknowledgment'].$post({
+        param: { id: 'step1' },
+        json: {},
+      });
+
+      expect(res.status).toBe(409);
+      expect(await res.json()).toEqual({
+        message: "L'accusé de réception a déjà été envoyé pour cette étape.",
+        cause: { kind: ERROR_KIND.BUSINESS },
+      });
+    });
+
+    it('returns a service unavailable business error when email sending is disabled', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: 'ACKNOWLEDGMENT',
+      });
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce({
+        requete: { declarant: { identite: { email: 'declarant@example.test' } } },
+      } as never);
+      vi.mocked(sendManualAcknowledgmentEmail).mockRejectedValueOnce(new EmailSendingDisabledError());
+
+      const res = await client[':id']['send-acknowledgment'].$post({
+        param: { id: 'step1' },
+        json: {},
+      });
+
+      expect(res.status).toBe(503);
+      expect(await res.json()).toEqual({
+        message: "L'envoi des e-mails est actuellement désactivé.",
+        cause: { kind: ERROR_KIND.BUSINESS },
+      });
     });
   });
 
@@ -638,7 +963,41 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(200);
       const json = await res.json();
       expect(json).toEqual({ data: convertDatesToStrings(fakeUpdatedNomRequeteEtape) });
-      expect(updateProcessingEtape).toHaveBeenCalledWith('step1', 'test-user-id', validBody, expect.anything());
+      expect(updateProcessingEtape).toHaveBeenCalledWith(
+        'step1',
+        'test-user-id',
+        { ...validBody, estPartagee: undefined },
+        expect.anything(),
+      );
+    });
+
+    it('updates sharing on an owned manual step when the feature is enabled', async () => {
+      vi.mocked(hasFeature).mockResolvedValueOnce(true);
+      vi.mocked(updateProcessingEtape).mockResolvedValueOnce({ ...fakeUpdatedNomRequeteEtape, estPartagee: false });
+
+      const res = await client[':id'].$patch({
+        param: { id: 'step1' },
+        json: { ...validBody, estPartagee: false },
+      });
+
+      expect(res.status).toBe(200);
+      expect(updateProcessingEtape).toHaveBeenCalledWith(
+        'step1',
+        'test-user-id',
+        { ...validBody, estPartagee: false },
+        expect.anything(),
+      );
+    });
+
+    it('denies updates rejected by the common authorization policy', async () => {
+      vi.spyOn(requeteEtapeAuthorization, 'canWrite').mockReturnValueOnce(false);
+
+      const res = await client[':id'].$patch({ param: { id: 'step1' }, json: validBody });
+
+      expect(res.status).toBe(403);
+      expect(requeteEtapeAuthorization.canWrite).toHaveBeenCalledWith('e1', fakeRequeteEtape);
+      expect(hasAccessToRequete).not.toHaveBeenCalled();
+      expect(updateProcessingEtape).not.toHaveBeenCalled();
     });
 
     it('returns 404 if RequeteEtape not found', async () => {
@@ -650,10 +1009,21 @@ describe('requeteEtapes.controller.ts', () => {
       expect(updateProcessingEtape).not.toHaveBeenCalled();
     });
 
-    it('returns 403 if the step belongs to another entite', async () => {
-      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({ ...fakeRequeteEtape, entiteId: 'other-entite' });
+    it('forbids changing notes or files on a foreign shared processing step', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        entiteId: 'other-entite',
+        estPartagee: true,
+      });
 
-      const res = await client[':id'].$patch({ param: { id: 'step1' }, json: validBody });
+      const res = await client[':id'].$patch({
+        param: { id: 'step1' },
+        json: {
+          ...validBody,
+          notes: [{ texte: 'Foreign note' }],
+          fileIds: ['foreign-file'],
+        },
+      });
 
       expect(res.status).toBe(403);
       expect(updateProcessingEtape).not.toHaveBeenCalled();

@@ -28,6 +28,7 @@ type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data
 
 type StepProps = StepType & {
   requestId: string;
+  isOwner: boolean;
   isAcknowledgmentSendable?: boolean;
   onSendAcknowledgment?: () => void;
   openEdit?(step: StepType): void;
@@ -210,6 +211,7 @@ const StepEditButton = ({ className, step, onEdit }: StepEditButtonProps) => {
 
 const StepComponent = ({
   requestId,
+  isOwner,
   nom,
   createdBy,
   createdAt,
@@ -370,7 +372,7 @@ const StepComponent = ({
                       key={file.id}
                       file={file}
                       stepId={id}
-                      canEdit={canEdit}
+                      canEdit={isOwner && canEdit}
                       onRequestDelete={handleRequestDeleteClotureFile}
                     />
                   ))}
@@ -418,7 +420,7 @@ const StepComponent = ({
             ) : null}
           </>
         )}
-        {statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE && canWrite && (
+        {statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE && isOwner && canWrite && (
           <>
             <Button
               className={styles['request-step__add-note']}

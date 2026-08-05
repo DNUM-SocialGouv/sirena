@@ -549,6 +549,9 @@ model RequeteEtape {
 
   dateRealisation DateTime?
 
+  rappelType String?
+  rappelDate DateTime? @db.Date
+
   requeteId String
   requete   Requete @relation(fields: [requeteId], references: [id], onDelete: Cascade)
 

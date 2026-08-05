@@ -1,15 +1,8 @@
 import { createFactory } from 'hono/factory';
-
-import type { PinoLogger } from 'hono-pino';
+import type { AppBindings as AuthAppBindings } from './appWithAuth.js';
 
 export type AppBindings = {
-  Variables: {
-    logger: PinoLogger;
-    userId: string;
-    roleId: string;
-    entiteIds: string[] | null;
-    assignedEntiteId: string | null;
-    topEntiteId: string | null;
+  Variables: AuthAppBindings['Variables'] & {
     entiteIdLevel: number | null;
   };
 };

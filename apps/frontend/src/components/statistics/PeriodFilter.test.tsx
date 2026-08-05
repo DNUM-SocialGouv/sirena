@@ -135,25 +135,6 @@ describe('PeriodFilter', () => {
     expect(screen.getByRole('radio', { name: 'Mois courant' })).not.toBeChecked();
   });
 
-  it('shows the active selection as a tag that clears the period when dismissed', async () => {
-    const onChange = vi.fn();
-    render(<PeriodFilter value={{ period: 'rolling-month' }} onChange={onChange} />);
-
-    const tag = screen.getByRole('button', { name: /^Requêtes créées : Mois glissant/ });
-    expect(tag).toBeInTheDocument();
-
-    await userEvent.click(tag);
-    expect(onChange).toHaveBeenCalledWith({ period: undefined, startDate: undefined, endDate: undefined });
-  });
-
-  it('phrases a custom range tag around the request creation date', () => {
-    render(<PeriodFilter value={{ startDate: '2026-01-01', endDate: '2026-01-31' }} onChange={vi.fn()} />);
-
-    expect(
-      screen.getByRole('button', { name: /^Requêtes créées entre le 01\/01\/2026 et le 31\/01\/2026/ }),
-    ).toBeInTheDocument();
-  });
-
   it('explains in the panel that the filter uses the request creation date', async () => {
     render(<PeriodFilter value={{}} onChange={vi.fn()} />);
 

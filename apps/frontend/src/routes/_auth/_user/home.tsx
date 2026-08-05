@@ -1,5 +1,4 @@
 import { fr } from '@codegouvfr/react-dsfr';
-import { Button } from '@codegouvfr/react-dsfr/Button';
 import { ROLES, STATUT_TYPES } from '@sirena/common/constants';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
@@ -45,16 +44,15 @@ function RouteComponent() {
       {() => (
         <div className={fr.cx('fr-container', 'fr-my-8w')}>
           <div className={styles.header}>
-            <h1 className={styles.title}>Bienvenue {label}</h1>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              {canEdit ? (
-                <Link to="/request/create">
-                  <Button iconId="fr-icon-add-line" iconPosition="left">
-                    Créer une requête
-                  </Button>
-                </Link>
-              ) : null}
+            <div>
+              <h1 className={styles.title}>Tableau de bord des requêtes</h1>
+              <p className={styles.greeting}>Bienvenue {label}</p>
             </div>
+            {canEdit ? (
+              <Link to="/request/create" className={fr.cx('fr-btn', 'fr-btn--icon-left', 'fr-icon-add-line')}>
+                Créer une requête
+              </Link>
+            ) : null}
           </div>
           <RequetesEntite />
         </div>

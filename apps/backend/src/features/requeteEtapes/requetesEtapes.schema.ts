@@ -1,5 +1,10 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
-import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
+import {
+  RAPPEL_DATE_REQUIRED_MESSAGE,
+  REQUETE_ETAPE_RAPPEL_TYPES,
+  REQUETE_ETAPE_STATUT_TYPES,
+  REQUETE_ETAPE_TYPES,
+} from '@sirena/common/constants';
 import { z } from 'zod';
 import { Prisma } from '../../libs/prisma.js';
 
@@ -15,6 +20,15 @@ export const RequeteEtapeSchema = z.object({
   estPartagee: z.boolean(),
   statutId: z.string().nullable(),
   dateRealisation: z.coerce.date().nullable(),
+  rappelType: z
+    .enum([
+      REQUETE_ETAPE_RAPPEL_TYPES.JOURS_7,
+      REQUETE_ETAPE_RAPPEL_TYPES.JOURS_15,
+      REQUETE_ETAPE_RAPPEL_TYPES.JOURS_30,
+      REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE,
+    ])
+    .nullable(),
+  rappelDate: z.coerce.date().nullable(),
   requeteId: z.string(),
   entiteId: z.string(),
   clotureReasonIds: z.array(z.string()).optional(),
@@ -90,29 +104,49 @@ const fileIdsSchema = z.array(z.string().min(1, 'id vide')).refine((ids) => new 
 const requireDateWhenFait = (data: { statutId?: string | null; dateRealisation?: Date }) =>
   data.statutId !== REQUETE_ETAPE_STATUT_TYPES.FAIT || data.dateRealisation != null;
 
+const etapeRappelTypeSchema = z.enum([
+  REQUETE_ETAPE_RAPPEL_TYPES.JOURS_7,
+  REQUETE_ETAPE_RAPPEL_TYPES.JOURS_15,
+  REQUETE_ETAPE_RAPPEL_TYPES.JOURS_30,
+  REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE,
+]);
+
+const etapeRappelDateSchema = z.iso.date();
+
+const requireRappelDateWhenPersonnalise = (data: { rappelType?: string | null; rappelDate?: string }) =>
+  data.rappelType !== REQUETE_ETAPE_RAPPEL_TYPES.PERSONNALISE || data.rappelDate != null;
+
 export const AddProcessingStepBodySchema = z
   .object({
     nom: etapeNomSchema,
     statutId: etapeStatutEnum.nullable().optional(),
     dateRealisation: z.coerce.date().optional(),
+    rappelType: etapeRappelTypeSchema.nullable().optional(),
+    rappelDate: etapeRappelDateSchema.optional(),
     notes: z
       .array(z.object({ texte: noteTexteSchema }))
       .optional()
       .default([]),
     fileIds: fileIdsSchema.optional().default([]),
+    estPartagee: z.boolean().optional(),
   })
-  .refine(requireDateWhenFait, { path: ['dateRealisation'], message: 'La date de réalisation est obligatoire.' });
+  .refine(requireDateWhenFait, { path: ['dateRealisation'], message: 'La date de réalisation est obligatoire.' })
+  .refine(requireRappelDateWhenPersonnalise, { path: ['rappelDate'], message: RAPPEL_DATE_REQUIRED_MESSAGE });
 
 export const UpdateProcessingStepBodySchema = z
   .object({
     nom: etapeNomSchema,
     statutId: etapeStatutEnum.nullable().optional(),
     dateRealisation: z.coerce.date().optional(),
+    rappelType: etapeRappelTypeSchema.nullable().optional(),
+    rappelDate: etapeRappelDateSchema.optional(),
 
     notes: z.array(z.object({ id: z.string().optional(), texte: noteTexteSchema })).default([]),
     fileIds: fileIdsSchema.default([]),
+    estPartagee: z.boolean().optional(),
   })
-  .refine(requireDateWhenFait, { path: ['dateRealisation'], message: 'La date de réalisation est obligatoire.' });
+  .refine(requireDateWhenFait, { path: ['dateRealisation'], message: 'La date de réalisation est obligatoire.' })
+  .refine(requireRappelDateWhenPersonnalise, { path: ['rappelDate'], message: RAPPEL_DATE_REQUIRED_MESSAGE });
 
 export const AddClotureFilesSchema = z.object({
   fileIds: fileIdsSchema.min(1, { message: 'Vous devez sélectionner au moins un fichier.' }),

@@ -15,6 +15,20 @@ import { createUploadedFile } from '../uploadedFiles/uploadedFiles.service.js';
 
 const ELIGIBLE_RECEPTION_TYPES_FOR_ACKNOWLEDGMENT = [RECEPTION_TYPE.FORMULAIRE, RECEPTION_TYPE.PLATEFORME] as const;
 
+export class AcknowledgmentStepAlreadyProcessedError extends Error {
+  constructor() {
+    super('Cet accusé de réception a déjà été envoyé.');
+    this.name = 'AcknowledgmentStepAlreadyProcessedError';
+  }
+}
+
+export class EmailSendingDisabledError extends Error {
+  constructor() {
+    super("L'envoi des e-mails est actuellement désactivé.");
+    this.name = 'EmailSendingDisabledError';
+  }
+}
+
 /**
  * Formats the list of administrative entity names (entities without a parent entity)
  * Example: "ARS Normandie" or "ARS Normandie et Conseil départemental du Calvados"
@@ -270,7 +284,8 @@ export function buildAcknowledgmentMessageText(
 
 /**
  * Sends an acknowledgment email manually for a manual request
- * @throws Error with code 'STEP_ALREADY_PROCESSED' if the step is no longer A_FAIRE
+ * @throws AcknowledgmentStepAlreadyProcessedError if the step is no longer A_FAIRE
+ * @throws EmailSendingDisabledError if email sending is disabled
  */
 export async function sendManualAcknowledgmentEmail({
   etapeId,
@@ -288,15 +303,18 @@ export async function sendManualAcknowledgmentEmail({
   const logger = getLoggerStore();
 
   const markedDoneAt = new Date();
+  let emailSent = false;
   const claimResult = await prisma.requeteEtape.updateMany({
     where: { id: etapeId, statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
-    data: { statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT, dateRealisation: markedDoneAt },
+    data: {
+      statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+      dateRealisation: markedDoneAt,
+      estPartagee: false,
+    },
   });
 
   if (claimResult.count === 0) {
-    const err = new Error('Cet accusé de réception a déjà été envoyé.');
-    (err as unknown as { code: string }).code = 'STEP_ALREADY_PROCESSED';
-    throw err;
+    throw new AcknowledgmentStepAlreadyProcessedError();
   }
 
   logger.info({ requeteId, entiteId, etapeId }, 'Acknowledgment step claimed, proceeding to send email');
@@ -335,11 +353,21 @@ export async function sendManualAcknowledgmentEmail({
     const from = { address: fromAddress, personalName: fromPersonalName };
     const sentDate = new Date();
 
-    await sendTipimailEmail({
+    const sendResult = await sendTipimailEmail({
       to: declarantEmail,
       subject: ACKNOWLEDGMENT_EMAIL_SUBJECT,
       text: message,
       html: buildAcknowledgmentMessageHtml(message),
+    });
+
+    if (sendResult.status === 'disabled') {
+      throw new EmailSendingDisabledError();
+    }
+
+    emailSent = true;
+    await prisma.requeteEtape.update({
+      where: { id: etapeId },
+      data: { estPartagee: true },
     });
 
     logger.info({ requeteId, entiteId, declarantEmail }, 'Manual acknowledgment email sent successfully');
@@ -349,8 +377,16 @@ export async function sendManualAcknowledgmentEmail({
         entity: 'RequeteEtape',
         entityId: etapeId,
         action: ChangeLogAction.UPDATED,
-        before: { statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE, dateRealisation: null },
-        after: { statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT, dateRealisation: markedDoneAt.toISOString() },
+        before: {
+          statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
+          dateRealisation: null,
+          estPartagee: false,
+        },
+        after: {
+          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          dateRealisation: markedDoneAt.toISOString(),
+          estPartagee: true,
+        },
         changedById: userId,
       });
     } catch (changelogError) {
@@ -403,6 +439,14 @@ export async function sendManualAcknowledgmentEmail({
       logger.error({ requeteId, error: changelogError }, 'Failed to create changelog for manual acknowledgment email');
     }
   } catch (error) {
+    if (emailSent) {
+      logger.error(
+        { requeteId, entiteId, etapeId, error },
+        'Acknowledgment email was sent but the step could not be finalized',
+      );
+      throw error;
+    }
+
     logger.error(
       { requeteId, entiteId, etapeId, error },
       'Failed to send manual acknowledgment email, rolling back step to A_FAIRE',
@@ -410,7 +454,11 @@ export async function sendManualAcknowledgmentEmail({
     try {
       await prisma.requeteEtape.update({
         where: { id: etapeId },
-        data: { statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE, dateRealisation: null },
+        data: {
+          statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
+          dateRealisation: null,
+          estPartagee: false,
+        },
       });
     } catch (rollbackError) {
       logger.error(

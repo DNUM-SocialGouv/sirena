@@ -10,6 +10,10 @@
   padding: 0 16px 88px 16px;
 }
 
+.sharingAlert {
+  padding-right: 1rem;
+}
+
 .separator {
   border-top: 1px solid var(--border-default-grey);
   margin: 1rem 0;

@@ -1,16 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../libs/prisma.js';
-import { createUploadedFile, deleteUploadedFile, getUploadedFileById, isUserOwner } from './uploadedFiles.service.js';
+import {
+  createUploadedFile,
+  deleteUploadedFile,
+  FilesNotOwnedError,
+  getRequeteEtapeUploadedFile,
+  getUploadedFileById,
+  isUserOwner,
+  setEtapeFile,
+} from './uploadedFiles.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
+    $transaction: vi.fn(),
     uploadedFile: {
       findFirst: vi.fn(),
       count: vi.fn(),
       create: vi.fn(),
       delete: vi.fn(),
+      findMany: vi.fn(),
+      updateMany: vi.fn(),
     },
   },
+}));
+
+vi.mock('../changelog/changelog.service.js', () => ({
+  createChangeLog: vi.fn(),
 }));
 
 vi.mock('../../helpers/sse.js', () => ({
@@ -89,6 +104,22 @@ describe('uploadedFiles.service.ts', () => {
     });
   });
 
+  describe('getRequeteEtapeUploadedFile()', () => {
+    it('only returns the requested file when it belongs to the exact processing step', async () => {
+      mockedUploadedFile.findFirst.mockResolvedValueOnce(mockUploadedFile);
+
+      const result = await getRequeteEtapeUploadedFile('step1', 'file1');
+
+      expect(mockedUploadedFile.findFirst).toHaveBeenCalledWith({
+        where: {
+          id: 'file1',
+          requeteEtapeId: 'step1',
+        },
+      });
+      expect(result).toEqual(mockUploadedFile);
+    });
+  });
+
   describe('createUploadedFile()', () => {
     it('should call create with correct data', async () => {
       mockedUploadedFile.create.mockResolvedValueOnce(mockUploadedFile);
@@ -163,6 +194,49 @@ describe('uploadedFiles.service.ts', () => {
 
       expect(mockedUploadedFile.delete).toHaveBeenCalledWith({ where: { id: 'file1' } });
       expect(result).toEqual(mockUploadedFile);
+    });
+  });
+
+  describe('setEtapeFile()', () => {
+    it('only attaches files owned by the user, in the target entity, and not already attached', async () => {
+      mockedUploadedFile.findMany
+        .mockResolvedValueOnce([{ ...mockUploadedFile, requeteId: null, faitSituationId: null }])
+        .mockResolvedValueOnce([
+          {
+            ...mockUploadedFile,
+            requeteId: null,
+            faitSituationId: null,
+            requeteEtapeId: 'step1',
+            status: 'COMPLETED',
+          },
+        ]);
+      mockedUploadedFile.updateMany.mockResolvedValueOnce({ count: 1 });
+
+      await setEtapeFile('step1', ['file1'], 'e1', 'user1', prisma);
+
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(mockedUploadedFile.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: { in: ['file1'] },
+          uploadedById: 'user1',
+          entiteId: 'e1',
+          requeteId: null,
+          requeteEtapeId: null,
+          faitSituationId: null,
+          demarchesEngageesId: null,
+        },
+        data: { requeteEtapeId: 'step1', status: 'COMPLETED', entiteId: 'e1' },
+      });
+    });
+
+    it('opens a transaction and rejects the whole attachment when any requested file is ineligible', async () => {
+      vi.mocked(prisma.$transaction).mockImplementation((async (cb: (tx: unknown) => unknown) => cb(prisma)) as never);
+      mockedUploadedFile.findMany.mockResolvedValueOnce([]);
+      mockedUploadedFile.updateMany.mockResolvedValueOnce({ count: 1 });
+
+      await expect(setEtapeFile('step1', ['file1', 'file2'], 'e1', 'user1')).rejects.toBeInstanceOf(FilesNotOwnedError);
+      expect(prisma.$transaction).toHaveBeenCalledOnce();
+      expect(mockedUploadedFile.findMany).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -2,7 +2,7 @@ import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { EntiteTypeBadge } from '@/components/common/EntiteTypeBadge';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { Step } from '@/components/requestId/processing/Step';
@@ -35,9 +35,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
   const { canEdit, hasEditRole } = useCanEdit({ requeteId: requestId });
   const { data: { subAdministrativeEntites = [] } = {} } = useRequeteOtherEntitiesAffected(requestId);
 
-  const isRequestClosed = useMemo(() => {
-    return queryProcessingSteps.data?.data?.some((step) => step.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE);
-  }, [queryProcessingSteps.data?.data]);
+  const isRequestClosed = requestQuery.data?.statutId === REQUETE_STATUT_TYPES.CLOTUREE;
 
   useEffect(() => {
     if (
@@ -74,6 +72,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                 <Step
                   key={step.id}
                   requestId={requestId}
+                  isOwner={step.entiteId === requestQuery.data?.entiteId}
                   {...step}
                   isAcknowledgmentSendable={isAcknowledgmentSendable}
                   onSendAcknowledgment={
