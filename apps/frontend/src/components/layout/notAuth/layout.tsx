@@ -6,13 +6,9 @@ type NotAuthProps = {
 };
 
 export const NotAuth = ({ children }: NotAuthProps) => {
-  const mainId = 'main';
-
   return (
     <div className="layout">
-      <main role="main" id={mainId} className={'fr-container not-auth-main fr-my-15w'}>
-        {children}
-      </main>
+      <div className={'fr-container not-auth-main fr-my-15w'}>{children}</div>
     </div>
   );
 };

@@ -10,27 +10,44 @@ export function useDisclosureMenu({ onOpen, onClose }: useDisclosureMenuOptions 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
+  const isOpenRef = useRef(false);
+
+  const setOpenState = useCallback((next: boolean) => {
+    isOpenRef.current = next;
+    setIsOpen(next);
+  }, []);
+
   const open = useCallback(() => {
-    setIsOpen(true);
+    if (isOpenRef.current) return;
+
+    setOpenState(true);
     onOpen?.();
-  }, [onOpen]);
+  }, [onOpen, setOpenState]);
 
-  const close = useCallback(() => {
-    setIsOpen(false);
-    onClose?.();
+  const close = useCallback(
+    (options?: { restoreFocus?: boolean }) => {
+      if (!isOpenRef.current) return;
 
-    requestAnimationFrame(() => {
-      triggerRef.current?.focus();
-    });
-  }, [onClose]);
+      const { restoreFocus = true } = options ?? {};
+
+      setOpenState(false);
+      onClose?.();
+
+      if (!restoreFocus) return;
+
+      requestAnimationFrame(() => {
+        triggerRef.current?.focus();
+      });
+    },
+    [onClose, setOpenState],
+  );
 
   const toggle = useCallback(() => {
-    setIsOpen((v) => {
-      const next = !v;
-      next ? onOpen?.() : onClose?.();
-      return next;
-    });
-  }, [onOpen, onClose]);
+    const next = !isOpenRef.current;
+
+    setOpenState(next);
+    next ? onOpen?.() : onClose?.();
+  }, [onOpen, onClose, setOpenState]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -39,7 +56,7 @@ export function useDisclosureMenu({ onOpen, onClose }: useDisclosureMenuOptions 
 
       const isInside = panelRef.current?.contains(target) || triggerRef.current?.contains(target);
 
-      if (!isInside) close();
+      if (!isInside) close({ restoreFocus: false });
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -63,8 +80,10 @@ export function useDisclosureMenu({ onOpen, onClose }: useDisclosureMenuOptions 
     (e: React.FocusEvent<HTMLElement>) => {
       const next = e.relatedTarget as Node | null;
 
+      if (next && triggerRef.current?.contains(next)) return;
+
       if (!next || !panelRef.current?.contains(next)) {
-        close();
+        close({ restoreFocus: false });
       }
     },
     [close],

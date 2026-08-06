@@ -13,7 +13,7 @@ export function PublicLayout({ children }: { children?: React.ReactNode }) {
           <BreadCrumb items={items} />
         </div>
       </div>
-      <main role="main">{children || <Outlet />}</main>
+      {children || <Outlet />}
     </div>
   );
 }
