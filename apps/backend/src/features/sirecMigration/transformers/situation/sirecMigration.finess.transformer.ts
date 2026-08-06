@@ -14,13 +14,13 @@ export interface SirenaFinessMisEnCauseData {
 }
 
 export interface SirenaLieuDeSurvenueData {
-  finess: string;
-  codePostal: string;
-  categCode: string;
-  categLib: string;
+  finess?: string;
+  codePostal?: string;
+  categCode?: string;
+  categLib?: string;
   lieuTypeId: string;
-  lieuPrecision: string;
-  adresse: {
+  lieuPrecision?: string;
+  adresse?: {
     label: string;
     numero: string;
     rue: string;

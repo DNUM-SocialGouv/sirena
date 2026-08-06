@@ -109,39 +109,39 @@ describe('sirecMigration.finess.transformer.ts', () => {
       const { lieuDeSurvenueData } = transformSirecFiness(
         makeFinessData({ categetab: '355', typevoie: 'RUE', voie: 'de la Paix' }),
       );
-      expect(lieuDeSurvenueData?.adresse.rue).toBe('RUE de la Paix');
+      expect(lieuDeSurvenueData?.adresse?.rue).toBe('RUE de la Paix');
     });
 
     it('should handle null typevoie in rue construction', () => {
       const { lieuDeSurvenueData } = transformSirecFiness(
         makeFinessData({ categetab: '355', typevoie: null, voie: 'de la Paix' }),
       );
-      expect(lieuDeSurvenueData?.adresse.rue).toBe('de la Paix');
+      expect(lieuDeSurvenueData?.adresse?.rue).toBe('de la Paix');
     });
 
     it('should map adresse label from rs', () => {
       const { lieuDeSurvenueData } = transformSirecFiness(makeFinessData({ categetab: '355', rs: 'Hôpital B' }));
-      expect(lieuDeSurvenueData?.adresse.label).toBe('Hôpital B');
+      expect(lieuDeSurvenueData?.adresse?.label).toBe('Hôpital B');
     });
 
     it('should map adresse codePostal from codepostal', () => {
       const { lieuDeSurvenueData } = transformSirecFiness(makeFinessData({ categetab: '355', codepostal: '69001' }));
-      expect(lieuDeSurvenueData?.adresse.codePostal).toBe('69001');
+      expect(lieuDeSurvenueData?.adresse?.codePostal).toBe('69001');
     });
 
     it('should map adresse ville from libcommune', () => {
       const { lieuDeSurvenueData } = transformSirecFiness(makeFinessData({ categetab: '355', libcommune: 'Lyon' }));
-      expect(lieuDeSurvenueData?.adresse.ville).toBe('Lyon');
+      expect(lieuDeSurvenueData?.adresse?.ville).toBe('Lyon');
     });
 
     it('should fallback adresse codePostal to empty string when null', () => {
       const { lieuDeSurvenueData } = transformSirecFiness(makeFinessData({ categetab: '355', codepostal: null }));
-      expect(lieuDeSurvenueData?.adresse.codePostal).toBe('');
+      expect(lieuDeSurvenueData?.adresse?.codePostal).toBe('');
     });
 
     it('should fallback adresse ville to empty string when null', () => {
       const { lieuDeSurvenueData } = transformSirecFiness(makeFinessData({ categetab: '355', libcommune: null }));
-      expect(lieuDeSurvenueData?.adresse.ville).toBe('');
+      expect(lieuDeSurvenueData?.adresse?.ville).toBe('');
     });
   });
 

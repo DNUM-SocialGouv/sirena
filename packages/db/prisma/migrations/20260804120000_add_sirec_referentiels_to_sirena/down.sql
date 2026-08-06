@@ -1,0 +1,5 @@
+-- SIRENA-656 rollback: remove the referential values added by this migration.
+DELETE FROM "MisEnCauseTypePrecisionEnum" WHERE "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL' AND "id" = 'EXERCICE_ILLEGAL';
+DELETE FROM "LieuTypeEnum" WHERE "id" = 'ETABLISSEMENT_FICTIF';
+DELETE FROM "ReceptionTypeEnum" WHERE "id" IN ('INFO_MEDIA', 'PORTAIL_SIGNALEMENTS', 'SIGNAL_CONSO');
+DELETE FROM "MotifDeclaratifEnum" WHERE "id" IN ('DIFFICULTES_ACCES_SOINS', 'MALTRAITANCE', 'PROBLEME_ORGANISATION_FONCTIONNEMENT');

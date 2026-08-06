@@ -164,6 +164,9 @@ export const MOTIF = {
   PROBLEME_ORGANISATION: 'PROBLEME_ORGANISATION',
   PROBLEME_INFORMATION: 'PROBLEME_INFORMATION',
   PROBLEME_QUALITE_SOINS: 'PROBLEME_QUALITE_SOINS',
+  DIFFICULTES_ACCES_SOINS: 'DIFFICULTES_ACCES_SOINS',
+  MALTRAITANCE: 'MALTRAITANCE',
+  PROBLEME_ORGANISATION_FONCTIONNEMENT: 'PROBLEME_ORGANISATION_FONCTIONNEMENT',
   AUTRE: 'AUTRE',
 } as const;
 
@@ -177,6 +180,9 @@ export const motifLabels: Record<Motif, string> = {
   PROBLEME_ORGANISATION: "Un manque d'information sur l'organisation de l'établissement ou du service",
   PROBLEME_INFORMATION: 'Un manque d’information sur les droits des usagers',
   PROBLEME_QUALITE_SOINS: 'Problème de qualité des soins médicaux ou paramédicaux',
+  DIFFICULTES_ACCES_SOINS: "Difficultés d'accès aux soins (établissement ou professionnel)",
+  MALTRAITANCE: "Maltraitance (action ou défaut d'action individuelle, collective ou institutionnelle)",
+  PROBLEME_ORGANISATION_FONCTIONNEMENT: "Problème d'organisation ou de fonctionnement de l'établissement ou du service",
   AUTRE: 'Autre (ex: tatouage, chirurgie et/ou soins esthétiques...)',
 };
 
@@ -188,6 +194,9 @@ export const motifShortLabels: Record<Motif, string> = {
   PROBLEME_ORGANISATION: "Manque d'information sur l'organisation",
   PROBLEME_INFORMATION: 'Manque d’information sur les droits des usagers',
   PROBLEME_QUALITE_SOINS: 'Problème de qualité des soins',
+  DIFFICULTES_ACCES_SOINS: "Difficultés d'accès aux soins",
+  MALTRAITANCE: 'Maltraitance',
+  PROBLEME_ORGANISATION_FONCTIONNEMENT: "Problème d'organisation ou de fonctionnement",
   AUTRE: 'Autre',
 };
 
@@ -266,6 +275,7 @@ export const LIEU_TYPE = {
   ETABLISSEMENT_SOCIAL: 'ETABLISSEMENT_SOCIAL',
   AUTRES_ETABLISSEMENTS: 'AUTRES_ETABLISSEMENTS',
   TRAJET: 'TRAJET',
+  ETABLISSEMENT_FICTIF: 'ETABLISSEMENT_FICTIF',
 } as const;
 
 export type LieuType = keyof typeof LIEU_TYPE;
@@ -278,6 +288,7 @@ export const lieuTypeLabels: Record<LieuType, string> = {
   ETABLISSEMENT_SOCIAL: 'Etablissements sociaux',
   AUTRES_ETABLISSEMENTS: 'Autres établissements',
   TRAJET: 'Trajet',
+  ETABLISSEMENT_FICTIF: 'Etablissement fictif',
 };
 
 // Domicile - Précisions
@@ -437,6 +448,7 @@ export const lieuEtablissementSocialPrecisionLabels: Record<LieuEtablissementSoc
 // Autres établissements - Précisions
 export const LIEU_AUTRES_ETABLISSEMENTS_PRECISION = {
   SALON_TATOUAGE_ESTHETIQUE: 'SALON_TATOUAGE_ESTHETIQUE',
+  MAISON_ARRET: 'MAISON_ARRET',
   AUTRE: 'AUTRE',
 } as const;
 
@@ -444,6 +456,7 @@ export type LieuAutresEtablissementsPrecision = keyof typeof LIEU_AUTRES_ETABLIS
 
 export const lieuAutresEtablissementsPrecisionLabels: Record<LieuAutresEtablissementsPrecision, string> = {
   SALON_TATOUAGE_ESTHETIQUE: "Salon de tatouage, salon d'esthétique",
+  MAISON_ARRET: "Maison d'arrêt",
   AUTRE: 'Autre',
 };
 
@@ -455,6 +468,7 @@ export const LIEU_TRAJET_PRECISION = {
   AMBULANCE: 'AMBULANCE',
   VSL: 'VSL',
   TAXI: 'TAXI',
+  TRANSPORTEUR_SANITAIRE: 'TRANSPORTEUR_SANITAIRE',
   AUTRE: 'AUTRE',
 } as const;
 
@@ -467,6 +481,7 @@ export const lieuTrajetPrecisionLabels: Record<LieuTrajetPrecision, string> = {
   AMBULANCE: 'Ambulance',
   VSL: 'Véhicule sanitaire léger',
   TAXI: 'Taxi',
+  TRANSPORTEUR_SANITAIRE: 'Transporteur Sanitaire',
   AUTRE: 'Autre',
 };
 
@@ -641,6 +656,7 @@ export const AUTRE_PROFESSIONNEL_PRECISION = {
   SAPEUR_POMPIER: 'SAPEUR_POMPIER',
   MEDECINE_NON_CONVENTIONNELLE: 'MEDECINE_NON_CONVENTIONNELLE',
   ESTHETICIEN: 'ESTHETICIEN',
+  EXERCICE_ILLEGAL: 'EXERCICE_ILLEGAL',
   AUTRE: 'AUTRE',
 } as const;
 
@@ -671,6 +687,7 @@ export const autreProfessionnelPrecisionLabels: Record<AutreProfessionnelPrecisi
   SAPEUR_POMPIER: 'Sapeur pompier',
   MEDECINE_NON_CONVENTIONNELLE: 'Médecine non conventionnelle (naturopathe...)',
   ESTHETICIEN: 'Esthéticien',
+  EXERCICE_ILLEGAL: 'Exercice illégal',
   AUTRE: 'Autre',
 };
 
@@ -680,6 +697,9 @@ export const RECEPTION_TYPE = {
   FORMULAIRE: 'FORMULAIRE',
   PLATEFORME: 'PLATEFORME',
   TELEPHONE: 'TELEPHONE',
+  INFO_MEDIA: 'INFO_MEDIA',
+  PORTAIL_SIGNALEMENTS: 'PORTAIL_SIGNALEMENTS',
+  SIGNAL_CONSO: 'SIGNAL_CONSO',
   AUTRE: 'AUTRE',
 } as const;
 
@@ -691,6 +711,9 @@ export const receptionTypeLabels: Record<ReceptionType, string> = {
   FORMULAIRE: 'Formulaire',
   PLATEFORME: 'Plateforme téléphonique',
   TELEPHONE: 'Téléphone',
+  INFO_MEDIA: 'Info par média',
+  PORTAIL_SIGNALEMENTS: 'Portail des signalements',
+  SIGNAL_CONSO: 'Signal Conso',
   AUTRE: 'Autre',
 };
 

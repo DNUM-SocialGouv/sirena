@@ -119,7 +119,8 @@ function resolveMisEnCause(misEnCause: SirecMisEnCause): MisEnCauseResolution {
   }
 
   if (misEnCause.type === SIREC_TYPE_AUTRE) {
-    return { misEnCauseData: transformSirecAutre(misEnCause), lieuDeSurvenueData: null };
+    const result = transformSirecAutre(misEnCause);
+    return { misEnCauseData: result.misEnCauseData, lieuDeSurvenueData: result.lieuDeSurvenueData };
   }
 
   return { misEnCauseData: null, lieuDeSurvenueData: null };
