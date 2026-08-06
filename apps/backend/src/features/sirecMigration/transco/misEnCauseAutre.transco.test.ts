@@ -37,16 +37,36 @@ describe('transcodeAutresMcType', () => {
     expect(result.misEnCauseTypePrecisionId).toBe('TATOUEUR');
   });
 
-  it('should return AUTRE_PROFESSIONNEL with null precision for 122', () => {
+  it('should return ETABLISSEMENT / ETABLISSEMENT with lieuSurvenue ETABLISSEMENT_FICTIF for 122', () => {
     const result = transcodeAutresMcType(122);
-    expect(result.misEnCauseTypeId).toBe('AUTRE_PROFESSIONNEL');
-    expect(result.misEnCauseTypePrecisionId).toBeNull();
+    expect(result.misEnCauseTypeId).toBe('ETABLISSEMENT');
+    expect(result.misEnCauseTypePrecisionId).toBe('ETABLISSEMENT');
+    expect(result.lieuSurvenue).toEqual({ lieuTypeId: 'ETABLISSEMENT_FICTIF' });
+  });
+
+  it('should return ETABLISSEMENT / ETABLISSEMENT with lieuSurvenue AUTRES_ETABLISSEMENTS/MAISON_ARRET for 124', () => {
+    const result = transcodeAutresMcType(124);
+    expect(result.misEnCauseTypeId).toBe('ETABLISSEMENT');
+    expect(result.misEnCauseTypePrecisionId).toBe('ETABLISSEMENT');
+    expect(result.lieuSurvenue).toEqual({ lieuTypeId: 'AUTRES_ETABLISSEMENTS', lieuPrecision: 'MAISON_ARRET' });
+  });
+
+  it('should return ETABLISSEMENT / ETABLISSEMENT with lieuSurvenue TRAJET/TRANSPORTEUR_SANITAIRE for 130', () => {
+    const result = transcodeAutresMcType(130);
+    expect(result.misEnCauseTypeId).toBe('ETABLISSEMENT');
+    expect(result.misEnCauseTypePrecisionId).toBe('ETABLISSEMENT');
+    expect(result.lieuSurvenue).toEqual({ lieuTypeId: 'TRAJET', lieuPrecision: 'TRANSPORTEUR_SANITAIRE' });
+  });
+
+  it('should not set lieuSurvenue for autresMcType without a lieu de survenue (e.g. 120)', () => {
+    const result = transcodeAutresMcType(120);
+    expect(result.lieuSurvenue).toBeUndefined();
   });
 
   it('should return AUTRE_PROFESSIONNEL with null precision for 131', () => {
     const result = transcodeAutresMcType(131);
-    expect(result.misEnCauseTypeId).toBe('AUTRE_PROFESSIONNEL');
-    expect(result.misEnCauseTypePrecisionId).toBeNull();
+    expect(result.misEnCauseTypeId).toBe('AUTRE_PERSONNE_NON_PRO');
+    expect(result.misEnCauseTypePrecisionId).toBe('AUTRE');
   });
 
   it('should throw SirecTranscoError for unknown autresMcType', () => {

@@ -102,12 +102,24 @@ vi.mock('../transco/misEnCauseAutre.transco.js', () => ({
 }));
 
 vi.mock('./sirecMigration.autre.transformer.js', () => ({
-  transformSirecAutre: vi.fn(() => ({
-    kind: 'autre',
-    misEnCauseTypeId: 'AUTRE_PROFESSIONNEL',
-    misEnCauseTypePrecisionId: 'ACUPUNCTEUR',
-    autrePrecision: 'Type de mis en cause : Acuponcteur\nNom / structure : Dr Test\nAdresse : Non renseigné',
-  })),
+  transformSirecAutre: vi.fn((misEnCause: { autresMcType: number | null }) => {
+    const lieuByAutresMcType: Record<number, { lieuTypeId: string; lieuPrecision?: string }> = {
+      122: { lieuTypeId: 'ETABLISSEMENT_FICTIF' },
+      124: { lieuTypeId: 'AUTRES_ETABLISSEMENTS', lieuPrecision: 'MAISON_ARRET' },
+      130: { lieuTypeId: 'TRAJET', lieuPrecision: 'TRANSPORTEUR_SANITAIRE' },
+    };
+    const lieuDeSurvenueData =
+      misEnCause.autresMcType !== null ? (lieuByAutresMcType[misEnCause.autresMcType] ?? null) : null;
+    return {
+      misEnCauseData: {
+        kind: 'autre',
+        misEnCauseTypeId: lieuDeSurvenueData ? 'ETABLISSEMENT' : 'AUTRE_PROFESSIONNEL',
+        misEnCauseTypePrecisionId: lieuDeSurvenueData ? 'ETABLISSEMENT' : 'ACUPUNCTEUR',
+        autrePrecision: 'Type de mis en cause : Acuponcteur\nNom / structure : Dr Test\nAdresse : Non renseigné',
+      },
+      lieuDeSurvenueData,
+    };
+  }),
 }));
 
 const makeMisEnCause = (
@@ -398,6 +410,37 @@ describe('sirecMigration.misEnCause.transformer.ts', () => {
       const result = transformSirecMisEnCauseSituations(makeData([], [makeMisEnCause({ id_data: 10, type: 67 })]), []);
 
       expect(result[0].lieuDeSurvenueData).toBeNull();
+    });
+
+    it('should set lieuDeSurvenueData ETABLISSEMENT_FICTIF for type 67 / autresMcType 122', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [makeMisEnCause({ id_data: 10, type: 67, autresMcType: 122 })]),
+        [],
+      );
+
+      expect(result[0].lieuDeSurvenueData).toEqual({ lieuTypeId: 'ETABLISSEMENT_FICTIF' });
+      expect(result[0].misEnCauseData?.misEnCauseTypeId).toBe('ETABLISSEMENT');
+    });
+
+    it('should set lieuDeSurvenueData AUTRES_ETABLISSEMENTS/MAISON_ARRET for type 67 / autresMcType 124', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [makeMisEnCause({ id_data: 10, type: 67, autresMcType: 124 })]),
+        [],
+      );
+
+      expect(result[0].lieuDeSurvenueData).toEqual({
+        lieuTypeId: 'AUTRES_ETABLISSEMENTS',
+        lieuPrecision: 'MAISON_ARRET',
+      });
+    });
+
+    it('should set lieuDeSurvenueData TRAJET/TRANSPORTEUR_SANITAIRE for type 67 / autresMcType 130', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [makeMisEnCause({ id_data: 10, type: 67, autresMcType: 130 })]),
+        [],
+      );
+
+      expect(result[0].lieuDeSurvenueData).toEqual({ lieuTypeId: 'TRAJET', lieuPrecision: 'TRANSPORTEUR_SANITAIRE' });
     });
   });
 

@@ -132,15 +132,17 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
             categLib: lsd.categLib,
             lieuTypeId: lsd.lieuTypeId,
             lieuPrecision: lsd.lieuPrecision,
-            adresse: {
-              create: {
-                label: lsd.adresse.label,
-                numero: lsd.adresse.numero,
-                rue: lsd.adresse.rue,
-                codePostal: lsd.adresse.codePostal,
-                ville: lsd.adresse.ville,
-              },
-            },
+            adresse: lsd.adresse
+              ? {
+                  create: {
+                    label: lsd.adresse.label,
+                    numero: lsd.adresse.numero,
+                    rue: lsd.adresse.rue,
+                    codePostal: lsd.adresse.codePostal,
+                    ville: lsd.adresse.ville,
+                  },
+                }
+              : undefined,
           },
           select: { id: true },
         });
