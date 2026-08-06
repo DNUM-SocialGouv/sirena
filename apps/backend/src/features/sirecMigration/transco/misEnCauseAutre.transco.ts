@@ -1,12 +1,24 @@
-import { AUTRE_PROFESSIONNEL_PRECISION, MIS_EN_CAUSE_TYPE } from '@sirena/common/constants';
+import {
+  AUTRE_PROFESSIONNEL_PRECISION,
+  LIEU_AUTRES_ETABLISSEMENTS_PRECISION,
+  LIEU_TRAJET_PRECISION,
+  LIEU_TYPE,
+  MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION,
+  MIS_EN_CAUSE_ETABLISSEMENT_PRECISION,
+  MIS_EN_CAUSE_TYPE,
+} from '@sirena/common/constants';
 import { SIREC_DICO } from './dictionnaire.transco.js';
 import { SirecTranscoError } from './sirecTransco.error.js';
 
 export const SIREC_TYPE_AUTRE = 67;
 
-interface AutreMcTranscoResult {
+export interface AutreMcTranscoResult {
   misEnCauseTypeId: string | null;
   misEnCauseTypePrecisionId: string | null;
+  lieuSurvenue?: {
+    lieuTypeId: string;
+    lieuPrecision?: string;
+  };
 }
 
 const AUTRES_MC_TYPE_TRANSCO: Record<number, AutreMcTranscoResult> = {
@@ -18,9 +30,25 @@ const AUTRES_MC_TYPE_TRANSCO: Record<number, AutreMcTranscoResult> = {
     misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL,
     misEnCauseTypePrecisionId: AUTRE_PROFESSIONNEL_PRECISION.CHIROPRACTEUR,
   },
-  122: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL, misEnCauseTypePrecisionId: null },
-  123: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL, misEnCauseTypePrecisionId: null },
-  124: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL, misEnCauseTypePrecisionId: null },
+  // Etablissement fictif : mis en cause requalifié en ETABLISSEMENT + lieu de survenue dédié
+  122: {
+    misEnCauseTypeId: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
+    misEnCauseTypePrecisionId: MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.ETABLISSEMENT,
+    lieuSurvenue: { lieuTypeId: LIEU_TYPE.ETABLISSEMENT_FICTIF },
+  },
+  123: {
+    misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL,
+    misEnCauseTypePrecisionId: AUTRE_PROFESSIONNEL_PRECISION.EXERCICE_ILLEGAL,
+  },
+  // Maison d'arrêt : mis en cause requalifié en ETABLISSEMENT + lieu de survenue dédié
+  124: {
+    misEnCauseTypeId: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
+    misEnCauseTypePrecisionId: MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.ETABLISSEMENT,
+    lieuSurvenue: {
+      lieuTypeId: LIEU_TYPE.AUTRES_ETABLISSEMENTS,
+      lieuPrecision: LIEU_AUTRES_ETABLISSEMENTS_PRECISION.MAISON_ARRET,
+    },
+  },
   125: {
     misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL,
     misEnCauseTypePrecisionId: AUTRE_PROFESSIONNEL_PRECISION.OSTEOPATHE,
@@ -35,8 +63,19 @@ const AUTRES_MC_TYPE_TRANSCO: Record<number, AutreMcTranscoResult> = {
     misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL,
     misEnCauseTypePrecisionId: AUTRE_PROFESSIONNEL_PRECISION.TATOUEUR,
   },
-  130: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL, misEnCauseTypePrecisionId: null },
-  131: { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL, misEnCauseTypePrecisionId: null },
+  // Transporteur sanitaire : mis en cause requalifié en ETABLISSEMENT + lieu de survenue dédié
+  130: {
+    misEnCauseTypeId: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
+    misEnCauseTypePrecisionId: MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.ETABLISSEMENT,
+    lieuSurvenue: {
+      lieuTypeId: LIEU_TYPE.TRAJET,
+      lieuPrecision: LIEU_TRAJET_PRECISION.TRANSPORTEUR_SANITAIRE,
+    },
+  },
+  131: {
+    misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PERSONNE_NON_PRO,
+    misEnCauseTypePrecisionId: MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION.AUTRE,
+  },
 };
 
 export function transcodeAutresMcType(autresMcType: number | null): AutreMcTranscoResult {

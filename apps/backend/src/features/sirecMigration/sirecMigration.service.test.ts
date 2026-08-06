@@ -1371,6 +1371,37 @@ describe('sirecMigration.service.ts', () => {
       });
     });
 
+    describe('LieuDeSurvenue minimal (mis en cause AUTRE requalifié en ETABLISSEMENT)', () => {
+      it('should create LieuDeSurvenue with only lieuTypeId when lieuPrecision is absent (ex: Etablissement fictif)', async () => {
+        await saveFromSirec({
+          ...data,
+          situations: [{ ...data.situations[0], lieuDeSurvenueData: { lieuTypeId: 'ETABLISSEMENT_FICTIF' } }],
+        });
+
+        expect(prisma.lieuDeSurvenue.create).toHaveBeenCalledWith({
+          data: { lieuTypeId: 'ETABLISSEMENT_FICTIF' },
+          select: { id: true },
+        });
+      });
+
+      it('should create LieuDeSurvenue with lieuTypeId and lieuPrecision but no finess/adresse (ex: Maison d’arrêt)', async () => {
+        await saveFromSirec({
+          ...data,
+          situations: [
+            {
+              ...data.situations[0],
+              lieuDeSurvenueData: { lieuTypeId: 'AUTRES_ETABLISSEMENTS', lieuPrecision: 'MAISON_ARRET' },
+            },
+          ],
+        });
+
+        expect(prisma.lieuDeSurvenue.create).toHaveBeenCalledWith({
+          data: { lieuTypeId: 'AUTRES_ETABLISSEMENTS', lieuPrecision: 'MAISON_ARRET' },
+          select: { id: true },
+        });
+      });
+    });
+
     describe('misEnCause AUTRE', () => {
       const autreDataWithType = {
         kind: 'autre' as const,
