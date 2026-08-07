@@ -3,6 +3,7 @@ import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { SearchBar, type SearchBarProps } from '@codegouvfr/react-dsfr/SearchBar';
 import type { RequetePrioriteType, RequeteStatutType } from '@sirena/common/constants';
 import { entiteTypes, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { isCreatedOver90DaysAgo } from '@sirena/common/utils';
 import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@sirena/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
@@ -131,6 +132,7 @@ export function RequetesEntite() {
     ...(queries.domaineIds ? { domaineIds: queries.domaineIds } : {}),
     ...(queries.statutIds ? { statutIds: queries.statutIds } : {}),
     ...(queries.prioriteId ? { prioriteId: queries.prioriteId } : {}),
+    ...(queries.over90Days ? { over90Days: queries.over90Days } : {}),
     offset,
     limit,
   });
@@ -273,10 +275,7 @@ export function RequetesEntite() {
     'requete.receptionDate': (row) => {
       const createdAt = new Date(row.requete.createdAt);
       const isOpen = row.statutId === REQUETE_STATUT_TYPES.NOUVEAU || row.statutId === REQUETE_STATUT_TYPES.EN_COURS;
-      const today = new Date();
-      const todayMidnight = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
-      const createdAtMidnight = Date.UTC(createdAt.getFullYear(), createdAt.getMonth(), createdAt.getDate());
-      const isOver90Days = isOpen && todayMidnight - createdAtMidnight >= 90 * 24 * 60 * 60 * 1000;
+      const isOver90Days = isOpen && isCreatedOver90DaysAgo(createdAt);
       return (
         <div className="requetesEntitesTable__reception-date-cell">
           {createdAt.toLocaleDateString('fr-FR', { year: 'numeric', month: '2-digit', day: '2-digit' })}

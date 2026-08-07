@@ -512,6 +512,26 @@ describe('requetesEntite.service', () => {
         }),
       );
     });
+
+    it('should filter by over90Days on open requêtes older than 90 days when provided', async () => {
+      mockedRequeteEntite.findMany.mockResolvedValueOnce([mockRequeteEntite]);
+      mockedRequeteEntite.count.mockResolvedValueOnce(1);
+
+      await getRequetesEntite(null, { over90Days: 'true' });
+
+      expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            AND: [
+              {
+                statutId: { in: ['NOUVEAU', 'EN_COURS'] },
+                requete: { createdAt: { lt: expect.any(Date) } },
+              },
+            ],
+          },
+        }),
+      );
+    });
   });
 
   describe('hasAccessToRequete', () => {
