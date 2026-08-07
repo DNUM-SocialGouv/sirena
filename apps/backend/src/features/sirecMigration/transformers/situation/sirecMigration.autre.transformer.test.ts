@@ -11,7 +11,6 @@ const makeMisEnCause = (overrides: Partial<SirecMisEnCause> = {}): SirecMisEnCau
   adresse: null,
   serviceConcerne: null,
   publicConcerne: null,
-  groupIds: [],
   rppsData: null,
   finessData: null,
   motifsIgas: [],

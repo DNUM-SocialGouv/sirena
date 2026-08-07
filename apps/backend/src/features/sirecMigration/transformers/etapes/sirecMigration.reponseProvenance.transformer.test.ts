@@ -11,17 +11,6 @@ vi.mock('../../transco/dictionnaire.transco.js', () => ({
   },
 }));
 
-vi.mock('../../transco/affectation/affectation.transco.js', () => ({
-  transcodeAffectation: vi.fn((id: number) => {
-    if (id === 693) return { requeteEntiteIds: ['ars-normandie'], situationEntiteIds: [] };
-    if (id === 695) return { requeteEntiteIds: ['ars-normandie'], situationEntiteIds: [] }; // different id_group, same ARS
-    if (id === 677) return { requeteEntiteIds: ['ars-grand-est'], situationEntiteIds: [] };
-    if (id === 680) return { requeteEntiteIds: ['ars-idf'], situationEntiteIds: [] };
-    if (id === 999) return { requeteEntiteIds: ['ars-a', 'ars-b'], situationEntiteIds: [] };
-    throw new SirecTranscoError(id, 'affectation');
-  }),
-}));
-
 const makeData = (
   reclamationOverrides: {
     date_rep_provenance1?: Date | null;
@@ -29,7 +18,7 @@ const makeData = (
     date_rep_provenance3?: Date | null;
     sys_creation_date?: Date | null;
   } = {},
-  provenances: { id_provenance: number; id_group: number }[] = [],
+  provenances: { id_provenance: number }[] = [],
 ) =>
   ({
     reclamation: {
@@ -53,9 +42,11 @@ const makeData = (
     misEnCauses: [],
   }) as unknown as SirecReclamationData;
 
+const ARS_IDS = ['ars-normandie', 'ars-grand-est'];
+
 describe('sirecMigration.reponseProvenance.transformer.ts', () => {
   it('should return an empty array when there are no provenances', () => {
-    const result = transformSirecReponseProvenances(makeData({ date_rep_provenance1: new Date() }, []));
+    const result = transformSirecReponseProvenances(makeData({ date_rep_provenance1: new Date() }, []), ARS_IDS);
 
     expect(result).toEqual([]);
   });
@@ -63,8 +54,18 @@ describe('sirecMigration.reponseProvenance.transformer.ts', () => {
   it('should return an empty array when all dates are null', () => {
     const result = transformSirecReponseProvenances(
       makeData({ date_rep_provenance1: null, date_rep_provenance2: null, date_rep_provenance3: null }, [
-        { id_provenance: 103, id_group: 693 },
+        { id_provenance: 103 },
       ]),
+      ARS_IDS,
+    );
+
+    expect(result).toEqual([]);
+  });
+
+  it('should return an empty array when arsEntiteIds is empty', () => {
+    const result = transformSirecReponseProvenances(
+      makeData({ date_rep_provenance1: new Date() }, [{ id_provenance: 103 }]),
+      [],
     );
 
     expect(result).toEqual([]);
@@ -73,9 +74,10 @@ describe('sirecMigration.reponseProvenance.transformer.ts', () => {
   it('should skip provenance when its date is null', () => {
     const result = transformSirecReponseProvenances(
       makeData({ date_rep_provenance1: null, date_rep_provenance2: new Date('2024-05-10') }, [
-        { id_provenance: 103, id_group: 693 },
-        { id_provenance: 104, id_group: 677 },
+        { id_provenance: 103 },
+        { id_provenance: 104 },
       ]),
+      ['ars-normandie'],
     );
 
     expect(result).toHaveLength(1);
@@ -84,23 +86,28 @@ describe('sirecMigration.reponseProvenance.transformer.ts', () => {
 
   it('should create an etape with the correct nom', () => {
     const result = transformSirecReponseProvenances(
-      makeData({ date_rep_provenance1: new Date('2024-03-05') }, [{ id_provenance: 103, id_group: 693 }]),
+      makeData({ date_rep_provenance1: new Date('2024-03-05') }, [{ id_provenance: 103 }]),
+      ['ars-normandie'],
     );
 
     expect(result[0].nom).toBe("Réponse à l'institution de provenance : Institution 1");
   });
 
-  it('should set entiteId from transcodeAffectation', () => {
+  it('should create one etape per arsEntiteId', () => {
     const result = transformSirecReponseProvenances(
-      makeData({ date_rep_provenance1: new Date('2024-03-05') }, [{ id_provenance: 103, id_group: 693 }]),
+      makeData({ date_rep_provenance1: new Date('2024-03-05') }, [{ id_provenance: 103 }]),
+      ARS_IDS,
     );
 
+    expect(result).toHaveLength(2);
     expect(result[0].entiteId).toBe('ars-normandie');
+    expect(result[1].entiteId).toBe('ars-grand-est');
   });
 
   it('should set statutId to FAIT', () => {
     const result = transformSirecReponseProvenances(
-      makeData({ date_rep_provenance1: new Date('2024-03-05') }, [{ id_provenance: 103, id_group: 693 }]),
+      makeData({ date_rep_provenance1: new Date('2024-03-05') }, [{ id_provenance: 103 }]),
+      ['ars-normandie'],
     );
 
     expect(result[0].statutId).toBe('FAIT');
@@ -109,7 +116,8 @@ describe('sirecMigration.reponseProvenance.transformer.ts', () => {
   it('should set dateRealisation to the date', () => {
     const date = new Date('2024-03-05');
     const result = transformSirecReponseProvenances(
-      makeData({ date_rep_provenance1: date }, [{ id_provenance: 103, id_group: 693 }]),
+      makeData({ date_rep_provenance1: date }, [{ id_provenance: 103 }]),
+      ['ars-normandie'],
     );
 
     expect(result[0].dateRealisation).toEqual(date);
@@ -118,9 +126,8 @@ describe('sirecMigration.reponseProvenance.transformer.ts', () => {
   it('should set createdAt from sys_creation_date', () => {
     const sysDate = new Date('2024-01-01');
     const result = transformSirecReponseProvenances(
-      makeData({ date_rep_provenance1: new Date('2024-03-05'), sys_creation_date: sysDate }, [
-        { id_provenance: 103, id_group: 693 },
-      ]),
+      makeData({ date_rep_provenance1: new Date('2024-03-05'), sys_creation_date: sysDate }, [{ id_provenance: 103 }]),
+      ['ars-normandie'],
     );
 
     expect(result[0].createdAt).toEqual(sysDate);
@@ -128,7 +135,8 @@ describe('sirecMigration.reponseProvenance.transformer.ts', () => {
 
   it('should set note to "Date de la réponse : DD/MM/YYYY"', () => {
     const result = transformSirecReponseProvenances(
-      makeData({ date_rep_provenance1: new Date('2024-03-05') }, [{ id_provenance: 103, id_group: 693 }]),
+      makeData({ date_rep_provenance1: new Date('2024-03-05') }, [{ id_provenance: 103 }]),
+      ['ars-normandie'],
     );
 
     expect(result[0].note).toBe('Date de la réponse : 05/03/2024');
@@ -140,10 +148,11 @@ describe('sirecMigration.reponseProvenance.transformer.ts', () => {
     const date3 = new Date('2024-03-20');
     const result = transformSirecReponseProvenances(
       makeData({ date_rep_provenance1: date1, date_rep_provenance2: date2, date_rep_provenance3: date3 }, [
-        { id_provenance: 103, id_group: 693 },
-        { id_provenance: 104, id_group: 677 },
-        { id_provenance: 105, id_group: 680 },
+        { id_provenance: 103 },
+        { id_provenance: 104 },
+        { id_provenance: 105 },
       ]),
+      ['ars-normandie'],
     );
 
     expect(result).toHaveLength(3);
@@ -162,22 +171,23 @@ describe('sirecMigration.reponseProvenance.transformer.ts', () => {
           date_rep_provenance1: new Date('2024-01-01'),
           date_rep_provenance2: new Date('2024-01-02'),
         },
-        [{ id_provenance: 103, id_group: 693 }],
+        [{ id_provenance: 103 }],
       ),
+      ['ars-normandie'],
     );
 
     expect(result).toHaveLength(1);
   });
 
-  it('should deduplicate etapes when different id_groups resolve to the same ARS and same id_provenance', () => {
+  it('should deduplicate etapes when several provenances resolve to the same entiteId and same id_provenance', () => {
     const date1 = new Date('2024-01-10');
     const date2 = new Date('2024-02-15');
-    // id_group 693 and 695 both map to 'ars-normandie'
     const result = transformSirecReponseProvenances(
       makeData({ date_rep_provenance1: date1, date_rep_provenance2: date2 }, [
-        { id_provenance: 103, id_group: 693 },
-        { id_provenance: 103, id_group: 695 },
+        { id_provenance: 103 },
+        { id_provenance: 103 },
       ]),
+      ['ars-normandie'],
     );
 
     expect(result).toHaveLength(1);
@@ -185,31 +195,11 @@ describe('sirecMigration.reponseProvenance.transformer.ts', () => {
     expect(result[0].dateRealisation).toEqual(date1);
   });
 
-  it('should create one etape per requeteEntiteId when a group maps to multiple entiteIds', () => {
-    const result = transformSirecReponseProvenances(
-      makeData({ date_rep_provenance1: new Date('2024-03-05') }, [{ id_provenance: 103, id_group: 999 }]),
-    );
-
-    expect(result).toHaveLength(2);
-    expect(result[0].entiteId).toBe('ars-a');
-    expect(result[1].entiteId).toBe('ars-b');
-    expect(result[0].nom).toBe("Réponse à l'institution de provenance : Institution 1");
-    expect(result[1].nom).toBe("Réponse à l'institution de provenance : Institution 1");
-  });
-
   it('should throw SirecTranscoError for an unknown id_provenance', () => {
     expect(() =>
-      transformSirecReponseProvenances(
-        makeData({ date_rep_provenance1: new Date() }, [{ id_provenance: 9999, id_group: 693 }]),
-      ),
-    ).toThrow(SirecTranscoError);
-  });
-
-  it('should propagate SirecTranscoError from transcodeAffectation for an unknown id_group', () => {
-    expect(() =>
-      transformSirecReponseProvenances(
-        makeData({ date_rep_provenance1: new Date() }, [{ id_provenance: 103, id_group: 9999 }]),
-      ),
+      transformSirecReponseProvenances(makeData({ date_rep_provenance1: new Date() }, [{ id_provenance: 9999 }]), [
+        'ars-normandie',
+      ]),
     ).toThrow(SirecTranscoError);
   });
 });
