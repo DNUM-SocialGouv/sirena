@@ -126,7 +126,7 @@ describe('Step', () => {
     expect(screen.getByRole('button', { name: /Ajouter un fichier/ })).toBeInTheDocument();
   });
 
-  it('hides every closure file mutation action on a foreign Étape de traitement partagée', () => {
+  it('hides every closure file mutation action on a foreign Étape partagée', () => {
     canEditRequest = true;
 
     const foreignEtapePartagee: React.ComponentProps<typeof Step> = {
@@ -220,6 +220,40 @@ describe('Step', () => {
     requete: { dematSocialId: null, sirecId: null, createdById: 'AGENT-1', thirdPartyAccountId: null, createdBy: null },
     clotureReason: [],
     ...overrides,
+  });
+
+  it('shows the edit action to another agent from the owner root perimeter', () => {
+    canEditRequest = true;
+
+    render(
+      <Step
+        {...makeStep({
+          editable: true,
+          createdBy: { prenom: 'autre', nom: 'agent' },
+          estPartagee: true,
+        })}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: "Modifier l'étape" })).toBeInTheDocument();
+  });
+
+  it('keeps a foreign Étape partagée visible but read-only', () => {
+    canEditRequest = true;
+
+    render(
+      <Step
+        {...makeStep({
+          isOwner: false,
+          entiteId: 'FOREIGN-ENTITE',
+          estPartagee: true,
+          editable: false,
+        })}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Analyse du MSIP' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "Modifier l'étape" })).not.toBeInTheDocument();
   });
 
   it('renders a note block with the "Note rédigée le … par …" wording', () => {

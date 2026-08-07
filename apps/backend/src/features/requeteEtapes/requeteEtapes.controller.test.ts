@@ -217,7 +217,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(addClotureEtapeFiles).not.toHaveBeenCalled();
     });
 
-    it('forbids attaching files to a foreign Étape de traitement partagée', async () => {
+    it('forbids attaching files to a foreign Étape partagée', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
         entiteId: 'e2',
@@ -329,7 +329,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(getFileStream).toHaveBeenCalledWith('/uploads/test.pdf', undefined);
     });
 
-    it('allows an affected reader with sharing enabled to download a foreign Étape de traitement partagée file', async () => {
+    it('allows an affected reader with sharing enabled to download a foreign Étape partagée file', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
         entiteId: 'e2',
@@ -352,7 +352,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(getRequeteEtapeUploadedFile).toHaveBeenCalledWith('step1', 'file1');
     });
 
-    it('denies a foreign Étape de traitement partagée file when the reader feature flag is disabled', async () => {
+    it('denies a foreign Étape partagée file when the reader feature flag is disabled', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
         entiteId: 'e2',
@@ -383,7 +383,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(getRequeteEtapeUploadedFile).not.toHaveBeenCalled();
     });
 
-    it('denies a foreign Étape de traitement partagée file when the reader is not affected to the Requête SIRENA', async () => {
+    it('denies a foreign Étape partagée file when the reader is not affected to the Requête SIRENA', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
         entiteId: 'e2',
@@ -509,7 +509,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.headers.get('content-disposition')).toBe('inline; filename="fallback.pdf"');
     });
 
-    it('streams the safe version of a foreign Étape de traitement partagée file when available', async () => {
+    it('streams the safe version of a foreign Étape partagée file when available', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
         entiteId: 'e2',
@@ -596,7 +596,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(deleteRequeteEtape).not.toHaveBeenCalled();
     });
 
-    it('forbids deleting a foreign shared processing step', async () => {
+    it('forbids deleting a foreign Étape partagée', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
         entiteId: 'other-entite',
@@ -971,6 +971,24 @@ describe('requeteEtapes.controller.ts', () => {
       );
     });
 
+    it('allows another agent from the owner root perimeter to update an editable step', async () => {
+      const stepCreatedByAnotherAgent = {
+        ...fakeRequeteEtape,
+        createdById: 'creator-agent-id',
+      };
+      const stepUpdatedByCurrentAgent = {
+        ...stepCreatedByAnotherAgent,
+        nom: 'Updated',
+      };
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(stepCreatedByAnotherAgent);
+      vi.mocked(updateProcessingEtape).mockResolvedValueOnce(stepUpdatedByCurrentAgent);
+
+      const res = await client[':id'].$patch({ param: { id: 'step1' }, json: validBody });
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ data: convertDatesToStrings(stepUpdatedByCurrentAgent) });
+    });
+
     it('updates sharing on an owned manual step when the feature is enabled', async () => {
       vi.mocked(hasFeature).mockResolvedValueOnce(true);
       vi.mocked(updateProcessingEtape).mockResolvedValueOnce({ ...fakeUpdatedNomRequeteEtape, estPartagee: false });
@@ -1009,11 +1027,12 @@ describe('requeteEtapes.controller.ts', () => {
       expect(updateProcessingEtape).not.toHaveBeenCalled();
     });
 
-    it('forbids changing notes or files on a foreign shared processing step', async () => {
+    it('forbids the creator from changing notes or files after leaving the owner root perimeter', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
         entiteId: 'other-entite',
         estPartagee: true,
+        createdById: 'test-user-id',
       });
 
       const res = await client[':id'].$patch({

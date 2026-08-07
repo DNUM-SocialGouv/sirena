@@ -718,15 +718,36 @@ describe('RequeteEtapes.service.ts', () => {
       expect(result.data[2]).toMatchObject({ editable: true, canOnlyEditNotes: false });
     });
 
-    it('selects owner and foreign Étapes de traitement partagées in one paginated query and makes foreign steps read-only', async () => {
+    it('returns owner steps and foreign Étapes partagées in one chronology, with the latter read-only', async () => {
       vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
-        { ...requeteEtapeWithNotesAndFiles, entiteId: 'foreign-entite', estPartagee: true },
+        { ...requeteEtapeWithNotesAndFiles, id: 'owner-step', entiteId: 'reader-entite' },
+        {
+          ...requeteEtapeWithNotesAndFiles,
+          id: 'foreign-shared-step',
+          entiteId: 'foreign-entite',
+          estPartagee: true,
+        },
       ]);
-      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(2);
 
-      const result = await getRequeteEtapes('requeteId', 'reader-entite', { offset: 5, limit: 10 }, true);
+      const result = await getRequeteEtapes('requeteId', 'reader-entite', {}, true);
 
-      expect(result.data[0]).toMatchObject({ entiteId: 'foreign-entite', editable: false, canOnlyEditNotes: false });
+      expect(result.data).toMatchObject([
+        { id: 'owner-step', entiteId: 'reader-entite', editable: true, canOnlyEditNotes: false },
+        { id: 'foreign-shared-step', entiteId: 'foreign-entite', editable: false, canOnlyEditNotes: false },
+      ]);
+      expect(result.total).toBe(2);
+      expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ orderBy: { createdAt: 'desc' } }),
+      );
+    });
+
+    it('selects only owner steps or Étapes partagées for a currently affected reader', async () => {
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([]);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(0);
+
+      await getRequeteEtapes('requeteId', 'reader-entite', { offset: 5, limit: 10 }, true);
+
       const sharedWhere = {
         requeteId: 'requeteId',
         requete: { requeteEntites: { some: { entiteId: 'reader-entite' } } },
