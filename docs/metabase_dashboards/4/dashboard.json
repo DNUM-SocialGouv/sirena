@@ -2662,7 +2662,7 @@
             }
           ]
         },
-        "description": null,
+        "description": "Répartition des requêtes affectées à mon entité administrative selon leur mode de réception. Mode non renseigné = « Non précisé ».",
         "dimension_mappings": null,
         "dimensions": null,
         "display": "pie",
