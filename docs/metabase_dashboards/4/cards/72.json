@@ -1,0 +1,199 @@
+{
+  "archived": false,
+  "archived_directly": false,
+  "average_query_time": 416.125,
+  "cache_ttl": null,
+  "can_delete": false,
+  "can_manage_db": true,
+  "can_restore": false,
+  "can_run_adhoc_query": true,
+  "can_write": true,
+  "card_schema": 23,
+  "collection": {
+    "authority_level": null,
+    "can_write": true,
+    "id": "root",
+    "is_personal": false,
+    "is_remote_synced": false,
+    "metabase.collections.models.collection.root/is-root?": true,
+    "name": "Our analytics"
+  },
+  "collection_id": null,
+  "collection_position": null,
+  "collection_preview": true,
+  "creator_id": 7,
+  "dashboard": {
+    "id": 4,
+    "moderation_status": null,
+    "name": "[integration] Dashboard local"
+  },
+  "dashboard_count": 1,
+  "dashboard_id": 4,
+  "database_id": 4,
+  "dataset_query": {
+    "database": 4,
+    "lib/type": "mbql/query",
+    "stages": [
+      {
+        "lib/type": "mbql.stage/native",
+        "native": "-- Carte : « Demandes de confidentialité »\n-- Requêtes affectées à mon entité dont la personne concernée (participant) n'a PAS\n-- consenti à la communication de son identité (veutGarderAnonymat = true → réponse « Non »).\nSELECT\n  COUNT(*) AS nombre_requetes\nFROM\n  \"RequeteEntite\" re\n  JOIN \"Entite\"  e  ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r  ON r.id = re.\"requeteId\"\n  JOIN \"PersonneConcernee\" pc ON pc.\"participantDeId\" = r.id\nWHERE\n  pc.\"veutGarderAnonymat\" = TRUE\n  [[ AND e.label = {{entity_label}} ]]\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]];",
+        "template-tags": [
+          {
+            "display-name": "Entity Label",
+            "id": "acf7527c-58c2-4da3-b7f1-a92ffe3c24ba",
+            "name": "entity_label",
+            "type": "text"
+          },
+          {
+            "display-name": "Start Date",
+            "id": "885c1041-446c-47f6-8545-5c04ecc1de3d",
+            "name": "start_date",
+            "type": "date"
+          },
+          {
+            "display-name": "End Date",
+            "id": "12726fd7-cff8-4524-8773-76c5a7b51515",
+            "name": "end_date",
+            "type": "date"
+          },
+          {
+            "display-name": "Domaine Fonctionnel",
+            "id": "5c7bf358-ac1f-4339-9724-43839a097722",
+            "name": "domaine_fonctionnel",
+            "type": "text"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "Demande de confidentialité faite par la personne concernée",
+  "dimension_mappings": null,
+  "dimensions": null,
+  "display": "scalar",
+  "document_id": null,
+  "embedding_params": null,
+  "embedding_type": null,
+  "enable_embedding": false,
+  "entity_id": "5otXTZilAKiWTtvZDkIPA",
+  "id": 72,
+  "is_remote_synced": false,
+  "last_query_start": "2026-08-07T15:02:44.039612Z",
+  "legacy_query": null,
+  "made_public_by_id": null,
+  "metabase_version": "v0.63.5 (1dca717)",
+  "moderation_reviews": [],
+  "name": "Demandes de confidentialité",
+  "param_fields": {},
+  "parameter_mappings": [],
+  "parameter_usage_count": 0,
+  "parameters": [
+    {
+      "id": "acf7527c-58c2-4da3-b7f1-a92ffe3c24ba",
+      "isMultiSelect": false,
+      "name": "Entity Label",
+      "slug": "entity_label",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "entity_label"
+        ]
+      ],
+      "type": "string/="
+    },
+    {
+      "id": "885c1041-446c-47f6-8545-5c04ecc1de3d",
+      "isMultiSelect": false,
+      "name": "Start Date",
+      "slug": "start_date",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "start_date"
+        ]
+      ],
+      "type": "date/single"
+    },
+    {
+      "id": "12726fd7-cff8-4524-8773-76c5a7b51515",
+      "isMultiSelect": false,
+      "name": "End Date",
+      "slug": "end_date",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "end_date"
+        ]
+      ],
+      "type": "date/single"
+    },
+    {
+      "id": "5c7bf358-ac1f-4339-9724-43839a097722",
+      "isMultiSelect": true,
+      "name": "Domaine Fonctionnel",
+      "slug": "domaine_fonctionnel",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "domaine_fonctionnel"
+        ]
+      ],
+      "type": "string/="
+    }
+  ],
+  "public_uuid": null,
+  "query_type": "native",
+  "result_metadata": [
+    {
+      "base_type": "type/BigInteger",
+      "database_type": "int8",
+      "display_name": "nombre_requetes",
+      "effective_type": "type/BigInteger",
+      "field_ref": [
+        "field",
+        "nombre_requetes",
+        {
+          "base-type": "type/BigInteger"
+        }
+      ],
+      "fingerprint": {
+        "global": {
+          "distinct-count": 1,
+          "nil%": 0
+        },
+        "type": {
+          "type/Number": {
+            "avg": 279,
+            "excess-kurtosis": null,
+            "max": 279,
+            "min": 279,
+            "mode-fraction": 1,
+            "q1": 279,
+            "q3": 279,
+            "sd": 0,
+            "skewness": null,
+            "top-3-fraction": 1,
+            "zero-fraction": 0
+          }
+        }
+      },
+      "lib/deduplicated-name": "nombre_requetes",
+      "lib/desired-column-alias": "nombre_requetes",
+      "lib/original-name": "nombre_requetes",
+      "lib/source": "source/native",
+      "lib/source-column-alias": "nombre_requetes",
+      "name": "nombre_requetes",
+      "semantic_type": null,
+      "source": "native"
+    }
+  ],
+  "source_card_id": null,
+  "table_id": null,
+  "type": "question",
+  "visualization_settings": {
+    "scalar.segments": []
+  }
+}
