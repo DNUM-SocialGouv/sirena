@@ -23,7 +23,7 @@ interface StatChartProps {
 export function StatChart({ name, description, parsed, action }: StatChartProps) {
   const titleId = useId();
   const legendId = useId();
-  const [view, setView] = useState<View>('table');
+  const [view, setView] = useState<View>('chart');
   const { items, total } = parsed;
 
   const slices = useMemo(() => {
