@@ -1,3 +1,15 @@
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+export const REQUETE_OVER_90_DAYS_THRESHOLD = 90;
+
+const toMidnightTimestamp = (date: Date): number => Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+
+export const isCreatedOver90DaysAgo = (createdAt: Date, now: Date = new Date()): boolean =>
+  toMidnightTimestamp(now) - toMidnightTimestamp(createdAt) >= REQUETE_OVER_90_DAYS_THRESHOLD * DAY_IN_MS;
+
+export const getOver90DaysCutoffDate = (now: Date = new Date()): Date =>
+  new Date(now.getFullYear(), now.getMonth(), now.getDate() - (REQUETE_OVER_90_DAYS_THRESHOLD - 1));
+
 export const getDateTodayInParis = (): string => {
   const parts = new Intl.DateTimeFormat('fr-FR', {
     timeZone: 'Europe/Paris',

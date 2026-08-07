@@ -8,6 +8,7 @@ export async function fetchRequetesEntite(query: QueryParams = {}) {
       ...query,
       limit: query.limit?.toString(),
       offset: query.offset?.toString(),
+      over90Days: query.over90Days ? 'true' : undefined,
     },
   });
   await handleRequestErrors(res);

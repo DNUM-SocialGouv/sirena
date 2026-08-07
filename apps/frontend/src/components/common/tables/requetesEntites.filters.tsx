@@ -102,6 +102,19 @@ export function RequetesEntiteQuickFilters() {
     [navigate],
   );
 
+  const handleOver90DaysChange = useCallback(
+    (checked: boolean) => {
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          over90Days: checked ? true : undefined,
+          offset: undefined,
+        }),
+      });
+    },
+    [navigate],
+  );
+
   const handleDepartementChange = useCallback(
     (codes: string[]) => {
       navigate({
@@ -164,6 +177,12 @@ export function RequetesEntiteQuickFilters() {
           label="Priorité haute"
           checked={quickFilters.isHautePrioriteOnly}
           onChange={handlePrioriteChange}
+        />
+
+        <CheckboxFilter
+          label="En cours depuis plus de 90 jours"
+          checked={quickFilters.isOver90DaysOnly}
+          onChange={handleOver90DaysChange}
         />
 
         {isTopEntiteARS && (
