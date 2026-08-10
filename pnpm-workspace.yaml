@@ -52,6 +52,8 @@ minimumReleaseAgeExclude:
   - hono
   - mermaid
   - js-yaml
+  - nanoid
+  - dompurify
 overrides:
   # Planchers de sécurité sur des paquets tirés transitivement (@sentry/cli,
   # ajv via prisma/commitlint, minio) : leurs ranges parents résolvent aujourd'hui
@@ -87,3 +89,10 @@ overrides:
   # (GHSA). Tiré par @commitlint/cli, @graphql-codegen/cli et prisma-erd-generator.
   # Borné à la ligne 4.x : le correctif est 4.3.1, on évite le saut majeur vers 5.x.
   "js-yaml@>=4.0.0 <4.3.1": ">=4.3.1 <5"
+  # nanoid <3.3.17: custom generators can loop indefinitely when size is zero —
+  # GHSA-2v37-7h3g-55p8. Tiré par vitest/@vitest/mocker > vite > postcss (test only).
+  "nanoid@<3.3.17": ">=3.3.17"
+  # dompurify <=3.4.12: IN_PLACE hook removal leaves a detached subtree
+  # executable, causing XSS — GHSA-55q2-fjhq-7xh7. Tiré par prisma-erd-generator
+  # > @mermaid-js/mermaid-cli > mermaid/@zenuml/core (db:erd only).
+  "dompurify@<=3.4.12": ">=3.4.13"

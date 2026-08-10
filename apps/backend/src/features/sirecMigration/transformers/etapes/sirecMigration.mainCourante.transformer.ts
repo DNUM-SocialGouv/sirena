@@ -1,7 +1,6 @@
 import { REQUETE_ETAPE_STATUT_TYPES } from '@sirena/common/constants';
 import { formatSirecDate } from '../../../../helpers/sirecMigration.js';
 import type { SirecReclamationData } from '../../sirecMigration.repository.js';
-import { transcodeAffectation } from '../../transco/affectation/affectation.transco.js';
 import { SIREC_DICO } from '../../transco/dictionnaire.transco.js';
 import { SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import type { SirenaEtapeData } from './sirecMigration.etape.types.js';
@@ -20,7 +19,10 @@ function buildNote(commentaire: string | null, dateAction: Date | null): string 
   return parts.length > 0 ? parts.join('\n') : null;
 }
 
-export function transformSirecMainCourantes(sirecData: SirecReclamationData): SirenaEtapeData[] {
+export function transformSirecMainCourantes(
+  sirecData: SirecReclamationData,
+  arsEntiteIds: string[],
+): SirenaEtapeData[] {
   const etapes: SirenaEtapeData[] = [];
   const mainCouranteForEntitySet = new Set<string>();
 
@@ -28,23 +30,19 @@ export function transformSirecMainCourantes(sirecData: SirecReclamationData): Si
     const nom = transcodeTypeAction(mc.type_action1);
     const note = buildNote(mc.commentaire, mc.date_action);
 
-    for (const id_group of mc.groupIds) {
-      const { requeteEntiteIds } = transcodeAffectation(id_group);
+    for (const entiteId of arsEntiteIds) {
+      const currentMainCouranteForEntity = `${mc.id_data}:${entiteId}`;
+      if (mainCouranteForEntitySet.has(currentMainCouranteForEntity)) continue;
+      mainCouranteForEntitySet.add(currentMainCouranteForEntity);
 
-      for (const entiteId of requeteEntiteIds) {
-        const currentMainCouranteForEntity = `${mc.id_data}:${entiteId}`;
-        if (mainCouranteForEntitySet.has(currentMainCouranteForEntity)) continue;
-        mainCouranteForEntitySet.add(currentMainCouranteForEntity);
-
-        etapes.push({
-          nom,
-          entiteId,
-          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-          createdAt: mc.sys_creation_date,
-          ...(mc.date_action !== null ? { dateRealisation: mc.date_action } : {}),
-          note,
-        });
-      }
+      etapes.push({
+        nom,
+        entiteId,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        createdAt: mc.sys_creation_date,
+        ...(mc.date_action !== null ? { dateRealisation: mc.date_action } : {}),
+        note,
+      });
     }
   }
 

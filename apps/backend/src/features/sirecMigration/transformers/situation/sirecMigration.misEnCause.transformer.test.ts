@@ -6,22 +6,6 @@ import { SirecDataError, SirecTranscoError } from '../../transco/sirecTransco.er
 import type { SirenaDeclarantData } from '../sirecMigration.declarant.transformer.js';
 import { transformSirecMisEnCauseSituations } from './sirecMigration.misEnCause.transformer.js';
 
-vi.mock('./sirecMigration.affectation.transformer.js', () => ({
-  computeSituationEntiteIds: vi.fn((ids: (number | null)[]) => {
-    const result: string[] = [];
-    for (const id of ids) {
-      if (id === 1115) result.push('service-1', 'ars-normandie');
-      else if (id === 1121) result.push('service-2', 'ars-normandie');
-      else if (id === 693) {
-        // ARS direct: no situationEntiteId
-      } else if (id !== null && id !== 0) {
-        throw new SirecTranscoError(id, 'affectation');
-      }
-    }
-    return [...new Set(result)];
-  }),
-}));
-
 vi.mock('./sirecMigration.situation.transformer.js', () => ({
   transformSirecSituation: vi.fn((_sirecData: unknown, entiteIds: string[]) => ({
     fait: { autresPrecisions: 'Description', motifsDeclaratifs: ['MOTIF_A'], motifs: [] },
@@ -132,7 +116,6 @@ const makeMisEnCause = (
     adresse: string | null;
     serviceConcerne: number | null;
     publicConcerne: number | null;
-    groupIds: number[];
     rppsData: SirecRppsData | null;
     finessData: SirecFinessData | null;
     motifsIgas: { id_igas: number; igas_type: 'in' | 'out' }[];
@@ -146,7 +129,6 @@ const makeMisEnCause = (
   adresse: null,
   serviceConcerne: null,
   publicConcerne: null,
-  groupIds: [],
   rppsData: null,
   finessData: null,
   motifsIgas: [],
@@ -259,72 +241,18 @@ describe('sirecMigration.misEnCause.transformer.ts', () => {
 
   describe('when there is one mis en cause', () => {
     it('should return one situation per mis en cause', () => {
-      const result = transformSirecMisEnCauseSituations(
-        makeData([1115, 1121], [makeMisEnCause({ id_data: 10, groupIds: [1115] })]),
-        [],
-      );
+      const result = transformSirecMisEnCauseSituations(makeData([], [makeMisEnCause({ id_data: 10 })]), []);
 
       expect(result).toHaveLength(1);
     });
 
-    it('should include mis en cause entiteIds in the situation', () => {
-      const result = transformSirecMisEnCauseSituations(
-        makeData([1115], [makeMisEnCause({ id_data: 10, groupIds: [1115] })]),
-        [],
-      );
+    it('should use the given situationEntiteIds for the situation entiteIds', () => {
+      const result = transformSirecMisEnCauseSituations(makeData([], [makeMisEnCause({ id_data: 10 })]), [
+        'service-1',
+        'ars-normandie',
+      ]);
 
-      expect(result[0].entiteIds).toContain('service-1');
-      expect(result[0].entiteIds).toContain('ars-normandie');
-    });
-
-    it('should include orphan groupIds (not linked to any mis en cause) in all situations', () => {
-      const result = transformSirecMisEnCauseSituations(
-        makeData([1115, 1121], [makeMisEnCause({ id_data: 10, groupIds: [1115] })]),
-        [],
-      );
-
-      expect(result[0].entiteIds).toContain('service-2');
-    });
-
-    it('should not duplicate entiteIds when orphan and mis en cause produce the same id', () => {
-      const result = transformSirecMisEnCauseSituations(
-        makeData([1115, 1121], [makeMisEnCause({ id_data: 10, groupIds: [1115, 1121] })]),
-        [],
-      );
-
-      expect(result[0].entiteIds.filter((id) => id === 'ars-normandie')).toHaveLength(1);
-    });
-
-    it('should not include service_recepteur_niv1 in orphanEntiteIds when it is the national id (1)', () => {
-      const sirecData = {
-        ...makeData([], [makeMisEnCause({ id_data: 10 })]),
-        reclamation: {
-          id_data: 42,
-          service_recepteur_niv1: 1,
-          service_gestionnaire: null,
-          sans_mc: null,
-          observation: null,
-          signalement: null,
-        },
-      } as unknown as SirecReclamationData;
-
-      expect(() => transformSirecMisEnCauseSituations(sirecData, [])).not.toThrow();
-    });
-
-    it('should not include service_gestionnaire in orphanEntiteIds when it is the national id (1)', () => {
-      const sirecData = {
-        ...makeData([], [makeMisEnCause({ id_data: 10 })]),
-        reclamation: {
-          id_data: 42,
-          service_recepteur_niv1: null,
-          service_gestionnaire: 1,
-          sans_mc: null,
-          observation: null,
-          signalement: null,
-        },
-      } as unknown as SirecReclamationData;
-
-      expect(() => transformSirecMisEnCauseSituations(sirecData, [])).not.toThrow();
+      expect(result[0].entiteIds).toEqual(['service-1', 'ars-normandie']);
     });
 
     it('should duplicate the fait and demarchesIds for each situation', () => {
@@ -447,27 +375,21 @@ describe('sirecMigration.misEnCause.transformer.ts', () => {
   describe('when there are multiple mis en cause', () => {
     it('should return one situation per mis en cause', () => {
       const result = transformSirecMisEnCauseSituations(
-        makeData(
-          [1115, 1121],
-          [makeMisEnCause({ id_data: 10, groupIds: [1115] }), makeMisEnCause({ id_data: 20, groupIds: [1121] })],
-        ),
+        makeData([], [makeMisEnCause({ id_data: 10 }), makeMisEnCause({ id_data: 20 })]),
         [],
       );
 
       expect(result).toHaveLength(2);
     });
 
-    it('should include the correct mis en cause entiteIds per situation', () => {
+    it('should give every situation the same situationEntiteIds', () => {
       const result = transformSirecMisEnCauseSituations(
-        makeData(
-          [1115, 1121],
-          [makeMisEnCause({ id_data: 10, groupIds: [1115] }), makeMisEnCause({ id_data: 20, groupIds: [1121] })],
-        ),
-        [],
+        makeData([], [makeMisEnCause({ id_data: 10 }), makeMisEnCause({ id_data: 20 })]),
+        ['service-1', 'ars-normandie'],
       );
 
-      expect(result[0].entiteIds).toContain('service-1');
-      expect(result[1].entiteIds).toContain('service-2');
+      expect(result[0].entiteIds).toEqual(['service-1', 'ars-normandie']);
+      expect(result[1].entiteIds).toEqual(['service-1', 'ars-normandie']);
     });
 
     it('should resolve misEnCauseData independently per situation', () => {
