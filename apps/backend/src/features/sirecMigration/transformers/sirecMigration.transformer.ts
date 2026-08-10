@@ -46,7 +46,7 @@ export interface SirenaRequeteData {
 export function transformSirecReclamation(sirecData: SirecReclamationData): SirenaRequeteData {
   const { requeteEntiteIds, situationEntiteIds } = transformSirecAffectation(sirecData);
   const arsEntiteIds = filterArsEntiteIds(requeteEntiteIds);
-  const provenanceEtapes = transformSirecReceptionProvenances(sirecData);
+  const provenanceEtapes = transformSirecReceptionProvenances(sirecData, arsEntiteIds);
   const declarant = transformSirecDeclarant(sirecData.reclamation);
   const victime = transformSirecVictime(sirecData.reclamation);
   const { requeteStatutId, etapes: clotureEtapes } = transformSirecCloture(sirecData, arsEntiteIds);
@@ -69,14 +69,14 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
     requeteEntiteIds,
     etapes: [
       ...provenanceEtapes,
-      ...transformSirecReponseProvenances(sirecData),
+      ...transformSirecReponseProvenances(sirecData, arsEntiteIds),
       ...transformSirecDateRecepGest(sirecData, arsEntiteIds),
       ...transformSirecAccuseReception(sirecData, arsEntiteIds),
       ...transformSirecInstitutionsPartenaires(sirecData, arsEntiteIds),
       ...transformSirecPriseEnCharge(sirecData, arsEntiteIds),
       ...transformSirecExamenCommission(sirecData, arsEntiteIds),
       ...transformSirecReponsePlaignant(sirecData, arsEntiteIds),
-      ...transformSirecMainCourantes(sirecData),
+      ...transformSirecMainCourantes(sirecData, arsEntiteIds),
       ...transformSirecMesuresPrises(sirecData, arsEntiteIds),
       ...clotureEtapes,
     ],

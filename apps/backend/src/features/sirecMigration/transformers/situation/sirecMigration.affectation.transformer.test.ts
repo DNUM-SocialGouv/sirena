@@ -14,11 +14,7 @@ vi.mock('../../transco/affectation/affectation.transco.js', () => ({
   }),
 }));
 
-const makeData = (
-  service_gestionnaire: number | null,
-  groupIds: number[] = [],
-  mainCourantes: { groupIds: number[] }[] = [],
-) =>
+const makeData = (service_gestionnaire: number | null, groupIds: number[] = []) =>
   ({
     reclamation: {
       id_data: 42,
@@ -33,8 +29,8 @@ const makeData = (
       accuser_reception_precision: null,
     },
     motifsDeclaresIdDicos: [],
-    groupIds,
-    mainCourantes,
+    groupIds: groupIds.map((id_group) => ({ id_group, mode: 'ECRITURE' })),
+    mainCourantes: [],
     provenances: [],
     institutionPartenaires: {},
     typeTraitementIdDicos: [],
@@ -150,14 +146,6 @@ describe('sirecMigration.affectation.transformer.ts', () => {
 
     it('should still throw SirecDataError when service_gestionnaire and groupIds are empty', () => {
       expect(() => transformSirecAffectation(makeData(null, []))).toThrow(SirecDataError);
-    });
-  });
-
-  describe('mainCourantes', () => {
-    it('should add ARS from a mainCourante groupId to requeteEntiteIds', () => {
-      const result = transformSirecAffectation(makeData(null, [], [{ groupIds: [677] }]));
-
-      expect(result.requeteEntiteIds).toEqual(['ars-grand-est']);
     });
   });
 

@@ -65,7 +65,7 @@ describe('transcodeAutresMcType', () => {
 
   it('should return AUTRE_PROFESSIONNEL with null precision for 131', () => {
     const result = transcodeAutresMcType(131);
-    expect(result.misEnCauseTypeId).toBe('AUTRE_PERSONNE_NON_PRO');
+    expect(result.misEnCauseTypeId).toBe('AUTRE_PROFESSIONNEL');
     expect(result.misEnCauseTypePrecisionId).toBe('AUTRE');
   });
 

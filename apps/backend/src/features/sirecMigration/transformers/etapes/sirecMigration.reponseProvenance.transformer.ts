@@ -1,12 +1,14 @@
 import { REQUETE_ETAPE_STATUT_TYPES } from '@sirena/common/constants';
 import { formatSirecDate } from '../../../../helpers/sirecMigration.js';
 import type { SirecReclamationData } from '../../sirecMigration.repository.js';
-import { transcodeAffectation } from '../../transco/affectation/affectation.transco.js';
 import { SIREC_DICO } from '../../transco/dictionnaire.transco.js';
 import { SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import type { SirenaEtapeData } from './sirecMigration.etape.types.js';
 
-export function transformSirecReponseProvenances(sirecData: SirecReclamationData): SirenaEtapeData[] {
+export function transformSirecReponseProvenances(
+  sirecData: SirecReclamationData,
+  arsEntiteIds: string[],
+): SirenaEtapeData[] {
   const { date_rep_provenance1, date_rep_provenance2, date_rep_provenance3, sys_creation_date } = sirecData.reclamation;
   const reponseDates: (Date | null)[] = [date_rep_provenance1, date_rep_provenance2, date_rep_provenance3];
 
@@ -17,13 +19,11 @@ export function transformSirecReponseProvenances(sirecData: SirecReclamationData
     const date = reponseDates[i];
     if (date === null) continue;
 
-    const { id_provenance, id_group } = sirecData.provenances[i];
+    const { id_provenance } = sirecData.provenances[i];
     const institutionNom = SIREC_DICO[id_provenance];
     if (institutionNom === undefined) throw new SirecTranscoError(id_provenance, 'provenance');
 
-    const { requeteEntiteIds } = transcodeAffectation(id_group);
-
-    for (const entiteId of requeteEntiteIds) {
+    for (const entiteId of arsEntiteIds) {
       const currentProvenanceForEntity = `${id_provenance}:${entiteId}`;
       if (provenanceForEntitySet.has(currentProvenanceForEntity)) continue;
       provenanceForEntitySet.add(currentProvenanceForEntity);
