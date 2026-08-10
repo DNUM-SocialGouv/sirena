@@ -384,6 +384,11 @@
   "table_id": null,
   "type": "question",
   "visualization_settings": {
+    "column_settings": {
+      "[\"name\",\"Part des requêtes (%)\"]": {
+        "column_title": "Part des requêtes comportant ce motif (%)"
+      }
+    },
     "table.cell_column": "Part des requêtes (%)",
     "table.pivot_column": "Nombre de requêtes"
   }
