@@ -13,6 +13,7 @@ import {
   fetchSirecReclamationById,
   fetchSirecTypeTraitementIds,
 } from './sirecMigration.repository.js';
+import { SirecDataError } from './transco/sirecTransco.error.js';
 
 vi.mock('../../config/mariadb.js', () => ({
   mariadbPool: {
@@ -84,13 +85,40 @@ describe('sirecMigration.repository.ts', () => {
   });
 
   describe('fetchSirecGroupIds', () => {
-    it('should return the list of group ids when found', async () => {
-      vi.mocked(mariadbPool.query).mockResolvedValueOnce([{ id_group: 3 }, { id_group: 5 }]);
+    it('should default to mode ECRITURE for all groups when no mode records exist', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([
+        { id_group: 3, mode: null },
+        { id_group: 5, mode: null },
+      ]);
 
       const result = await fetchSirecGroupIds(42);
 
-      expect(result).toEqual([3, 5]);
+      expect(result).toEqual([
+        { id_group: 3, mode: 'ECRITURE' },
+        { id_group: 5, mode: 'ECRITURE' },
+      ]);
       expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_reclamation_data_group'), [42]);
+    });
+
+    it('should only return groups that have mode records, with their mode, when some exist', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([
+        { id_group: 3, mode: null },
+        { id_group: 5, mode: 4 },
+        { id_group: 7, mode: 2 },
+      ]);
+
+      const result = await fetchSirecGroupIds(42);
+
+      expect(result).toEqual([
+        { id_group: 5, mode: 'LECTURE' },
+        { id_group: 7, mode: 'ECRITURE' },
+      ]);
+    });
+
+    it('should throw SirecDataError for an unknown mode raw value', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([{ id_group: 5, mode: 99 }]);
+
+      await expect(fetchSirecGroupIds(42)).rejects.toThrow(SirecDataError);
     });
 
     it('should return an empty array when no groups found', async () => {
@@ -106,23 +134,23 @@ describe('sirecMigration.repository.ts', () => {
     it('should return provenances with all fields when found', async () => {
       const date = new Date('2024-03-05');
       vi.mocked(mariadbPool.query).mockResolvedValueOnce([
-        { id_provenance: 103, id_group: 693, date_signalement: date, reponse_attendue: 134 },
+        { id_provenance: 103, date_signalement: date, reponse_attendue: 134 },
       ]);
 
       const result = await fetchSirecProvenances(42);
 
-      expect(result).toEqual([{ id_provenance: 103, id_group: 693, date_signalement: date, reponse_attendue: 134 }]);
+      expect(result).toEqual([{ id_provenance: 103, date_signalement: date, reponse_attendue: 134 }]);
       expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_provenances_data'), [42]);
     });
 
     it('should handle null date_signalement and reponse_attendue', async () => {
       vi.mocked(mariadbPool.query).mockResolvedValueOnce([
-        { id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null },
+        { id_provenance: 103, date_signalement: null, reponse_attendue: null },
       ]);
 
       const result = await fetchSirecProvenances(42);
 
-      expect(result).toEqual([{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }]);
+      expect(result).toEqual([{ id_provenance: 103, date_signalement: null, reponse_attendue: null }]);
     });
 
     it('should return an empty array when no provenances found', async () => {
@@ -212,36 +240,12 @@ describe('sirecMigration.repository.ts', () => {
   });
 
   describe('fetchSirecMisEnCauses', () => {
-    it('should return mis en cause with their group ids and type', async () => {
+    it('should return one entry per mis en cause row with their type', async () => {
       vi.mocked(mariadbPool.query).mockResolvedValueOnce([
         {
           id_data: 10,
           type: 12,
           identifiant: null,
-          id_group: 693,
-          rpps_id_data: null,
-          rpps_civilite: null,
-          rpps_nom: null,
-          rpps_prenom: null,
-          rpps_code_postal: null,
-          rpps_commune: null,
-          rpps_libelle_prof: null,
-          finess_id_data: null,
-          finess_nofinesset: null,
-          finess_categetab: null,
-          finess_libcategetab: null,
-          finess_rs: null,
-          finess_codepostal: null,
-          finess_libcommune: null,
-          finess_numvoie: null,
-          finess_typevoie: null,
-          finess_voie: null,
-        },
-        {
-          id_data: 10,
-          type: 12,
-          identifiant: null,
-          id_group: 677,
           rpps_id_data: null,
           rpps_civilite: null,
           rpps_nom: null,
@@ -264,7 +268,6 @@ describe('sirecMigration.repository.ts', () => {
           id_data: 20,
           type: 12,
           identifiant: null,
-          id_group: 693,
           rpps_id_data: null,
           rpps_civilite: null,
           rpps_nom: null,
@@ -289,16 +292,8 @@ describe('sirecMigration.repository.ts', () => {
       const result = await fetchSirecMisEnCauses(42);
 
       expect(result).toEqual([
-        {
-          id_data: 10,
-          type: 12,
-          identifiant: null,
-          groupIds: [693, 677],
-          rppsData: null,
-          finessData: null,
-          motifsIgas: [],
-        },
-        { id_data: 20, type: 12, identifiant: null, groupIds: [693], rppsData: null, finessData: null, motifsIgas: [] },
+        { id_data: 10, type: 12, identifiant: null, rppsData: null, finessData: null, motifsIgas: [] },
+        { id_data: 20, type: 12, identifiant: null, rppsData: null, finessData: null, motifsIgas: [] },
       ]);
       expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_misencause_data'), [42]);
     });
@@ -309,7 +304,6 @@ describe('sirecMigration.repository.ts', () => {
           id_data: 10,
           type: 65,
           identifiant: 12345678901,
-          id_group: null,
           rpps_id_data: 12345678901,
           rpps_rpps: '12345678901',
           rpps_civilite: 'mme',
@@ -339,7 +333,6 @@ describe('sirecMigration.repository.ts', () => {
           id_data: 10,
           type: 65,
           identifiant: 12345678901,
-          groupIds: [],
           finessData: null,
           motifsIgas: [],
           rppsData: {
@@ -362,7 +355,6 @@ describe('sirecMigration.repository.ts', () => {
           id_data: 10,
           type: 65,
           identifiant: 999,
-          id_group: null,
           rpps_id_data: null,
           rpps_civilite: null,
           rpps_nom: null,
@@ -389,41 +381,6 @@ describe('sirecMigration.repository.ts', () => {
       expect(result[0].rppsData).toBeNull();
     });
 
-    it('should return mis en cause with empty groupIds when no groups are linked', async () => {
-      vi.mocked(mariadbPool.query).mockResolvedValueOnce([
-        {
-          id_data: 10,
-          type: null,
-          identifiant: null,
-          id_group: null,
-          rpps_id_data: null,
-          rpps_civilite: null,
-          rpps_nom: null,
-          rpps_prenom: null,
-          rpps_code_postal: null,
-          rpps_commune: null,
-          rpps_libelle_prof: null,
-          finess_id_data: null,
-          finess_nofinesset: null,
-          finess_categetab: null,
-          finess_libcategetab: null,
-          finess_rs: null,
-          finess_codepostal: null,
-          finess_libcommune: null,
-          finess_numvoie: null,
-          finess_typevoie: null,
-          finess_voie: null,
-        },
-      ]);
-      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
-
-      const result = await fetchSirecMisEnCauses(42);
-
-      expect(result).toEqual([
-        { id_data: 10, type: null, identifiant: null, groupIds: [], rppsData: null, finessData: null, motifsIgas: [] },
-      ]);
-    });
-
     it('should join with sire_rpps_data and sire_finess_data in the query', async () => {
       vi.mocked(mariadbPool.query).mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
@@ -439,7 +396,6 @@ describe('sirecMigration.repository.ts', () => {
           id_data: 10,
           type: 64,
           identifiant: 1234,
-          id_group: null,
           rpps_id_data: null,
           rpps_rpps: null,
           rpps_civilite: null,
@@ -485,7 +441,6 @@ describe('sirecMigration.repository.ts', () => {
           id_data: 10,
           type: 64,
           identifiant: 999,
-          id_group: null,
           rpps_id_data: null,
           rpps_rpps: null,
           rpps_civilite: null,
@@ -538,7 +493,6 @@ describe('sirecMigration.repository.ts', () => {
           id_data: 10,
           type: null,
           identifiant: null,
-          id_group: null,
           rpps_id_data: null,
           rpps_civilite: null,
           rpps_nom: null,
@@ -577,7 +531,6 @@ describe('sirecMigration.repository.ts', () => {
           id_data: 10,
           type: null,
           identifiant: null,
-          id_group: null,
           service_concerne: 68,
           public_concerne: 71,
           rpps_id_data: null,
@@ -611,31 +564,20 @@ describe('sirecMigration.repository.ts', () => {
   });
 
   describe('fetchSirecMainCourantes', () => {
-    it('should return main courantes with aggregated groupIds', async () => {
+    it('should return one entry per main courante row', async () => {
       const date = new Date('2024-06-01');
       vi.mocked(mariadbPool.query).mockResolvedValueOnce([
-        { id_data: 10, type_action1: 100, commentaire: 'RAS', date_action: date, id_group: 693 },
-        { id_data: 10, type_action1: 100, commentaire: 'RAS', date_action: date, id_group: 677 },
-        { id_data: 20, type_action1: null, commentaire: null, date_action: null, id_group: 693 },
+        { id_data: 10, type_action1: 100, commentaire: 'RAS', date_action: date, sys_creation_date: date },
+        { id_data: 20, type_action1: null, commentaire: null, date_action: null, sys_creation_date: date },
       ]);
 
       const result = await fetchSirecMainCourantes(42);
 
       expect(result).toEqual([
-        { id_data: 10, type_action1: 100, commentaire: 'RAS', date_action: date, groupIds: [693, 677] },
-        { id_data: 20, type_action1: null, commentaire: null, date_action: null, groupIds: [693] },
+        { id_data: 10, type_action1: 100, commentaire: 'RAS', date_action: date, sys_creation_date: date },
+        { id_data: 20, type_action1: null, commentaire: null, date_action: null, sys_creation_date: date },
       ]);
       expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_main_courante_data'), [42]);
-    });
-
-    it('should return main courante with empty groupIds when no groups are linked', async () => {
-      vi.mocked(mariadbPool.query).mockResolvedValueOnce([
-        { id_data: 10, type_action1: null, commentaire: null, date_action: null, id_group: null },
-      ]);
-
-      const result = await fetchSirecMainCourantes(42);
-
-      expect(result).toEqual([{ id_data: 10, type_action1: null, commentaire: null, date_action: null, groupIds: [] }]);
     });
 
     it('should return an empty array when no mains courantes found', async () => {
@@ -663,8 +605,11 @@ describe('sirecMigration.repository.ts', () => {
       vi.mocked(mariadbPool.query)
         .mockResolvedValueOnce([mockRow])
         .mockResolvedValueOnce([{ id_dico: 823 }, { id_dico: 809 }])
-        .mockResolvedValueOnce([{ id_group: 3 }, { id_group: 5 }])
-        .mockResolvedValueOnce([{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }])
+        .mockResolvedValueOnce([
+          { id_group: 3, mode: null },
+          { id_group: 5, mode: null },
+        ])
+        .mockResolvedValueOnce([{ id_provenance: 103, date_signalement: null, reponse_attendue: null }])
         .mockResolvedValueOnce([{ id_dico: 344 }])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
@@ -675,8 +620,11 @@ describe('sirecMigration.repository.ts', () => {
       expect(result).toEqual({
         reclamation: mockRow,
         motifsDeclaresIdDicos: [823, 809],
-        groupIds: [3, 5],
-        provenances: [{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }],
+        groupIds: [
+          { id_group: 3, mode: 'ECRITURE' },
+          { id_group: 5, mode: 'ECRITURE' },
+        ],
+        provenances: [{ id_provenance: 103, date_signalement: null, reponse_attendue: null }],
         institutionPartenaires: {},
         typeTraitementIdDicos: [344],
         misEnCauses: [],
