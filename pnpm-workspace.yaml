@@ -50,6 +50,8 @@ minimumReleaseAgeExclude:
   - fast-uri
   - brace-expansion
   - hono
+  - mermaid
+  - js-yaml
 overrides:
   # Planchers de sécurité sur des paquets tirés transitivement (@sentry/cli,
   # ajv via prisma/commitlint, minio) : leurs ranges parents résolvent aujourd'hui
@@ -77,3 +79,11 @@ overrides:
   # hono <4.12.34: ReDoS in the CORS middleware. Aligns the transitive tree
   # (prisma > @prisma/dev); direct consumers are on ^4.12.34 via the catalog.
   "hono@<4.12.34": ">=4.12.34"
+  # mermaid <11.16.1: prototype pollution, CSS injection and several DoS in the
+  # diagram renderers (GHSA-c4c3-pg64-4m4v, GHSA-2v8p-3f2j-5mp7, GHSA-rhh3-jpg6-66xh…).
+  # Tiré transitivement par prisma-erd-generator > @mermaid-js/mermaid-cli (db:erd only).
+  "mermaid@>=11.0.0 <11.16.1": ">=11.16.1 <12"
+  # js-yaml <4.3.1: quadratic CPU consumption in !!omap resolution — CVE-2026-59870
+  # (GHSA). Tiré par @commitlint/cli, @graphql-codegen/cli et prisma-erd-generator.
+  # Borné à la ligne 4.x : le correctif est 4.3.1, on évite le saut majeur vers 5.x.
+  "js-yaml@>=4.0.0 <4.3.1": ">=4.3.1 <5"
