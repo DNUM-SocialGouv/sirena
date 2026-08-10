@@ -7,26 +7,13 @@ export interface SirenaAffectationData {
   situationEntiteIds: string[];
 }
 
-export function computeSituationEntiteIds(sourceIds: (number | null)[]): string[] {
-  const ids = new Set<string>();
-  for (const id of sourceIds) {
-    if (!id) continue;
-    const { situationEntiteIds } = transcodeAffectation(id);
-    for (const entiteId of situationEntiteIds) ids.add(entiteId);
-  }
-  return [...ids];
-}
-
 export function transformSirecAffectation(sirecData: SirecReclamationData): SirenaAffectationData {
   const requeteIds = new Set<string>();
   const situationIds = new Set<string>();
 
   const allIds: (number | null)[] = [
     sirecData.reclamation.service_gestionnaire,
-    ...sirecData.groupIds,
-    ...sirecData.mainCourantes.flatMap((mc) => mc.groupIds),
-    ...sirecData.provenances.map((p) => p.id_group),
-    ...sirecData.misEnCauses.flatMap((mec) => mec.groupIds),
+    ...sirecData.groupIds.map((g) => g.id_group),
   ];
 
   for (const fieldValue of allIds) {

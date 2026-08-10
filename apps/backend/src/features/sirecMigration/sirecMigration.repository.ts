@@ -1,6 +1,32 @@
 import { mariadbPool } from '../../config/mariadb.js';
 import { SIREC_NATIONAL_ENTITE_ID } from './transco/affectation/affectation.transco.js';
 import { MOTIF_IGAS_A_RENSEIGNER, MOTIF_IGAS_HORS_COMPETENCE } from './transco/motifsIgas.transco.js';
+import { SirecDataError } from './transco/sirecTransco.error.js';
+
+export const SIREC_GROUP_MODE = {
+  LECTURE: 'LECTURE',
+  ECRITURE: 'ECRITURE',
+} as const;
+
+export type SirecGroupMode = (typeof SIREC_GROUP_MODE)[keyof typeof SIREC_GROUP_MODE];
+
+const SIREC_GROUP_MODE_BY_RAW_VALUE: Record<number, SirecGroupMode> = {
+  2: SIREC_GROUP_MODE.ECRITURE,
+  4: SIREC_GROUP_MODE.LECTURE,
+};
+
+function mapSirecGroupMode(rawMode: number): SirecGroupMode {
+  const mode = SIREC_GROUP_MODE_BY_RAW_VALUE[rawMode];
+  if (!mode) {
+    throw new SirecDataError(`Mode de groupe SIREC inconnu: ${rawMode}`);
+  }
+  return mode;
+}
+
+export interface SirecGroupIdWithMode {
+  id_group: number;
+  mode: SirecGroupMode;
+}
 
 export interface SirecReclamationRow {
   id_data: number;
@@ -91,7 +117,6 @@ export interface SirecReclamationRow {
 
 export interface SirecProvenance {
   id_provenance: number;
-  id_group: number;
   date_signalement: Date | null;
   reponse_attendue: number | null;
 }
@@ -134,7 +159,6 @@ export interface SirecMisEnCause {
   adresse: string | null;
   serviceConcerne: number | null;
   publicConcerne: number | null;
-  groupIds: number[];
   rppsData: SirecRppsData | null;
   finessData: SirecFinessData | null;
   motifsIgas: SirecMcIgasMotif[];
@@ -146,13 +170,12 @@ export interface SirecMainCourante {
   commentaire: string | null;
   date_action: Date | null;
   sys_creation_date: Date;
-  groupIds: number[];
 }
 
 export interface SirecReclamationData {
   reclamation: SirecReclamationRow;
   motifsDeclaresIdDicos: number[];
-  groupIds: number[];
+  groupIds: SirecGroupIdWithMode[];
   provenances: SirecProvenance[];
   institutionPartenaires: Record<number, string>;
   typeTraitementIdDicos: number[];
@@ -198,30 +221,33 @@ export async function fetchSirecMotifsDeclaresById(sirecId: number): Promise<num
   return rows.map((row) => row.id_dico);
 }
 
-export async function fetchSirecGroupIds(sirecId: number): Promise<number[]> {
-  const rows = await mariadbPool.query<{ id_group: number }[]>(
-    `SELECT id_group
-     FROM sire_reclamation_data_group
-     WHERE id_data = ?
-       AND id_group != ${SIREC_NATIONAL_ENTITE_ID}
-       and id_group != 3`,
+export async function fetchSirecGroupIds(sirecId: number): Promise<SirecGroupIdWithMode[]> {
+  const rows = await mariadbPool.query<{ id_group: number; mode: number | null }[]>(
+    `SELECT rg.id_group, rgm.mode
+     FROM sire_reclamation_data_group rg
+     LEFT JOIN sire_reclamation_data_group_mode rgm ON rgm.id_data_group = rg.id_data_group
+     WHERE rg.id_data = ?
+       AND rg.id_group != ${SIREC_NATIONAL_ENTITE_ID}
+       and rg.id_group != 3`,
     [sirecId],
   );
-  return rows.map((row) => row.id_group);
+  const rowsWithMode = rows.filter((row) => row.mode !== null);
+  if (rowsWithMode.length > 0) {
+    return rowsWithMode.map((row) => ({ id_group: row.id_group, mode: mapSirecGroupMode(row.mode as number) }));
+  }
+
+  return rows.map((row) => ({ id_group: row.id_group, mode: SIREC_GROUP_MODE.ECRITURE }));
 }
 
 export async function fetchSirecProvenances(sirecId: number): Promise<SirecProvenance[]> {
   const rows = await mariadbPool.query<SirecProvenance[]>(
-    `SELECT p.id_provenance, pg.id_group, p.date_signalement, p.reponse_attendue
+    `SELECT p.id_provenance, p.date_signalement, p.reponse_attendue
      FROM sire_provenances_data p
-              INNER JOIN sire_provenances_data_group pg
-                         ON pg.id_data = p.id_data and pg.id_group != ${SIREC_NATIONAL_ENTITE_ID} and pg.id_group != 3
      WHERE p.id_reclamation = ? ORDER BY p.sys_creation_date, p.id_data`,
     [sirecId],
   );
   return rows.map((row) => ({
     id_provenance: row.id_provenance,
-    id_group: row.id_group,
     date_signalement: row.date_signalement,
     reponse_attendue: row.reponse_attendue,
   }));
@@ -253,7 +279,6 @@ type MisEnCauseRow = {
   adresse: string | null;
   service_concerne: number | null;
   public_concerne: number | null;
-  id_group: number | null;
   rpps_id_data: number | null;
   rpps_rpps: string | null;
   rpps_civilite: string | null;
@@ -310,7 +335,6 @@ export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEn
             m.adresse,
             m.service_concerne,
             m.public_concerne,
-            mcg.id_group,
             r.id_data      AS rpps_id_data,
             r.rpps         AS rpps_rpps,
             r.civilite     AS rpps_civilite,
@@ -330,9 +354,6 @@ export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEn
             f.typevoie     AS finess_typevoie,
             f.voie         AS finess_voie
      FROM sire_misencause_data m
-              LEFT JOIN sire_misencause_data_group mcg
-                        ON m.id_data = mcg.id_data AND mcg.id_group != ${SIREC_NATIONAL_ENTITE_ID} AND
-                           mcg.id_group != 3 AND mcg.id_group != 0
               LEFT JOIN sire_rpps_data r ON r.id_data = m.identifiant AND m.type = 65
               LEFT JOIN sire_finess_data f ON f.id_data = m.identifiant AND m.type = 64
      WHERE m.id_reclamation = ?
@@ -342,58 +363,49 @@ export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEn
     fetchSirecMcIgasMotifs(sirecId),
   ]);
 
-  const map = new Map<number, SirecMisEnCause>();
-  for (const row of rows) {
-    if (!map.has(row.id_data)) {
-      const rppsData: SirecRppsData | null =
-        row.rpps_id_data !== null
-          ? {
-              id_data: row.rpps_id_data,
-              rpps: row.rpps_rpps,
-              civilite: row.rpps_civilite,
-              nom: row.rpps_nom,
-              prenom: row.rpps_prenom,
-              code_postal: row.rpps_code_postal,
-              commune: row.rpps_commune,
-              libelle_prof: row.rpps_libelle_prof,
-            }
-          : null;
-      const finessData: SirecFinessData | null =
-        row.finess_id_data !== null
-          ? {
-              id_data: row.finess_id_data,
-              nofinesset: row.finess_nofinesset,
-              categetab: row.finess_categetab,
-              libcategetab: row.finess_libcategetab,
-              rs: row.finess_rs,
-              codepostal: row.finess_codepostal,
-              libcommune: row.finess_libcommune,
-              numvoie: row.finess_numvoie,
-              typevoie: row.finess_typevoie,
-              voie: row.finess_voie,
-            }
-          : null;
-      map.set(row.id_data, {
-        id_data: row.id_data,
-        type: row.type,
-        identifiant: row.identifiant,
-        autresMcType: row.autres_mc_type,
-        label: row.label,
-        adresse: row.adresse,
-        serviceConcerne: row.service_concerne,
-        publicConcerne: row.public_concerne,
-        groupIds: [],
-        rppsData,
-        finessData,
-        motifsIgas: motifsIgasByMc.get(row.id_data) ?? [],
-      });
-    }
-    if (row.id_group !== null) {
-      // biome-ignore lint/style/noNonNullAssertion: key was just set above
-      map.get(row.id_data)!.groupIds.push(row.id_group);
-    }
-  }
-  return [...map.values()];
+  return rows.map((row) => {
+    const rppsData: SirecRppsData | null =
+      row.rpps_id_data !== null
+        ? {
+            id_data: row.rpps_id_data,
+            rpps: row.rpps_rpps,
+            civilite: row.rpps_civilite,
+            nom: row.rpps_nom,
+            prenom: row.rpps_prenom,
+            code_postal: row.rpps_code_postal,
+            commune: row.rpps_commune,
+            libelle_prof: row.rpps_libelle_prof,
+          }
+        : null;
+    const finessData: SirecFinessData | null =
+      row.finess_id_data !== null
+        ? {
+            id_data: row.finess_id_data,
+            nofinesset: row.finess_nofinesset,
+            categetab: row.finess_categetab,
+            libcategetab: row.finess_libcategetab,
+            rs: row.finess_rs,
+            codepostal: row.finess_codepostal,
+            libcommune: row.finess_libcommune,
+            numvoie: row.finess_numvoie,
+            typevoie: row.finess_typevoie,
+            voie: row.finess_voie,
+          }
+        : null;
+    return {
+      id_data: row.id_data,
+      type: row.type,
+      identifiant: row.identifiant,
+      autresMcType: row.autres_mc_type,
+      label: row.label,
+      adresse: row.adresse,
+      serviceConcerne: row.service_concerne,
+      publicConcerne: row.public_concerne,
+      rppsData,
+      finessData,
+      motifsIgas: motifsIgasByMc.get(row.id_data) ?? [],
+    };
+  });
 }
 
 type MainCouranteRow = {
@@ -402,37 +414,23 @@ type MainCouranteRow = {
   commentaire: string | null;
   date_action: Date | null;
   sys_creation_date: Date;
-  id_group: number | null;
 };
 
 export async function fetchSirecMainCourantes(sirecId: number): Promise<SirecMainCourante[]> {
   const rows = await mariadbPool.query<MainCouranteRow[]>(
-    `SELECT mc.id_data, mc.type_action1, mc.commentaire, mc.date_action, mc.sys_creation_date, dg.id_group
+    `SELECT mc.id_data, mc.type_action1, mc.commentaire, mc.date_action, mc.sys_creation_date
      FROM sire_main_courante_data mc
-              LEFT JOIN sire_main_courante_data_group dg
-                        ON mc.id_data = dg.id_data AND dg.id_group != ${SIREC_NATIONAL_ENTITE_ID} and dg.id_group != 3
      WHERE mc.id_reclamation = ?`,
     [sirecId],
   );
 
-  const map = new Map<number, SirecMainCourante>();
-  for (const row of rows) {
-    if (!map.has(row.id_data)) {
-      map.set(row.id_data, {
-        id_data: row.id_data,
-        type_action1: row.type_action1,
-        commentaire: row.commentaire,
-        date_action: row.date_action,
-        sys_creation_date: row.sys_creation_date,
-        groupIds: [],
-      });
-    }
-    if (row.id_group !== null) {
-      // biome-ignore lint/style/noNonNullAssertion: key was just set above
-      map.get(row.id_data)!.groupIds.push(row.id_group);
-    }
-  }
-  return [...map.values()];
+  return rows.map((row) => ({
+    id_data: row.id_data,
+    type_action1: row.type_action1,
+    commentaire: row.commentaire,
+    date_action: row.date_action,
+    sys_creation_date: row.sys_creation_date,
+  }));
 }
 
 function parseInstitutionPartNumericIds(value: string | null): number[] {

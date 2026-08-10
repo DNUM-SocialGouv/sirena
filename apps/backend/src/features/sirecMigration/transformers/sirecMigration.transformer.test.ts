@@ -228,7 +228,7 @@ describe('sirecMigration.transformer.ts', () => {
   it('should map the first provenance id_provenance to provenanceId via transco', () => {
     const result = transformSirecReclamation({
       ...sirecData,
-      provenances: [{ id_provenance: 26, id_group: 693, date_signalement: null, reponse_attendue: null }],
+      provenances: [{ id_provenance: 26, date_signalement: null, reponse_attendue: null }],
     });
 
     expect(result.provenanceId).toBe('PREMIER_MINISTRE');
@@ -238,8 +238,8 @@ describe('sirecMigration.transformer.ts', () => {
     const result = transformSirecReclamation({
       ...sirecData,
       provenances: [
-        { id_provenance: 26, id_group: 693, date_signalement: null, reponse_attendue: null },
-        { id_provenance: 28, id_group: 693, date_signalement: null, reponse_attendue: null },
+        { id_provenance: 26, date_signalement: null, reponse_attendue: null },
+        { id_provenance: 28, date_signalement: null, reponse_attendue: null },
       ],
     });
 
@@ -256,7 +256,7 @@ describe('sirecMigration.transformer.ts', () => {
     expect(() =>
       transformSirecReclamation({
         ...sirecData,
-        provenances: [{ id_provenance: 9999, id_group: 693, date_signalement: null, reponse_attendue: null }],
+        provenances: [{ id_provenance: 9999, date_signalement: null, reponse_attendue: null }],
       }),
     ).toThrow(SirecTranscoError);
   });
@@ -265,7 +265,7 @@ describe('sirecMigration.transformer.ts', () => {
     expect(() =>
       transformSirecReclamation({
         ...sirecData,
-        provenances: [{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }],
+        provenances: [{ id_provenance: 103, date_signalement: null, reponse_attendue: null }],
       }),
     ).toThrow(SirecTranscoError);
   });
@@ -371,11 +371,10 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     it('should map a provenance to an etape with the institution name in nom', () => {
-      // service_gestionnaire: 693 → ARS Normandie (4af829ff-...)
-      // provenance id_group: 693 → same ARS Normandie
+      // service_gestionnaire: 693 → ARS Normandie (4af829ff-...), etapes are dispatched to arsEntiteIds
       const result = transformSirecReclamation({
         ...sirecData,
-        provenances: [{ id_provenance: 26, id_group: 693, date_signalement: null, reponse_attendue: null }],
+        provenances: [{ id_provenance: 26, date_signalement: null, reponse_attendue: null }],
       });
 
       expect(result.etapes[0].nom).toBe("Réception à l'institution de provenance : Premier Ministre");
