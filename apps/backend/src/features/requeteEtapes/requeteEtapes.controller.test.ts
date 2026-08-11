@@ -678,6 +678,7 @@ describe('requeteEtapes.controller.ts', () => {
       };
       editable: boolean;
       canOnlyEditNotes: boolean;
+      entiteAdministrative: { id: string; nomComplet: string; entiteTypeId: string };
     } = {
       ...requeteEtape,
       clotureReason: [],
@@ -686,6 +687,11 @@ describe('requeteEtapes.controller.ts', () => {
       requete: { createdById: null, dematSocialId: null, sirecId: null, thirdPartyAccountId: null, createdBy: null },
       editable: true,
       canOnlyEditNotes: false,
+      entiteAdministrative: {
+        id: 'entiteId',
+        nomComplet: 'ARS Normandie',
+        entiteTypeId: 'ARS',
+      },
       notes: [
         {
           ...note,
@@ -696,7 +702,11 @@ describe('requeteEtapes.controller.ts', () => {
     };
 
     it('should return processing steps for a requete', async () => {
-      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({ data: [requeteEtapeWithNotesAndFiles], total: 2 });
+      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({
+        data: [requeteEtapeWithNotesAndFiles],
+        total: 2,
+        isMultiEntite: true,
+      });
 
       const res = await client[':id']['processing-steps'].$get({
         param: { id: '1' },
@@ -706,7 +716,7 @@ describe('requeteEtapes.controller.ts', () => {
       const json = await res.json();
       expect(json).toEqual({
         data: convertDatesToStrings([requeteEtapeWithNotesAndFiles]),
-        meta: { total: 2 },
+        meta: { total: 2, isMultiEntite: true, etapePartageeEnabled: false },
       });
 
       expect(getRequeteEtapes).toHaveBeenCalledWith('1', 'e1', {}, false);
@@ -714,18 +724,22 @@ describe('requeteEtapes.controller.ts', () => {
 
     it('requests the shared chronology only when the targeted feature is enabled', async () => {
       vi.mocked(hasFeature).mockResolvedValueOnce(true);
-      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({ data: [], total: 0 });
+      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({ data: [], total: 0, isMultiEntite: true });
 
       const res = await client[':id']['processing-steps'].$get({ param: { id: '1' } });
 
       expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        data: [],
+        meta: { total: 0, isMultiEntite: true, etapePartageeEnabled: true },
+      });
       expect(hasFeature).toHaveBeenCalledWith('SHARED_PROCESSING_STEPS', false, 'agent@example.test', 'e1');
       expect(getUserById).not.toHaveBeenCalled();
       expect(getRequeteEtapes).toHaveBeenCalledWith('1', 'e1', {}, true);
     });
 
     it('should return 400 if topEntiteId is missing', async () => {
-      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({ data: [], total: 0 });
+      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({ data: [], total: 0, isMultiEntite: false });
 
       const res = await client[':id']['processing-steps'].$get({
         param: { id: 'nonexistent' },
@@ -733,7 +747,10 @@ describe('requeteEtapes.controller.ts', () => {
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json).toEqual({ data: [], meta: { total: 0 } });
+      expect(json).toEqual({
+        data: [],
+        meta: { total: 0, isMultiEntite: false, etapePartageeEnabled: false },
+      });
     });
   });
 

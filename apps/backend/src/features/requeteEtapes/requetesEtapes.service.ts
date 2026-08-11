@@ -505,7 +505,7 @@ export const getRequeteEtapes = async (
   estPartageeEnabled = false,
 ) => {
   if (!entiteId) {
-    return { data: [], total: 0 };
+    return { data: [], total: 0, isMultiEntite: false };
   }
 
   const { offset = 0, limit, sort = 'createdAt', order = 'desc' } = query;
@@ -517,7 +517,7 @@ export const getRequeteEtapes = async (
     ...(estPartageeEnabled ? { OR: [{ entiteId }, { estPartagee: true }] } : { entiteId }),
   };
 
-  const [raw, total] = await Promise.all([
+  const [raw, total, affectedEntiteCount] = await Promise.all([
     prisma.requeteEtape.findMany({
       where,
       skip: offset,
@@ -582,6 +582,17 @@ export const getRequeteEtapes = async (
         },
         requeteId: true,
         entiteId: true,
+        requeteEntite: {
+          select: {
+            entite: {
+              select: {
+                id: true,
+                nomComplet: true,
+                entiteTypeId: true,
+              },
+            },
+          },
+        },
         requete: {
           select: {
             createdById: true,
@@ -598,6 +609,12 @@ export const getRequeteEtapes = async (
     prisma.requeteEtape.count({
       where,
     }),
+    prisma.requeteEntite.count({
+      where: {
+        requeteId,
+        requete: { requeteEntites: { some: { entiteId } } },
+      },
+    }),
   ]);
 
   const sanitizeFile = <T extends { fileName: string; metadata: Prisma.JsonValue | null }>(file: T) => {
@@ -607,6 +624,7 @@ export const getRequeteEtapes = async (
 
   // closure / creation = not editable; a sent ACR (AR PDF attached) = statut/name/date locked, notes OK; else full.
   const data = raw.map((etape) => {
+    const { requeteEntite, ...step } = etape;
     const permissions = getEtapePermissions({
       type: etape.type,
       statutId: etape.statutId,
@@ -614,7 +632,8 @@ export const getRequeteEtapes = async (
     });
     const isOwner = etape.entiteId === entiteId;
     return {
-      ...etape,
+      ...step,
+      entiteAdministrative: requeteEntite.entite,
       editable: isOwner && permissions.editable,
       canOnlyEditNotes: isOwner && permissions.canOnlyEditNotes,
       uploadedFiles: etape.uploadedFiles.map(sanitizeFile),
@@ -624,6 +643,7 @@ export const getRequeteEtapes = async (
   return {
     data,
     total,
+    isMultiEntite: affectedEntiteCount > 1,
   };
 };
 

@@ -64,6 +64,11 @@ const RequeteEtapeNoteSchema = z.object({
 // Response schema for the list endpoint, which enriches each step with editability
 // flags and its notes/files (see getRequeteEtapes).
 export const RequeteEtapeWithDetailsSchema = RequeteEtapeSchema.extend({
+  entiteAdministrative: z.object({
+    id: z.string(),
+    nomComplet: z.string(),
+    entiteTypeId: z.string(),
+  }),
   editable: z.boolean(),
   canOnlyEditNotes: z.boolean(),
   uploadedFiles: z.array(EtapeUploadedFileSchema),

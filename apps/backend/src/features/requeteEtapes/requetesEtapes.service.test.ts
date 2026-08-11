@@ -34,6 +34,7 @@ vi.mock('../../libs/prisma.js', () => ({
       findUnique: vi.fn(),
     },
     requeteEntite: {
+      count: vi.fn(),
       findUnique: vi.fn(),
       upsert: vi.fn(),
     },
@@ -101,6 +102,9 @@ const uploadedFile: Pick<UploadedFile, 'id' | 'fileName' | 'size' | 'metadata' |
 const requeteEtapeWithNotesAndFiles: RequeteEtape & {
   notes: RequeteEtapeNote[];
   uploadedFiles: Pick<UploadedFile, 'id' | 'fileName' | 'size' | 'metadata' | 'filePath'>[];
+  requeteEntite: {
+    entite: { id: string; nomComplet: string; entiteTypeId: string };
+  };
 } = {
   ...requeteEtape,
   notes: [
@@ -114,11 +118,15 @@ const requeteEtapeWithNotesAndFiles: RequeteEtape & {
     },
   ],
   uploadedFiles: [uploadedFile],
+  requeteEntite: {
+    entite: { id: 'entiteId', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
+  },
 };
 
 describe('RequeteEtapes.service.ts', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(prisma.requeteEntite.count).mockResolvedValue(1);
   });
 
   describe('createDefaultRequeteEtapes()', () => {
@@ -572,6 +580,17 @@ describe('RequeteEtapes.service.ts', () => {
           },
           requeteId: true,
           entiteId: true,
+          requeteEntite: {
+            select: {
+              entite: {
+                select: {
+                  id: true,
+                  nomComplet: true,
+                  entiteTypeId: true,
+                },
+              },
+            },
+          },
         },
         skip: 0,
         take: 10,
@@ -673,6 +692,17 @@ describe('RequeteEtapes.service.ts', () => {
           },
           requeteId: true,
           entiteId: true,
+          requeteEntite: {
+            select: {
+              entite: {
+                select: {
+                  id: true,
+                  nomComplet: true,
+                  entiteTypeId: true,
+                },
+              },
+            },
+          },
         },
         skip: 0,
         orderBy: { createdAt: 'desc' },
@@ -682,6 +712,7 @@ describe('RequeteEtapes.service.ts', () => {
     it('should expose editability flags per step type', async () => {
       const closedEtape = {
         ...requeteEtape,
+        requeteEntite: requeteEtapeWithNotesAndFiles.requeteEntite,
         type: 'MANUAL',
         statutId: 'CLOTUREE',
         notes: [],
@@ -690,6 +721,7 @@ describe('RequeteEtapes.service.ts', () => {
       };
       const sentAckEtape = {
         ...requeteEtape,
+        requeteEntite: requeteEtapeWithNotesAndFiles.requeteEntite,
         id: 'ackEtapeId',
         type: 'ACKNOWLEDGMENT',
         statutId: 'FAIT',
@@ -700,6 +732,7 @@ describe('RequeteEtapes.service.ts', () => {
       };
       const handMarkedAckEtape = {
         ...requeteEtape,
+        requeteEntite: requeteEtapeWithNotesAndFiles.requeteEntite,
         id: 'handAckEtapeId',
         type: 'ACKNOWLEDGMENT',
         statutId: 'FAIT',
@@ -716,6 +749,41 @@ describe('RequeteEtapes.service.ts', () => {
       expect(result.data[0]).toMatchObject({ editable: false, canOnlyEditNotes: false });
       expect(result.data[1]).toMatchObject({ editable: true, canOnlyEditNotes: true });
       expect(result.data[2]).toMatchObject({ editable: true, canOnlyEditNotes: false });
+    });
+
+    it('exposes current multi-entity metadata and each owner Entité administrative identity', async () => {
+      const foreignSharedStep = {
+        ...requeteEtapeWithNotesAndFiles,
+        id: 'foreign-shared-step',
+        entiteId: 'foreign-entite',
+        estPartagee: true,
+        requeteEntite: {
+          entite: { id: 'foreign-entite', nomComplet: 'CD du Calvados', entiteTypeId: 'CD' },
+        },
+      };
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([foreignSharedStep]);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
+      vi.mocked(prisma.requeteEntite.count).mockResolvedValueOnce(2);
+
+      const result = await getRequeteEtapes('requeteId', 'reader-entite', {}, true);
+
+      expect(result.isMultiEntite).toBe(true);
+      expect(result.data[0]).toMatchObject({
+        id: 'foreign-shared-step',
+        entiteId: 'foreign-entite',
+        entiteAdministrative: {
+          id: 'foreign-entite',
+          nomComplet: 'CD du Calvados',
+          entiteTypeId: 'CD',
+        },
+      });
+      expect(result.data[0]).not.toHaveProperty('requeteEntite');
+      expect(prisma.requeteEntite.count).toHaveBeenCalledWith({
+        where: {
+          requeteId: 'requeteId',
+          requete: { requeteEntites: { some: { entiteId: 'reader-entite' } } },
+        },
+      });
     });
 
     it('returns owner steps and foreign Étapes partagées in one chronology, with the latter read-only', async () => {
