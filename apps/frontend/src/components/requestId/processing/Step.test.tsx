@@ -274,6 +274,8 @@ describe('Step', () => {
 
     expect(screen.getByRole('heading', { name: 'CD - Analyse du MSIP' })).toBeInTheDocument();
     expect(screen.getByText('CD', { selector: 'p' })).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByText('CD', { selector: 'p' })).toHaveAttribute('data-entity-relation', 'foreign');
+    expect(screen.getByText('CD', { selector: 'p' })).toHaveClass('color-yellow-moutarde');
     expect(screen.getByText(/Ajouté par Jeanne/)).toHaveTextContent(
       /Ajouté par Jeanne Moulon \(CD du Calvados\) le 19\/05\/2026/,
     );
@@ -286,6 +288,8 @@ describe('Step', () => {
     const { container } = render(<Step {...makeStep({ isMultiEntite: true })} />);
 
     expect(screen.getByRole('heading', { name: 'ARS - Analyse du MSIP' })).toBeInTheDocument();
+    expect(screen.getByText('ARS', { selector: 'p' })).toHaveAttribute('data-entity-relation', 'owner');
+    expect(screen.getByText('ARS', { selector: 'p' })).toHaveClass('color-pink-tuile');
     expect(screen.getByText(/Ajouté par Jeanne/)).toHaveTextContent(
       /Ajouté par Jeanne Moulon \(ARS Normandie\) le 19\/05\/2026/,
     );

@@ -12,6 +12,7 @@ import { Toast } from '@sirena/ui';
 
 import { clsx } from 'clsx';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
+import { EntiteTypeBadge } from '@/components/common/EntiteTypeBadge';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { useDeleteUploadedFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
@@ -330,9 +331,13 @@ const StepComponent = ({
           <div className="fr-grid-row fr-grid-row--middle">
             <div className="fr-col" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
               {isMultiEntite ? (
-                <p className={styles['timeline-entity-badge']} aria-hidden="true">
-                  {entiteAdministrative.entiteTypeId}
-                </p>
+                <EntiteTypeBadge
+                  entiteTypeId={entiteAdministrative.entiteTypeId}
+                  label={entiteAdministrative.entiteTypeId}
+                  relation={entityRelation}
+                  className="fr-mb-0"
+                  aria-hidden="true"
+                />
               ) : null}
               <h3 className="fr-h6 fr-mb-0">
                 {isMultiEntite ? (
