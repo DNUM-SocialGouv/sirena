@@ -61,8 +61,10 @@ describe('Step', () => {
     const closureStep: React.ComponentProps<typeof Step> = {
       requestId: 'REQ-354',
       isOwner: true,
+      isMultiEntite: false,
       requeteId: 'REQ-354',
       entiteId: 'ENTITE-1',
+      entiteAdministrative: { id: 'ENTITE-1', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
       id: 'step-1',
       nom: '',
       type: REQUETE_ETAPE_TYPES.MANUAL,
@@ -96,8 +98,10 @@ describe('Step', () => {
     const closureStep: React.ComponentProps<typeof Step> = {
       requestId: 'REQ-354',
       isOwner: true,
+      isMultiEntite: false,
       requeteId: 'REQ-354',
       entiteId: 'ENTITE-1',
+      entiteAdministrative: { id: 'ENTITE-1', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
       id: 'step-1',
       nom: '',
       type: REQUETE_ETAPE_TYPES.MANUAL,
@@ -132,8 +136,14 @@ describe('Step', () => {
     const foreignEtapePartagee: React.ComponentProps<typeof Step> = {
       requestId: 'REQ-354',
       isOwner: false,
+      isMultiEntite: true,
       requeteId: 'REQ-354',
       entiteId: 'FOREIGN-ENTITE',
+      entiteAdministrative: {
+        id: 'FOREIGN-ENTITE',
+        nomComplet: 'CD du Calvados',
+        entiteTypeId: 'CD',
+      },
       id: 'step-foreign',
       nom: '',
       type: REQUETE_ETAPE_TYPES.MANUAL,
@@ -178,7 +188,9 @@ describe('Step', () => {
 
     render(<Step {...foreignEtapePartagee} />);
 
-    expect(screen.getByText(/Requête clôturée le 18\/05\/2024/)).toBeInTheDocument();
+    expect(screen.getByText(/Requête clôturée le 18\/05\/2024 par Camille/)).toHaveTextContent(
+      /Requête clôturée le 18\/05\/2024 par Camille Dupont \(CD du Calvados\)/,
+    );
     expect(screen.getByText('Hors compétence')).toBeInTheDocument();
     expect(screen.getByText('Contrôles terminés sans anomalie.')).toBeInTheDocument();
     expect(screen.getByText('preuve.pdf')).toBeInTheDocument();
@@ -202,8 +214,10 @@ describe('Step', () => {
   const makeStep = (overrides: Partial<StepProps> = {}): StepProps => ({
     requestId: 'REQ-1',
     isOwner: true,
+    isMultiEntite: false,
     requeteId: 'REQ-1',
     entiteId: 'ENTITE-1',
+    entiteAdministrative: { id: 'ENTITE-1', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
     id: 'step-1',
     nom: 'Analyse du MSIP',
     type: REQUETE_ETAPE_TYPES.MANUAL,
@@ -238,22 +252,78 @@ describe('Step', () => {
     expect(screen.getByRole('button', { name: "Modifier l'étape" })).toBeInTheDocument();
   });
 
-  it('keeps a foreign Étape partagée visible but read-only', () => {
+  it('attributes a foreign Étape partagée without relying on color', () => {
     canEditRequest = true;
 
-    render(
+    const { container } = render(
       <Step
         {...makeStep({
           isOwner: false,
+          isMultiEntite: true,
           entiteId: 'FOREIGN-ENTITE',
+          entiteAdministrative: {
+            id: 'FOREIGN-ENTITE',
+            nomComplet: 'CD du Calvados',
+            entiteTypeId: 'CD',
+          },
           estPartagee: true,
           editable: false,
         })}
       />,
     );
 
-    expect(screen.getByRole('heading', { name: 'Analyse du MSIP' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'CD - Analyse du MSIP' })).toBeInTheDocument();
+    expect(screen.getByText('CD', { selector: 'p' })).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByText(/Ajouté par Jeanne/)).toHaveTextContent(
+      /Ajouté par Jeanne Moulon \(CD du Calvados\) le 19\/05\/2026/,
+    );
+    expect(container.querySelector('[data-entity-relation="foreign"]')).toBeInTheDocument();
+    expect(screen.getByTestId('timeline-dot')).toHaveAttribute('aria-hidden', 'true');
     expect(screen.queryByRole('button', { name: "Modifier l'étape" })).not.toBeInTheDocument();
+  });
+
+  it('uses the owner relationship treatment in multi-entity mode', () => {
+    const { container } = render(<Step {...makeStep({ isMultiEntite: true })} />);
+
+    expect(screen.getByRole('heading', { name: 'ARS - Analyse du MSIP' })).toBeInTheDocument();
+    expect(screen.getByText(/Ajouté par Jeanne/)).toHaveTextContent(
+      /Ajouté par Jeanne Moulon \(ARS Normandie\) le 19\/05\/2026/,
+    );
+    expect(container.querySelector('[data-entity-relation="owner"]')).toBeInTheDocument();
+  });
+
+  it('attributes an Étape d’Accusé de réception à envoyer to its owner Entité administrative', () => {
+    render(
+      <Step
+        {...makeStep({
+          type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+          statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
+          isMultiEntite: true,
+          isOwner: false,
+          entiteId: 'FOREIGN-ENTITE',
+          entiteAdministrative: {
+            id: 'FOREIGN-ENTITE',
+            nomComplet: 'CD Seine-Maritime',
+            entiteTypeId: 'CD',
+          },
+          createdBy: null,
+          dateRealisation: null,
+        })}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: "CD - Envoi de l'accusé de réception" })).toBeInTheDocument();
+    expect(screen.getByText(/Ajouté automatiquement \(CD Seine-Maritime\) le 19\/05\/2026/)).toBeInTheDocument();
+  });
+
+  it('keeps the historical title and subtitle in mono-entity mode', () => {
+    const { container } = render(<Step {...makeStep()} />);
+
+    expect(screen.getByRole('heading', { name: 'Analyse du MSIP' })).toBeInTheDocument();
+    expect(screen.queryByText('ARS', { selector: 'p' })).not.toBeInTheDocument();
+    expect(screen.getByText(/Ajouté par Jeanne/)).toHaveTextContent(/Ajouté par Jeanne Moulon le 19\/05\/2026/);
+    expect(screen.queryByText(/ARS Normandie/)).not.toBeInTheDocument();
+    expect(container.querySelector('[data-entity-relation]')).not.toBeInTheDocument();
   });
 
   it('renders a note block with the "Note rédigée le … par …" wording', () => {

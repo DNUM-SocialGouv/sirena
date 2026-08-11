@@ -58,10 +58,11 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
   const content = requestId ? (
     <>
       <div className={styles['timeline-container']}>
-        <div className={styles['timeline-line']} />
+        <div className={styles['timeline-line']} data-testid="timeline-line" aria-hidden="true" />
         <QueryStateHandler query={queryProcessingSteps}>
           {({ data }) => {
             const isManualRequest = !!requestQuery.data?.requete?.createdById;
+            const isMultiEntite = Boolean(data.meta.isMultiEntite && data.meta.etapePartageeEnabled);
 
             return data.data.map((step) => {
               const isAcknowledgmentSendable =
@@ -72,7 +73,8 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                 <Step
                   key={step.id}
                   requestId={requestId}
-                  isOwner={step.entiteId === requestQuery.data?.entiteId}
+                  isOwner={(step.entiteAdministrative?.id ?? step.entiteId) === requestQuery.data?.entiteId}
+                  isMultiEntite={isMultiEntite}
                   {...step}
                   isAcknowledgmentSendable={isAcknowledgmentSendable}
                   onSendAcknowledgment={

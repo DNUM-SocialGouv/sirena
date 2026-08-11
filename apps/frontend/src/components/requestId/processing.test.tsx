@@ -1,7 +1,9 @@
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Processing } from './processing';
+
+let processingMeta = { total: 1, isMultiEntite: true, etapePartageeEnabled: true };
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),
@@ -15,6 +17,11 @@ vi.mock('@/hooks/queries/processingSteps.hook', () => ({
           id: 'foreign-closure',
           requeteId: 'REQ-1',
           entiteId: 'OTHER-ENTITY',
+          entiteAdministrative: {
+            id: 'OTHER-ENTITY',
+            nomComplet: 'CD du Calvados',
+            entiteTypeId: 'CD',
+          },
           nom: 'Clôture étrangère',
           type: REQUETE_ETAPE_TYPES.MANUAL,
           estPartagee: true,
@@ -38,6 +45,7 @@ vi.mock('@/hooks/queries/processingSteps.hook', () => ({
           },
         },
       ],
+      meta: processingMeta,
     },
     error: null,
     isLoading: false,
@@ -67,7 +75,11 @@ vi.mock('@/components/common/EntiteTypeBadge', () => ({
 }));
 
 vi.mock('@/components/requestId/processing/Step', () => ({
-  Step: () => <div>Étape étrangère</div>,
+  Step: ({ isMultiEntite, isOwner }: { isMultiEntite: boolean; isOwner: boolean }) => (
+    <div data-testid="processing-step" data-multi-entite={isMultiEntite} data-owner={isOwner}>
+      Étape étrangère
+    </div>
+  ),
 }));
 
 vi.mock('./processing/StepFormPanel', () => ({ StepFormPanel: () => null }));
@@ -77,27 +89,37 @@ vi.mock('./processing/ReopenRequeteModal', () => ({ ReopenRequeteModal: () => nu
 vi.mock('./sections/OtherEntitesAffected', () => ({ OtherEntitiesAffected: () => null }));
 
 describe('Processing', () => {
+  beforeEach(() => {
+    processingMeta = { total: 1, isMultiEntite: true, etapePartageeEnabled: true };
+  });
+
+  const requestQuery = {
+    data: {
+      entiteId: 'CURRENT-ENTITY',
+      statutId: REQUETE_STATUT_TYPES.EN_COURS,
+      entite: { entiteTypeId: 'ARS', nomComplet: 'ARS courante' },
+      requete: { createdById: null },
+    },
+    error: null,
+  } as never;
+
   it("does not treat another entity's shared closure step as the current entity's closed status", () => {
-    render(
-      <Processing
-        requestId="REQ-1"
-        requestQuery={
-          {
-            data: {
-              entiteId: 'CURRENT-ENTITY',
-              statutId: REQUETE_STATUT_TYPES.EN_COURS,
-              entite: { entiteTypeId: 'ARS', nomComplet: 'ARS courante' },
-              requete: { createdById: null },
-            },
-            error: null,
-          } as never
-        }
-      />,
-    );
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
     expect(
       screen.getByText("Accès en lecture seule : l'édition n'est pas disponible avec vos autorisations actuelles."),
     ).toBeInTheDocument();
     expect(screen.queryByText(/cette requête est clôturée/)).not.toBeInTheDocument();
+    expect(screen.getByTestId('processing-step')).toHaveAttribute('data-multi-entite', 'true');
+    expect(screen.getByTestId('processing-step')).toHaveAttribute('data-owner', 'false');
+    expect(screen.getByTestId('timeline-line')).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('keeps the historical presentation when the rollout flag is disabled', () => {
+    processingMeta = { total: 1, isMultiEntite: true, etapePartageeEnabled: false };
+
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(screen.getByTestId('processing-step')).toHaveAttribute('data-multi-entite', 'false');
   });
 });

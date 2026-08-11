@@ -1,6 +1,8 @@
+import { FEATURE_FLAGS } from '@sirena/common/constants';
 import { useParams } from '@tanstack/react-router';
 import { EntiteTag } from '@/components/common/EntiteTag';
 import { useRequeteOtherEntitiesAffected } from '@/hooks/queries/useRequeteDetails';
+import { useHasFeature } from '@/hooks/useHasFeature';
 import styles from './OtherEntitesAffected.module.css';
 
 export const OtherEntitiesAffected = () => {
@@ -8,6 +10,7 @@ export const OtherEntitiesAffected = () => {
     from: '/_auth/_user/request/$requestId',
   });
   const { data: { otherEntites = [] } = {}, isLoading, error } = useRequeteOtherEntitiesAffected(requestId);
+  const etapesPartageesActivees = useHasFeature(FEATURE_FLAGS.SHARED_PROCESSING_STEPS, false);
   if (isLoading) {
     return <div>Chargement...</div>;
   }
@@ -24,7 +27,11 @@ export const OtherEntitiesAffected = () => {
       {hasOtherEntitiesAffected ? (
         <ul className={styles['other-entities-affected-container']}>
           {otherEntites.map((entity) => (
-            <li className={styles['other-entities-affected']} key={entity.id}>
+            <li
+              className={styles['other-entities-affected']}
+              key={entity.id}
+              data-entity-relation={etapesPartageesActivees ? 'foreign' : undefined}
+            >
               {!!entity && (
                 <EntiteTag label={entity.nomComplet} entiteTypeId={entity.entiteTypeId} statut={entity.statutId} />
               )}
