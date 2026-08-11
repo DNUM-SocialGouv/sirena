@@ -555,7 +555,8 @@ describe('requetesEntite.service', () => {
     });
 
     it('should expose hasRappel based on the filtered étape count', async () => {
-      mockedRequeteEntite.findMany.mockResolvedValueOnce([{ ...mockRequeteEntite, _count: { requeteEtape: 2 } }]);
+      const rowWithRappel = { ...mockRequeteEntite, _count: { requeteEtape: 2 } };
+      mockedRequeteEntite.findMany.mockResolvedValueOnce([rowWithRappel]);
       mockedRequeteEntite.count.mockResolvedValueOnce(1);
 
       const { data } = await getRequetesEntite(null, {});
