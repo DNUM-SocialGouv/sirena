@@ -2,7 +2,7 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { SearchBar, type SearchBarProps } from '@codegouvfr/react-dsfr/SearchBar';
 import type { RequetePrioriteType, RequeteStatutType } from '@sirena/common/constants';
-import { entiteTypes, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { entiteTypes, FEATURE_FLAGS, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { isCreatedOver90DaysAgo } from '@sirena/common/utils';
 import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@sirena/ui';
 import { useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
+import { useHasFeature } from '@/hooks/useHasFeature';
 import { useRequetesListSSE } from '@/hooks/useRequetesListSSE';
 import { useListStateStore } from '@/stores/listStateStore';
 import { RequetePrioriteTag, RequeteStatutTag } from '../RequeteStatutTag';
@@ -90,6 +91,7 @@ export function RequetesEntite() {
   const { data: profile } = useProfile();
   const userTopEntiteId = profile?.topEntiteId;
   const isTopEntiteARS = profile?.topEntiteTypeId === entiteTypes.ARS;
+  const isRappelEnabled = useHasFeature(FEATURE_FLAGS.ETAPE_RAPPEL, false);
 
   const handleUpdate = useCallback(() => {
     // Debounce multiple rapid SSE events to prevent excessive refreshes
@@ -133,6 +135,7 @@ export function RequetesEntite() {
     ...(queries.statutIds ? { statutIds: queries.statutIds } : {}),
     ...(queries.prioriteId ? { prioriteId: queries.prioriteId } : {}),
     ...(queries.over90Days ? { over90Days: queries.over90Days } : {}),
+    ...(isRappelEnabled && queries.rappel ? { rappel: queries.rappel } : {}),
     offset,
     limit,
   });
@@ -267,11 +270,28 @@ export function RequetesEntite() {
   ];
 
   const cells: Cells<RequeteEntiteRow> = {
-    'requete.id': (row) => (
-      <Link to="/request/$requestId" className="fr-link" params={{ requestId: row.requeteId }}>
-        Voir <span className="fr-sr-only">la requête</span> {row.requete.id}
-      </Link>
-    ),
+    'requete.id': (row) => {
+      const link = (
+        <Link to="/request/$requestId" className="fr-link" params={{ requestId: row.requeteId }}>
+          Voir <span className="fr-sr-only">la requête</span> {row.requete.id}
+        </Link>
+      );
+
+      if (!isRappelEnabled) return link;
+
+      return (
+        <div className="requetesEntitesTable__lien-cell">
+          <span className="requetesEntitesTable__lien-cell-link">{link}</span>
+          {row.hasRappel ? (
+            <Badge severity="warning" noIcon small className="requetesEntitesTable__rappel-badge">
+              <span className="fr-icon-notification-3-line fr-icon--sm" aria-hidden="true" />
+              <span className="fr-sr-only">Cette requête comporte un rappel</span>
+              <span aria-hidden="true">Rappel</span>
+            </Badge>
+          ) : null}
+        </div>
+      );
+    },
     'requete.receptionDate': (row) => {
       const createdAt = new Date(row.requete.createdAt);
       const isOpen = row.statutId === REQUETE_STATUT_TYPES.NOUVEAU || row.statutId === REQUETE_STATUT_TYPES.EN_COURS;

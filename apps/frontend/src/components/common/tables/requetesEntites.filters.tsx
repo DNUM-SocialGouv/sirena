@@ -1,6 +1,7 @@
 import {
   DOMAINES_FONCTIONNELS,
   entiteTypes,
+  FEATURE_FLAGS,
   REQUETE_PRIORITE_TYPES,
   REQUETE_STATUT_TYPES,
 } from '@sirena/common/constants';
@@ -14,6 +15,7 @@ import { useDepartementCounts } from '@/hooks/queries/departementCounts.hook';
 import { useDomaineCounts } from '@/hooks/queries/domaineCounts.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useStatutCounts } from '@/hooks/queries/statutCounts.hook';
+import { useHasFeature } from '@/hooks/useHasFeature';
 import { splitCsv } from '@/utils/filters';
 import { getRequetesQuickFiltersViewModel } from './requetesEntites.filters.model';
 
@@ -23,6 +25,7 @@ export function RequetesEntiteQuickFilters() {
   const { data: profile } = useProfile();
 
   const isTopEntiteARS = profile?.topEntiteTypeId === entiteTypes.ARS;
+  const isRappelEnabled = useHasFeature(FEATURE_FLAGS.ETAPE_RAPPEL, false);
   const quickFilters = useMemo(() => getRequetesQuickFiltersViewModel(profile ?? null, queries), [profile, queries]);
 
   const arsDepartements = useMemo(() => profile?.topEntiteDepartements ?? [], [profile?.topEntiteDepartements]);
@@ -115,6 +118,19 @@ export function RequetesEntiteQuickFilters() {
     [navigate],
   );
 
+  const handleRappelChange = useCallback(
+    (checked: boolean) => {
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          rappel: checked ? true : undefined,
+          offset: undefined,
+        }),
+      });
+    },
+    [navigate],
+  );
+
   const handleDepartementChange = useCallback(
     (codes: string[]) => {
       navigate({
@@ -184,6 +200,10 @@ export function RequetesEntiteQuickFilters() {
           checked={quickFilters.isOver90DaysOnly}
           onChange={handleOver90DaysChange}
         />
+
+        {isRappelEnabled && (
+          <CheckboxFilter label="Rappels" checked={quickFilters.isRappelOnly} onChange={handleRappelChange} />
+        )}
 
         {isTopEntiteARS && (
           <DepartementFilter

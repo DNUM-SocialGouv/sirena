@@ -52,3 +52,27 @@
   gap: 0.5rem;
   flex-wrap: wrap;
 }
+
+.requetesEntitesTable .fr-cell:has(.requetesEntitesTable__lien-cell) {
+  min-width: 16rem;
+}
+
+.requetesEntitesTable__lien-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.requetesEntitesTable__lien-cell-link {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.requetesEntitesTable__lien-cell-link .fr-link {
+  white-space: nowrap;
+}
+
+.requetesEntitesTable__rappel-badge {
+  gap: 0.25rem;
+  flex-shrink: 0;
+}

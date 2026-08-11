@@ -133,7 +133,9 @@ export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situation
   requeteEtape: RequeteEtape[];
   departementsLieuSurvenue: { code: string; lib: string }[];
   domainesFonctionnels: { id: string; label: string }[];
+  _count: { requeteEtape: number };
 } = {
+  _count: { requeteEtape: 0 },
   requeteId: 'req123',
   entiteId: 'ent123',
   statutId: 'EN_COURS',
@@ -284,11 +286,13 @@ describe('requetesEntite.service', () => {
             orderBy: { createdAt: 'desc' },
             take: 1,
           },
+          _count: { select: { requeteEtape: { where: { rappelType: { not: null } } } } },
         },
       });
 
       expect(mockedRequeteEntite.count).toHaveBeenCalled();
-      expect(result).toEqual({ data: [mockRequeteEntite], total: 1 });
+      const { _count, ...expectedRow } = mockRequeteEntite;
+      expect(result).toEqual({ data: [{ ...expectedRow, hasRappel: false }], total: 1 });
     });
 
     it('should respect offset, limit, sort and order', async () => {
@@ -389,6 +393,7 @@ describe('requetesEntite.service', () => {
             orderBy: { createdAt: 'desc' },
             take: 1,
           },
+          _count: { select: { requeteEtape: { where: { rappelType: { not: null } } } } },
         },
       });
 
@@ -494,6 +499,7 @@ describe('requetesEntite.service', () => {
             orderBy: { createdAt: 'desc' },
             take: 1,
           },
+          _count: { select: { requeteEtape: { where: { rappelType: { not: null } } } } },
         },
       });
 
@@ -531,6 +537,30 @@ describe('requetesEntite.service', () => {
           },
         }),
       );
+    });
+
+    it('should filter by requêtes with at least one étape having a rappel when provided', async () => {
+      mockedRequeteEntite.findMany.mockResolvedValueOnce([mockRequeteEntite]);
+      mockedRequeteEntite.count.mockResolvedValueOnce(1);
+
+      await getRequetesEntite(null, { rappel: 'true' });
+
+      expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            AND: [{ requeteEtape: { some: { rappelType: { not: null } } } }],
+          },
+        }),
+      );
+    });
+
+    it('should expose hasRappel based on the filtered étape count', async () => {
+      mockedRequeteEntite.findMany.mockResolvedValueOnce([{ ...mockRequeteEntite, _count: { requeteEtape: 2 } }]);
+      mockedRequeteEntite.count.mockResolvedValueOnce(1);
+
+      const { data } = await getRequetesEntite(null, {});
+
+      expect(data[0].hasRappel).toBe(true);
     });
   });
 
