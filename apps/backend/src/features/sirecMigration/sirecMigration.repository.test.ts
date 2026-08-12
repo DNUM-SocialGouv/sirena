@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mariadbPool } from '../../config/mariadb.js';
 import {
   fetchSirecData,
+  fetchSirecFiles,
   fetchSirecGroupIds,
   fetchSirecIdsByServiceIds,
   fetchSirecInstitutionPartenaires,
@@ -722,6 +723,61 @@ describe('sirecMigration.repository.ts', () => {
         expect.stringContaining('INNER JOIN sire_reclamation_data_group'),
         expect.any(Array),
       );
+    });
+  });
+
+  describe('fetchSirecFiles', () => {
+    it('should return the files rows when found', async () => {
+      const date = new Date('2024-02-10');
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([
+        {
+          id_data: 1,
+          sys_creation_date: date,
+          original_name: 'courrier.pdf',
+          generated_name: 'a1b2c3.pdf',
+          size: 12345,
+          hash: 'deadbeef',
+          ext: 'pdf',
+          content_type: 'application/pdf',
+          file_type: null,
+        },
+      ]);
+
+      const result = await fetchSirecFiles(42);
+
+      expect(result).toEqual([
+        {
+          id_data: 1,
+          sys_creation_date: date,
+          original_name: 'courrier.pdf',
+          generated_name: 'a1b2c3.pdf',
+          size: 12345,
+          hash: 'deadbeef',
+          ext: 'pdf',
+          content_type: 'application/pdf',
+          file_type: null,
+        },
+      ]);
+      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_reclamation_file_data'), [42]);
+    });
+
+    it('should filter on file_type NULL or hors_process/fiche_synthese in the query', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
+
+      await fetchSirecFiles(42);
+
+      expect(mariadbPool.query).toHaveBeenCalledWith(
+        expect.stringContaining("f.file_type IS NULL OR f.file_type IN ('hors_process', 'fiche_synthese')"),
+        [42],
+      );
+    });
+
+    it('should return an empty array when no files found', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
+
+      const result = await fetchSirecFiles(42);
+
+      expect(result).toEqual([]);
     });
   });
 });

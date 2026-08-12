@@ -1,6 +1,7 @@
 import { type Job, UnrecoverableError, Worker } from 'bullmq';
 import { ZodError } from 'zod';
 import { connection } from '../../config/redis.js';
+import { migrateSirecFiles } from '../../features/sirecMigration/sirecMigration.files.service.js';
 import { fetchSirecData } from '../../features/sirecMigration/sirecMigration.repository.js';
 import {
   deleteRequeteWithRelatedData,
@@ -21,7 +22,7 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
     transcoInitPromise = initAffectationTransco();
   }
   await transcoInitPromise;
-  const { sirecId, deleteIfExists } = job.data;
+  const { sirecId, deleteIfExists, migrateFiles } = job.data;
 
   return loggerStorage.run(
     createDefaultLogger().child({ context: 'sirec-migration-worker', sirecId, jobId: job.id }),
@@ -78,6 +79,10 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
       }
 
       logger.info({ requeteId: sirenaRequeteId, sirecId: data.sirecId }, 'SIREC record migrated successfully');
+
+      if (migrateFiles !== false) {
+        await migrateSirecFiles(sirecId, sirenaRequeteId);
+      }
     },
   );
 };
