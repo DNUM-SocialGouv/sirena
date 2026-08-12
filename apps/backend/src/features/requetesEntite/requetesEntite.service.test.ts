@@ -163,6 +163,8 @@ export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situation
       updatedAt: new Date(),
       entiteId: 'ent123',
       estPartagee: false,
+      acknowledgmentSendMode: null,
+      acknowledgmentSendOperationId: null,
       dateRealisation: null,
       nom: 'Etape 1',
       requeteId: 'req123',

@@ -6,6 +6,7 @@ import {
   FilesNotOwnedError,
   getRequeteEtapeUploadedFile,
   getUploadedFileById,
+  isUploadedFileAttachedToImmutableAcknowledgment,
   isUserOwner,
   setEtapeFile,
 } from './uploadedFiles.service.js';
@@ -194,6 +195,42 @@ describe('uploadedFiles.service.ts', () => {
 
       expect(mockedUploadedFile.delete).toHaveBeenCalledWith({ where: { id: 'file1' } });
       expect(result).toEqual(mockUploadedFile);
+    });
+  });
+
+  describe('isUploadedFileAttachedToImmutableAcknowledgment()', () => {
+    it('recognizes explicit and reliably identifiable historical automatic acknowledgments', async () => {
+      mockedUploadedFile.findFirst.mockResolvedValueOnce({ id: 'file1' } as never);
+
+      await expect(isUploadedFileAttachedToImmutableAcknowledgment('file1')).resolves.toBe(true);
+      expect(mockedUploadedFile.findFirst).toHaveBeenCalledWith({
+        where: {
+          id: 'file1',
+          requeteEtape: {
+            is: {
+              type: 'ACKNOWLEDGMENT',
+              statutId: 'FAIT',
+              OR: [
+                { acknowledgmentSendMode: 'AUTOMATIC' },
+                {
+                  acknowledgmentSendMode: null,
+                  uploadedFiles: { some: { canDelete: false, uploadedById: null } },
+                  requete: {
+                    is: {
+                      OR: [
+                        { dematSocialId: { not: null } },
+                        { sirecId: { not: null } },
+                        { thirdPartyAccountId: { not: null } },
+                      ],
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+        select: { id: true },
+      });
     });
   });
 

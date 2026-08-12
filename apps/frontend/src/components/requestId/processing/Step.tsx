@@ -2,6 +2,7 @@ import { fr } from '@codegouvfr/react-dsfr';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import {
+  ACKNOWLEDGMENT_SEND_MODES,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_ETAPE_TYPES,
   ROLES,
@@ -71,6 +72,7 @@ type StepSubtitleArgs = {
   notes: StepType['notes'];
   requete: StepType['requete'];
   uploadedFiles: StepType['uploadedFiles'];
+  acknowledgmentSendMode?: StepType['acknowledgmentSendMode'];
   clotureEffectiveDate?: string | null;
   dateRealisation?: string | Date | null;
   nomEntiteAdministrative?: string;
@@ -85,6 +87,7 @@ const getStepSubtitle = ({
   notes,
   requete,
   uploadedFiles,
+  acknowledgmentSendMode,
   clotureEffectiveDate,
   dateRealisation,
   nomEntiteAdministrative,
@@ -129,8 +132,10 @@ const getStepSubtitle = ({
   }
   if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
     if (statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT) {
-      // The AR PDF is attached to the step and kept non-deletable (canDelete:false).
       const arFile = uploadedFiles.find((file) => !file.canDelete);
+      if (acknowledgmentSendMode === ACKNOWLEDGMENT_SEND_MODES.AUTOMATIC) {
+        return `Envoyé automatiquement${suffixeEntiteAdministrative} le ${formatDate(dateRealisation ?? updatedAt)}`;
+      }
       if (arFile?.uploadedBy) {
         return (
           <>
@@ -138,6 +143,9 @@ const getStepSubtitle = ({
             {suffixeEntiteAdministrative}
           </>
         );
+      }
+      if (acknowledgmentSendMode === ACKNOWLEDGMENT_SEND_MODES.MANUAL) {
+        return `Envoyé${suffixeEntiteAdministrative} le ${formatDate(dateRealisation ?? updatedAt)}`;
       }
       if (arFile) {
         return `Envoyé automatiquement${suffixeEntiteAdministrative} le ${formatDate(arFile.createdAt)}`;
@@ -366,6 +374,7 @@ const StepComponent = ({
                   notes,
                   requete,
                   uploadedFiles: step.uploadedFiles,
+                  acknowledgmentSendMode: step.acknowledgmentSendMode,
                   clotureEffectiveDate,
                   dateRealisation: step.dateRealisation,
                   nomEntiteAdministrative,

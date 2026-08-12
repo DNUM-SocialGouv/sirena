@@ -1,5 +1,6 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
 import {
+  ACKNOWLEDGMENT_SEND_MODES,
   RAPPEL_DATE_REQUIRED_MESSAGE,
   REQUETE_ETAPE_RAPPEL_TYPES,
   REQUETE_ETAPE_STATUT_TYPES,
@@ -18,6 +19,8 @@ export const RequeteEtapeSchema = z.object({
     REQUETE_ETAPE_TYPES.MANUAL,
   ]),
   estPartagee: z.boolean(),
+  acknowledgmentSendMode: z.enum(ACKNOWLEDGMENT_SEND_MODES).nullable(),
+  acknowledgmentSendOperationId: z.uuid().nullable(),
   statutId: z.string().nullable(),
   dateRealisation: z.coerce.date().nullable(),
   rappelType: z

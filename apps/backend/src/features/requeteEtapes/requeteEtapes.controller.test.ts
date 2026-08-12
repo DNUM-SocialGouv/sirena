@@ -153,6 +153,8 @@ const fakeRequeteEtape: RequeteEtape = {
   createdAt: new Date(),
   updatedAt: new Date(),
   estPartagee: false,
+  acknowledgmentSendMode: null,
+  acknowledgmentSendOperationId: null,
   dateRealisation: null,
   createdById: null,
   clotureEffectiveDate: null,
@@ -214,6 +216,24 @@ describe('requeteEtapes.controller.ts', () => {
       });
 
       expect(res.status).toBe(404);
+      expect(addClotureEtapeFiles).not.toHaveBeenCalled();
+    });
+
+    it('forbids attaching files to an automatically sent acknowledgment owned by the current perimeter', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'FAIT',
+        acknowledgmentSendMode: 'AUTOMATIC',
+        acknowledgmentSendOperationId: '11111111-1111-4111-8111-111111111111',
+      });
+
+      const res = await client[':id']['cloture-files'].$post({
+        param: { id: 'step1' },
+        json: { fileIds: ['file1'] },
+      });
+
+      expect(res.status).toBe(403);
       expect(addClotureEtapeFiles).not.toHaveBeenCalled();
     });
 
@@ -596,6 +616,22 @@ describe('requeteEtapes.controller.ts', () => {
       expect(deleteRequeteEtape).not.toHaveBeenCalled();
     });
 
+    it('forbids deleting an automatically sent acknowledgment owned by the current perimeter', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'FAIT',
+        acknowledgmentSendMode: 'AUTOMATIC',
+        acknowledgmentSendOperationId: '11111111-1111-4111-8111-111111111111',
+      });
+
+      const res = await client[':id'].$delete({ param: { id: 'step1' } });
+
+      expect(res.status).toBe(403);
+      expect(deleteRequeteEtape).not.toHaveBeenCalled();
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+    });
+
     it('forbids deleting a foreign Étape partagée', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
@@ -633,6 +669,8 @@ describe('requeteEtapes.controller.ts', () => {
       nom: 'Etape 1',
       type: 'MANUAL',
       estPartagee: false,
+      acknowledgmentSendMode: null,
+      acknowledgmentSendOperationId: null,
       dateRealisation: null,
       statutId: 'A_FAIRE',
       createdAt: new Date(),
@@ -768,6 +806,8 @@ describe('requeteEtapes.controller.ts', () => {
         updatedAt: new Date(0),
         entiteId: 'e1',
         estPartagee: false,
+        acknowledgmentSendMode: null,
+        acknowledgmentSendOperationId: null,
         dateRealisation: null,
         createdById: null,
         clotureEffectiveDate: null,
@@ -1022,6 +1062,25 @@ describe('requeteEtapes.controller.ts', () => {
         { ...validBody, estPartagee: false },
         expect.anything(),
       );
+    });
+
+    it('forbids changing notes and files on an automatically sent acknowledgment owned by the current perimeter', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'FAIT',
+        acknowledgmentSendMode: 'AUTOMATIC',
+        acknowledgmentSendOperationId: '11111111-1111-4111-8111-111111111111',
+      });
+
+      const res = await client[':id'].$patch({
+        param: { id: 'step1' },
+        json: { ...validBody, notes: [{ texte: 'Forbidden note' }], fileIds: ['forbidden-file'] },
+      });
+
+      expect(res.status).toBe(403);
+      expect(updateProcessingEtape).not.toHaveBeenCalled();
+      expect(updateStatusRequete).not.toHaveBeenCalled();
     });
 
     it('denies updates rejected by the common authorization policy', async () => {

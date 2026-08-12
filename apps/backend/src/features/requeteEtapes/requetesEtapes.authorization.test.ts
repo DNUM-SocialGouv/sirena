@@ -48,10 +48,28 @@ describe('requeteEtapeAuthorization', () => {
   ])(
     'allows $relationship according to ownership and sharing',
     ({ viewerEntiteId, estPartagee, estPartageeEnabled, canRead, canWrite }) => {
-      const step = { entiteId: ownerEntiteId, estPartagee };
+      const step = {
+        entiteId: ownerEntiteId,
+        estPartagee,
+        type: 'MANUAL',
+        statutId: 'A_FAIRE',
+        acknowledgmentSendMode: null,
+      };
 
       expect(requeteEtapeAuthorization.canRead(viewerEntiteId, step, estPartageeEnabled)).toBe(canRead);
       expect(requeteEtapeAuthorization.canWrite(viewerEntiteId, step)).toBe(canWrite);
     },
   );
+
+  it('rejects writes to an automatically sent acknowledgment owned by the viewer perimeter', () => {
+    expect(
+      requeteEtapeAuthorization.canWrite(ownerEntiteId, {
+        entiteId: ownerEntiteId,
+        estPartagee: true,
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'FAIT',
+        acknowledgmentSendMode: 'AUTOMATIC',
+      }),
+    ).toBe(false);
+  });
 });

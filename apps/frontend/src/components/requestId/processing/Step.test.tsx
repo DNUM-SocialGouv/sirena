@@ -68,6 +68,8 @@ describe('Step', () => {
       id: 'step-1',
       nom: '',
       type: REQUETE_ETAPE_TYPES.MANUAL,
+      acknowledgmentSendMode: null,
+      acknowledgmentSendOperationId: null,
       statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
       dateRealisation: null,
       createdAt: '2024-05-20T12:00:00.000Z',
@@ -105,6 +107,8 @@ describe('Step', () => {
       id: 'step-1',
       nom: '',
       type: REQUETE_ETAPE_TYPES.MANUAL,
+      acknowledgmentSendMode: null,
+      acknowledgmentSendOperationId: null,
       statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
       createdAt: '2024-05-20T12:00:00.000Z',
       updatedAt: '2024-05-20T12:00:00.000Z',
@@ -147,6 +151,8 @@ describe('Step', () => {
       id: 'step-foreign',
       nom: '',
       type: REQUETE_ETAPE_TYPES.MANUAL,
+      acknowledgmentSendMode: null,
+      acknowledgmentSendOperationId: null,
       statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
       createdAt: '2024-05-20T12:00:00.000Z',
       updatedAt: '2024-05-20T12:00:00.000Z',
@@ -221,6 +227,8 @@ describe('Step', () => {
     id: 'step-1',
     nom: 'Analyse du MSIP',
     type: REQUETE_ETAPE_TYPES.MANUAL,
+    acknowledgmentSendMode: null,
+    acknowledgmentSendOperationId: null,
     statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
     createdAt: '2026-05-19T10:00:00.000Z',
     updatedAt: '2026-05-19T10:00:00.000Z',
@@ -250,6 +258,35 @@ describe('Step', () => {
     );
 
     expect(screen.getByRole('button', { name: "Modifier l'étape" })).toBeInTheDocument();
+  });
+
+  it('hides every mutation action on an automatically sent acknowledgment', () => {
+    canEditRequest = true;
+
+    render(
+      <Step
+        {...makeStep({
+          type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+          acknowledgmentSendMode: 'AUTOMATIC',
+          acknowledgmentSendOperationId: '11111111-1111-4111-8111-111111111111',
+          editable: false,
+          notes: [
+            {
+              id: 'system-note',
+              texte: 'Information envoyée',
+              createdAt: '2026-05-19T10:00:00.000Z',
+              author: null,
+            },
+          ],
+          uploadedFiles: [makeFile({ canDelete: false, uploadedBy: null })],
+        })}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: "Modifier l'étape" })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Envoyer' })).not.toBeInTheDocument();
+    expect(screen.getByText('Information envoyée')).toBeInTheDocument();
+    expect(screen.getByText('doc.pdf')).toBeInTheDocument();
   });
 
   it('attributes a foreign Étape partagée without relying on color', () => {

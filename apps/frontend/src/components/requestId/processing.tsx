@@ -68,7 +68,8 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
               const isAcknowledgmentSendable =
                 isManualRequest &&
                 step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT &&
-                step.statutId === REQUETE_ETAPE_STATUT_TYPES.A_FAIRE;
+                step.statutId === REQUETE_ETAPE_STATUT_TYPES.A_FAIRE &&
+                step.editable;
               return (
                 <Step
                   key={step.id}

@@ -1,4 +1,9 @@
-import { RECEPTION_TYPE, REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
+import {
+  ACKNOWLEDGMENT_SEND_MODES,
+  RECEPTION_TYPE,
+  REQUETE_ETAPE_STATUT_TYPES,
+  REQUETE_ETAPE_TYPES,
+} from '@sirena/common/constants';
 import { envVars } from '../../config/env.js';
 import { ACKNOWLEDGMENT_EMAIL_SUBJECT } from '../../config/tipimail.constant.js';
 import { pick } from '../../helpers/object.js';
@@ -310,6 +315,8 @@ export async function sendManualAcknowledgmentEmail({
       statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
       dateRealisation: markedDoneAt,
       estPartagee: false,
+      acknowledgmentSendMode: ACKNOWLEDGMENT_SEND_MODES.MANUAL,
+      acknowledgmentSendOperationId: null,
     },
   });
 
@@ -381,11 +388,15 @@ export async function sendManualAcknowledgmentEmail({
           statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
           dateRealisation: null,
           estPartagee: false,
+          acknowledgmentSendMode: null,
+          acknowledgmentSendOperationId: null,
         },
         after: {
           statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
           dateRealisation: markedDoneAt.toISOString(),
           estPartagee: true,
+          acknowledgmentSendMode: ACKNOWLEDGMENT_SEND_MODES.MANUAL,
+          acknowledgmentSendOperationId: null,
         },
         changedById: userId,
       });
@@ -458,6 +469,8 @@ export async function sendManualAcknowledgmentEmail({
           statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
           dateRealisation: null,
           estPartagee: false,
+          acknowledgmentSendMode: null,
+          acknowledgmentSendOperationId: null,
         },
       });
     } catch (rollbackError) {

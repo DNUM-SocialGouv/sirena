@@ -1,3 +1,4 @@
+import { ACKNOWLEDGMENT_SEND_MODES, REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
 import { pick } from '../../helpers/object.js';
 import { sseEventManager } from '../../helpers/sse.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
@@ -41,6 +42,39 @@ export const getRequeteEtapeUploadedFile = async (
 
 export const deleteUploadedFile = async (id: UploadedFile['id']): Promise<UploadedFileDeleteResult> => {
   return prisma.uploadedFile.delete({ where: { id } });
+};
+
+export const isUploadedFileAttachedToImmutableAcknowledgment = async (id: UploadedFile['id']): Promise<boolean> => {
+  const file = await prisma.uploadedFile.findFirst({
+    where: {
+      id,
+      requeteEtape: {
+        is: {
+          type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          OR: [
+            { acknowledgmentSendMode: ACKNOWLEDGMENT_SEND_MODES.AUTOMATIC },
+            {
+              acknowledgmentSendMode: null,
+              uploadedFiles: { some: { canDelete: false, uploadedById: null } },
+              requete: {
+                is: {
+                  OR: [
+                    { dematSocialId: { not: null } },
+                    { sirecId: { not: null } },
+                    { thirdPartyAccountId: { not: null } },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      },
+    },
+    select: { id: true },
+  });
+
+  return file !== null;
 };
 
 export const createUploadedFile = async (
