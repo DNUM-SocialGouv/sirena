@@ -55,6 +55,7 @@ export function RouteComponent() {
   const [mode, setMode] = useState<Mode>('reclamations');
   const [raw, setRaw] = useState('');
   const [deleteIfExists, setDeleteIfExists] = useState(false);
+  const [migrateFiles, setMigrateFiles] = useState(true);
   const [result, setResult] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [systemError, setSystemError] = useState<string | null>(null);
@@ -64,6 +65,7 @@ export function RouteComponent() {
     setMode(newMode);
     setRaw('');
     setDeleteIfExists(false);
+    setMigrateFiles(true);
     setResult(null);
     setFieldError(null);
     setSystemError(null);
@@ -88,10 +90,10 @@ export function RouteComponent() {
       setLoading(true);
       try {
         if (mode === 'reclamations') {
-          const { queued } = await migrateByReclamations(ids, deleteIfExists);
+          const { queued } = await migrateByReclamations(ids, deleteIfExists, migrateFiles);
           setResult(`${queued} réclamation${queued > 1 ? 's' : ''} ajoutée${queued > 1 ? 's' : ''} à la queue.`);
         } else {
-          const { queued, found } = await migrateByServices(ids, deleteIfExists);
+          const { queued, found } = await migrateByServices(ids, deleteIfExists, migrateFiles);
           setResult(
             `${found} réclamation${found > 1 ? 's' : ''} trouvée${found > 1 ? 's' : ''}, ${queued} ajoutée${queued > 1 ? 's' : ''} à la queue.`,
           );
@@ -114,7 +116,7 @@ export function RouteComponent() {
         setLoading(false);
       }
     },
-    [raw, mode, deleteIfExists],
+    [raw, mode, deleteIfExists, migrateFiles],
   );
 
   const isReclamations = mode === 'reclamations';
@@ -190,6 +192,13 @@ export function RouteComponent() {
                       onChange: (e) => setDeleteIfExists(e.target.checked),
                     },
                   },
+                  {
+                    label: 'Migrer les pièces jointes',
+                    nativeInputProps: {
+                      checked: migrateFiles,
+                      onChange: (e) => setMigrateFiles(e.target.checked),
+                    },
+                  },
                 ]}
               />
               <Button type="submit" disabled={loading}>
@@ -227,6 +236,13 @@ export function RouteComponent() {
                     nativeInputProps: {
                       checked: deleteIfExists,
                       onChange: (e) => setDeleteIfExists(e.target.checked),
+                    },
+                  },
+                  {
+                    label: 'Migrer les pièces jointes',
+                    nativeInputProps: {
+                      checked: migrateFiles,
+                      onChange: (e) => setMigrateFiles(e.target.checked),
                     },
                   },
                 ]}

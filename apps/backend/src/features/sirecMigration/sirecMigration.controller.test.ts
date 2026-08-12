@@ -68,7 +68,7 @@ describe('SirecMigration controller', () => {
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body).toEqual({ queued: 3 });
-      expect(addSirecIdsToQueueSpy).toHaveBeenCalledWith([1, 2, 3], undefined);
+      expect(addSirecIdsToQueueSpy).toHaveBeenCalledWith([1, 2, 3], undefined, undefined);
     });
 
     it('should forward deleteIfExists to the queue when provided', async () => {
@@ -76,7 +76,15 @@ describe('SirecMigration controller', () => {
       addSirecIdsToQueueSpy.mockResolvedValue(3);
       const res = await client['by-reclamations'].$post({ json: { sirecIds: [1, 2, 3], deleteIfExists: true } });
       expect(res.status).toBe(200);
-      expect(addSirecIdsToQueueSpy).toHaveBeenCalledWith([1, 2, 3], true);
+      expect(addSirecIdsToQueueSpy).toHaveBeenCalledWith([1, 2, 3], true, undefined);
+    });
+
+    it('should forward migrateFiles to the queue when provided', async () => {
+      fetchExistingSirecIdsSpy.mockResolvedValue([1, 2, 3]);
+      addSirecIdsToQueueSpy.mockResolvedValue(3);
+      const res = await client['by-reclamations'].$post({ json: { sirecIds: [1, 2, 3], migrateFiles: false } });
+      expect(res.status).toBe(200);
+      expect(addSirecIdsToQueueSpy).toHaveBeenCalledWith([1, 2, 3], undefined, false);
     });
 
     it('should return 422 with unknown ids when some do not exist in SIREC', async () => {
@@ -119,7 +127,7 @@ describe('SirecMigration controller', () => {
       const body = await res.json();
       expect(body).toEqual({ queued: 3, found: 3 });
       expect(fetchSirecIdsByServiceIdsSpy).toHaveBeenCalledWith([10, 20]);
-      expect(addSirecIdsToQueueSpy).toHaveBeenCalledWith([100, 101, 102], undefined);
+      expect(addSirecIdsToQueueSpy).toHaveBeenCalledWith([100, 101, 102], undefined, undefined);
     });
 
     it('should forward deleteIfExists to the queue when provided', async () => {
@@ -127,7 +135,15 @@ describe('SirecMigration controller', () => {
       addSirecIdsToQueueSpy.mockResolvedValue(1);
       const res = await client['by-services'].$post({ json: { serviceIds: [10], deleteIfExists: true } });
       expect(res.status).toBe(200);
-      expect(addSirecIdsToQueueSpy).toHaveBeenCalledWith([100], true);
+      expect(addSirecIdsToQueueSpy).toHaveBeenCalledWith([100], true, undefined);
+    });
+
+    it('should forward migrateFiles to the queue when provided', async () => {
+      fetchSirecIdsByServiceIdsSpy.mockResolvedValue([100]);
+      addSirecIdsToQueueSpy.mockResolvedValue(1);
+      const res = await client['by-services'].$post({ json: { serviceIds: [10], migrateFiles: false } });
+      expect(res.status).toBe(200);
+      expect(addSirecIdsToQueueSpy).toHaveBeenCalledWith([100], undefined, false);
     });
 
     it('should return 400 with invalid body (empty array)', async () => {

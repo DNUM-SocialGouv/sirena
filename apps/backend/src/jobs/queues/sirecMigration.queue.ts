@@ -6,6 +6,7 @@ export const SIREC_MIGRATION_QUEUE_NAME = 'sirec-ids-to-migrate';
 export interface SirecMigrationJobData {
   sirecId: number;
   deleteIfExists?: boolean;
+  migrateFiles?: boolean;
 }
 
 export const sirecMigrationQueue = new Queue<SirecMigrationJobData>(SIREC_MIGRATION_QUEUE_NAME, {
@@ -21,9 +22,13 @@ export const sirecMigrationQueue = new Queue<SirecMigrationJobData>(SIREC_MIGRAT
   },
 });
 
-export async function addSirecIdsToQueue(sirecIds: number[], deleteIfExists = false): Promise<number> {
+export async function addSirecIdsToQueue(
+  sirecIds: number[],
+  deleteIfExists = false,
+  migrateFiles = true,
+): Promise<number> {
   if (sirecIds.length === 0) return 0;
-  const jobs = sirecIds.map((sirecId) => ({ name: 'migrate', data: { sirecId, deleteIfExists } }));
+  const jobs = sirecIds.map((sirecId) => ({ name: 'migrate', data: { sirecId, deleteIfExists, migrateFiles } }));
   await sirecMigrationQueue.addBulk(jobs);
   return jobs.length;
 }

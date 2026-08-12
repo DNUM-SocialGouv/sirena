@@ -1,8 +1,14 @@
 import { client } from '@/lib/api/hc';
 import { HttpError, handleRequestErrors } from '@/lib/api/tanstackQuery';
 
-export async function migrateByReclamations(sirecIds: number[], deleteIfExists?: boolean): Promise<{ queued: number }> {
-  const res = await client['sirec-migration']['by-reclamations'].$post({ json: { sirecIds, deleteIfExists } });
+export async function migrateByReclamations(
+  sirecIds: number[],
+  deleteIfExists?: boolean,
+  migrateFiles?: boolean,
+): Promise<{ queued: number }> {
+  const res = await client['sirec-migration']['by-reclamations'].$post({
+    json: { sirecIds, deleteIfExists, migrateFiles },
+  });
   await handleRequestErrors(res, { silentToastError: true });
   if (!res.ok) {
     throw new HttpError(`HTTP ${res.status}`, res.status);
@@ -13,8 +19,11 @@ export async function migrateByReclamations(sirecIds: number[], deleteIfExists?:
 export async function migrateByServices(
   serviceIds: number[],
   deleteIfExists?: boolean,
+  migrateFiles?: boolean,
 ): Promise<{ queued: number; found: number }> {
-  const res = await client['sirec-migration']['by-services'].$post({ json: { serviceIds, deleteIfExists } });
+  const res = await client['sirec-migration']['by-services'].$post({
+    json: { serviceIds, deleteIfExists, migrateFiles },
+  });
   await handleRequestErrors(res);
   return res.json();
 }

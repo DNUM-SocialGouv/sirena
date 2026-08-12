@@ -11,11 +11,13 @@ import { fetchExistingSirecIds, fetchSirecIdsByServiceIds } from './sirecMigrati
 const byReclamationsSchema = z.object({
   sirecIds: z.array(z.number().int().positive()).min(1),
   deleteIfExists: z.boolean().optional(),
+  migrateFiles: z.boolean().optional(),
 });
 
 const byServicesSchema = z.object({
   serviceIds: z.array(z.number().int().positive()).min(1),
   deleteIfExists: z.boolean().optional(),
+  migrateFiles: z.boolean().optional(),
 });
 
 const app = factoryWithLogs
@@ -25,7 +27,7 @@ const app = factoryWithLogs
   .use(roleMiddleware([ROLES.SUPER_ADMIN]))
 
   .post('/by-reclamations', zValidator('json', byReclamationsSchema), async (c) => {
-    const { sirecIds, deleteIfExists } = c.req.valid('json');
+    const { sirecIds, deleteIfExists, migrateFiles } = c.req.valid('json');
 
     const existingIds = await fetchExistingSirecIds(sirecIds);
     const unknownIds = sirecIds.filter((id) => !existingIds.includes(id));
@@ -33,14 +35,14 @@ const app = factoryWithLogs
       return c.json({ unknownIds }, 422);
     }
 
-    const queued = await addSirecIdsToQueue(sirecIds, deleteIfExists);
+    const queued = await addSirecIdsToQueue(sirecIds, deleteIfExists, migrateFiles);
     return c.json({ queued });
   })
 
   .post('/by-services', zValidator('json', byServicesSchema), async (c) => {
-    const { serviceIds, deleteIfExists } = c.req.valid('json');
+    const { serviceIds, deleteIfExists, migrateFiles } = c.req.valid('json');
     const ids = await fetchSirecIdsByServiceIds(serviceIds);
-    const queued = await addSirecIdsToQueue(ids, deleteIfExists);
+    const queued = await addSirecIdsToQueue(ids, deleteIfExists, migrateFiles);
     return c.json({ queued, found: ids.length });
   });
 
