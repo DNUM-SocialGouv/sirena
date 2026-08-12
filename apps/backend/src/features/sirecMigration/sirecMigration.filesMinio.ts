@@ -32,7 +32,11 @@ const SIREC_FILES_PREFIX = 'files';
 export const buildSirecFileObjectPath = (sirecId: number, generatedName: string): string =>
   `${SIREC_FILES_PREFIX}/${sirecId}/${generatedName}`;
 
-export const getSirecFileStream = async (sirecId: number, generatedName: string): Promise<Readable> => {
+export const getSirecFileStream = async (
+  sirecId: number,
+  generatedName: string,
+  mockFilePath?: string,
+): Promise<Readable> => {
   if (!sirecFilesMinioClient) {
     throw new Error('SIREC migration MinIO client not initialized, check your S3_MIGRATION_BUCKET_* env vars');
   }
@@ -40,6 +44,8 @@ export const getSirecFileStream = async (sirecId: number, generatedName: string)
     throw new Error('S3_MIGRATION_BUCKET_NAME is not set');
   }
 
-  const objectPath = buildSirecFileObjectPath(sirecId, generatedName);
+  // mockFilePath permet, en environnement de test, de forcer toutes les pièces
+  // jointes migrées à pointer vers un seul fichier existant dans le bucket source.
+  const objectPath = mockFilePath || buildSirecFileObjectPath(sirecId, generatedName);
   return sirecFilesMinioClient.getObject(S3_MIGRATION_BUCKET_NAME, objectPath);
 };

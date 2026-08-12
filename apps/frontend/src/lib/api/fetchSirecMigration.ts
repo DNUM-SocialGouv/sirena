@@ -5,9 +5,10 @@ export async function migrateByReclamations(
   sirecIds: number[],
   deleteIfExists?: boolean,
   migrateFiles?: boolean,
+  mockFilePath?: string,
 ): Promise<{ queued: number }> {
   const res = await client['sirec-migration']['by-reclamations'].$post({
-    json: { sirecIds, deleteIfExists, migrateFiles },
+    json: { sirecIds, deleteIfExists, migrateFiles, mockFilePath },
   });
   await handleRequestErrors(res, { silentToastError: true });
   if (!res.ok) {
@@ -20,9 +21,10 @@ export async function migrateByServices(
   serviceIds: number[],
   deleteIfExists?: boolean,
   migrateFiles?: boolean,
+  mockFilePath?: string,
 ): Promise<{ queued: number; found: number }> {
   const res = await client['sirec-migration']['by-services'].$post({
-    json: { serviceIds, deleteIfExists, migrateFiles },
+    json: { serviceIds, deleteIfExists, migrateFiles, mockFilePath },
   });
   await handleRequestErrors(res);
   return res.json();

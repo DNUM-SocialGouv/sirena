@@ -22,7 +22,7 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
     transcoInitPromise = initAffectationTransco();
   }
   await transcoInitPromise;
-  const { sirecId, deleteIfExists, migrateFiles } = job.data;
+  const { sirecId, deleteIfExists, migrateFiles, mockFilePath } = job.data;
 
   return loggerStorage.run(
     createDefaultLogger().child({ context: 'sirec-migration-worker', sirecId, jobId: job.id }),
@@ -81,7 +81,7 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
       logger.info({ requeteId: sirenaRequeteId, sirecId: data.sirecId }, 'SIREC record migrated successfully');
 
       if (migrateFiles !== false) {
-        await migrateSirecFiles(sirecId, sirenaRequeteId);
+        await migrateSirecFiles(sirecId, sirenaRequeteId, mockFilePath);
       }
     },
   );

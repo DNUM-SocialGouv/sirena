@@ -43,5 +43,15 @@ describe('sirecMigration.filesMinio.ts', () => {
       expect(result).toBe(fakeStream);
       expect(mockMinioClient.getObject).toHaveBeenCalledWith('migration-bucket', 'files/42/a1b2c3.pdf');
     });
+
+    it('should use mockFilePath instead of the computed path when provided', async () => {
+      const fakeStream = {};
+      mockMinioClient.getObject.mockResolvedValueOnce(fakeStream);
+
+      const result = await getSirecFileStream(42, 'a1b2c3.pdf', '/files/mockfile');
+
+      expect(result).toBe(fakeStream);
+      expect(mockMinioClient.getObject).toHaveBeenCalledWith('migration-bucket', '/files/mockfile');
+    });
   });
 });

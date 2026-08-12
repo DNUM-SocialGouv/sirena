@@ -56,6 +56,7 @@ export function RouteComponent() {
   const [raw, setRaw] = useState('');
   const [deleteIfExists, setDeleteIfExists] = useState(false);
   const [migrateFiles, setMigrateFiles] = useState(true);
+  const [mockFilePath, setMockFilePath] = useState('');
   const [result, setResult] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [systemError, setSystemError] = useState<string | null>(null);
@@ -66,6 +67,7 @@ export function RouteComponent() {
     setRaw('');
     setDeleteIfExists(false);
     setMigrateFiles(true);
+    setMockFilePath('');
     setResult(null);
     setFieldError(null);
     setSystemError(null);
@@ -89,11 +91,13 @@ export function RouteComponent() {
 
       setLoading(true);
       try {
+        const trimmedMockFilePath = migrateFiles && mockFilePath.trim() ? mockFilePath.trim() : undefined;
+
         if (mode === 'reclamations') {
-          const { queued } = await migrateByReclamations(ids, deleteIfExists, migrateFiles);
+          const { queued } = await migrateByReclamations(ids, deleteIfExists, migrateFiles, trimmedMockFilePath);
           setResult(`${queued} réclamation${queued > 1 ? 's' : ''} ajoutée${queued > 1 ? 's' : ''} à la queue.`);
         } else {
-          const { queued, found } = await migrateByServices(ids, deleteIfExists, migrateFiles);
+          const { queued, found } = await migrateByServices(ids, deleteIfExists, migrateFiles, trimmedMockFilePath);
           setResult(
             `${found} réclamation${found > 1 ? 's' : ''} trouvée${found > 1 ? 's' : ''}, ${queued} ajoutée${queued > 1 ? 's' : ''} à la queue.`,
           );
@@ -116,7 +120,7 @@ export function RouteComponent() {
         setLoading(false);
       }
     },
-    [raw, mode, deleteIfExists, migrateFiles],
+    [raw, mode, deleteIfExists, migrateFiles, mockFilePath],
   );
 
   const isReclamations = mode === 'reclamations';
@@ -201,6 +205,17 @@ export function RouteComponent() {
                   },
                 ]}
               />
+              {migrateFiles ? (
+                <Input
+                  className="fr-mb-4w"
+                  label="Chemin vers un fichier mock à utiliser à la place des pièces jointes SIREC (optionnel)"
+                  hintText="par exemple : /files/mockfile"
+                  nativeInputProps={{
+                    value: mockFilePath,
+                    onChange: (e) => setMockFilePath(e.target.value),
+                  }}
+                />
+              ) : null}
               <Button type="submit" disabled={loading}>
                 {loading ? 'Envoi en cours…' : 'Ajouter à la queue'}
               </Button>
@@ -247,6 +262,17 @@ export function RouteComponent() {
                   },
                 ]}
               />
+              {migrateFiles ? (
+                <Input
+                  className="fr-mb-4w"
+                  label="Chemin vers un fichier mock à utiliser à la place des pièces jointes SIREC (optionnel)"
+                  hintText="par exemple : /files/mockfile"
+                  nativeInputProps={{
+                    value: mockFilePath,
+                    onChange: (e) => setMockFilePath(e.target.value),
+                  }}
+                />
+              ) : null}
               <Button type="submit" disabled={loading}>
                 {loading ? 'Recherche en cours…' : 'Rechercher et ajouter à la queue'}
               </Button>

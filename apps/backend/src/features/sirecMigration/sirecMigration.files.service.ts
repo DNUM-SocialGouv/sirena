@@ -7,8 +7,13 @@ import { fetchSirecFiles, type SirecFileRow } from './sirecMigration.repository.
 
 const DEFAULT_CONTENT_TYPE = 'application/octet-stream';
 
-async function migrateSingleSirecFile(sirecId: number, requeteId: string, file: SirecFileRow): Promise<void> {
-  const sourceStream = await getSirecFileStream(sirecId, file.generated_name);
+async function migrateSingleSirecFile(
+  sirecId: number,
+  requeteId: string,
+  file: SirecFileRow,
+  mockFilePath?: string,
+): Promise<void> {
+  const sourceStream = await getSirecFileStream(sirecId, file.generated_name, mockFilePath);
   const contentType = file.content_type || DEFAULT_CONTENT_TYPE;
 
   const { objectPath, rollback, encryptionMetadata } = await uploadFileToMinio(
@@ -68,17 +73,17 @@ async function migrateSingleSirecFile(sirecId: number, requeteId: string, file: 
  * L'échec de migration d'un fichier individuel n'interrompt pas la migration :
  * il est loggé en warning et les fichiers suivants sont traités.
  */
-export async function migrateSirecFiles(sirecId: number, requeteId: string): Promise<void> {
+export async function migrateSirecFiles(sirecId: number, requeteId: string, mockFilePath?: string): Promise<void> {
   const logger = getLoggerStore();
   const files = await fetchSirecFiles(sirecId);
 
   if (files.length === 0) return;
 
-  logger.info({ sirecId, requeteId, count: files.length }, 'Migrating SIREC files');
+  logger.info({ sirecId, requeteId, count: files.length, mockFilePath }, 'Migrating SIREC files');
 
   for (const file of files) {
     try {
-      await migrateSingleSirecFile(sirecId, requeteId, file);
+      await migrateSingleSirecFile(sirecId, requeteId, file, mockFilePath);
     } catch (err) {
       logger.warn(
         { err, sirecId, requeteId, sirecFileId: file.id_data, generatedName: file.generated_name },

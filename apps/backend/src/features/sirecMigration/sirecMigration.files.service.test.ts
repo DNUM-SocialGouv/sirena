@@ -87,7 +87,7 @@ describe('sirecMigration.files.service.ts', () => {
 
     await migrateSirecFiles(42, 'requete-1');
 
-    expect(mockGetSirecFileStream).toHaveBeenCalledWith(42, 'a1b2c3.pdf');
+    expect(mockGetSirecFileStream).toHaveBeenCalledWith(42, 'a1b2c3.pdf', undefined);
     expect(mockUploadFileToMinio).toHaveBeenCalledWith({ stream: true }, 'courrier.pdf', 'application/pdf', 12345);
     expect(mockUploadedFileCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -121,6 +121,14 @@ describe('sirecMigration.files.service.ts', () => {
       mimeType: 'application/pdf',
     });
     expect(fakeLogger.warn).not.toHaveBeenCalled();
+  });
+
+  it('should forward mockFilePath to getSirecFileStream when provided', async () => {
+    mockFetchSirecFiles.mockResolvedValueOnce([makeFile()]);
+
+    await migrateSirecFiles(42, 'requete-1', '/files/mockfile');
+
+    expect(mockGetSirecFileStream).toHaveBeenCalledWith(42, 'a1b2c3.pdf', '/files/mockfile');
   });
 
   it('should fall back to application/octet-stream when content_type is missing', async () => {
