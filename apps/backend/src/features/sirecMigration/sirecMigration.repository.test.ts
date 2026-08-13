@@ -740,6 +740,7 @@ describe('sirecMigration.repository.ts', () => {
           ext: 'pdf',
           content_type: 'application/pdf',
           file_type: null,
+          id_ext_mc: null,
         },
       ]);
 
@@ -756,9 +757,11 @@ describe('sirecMigration.repository.ts', () => {
           ext: 'pdf',
           content_type: 'application/pdf',
           file_type: null,
+          id_ext_mc: null,
         },
       ]);
       expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_reclamation_file_data'), [42]);
+      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('rf.id_ext_mc'), [42]);
     });
 
     it('should not filter on file_type (all files are fetched, dispatch happens downstream)', async () => {

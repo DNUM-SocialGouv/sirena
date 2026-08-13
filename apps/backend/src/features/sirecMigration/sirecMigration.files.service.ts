@@ -23,6 +23,9 @@ const ETAPE_FILE_TYPE_KEYS = new Set([
   'rep_plaignant',
 ]);
 
+/** file_type SIREC ciblant une étape "main courante", rattachée via id_ext_mc (sire_main_courante_data.id_data). */
+const MAIN_COURANTE_FILE_TYPES = new Set(['main_courante_flag', 'main_courante']);
+
 async function migrateSingleSirecFile(
   sirecId: number,
   requeteId: string,
@@ -115,6 +118,9 @@ async function migrateFileToTarget(
  * - lié à une étape connue (cf. ETAPE_FILE_TYPE_KEYS) : rattaché à chaque étape créée pour ce
  *   type lors de cette migration (etapeIdsByFileType, cf. saveFromSirec) — réuploadé une fois
  *   par étape si plusieurs entités ARS sont concernées ;
+ * - lié à une main courante (cf. MAIN_COURANTE_FILE_TYPES) : rattaché à chaque étape créée pour
+ *   la main courante SIREC ciblée par id_ext_mc (etapeIdsByMainCouranteId, cf. saveFromSirec) —
+ *   réuploadé une fois par étape si plusieurs entités ARS sont concernées ;
  * - type connu mais sans étape créée pour cette réclamation, ou type inconnu : warning + fichier
  *   tout de même rattaché directement à la réclamation.
  *
@@ -125,6 +131,7 @@ export async function migrateSirecFiles(
   sirecId: number,
   requeteId: string,
   etapeIdsByFileType: Map<string, string[]>,
+  etapeIdsByMainCouranteId: Map<number, string[]>,
   mockFilePath?: string,
 ): Promise<void> {
   const logger = getLoggerStore();
@@ -138,6 +145,23 @@ export async function migrateSirecFiles(
     const fileType = file.file_type;
 
     if (DIRECT_FILE_TYPES.has(fileType)) {
+      await migrateFileToTarget(sirecId, requeteId, file, null, mockFilePath);
+      continue;
+    }
+
+    if (fileType && MAIN_COURANTE_FILE_TYPES.has(fileType)) {
+      const etapeIds = file.id_ext_mc !== null ? etapeIdsByMainCouranteId.get(file.id_ext_mc) : undefined;
+      if (etapeIds && etapeIds.length > 0) {
+        for (const etapeId of etapeIds) {
+          await migrateFileToTarget(sirecId, requeteId, file, etapeId, mockFilePath);
+        }
+        continue;
+      }
+
+      logger.warn(
+        { sirecId, requeteId, sirecFileId: file.id_data, fileType, idExtMc: file.id_ext_mc },
+        'No étape created for this SIREC main courante on this réclamation, attaching file directly to the requete',
+      );
       await migrateFileToTarget(sirecId, requeteId, file, null, mockFilePath);
       continue;
     }

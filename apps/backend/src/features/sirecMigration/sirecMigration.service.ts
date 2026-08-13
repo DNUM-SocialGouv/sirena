@@ -45,6 +45,8 @@ export interface SaveFromSirecResult {
   requeteId: string;
   /** requeteEtapeId(s) créés, groupés par sirecFileTypeKey (cf. SirenaEtapeData), pour la migration des pièces jointes. */
   etapeIdsByFileType: Map<string, string[]>;
+  /** requeteEtapeId(s) créés, groupés par id_data de main courante SIREC, pour la migration des pièces jointes. */
+  etapeIdsByMainCouranteId: Map<number, string[]>;
 }
 
 export async function saveFromSirec(data: SirenaRequeteData): Promise<SaveFromSirecResult> {
@@ -219,6 +221,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<SaveFromSi
     });
 
     const etapeIdsByFileType = new Map<string, string[]>();
+    const etapeIdsByMainCouranteId = new Map<number, string[]>();
 
     for (const {
       nom,
@@ -230,6 +233,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<SaveFromSi
       clotureEffectiveDate,
       dateRealisation,
       sirecFileTypeKeys,
+      sirecMainCouranteId,
     } of data.etapes) {
       const etapeCreatedAt = createdAt ?? data.sysCreationDate;
       const createdEtape = await tx.requeteEtape.create({
@@ -257,6 +261,12 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<SaveFromSi
         const ids = etapeIdsByFileType.get(fileTypeKey) ?? [];
         ids.push(createdEtape.id);
         etapeIdsByFileType.set(fileTypeKey, ids);
+      }
+
+      if (sirecMainCouranteId !== undefined) {
+        const ids = etapeIdsByMainCouranteId.get(sirecMainCouranteId) ?? [];
+        ids.push(createdEtape.id);
+        etapeIdsByMainCouranteId.set(sirecMainCouranteId, ids);
       }
     }
     if (data.declarant !== null && !data.declarant.estVictime) {
@@ -340,6 +350,6 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<SaveFromSi
         },
       });
     }
-    return { requeteId: sirenaRequete.id, etapeIdsByFileType };
+    return { requeteId: sirenaRequete.id, etapeIdsByFileType, etapeIdsByMainCouranteId };
   });
 }

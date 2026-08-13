@@ -257,6 +257,54 @@ describe('sirecMigration.service.ts', () => {
       expect(result.etapeIdsByFileType.get('rep_instit_part1')).toEqual(['etape-institution-1']);
     });
 
+    it('should return an empty etapeIdsByMainCouranteId map when no etape has a sirecMainCouranteId', async () => {
+      const result = await saveFromSirec({
+        ...data,
+        etapes: [
+          { nom: 'Envoyer un accusé de réception au déclarant', entiteId: 'ars-1', statutId: 'A_FAIRE', note: null },
+        ],
+      });
+
+      expect(result.etapeIdsByMainCouranteId.size).toBe(0);
+    });
+
+    it('should group created requeteEtape ids by sirecMainCouranteId', async () => {
+      vi.mocked(prisma.requeteEtape.create)
+        .mockResolvedValueOnce({ id: 'etape-mc1-ars1' } as any)
+        .mockResolvedValueOnce({ id: 'etape-mc1-ars2' } as any)
+        .mockResolvedValueOnce({ id: 'etape-mc2-ars1' } as any);
+
+      const result = await saveFromSirec({
+        ...data,
+        etapes: [
+          {
+            nom: 'Médiation',
+            entiteId: 'ars-1',
+            statutId: 'FAIT',
+            note: null,
+            sirecMainCouranteId: 1,
+          },
+          {
+            nom: 'Médiation',
+            entiteId: 'ars-2',
+            statutId: 'FAIT',
+            note: null,
+            sirecMainCouranteId: 1,
+          },
+          {
+            nom: 'Enquête',
+            entiteId: 'ars-1',
+            statutId: 'FAIT',
+            note: null,
+            sirecMainCouranteId: 2,
+          },
+        ],
+      });
+
+      expect(result.etapeIdsByMainCouranteId.get(1)).toEqual(['etape-mc1-ars1', 'etape-mc1-ars2']);
+      expect(result.etapeIdsByMainCouranteId.get(2)).toEqual(['etape-mc2-ars1']);
+    });
+
     it('should create Requete with correct data', async () => {
       await saveFromSirec(data);
 
