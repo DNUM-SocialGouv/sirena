@@ -41,7 +41,13 @@ export async function deleteRequeteWithRelatedData(requeteId: string): Promise<v
   });
 }
 
-export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
+export interface SaveFromSirecResult {
+  requeteId: string;
+  /** requeteEtapeId(s) créés, groupés par sirecFileTypeKey (cf. SirenaEtapeData), pour la migration des pièces jointes. */
+  etapeIdsByFileType: Map<string, string[]>;
+}
+
+export async function saveFromSirec(data: SirenaRequeteData): Promise<SaveFromSirecResult> {
   const logger = getLoggerStore();
   for (const situation of data.situations) {
     SituationDataSchema.parse(situation);
@@ -212,6 +218,8 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       })),
     });
 
+    const etapeIdsByFileType = new Map<string, string[]>();
+
     for (const {
       nom,
       entiteId,
@@ -221,9 +229,10 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       clotureReason,
       clotureEffectiveDate,
       dateRealisation,
+      sirecFileTypeKeys,
     } of data.etapes) {
       const etapeCreatedAt = createdAt ?? data.sysCreationDate;
-      await tx.requeteEtape.create({
+      const createdEtape = await tx.requeteEtape.create({
         data: {
           requeteId: sirenaRequete.id,
           entiteId,
@@ -241,9 +250,15 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
           ...(clotureEffectiveDate !== undefined ? { clotureEffectiveDate } : {}),
           ...(dateRealisation !== undefined ? { dateRealisation } : {}),
         },
+        select: { id: true },
       });
-    }
 
+      for (const fileTypeKey of sirecFileTypeKeys ?? []) {
+        const ids = etapeIdsByFileType.get(fileTypeKey) ?? [];
+        ids.push(createdEtape.id);
+        etapeIdsByFileType.set(fileTypeKey, ids);
+      }
+    }
     if (data.declarant !== null && !data.declarant.estVictime) {
       await tx.personneConcernee.create({
         data: {
@@ -325,6 +340,6 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
         },
       });
     }
-    return sirenaRequete?.id;
+    return { requeteId: sirenaRequete.id, etapeIdsByFileType };
   });
 }

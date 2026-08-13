@@ -179,13 +179,82 @@ describe('sirecMigration.service.ts', () => {
       vi.mocked(prisma.faitMotifDeclaratif.createMany).mockResolvedValue({ count: 2 } as any);
       vi.mocked(prisma.faitMotif.createMany).mockResolvedValue({ count: 1 } as any);
       vi.mocked(prisma.requeteEntite.createMany).mockResolvedValue({ count: 2 } as any);
-      vi.mocked(prisma.requeteEtape.create).mockResolvedValue({} as any);
+      vi.mocked(prisma.requeteEtape.create).mockResolvedValue({ id: 'etape-1' } as any);
       vi.mocked(prisma.situationEntite.createMany).mockResolvedValue({ count: 2 } as any);
       vi.mocked(prisma.personneConcernee.create).mockResolvedValue({} as any);
     });
 
     it('should return the requete id', async () => {
-      expect(await saveFromSirec(data)).toBe('SIREC-42');
+      const result = await saveFromSirec(data);
+      expect(result.requeteId).toBe('SIREC-42');
+    });
+
+    it('should return an empty etapeIdsByFileType map when no etape has a sirecFileTypeKey', async () => {
+      const result = await saveFromSirec({
+        ...data,
+        etapes: [
+          { nom: 'Envoyer un accusé de réception au déclarant', entiteId: 'ars-1', statutId: 'A_FAIRE', note: null },
+        ],
+      });
+
+      expect(result.etapeIdsByFileType.size).toBe(0);
+    });
+
+    it('should group created requeteEtape ids by sirecFileTypeKeys', async () => {
+      vi.mocked(prisma.requeteEtape.create)
+        .mockResolvedValueOnce({ id: 'etape-ar-ars1' } as any)
+        .mockResolvedValueOnce({ id: 'etape-ar-ars2' } as any)
+        .mockResolvedValueOnce({ id: 'etape-mesures' } as any);
+
+      const result = await saveFromSirec({
+        ...data,
+        etapes: [
+          {
+            nom: 'Envoyer un accusé de réception au déclarant',
+            entiteId: 'ars-1',
+            statutId: 'FAIT',
+            note: null,
+            sirecFileTypeKeys: ['ar_requerant'],
+          },
+          {
+            nom: 'Envoyer un accusé de réception au déclarant',
+            entiteId: 'ars-2',
+            statutId: 'FAIT',
+            note: null,
+            sirecFileTypeKeys: ['ar_requerant'],
+          },
+          {
+            nom: 'Mesures prises par le mis en cause',
+            entiteId: 'ars-1',
+            statutId: 'FAIT',
+            note: null,
+            sirecFileTypeKeys: ['mesures_prises'],
+          },
+        ],
+      });
+
+      expect(result.etapeIdsByFileType.get('ar_requerant')).toEqual(['etape-ar-ars1', 'etape-ar-ars2']);
+      expect(result.etapeIdsByFileType.get('mesures_prises')).toEqual(['etape-mesures']);
+    });
+
+    it('should register the same created etape id under every key when an etape has several sirecFileTypeKeys', async () => {
+      vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce({ id: 'etape-institution-1' } as any);
+
+      const result = await saveFromSirec({
+        ...data,
+        etapes: [
+          {
+            nom: "Transfert à l'institution : CHU de Paris",
+            entiteId: 'ars-1',
+            statutId: 'FAIT',
+            note: null,
+            sirecFileTypeKeys: ['hors_ars1', 'rep_instit_part1'],
+          },
+        ],
+      });
+
+      expect(result.etapeIdsByFileType.get('hors_ars1')).toEqual(['etape-institution-1']);
+      expect(result.etapeIdsByFileType.get('rep_instit_part1')).toEqual(['etape-institution-1']);
     });
 
     it('should create Requete with correct data', async () => {
@@ -1079,6 +1148,7 @@ describe('sirecMigration.service.ts', () => {
           createdAt: new Date('2024-01-20'),
           notes: { create: [{ texte: 'Note ligne 1\nNote ligne 2', createdAt: new Date('2024-01-20') }] },
         },
+        select: { id: true },
       });
     });
 
@@ -1108,6 +1178,7 @@ describe('sirecMigration.service.ts', () => {
             create: [{ texte: "Date d'envoi de l'accusé de réception au requérant : 10/06/2024", createdAt: date }],
           },
         },
+        select: { id: true },
       });
     });
 
@@ -1137,6 +1208,7 @@ describe('sirecMigration.service.ts', () => {
           createdAt: sysCreationDate,
           notes: { create: [{ texte: 'Note', createdAt: sysCreationDate }] },
         },
+        select: { id: true },
       });
     });
 
@@ -1166,6 +1238,7 @@ describe('sirecMigration.service.ts', () => {
           createdAt: etapeDate,
           notes: { create: [{ texte: 'Note', createdAt: etapeDate }] },
         },
+        select: { id: true },
       });
     });
 
@@ -1185,6 +1258,7 @@ describe('sirecMigration.service.ts', () => {
           nom: 'Envoyer un accusé de réception au déclarant',
           createdAt: new Date('2024-01-20'),
         },
+        select: { id: true },
       });
     });
 
@@ -1215,6 +1289,7 @@ describe('sirecMigration.service.ts', () => {
           clotureReason: { connect: [{ id: 'SANS_SUITE' }] },
           createdAt: new Date('2024-01-20'),
         },
+        select: { id: true },
       });
     });
 
@@ -1226,6 +1301,7 @@ describe('sirecMigration.service.ts', () => {
 
       expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
         data: expect.not.objectContaining({ clotureReason: expect.anything() }),
+        select: { id: true },
       });
     });
 
@@ -1238,6 +1314,7 @@ describe('sirecMigration.service.ts', () => {
 
       expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
         data: expect.objectContaining({ clotureEffectiveDate: date }),
+        select: { id: true },
       });
     });
 
@@ -1249,6 +1326,7 @@ describe('sirecMigration.service.ts', () => {
 
       expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
         data: expect.not.objectContaining({ clotureEffectiveDate: expect.anything() }),
+        select: { id: true },
       });
     });
 
