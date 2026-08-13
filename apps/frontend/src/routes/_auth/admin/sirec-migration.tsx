@@ -209,7 +209,7 @@ export function RouteComponent() {
                 <Input
                   className="fr-mb-4w"
                   label="Chemin vers un fichier mock à utiliser à la place des pièces jointes SIREC (optionnel)"
-                  hintText="par exemple : /files/mockfile"
+                  hintText="Exemple : /files/mockfile"
                   nativeInputProps={{
                     value: mockFilePath,
                     onChange: (e) => setMockFilePath(e.target.value),
