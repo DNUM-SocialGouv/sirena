@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Processing } from './processing';
 
 let processingMeta = { total: 1, isMultiEntite: true, etapePartageeEnabled: true };
+let canEditRequest = false;
 const foreignEtapePartagee = {
   id: 'foreign-closure',
   requeteId: 'REQ-1',
@@ -86,7 +87,7 @@ vi.mock('@/hooks/queries/useRequeteDetails', () => ({
 }));
 
 vi.mock('@/hooks/useCanEdit', () => ({
-  useCanEdit: () => ({ canEdit: false, hasEditRole: false }),
+  useCanEdit: () => ({ canEdit: canEditRequest, hasEditRole: canEditRequest }),
 }));
 
 vi.mock('@/components/queryStateHandler/queryStateHandler', () => ({
@@ -148,6 +149,7 @@ vi.mock('./sections/OtherEntitesAffected', () => ({ OtherEntitiesAffected: () =>
 describe('Processing', () => {
   beforeEach(() => {
     processingMeta = { total: 1, isMultiEntite: true, etapePartageeEnabled: true };
+    canEditRequest = false;
     requeteEtapes = [foreignEtapePartagee];
   });
 
@@ -207,6 +209,48 @@ describe('Processing', () => {
       screen.getByRole('heading', { name: 'Création de la requête' }).closest('[data-timeline-item-type]'),
     ).toHaveAttribute('data-timeline-item-type', 'NEUTRAL_EVENT');
     expect(document.querySelector('[data-entity-relation="neutral"]')).toBeInTheDocument();
+  });
+
+  it('renders a pending acknowledgment from an automatic request without mutation actions', () => {
+    canEditRequest = true;
+    processingMeta = { total: 1, isMultiEntite: false, etapePartageeEnabled: true };
+    requeteEtapes = [
+      {
+        ...foreignEtapePartagee,
+        id: 'pending-automatic-acknowledgment',
+        entiteId: 'CURRENT-ENTITY',
+        entiteAdministrative: {
+          id: 'CURRENT-ENTITY',
+          nomComplet: 'ARS courante',
+          entiteTypeId: 'ARS',
+        },
+        type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
+        acknowledgmentSendMode: null,
+        acknowledgmentSendOperationId: null,
+        attributedEntiteAdministrative: {
+          id: 'CURRENT-ENTITY',
+          nomComplet: 'ARS courante',
+          entiteTypeId: 'ARS',
+        },
+        editable: false,
+        canOnlyEditNotes: false,
+        requete: {
+          createdById: null,
+          dematSocialId: 123,
+          sirecId: null,
+          thirdPartyAccountId: null,
+          createdBy: null,
+        },
+      },
+    ];
+
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(screen.getByRole('heading', { name: "Envoi de l'accusé de réception" })).toBeInTheDocument();
+    expect(screen.getByText('À faire')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "Modifier l'étape" })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Envoyer' })).not.toBeInTheDocument();
   });
 
   it('renders each automatic send as one neutral immutable event with one exact source document', () => {

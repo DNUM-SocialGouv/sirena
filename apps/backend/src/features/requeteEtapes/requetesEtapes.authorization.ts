@@ -1,3 +1,4 @@
+import { isAutomaticRequest } from '@sirena/common/utils';
 import type { RequeteEtape, UploadedFile } from '../../libs/prisma.js';
 import { isAutomaticAcknowledgment } from './requetesEtapes.permissions.js';
 
@@ -6,6 +7,11 @@ type AuthorizableRequeteEtape = Pick<
   'entiteId' | 'estPartagee' | 'type' | 'statutId' | 'acknowledgmentSendMode'
 > & {
   uploadedFiles?: Pick<UploadedFile, 'canDelete' | 'uploadedById'>[];
+  requete?: {
+    dematSocialId: number | null;
+    sirecId: number | null;
+    thirdPartyAccountId: string | null;
+  };
 };
 
 const isOwner = (viewerEntiteId: string, step: AuthorizableRequeteEtape): boolean => viewerEntiteId === step.entiteId;
@@ -20,6 +26,7 @@ export const requeteEtapeAuthorization = {
       type: step.type,
       statutId: step.statutId,
       acknowledgmentSendMode: step.acknowledgmentSendMode,
+      requeteIsAutomatic: isAutomaticRequest(step.requete),
       uploadedFiles: step.uploadedFiles ?? [],
     }),
 };

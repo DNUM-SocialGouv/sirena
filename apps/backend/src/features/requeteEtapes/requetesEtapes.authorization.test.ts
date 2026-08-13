@@ -72,4 +72,17 @@ describe('requeteEtapeAuthorization', () => {
       }),
     ).toBe(false);
   });
+
+  it('rejects writes to a pending acknowledgment from an automatic request before its send mode is recorded', () => {
+    expect(
+      requeteEtapeAuthorization.canWrite(ownerEntiteId, {
+        entiteId: ownerEntiteId,
+        estPartagee: false,
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'A_FAIRE',
+        acknowledgmentSendMode: null,
+        requete: { dematSocialId: 123, sirecId: null, thirdPartyAccountId: null },
+      }),
+    ).toBe(false);
+  });
 });

@@ -19,6 +19,7 @@ export const isAutomaticAcknowledgment = (etape: EtapePermissionInput): boolean 
   if (etape.type !== REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) return false;
   if (etape.acknowledgmentSendMode === ACKNOWLEDGMENT_SEND_MODES.AUTOMATIC) return true;
   if (etape.acknowledgmentSendMode !== null && etape.acknowledgmentSendMode !== undefined) return false;
+  if (etape.requeteIsAutomatic === true && etape.statutId === REQUETE_ETAPE_STATUT_TYPES.A_FAIRE) return true;
 
   const acknowledgmentPdf = getAcknowledgmentPdf(etape);
   const uploadedBySystem =

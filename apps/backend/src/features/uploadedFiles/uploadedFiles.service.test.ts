@@ -199,7 +199,7 @@ describe('uploadedFiles.service.ts', () => {
   });
 
   describe('isUploadedFileAttachedToImmutableAcknowledgment()', () => {
-    it('recognizes explicit and reliably identifiable historical automatic acknowledgments', async () => {
+    it('recognizes pending and sent automatic acknowledgments, including historical ones', async () => {
       mockedUploadedFile.findFirst.mockResolvedValueOnce({ id: 'file1' } as never);
 
       await expect(isUploadedFileAttachedToImmutableAcknowledgment('file1')).resolves.toBe(true);
@@ -209,12 +209,10 @@ describe('uploadedFiles.service.ts', () => {
           requeteEtape: {
             is: {
               type: 'ACKNOWLEDGMENT',
-              statutId: 'FAIT',
               OR: [
                 { acknowledgmentSendMode: 'AUTOMATIC' },
                 {
                   acknowledgmentSendMode: null,
-                  uploadedFiles: { some: { canDelete: false, uploadedById: null } },
                   requete: {
                     is: {
                       OR: [
@@ -224,6 +222,13 @@ describe('uploadedFiles.service.ts', () => {
                       ],
                     },
                   },
+                  OR: [
+                    { statutId: 'A_FAIRE' },
+                    {
+                      statutId: 'FAIT',
+                      uploadedFiles: { some: { canDelete: false, uploadedById: null } },
+                    },
+                  ],
                 },
               ],
             },

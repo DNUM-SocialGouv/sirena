@@ -550,7 +550,18 @@ describe('sendManualAcknowledgmentEmail() — PDF attachment', () => {
 
     await vi.waitFor(() => expect(mockedSendTipimailEmail).toHaveBeenCalled());
     expect(mockedRequeteEtape.updateMany).toHaveBeenCalledWith({
-      where: { id: 'etapeAck', statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
+      where: {
+        id: 'etapeAck',
+        statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
+        acknowledgmentSendMode: null,
+        requete: {
+          is: {
+            dematSocialId: null,
+            sirecId: null,
+            thirdPartyAccountId: null,
+          },
+        },
+      },
       data: {
         statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
         dateRealisation: expect.any(Date),

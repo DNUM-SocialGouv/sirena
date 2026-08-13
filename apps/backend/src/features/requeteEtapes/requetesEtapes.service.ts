@@ -727,9 +727,18 @@ export const getRequeteEtapes = async (
   };
 };
 
-export const getRequeteEtapeById = async (id: string) =>
+type RequeteEtapeAuthorizationContext = RequeteEtape & {
+  uploadedFiles?: { canDelete: boolean; uploadedById: string | null }[];
+  requete?: { dematSocialId: number | null; sirecId: number | null; thirdPartyAccountId: string | null };
+};
+
+export const getRequeteEtapeById = async (id: string): Promise<RequeteEtapeAuthorizationContext | null> =>
   await prisma.requeteEtape.findUnique({
     where: { id },
+    include: {
+      uploadedFiles: { select: { canDelete: true, uploadedById: true } },
+      requete: { select: { dematSocialId: true, sirecId: true, thirdPartyAccountId: true } },
+    },
   });
 
 /**

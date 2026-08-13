@@ -310,7 +310,18 @@ export async function sendManualAcknowledgmentEmail({
   const markedDoneAt = new Date();
   let emailSent = false;
   const claimResult = await prisma.requeteEtape.updateMany({
-    where: { id: etapeId, statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
+    where: {
+      id: etapeId,
+      statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
+      acknowledgmentSendMode: null,
+      requete: {
+        is: {
+          dematSocialId: null,
+          sirecId: null,
+          thirdPartyAccountId: null,
+        },
+      },
+    },
     data: {
       statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
       dateRealisation: markedDoneAt,

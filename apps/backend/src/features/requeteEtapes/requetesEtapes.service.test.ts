@@ -815,6 +815,32 @@ describe('RequeteEtapes.service.ts', () => {
       expect(result.data[3]).toMatchObject({ editable: true, canOnlyEditNotes: false });
     });
 
+    it('returns a pending acknowledgment from an automatic request as immutable in the timeline', async () => {
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
+        {
+          ...requeteEtapeWithNotesAndFiles,
+          id: 'pending-automatic-ack',
+          type: 'ACKNOWLEDGMENT',
+          statutId: 'A_FAIRE',
+          acknowledgmentSendMode: null,
+          uploadedFiles: [],
+          requete: {
+            ...requeteEtapeWithNotesAndFiles.requete,
+            dematSocialId: 123,
+          },
+        } as never,
+      ]);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
+
+      const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0 });
+
+      expect(result.data[0]).toMatchObject({
+        id: 'pending-automatic-ack',
+        editable: false,
+        canOnlyEditNotes: false,
+      });
+    });
+
     it('exposes current multi-entity metadata and each owner Entité administrative identity', async () => {
       const foreignEtapePartagee = {
         ...requeteEtapeWithNotesAndFiles,
@@ -1265,6 +1291,10 @@ describe('RequeteEtapes.service.ts', () => {
       });
       expect(prisma.requeteEtape.findUnique).toHaveBeenCalledWith({
         where: { id: 'requeteEtapeId' },
+        include: {
+          uploadedFiles: { select: { canDelete: true, uploadedById: true } },
+          requete: { select: { dematSocialId: true, sirecId: true, thirdPartyAccountId: true } },
+        },
       });
     });
 
@@ -1276,6 +1306,10 @@ describe('RequeteEtapes.service.ts', () => {
       expect(result).toBeNull();
       expect(prisma.requeteEtape.findUnique).toHaveBeenCalledWith({
         where: { id: 'missing' },
+        include: {
+          uploadedFiles: { select: { canDelete: true, uploadedById: true } },
+          requete: { select: { dematSocialId: true, sirecId: true, thirdPartyAccountId: true } },
+        },
       });
     });
   });
@@ -1519,6 +1553,30 @@ describe('RequeteEtapes.service.ts', () => {
           uploadedFiles: [],
         }),
       ).toEqual({ editable: false, canOnlyEditNotes: false });
+    });
+
+    it('makes a pending acknowledgment from an automatic request immutable before its send mode is recorded', () => {
+      expect(
+        getEtapePermissions({
+          type: 'ACKNOWLEDGMENT',
+          statutId: 'A_FAIRE',
+          acknowledgmentSendMode: null,
+          requeteIsAutomatic: true,
+          uploadedFiles: [],
+        }),
+      ).toEqual({ editable: false, canOnlyEditNotes: false });
+    });
+
+    it('keeps a pending acknowledgment from a manual request editable before its send mode is recorded', () => {
+      expect(
+        getEtapePermissions({
+          type: 'ACKNOWLEDGMENT',
+          statutId: 'A_FAIRE',
+          acknowledgmentSendMode: null,
+          requeteIsAutomatic: false,
+          uploadedFiles: [],
+        }),
+      ).toEqual({ editable: true, canOnlyEditNotes: false });
     });
 
     it('keeps an explicitly manually sent acknowledgment editable for notes and attachments', () => {

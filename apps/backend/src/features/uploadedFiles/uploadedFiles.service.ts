@@ -51,12 +51,10 @@ export const isUploadedFileAttachedToImmutableAcknowledgment = async (id: Upload
       requeteEtape: {
         is: {
           type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
-          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
           OR: [
             { acknowledgmentSendMode: ACKNOWLEDGMENT_SEND_MODES.AUTOMATIC },
             {
               acknowledgmentSendMode: null,
-              uploadedFiles: { some: { canDelete: false, uploadedById: null } },
               requete: {
                 is: {
                   OR: [
@@ -66,6 +64,13 @@ export const isUploadedFileAttachedToImmutableAcknowledgment = async (id: Upload
                   ],
                 },
               },
+              OR: [
+                { statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
+                {
+                  statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+                  uploadedFiles: { some: { canDelete: false, uploadedById: null } },
+                },
+              ],
             },
           ],
         },

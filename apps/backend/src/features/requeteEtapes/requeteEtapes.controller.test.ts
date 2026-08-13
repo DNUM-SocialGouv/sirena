@@ -632,6 +632,22 @@ describe('requeteEtapes.controller.ts', () => {
       expect(updateStatusRequete).not.toHaveBeenCalled();
     });
 
+    it('forbids deleting a pending acknowledgment from an automatic request', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'A_FAIRE',
+        acknowledgmentSendMode: null,
+        requete: { dematSocialId: 123, sirecId: null, thirdPartyAccountId: null },
+        uploadedFiles: [],
+      } as never);
+
+      const res = await client[':id'].$delete({ param: { id: 'step1' } });
+
+      expect(res.status).toBe(403);
+      expect(deleteRequeteEtape).not.toHaveBeenCalled();
+    });
+
     it('forbids deleting a foreign Étape partagée', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
@@ -1075,6 +1091,25 @@ describe('requeteEtapes.controller.ts', () => {
   });
 
   describe('POST /:id/send-acknowledgment', () => {
+    it('forbids manually sending a pending acknowledgment from an automatic request', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'A_FAIRE',
+        acknowledgmentSendMode: null,
+        requete: { dematSocialId: 123, sirecId: null, thirdPartyAccountId: null },
+        uploadedFiles: [],
+      } as never);
+
+      const res = await client[':id']['send-acknowledgment'].$post({
+        param: { id: 'step1' },
+        json: {},
+      });
+
+      expect(res.status).toBe(403);
+      expect(sendManualAcknowledgmentEmail).not.toHaveBeenCalled();
+    });
+
     it('returns a conflict when the acknowledgment step has already been processed', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
@@ -1189,6 +1224,23 @@ describe('requeteEtapes.controller.ts', () => {
         param: { id: 'step1' },
         json: { ...validBody, notes: [{ texte: 'Forbidden note' }], fileIds: ['forbidden-file'] },
       });
+
+      expect(res.status).toBe(403);
+      expect(updateProcessingEtape).not.toHaveBeenCalled();
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+    });
+
+    it('forbids updating a pending acknowledgment from an automatic request', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'A_FAIRE',
+        acknowledgmentSendMode: null,
+        requete: { dematSocialId: 123, sirecId: null, thirdPartyAccountId: null },
+        uploadedFiles: [],
+      } as never);
+
+      const res = await client[':id'].$patch({ param: { id: 'step1' }, json: validBody });
 
       expect(res.status).toBe(403);
       expect(updateProcessingEtape).not.toHaveBeenCalled();
