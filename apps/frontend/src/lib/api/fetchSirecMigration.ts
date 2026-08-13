@@ -10,7 +10,7 @@ export async function migrateByReclamations(
   const res = await client['sirec-migration']['by-reclamations'].$post({
     json: { sirecIds, deleteIfExists, migrateFiles, mockFilePath },
   });
-  await handleRequestErrors(res, { silentToastError: true });
+  await handleRequestErrors(res, { silentToastError: res.ok || res.status === 422 });
   if (!res.ok) {
     throw new HttpError(`HTTP ${res.status}`, res.status);
   }

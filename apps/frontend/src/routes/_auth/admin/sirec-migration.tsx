@@ -59,7 +59,6 @@ export function RouteComponent() {
   const [mockFilePath, setMockFilePath] = useState('');
   const [result, setResult] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | null>(null);
-  const [systemError, setSystemError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleModeChange = useCallback((newMode: Mode) => {
@@ -70,7 +69,6 @@ export function RouteComponent() {
     setMockFilePath('');
     setResult(null);
     setFieldError(null);
-    setSystemError(null);
   }, []);
 
   const selectReclamations = useCallback(() => handleModeChange('reclamations'), [handleModeChange]);
@@ -81,7 +79,6 @@ export function RouteComponent() {
       e.preventDefault();
       setResult(null);
       setFieldError(null);
-      setSystemError(null);
 
       const ids = parseIds(raw);
       if (ids.length === 0) {
@@ -115,7 +112,6 @@ export function RouteComponent() {
             return;
           }
         }
-        setSystemError('Une erreur est survenue lors de la requête.');
       } finally {
         setLoading(false);
       }
@@ -174,6 +170,7 @@ export function RouteComponent() {
         >
           {isReclamations && (
             <form onSubmit={handleSubmit} className="fr-mt-2w">
+              <p className="fr-text--sm">Sauf mention contraire, les champs sont obligatoires.</p>
               <Input
                 label="IDs de réclamations SIREC"
                 hintText="Un identifiant par ligne ou séparés par des virgules"
@@ -231,6 +228,7 @@ export function RouteComponent() {
         >
           {!isReclamations && (
             <form onSubmit={handleSubmit} className="fr-mt-2w">
+              <p className="fr-text--sm">Sauf mention contraire, les champs sont obligatoires.</p>
               <Input
                 label="IDs de services SIREC"
                 hintText="Un identifiant par ligne ou séparés par des virgules"
@@ -282,7 +280,6 @@ export function RouteComponent() {
       </div>
 
       {result ? <Alert className="fr-mt-2w" severity="success" title={result} /> : null}
-      {systemError ? <Alert className="fr-mt-2w" severity="error" title={systemError} /> : null}
     </div>
   );
 }
