@@ -761,15 +761,12 @@ describe('sirecMigration.repository.ts', () => {
       expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_reclamation_file_data'), [42]);
     });
 
-    it('should filter on file_type NULL or hors_process/fiche_synthese in the query', async () => {
+    it('should not filter on file_type (all files are fetched, dispatch happens downstream)', async () => {
       vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
 
       await fetchSirecFiles(42);
 
-      expect(mariadbPool.query).toHaveBeenCalledWith(
-        expect.stringContaining("f.file_type IS NULL OR f.file_type IN ('hors_process', 'fiche_synthese')"),
-        [42],
-      );
+      expect(mariadbPool.query).toHaveBeenCalledWith(expect.not.stringContaining('file_type IS NULL'), [42]);
     });
 
     it('should return an empty array when no files found', async () => {

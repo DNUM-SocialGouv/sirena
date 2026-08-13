@@ -7,4 +7,5 @@ export interface SirenaEtapeData {
   clotureReason?: string;
   clotureEffectiveDate?: Date;
   dateRealisation?: Date;
+  sirecFileTypeKeys?: string[];
 }

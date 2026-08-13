@@ -26,6 +26,7 @@ export function transformSirecAccuseReception(
         statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
         note: "Envoi d'un accusé de réception : non",
         createdAt: sirecData.reclamation.sys_creation_date,
+        sirecFileTypeKeys: ['ar_requerant'],
       };
     }
 
@@ -44,6 +45,7 @@ export function transformSirecAccuseReception(
       ...(date_envoi_ar !== null ? { dateRealisation: date_envoi_ar } : {}),
       createdAt: date_envoi_ar ?? sirecData.reclamation.sys_creation_date,
       note: parts.length > 0 ? parts.join('\n') : null,
+      sirecFileTypeKeys: ['ar_requerant'],
     };
   });
 }

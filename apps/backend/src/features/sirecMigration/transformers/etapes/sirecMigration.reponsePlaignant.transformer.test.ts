@@ -77,6 +77,14 @@ describe('sirecMigration.reponsePlaignant.transformer.ts', () => {
     });
   });
 
+  describe('sirecFileTypeKeys', () => {
+    it('should set sirecFileTypeKeys to [rep_plaignant]', () => {
+      const result = transformSirecReponsePlaignant(makeData({ reponse_plaignant: 1 }), ['ars-1']);
+
+      expect(result[0].sirecFileTypeKeys).toEqual(['rep_plaignant']);
+    });
+  });
+
   describe('statutId and createdAt', () => {
     it('should set statutId to FAIT and createdAt when date_rep_plaignant is set', () => {
       const date = new Date('2024-03-05');

@@ -94,6 +94,12 @@ describe('sirecMigration.mesuresPrises.transformer.ts', () => {
       expect(result[0].entiteId).toBe(ARS_1);
       expect(result[1].entiteId).toBe(ARS_2);
     });
+
+    it('should set sirecFileTypeKeys to [mesures_prises]', () => {
+      const result = transformSirecMesuresPrises(makeData({ mesures_prises: 1 }), [ARS_1]);
+
+      expect(result[0].sirecFileTypeKeys).toEqual(['mesures_prises']);
+    });
   });
 
   describe('note — mesures_initiative line', () => {

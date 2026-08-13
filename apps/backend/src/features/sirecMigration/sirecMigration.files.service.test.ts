@@ -75,17 +75,17 @@ describe('sirecMigration.files.service.ts', () => {
   it('should do nothing when there are no files to migrate', async () => {
     mockFetchSirecFiles.mockResolvedValueOnce([]);
 
-    await migrateSirecFiles(42, 'requete-1');
+    await migrateSirecFiles(42, 'requete-1', new Map());
 
     expect(mockUploadFileToMinio).not.toHaveBeenCalled();
     expect(fakeLogger.info).not.toHaveBeenCalled();
   });
 
-  it('should migrate a file: fetch from SIREC bucket, upload, create the record and queue processing', async () => {
+  it('should migrate a file directly attached to the requete (null file_type)', async () => {
     const file = makeFile();
     mockFetchSirecFiles.mockResolvedValueOnce([file]);
 
-    await migrateSirecFiles(42, 'requete-1');
+    await migrateSirecFiles(42, 'requete-1', new Map());
 
     expect(mockGetSirecFileStream).toHaveBeenCalledWith(42, 'a1b2c3.pdf', undefined);
     expect(mockUploadFileToMinio).toHaveBeenCalledWith({ stream: true }, 'courrier.pdf', 'application/pdf', 12345);
@@ -123,10 +123,80 @@ describe('sirecMigration.files.service.ts', () => {
     expect(fakeLogger.warn).not.toHaveBeenCalled();
   });
 
+  it.each(['hors_process', 'fiche_synthese'])(
+    'should migrate a file with file_type %s directly attached to the requete',
+    async (fileType) => {
+      mockFetchSirecFiles.mockResolvedValueOnce([makeFile({ file_type: fileType })]);
+
+      await migrateSirecFiles(42, 'requete-1', new Map());
+
+      expect(mockUploadedFileCreate).toHaveBeenCalledWith({
+        data: expect.objectContaining({ requeteId: 'requete-1', requeteEtapeId: null }),
+      });
+      expect(fakeLogger.warn).not.toHaveBeenCalled();
+    },
+  );
+
+  it('should attach a file to the matching étape when its file_type is a known étape key', async () => {
+    mockFetchSirecFiles.mockResolvedValueOnce([makeFile({ file_type: 'mesures_prises' })]);
+    const etapeIdsByFileType = new Map([['mesures_prises', ['etape-1']]]);
+
+    await migrateSirecFiles(42, 'requete-1', etapeIdsByFileType);
+
+    expect(mockUploadedFileCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ requeteId: null, requeteEtapeId: 'etape-1' }),
+    });
+    expect(fakeLogger.warn).not.toHaveBeenCalled();
+  });
+
+  it('should attach a file to every matching étape when several ARS entités created one each', async () => {
+    mockFetchSirecFiles.mockResolvedValueOnce([makeFile({ file_type: 'ar_requerant' })]);
+    const etapeIdsByFileType = new Map([['ar_requerant', ['etape-ars1', 'etape-ars2']]]);
+
+    await migrateSirecFiles(42, 'requete-1', etapeIdsByFileType);
+
+    expect(mockUploadedFileCreate).toHaveBeenCalledTimes(2);
+    expect(mockUploadedFileCreate).toHaveBeenNthCalledWith(1, {
+      data: expect.objectContaining({ requeteId: null, requeteEtapeId: 'etape-ars1' }),
+    });
+    expect(mockUploadedFileCreate).toHaveBeenNthCalledWith(2, {
+      data: expect.objectContaining({ requeteId: null, requeteEtapeId: 'etape-ars2' }),
+    });
+    expect(mockAddFileProcessingJob).toHaveBeenCalledTimes(2);
+  });
+
+  it('should warn and attach directly to the requete when the étape file_type is known but no étape was created', async () => {
+    mockFetchSirecFiles.mockResolvedValueOnce([makeFile({ file_type: 'rep_plaignant' })]);
+
+    await migrateSirecFiles(42, 'requete-1', new Map());
+
+    expect(fakeLogger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ sirecFileId: 1, fileType: 'rep_plaignant' }),
+      'No étape created for this SIREC file_type on this réclamation, attaching file directly to the requete',
+    );
+    expect(mockUploadedFileCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ requeteId: 'requete-1', requeteEtapeId: null }),
+    });
+  });
+
+  it('should warn and attach directly to the requete when file_type is unknown', async () => {
+    mockFetchSirecFiles.mockResolvedValueOnce([makeFile({ file_type: 'un_type_jamais_vu' })]);
+
+    await migrateSirecFiles(42, 'requete-1', new Map());
+
+    expect(fakeLogger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ sirecFileId: 1, fileType: 'un_type_jamais_vu' }),
+      'Unknown SIREC file_type, attaching file directly to the requete',
+    );
+    expect(mockUploadedFileCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ requeteId: 'requete-1', requeteEtapeId: null }),
+    });
+  });
+
   it('should forward mockFilePath to getSirecFileStream when provided', async () => {
     mockFetchSirecFiles.mockResolvedValueOnce([makeFile()]);
 
-    await migrateSirecFiles(42, 'requete-1', '/files/mockfile');
+    await migrateSirecFiles(42, 'requete-1', new Map(), '/files/mockfile');
 
     expect(mockGetSirecFileStream).toHaveBeenCalledWith(42, 'a1b2c3.pdf', '/files/mockfile');
   });
@@ -134,7 +204,7 @@ describe('sirecMigration.files.service.ts', () => {
   it('should fall back to application/octet-stream when content_type is missing', async () => {
     mockFetchSirecFiles.mockResolvedValueOnce([makeFile({ content_type: null })]);
 
-    await migrateSirecFiles(42, 'requete-1');
+    await migrateSirecFiles(42, 'requete-1', new Map());
 
     expect(mockUploadFileToMinio).toHaveBeenCalledWith(
       { stream: true },
@@ -148,7 +218,7 @@ describe('sirecMigration.files.service.ts', () => {
     mockFetchSirecFiles.mockResolvedValueOnce([makeFile({ id_data: 1 }), makeFile({ id_data: 2 })]);
     mockGetSirecFileStream.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce({ stream: true });
 
-    await migrateSirecFiles(42, 'requete-1');
+    await migrateSirecFiles(42, 'requete-1', new Map());
 
     expect(fakeLogger.warn).toHaveBeenCalledWith(
       expect.objectContaining({ sirecFileId: 1, sirecId: 42, requeteId: 'requete-1' }),
@@ -161,7 +231,7 @@ describe('sirecMigration.files.service.ts', () => {
     mockFetchSirecFiles.mockResolvedValueOnce([makeFile()]);
     mockUploadedFileCreate.mockRejectedValueOnce(new Error('db down'));
 
-    await migrateSirecFiles(42, 'requete-1');
+    await migrateSirecFiles(42, 'requete-1', new Map());
 
     expect(mockRollback).toHaveBeenCalled();
     expect(mockAddFileProcessingJob).not.toHaveBeenCalled();
