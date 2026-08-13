@@ -9,22 +9,12 @@ vi.mock('../../transco/dictionnaire.transco.js', () => ({
   },
 }));
 
-vi.mock('../../transco/affectation/affectation.transco.js', () => ({
-  transcodeAffectation: vi.fn((id: number) => {
-    if (id === 693) return { requeteEntiteIds: ['ars-normandie'], situationEntiteIds: [] };
-    if (id === 677) return { requeteEntiteIds: ['ars-grand-est'], situationEntiteIds: [] };
-    if (id === 999) return { requeteEntiteIds: ['ars-a', 'ars-b'], situationEntiteIds: [] };
-    throw new SirecTranscoError(id, 'affectation');
-  }),
-}));
-
 const makeData = (
   mainCourantes: {
     id_data: number;
     type_action1: number | null;
     commentaire: string | null;
     date_action: Date | null;
-    groupIds: number[];
     sys_creation_date?: Date;
   }[] = [],
 ) => ({
@@ -38,14 +28,17 @@ const makeData = (
   mainCourantes: mainCourantes as never,
 });
 
+const ARS_IDS = ['ars-normandie', 'ars-grand-est'];
+
 describe('sirecMigration.mainCourante.transformer.ts', () => {
   it('should return an empty array when there are no mains courantes', () => {
-    expect(transformSirecMainCourantes(makeData([]))).toEqual([]);
+    expect(transformSirecMainCourantes(makeData([]), ARS_IDS)).toEqual([]);
   });
 
-  it('should return an empty array when a main courante has no groups', () => {
+  it('should return an empty array when arsEntiteIds is empty', () => {
     const result = transformSirecMainCourantes(
-      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null, groupIds: [] }]),
+      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null }]),
+      [],
     );
 
     expect(result).toEqual([]);
@@ -53,7 +46,8 @@ describe('sirecMigration.mainCourante.transformer.ts', () => {
 
   it('should set nom to "Type de traitement : Non précisé" when type_action1 is null', () => {
     const result = transformSirecMainCourantes(
-      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null, groupIds: [693] }]),
+      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null }]),
+      ['ars-normandie'],
     );
 
     expect(result[0].nom).toBe('Type de traitement : Non précisé');
@@ -61,7 +55,8 @@ describe('sirecMigration.mainCourante.transformer.ts', () => {
 
   it('should set nom from SIREC_DICO when type_action1 is a known id', () => {
     const result = transformSirecMainCourantes(
-      makeData([{ id_data: 1, type_action1: 100, commentaire: null, date_action: null, groupIds: [693] }]),
+      makeData([{ id_data: 1, type_action1: 100, commentaire: null, date_action: null }]),
+      ['ars-normandie'],
     );
 
     expect(result[0].nom).toBe('Médiation');
@@ -70,30 +65,27 @@ describe('sirecMigration.mainCourante.transformer.ts', () => {
   it('should throw SirecTranscoError when type_action1 is an unknown id', () => {
     expect(() =>
       transformSirecMainCourantes(
-        makeData([{ id_data: 1, type_action1: 9999, commentaire: null, date_action: null, groupIds: [693] }]),
+        makeData([{ id_data: 1, type_action1: 9999, commentaire: null, date_action: null }]),
+        ['ars-normandie'],
       ),
     ).toThrow(SirecTranscoError);
   });
 
-  it('should set entiteId from transcodeAffectation', () => {
+  it('should create one etape per arsEntiteId', () => {
     const result = transformSirecMainCourantes(
-      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null, groupIds: [693] }]),
+      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null }]),
+      ARS_IDS,
     );
 
+    expect(result).toHaveLength(2);
     expect(result[0].entiteId).toBe('ars-normandie');
-  });
-
-  it('should propagate SirecTranscoError for an unknown id_group', () => {
-    expect(() =>
-      transformSirecMainCourantes(
-        makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null, groupIds: [9999] }]),
-      ),
-    ).toThrow(SirecTranscoError);
+    expect(result[1].entiteId).toBe('ars-grand-est');
   });
 
   it('should set statutId to FAIT', () => {
     const result = transformSirecMainCourantes(
-      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null, groupIds: [693] }]),
+      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null }]),
+      ['ars-normandie'],
     );
 
     expect(result[0].statutId).toBe('FAIT');
@@ -108,10 +100,10 @@ describe('sirecMigration.mainCourante.transformer.ts', () => {
           type_action1: null,
           commentaire: null,
           date_action: null,
-          groupIds: [693],
           sys_creation_date: sysDate,
         },
       ]),
+      ['ars-normandie'],
     );
 
     expect(result[0].createdAt).toEqual(sysDate);
@@ -120,7 +112,8 @@ describe('sirecMigration.mainCourante.transformer.ts', () => {
   it('should set dateRealisation to date_action when non-null', () => {
     const date = new Date('2024-06-15');
     const result = transformSirecMainCourantes(
-      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: date, groupIds: [693] }]),
+      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: date }]),
+      ['ars-normandie'],
     );
 
     expect(result[0].dateRealisation).toEqual(date);
@@ -128,7 +121,8 @@ describe('sirecMigration.mainCourante.transformer.ts', () => {
 
   it('should not set dateRealisation when date_action is null', () => {
     const result = transformSirecMainCourantes(
-      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null, groupIds: [693] }]),
+      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null }]),
+      ['ars-normandie'],
     );
 
     expect(result[0].dateRealisation).toBeUndefined();
@@ -136,7 +130,8 @@ describe('sirecMigration.mainCourante.transformer.ts', () => {
 
   it('should set note to null when both commentaire and date_action are null', () => {
     const result = transformSirecMainCourantes(
-      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null, groupIds: [693] }]),
+      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null }]),
+      ['ars-normandie'],
     );
 
     expect(result[0].note).toBeNull();
@@ -144,7 +139,8 @@ describe('sirecMigration.mainCourante.transformer.ts', () => {
 
   it('should set note with only commentaire when date_action is null', () => {
     const result = transformSirecMainCourantes(
-      makeData([{ id_data: 1, type_action1: null, commentaire: 'RAS', date_action: null, groupIds: [693] }]),
+      makeData([{ id_data: 1, type_action1: null, commentaire: 'RAS', date_action: null }]),
+      ['ars-normandie'],
     );
 
     expect(result[0].note).toBe('Commentaire : RAS');
@@ -152,9 +148,8 @@ describe('sirecMigration.mainCourante.transformer.ts', () => {
 
   it('should set note with only date_action when commentaire is null', () => {
     const result = transformSirecMainCourantes(
-      makeData([
-        { id_data: 1, type_action1: null, commentaire: null, date_action: new Date('2024-06-15'), groupIds: [693] },
-      ]),
+      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: new Date('2024-06-15') }]),
+      ['ars-normandie'],
     );
 
     expect(result[0].note).toBe("Date de l'action : 15/06/2024");
@@ -168,59 +163,31 @@ describe('sirecMigration.mainCourante.transformer.ts', () => {
           type_action1: null,
           commentaire: 'Traitement effectué',
           date_action: new Date('2024-06-15'),
-          groupIds: [693],
         },
       ]),
+      ['ars-normandie'],
     );
 
     expect(result[0].note).toBe("Commentaire : Traitement effectué\nDate de l'action : 15/06/2024");
   });
 
-  it('should create one etape per group', () => {
-    const result = transformSirecMainCourantes(
-      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null, groupIds: [693, 677] }]),
-    );
-
-    expect(result).toHaveLength(2);
-    expect(result[0].entiteId).toBe('ars-normandie');
-    expect(result[1].entiteId).toBe('ars-grand-est');
-  });
-
   it('should deduplicate etapes with the same id_data and entiteId', () => {
     const result = transformSirecMainCourantes(
-      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null, groupIds: [693, 693] }]),
+      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null }]),
+      ['ars-normandie', 'ars-normandie'],
     );
 
     expect(result).toHaveLength(1);
     expect(result[0].entiteId).toBe('ars-normandie');
   });
 
-  it('should create one etape per requeteEntiteId when a group maps to multiple entiteIds', () => {
-    const result = transformSirecMainCourantes(
-      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null, groupIds: [999] }]),
-    );
-
-    expect(result).toHaveLength(2);
-    expect(result[0].entiteId).toBe('ars-a');
-    expect(result[1].entiteId).toBe('ars-b');
-  });
-
-  it('should deduplicate etapes with the same id_data and entiteId across multiple groups', () => {
-    // group 693 → ['ars-normandie'], group 999 → ['ars-a', 'ars-b']
-    const result = transformSirecMainCourantes(
-      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null, groupIds: [693, 693, 999] }]),
-    );
-
-    expect(result).toHaveLength(3);
-    expect(result.map((e) => e.entiteId)).toEqual(['ars-normandie', 'ars-a', 'ars-b']);
-  });
-
   it('should create etapes for multiple mains courantes', () => {
     const result = transformSirecMainCourantes(
       makeData([
-        { id_data: 1, type_action1: 100, commentaire: null, date_action: null, groupIds: [693] },
-        { id_data: 2, type_action1: 101, commentaire: null, date_action: null, groupIds: [677] },
+        { id_data: 1, type_action1: 100, commentaire: null, date_action: null },
+        { id_data: 2, type_action1: 101, commentaire: null, date_action: null },
       ]),
+      ['ars-normandie'],
     );
 
     expect(result).toHaveLength(2);

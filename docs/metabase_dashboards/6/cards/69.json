@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 228.83561643835617,
+  "average_query_time": 216.83695652173913,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -36,7 +36,7 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "WITH RECURSIVE\n-- 1. Périmètre entités : l'entité de premier niveau de l'utilisateur (entiteMereId IS NULL)\n--    identifiée par {{entity_label}}, PLUS tous ses services descendants (récursif).\nentites_scope AS (\n  SELECT e.id\n  FROM \"Entite\" e\n  WHERE e.\"entiteMereId\" IS NULL\n    [[ AND e.label = {{entity_label}} ]]\n\n  UNION ALL\n\n  SELECT child.id\n  FROM \"Entite\" child\n  JOIN entites_scope s ON child.\"entiteMereId\" = s.id\n),\n\n-- 2. Requêtes ayant AU MOINS un motif dont le 1er niveau est \"Maltraitance professionnels ou entourage\".\n--    Les id de MotifEnum sont au format \"PARENT/ENFANT\" -> on filtre sur le parent.\nrequetes_maltraitance AS (\n  SELECT DISTINCT s.\"requeteId\" AS requete_id\n  FROM \"Situation\" s\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  WHERE s.\"requeteId\" IS NOT NULL\n    AND fm.\"motifId\" LIKE 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/%'\n)\n\nSELECT COUNT(DISTINCT r.id) AS \"Requêtes maltraitance\"\nFROM \"Requete\" r\nJOIN requetes_maltraitance rm ON rm.requete_id = r.id\nJOIN \"RequeteEntite\" re     ON re.\"requeteId\" = r.id\nJOIN entites_scope es       ON es.id = re.\"entiteId\"\nWHERE 1 = 1\n  [[ AND r.\"receptionDate\"::date >= {{start_date}} ]]\n  [[ AND r.\"receptionDate\"::date <= {{end_date}} ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]",
+        "native": "WITH RECURSIVE\n-- 1. Périmètre entités : l'entité de premier niveau de l'utilisateur (entiteMereId IS NULL)\n--    identifiée par {{entity_label}}, PLUS tous ses services descendants (récursif).\nentites_scope AS (\n  SELECT e.id\n  FROM \"Entite\" e\n  WHERE e.\"entiteMereId\" IS NULL\n    [[ AND e.label = {{entity_label}} ]]\n\n  UNION ALL\n\n  SELECT child.id\n  FROM \"Entite\" child\n  JOIN entites_scope s ON child.\"entiteMereId\" = s.id\n),\n\n-- 2. Requêtes ayant AU MOINS un motif dont le 1er niveau est \"Maltraitance professionnels ou entourage\".\n--    Les id de MotifEnum sont au format \"PARENT/ENFANT\" -> on filtre sur le parent.\nrequetes_maltraitance AS (\n  SELECT DISTINCT s.\"requeteId\" AS requete_id\n  FROM \"Situation\" s\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  WHERE s.\"requeteId\" IS NOT NULL\n    AND fm.\"motifId\" LIKE 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/%'\n)\n\nSELECT COUNT(DISTINCT r.id) AS \"Requêtes maltraitance\"\nFROM \"Requete\" r\nJOIN requetes_maltraitance rm ON rm.requete_id = r.id\nJOIN \"RequeteEntite\" re     ON re.\"requeteId\" = r.id\nJOIN entites_scope es       ON es.id = re.\"entiteId\"\nWHERE 1 = 1\n  [[ AND r.\"createdAt\"::date >= {{start_date}} ]]\n  [[ AND r.\"createdAt\"::date <= {{end_date}} ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]",
         "template-tags": [
           {
             "display-name": "Entity Label",
@@ -66,7 +66,7 @@
       }
     ]
   },
-  "description": null,
+  "description": "Requêtes ayant au moins un motif « Maltraitance professionnels ou entourage », comptées selon leur date de création dans SIRENA",
   "dimension_mappings": null,
   "dimensions": null,
   "display": "scalar",
@@ -77,12 +77,12 @@
   "entity_id": "2P4X0t5mBkSBs54R0UTUb",
   "id": 69,
   "is_remote_synced": false,
-  "last_query_start": "2026-08-04T15:48:22.318555Z",
+  "last_query_start": "2026-08-10T12:19:04.07248Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.63.1.2 (b067da1)",
   "moderation_reviews": [],
-  "name": "requêtes taggués maltraitance",
+  "name": "Requêtes concernées par la maltraitance",
   "param_fields": {},
   "parameter_mappings": [],
   "parameter_usage_count": 0,
@@ -275,17 +275,17 @@
         },
         "type": {
           "type/Number": {
-            "avg": 13,
+            "avg": 0,
             "excess-kurtosis": null,
-            "max": 13,
-            "min": 13,
+            "max": 0,
+            "min": 0,
             "mode-fraction": 1,
-            "q1": 13,
-            "q3": 13,
+            "q1": 0,
+            "q3": 0,
             "sd": 0,
             "skewness": null,
             "top-3-fraction": 1,
-            "zero-fraction": 0
+            "zero-fraction": 1
           }
         }
       },

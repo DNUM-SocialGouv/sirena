@@ -1,5 +1,5 @@
 import type { SirecMisEnCause, SirecReclamationData, SirecReclamationRow } from '../../sirecMigration.repository.js';
-import { ARS_NORMANDIE_ENTITE_ID, SIREC_NATIONAL_ENTITE_ID } from '../../transco/affectation/affectation.transco.js';
+import { ARS_NORMANDIE_ENTITE_ID } from '../../transco/affectation/affectation.transco.js';
 import { SIREC_BOOLEAN_TRANSCO, SIREC_DICO } from '../../transco/dictionnaire.transco.js';
 import { SIREC_TYPE_FINESS } from '../../transco/finessCategetab.transco.js';
 import { SIREC_TYPE_AUTRE } from '../../transco/misEnCauseAutre.transco.js';
@@ -7,7 +7,6 @@ import { SIREC_TYPE_RPPS } from '../../transco/misEnCauseRpps.transco.js';
 import { transcodeSignalement } from '../../transco/signalement.transco.js';
 import { SirecDataError, SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import type { SirenaDeclarantData } from '../sirecMigration.declarant.transformer.js';
-import { computeSituationEntiteIds } from './sirecMigration.affectation.transformer.js';
 import { transformSirecAutre } from './sirecMigration.autre.transformer.js';
 import {
   type SirenaFinessResult,
@@ -132,29 +131,16 @@ export function transformSirecMisEnCauseSituations(
   requeteEntiteIds: string[] = [],
   declarant: SirenaDeclarantData | null = null,
 ): SirenaSituationData[] {
-  const { misEnCauses, reclamation, groupIds } = sirecData;
+  const { misEnCauses, reclamation } = sirecData;
+
+  const baseSituation = transformSirecSituation(sirecData, situationEntiteIds);
 
   if (misEnCauses.length === 0) {
     const sansMcData = resolveSansMc(reclamation.sans_mc);
-    const baseSituationNoMec = transformSirecSituation(sirecData, situationEntiteIds);
-    return [{ ...baseSituationNoMec, misEnCauseData: applyMisEnCauseAnnotations(sansMcData, reclamation) }];
+    return [{ ...baseSituation, misEnCauseData: applyMisEnCauseAnnotations(sansMcData, reclamation) }];
   }
 
-  const baseSituation = transformSirecSituation(sirecData, []);
-
-  const allMisEnCauseGroupIds = new Set(misEnCauses.flatMap((m) => m.groupIds));
-  const orphanGroupIds = groupIds.filter((id) => !allMisEnCauseGroupIds.has(id));
-
-  const orphanEntiteIds = computeSituationEntiteIds([
-    ...[reclamation.service_recepteur_niv1, reclamation.service_gestionnaire].filter(
-      (id) => id !== SIREC_NATIONAL_ENTITE_ID,
-    ),
-    ...orphanGroupIds,
-  ]);
-
   return misEnCauses.map((misEnCause) => {
-    const misEnCauseEntiteIds = computeSituationEntiteIds(misEnCause.groupIds);
-    const entiteIds = [...new Set([...orphanEntiteIds, ...misEnCauseEntiteIds])];
     const { misEnCauseData, lieuDeSurvenueData } = resolveMisEnCause(misEnCause);
     const { motifs, commentaireSuffix } = resolveMotifsIgas(misEnCause.motifsIgas);
     const annotatedMisEnCauseData = applyMisEnCauseAnnotations(misEnCauseData, reclamation, misEnCause);
@@ -165,7 +151,6 @@ export function transformSirecMisEnCauseSituations(
         : annotatedMisEnCauseData;
     return {
       ...baseSituation,
-      entiteIds,
       misEnCauseData: finalMisEnCauseData,
       lieuDeSurvenueData,
       fait: {

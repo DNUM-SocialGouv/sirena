@@ -1,0 +1,154 @@
+{
+  "archived": false,
+  "archived_directly": false,
+  "average_query_time": 621.3098591549295,
+  "cache_ttl": null,
+  "can_delete": false,
+  "can_manage_db": true,
+  "can_restore": false,
+  "can_run_adhoc_query": true,
+  "can_write": true,
+  "card_schema": 23,
+  "collection": {
+    "authority_level": null,
+    "can_write": true,
+    "id": "root",
+    "is_personal": false,
+    "is_remote_synced": false,
+    "metabase.collections.models.collection.root/is-root?": true,
+    "name": "Our analytics"
+  },
+  "collection_id": null,
+  "collection_position": null,
+  "collection_preview": true,
+  "creator_id": 7,
+  "dashboard": {
+    "id": 4,
+    "moderation_status": null,
+    "name": "[integration] Dashboard local"
+  },
+  "dashboard_count": 1,
+  "dashboard_id": 4,
+  "database_id": 4,
+  "dataset_query": {
+    "database": 4,
+    "lib/type": "mbql/query",
+    "stages": [
+      {
+        "lib/type": "mbql.stage/native",
+        "native": "-- Carte : « Répartition des requêtes par mode de réception »\nWITH requetes AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, r.\"receptionTypeId\" AS reception_type_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n),\ntotal AS (SELECT COUNT(*) AS nb_total FROM requetes),\npar_type AS (\n  SELECT COALESCE(rt.label, 'Non précisé') AS mode_reception, COUNT(*) AS nb_requetes\n  FROM requetes q\n  LEFT JOIN \"ReceptionTypeEnum\" rt ON rt.id = q.reception_type_id\n  GROUP BY COALESCE(rt.label, 'Non précisé')\n)\nSELECT\n  pt.mode_reception                                        AS \"Mode de réception\",\n  pt.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * pt.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes (%)\"\nFROM par_type pt\nCROSS JOIN total t\nORDER BY pt.nb_requetes DESC;",
+        "template-tags": [
+          {
+            "display-name": "Entity Label",
+            "id": "1058dec6-7cd4-4a04-99ec-c99cc98869a1",
+            "name": "entity_label",
+            "type": "text"
+          },
+          {
+            "display-name": "Start Date",
+            "id": "cc76a986-791f-4df5-936e-390ff6ee33f5",
+            "name": "start_date",
+            "type": "date"
+          },
+          {
+            "display-name": "End Date",
+            "id": "8b4896e9-2a4c-4b4e-9b52-83b5a05b971a",
+            "name": "end_date",
+            "type": "date"
+          },
+          {
+            "display-name": "Domaine Fonctionnel",
+            "id": "b75bc313-539f-4567-b202-958fb6f48e35",
+            "name": "domaine_fonctionnel",
+            "type": "text"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "Répartition des requêtes affectées à mon entité administrative selon leur mode de réception. Mode non renseigné = « Non précisé ».",
+  "dimension_mappings": null,
+  "dimensions": null,
+  "display": "pie",
+  "document_id": null,
+  "embedding_params": null,
+  "embedding_type": null,
+  "enable_embedding": false,
+  "entity_id": "pfEguIi5DjK77MqToiTG4",
+  "id": 71,
+  "is_remote_synced": false,
+  "last_query_start": "2026-08-07T14:05:49.437254Z",
+  "legacy_query": null,
+  "made_public_by_id": null,
+  "metabase_version": "v0.63.1.2 (b067da1)",
+  "moderation_reviews": [],
+  "name": "Répartition des requêtes par mode de réception",
+  "param_fields": {},
+  "parameter_mappings": [],
+  "parameter_usage_count": 0,
+  "parameters": [
+    {
+      "id": "1058dec6-7cd4-4a04-99ec-c99cc98869a1",
+      "isMultiSelect": false,
+      "name": "Entity Label",
+      "slug": "entity_label",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "entity_label"
+        ]
+      ],
+      "type": "string/="
+    },
+    {
+      "id": "cc76a986-791f-4df5-936e-390ff6ee33f5",
+      "isMultiSelect": false,
+      "name": "Start Date",
+      "slug": "start_date",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "start_date"
+        ]
+      ],
+      "type": "date/single"
+    },
+    {
+      "id": "8b4896e9-2a4c-4b4e-9b52-83b5a05b971a",
+      "isMultiSelect": false,
+      "name": "End Date",
+      "slug": "end_date",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "end_date"
+        ]
+      ],
+      "type": "date/single"
+    },
+    {
+      "id": "b75bc313-539f-4567-b202-958fb6f48e35",
+      "isMultiSelect": true,
+      "name": "Domaine Fonctionnel",
+      "slug": "domaine_fonctionnel",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "domaine_fonctionnel"
+        ]
+      ],
+      "type": "string/="
+    }
+  ],
+  "public_uuid": null,
+  "query_type": "native",
+  "result_metadata": null,
+  "source_card_id": null,
+  "table_id": null,
+  "type": "question",
+  "visualization_settings": {}
+}
