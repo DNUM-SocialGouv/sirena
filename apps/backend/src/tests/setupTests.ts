@@ -235,4 +235,8 @@ Object.assign(process.env, {
   MARIADB_SIREC_DB: 'sirec',
   MARIADB_SIREC_USER: 'sirec',
   MARIADB_SIREC_PASSWORD: 'sirec',
+  // Migration bucket
+  S3_MIGRATION_BUCKET_ACCESS_KEY: 'migration-access-key',
+  S3_MIGRATION_BUCKET_SECRET_KEY: 'migration-secret-key',
+  S3_MIGRATION_BUCKET_NAME: 'migration-bucket',
 });
