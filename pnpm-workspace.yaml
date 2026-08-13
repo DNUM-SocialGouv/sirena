@@ -96,3 +96,11 @@ overrides:
   # executable, causing XSS — GHSA-55q2-fjhq-7xh7. Tiré par prisma-erd-generator
   # > @mermaid-js/mermaid-cli > mermaid/@zenuml/core (db:erd only).
   "dompurify@<=3.4.12": ">=3.4.13"
+# extract-zip <=2.0.1: symlink path traversal — GHSA-jmr9-qjv8-65gv. Aucune
+# version corrigée n'a jamais été publiée sur npm (dernière release : 2.0.1,
+# 2020), un override est donc impossible. Tiré par prisma-erd-generator >
+# @mermaid-js/mermaid-cli > puppeteer(-core) > @puppeteer/browsers (db:erd
+# only ; zips générés localement, pas de contenu attaquant).
+auditConfig:
+  ignoreGhsas:
+    - GHSA-jmr9-qjv8-65gv
