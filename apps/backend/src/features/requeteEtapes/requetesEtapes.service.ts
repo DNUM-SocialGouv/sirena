@@ -473,6 +473,29 @@ export const updateProcessingEtape = async (
   return prisma.requeteEtape.findUnique({ where: { id: stepId } });
 };
 
+// Clear the rappel on a step without touching its notes/files (unlike the full update PATCH).
+export const disableEtapeRappel = async (stepId: string): Promise<RequeteEtape | null> => {
+  const etape = await prisma.requeteEtape.findUnique({
+    where: { id: stepId },
+    include: {
+      uploadedFiles: { select: { canDelete: true } },
+    },
+  });
+  if (!etape) {
+    return null;
+  }
+
+  const { editable } = getEtapePermissions(etape);
+  if (!editable) {
+    throw new EtapeNotEditableError('ETAPE_NOT_EDITABLE');
+  }
+
+  return prisma.requeteEtape.update({
+    where: { id: stepId },
+    data: { rappelType: null, rappelDate: null },
+  });
+};
+
 /**
  * Attaches uploaded files to a CLOTUREE (closure) step at the step level (requeteEtapeId).
  */

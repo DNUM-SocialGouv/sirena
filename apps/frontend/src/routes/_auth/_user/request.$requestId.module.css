@@ -74,6 +74,40 @@
   margin-left: 0;
 }
 
+.step-rappel {
+  display: inline;
+}
+
+.step-rappel .fr-badge {
+  gap: 0.25rem;
+  vertical-align: middle;
+}
+
+.step-rappel__disable {
+  margin-left: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--text-mention-grey);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.step-rappel__disable:hover {
+  color: var(--text-default-grey);
+}
+
+.step-rappel__disable:focus-visible {
+  outline: 2px solid var(--focus, #0a76f6);
+  outline-offset: 2px;
+}
+
+.step-rappel__disable:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .request-notes-distplay {
   margin: 0 0 1rem 0;
 }

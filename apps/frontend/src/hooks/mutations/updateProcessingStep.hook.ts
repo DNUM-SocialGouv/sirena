@@ -5,6 +5,7 @@ import {
   addClotureFiles,
   addProcessingStep,
   deleteProcessingStep,
+  disableStepRappel,
   sendAcknowledgment,
   type UpdateProcessingStepData,
   updateProcessingStep,
@@ -30,6 +31,17 @@ export const useUpdateProcessingStep = (requestId: string) => {
 
   return useMutation({
     mutationFn: ({ id, ...data }: UpdateProcessingStepParams) => updateProcessingStep(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['processingSteps', requestId] });
+    },
+  });
+};
+
+export const useDisableStepRappel = (requestId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id }: { id: string }) => disableStepRappel(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['processingSteps', requestId] });
     },
