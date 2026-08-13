@@ -107,6 +107,14 @@ const requeteEtapeWithNotesAndFiles: RequeteEtape & {
   requeteEntite: {
     entite: { id: string; nomComplet: string; entiteTypeId: string };
   };
+  requete: {
+    createdAt: Date;
+    createdById: string | null;
+    createdBy: { prenom: string; nom: string } | null;
+    dematSocialId: number | null;
+    sirecId: number | null;
+    thirdPartyAccountId: string | null;
+  };
 } = {
   ...requeteEtape,
   notes: [
@@ -122,6 +130,14 @@ const requeteEtapeWithNotesAndFiles: RequeteEtape & {
   uploadedFiles: [uploadedFile],
   requeteEntite: {
     entite: { id: 'entiteId', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
+  },
+  requete: {
+    createdAt: new Date('2024-01-01T00:00:00.000Z'),
+    createdById: null,
+    createdBy: null,
+    dematSocialId: null,
+    sirecId: null,
+    thirdPartyAccountId: null,
   },
 };
 
@@ -592,6 +608,7 @@ describe('RequeteEtapes.service.ts', () => {
           },
           requete: {
             select: {
+              createdAt: true,
               createdById: true,
               createdBy: {
                 select: {
@@ -706,6 +723,7 @@ describe('RequeteEtapes.service.ts', () => {
           },
           requete: {
             select: {
+              createdAt: true,
               createdById: true,
               createdBy: {
                 select: {
@@ -798,16 +816,16 @@ describe('RequeteEtapes.service.ts', () => {
     });
 
     it('exposes current multi-entity metadata and each owner Entité administrative identity', async () => {
-      const foreignSharedStep = {
+      const foreignEtapePartagee = {
         ...requeteEtapeWithNotesAndFiles,
-        id: 'foreign-shared-step',
+        id: 'foreign-etape-partagee',
         entiteId: 'foreign-entite',
         estPartagee: true,
         requeteEntite: {
           entite: { id: 'foreign-entite', nomComplet: 'CD du Calvados', entiteTypeId: 'CD' },
         },
       };
-      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([foreignSharedStep]);
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([foreignEtapePartagee]);
       vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
       vi.mocked(prisma.requeteEntite.count).mockResolvedValueOnce(2);
 
@@ -815,7 +833,7 @@ describe('RequeteEtapes.service.ts', () => {
 
       expect(result.isMultiEntite).toBe(true);
       expect(result.data[0]).toMatchObject({
-        id: 'foreign-shared-step',
+        id: 'foreign-etape-partagee',
         entiteId: 'foreign-entite',
         entiteAdministrative: {
           id: 'foreign-entite',
@@ -854,6 +872,127 @@ describe('RequeteEtapes.service.ts', () => {
       expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ orderBy: { createdAt: 'desc' } }),
       );
+    });
+
+    it('keeps entity-specific creation sources unchanged when the shared chronology is disabled', async () => {
+      const creationSources = [
+        {
+          ...requeteEtapeWithNotesAndFiles,
+          id: 'owner-creation',
+          type: 'CREATION' as const,
+          createdAt: new Date('2026-01-02T08:00:00.000Z'),
+        },
+        {
+          ...requeteEtapeWithNotesAndFiles,
+          id: 'later-creation',
+          type: 'CREATION' as const,
+          createdAt: new Date('2026-07-01T08:00:00.000Z'),
+        },
+      ];
+      vi.mocked(prisma.requeteEntite.count).mockResolvedValueOnce(2);
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce(creationSources);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(2);
+
+      const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0, limit: 10 }, false);
+
+      expect(result.data.map((step) => step.id)).toEqual(['owner-creation', 'later-creation']);
+      expect(result.data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            timelineItemType: 'ENTITY_STEP',
+            attributedEntiteAdministrative: expect.any(Object),
+          }),
+        ]),
+      );
+      expect(result.total).toBe(2);
+      expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ skip: 0, take: 10, orderBy: { createdAt: 'desc' } }),
+      );
+    });
+
+    it('projects one neutral creation at the original request date before sorting and pagination', async () => {
+      const requestCreatedAt = new Date('2026-01-01T08:00:00.000Z');
+      const makeTimelineStep = ({
+        id,
+        type = 'MANUAL',
+        createdAt,
+        dateRealisation = null,
+        entiteId = 'reader-entite',
+      }: {
+        id: string;
+        type?: RequeteEtape['type'];
+        createdAt: Date;
+        dateRealisation?: Date | null;
+        entiteId?: string;
+      }) => ({
+        ...requeteEtapeWithNotesAndFiles,
+        id,
+        type,
+        entiteId,
+        createdAt,
+        dateRealisation,
+        requeteEntite: {
+          entite: {
+            id: entiteId,
+            nomComplet: entiteId === 'reader-entite' ? 'ARS Normandie' : 'CD du Calvados',
+            entiteTypeId: entiteId === 'reader-entite' ? 'ARS' : 'CD',
+          },
+        },
+        requete: {
+          createdAt: requestCreatedAt,
+          createdById: 'agent-1',
+          createdBy: { prenom: 'Camille', nom: 'Dupont' },
+          dematSocialId: null,
+          sirecId: null,
+          thirdPartyAccountId: null,
+        },
+      });
+
+      const sourceTimeline = [
+        makeTimelineStep({
+          id: 'creation-late-assignment',
+          type: 'CREATION',
+          createdAt: new Date('2026-07-01T08:00:00.000Z'),
+          entiteId: 'foreign-entite',
+        }),
+        makeTimelineStep({
+          id: 'most-recent-by-created-at',
+          createdAt: new Date('2026-06-01T08:00:00.000Z'),
+          dateRealisation: new Date('2025-01-01T08:00:00.000Z'),
+        }),
+        makeTimelineStep({ id: 'same-date-b', createdAt: new Date('2026-05-01T08:00:00.000Z') }),
+        makeTimelineStep({
+          id: 'creation-initial-assignment',
+          type: 'CREATION',
+          createdAt: new Date('2026-01-02T08:00:00.000Z'),
+        }),
+        makeTimelineStep({ id: 'same-date-a', createdAt: new Date('2026-05-01T08:00:00.000Z') }),
+      ];
+      vi.mocked(prisma.requeteEntite.count).mockResolvedValueOnce(3).mockResolvedValueOnce(3);
+      vi.mocked(prisma.requeteEtape.findMany)
+        .mockResolvedValueOnce(sourceTimeline)
+        .mockResolvedValueOnce(sourceTimeline);
+
+      const firstPage = await getRequeteEtapes('requeteId', 'reader-entite', { offset: 0, limit: 2 }, true);
+      const secondPage = await getRequeteEtapes('requeteId', 'reader-entite', { offset: 2, limit: 2 }, true);
+
+      expect(firstPage.total).toBe(4);
+      expect(secondPage.total).toBe(4);
+      expect(firstPage.data.map((step) => step.id)).toEqual(['most-recent-by-created-at', 'same-date-a']);
+      expect(secondPage.data.map((step) => step.id)).toEqual(['same-date-b', 'creation-initial-assignment']);
+      expect(secondPage.data[1]).toMatchObject({
+        id: 'creation-initial-assignment',
+        type: 'CREATION',
+        createdAt: requestCreatedAt,
+        timelineItemType: 'NEUTRAL_EVENT',
+        attributedEntiteAdministrative: null,
+      });
+      expect([...firstPage.data, ...secondPage.data].filter((step) => step.type === 'CREATION')).toHaveLength(1);
+      expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith(
+        expect.not.objectContaining({ skip: expect.anything(), take: expect.anything() }),
+      );
+      expect(prisma.requeteEtape.update).not.toHaveBeenCalled();
+      expect(prisma.requeteEtape.delete).not.toHaveBeenCalled();
     });
 
     it('selects only owner steps or Étapes partagées for a currently affected reader', async () => {

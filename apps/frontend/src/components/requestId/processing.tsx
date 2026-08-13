@@ -74,7 +74,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                 <Step
                   key={step.id}
                   requestId={requestId}
-                  isOwner={(step.entiteAdministrative?.id ?? step.entiteId) === requestQuery.data?.entiteId}
+                  isOwner={step.attributedEntiteAdministrative?.id === requestQuery.data?.entiteId}
                   isMultiEntite={isMultiEntite}
                   {...step}
                   isAcknowledgmentSendable={isAcknowledgmentSendable}

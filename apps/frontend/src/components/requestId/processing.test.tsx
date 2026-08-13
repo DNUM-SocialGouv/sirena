@@ -1,50 +1,61 @@
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { render, screen } from '@testing-library/react';
+import { forwardRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Processing } from './processing';
 
 let processingMeta = { total: 1, isMultiEntite: true, etapePartageeEnabled: true };
+const foreignEtapePartagee = {
+  id: 'foreign-closure',
+  requeteId: 'REQ-1',
+  entiteId: 'OTHER-ENTITY',
+  entiteAdministrative: {
+    id: 'OTHER-ENTITY',
+    nomComplet: 'CD du Calvados',
+    entiteTypeId: 'CD',
+  },
+  timelineItemType: 'ENTITY_STEP',
+  attributedEntiteAdministrative: {
+    id: 'OTHER-ENTITY',
+    nomComplet: 'CD du Calvados',
+    entiteTypeId: 'CD',
+  },
+  nom: 'Clôture étrangère',
+  type: REQUETE_ETAPE_TYPES.MANUAL,
+  estPartagee: true,
+  statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
+  dateRealisation: null,
+  clotureEffectiveDate: '2026-07-31',
+  createdAt: '2026-07-31T10:00:00.000Z',
+  updatedAt: '2026-07-31T10:00:00.000Z',
+  editable: false,
+  canOnlyEditNotes: false,
+  notes: [],
+  uploadedFiles: [],
+  clotureReason: [],
+  createdBy: null,
+  requete: {
+    createdById: null,
+    dematSocialId: null,
+    sirecId: null,
+    thirdPartyAccountId: null,
+    createdBy: null,
+  },
+};
+type RequeteEtapeFixture = Omit<typeof foreignEtapePartagee, 'attributedEntiteAdministrative'> & {
+  attributedEntiteAdministrative: typeof foreignEtapePartagee.attributedEntiteAdministrative | null;
+};
+let requeteEtapes: RequeteEtapeFixture[] = [foreignEtapePartagee];
 
-vi.mock('@tanstack/react-router', () => ({
-  useNavigate: () => vi.fn(),
-}));
+vi.mock('@tanstack/react-router', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@tanstack/react-router')>();
+  return { ...original, useNavigate: () => vi.fn() };
+});
 
 vi.mock('@/hooks/queries/processingSteps.hook', () => ({
   useProcessingSteps: () => ({
     data: {
-      data: [
-        {
-          id: 'foreign-closure',
-          requeteId: 'REQ-1',
-          entiteId: 'OTHER-ENTITY',
-          entiteAdministrative: {
-            id: 'OTHER-ENTITY',
-            nomComplet: 'CD du Calvados',
-            entiteTypeId: 'CD',
-          },
-          nom: 'Clôture étrangère',
-          type: REQUETE_ETAPE_TYPES.MANUAL,
-          estPartagee: true,
-          statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
-          dateRealisation: null,
-          clotureEffectiveDate: '2026-07-31',
-          createdAt: '2026-07-31T10:00:00.000Z',
-          updatedAt: '2026-07-31T10:00:00.000Z',
-          editable: false,
-          canOnlyEditNotes: false,
-          notes: [],
-          uploadedFiles: [],
-          clotureReason: [],
-          createdBy: null,
-          requete: {
-            createdById: null,
-            dematSocialId: null,
-            sirecId: null,
-            thirdPartyAccountId: null,
-            createdBy: null,
-          },
-        },
-      ],
+      data: requeteEtapes,
       meta: processingMeta,
     },
     error: null,
@@ -74,12 +85,40 @@ vi.mock('@/components/common/EntiteTypeBadge', () => ({
   EntiteTypeBadge: () => null,
 }));
 
-vi.mock('@/components/requestId/processing/Step', () => ({
-  Step: ({ isMultiEntite, isOwner }: { isMultiEntite: boolean; isOwner: boolean }) => (
-    <div data-testid="processing-step" data-multi-entite={isMultiEntite} data-owner={isOwner}>
-      Étape étrangère
-    </div>
-  ),
+vi.mock('./processing/AddFilesClotureDrawer', () => ({
+  AddFilesClotureDrawer: forwardRef(() => null),
+}));
+
+vi.mock('@codegouvfr/react-dsfr/Modal', () => ({
+  createModal: () => ({
+    id: 'test-modal',
+    open: vi.fn(),
+    close: vi.fn(),
+    Component: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  }),
+}));
+
+vi.mock('@sirena/ui', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@sirena/ui')>();
+  return {
+    ...original,
+    Toast: {
+      ...original.Toast,
+      useToastManager: () => ({ add: vi.fn() }),
+    },
+  };
+});
+
+vi.mock('@/hooks/mutations/updateUploadedFiles.hook', () => ({
+  useDeleteUploadedFile: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
+vi.mock('@/hooks/useModalFocusRestore', () => ({
+  useModalFocusRestore: () => ({ registerTrigger: vi.fn() }),
+}));
+
+vi.mock('@/stores/userStore', () => ({
+  useUserStore: (selector: (state: { role: string }) => string) => selector({ role: 'WRITER' }),
 }));
 
 vi.mock('./processing/StepFormPanel', () => ({ StepFormPanel: () => null }));
@@ -91,6 +130,7 @@ vi.mock('./sections/OtherEntitesAffected', () => ({ OtherEntitiesAffected: () =>
 describe('Processing', () => {
   beforeEach(() => {
     processingMeta = { total: 1, isMultiEntite: true, etapePartageeEnabled: true };
+    requeteEtapes = [foreignEtapePartagee];
   });
 
   const requestQuery = {
@@ -110,9 +150,45 @@ describe('Processing', () => {
       screen.getByText("Accès en lecture seule : l'édition n'est pas disponible avec vos autorisations actuelles."),
     ).toBeInTheDocument();
     expect(screen.queryByText(/cette requête est clôturée/)).not.toBeInTheDocument();
-    expect(screen.getByTestId('processing-step')).toHaveAttribute('data-multi-entite', 'true');
-    expect(screen.getByTestId('processing-step')).toHaveAttribute('data-owner', 'false');
+    expect(document.querySelector('[data-entity-relation="foreign"]')).toBeInTheDocument();
     expect(screen.getByTestId('timeline-line')).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('renders one neutral creation event in the order supplied by the backend', () => {
+    processingMeta = { total: 3, isMultiEntite: true, etapePartageeEnabled: true };
+    requeteEtapes = [
+      {
+        ...foreignEtapePartagee,
+        id: 'newest-step',
+        nom: 'Étape la plus récente',
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+      },
+      {
+        ...foreignEtapePartagee,
+        id: 'neutral-creation',
+        type: REQUETE_ETAPE_TYPES.CREATION,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        timelineItemType: 'NEUTRAL_EVENT',
+        attributedEntiteAdministrative: null,
+      },
+      {
+        ...foreignEtapePartagee,
+        id: 'oldest-step',
+        nom: 'Étape la plus ancienne',
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+      },
+    ];
+
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(
+      [...document.querySelectorAll('[data-timeline-item-type] h3')].map((heading) => heading.textContent?.trim()),
+    ).toEqual(['CD - Étape la plus récente', 'Création de la requête', 'CD - Étape la plus ancienne']);
+    expect(screen.getAllByRole('heading', { name: 'Création de la requête' })).toHaveLength(1);
+    expect(
+      screen.getByRole('heading', { name: 'Création de la requête' }).closest('[data-timeline-item-type]'),
+    ).toHaveAttribute('data-timeline-item-type', 'NEUTRAL_EVENT');
+    expect(document.querySelector('[data-entity-relation="neutral"]')).toBeInTheDocument();
   });
 
   it('keeps the historical presentation when the rollout flag is disabled', () => {
@@ -120,6 +196,7 @@ describe('Processing', () => {
 
     render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
-    expect(screen.getByTestId('processing-step')).toHaveAttribute('data-multi-entite', 'false');
+    expect(document.querySelector('[data-entity-relation]')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Clôture' })).toBeInTheDocument();
   });
 });

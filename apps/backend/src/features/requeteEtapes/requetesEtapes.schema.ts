@@ -64,19 +64,32 @@ const RequeteEtapeNoteSchema = z.object({
   author: z.object({ prenom: z.string(), nom: z.string() }).nullable(),
 });
 
-// Response schema for the list endpoint, which enriches each step with editability
-// flags and its notes/files (see getRequeteEtapes).
-export const RequeteEtapeWithDetailsSchema = RequeteEtapeSchema.extend({
-  entiteAdministrative: z.object({
-    id: z.string(),
-    nomComplet: z.string(),
-    entiteTypeId: z.string(),
-  }),
+const AttributedEntiteAdministrativeSchema = z.object({
+  id: z.string(),
+  nomComplet: z.string(),
+  entiteTypeId: z.string(),
+});
+
+// Response schema for the list endpoint, which enriches each step with editability,
+// timeline presentation metadata, notes and files (see getRequeteEtapes).
+const RequeteEtapeWithDetailsBaseSchema = RequeteEtapeSchema.extend({
+  entiteAdministrative: AttributedEntiteAdministrativeSchema,
   editable: z.boolean(),
   canOnlyEditNotes: z.boolean(),
   uploadedFiles: z.array(EtapeUploadedFileSchema),
   notes: z.array(RequeteEtapeNoteSchema),
 });
+
+export const RequeteEtapeWithDetailsSchema = z.discriminatedUnion('timelineItemType', [
+  RequeteEtapeWithDetailsBaseSchema.extend({
+    timelineItemType: z.literal('ENTITY_STEP'),
+    attributedEntiteAdministrative: AttributedEntiteAdministrativeSchema,
+  }),
+  RequeteEtapeWithDetailsBaseSchema.extend({
+    timelineItemType: z.literal('NEUTRAL_EVENT'),
+    attributedEntiteAdministrative: z.null(),
+  }),
+]);
 
 const columns = [
   Prisma.RequeteEtapeScalarFieldEnum.nom,

@@ -716,6 +716,8 @@ describe('requeteEtapes.controller.ts', () => {
       };
       editable: boolean;
       canOnlyEditNotes: boolean;
+      timelineItemType: 'ENTITY_STEP';
+      attributedEntiteAdministrative: { id: string; nomComplet: string; entiteTypeId: string };
       entiteAdministrative: { id: string; nomComplet: string; entiteTypeId: string };
     } = {
       ...requeteEtape,
@@ -725,6 +727,12 @@ describe('requeteEtapes.controller.ts', () => {
       requete: { createdById: null, dematSocialId: null, sirecId: null, thirdPartyAccountId: null, createdBy: null },
       editable: true,
       canOnlyEditNotes: false,
+      timelineItemType: 'ENTITY_STEP',
+      attributedEntiteAdministrative: {
+        id: 'entiteId',
+        nomComplet: 'ARS Normandie',
+        entiteTypeId: 'ARS',
+      },
       entiteAdministrative: {
         id: 'entiteId',
         nomComplet: 'ARS Normandie',
@@ -758,6 +766,57 @@ describe('requeteEtapes.controller.ts', () => {
       });
 
       expect(getRequeteEtapes).toHaveBeenCalledWith('1', 'e1', {}, false);
+    });
+
+    it('returns a complete projected chronology in service order with visible-item metadata', async () => {
+      vi.mocked(hasFeature).mockResolvedValueOnce(true);
+      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({
+        data: [
+          {
+            ...requeteEtapeWithNotesAndFiles,
+            id: 'owner-step',
+          },
+          {
+            ...requeteEtapeWithNotesAndFiles,
+            id: 'foreign-shared-step',
+            entiteId: 'e2',
+            estPartagee: true,
+            editable: false,
+            attributedEntiteAdministrative: { id: 'e2', nomComplet: 'CD du Calvados', entiteTypeId: 'CD' },
+            entiteAdministrative: { id: 'e2', nomComplet: 'CD du Calvados', entiteTypeId: 'CD' },
+          },
+          {
+            ...requeteEtapeWithNotesAndFiles,
+            id: 'neutral-creation',
+            type: 'CREATION',
+            timelineItemType: 'NEUTRAL_EVENT' as const,
+            attributedEntiteAdministrative: null,
+            editable: false,
+          },
+        ],
+        total: 3,
+        isMultiEntite: true,
+      });
+
+      const res = await client[':id']['processing-steps'].$get({ param: { id: '1' } });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.meta).toEqual({ total: 3, isMultiEntite: true, etapePartageeEnabled: true });
+      expect(json.data.map((step) => step.id)).toEqual(['owner-step', 'foreign-shared-step', 'neutral-creation']);
+      expect(json.data).toMatchObject([
+        {
+          timelineItemType: 'ENTITY_STEP',
+          attributedEntiteAdministrative: { id: 'entiteId', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
+        },
+        {
+          estPartagee: true,
+          editable: false,
+          timelineItemType: 'ENTITY_STEP',
+          attributedEntiteAdministrative: { id: 'e2', nomComplet: 'CD du Calvados', entiteTypeId: 'CD' },
+        },
+        { type: 'CREATION', timelineItemType: 'NEUTRAL_EVENT', attributedEntiteAdministrative: null, editable: false },
+      ]);
     });
 
     it('requests the shared chronology only when the targeted feature is enabled', async () => {

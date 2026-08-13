@@ -246,6 +246,8 @@ const StepComponent = ({
   requete,
   clotureEffectiveDate,
   entiteAdministrative,
+  timelineItemType,
+  attributedEntiteAdministrative,
   ...step
 }: StepProps) => {
   const deleteClotureFileModal = useMemo(
@@ -275,8 +277,10 @@ const StepComponent = ({
 
   const showAFaireBadge = statutId === REQUETE_ETAPE_STATUT_TYPES.A_FAIRE;
   const canEditStep = canEdit && step.editable;
-  const entityRelation = isMultiEntite ? (isOwner ? 'owner' : 'foreign') : undefined;
-  const nomEntiteAdministrative = isMultiEntite ? entiteAdministrative.nomComplet : undefined;
+  const isNeutralEvent = timelineItemType === 'NEUTRAL_EVENT';
+  const entityRelation = isMultiEntite ? (isNeutralEvent ? 'neutral' : isOwner ? 'owner' : 'foreign') : undefined;
+  const nomEntiteAdministrative =
+    isMultiEntite && !isNeutralEvent ? attributedEntiteAdministrative?.nomComplet : undefined;
 
   // Legacy notes that only held files show up empty once the files were moved to the step level; hide them.
   const visibleNotes = notes.filter((note) => note.texte?.trim());
@@ -332,25 +336,26 @@ const StepComponent = ({
         entityRelation && styles[`timeline-step--${entityRelation}`],
       )}
       data-entity-relation={entityRelation}
+      data-timeline-item-type={timelineItemType}
     >
       <div className={styles['timeline-dot']} data-testid="timeline-dot" aria-hidden="true" />
       <div className={styles.step}>
         <div className="fr-mb-1w">
           <div className="fr-grid-row fr-grid-row--middle">
             <div className="fr-col" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-              {isMultiEntite ? (
+              {isMultiEntite && attributedEntiteAdministrative ? (
                 <EntiteTypeBadge
-                  entiteTypeId={entiteAdministrative.entiteTypeId}
-                  label={entiteAdministrative.entiteTypeId}
+                  entiteTypeId={attributedEntiteAdministrative.entiteTypeId}
+                  label={attributedEntiteAdministrative.entiteTypeId}
                   relation={entityRelation}
                   className="fr-mb-0"
                   aria-hidden="true"
                 />
               ) : null}
               <h3 className="fr-h6 fr-mb-0">
-                {isMultiEntite ? (
+                {isMultiEntite && attributedEntiteAdministrative ? (
                   <>
-                    <span className="fr-sr-only">{entiteAdministrative.entiteTypeId} -</span>{' '}
+                    <span className="fr-sr-only">{attributedEntiteAdministrative.entiteTypeId} -</span>{' '}
                   </>
                 ) : null}
                 {getStepTitle(step.type, statutId, nom)}

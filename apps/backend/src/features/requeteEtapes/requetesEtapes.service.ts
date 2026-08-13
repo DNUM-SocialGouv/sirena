@@ -510,12 +510,24 @@ export const getRequeteEtapes = async (
     ...(estPartageeEnabled ? { OR: [{ entiteId }, { estPartagee: true }] } : { entiteId }),
   };
 
-  const [raw, total, affectedEntiteCount] = await Promise.all([
+  const affectedEntiteCount = await prisma.requeteEntite.count({
+    where: {
+      requeteId,
+      requete: { requeteEntites: { some: { entiteId } } },
+    },
+  });
+  const shouldBuildMultiEntityTimeline = estPartageeEnabled && affectedEntiteCount > 1;
+
+  const [raw, sourceTotal] = await Promise.all([
     prisma.requeteEtape.findMany({
       where,
-      skip: offset,
-      ...(typeof limit === 'number' ? { take: limit } : {}),
-      orderBy: { [sort]: order },
+      ...(shouldBuildMultiEntityTimeline
+        ? {}
+        : {
+            skip: offset,
+            ...(typeof limit === 'number' ? { take: limit } : {}),
+          }),
+      orderBy: shouldBuildMultiEntityTimeline ? [{ createdAt: 'desc' }, { id: 'asc' }] : { [sort]: order },
       select: {
         id: true,
         nom: true,
@@ -590,6 +602,7 @@ export const getRequeteEtapes = async (
         },
         requete: {
           select: {
+            createdAt: true,
             createdById: true,
             createdBy: {
               select: { prenom: true, nom: true },
@@ -601,15 +614,7 @@ export const getRequeteEtapes = async (
         },
       },
     }),
-    prisma.requeteEtape.count({
-      where,
-    }),
-    prisma.requeteEntite.count({
-      where: {
-        requeteId,
-        requete: { requeteEntites: { some: { entiteId } } },
-      },
-    }),
+    shouldBuildMultiEntityTimeline ? Promise.resolve(0) : prisma.requeteEtape.count({ where }),
   ]);
 
   const sanitizeFile = <T extends { fileName: string; metadata: Prisma.JsonValue | null }>(file: T) => {
@@ -618,8 +623,12 @@ export const getRequeteEtapes = async (
   };
 
   // closure / creation = not editable; a sent ACR (AR PDF attached) = statut/name/date locked, notes OK; else full.
-  const data = raw.map((etape) => {
-    const { requeteEntite, ...step } = etape;
+  const timelineSourceSteps = raw.map((etape) => {
+    const {
+      requeteEntite,
+      requete: { createdAt: requestCreatedAt, ...requete },
+      ...step
+    } = etape;
     const permissions = getEtapePermissions({
       type: etape.type,
       statutId: etape.statutId,
@@ -630,6 +639,10 @@ export const getRequeteEtapes = async (
     const isOwner = etape.entiteId === entiteId;
     return {
       ...step,
+      requete,
+      requestCreatedAt,
+      timelineItemType: 'ENTITY_STEP' as const,
+      attributedEntiteAdministrative: requeteEntite.entite,
       entiteAdministrative: requeteEntite.entite,
       editable: isOwner && permissions.editable,
       canOnlyEditNotes: isOwner && permissions.canOnlyEditNotes,
@@ -637,10 +650,39 @@ export const getRequeteEtapes = async (
     };
   });
 
+  if (!shouldBuildMultiEntityTimeline) {
+    return {
+      data: timelineSourceSteps.map(({ requestCreatedAt: _requestCreatedAt, ...step }) => step),
+      total: sourceTotal,
+      isMultiEntite: affectedEntiteCount > 1,
+    };
+  }
+
+  const creationSources = timelineSourceSteps
+    .filter((step) => step.type === REQUETE_ETAPE_TYPES.CREATION)
+    .sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime() || left.id.localeCompare(right.id));
+  const representativeCreationSource = creationSources[0];
+  const neutralCreationEvent = representativeCreationSource
+    ? {
+        ...representativeCreationSource,
+        createdAt: representativeCreationSource.requestCreatedAt,
+        timelineItemType: 'NEUTRAL_EVENT' as const,
+        attributedEntiteAdministrative: null,
+        editable: false,
+        canOnlyEditNotes: false,
+      }
+    : null;
+
+  const projectedTimeline = [
+    ...timelineSourceSteps.filter((step) => step.type !== REQUETE_ETAPE_TYPES.CREATION),
+    ...(neutralCreationEvent ? [neutralCreationEvent] : []),
+  ].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime() || left.id.localeCompare(right.id));
+  const paginatedTimeline = projectedTimeline.slice(offset, typeof limit === 'number' ? offset + limit : undefined);
+
   return {
-    data,
-    total,
-    isMultiEntite: affectedEntiteCount > 1,
+    data: paginatedTimeline.map(({ requestCreatedAt: _requestCreatedAt, ...step }) => step),
+    total: projectedTimeline.length,
+    isMultiEntite: true,
   };
 };
 

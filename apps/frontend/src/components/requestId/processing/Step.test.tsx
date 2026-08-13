@@ -148,6 +148,12 @@ describe('Step', () => {
         nomComplet: 'CD du Calvados',
         entiteTypeId: 'CD',
       },
+      timelineItemType: 'ENTITY_STEP',
+      attributedEntiteAdministrative: {
+        id: 'FOREIGN-ENTITE',
+        nomComplet: 'CD du Calvados',
+        entiteTypeId: 'CD',
+      },
       id: 'step-foreign',
       nom: '',
       type: REQUETE_ETAPE_TYPES.MANUAL,
@@ -224,6 +230,8 @@ describe('Step', () => {
     requeteId: 'REQ-1',
     entiteId: 'ENTITE-1',
     entiteAdministrative: { id: 'ENTITE-1', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
+    timelineItemType: 'ENTITY_STEP',
+    attributedEntiteAdministrative: { id: 'ENTITE-1', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
     id: 'step-1',
     nom: 'Analyse du MSIP',
     type: REQUETE_ETAPE_TYPES.MANUAL,
@@ -303,6 +311,11 @@ describe('Step', () => {
             nomComplet: 'CD du Calvados',
             entiteTypeId: 'CD',
           },
+          attributedEntiteAdministrative: {
+            id: 'FOREIGN-ENTITE',
+            nomComplet: 'CD du Calvados',
+            entiteTypeId: 'CD',
+          },
           estPartagee: true,
           editable: false,
         })}
@@ -333,6 +346,41 @@ describe('Step', () => {
     expect(container.querySelector('[data-entity-relation="owner"]')).toBeInTheDocument();
   });
 
+  it('renders the unique creation event neutrally without entity attribution', () => {
+    const { container } = render(
+      <Step
+        {...makeStep({
+          id: 'neutral-creation',
+          type: REQUETE_ETAPE_TYPES.CREATION,
+          isMultiEntite: true,
+          timelineItemType: 'NEUTRAL_EVENT',
+          attributedEntiteAdministrative: null,
+          createdAt: '2026-01-02T08:00:00.000Z',
+          requete: {
+            dematSocialId: null,
+            sirecId: null,
+            createdById: 'AGENT-1',
+            thirdPartyAccountId: null,
+            createdBy: { prenom: 'camille', nom: 'dupont' },
+          },
+        })}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Création de la requête' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /ARS|CD/ })).not.toBeInTheDocument();
+    expect(screen.queryByText('ARS', { selector: 'p' })).not.toBeInTheDocument();
+    const subtitle = screen.getByText(
+      (_content, element) =>
+        element?.tagName === 'P' && element.textContent === 'Requête créée le 02/01/2026 par Camille Dupont',
+    );
+    expect(subtitle).not.toHaveTextContent('ARS Normandie');
+    expect(container.querySelector('[data-entity-relation="neutral"]')).toHaveAttribute(
+      'data-timeline-item-type',
+      'NEUTRAL_EVENT',
+    );
+  });
+
   it('attributes an Étape d’Accusé de réception à envoyer to its owner Entité administrative', () => {
     render(
       <Step
@@ -343,6 +391,11 @@ describe('Step', () => {
           isOwner: false,
           entiteId: 'FOREIGN-ENTITE',
           entiteAdministrative: {
+            id: 'FOREIGN-ENTITE',
+            nomComplet: 'CD Seine-Maritime',
+            entiteTypeId: 'CD',
+          },
+          attributedEntiteAdministrative: {
             id: 'FOREIGN-ENTITE',
             nomComplet: 'CD Seine-Maritime',
             entiteTypeId: 'CD',

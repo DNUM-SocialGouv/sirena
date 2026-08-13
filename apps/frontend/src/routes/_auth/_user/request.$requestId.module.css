@@ -42,6 +42,11 @@
   border-color: var(--light-options-illustration-color-sun-default-yellow-moutarde-sun-348, #695240);
 }
 
+.timeline-step--neutral .timeline-dot {
+  background-color: var(--background-default-grey);
+  border-color: var(--border-default-grey);
+}
+
 .timeline-card {
   background-color: transparent;
 }
