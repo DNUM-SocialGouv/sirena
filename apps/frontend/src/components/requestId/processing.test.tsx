@@ -23,6 +23,8 @@ const foreignEtapePartagee = {
   nom: 'Clôture étrangère',
   type: REQUETE_ETAPE_TYPES.MANUAL,
   estPartagee: true,
+  acknowledgmentSendMode: null,
+  acknowledgmentSendOperationId: null,
   statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
   dateRealisation: null,
   clotureEffectiveDate: '2026-07-31',
@@ -42,8 +44,24 @@ const foreignEtapePartagee = {
     createdBy: null,
   },
 };
-type RequeteEtapeFixture = Omit<typeof foreignEtapePartagee, 'attributedEntiteAdministrative'> & {
+type RequeteEtapeFixture = Omit<
+  typeof foreignEtapePartagee,
+  'acknowledgmentSendMode' | 'acknowledgmentSendOperationId' | 'attributedEntiteAdministrative' | 'uploadedFiles'
+> & {
+  acknowledgmentSendMode: 'AUTOMATIC' | 'MANUAL' | null;
+  acknowledgmentSendOperationId: string | null;
   attributedEntiteAdministrative: typeof foreignEtapePartagee.attributedEntiteAdministrative | null;
+  uploadedFiles: Array<{
+    id: string;
+    fileName: string;
+    size: number;
+    status: string;
+    scanStatus: string;
+    sanitizeStatus: string;
+    canDelete: boolean;
+    createdAt: string;
+    uploadedBy: null;
+  }>;
 };
 let requeteEtapes: RequeteEtapeFixture[] = [foreignEtapePartagee];
 
@@ -189,6 +207,75 @@ describe('Processing', () => {
       screen.getByRole('heading', { name: 'Création de la requête' }).closest('[data-timeline-item-type]'),
     ).toHaveAttribute('data-timeline-item-type', 'NEUTRAL_EVENT');
     expect(document.querySelector('[data-entity-relation="neutral"]')).toBeInTheDocument();
+  });
+
+  it('renders each automatic send as one neutral immutable event with one exact source document', () => {
+    processingMeta = { total: 3, isMultiEntite: true, etapePartageeEnabled: true };
+    const makeAutomaticAcknowledgment = (id: string, operationId: string, fileId: string, fileName: string) => ({
+      ...foreignEtapePartagee,
+      id,
+      type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+      statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+      acknowledgmentSendMode: 'AUTOMATIC' as const,
+      acknowledgmentSendOperationId: operationId,
+      timelineItemType: 'NEUTRAL_EVENT',
+      attributedEntiteAdministrative: null,
+      editable: false,
+      canOnlyEditNotes: false,
+      uploadedFiles: [
+        {
+          id: fileId,
+          fileName,
+          size: 1024,
+          status: 'READY',
+          scanStatus: 'CLEAN',
+          sanitizeStatus: 'COMPLETED',
+          canDelete: false,
+          createdAt: '2026-06-01T08:00:00.000Z',
+          uploadedBy: null,
+        },
+      ],
+    });
+    requeteEtapes = [
+      makeAutomaticAcknowledgment(
+        'later-automatic-acknowledgment',
+        '22222222-2222-4222-8222-222222222222',
+        'later-document',
+        'accuse-reception-later.pdf',
+      ),
+      makeAutomaticAcknowledgment(
+        'first-grouped-automatic-acknowledgment',
+        '11111111-1111-4111-8111-111111111111',
+        'first-document',
+        'accuse-reception-first.pdf',
+      ),
+      {
+        ...foreignEtapePartagee,
+        id: 'neutral-creation',
+        type: REQUETE_ETAPE_TYPES.CREATION,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        timelineItemType: 'NEUTRAL_EVENT',
+        attributedEntiteAdministrative: null,
+      },
+    ];
+
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(screen.getAllByRole('heading', { name: "Envoi de l'accusé de réception" })).toHaveLength(2);
+    expect(screen.queryByRole('heading', { name: /CD - Envoi de l'accusé de réception/ })).not.toBeInTheDocument();
+    expect(screen.getAllByText('accuse-reception-first.pdf').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('accuse-reception-later.pdf').length).toBeGreaterThan(0);
+    expect(
+      document.querySelector(
+        'a[href="/api/requete-etapes/first-grouped-automatic-acknowledgment/file/first-document/safe"]',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      document.querySelector('a[href="/api/requete-etapes/later-automatic-acknowledgment/file/later-document/safe"]'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "Modifier l'étape" })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Envoyer' })).not.toBeInTheDocument();
+    expect(document.querySelectorAll('[data-entity-relation="neutral"]')).toHaveLength(3);
   });
 
   it('keeps the historical presentation when the rollout flag is disabled', () => {

@@ -995,6 +995,161 @@ describe('RequeteEtapes.service.ts', () => {
       expect(prisma.requeteEtape.delete).not.toHaveBeenCalled();
     });
 
+    it('groups automatic acknowledgments by durable send operation before sorting, totals, and pagination', async () => {
+      const requestCreatedAt = new Date('2026-01-01T08:00:00.000Z');
+      const firstSendOperationId = '11111111-1111-4111-8111-111111111111';
+      const laterSendOperationId = '22222222-2222-4222-8222-222222222222';
+      const makeTimelineStep = ({
+        id,
+        entiteId,
+        createdAt,
+        acknowledgmentSendMode,
+        acknowledgmentSendOperationId,
+        uploadedFiles = [],
+      }: {
+        id: string;
+        entiteId: string;
+        createdAt: Date;
+        acknowledgmentSendMode: RequeteEtape['acknowledgmentSendMode'];
+        acknowledgmentSendOperationId: string | null;
+        uploadedFiles?: typeof requeteEtapeWithNotesAndFiles.uploadedFiles;
+      }) => ({
+        ...requeteEtapeWithNotesAndFiles,
+        id,
+        type: 'ACKNOWLEDGMENT' as const,
+        entiteId,
+        estPartagee: true,
+        statutId: 'FAIT',
+        createdAt,
+        dateRealisation: new Date('2025-01-01T08:00:00.000Z'),
+        acknowledgmentSendMode,
+        acknowledgmentSendOperationId,
+        uploadedFiles,
+        requeteEntite: {
+          entite: {
+            id: entiteId,
+            nomComplet: entiteId === 'reader-entite' ? 'ARS Normandie' : 'CD du Calvados',
+            entiteTypeId: entiteId === 'reader-entite' ? 'ARS' : 'CD',
+          },
+        },
+        requete: {
+          createdAt: requestCreatedAt,
+          createdById: 'agent-1',
+          createdBy: { prenom: 'Camille', nom: 'Dupont' },
+          dematSocialId: null,
+          sirecId: null,
+          thirdPartyAccountId: null,
+        },
+      });
+      const makeAcknowledgmentFile = (id: string) => ({
+        ...uploadedFile,
+        id,
+        fileName: `${id}.pdf`,
+        metadata: { originalName: 'accuse-reception.pdf' },
+        canDelete: false,
+        status: 'READY',
+        scanStatus: 'CLEAN',
+        sanitizeStatus: 'COMPLETED',
+        createdAt: new Date('2026-06-10T08:00:00.000Z'),
+        uploadedBy: null,
+      });
+      const sourceTimeline = [
+        makeTimelineStep({
+          id: 'later-automatic-send',
+          entiteId: 'third-entite',
+          createdAt: new Date('2026-06-20T08:00:00.000Z'),
+          acknowledgmentSendMode: 'AUTOMATIC',
+          acknowledgmentSendOperationId: laterSendOperationId,
+          uploadedFiles: [makeAcknowledgmentFile('later-document')],
+        }),
+        makeTimelineStep({
+          id: 'manual-send',
+          entiteId: 'reader-entite',
+          createdAt: new Date('2026-06-15T08:00:00.000Z'),
+          acknowledgmentSendMode: 'MANUAL',
+          acknowledgmentSendOperationId: firstSendOperationId,
+          uploadedFiles: [makeAcknowledgmentFile('manual-document')],
+        }),
+        makeTimelineStep({
+          id: 'first-send-foreign-source',
+          entiteId: 'foreign-entite',
+          createdAt: new Date('2026-06-02T08:00:00.000Z'),
+          acknowledgmentSendMode: 'AUTOMATIC',
+          acknowledgmentSendOperationId: firstSendOperationId,
+          uploadedFiles: [makeAcknowledgmentFile('foreign-document-copy')],
+        }),
+        makeTimelineStep({
+          id: 'first-send-owner-source',
+          entiteId: 'reader-entite',
+          createdAt: new Date('2026-06-01T08:00:00.000Z'),
+          acknowledgmentSendMode: 'AUTOMATIC',
+          acknowledgmentSendOperationId: firstSendOperationId,
+          uploadedFiles: [],
+        }),
+        {
+          ...requeteEtapeWithNotesAndFiles,
+          id: 'creation-source',
+          type: 'CREATION' as const,
+          entiteId: 'reader-entite',
+          createdAt: new Date('2026-01-02T08:00:00.000Z'),
+          requete: {
+            createdAt: requestCreatedAt,
+            createdById: 'agent-1',
+            createdBy: { prenom: 'Camille', nom: 'Dupont' },
+            dematSocialId: null,
+            sirecId: null,
+            thirdPartyAccountId: null,
+          },
+        },
+      ];
+      const sourceIdsBeforeProjection = sourceTimeline.map((step) => step.id);
+      const sourceFilesBeforeProjection = sourceTimeline.map((step) => step.uploadedFiles.map((file) => file.id));
+      vi.mocked(prisma.requeteEntite.count).mockResolvedValueOnce(3).mockResolvedValueOnce(3);
+      vi.mocked(prisma.requeteEtape.findMany)
+        .mockResolvedValueOnce(sourceTimeline)
+        .mockResolvedValueOnce(sourceTimeline);
+
+      const firstPage = await getRequeteEtapes('requeteId', 'reader-entite', { offset: 0, limit: 2 }, true);
+      const secondPage = await getRequeteEtapes('requeteId', 'reader-entite', { offset: 2, limit: 2 }, true);
+
+      expect(firstPage.total).toBe(4);
+      expect(secondPage.total).toBe(4);
+      expect(firstPage.data.map((step) => step.id)).toEqual(['later-automatic-send', 'manual-send']);
+      expect(secondPage.data.map((step) => step.id)).toEqual(['first-send-foreign-source', 'creation-source']);
+      expect(firstPage.data[0]).toMatchObject({
+        timelineItemType: 'NEUTRAL_EVENT',
+        attributedEntiteAdministrative: null,
+        uploadedFiles: [{ id: 'later-document', fileName: 'accuse-reception.pdf' }],
+        editable: false,
+        canOnlyEditNotes: false,
+      });
+      expect(firstPage.data[1]).toMatchObject({
+        timelineItemType: 'ENTITY_STEP',
+        attributedEntiteAdministrative: { id: 'reader-entite' },
+        acknowledgmentSendMode: 'MANUAL',
+      });
+      expect(secondPage.data[0]).toMatchObject({
+        id: 'first-send-foreign-source',
+        createdAt: new Date('2026-06-01T08:00:00.000Z'),
+        timelineItemType: 'NEUTRAL_EVENT',
+        attributedEntiteAdministrative: null,
+        entiteAdministrative: { id: 'foreign-entite' },
+        uploadedFiles: [{ id: 'foreign-document-copy', fileName: 'accuse-reception.pdf' }],
+        editable: false,
+        canOnlyEditNotes: false,
+      });
+      expect(secondPage.data[0].uploadedFiles).toHaveLength(1);
+      expect(
+        [...firstPage.data, ...secondPage.data].filter((step) => step.acknowledgmentSendMode === 'AUTOMATIC'),
+      ).toHaveLength(2);
+      expect(sourceTimeline.map((step) => step.id)).toEqual(sourceIdsBeforeProjection);
+      expect(sourceTimeline.map((step) => step.uploadedFiles.map((file) => file.id))).toEqual(
+        sourceFilesBeforeProjection,
+      );
+      expect(prisma.requeteEtape.update).not.toHaveBeenCalled();
+      expect(prisma.requeteEtape.delete).not.toHaveBeenCalled();
+    });
+
     it('selects only owner steps or Étapes partagées for a currently affected reader', async () => {
       vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([]);
       vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(0);

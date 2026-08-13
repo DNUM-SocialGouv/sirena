@@ -769,9 +769,31 @@ describe('requeteEtapes.controller.ts', () => {
     });
 
     it('returns a complete projected chronology in service order with visible-item metadata', async () => {
+      const automaticAcknowledgmentFile = {
+        id: 'acknowledgment-file',
+        fileName: 'accuse-reception.pdf',
+        size: 1024,
+        status: 'READY',
+        scanStatus: 'CLEAN',
+        sanitizeStatus: 'COMPLETED',
+        canDelete: false,
+        createdAt: new Date('2026-06-01T08:00:00.000Z'),
+        uploadedBy: null,
+      };
       vi.mocked(hasFeature).mockResolvedValueOnce(true);
       vi.mocked(getRequeteEtapes).mockResolvedValueOnce({
         data: [
+          {
+            ...requeteEtapeWithNotesAndFiles,
+            id: 'later-automatic-acknowledgment',
+            type: 'ACKNOWLEDGMENT',
+            acknowledgmentSendMode: 'AUTOMATIC',
+            acknowledgmentSendOperationId: '22222222-2222-4222-8222-222222222222',
+            timelineItemType: 'NEUTRAL_EVENT' as const,
+            attributedEntiteAdministrative: null,
+            uploadedFiles: [{ ...automaticAcknowledgmentFile, id: 'later-acknowledgment-file' }],
+            editable: false,
+          },
           {
             ...requeteEtapeWithNotesAndFiles,
             id: 'owner-step',
@@ -787,6 +809,17 @@ describe('requeteEtapes.controller.ts', () => {
           },
           {
             ...requeteEtapeWithNotesAndFiles,
+            id: 'first-grouped-automatic-acknowledgment',
+            type: 'ACKNOWLEDGMENT',
+            acknowledgmentSendMode: 'AUTOMATIC',
+            acknowledgmentSendOperationId: '11111111-1111-4111-8111-111111111111',
+            timelineItemType: 'NEUTRAL_EVENT' as const,
+            attributedEntiteAdministrative: null,
+            uploadedFiles: [automaticAcknowledgmentFile],
+            editable: false,
+          },
+          {
+            ...requeteEtapeWithNotesAndFiles,
             id: 'neutral-creation',
             type: 'CREATION',
             timelineItemType: 'NEUTRAL_EVENT' as const,
@@ -794,7 +827,7 @@ describe('requeteEtapes.controller.ts', () => {
             editable: false,
           },
         ],
-        total: 3,
+        total: 5,
         isMultiEntite: true,
       });
 
@@ -802,9 +835,22 @@ describe('requeteEtapes.controller.ts', () => {
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.meta).toEqual({ total: 3, isMultiEntite: true, etapePartageeEnabled: true });
-      expect(json.data.map((step) => step.id)).toEqual(['owner-step', 'foreign-shared-step', 'neutral-creation']);
+      expect(json.meta).toEqual({ total: 5, isMultiEntite: true, etapePartageeEnabled: true });
+      expect(json.data.map((step) => step.id)).toEqual([
+        'later-automatic-acknowledgment',
+        'owner-step',
+        'foreign-shared-step',
+        'first-grouped-automatic-acknowledgment',
+        'neutral-creation',
+      ]);
       expect(json.data).toMatchObject([
+        {
+          acknowledgmentSendOperationId: '22222222-2222-4222-8222-222222222222',
+          timelineItemType: 'NEUTRAL_EVENT',
+          attributedEntiteAdministrative: null,
+          uploadedFiles: [{ id: 'later-acknowledgment-file' }],
+          editable: false,
+        },
         {
           timelineItemType: 'ENTITY_STEP',
           attributedEntiteAdministrative: { id: 'entiteId', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
@@ -814,6 +860,13 @@ describe('requeteEtapes.controller.ts', () => {
           editable: false,
           timelineItemType: 'ENTITY_STEP',
           attributedEntiteAdministrative: { id: 'e2', nomComplet: 'CD du Calvados', entiteTypeId: 'CD' },
+        },
+        {
+          acknowledgmentSendOperationId: '11111111-1111-4111-8111-111111111111',
+          timelineItemType: 'NEUTRAL_EVENT',
+          attributedEntiteAdministrative: null,
+          uploadedFiles: [{ id: 'acknowledgment-file' }],
+          editable: false,
         },
         { type: 'CREATION', timelineItemType: 'NEUTRAL_EVENT', attributedEntiteAdministrative: null, editable: false },
       ]);

@@ -673,8 +673,49 @@ export const getRequeteEtapes = async (
       }
     : null;
 
+  const entityTimelineItems = timelineSourceSteps.filter((step) => step.type !== REQUETE_ETAPE_TYPES.CREATION);
+  const automaticAcknowledgmentSourcesByOperation = new Map<string, typeof entityTimelineItems>();
+  for (const step of entityTimelineItems) {
+    if (
+      step.type !== REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT ||
+      step.acknowledgmentSendMode !== ACKNOWLEDGMENT_SEND_MODES.AUTOMATIC ||
+      !step.acknowledgmentSendOperationId
+    ) {
+      continue;
+    }
+    const operationSources = automaticAcknowledgmentSourcesByOperation.get(step.acknowledgmentSendOperationId) ?? [];
+    operationSources.push(step);
+    automaticAcknowledgmentSourcesByOperation.set(step.acknowledgmentSendOperationId, operationSources);
+  }
+
+  const groupedAutomaticAcknowledgmentSourceIds = new Set<string>();
+  const neutralAutomaticAcknowledgmentEvents = [...automaticAcknowledgmentSourcesByOperation.values()].map(
+    (operationSources) => {
+      const orderedSources = [...operationSources].sort(
+        (left, right) => left.createdAt.getTime() - right.createdAt.getTime() || left.id.localeCompare(right.id),
+      );
+      for (const source of orderedSources) {
+        groupedAutomaticAcknowledgmentSourceIds.add(source.id);
+      }
+
+      const chronologicalSource = orderedSources[0];
+      const representativeSource =
+        orderedSources.find((source) => source.uploadedFiles.length > 0) ?? chronologicalSource;
+
+      return {
+        ...representativeSource,
+        createdAt: chronologicalSource.createdAt,
+        timelineItemType: 'NEUTRAL_EVENT' as const,
+        attributedEntiteAdministrative: null,
+        editable: false,
+        canOnlyEditNotes: false,
+      };
+    },
+  );
+
   const projectedTimeline = [
-    ...timelineSourceSteps.filter((step) => step.type !== REQUETE_ETAPE_TYPES.CREATION),
+    ...entityTimelineItems.filter((step) => !groupedAutomaticAcknowledgmentSourceIds.has(step.id)),
+    ...neutralAutomaticAcknowledgmentEvents,
     ...(neutralCreationEvent ? [neutralCreationEvent] : []),
   ].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime() || left.id.localeCompare(right.id));
   const paginatedTimeline = projectedTimeline.slice(offset, typeof limit === 'number' ? offset + limit : undefined);
