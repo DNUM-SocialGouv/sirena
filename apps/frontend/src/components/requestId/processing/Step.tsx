@@ -2,6 +2,7 @@ import { fr } from '@codegouvfr/react-dsfr';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import {
+  FEATURE_FLAGS,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_ETAPE_TYPES,
   ROLES,
@@ -13,9 +14,11 @@ import { Toast } from '@sirena/ui';
 import { clsx } from 'clsx';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
+import { useDisableStepRappel } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useDeleteUploadedFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { useCanEdit } from '@/hooks/useCanEdit';
+import { useHasFeature } from '@/hooks/useHasFeature';
 import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { useUserStore } from '@/stores/userStore';
@@ -209,6 +212,64 @@ const StepEditButton = ({ className, step, onEdit }: StepEditButtonProps) => {
   );
 };
 
+// rappelDate holds a calendar day stored at UTC midnight. Read its Y/M/D in UTC and rebuild a local
+// Date so both the expiry check and the display stay on the intended day in every timezone.
+const rappelCalendarDay = (rappelDate: string | Date): Date => {
+  const d = new Date(rappelDate);
+  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+};
+
+// A rappel is expired once its calendar day is today or earlier.
+const isRappelExpired = (rappelDate: string | Date): boolean => {
+  const target = rappelCalendarDay(rappelDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return target.getTime() <= today.getTime();
+};
+
+type StepRappelBadgeProps = {
+  rappelType: string | null;
+  rappelDate: string | Date | null;
+  canDeactivate: boolean;
+  isDeactivating: boolean;
+  onDeactivate: () => void;
+};
+
+const StepRappelBadge = ({
+  rappelType,
+  rappelDate,
+  canDeactivate,
+  isDeactivating,
+  onDeactivate,
+}: StepRappelBadgeProps) => {
+  if (!rappelType || !rappelDate) return null;
+  const expired = isRappelExpired(rappelDate);
+  const dayLabel = formatDate(rappelCalendarDay(rappelDate));
+
+  return (
+    <span className={styles['step-rappel']}>
+      {expired ? (
+        <span className="fr-badge fr-badge--sm fr-badge--warning fr-badge--no-icon">
+          <span className="fr-icon-notification-3-line fr-icon--sm" aria-hidden="true" />
+          Rappel<span className="fr-sr-only"> expiré le {dayLabel}</span>
+        </span>
+      ) : (
+        <span>Rappel le {dayLabel}</span>
+      )}
+      {canDeactivate ? (
+        <button
+          type="button"
+          className={styles['step-rappel__disable']}
+          onClick={onDeactivate}
+          disabled={isDeactivating}
+        >
+          Désactiver <span className="fr-sr-only">le rappel</span>
+        </button>
+      ) : null}
+    </span>
+  );
+};
+
 const StepComponent = ({
   requestId,
   isOwner,
@@ -244,6 +305,7 @@ const StepComponent = ({
   const toastManager = Toast.useToastManager();
   useModalFocusRestore([deleteClotureFileModal.id]);
   const addFilesClotureDrawerRef = useRef<AddFilesClotureDrawerRef>(null);
+  const stepHeadingRef = useRef<HTMLHeadingElement>(null);
 
   const { canEdit } = useCanEdit({ requeteId: requestId });
   const userRole = useUserStore((s) => s.role);
@@ -251,8 +313,36 @@ const StepComponent = ({
     ? ([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER] as string[]).includes(userRole)
     : false;
 
+  const isRappelEnabled = useHasFeature(FEATURE_FLAGS.ETAPE_RAPPEL, false);
+  const disableRappelMutation = useDisableStepRappel(requestId);
+
   const showAFaireBadge = statutId === REQUETE_ETAPE_STATUT_TYPES.A_FAIRE;
   const canEditStep = canEdit && step.editable;
+
+  const handleDeactivateRappel = useCallback(() => {
+    disableRappelMutation.mutate(
+      { id },
+      {
+        onSuccess: () => {
+          toastManager.add({
+            title: 'Rappel désactivé avec succès',
+            description: 'Le rappel a bien été désactivé.',
+            data: { icon: 'fr-alert--success' },
+          });
+          // The "Désactiver" button unmounts once the rappel is cleared; move focus back to the
+          // step heading so keyboard/screen-reader users keep their place instead of falling to <body>.
+          stepHeadingRef.current?.focus();
+        },
+        onError: () => {
+          toastManager.add({
+            title: 'Erreur',
+            description: 'Une erreur est survenue lors de la désactivation du rappel.',
+            data: { icon: 'fr-alert--error' },
+          });
+        },
+      },
+    );
+  }, [disableRappelMutation, id, toastManager]);
 
   // Legacy notes that only held files show up empty once the files were moved to the step level; hide them.
   const visibleNotes = notes.filter((note) => note.texte?.trim());
@@ -307,7 +397,9 @@ const StepComponent = ({
         <div className="fr-mb-1w">
           <div className="fr-grid-row fr-grid-row--middle">
             <div className="fr-col" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <h3 className="fr-h6 fr-mb-0">{getStepTitle(step.type, statutId, nom)}</h3>
+              <h3 ref={stepHeadingRef} tabIndex={-1} className="fr-h6 fr-mb-0">
+                {getStepTitle(step.type, statutId, nom)}
+              </h3>
               {showAFaireBadge && (
                 <p className="fr-badge fr-badge--no-icon fr-badge--sm fr-badge--info fr-mb-0">
                   {requeteEtapeStatutType.A_FAIRE}
@@ -330,6 +422,19 @@ const StepComponent = ({
                   clotureEffectiveDate,
                   dateRealisation: step.dateRealisation,
                 })}
+                {isRappelEnabled && step.rappelType && step.rappelDate ? (
+                  <>
+                    {' '}
+                    <span aria-hidden="true">•</span>{' '}
+                    <StepRappelBadge
+                      rappelType={step.rappelType}
+                      rappelDate={step.rappelDate}
+                      canDeactivate={canEditStep && !step.canOnlyEditNotes}
+                      isDeactivating={disableRappelMutation.isPending}
+                      onDeactivate={handleDeactivateRappel}
+                    />
+                  </>
+                ) : null}
               </p>
               {isAcknowledgmentSendable && canEdit ? (
                 <div className="fr-mt-2w">
