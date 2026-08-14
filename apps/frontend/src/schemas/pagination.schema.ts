@@ -15,6 +15,7 @@ export const QueryParamsSchema = z.object({
     .enum([REQUETE_PRIORITE_TYPES.BASSE, REQUETE_PRIORITE_TYPES.MOYENNE, REQUETE_PRIORITE_TYPES.HAUTE])
     .optional(),
   over90Days: z.boolean().optional(),
+  rappel: z.boolean().optional(),
   rootEntiteIds: z.string().optional(),
 });
 
