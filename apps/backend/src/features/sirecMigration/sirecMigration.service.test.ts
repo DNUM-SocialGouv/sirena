@@ -305,6 +305,25 @@ describe('sirecMigration.service.ts', () => {
       expect(result.etapeIdsByMainCouranteId.get(2)).toEqual(['etape-mc2-ars1']);
     });
 
+    it('should return the created Fait situationId in faitSituationIds', async () => {
+      const result = await saveFromSirec(data);
+
+      expect(result.faitSituationIds).toEqual(['sit-1']);
+    });
+
+    it('should return one faitSituationId per situation created (one per mis en cause)', async () => {
+      vi.mocked(prisma.situation.create)
+        .mockResolvedValueOnce({ id: 'sit-1' } as any)
+        .mockResolvedValueOnce({ id: 'sit-2' } as any);
+
+      const result = await saveFromSirec({
+        ...data,
+        situations: [data.situations[0], data.situations[0]],
+      });
+
+      expect(result.faitSituationIds).toEqual(['sit-1', 'sit-2']);
+    });
+
     it('should create Requete with correct data', async () => {
       await saveFromSirec(data);
 

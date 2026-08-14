@@ -79,12 +79,19 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
         throw err;
       }
 
-      const { requeteId: sirenaRequeteId, etapeIdsByFileType, etapeIdsByMainCouranteId } = saveResult;
+      const { requeteId: sirenaRequeteId, etapeIdsByFileType, etapeIdsByMainCouranteId, faitSituationIds } = saveResult;
 
       logger.info({ requeteId: sirenaRequeteId, sirecId: data.sirecId }, 'SIREC record migrated successfully');
 
       if (migrateFiles !== false) {
-        await migrateSirecFiles(sirecId, sirenaRequeteId, etapeIdsByFileType, etapeIdsByMainCouranteId, mockFilePath);
+        await migrateSirecFiles(
+          sirecId,
+          sirenaRequeteId,
+          etapeIdsByFileType,
+          etapeIdsByMainCouranteId,
+          faitSituationIds,
+          mockFilePath,
+        );
       }
     },
   );
