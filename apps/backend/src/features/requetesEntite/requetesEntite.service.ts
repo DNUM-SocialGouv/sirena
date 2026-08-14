@@ -186,9 +186,10 @@ const buildRequetesEntiteWhere = async (
     statutIds?: string;
     prioriteId?: string;
     over90Days?: string;
+    rappel?: string;
   },
 ): Promise<Prisma.RequeteEntiteWhereInput> => {
-  const { search, entiteId, departementCodes, domaineIds, statutIds, prioriteId, over90Days } = query;
+  const { search, entiteId, departementCodes, domaineIds, statutIds, prioriteId, over90Days, rappel } = query;
   const searchConditions: Prisma.RequeteEntiteWhereInput = search ? createSearchConditionsForRequeteEntite(search) : {};
   const andFilters: Prisma.RequeteEntiteWhereInput[] = [];
 
@@ -246,6 +247,11 @@ const buildRequetesEntiteWhere = async (
       requete: { createdAt: { lt: getOver90DaysCutoffDate() } },
     });
   }
+  if (rappel) {
+    andFilters.push({
+      requeteEtape: { some: { rappelType: { not: null } } },
+    });
+  }
 
   return {
     ...searchConditions,
@@ -286,6 +292,7 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
           },
         },
         requeteEtape: { orderBy: { createdAt: 'desc' }, take: 1 },
+        _count: { select: { requeteEtape: { where: { rappelType: { not: null } } } } },
       },
     }),
     prisma.requeteEntite.count({
@@ -353,6 +360,9 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
   }
 
   const data = enrichedRows.map(({ requeteEntite, enrichedSituations }) => {
+    // Keep the rappel-étape count internal: expose only the derived hasRappel flag, not _count.
+    const { _count, ...requeteEntiteRest } = requeteEntite;
+
     const seenDptCodes = new Set<string>();
     const departementsLieuSurvenue = (requeteEntite.requete?.situations ?? []).flatMap((s) => {
       const cp = getCpFromSituation(s);
@@ -373,11 +383,12 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
     });
 
     return {
-      ...requeteEntite,
+      ...requeteEntiteRest,
       departementsLieuSurvenue,
       domainesFonctionnels,
+      hasRappel: _count.requeteEtape > 0,
       requete: {
-        ...requeteEntite.requete,
+        ...requeteEntiteRest.requete,
         situations: enrichedSituations,
       },
     };
