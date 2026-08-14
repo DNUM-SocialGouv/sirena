@@ -39,7 +39,8 @@ export type CloseRequeteModalProps = {
 
 export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteModalProps>(
   ({ requestId, otherEntitiesAffected, triggerButtonRef, onBeforeClose, onCancel, onSuccess, onDismiss }, ref) => {
-    const reasonErrorId = useId();
+    const reasonsSelectId = useId();
+    const dateInputRef = useRef<HTMLInputElement>(null);
     const [reasonIds, setReasonIds] = useState<string[]>([]);
     const [precision, setPrecision] = useState<string>('');
     const [clotureEffectiveDate, setClotureEffectiveDate] = useState<string>(getDateTodayInParis());
@@ -151,7 +152,18 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       }
 
       setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
+
+      if (Object.keys(newErrors).length > 0) {
+        // Move focus to the first field in error, following DOM order (reasons before date)
+        if (newErrors.reasonIds) {
+          document.getElementById(`${reasonsSelectId}-button`)?.focus();
+        } else if (newErrors.clotureEffectiveDate) {
+          dateInputRef.current?.focus();
+        }
+        return false;
+      }
+
+      return true;
     };
 
     const handleSubmit = async () => {
@@ -287,16 +299,14 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
 
         <div className="fr-mb-4w">
           <SelectWithChildren
+            id={reasonsSelectId}
             label="Raisons de la clôture"
             options={reasonOptions}
             value={reasonIds}
             onChange={setReasonIds}
+            state={errors.reasonIds ? 'error' : 'default'}
+            stateRelatedMessage={errors.reasonIds}
           />
-          {errors.reasonIds ? (
-            <p className="fr-message fr-message--error" id={reasonErrorId}>
-              {errors.reasonIds}
-            </p>
-          ) : null}
         </div>
 
         <div className="fr-mb-4w">
@@ -304,6 +314,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
             label="Date de clôture"
             hintText="Format attendu : JJ/MM/AAAA"
             nativeInputProps={{
+              ref: dateInputRef,
               type: 'date',
               value: clotureEffectiveDate,
               onChange: (e) => {

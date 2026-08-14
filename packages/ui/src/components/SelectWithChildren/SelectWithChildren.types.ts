@@ -13,4 +13,6 @@ export interface SelectWithChildrenProps {
   id?: string;
   disabled?: boolean;
   readOnly?: boolean;
+  state?: 'default' | 'error';
+  stateRelatedMessage?: string;
 }

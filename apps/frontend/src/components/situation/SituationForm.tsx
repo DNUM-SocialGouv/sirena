@@ -11,7 +11,7 @@ import { DescriptionFaits } from './sections/DescriptionSituation';
 import { Identification } from './sections/Identification';
 import { InformationsComplementaires } from './sections/InformationsComplementaires';
 import { LieuSurvenu } from './sections/LieuSurvenu';
-import TraitementDesFaitsSection from './TraitementDesFaits';
+import TraitementDesFaitsSection, { type TraitementDesFaitsSectionRef } from './TraitementDesFaits';
 
 interface SituationFormProps {
   mode: 'create' | 'edit';
@@ -45,6 +45,7 @@ export function SituationForm({
   const navigate = useNavigate();
   const internalSaveButtonRef = useRef<HTMLButtonElement>(null);
   const saveButtonRef = externalSaveButtonRef || internalSaveButtonRef;
+  const traitementDesFaitsRef = useRef<TraitementDesFaitsSectionRef>(null);
   const [formData, setFormData] = useState<SituationData>(initialData || {});
   const [isSaving, setIsSaving] = useState(false);
   const [faitFiles, setFaitFiles] = useState<File[]>([]);
@@ -81,6 +82,8 @@ export function SituationForm({
     setHasAttemptedSave(true);
 
     if (!isTraitementDesFaitsValid) {
+      // Move focus to the first field in error (the entity combobox)
+      traitementDesFaitsRef.current?.focusFirstError();
       return;
     }
 
@@ -145,6 +148,7 @@ export function SituationForm({
         />
 
         <TraitementDesFaitsSection
+          ref={traitementDesFaitsRef}
           entites={(entitesData?.data || []).map((e: { id: string; nomComplet: string }) => ({
             id: e.id,
             nomComplet: e.nomComplet,
