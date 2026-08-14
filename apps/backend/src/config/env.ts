@@ -96,6 +96,10 @@ const processEnv = {
   METABASE_DASHBOARD_ID_ADMIN: process.env.METABASE_DASHBOARD_ID_ADMIN,
   // Environment
   APP_ENV: process.env.APP_ENV,
+  // Migration bucket
+  S3_MIGRATION_BUCKET_ACCESS_KEY: process.env.S3_MIGRATION_BUCKET_ACCESS_KEY,
+  S3_MIGRATION_BUCKET_SECRET_KEY: process.env.S3_MIGRATION_BUCKET_SECRET_KEY,
+  S3_MIGRATION_BUCKET_NAME: process.env.S3_MIGRATION_BUCKET_NAME,
 };
 
 const validateEnvVars = () => EnvSchema.parse(processEnv);

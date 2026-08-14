@@ -285,8 +285,8 @@ export function RequetesEntite() {
           {row.hasRappel ? (
             <Badge severity="warning" noIcon small className="requetesEntitesTable__rappel-badge">
               <span className="fr-icon-notification-3-line fr-icon--sm" aria-hidden="true" />
-              <span className="fr-sr-only">Cette requête comporte un rappel</span>
-              <span aria-hidden="true">Rappel</span>
+              Rappel
+              <span className="fr-sr-only"> défini sur cette requête</span>
             </Badge>
           ) : null}
         </div>
