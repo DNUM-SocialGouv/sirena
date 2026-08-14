@@ -22,7 +22,10 @@
   margin-right: 0;
 }
 
-.selectButton:focus {
+/* Higher specificity (.selectWrapper .selectButton) is required to override DSFR's
+   `button:focus:not(:focus-visible) { outline-style: none }` reset, so the focus ring stays
+   visible even on programmatic focus() — e.g. when focus is moved here after a form error. */
+.selectWrapper .selectButton:focus {
   outline: 2px solid var(--border-plain-blue-france);
   outline-offset: 2px;
 }

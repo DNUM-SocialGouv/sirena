@@ -154,12 +154,16 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       setErrors(newErrors);
 
       if (Object.keys(newErrors).length > 0) {
-        // Move focus to the first field in error, following DOM order (reasons before date)
-        if (newErrors.reasonIds) {
-          document.getElementById(`${reasonsSelectId}-button`)?.focus();
-        } else if (newErrors.clotureEffectiveDate) {
-          dateInputRef.current?.focus();
-        }
+        // Move focus to the first field in error, following DOM order (reasons before date).
+        // Deferred with setTimeout so it runs after the DSFR modal focus trap has settled;
+        // an immediate focus() from the click handler would be overridden.
+        setTimeout(() => {
+          if (newErrors.reasonIds) {
+            document.getElementById(`${reasonsSelectId}-button`)?.focus();
+          } else if (newErrors.clotureEffectiveDate) {
+            dateInputRef.current?.focus();
+          }
+        }, 0);
         return false;
       }
 
