@@ -47,7 +47,7 @@
 }
 
 .timeline-step--neutral .timeline-dot {
-  background-color: var(--background-default-grey);
+  background-color: var(--border-default-grey);
   border-color: var(--border-default-grey);
 }
 
@@ -87,6 +87,12 @@
   padding-left: 1.5rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--border-default-grey);
+}
+
+.timeline-step--owner .request-step,
+.timeline-step--foreign .request-step,
+.timeline-step--neutral .request-step {
+  border-bottom: none;
 }
 
 .request-step__add-note {
