@@ -160,6 +160,7 @@ export const GetRequeteEntiteSchema = RequeteEntiteSchema.extend({
   requeteEtape: z.array(RequeteEtapeSchema),
   departementsLieuSurvenue: z.array(z.object({ code: z.string(), lib: z.string() })),
   domainesFonctionnels: z.array(z.object({ id: z.string(), label: z.string() })),
+  hasRappel: z.boolean(),
 });
 
 export const GetRequetesEntiteResponseSchema = z.array(GetRequeteEntiteSchema);
