@@ -11,7 +11,7 @@
 .timeline-line {
   position: absolute;
   left: calc(1.5rem + 1px);
-  top: 1.5rem;
+  top: -0.75rem;
   bottom: 1rem;
   width: 2px;
   background-color: var(--border-default-grey);
@@ -32,14 +32,18 @@
   border: 2px solid var(--border-default-grey);
 }
 
-.timeline-step--owner .timeline-dot {
-  background-color: var(--light-options-illustration-color-950-default-pink-tuile-950, #fee9e7);
-  border-color: var(--light-options-illustration-color-sun-default-pink-tuile-sun-425, #a94645);
+.timeline-step--owner .timeline-dot,
+.timeline-step--foreign .timeline-dot {
+  background-color: transparent;
+  border-color: transparent;
 }
 
-.timeline-step--foreign .timeline-dot {
-  background-color: var(--light-options-illustration-color-950-default-yellow-moutarde-950, #feecc2);
-  border-color: var(--light-options-illustration-color-sun-default-yellow-moutarde-sun-348, #695240);
+.timeline-entity-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
 }
 
 .timeline-step--neutral .timeline-dot {

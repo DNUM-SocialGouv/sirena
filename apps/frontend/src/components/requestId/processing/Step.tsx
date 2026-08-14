@@ -338,20 +338,21 @@ const StepComponent = ({
       data-entity-relation={entityRelation}
       data-timeline-item-type={timelineItemType}
     >
-      <div className={styles['timeline-dot']} data-testid="timeline-dot" aria-hidden="true" />
+      <div className={styles['timeline-dot']} data-testid="timeline-dot" aria-hidden="true">
+        {isMultiEntite && attributedEntiteAdministrative ? (
+          <EntiteTypeBadge
+            entiteTypeId={attributedEntiteAdministrative.entiteTypeId}
+            label={attributedEntiteAdministrative.entiteTypeId}
+            relation={entityRelation}
+            className={`fr-mb-0 ${styles['timeline-entity-badge']}`}
+            aria-hidden="true"
+          />
+        ) : null}
+      </div>
       <div className={styles.step}>
         <div className="fr-mb-1w">
           <div className="fr-grid-row fr-grid-row--middle">
             <div className="fr-col" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-              {isMultiEntite && attributedEntiteAdministrative ? (
-                <EntiteTypeBadge
-                  entiteTypeId={attributedEntiteAdministrative.entiteTypeId}
-                  label={attributedEntiteAdministrative.entiteTypeId}
-                  relation={entityRelation}
-                  className="fr-mb-0"
-                  aria-hidden="true"
-                />
-              ) : null}
               <h3 className="fr-h6 fr-mb-0">
                 {isMultiEntite && attributedEntiteAdministrative ? (
                   <>

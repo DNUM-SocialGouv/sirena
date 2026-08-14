@@ -323,9 +323,11 @@ describe('Step', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'CD - Analyse du MSIP' })).toBeInTheDocument();
-    expect(screen.getByText('CD', { selector: 'p' })).toHaveAttribute('aria-hidden', 'true');
-    expect(screen.getByText('CD', { selector: 'p' })).toHaveAttribute('data-entity-relation', 'foreign');
-    expect(screen.getByText('CD', { selector: 'p' })).toHaveClass('color-yellow-moutarde');
+    const entityBadge = screen.getByText('CD', { selector: 'p' });
+    expect(entityBadge).toHaveAttribute('aria-hidden', 'true');
+    expect(entityBadge).toHaveAttribute('data-entity-relation', 'foreign');
+    expect(entityBadge).toHaveClass('color-yellow-moutarde');
+    expect(screen.getByTestId('timeline-dot')).toContainElement(entityBadge);
     expect(screen.getByText(/Ajouté par Jeanne/)).toHaveTextContent(
       /Ajouté par Jeanne Moulon \(CD du Calvados\) le 19\/05\/2026/,
     );
