@@ -485,8 +485,10 @@ export const disableEtapeRappel = async (stepId: string): Promise<RequeteEtape |
     return null;
   }
 
-  const { editable } = getEtapePermissions(etape);
-  if (!editable) {
+  // canOnlyEditNotes (a sent ACR step) locks the step fields, including the rappel — only notes/files
+  // stay editable — so the rappel cannot be deactivated here either.
+  const { editable, canOnlyEditNotes } = getEtapePermissions(etape);
+  if (!editable || canOnlyEditNotes) {
     throw new EtapeNotEditableError('ETAPE_NOT_EDITABLE');
   }
 

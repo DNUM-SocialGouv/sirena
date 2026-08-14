@@ -212,10 +212,16 @@ const StepEditButton = ({ className, step, onEdit }: StepEditButtonProps) => {
   );
 };
 
-// A rappel (rappelDate at UTC midnight) is expired once its calendar day is today or earlier.
+// rappelDate holds a calendar day stored at UTC midnight. Read its Y/M/D in UTC and rebuild a local
+// Date so both the expiry check and the display stay on the intended day in every timezone.
+const rappelCalendarDay = (rappelDate: string | Date): Date => {
+  const d = new Date(rappelDate);
+  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+};
+
+// A rappel is expired once its calendar day is today or earlier.
 const isRappelExpired = (rappelDate: string | Date): boolean => {
-  const target = new Date(rappelDate);
-  target.setHours(0, 0, 0, 0);
+  const target = rappelCalendarDay(rappelDate);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return target.getTime() <= today.getTime();
@@ -224,34 +230,40 @@ const isRappelExpired = (rappelDate: string | Date): boolean => {
 type StepRappelBadgeProps = {
   rappelType: string | null;
   rappelDate: string | Date | null;
-  canDisable: boolean;
-  isDisabling: boolean;
-  onDisable: () => void;
+  canDeactivate: boolean;
+  isDeactivating: boolean;
+  onDeactivate: () => void;
 };
 
-const StepRappelBadge = ({ rappelType, rappelDate, canDisable, isDisabling, onDisable }: StepRappelBadgeProps) => {
+const StepRappelBadge = ({
+  rappelType,
+  rappelDate,
+  canDeactivate,
+  isDeactivating,
+  onDeactivate,
+}: StepRappelBadgeProps) => {
   if (!rappelType || !rappelDate) return null;
   const expired = isRappelExpired(rappelDate);
+  const dayLabel = formatDate(rappelCalendarDay(rappelDate));
 
   return (
     <span className={styles['step-rappel']}>
       {expired ? (
-        <span className="fr-badge fr-badge--sm fr-badge--error fr-badge--no-icon">
+        <span className="fr-badge fr-badge--sm fr-badge--warning fr-badge--no-icon">
           <span className="fr-icon-notification-3-line fr-icon--sm" aria-hidden="true" />
-          Rappel<span className="fr-sr-only"> expiré le {formatDate(rappelDate)}</span>
+          Rappel<span className="fr-sr-only"> expiré le {dayLabel}</span>
         </span>
       ) : (
-        <span>Rappel le {formatDate(rappelDate)}</span>
+        <span>Rappel le {dayLabel}</span>
       )}
-      {canDisable ? (
+      {canDeactivate ? (
         <button
           type="button"
           className={styles['step-rappel__disable']}
-          onClick={onDisable}
-          disabled={isDisabling}
-          aria-label="Désactiver le rappel"
+          onClick={onDeactivate}
+          disabled={isDeactivating}
         >
-          Désactiver
+          Désactiver <span className="fr-sr-only">le rappel</span>
         </button>
       ) : null}
     </span>
@@ -307,13 +319,13 @@ const StepComponent = ({
   const showAFaireBadge = statutId === REQUETE_ETAPE_STATUT_TYPES.A_FAIRE;
   const canEditStep = canEdit && step.editable;
 
-  const handleDisableRappel = useCallback(() => {
+  const handleDeactivateRappel = useCallback(() => {
     disableRappelMutation.mutate(
       { id },
       {
         onSuccess: () => {
           toastManager.add({
-            title: 'Rappel désactivé',
+            title: 'Rappel désactivé avec succès',
             description: 'Le rappel a bien été désactivé.',
             data: { icon: 'fr-alert--success' },
           });
@@ -417,9 +429,9 @@ const StepComponent = ({
                     <StepRappelBadge
                       rappelType={step.rappelType}
                       rappelDate={step.rappelDate}
-                      canDisable={canEditStep}
-                      isDisabling={disableRappelMutation.isPending}
-                      onDisable={handleDisableRappel}
+                      canDeactivate={canEditStep && !step.canOnlyEditNotes}
+                      isDeactivating={disableRappelMutation.isPending}
+                      onDeactivate={handleDeactivateRappel}
                     />
                   </>
                 ) : null}

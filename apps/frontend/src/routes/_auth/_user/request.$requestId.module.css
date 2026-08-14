@@ -78,7 +78,7 @@
   display: inline;
 }
 
-.step-rappel .fr-badge {
+.step-rappel :global(.fr-badge) {
   gap: 0.25rem;
   vertical-align: middle;
 }

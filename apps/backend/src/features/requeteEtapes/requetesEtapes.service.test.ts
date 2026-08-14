@@ -852,6 +852,18 @@ describe('RequeteEtapes.service.ts', () => {
       await expect(disableEtapeRappel('requeteEtapeId')).rejects.toThrow(EtapeNotEditableError);
       expect(prisma.requeteEtape.update).not.toHaveBeenCalled();
     });
+
+    it('throws EtapeNotEditableError on a sent ACR step (canOnlyEditNotes)', async () => {
+      const sentAcrEtape = {
+        ...editableEtapeWithRappel,
+        type: 'ACKNOWLEDGMENT',
+        uploadedFiles: [{ canDelete: false }],
+      };
+      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(sentAcrEtape);
+
+      await expect(disableEtapeRappel('requeteEtapeId')).rejects.toThrow(EtapeNotEditableError);
+      expect(prisma.requeteEtape.update).not.toHaveBeenCalled();
+    });
   });
 
   describe('addClotureEtapeFiles()', () => {
