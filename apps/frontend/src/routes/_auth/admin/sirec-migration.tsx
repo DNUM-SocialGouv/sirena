@@ -55,18 +55,20 @@ export function RouteComponent() {
   const [mode, setMode] = useState<Mode>('reclamations');
   const [raw, setRaw] = useState('');
   const [deleteIfExists, setDeleteIfExists] = useState(false);
+  const [migrateFiles, setMigrateFiles] = useState(true);
+  const [mockFilePath, setMockFilePath] = useState('');
   const [result, setResult] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | null>(null);
-  const [systemError, setSystemError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleModeChange = useCallback((newMode: Mode) => {
     setMode(newMode);
     setRaw('');
     setDeleteIfExists(false);
+    setMigrateFiles(true);
+    setMockFilePath('');
     setResult(null);
     setFieldError(null);
-    setSystemError(null);
   }, []);
 
   const selectReclamations = useCallback(() => handleModeChange('reclamations'), [handleModeChange]);
@@ -77,7 +79,6 @@ export function RouteComponent() {
       e.preventDefault();
       setResult(null);
       setFieldError(null);
-      setSystemError(null);
 
       const ids = parseIds(raw);
       if (ids.length === 0) {
@@ -87,11 +88,13 @@ export function RouteComponent() {
 
       setLoading(true);
       try {
+        const trimmedMockFilePath = migrateFiles && mockFilePath.trim() ? mockFilePath.trim() : undefined;
+
         if (mode === 'reclamations') {
-          const { queued } = await migrateByReclamations(ids, deleteIfExists);
+          const { queued } = await migrateByReclamations(ids, deleteIfExists, migrateFiles, trimmedMockFilePath);
           setResult(`${queued} réclamation${queued > 1 ? 's' : ''} ajoutée${queued > 1 ? 's' : ''} à la queue.`);
         } else {
-          const { queued, found } = await migrateByServices(ids, deleteIfExists);
+          const { queued, found } = await migrateByServices(ids, deleteIfExists, migrateFiles, trimmedMockFilePath);
           setResult(
             `${found} réclamation${found > 1 ? 's' : ''} trouvée${found > 1 ? 's' : ''}, ${queued} ajoutée${queued > 1 ? 's' : ''} à la queue.`,
           );
@@ -109,12 +112,11 @@ export function RouteComponent() {
             return;
           }
         }
-        setSystemError('Une erreur est survenue lors de la requête.');
       } finally {
         setLoading(false);
       }
     },
-    [raw, mode, deleteIfExists],
+    [raw, mode, deleteIfExists, migrateFiles, mockFilePath],
   );
 
   const isReclamations = mode === 'reclamations';
@@ -168,6 +170,7 @@ export function RouteComponent() {
         >
           {isReclamations && (
             <form onSubmit={handleSubmit} className="fr-mt-2w">
+              <p className="fr-text--sm">Sauf mention contraire, les champs sont obligatoires.</p>
               <Input
                 label="IDs de réclamations SIREC"
                 hintText="Un identifiant par ligne ou séparés par des virgules"
@@ -190,8 +193,26 @@ export function RouteComponent() {
                       onChange: (e) => setDeleteIfExists(e.target.checked),
                     },
                   },
+                  {
+                    label: 'Migrer les pièces jointes',
+                    nativeInputProps: {
+                      checked: migrateFiles,
+                      onChange: (e) => setMigrateFiles(e.target.checked),
+                    },
+                  },
                 ]}
               />
+              {migrateFiles ? (
+                <Input
+                  className="fr-mb-4w"
+                  label="Chemin vers un fichier mock à utiliser à la place des pièces jointes SIREC (optionnel)"
+                  hintText="Exemple : /files/mockfile"
+                  nativeInputProps={{
+                    value: mockFilePath,
+                    onChange: (e) => setMockFilePath(e.target.value),
+                  }}
+                />
+              ) : null}
               <Button type="submit" disabled={loading}>
                 {loading ? 'Envoi en cours…' : 'Ajouter à la queue'}
               </Button>
@@ -207,6 +228,7 @@ export function RouteComponent() {
         >
           {!isReclamations && (
             <form onSubmit={handleSubmit} className="fr-mt-2w">
+              <p className="fr-text--sm">Sauf mention contraire, les champs sont obligatoires.</p>
               <Input
                 label="IDs de services SIREC"
                 hintText="Un identifiant par ligne ou séparés par des virgules"
@@ -229,8 +251,26 @@ export function RouteComponent() {
                       onChange: (e) => setDeleteIfExists(e.target.checked),
                     },
                   },
+                  {
+                    label: 'Migrer les pièces jointes',
+                    nativeInputProps: {
+                      checked: migrateFiles,
+                      onChange: (e) => setMigrateFiles(e.target.checked),
+                    },
+                  },
                 ]}
               />
+              {migrateFiles ? (
+                <Input
+                  className="fr-mb-4w"
+                  label="Chemin vers un fichier mock à utiliser à la place des pièces jointes SIREC (optionnel)"
+                  hintText="par exemple : /files/mockfile"
+                  nativeInputProps={{
+                    value: mockFilePath,
+                    onChange: (e) => setMockFilePath(e.target.value),
+                  }}
+                />
+              ) : null}
               <Button type="submit" disabled={loading}>
                 {loading ? 'Recherche en cours…' : 'Rechercher et ajouter à la queue'}
               </Button>
@@ -240,7 +280,6 @@ export function RouteComponent() {
       </div>
 
       {result ? <Alert className="fr-mt-2w" severity="success" title={result} /> : null}
-      {systemError ? <Alert className="fr-mt-2w" severity="error" title={systemError} /> : null}
     </div>
   );
 }

@@ -314,6 +314,9 @@ export const AppEnvSchema = z.object({
     }),
   MARIADB_SIREC_USER: z.string().optional(),
   MARIADB_SIREC_PASSWORD: z.string().optional(),
+  S3_MIGRATION_BUCKET_ACCESS_KEY: z.string().optional(),
+  S3_MIGRATION_BUCKET_SECRET_KEY: z.string().optional(),
+  S3_MIGRATION_BUCKET_NAME: z.string().optional(),
   METABASE_SITE_URL: z
     .string()
     .optional()

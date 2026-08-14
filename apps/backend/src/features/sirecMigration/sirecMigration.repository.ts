@@ -477,3 +477,31 @@ export async function fetchSirecData(sirecId: number): Promise<SirecReclamationD
     mainCourantes,
   };
 }
+
+/**
+ * Fichiers directement rattachés à la réclamation (hors étapes de traitement) :
+ * file_type NULL, 'hors_process' ou 'fiche_synthese'.
+ */
+export interface SirecFileRow {
+  id_data: number;
+  sys_creation_date: Date;
+  original_name: string;
+  generated_name: string;
+  size: number;
+  hash: string | null;
+  ext: string | null;
+  content_type: string | null;
+  file_type: string | null;
+}
+
+export async function fetchSirecFiles(sirecId: number): Promise<SirecFileRow[]> {
+  const rows = await mariadbPool.query<SirecFileRow[]>(
+    `SELECT f.id_data, f.sys_creation_date, f.original_name, f.generated_name, f.size, f.hash, f.ext, f.content_type, f.file_type
+     FROM sire_file_data f, sire_reclamation_file_data rf
+     WHERE f.id_data = rf.id_file
+       AND rf.id_ext = ?
+       AND (f.file_type IS NULL OR f.file_type IN ('hors_process', 'fiche_synthese'))`,
+    [sirecId],
+  );
+  return rows;
+}
