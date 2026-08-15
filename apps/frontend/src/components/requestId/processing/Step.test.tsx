@@ -36,6 +36,10 @@ vi.mock('@/hooks/mutations/updateUploadedFiles.hook', () => ({
   useDeleteUploadedFile: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
+vi.mock('@/hooks/mutations/updateProcessingStep.hook', () => ({
+  useDisableStepRappel: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
 let canEditRequest = false;
 vi.mock('@/hooks/useCanEdit', () => ({
   useCanEdit: () => ({ canEdit: canEditRequest }),
