@@ -29,6 +29,13 @@ export const updateProcessingStepRoute = openApiProtectedRoute({
   },
 });
 
+export const disableRappelRoute = openApiProtectedRoute({
+  description: 'Disable the rappel configured on a processing step',
+  responses: {
+    ...openApiResponse(RequeteEtapeSchema),
+  },
+});
+
 export const addClotureFilesRoute = openApiProtectedRoute({
   description: 'Attach uploaded files to a CLOTUREE (closure) step.',
   responses: {
