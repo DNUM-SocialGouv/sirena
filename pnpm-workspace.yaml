@@ -15,7 +15,7 @@ allowBuilds:
 catalog:
   "@biomejs/biome": ^2.5.5
   "@codegouvfr/react-dsfr": ^1.32.4
-  "@hono/standard-validator": ^0.3.0
+  "@hono/standard-validator": ^0.4.0
   "@prisma/adapter-pg": ^7.9.0
   "@prisma/client": ^7.9.0
   "@tanstack/react-router": ^1.170.18
