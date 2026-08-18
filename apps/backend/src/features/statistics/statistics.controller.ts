@@ -44,6 +44,7 @@ const app = factoryWithLogs
     }
 
     const startedAt = Date.now();
+    const rssBeforeBytes = process.memoryUsage().rss;
 
     try {
       const csv = await generateExportRequetesCsv(topEntiteId);
@@ -51,7 +52,21 @@ const app = factoryWithLogs
       const csvSizeBytes = Buffer.byteLength(csv, 'utf8');
       const today = new Date().toISOString().slice(0, 10);
 
-      logger.info({ topEntiteId, durationMs, csvSizeBytes }, '[statistics] export requêtes generated successfully');
+      // The export is built fully in memory (findMany without pagination, then
+      // mapped records, then the whole CSV string). Log the RSS delta so a large
+      // export that pushes the pod toward its memory limit is visible in logs.
+      const rssAfterBytes = process.memoryUsage().rss;
+      logger.info(
+        {
+          topEntiteId,
+          durationMs,
+          csvSizeBytes,
+          rssBeforeBytes,
+          rssAfterBytes,
+          rssDeltaBytes: rssAfterBytes - rssBeforeBytes,
+        },
+        '[statistics] export requêtes generated successfully',
+      );
 
       c.header('Content-Type', 'text/csv; charset=utf-8');
       c.header('Content-Disposition', `attachment; filename="export-requetes-sirena-${today}.csv"`);
