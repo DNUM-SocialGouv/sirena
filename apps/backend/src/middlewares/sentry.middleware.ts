@@ -15,7 +15,6 @@ export const createSentryRequestContext = (c: Context, context: RequestContext) 
     method: c.req.method,
     url: c.req.url,
     path: c.req.path,
-    headers: Object.fromEntries(c.req.raw.headers.entries()),
     ip: context.ip,
     userAgent: context.userAgent,
     source: SOURCE_BACKEND,

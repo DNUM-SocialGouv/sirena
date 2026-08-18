@@ -6,7 +6,7 @@ if (envVars.SENTRY_ENABLED) {
   Sentry.init({
     dsn: envVars.SENTRY_DSN_BACKEND,
     environment: envVars.APP_ENV,
-    includeLocalVariables: process.env.NODE_ENV === 'production',
+    includeLocalVariables: false,
     ignoreTransactions: [/^GET \/health$/, /^GET \/version$/],
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
     release: APP_VERSION,
