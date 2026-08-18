@@ -1,0 +1,80 @@
+---
+# Sous-chart désactivé par défaut (comme anonymize) : activé par environnement
+# via `sirec-restore.enabled: true` dans values/<env>.yaml. Le gate est porté par
+# les templates (`{{- if .Values.enabled }}`), Helm charge toujours le sous-chart
+# depuis charts/ mais il ne rend rien tant qu'il est désactivé.
+enabled: false
+
+# CronJob livré SUSPENDU : l'import écrase la base sirec, on le déclenche à la
+# demande (kubectl create job --from=cronjob/sirec-restore sirec-restore-$(date +%s)).
+suspend: true
+schedule: "0 2 * * *"
+
+images:
+  # Client S3 générique (MinIO Client) pour récupérer le dump depuis le bucket.
+  s3: docker.io/minio/mc:latest
+  # Client MariaDB, version alignée sur le serveur (services-integration/…/mariadb).
+  mariadb: docker.io/mariadb:11.8.7
+
+# Secrets consommés, créés HORS de ce chart (external-secrets) :
+#   - migration-bucket-secret : credentials S3 du bucket sirena-migration-s3
+#   - mariadb-sirec-secret    : credentials MariaDB (host/port/user/db/password)
+migrationBucketSecretName: migration-bucket-secret
+mariadbSirecSecretName: mariadb-sirec-secret
+
+# Paramètres non sensibles de la restauration (ConfigMap sirec-restore-variables).
+config:
+  # Endpoint S3 OVH du bucket sirena-migration-s3 (resources/s3_migration.yaml).
+  s3EndpointUrl: "https://s3.gra.io.cloud.ovh.net"
+  # Nom de base à réécrire vers MARIADB_SIREC_DB pendant l'import (vide = aucune
+  # réécriture ; "sirec_voo4" si l'on repasse sur dumps_preprod/).
+  dumpSourceDb: ""
+  # Préfixe des dumps à restaurer (le job retient le plus récent sous ce préfixe).
+  dumpObjectPrefix: "dumps_prod_anon/"
+  # Dump précis à restaurer, relatif au préfixe (vide = sélection auto du plus récent).
+  dumpObjectKey: ""
+
+resources:
+  # initContainer s3-download.
+  download:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  # container mariadb-import.
+  import:
+    limits:
+      cpu: 1
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+
+# Contexte de sécurité du pod (partagé par tous les containers).
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
+  seccompProfile:
+    type: RuntimeDefault
+
+# Contexte de sécurité appliqué à chaque container (s3-download et mariadb-import).
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  privileged: false
+  readOnlyRootFilesystem: true
+
+# Taille des volumes éphémères (emptyDir).
+volumes:
+  # Stockage du dump compressé (les dumps pèsent ~500 MiB).
+  dump:
+    sizeLimit: 5Gi
+  # Config mc + fichiers temporaires.
+  tmp:
+    sizeLimit: 128Mi
