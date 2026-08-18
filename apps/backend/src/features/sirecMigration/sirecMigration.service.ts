@@ -47,6 +47,8 @@ export interface SaveFromSirecResult {
   etapeIdsByFileType: Map<string, string[]>;
   /** requeteEtapeId(s) créés, groupés par id_data de main courante SIREC, pour la migration des pièces jointes. */
   etapeIdsByMainCouranteId: Map<number, string[]>;
+  /** situationId des Fait créés (un par Situation), pour la migration des pièces jointes. */
+  faitSituationIds: string[];
 }
 
 export async function saveFromSirec(data: SirenaRequeteData): Promise<SaveFromSirecResult> {
@@ -77,6 +79,8 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<SaveFromSi
       }
       throw error;
     }
+
+    const faitSituationIds: string[] = [];
 
     for (const situationData of data.situations) {
       let misEnCauseId: string;
@@ -188,6 +192,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<SaveFromSi
           autresPrecisions: situationData.fait.autresPrecisions,
         },
       });
+      faitSituationIds.push(situation.id);
 
       await tx.faitMotifDeclaratif.createMany({
         data: situationData.fait.motifsDeclaratifs.map((motifDeclaratifId) => ({
@@ -350,6 +355,6 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<SaveFromSi
         },
       });
     }
-    return { requeteId: sirenaRequete.id, etapeIdsByFileType, etapeIdsByMainCouranteId };
+    return { requeteId: sirenaRequete.id, etapeIdsByFileType, etapeIdsByMainCouranteId, faitSituationIds };
   });
 }

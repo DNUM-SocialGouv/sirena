@@ -26,11 +26,22 @@ const ETAPE_FILE_TYPE_KEYS = new Set([
 /** file_type SIREC ciblant une étape "main courante", rattachée via id_ext_mc (sire_main_courante_data.id_data). */
 const MAIN_COURANTE_FILE_TYPES = new Set(['main_courante_flag', 'main_courante']);
 
+/** file_type SIREC ciblant le Fait de chaque Situation créée pour la réclamation. */
+const FAIT_FILE_TYPES = new Set(['orig_req']);
+
+/** Cible d'un fichier migré : étape, Fait, ou réclamation directe si les deux sont null. */
+interface FileTarget {
+  requeteEtapeId: string | null;
+  faitSituationId: string | null;
+}
+
+const DIRECT_TARGET: FileTarget = { requeteEtapeId: null, faitSituationId: null };
+
 async function migrateSingleSirecFile(
   sirecId: number,
   requeteId: string,
   file: SirecFileRow,
-  requeteEtapeId: string | null,
+  target: FileTarget,
   mockFilePath?: string,
 ): Promise<void> {
   const sourceStream = await getSirecFileStream(sirecId, file.generated_name, mockFilePath);
@@ -70,11 +81,11 @@ async function migrateSingleSirecFile(
         } as Prisma.InputJsonValue,
         entiteId: null,
         uploadedById: null,
-        // Un fichier est rattaché soit à une étape, soit directement à la requête, jamais les deux
-        // (cf. setEtapeFile en flux normal).
-        requeteId: requeteEtapeId ? null : requeteId,
-        requeteEtapeId,
-        faitSituationId: null,
+        // Un fichier est rattaché soit à une étape, soit à un Fait, soit directement à la requête,
+        // jamais à plusieurs à la fois (cf. setEtapeFile en flux normal).
+        requeteId: target.requeteEtapeId || target.faitSituationId ? null : requeteId,
+        requeteEtapeId: target.requeteEtapeId,
+        faitSituationId: target.faitSituationId,
         demarchesEngageesId: null,
         status: 'PENDING',
         canDelete: true,
@@ -89,22 +100,22 @@ async function migrateSingleSirecFile(
 }
 
 /**
- * Tente de migrer un fichier vers une cible (étape ou réclamation directe) ; loggue un warning
- * et continue sans bloquer la migration globale en cas d'échec.
+ * Tente de migrer un fichier vers une cible (étape, Fait, ou réclamation directe) ; loggue un
+ * warning et continue sans bloquer la migration globale en cas d'échec.
  */
 async function migrateFileToTarget(
   sirecId: number,
   requeteId: string,
   file: SirecFileRow,
-  requeteEtapeId: string | null,
+  target: FileTarget,
   mockFilePath: string | undefined,
 ): Promise<void> {
   const logger = getLoggerStore();
   try {
-    await migrateSingleSirecFile(sirecId, requeteId, file, requeteEtapeId, mockFilePath);
+    await migrateSingleSirecFile(sirecId, requeteId, file, target, mockFilePath);
   } catch (err) {
     logger.warn(
-      { err, sirecId, requeteId, sirecFileId: file.id_data, generatedName: file.generated_name, requeteEtapeId },
+      { err, sirecId, requeteId, sirecFileId: file.id_data, generatedName: file.generated_name, ...target },
       'Failed to migrate SIREC file, skipping',
     );
   }
@@ -121,6 +132,9 @@ async function migrateFileToTarget(
  * - lié à une main courante (cf. MAIN_COURANTE_FILE_TYPES) : rattaché à chaque étape créée pour
  *   la main courante SIREC ciblée par id_ext_mc (etapeIdsByMainCouranteId, cf. saveFromSirec) —
  *   réuploadé une fois par étape si plusieurs entités ARS sont concernées ;
+ * - lié au Fait (cf. FAIT_FILE_TYPES) : rattaché à chaque Fait créé pour cette réclamation
+ *   (faitSituationIds, cf. saveFromSirec) — réuploadé une fois par Fait si plusieurs mis en cause
+ *   sont concernés ;
  * - type connu mais sans étape créée pour cette réclamation, ou type inconnu : warning + fichier
  *   tout de même rattaché directement à la réclamation.
  *
@@ -132,6 +146,7 @@ export async function migrateSirecFiles(
   requeteId: string,
   etapeIdsByFileType: Map<string, string[]>,
   etapeIdsByMainCouranteId: Map<number, string[]>,
+  faitSituationIds: string[],
   mockFilePath?: string,
 ): Promise<void> {
   const logger = getLoggerStore();
@@ -145,7 +160,7 @@ export async function migrateSirecFiles(
     const fileType = file.file_type;
 
     if (DIRECT_FILE_TYPES.has(fileType)) {
-      await migrateFileToTarget(sirecId, requeteId, file, null, mockFilePath);
+      await migrateFileToTarget(sirecId, requeteId, file, DIRECT_TARGET, mockFilePath);
       continue;
     }
 
@@ -153,7 +168,13 @@ export async function migrateSirecFiles(
       const etapeIds = file.id_ext_mc !== null ? etapeIdsByMainCouranteId.get(file.id_ext_mc) : undefined;
       if (etapeIds && etapeIds.length > 0) {
         for (const etapeId of etapeIds) {
-          await migrateFileToTarget(sirecId, requeteId, file, etapeId, mockFilePath);
+          await migrateFileToTarget(
+            sirecId,
+            requeteId,
+            file,
+            { requeteEtapeId: etapeId, faitSituationId: null },
+            mockFilePath,
+          );
         }
         continue;
       }
@@ -162,7 +183,23 @@ export async function migrateSirecFiles(
         { sirecId, requeteId, sirecFileId: file.id_data, fileType, idExtMc: file.id_ext_mc },
         'No étape created for this SIREC main courante on this réclamation, attaching file directly to the requete',
       );
-      await migrateFileToTarget(sirecId, requeteId, file, null, mockFilePath);
+      await migrateFileToTarget(sirecId, requeteId, file, DIRECT_TARGET, mockFilePath);
+      continue;
+    }
+
+    if (fileType && FAIT_FILE_TYPES.has(fileType)) {
+      if (faitSituationIds.length > 0) {
+        for (const faitSituationId of faitSituationIds) {
+          await migrateFileToTarget(sirecId, requeteId, file, { requeteEtapeId: null, faitSituationId }, mockFilePath);
+        }
+        continue;
+      }
+
+      logger.warn(
+        { sirecId, requeteId, sirecFileId: file.id_data, fileType },
+        'No Fait created for this SIREC réclamation, attaching file directly to the requete',
+      );
+      await migrateFileToTarget(sirecId, requeteId, file, DIRECT_TARGET, mockFilePath);
       continue;
     }
 
@@ -170,7 +207,13 @@ export async function migrateSirecFiles(
       const etapeIds = etapeIdsByFileType.get(fileType);
       if (etapeIds && etapeIds.length > 0) {
         for (const etapeId of etapeIds) {
-          await migrateFileToTarget(sirecId, requeteId, file, etapeId, mockFilePath);
+          await migrateFileToTarget(
+            sirecId,
+            requeteId,
+            file,
+            { requeteEtapeId: etapeId, faitSituationId: null },
+            mockFilePath,
+          );
         }
         continue;
       }
@@ -179,7 +222,7 @@ export async function migrateSirecFiles(
         { sirecId, requeteId, sirecFileId: file.id_data, fileType },
         'No étape created for this SIREC file_type on this réclamation, attaching file directly to the requete',
       );
-      await migrateFileToTarget(sirecId, requeteId, file, null, mockFilePath);
+      await migrateFileToTarget(sirecId, requeteId, file, DIRECT_TARGET, mockFilePath);
       continue;
     }
 
@@ -187,6 +230,6 @@ export async function migrateSirecFiles(
       { sirecId, requeteId, sirecFileId: file.id_data, fileType },
       'Unknown SIREC file_type, attaching file directly to the requete',
     );
-    await migrateFileToTarget(sirecId, requeteId, file, null, mockFilePath);
+    await migrateFileToTarget(sirecId, requeteId, file, DIRECT_TARGET, mockFilePath);
   }
 }
