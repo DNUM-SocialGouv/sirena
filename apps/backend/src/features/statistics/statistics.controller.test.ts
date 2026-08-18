@@ -129,6 +129,9 @@ describe('statistics.controller.ts', () => {
           topEntiteId: 'root-entite',
           durationMs: expect.any(Number),
           csvSizeBytes: expect.any(Number),
+          rssBeforeBytes: expect.any(Number),
+          rssAfterBytes: expect.any(Number),
+          rssDeltaBytes: expect.any(Number),
         },
         '[statistics] export requêtes generated successfully',
       );
