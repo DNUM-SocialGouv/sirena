@@ -285,6 +285,49 @@ describe('sirecMigration.institutionPartenaire.transformer.ts', () => {
     });
   });
 
+  describe('sirecFileTypeKeys', () => {
+    it('should target both hors_ars<n> and rep_instit_part<n> for the n-th institution, when niv_competence_reclam is 54 (hors ARS)', () => {
+      const result = transformSirecInstitutionsPartenaires(
+        makeData({ institution_part: '1,2,3', niv_competence_reclam: 54 }, { 1: 'A', 2: 'B', 3: 'C' }),
+        [ARS_1],
+      );
+
+      expect(result[0].sirecFileTypeKeys).toEqual(['hors_ars1', 'rep_instit_part1']);
+      expect(result[1].sirecFileTypeKeys).toEqual(['hors_ars2', 'rep_instit_part2']);
+      expect(result[2].sirecFileTypeKeys).toEqual(['hors_ars3', 'rep_instit_part3']);
+    });
+
+    it('should target both hors_ars<n> and rep_instit_part<n> for the n-th institution, when niv_competence_reclam is 52 (réponse hors compétence)', () => {
+      const result = transformSirecInstitutionsPartenaires(
+        makeData({ institution_part: '1,2,3', niv_competence_reclam: 52 }, { 1: 'A', 2: 'B', 3: 'C' }),
+        [ARS_1],
+      );
+
+      expect(result[0].sirecFileTypeKeys).toEqual(['hors_ars1', 'rep_instit_part1']);
+      expect(result[1].sirecFileTypeKeys).toEqual(['hors_ars2', 'rep_instit_part2']);
+      expect(result[2].sirecFileTypeKeys).toEqual(['hors_ars3', 'rep_instit_part3']);
+    });
+
+    it('should not set sirecFileTypeKeys beyond the third institution', () => {
+      const result = transformSirecInstitutionsPartenaires(
+        makeData({ institution_part: '1,2,3,4', niv_competence_reclam: 54 }, { 1: 'A', 2: 'B', 3: 'C', 4: 'D' }),
+        [ARS_1],
+      );
+
+      expect(result[3].sirecFileTypeKeys).toBeUndefined();
+    });
+
+    it('should set the same sirecFileTypeKeys on every etape created for the same institution slot across ARS entités', () => {
+      const result = transformSirecInstitutionsPartenaires(
+        makeData({ institution_part: '1', niv_competence_reclam: 54 }, { 1: 'A' }),
+        [ARS_1, ARS_2],
+      );
+
+      expect(result[0].sirecFileTypeKeys).toEqual(['hors_ars1', 'rep_instit_part1']);
+      expect(result[1].sirecFileTypeKeys).toEqual(['hors_ars1', 'rep_instit_part1']);
+    });
+  });
+
   describe('prec_niv_comp in note', () => {
     it('should include "Précision : <value>" in note when prec_niv_comp is set', () => {
       const result = transformSirecInstitutionsPartenaires(
