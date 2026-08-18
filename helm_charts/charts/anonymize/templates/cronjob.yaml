@@ -32,7 +32,7 @@ spec:
           containers:
             - name: anonymize
               image: {{ .Values.image }}
-              imagePullPolicy: {{ .Values.pullPolicy | default "Always" }}
+              pullPolicy: {{ .Values.pullPolicy | default "Always" }}
               envFrom:
                 - secretRef:
                     name: anonymize-secret
