@@ -28,6 +28,7 @@ import {
   addClotureEtapeFiles,
   createProcessingEtape,
   deleteRequeteEtape,
+  disableEtapeRappel,
   EtapeNotEditableError,
   FilesNotOwnedError,
   getRequeteEtapeById,
@@ -46,6 +47,7 @@ vi.mock('../requeteEtapes/requetesEtapes.service.js', () => ({
   deleteRequeteEtape: vi.fn(),
   createProcessingEtape: vi.fn(),
   updateProcessingEtape: vi.fn(),
+  disableEtapeRappel: vi.fn(),
   addClotureEtapeFiles: vi.fn(),
   EtapeNotEditableError: class EtapeNotEditableError extends Error {},
   FilesNotOwnedError: class FilesNotOwnedError extends Error {},
@@ -189,6 +191,45 @@ describe('requeteEtapes.controller.ts', () => {
       entiteId: 'e1',
       prioriteId: null,
     } as RequeteEntite);
+  });
+
+  describe('PATCH /:id/rappel/disable', () => {
+    it('disables the rappel on the step', async () => {
+      vi.mocked(disableEtapeRappel).mockResolvedValueOnce(fakeRequeteEtape);
+
+      const res = await client[':id'].rappel.disable.$patch({ param: { id: 'step1' } });
+
+      const body = await res.json();
+      expect(res.status).toBe(200);
+      expect(body).toEqual({ data: convertDatesToStrings(fakeRequeteEtape) });
+      expect(disableEtapeRappel).toHaveBeenCalledWith('step1');
+    });
+
+    it('returns 404 when the step is not found', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].rappel.disable.$patch({ param: { id: 'step1' } });
+
+      expect(res.status).toBe(404);
+      expect(disableEtapeRappel).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 when the user has no access to the requete', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
+
+      const res = await client[':id'].rappel.disable.$patch({ param: { id: 'step1' } });
+
+      expect(res.status).toBe(403);
+      expect(disableEtapeRappel).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 when the step is not editable', async () => {
+      vi.mocked(disableEtapeRappel).mockRejectedValueOnce(new EtapeNotEditableError('ETAPE_NOT_EDITABLE'));
+
+      const res = await client[':id'].rappel.disable.$patch({ param: { id: 'step1' } });
+
+      expect(res.status).toBe(403);
+    });
   });
 
   describe('POST /:id/cloture-files', () => {

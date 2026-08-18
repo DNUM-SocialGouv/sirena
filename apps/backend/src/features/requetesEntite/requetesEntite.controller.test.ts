@@ -255,6 +255,7 @@ describe('RequetesEntite endpoints: /', () => {
       requeteEtape: [],
       departementsLieuSurvenue: [],
       domainesFonctionnels: [],
+      hasRappel: false,
     },
   ] satisfies Awaited<ReturnType<typeof getRequetesEntite>>['data'];
 

@@ -1,10 +1,12 @@
 import { type Job, UnrecoverableError, Worker } from 'bullmq';
 import { ZodError } from 'zod';
 import { connection } from '../../config/redis.js';
+import { migrateSirecFiles } from '../../features/sirecMigration/sirecMigration.files.service.js';
 import { fetchSirecData } from '../../features/sirecMigration/sirecMigration.repository.js';
 import {
   deleteRequeteWithRelatedData,
   getRequeteIdFromSirecId,
+  type SaveFromSirecResult,
   saveFromSirec,
 } from '../../features/sirecMigration/sirecMigration.service.js';
 import { initAffectationTransco } from '../../features/sirecMigration/transco/affectation/affectation.transco.js';
@@ -21,7 +23,7 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
     transcoInitPromise = initAffectationTransco();
   }
   await transcoInitPromise;
-  const { sirecId, deleteIfExists } = job.data;
+  const { sirecId, deleteIfExists, migrateFiles, mockFilePath } = job.data;
 
   return loggerStorage.run(
     createDefaultLogger().child({ context: 'sirec-migration-worker', sirecId, jobId: job.id }),
@@ -66,9 +68,9 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
         throw err;
       }
 
-      let sirenaRequeteId: string;
+      let saveResult: SaveFromSirecResult;
       try {
-        sirenaRequeteId = await saveFromSirec(data);
+        saveResult = await saveFromSirec(data);
       } catch (err) {
         if (err instanceof ZodError) {
           logger.error({ sirecId, validationErrors: err.issues }, 'SIREC record failed schema validation, skipping');
@@ -77,7 +79,20 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
         throw err;
       }
 
+      const { requeteId: sirenaRequeteId, etapeIdsByFileType, etapeIdsByMainCouranteId, faitSituationIds } = saveResult;
+
       logger.info({ requeteId: sirenaRequeteId, sirecId: data.sirecId }, 'SIREC record migrated successfully');
+
+      if (migrateFiles !== false) {
+        await migrateSirecFiles(
+          sirecId,
+          sirenaRequeteId,
+          etapeIdsByFileType,
+          etapeIdsByMainCouranteId,
+          faitSituationIds,
+          mockFilePath,
+        );
+      }
     },
   );
 };

@@ -17,6 +17,7 @@ import {
   createDefaultRequeteEtapes,
   createProcessingEtape,
   deleteRequeteEtape,
+  disableEtapeRappel,
   EtapeNotEditableError,
   FilesNotOwnedError,
   getEtapePermissions,
@@ -1311,6 +1312,60 @@ describe('RequeteEtapes.service.ts', () => {
           requete: { select: { dematSocialId: true, sirecId: true, thirdPartyAccountId: true } },
         },
       });
+    });
+  });
+
+  describe('disableEtapeRappel()', () => {
+    const editableEtapeWithRappel = {
+      ...requeteEtape,
+      rappelType: 'JOURS_7',
+      rappelDate: new Date('2026-06-02T00:00:00.000Z'),
+      uploadedFiles: [],
+    };
+
+    it('clears rappelType and rappelDate on an editable step', async () => {
+      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(editableEtapeWithRappel);
+      const updated = { ...requeteEtape, rappelType: null, rappelDate: null };
+      vi.mocked(prisma.requeteEtape.update).mockResolvedValueOnce(updated);
+
+      const result = await disableEtapeRappel('requeteEtapeId');
+
+      expect(prisma.requeteEtape.update).toHaveBeenCalledWith({
+        where: { id: 'requeteEtapeId' },
+        data: { rappelType: null, rappelDate: null },
+      });
+      expect(result).toEqual(updated);
+    });
+
+    it('returns null when the step does not exist', async () => {
+      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(null);
+
+      const result = await disableEtapeRappel('missing');
+
+      expect(result).toBeNull();
+      expect(prisma.requeteEtape.update).not.toHaveBeenCalled();
+    });
+
+    it('throws EtapeNotEditableError when the step is not editable', async () => {
+      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce({
+        ...editableEtapeWithRappel,
+        statutId: 'CLOTUREE',
+      });
+
+      await expect(disableEtapeRappel('requeteEtapeId')).rejects.toThrow(EtapeNotEditableError);
+      expect(prisma.requeteEtape.update).not.toHaveBeenCalled();
+    });
+
+    it('throws EtapeNotEditableError on a sent ACR step (canOnlyEditNotes)', async () => {
+      const sentAcrEtape = {
+        ...editableEtapeWithRappel,
+        type: 'ACKNOWLEDGMENT',
+        uploadedFiles: [{ canDelete: false }],
+      };
+      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(sentAcrEtape);
+
+      await expect(disableEtapeRappel('requeteEtapeId')).rejects.toThrow(EtapeNotEditableError);
+      expect(prisma.requeteEtape.update).not.toHaveBeenCalled();
     });
   });
 

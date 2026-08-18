@@ -75,6 +75,14 @@ export async function updateProcessingStep(stepId: string, data: UpdateProcessin
   return res.json();
 }
 
+export async function disableStepRappel(stepId: string) {
+  const res = await client['requete-etapes'][':id'].rappel.disable.$patch({
+    param: { id: stepId },
+  });
+  await handleRequestErrors(res);
+  return res.json();
+}
+
 export type AddClotureFilesData = {
   fileIds: string[];
 };

@@ -41,5 +41,6 @@ export function transformSirecMesuresPrises(
     statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
     createdAt: sys_creation_date,
     note,
+    sirecFileTypeKeys: ['mesures_prises'],
   }));
 }
