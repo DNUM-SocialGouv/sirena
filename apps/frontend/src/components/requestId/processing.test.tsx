@@ -128,6 +128,10 @@ vi.mock('@sirena/ui', async (importOriginal) => {
   };
 });
 
+vi.mock('@/hooks/mutations/updateProcessingStep.hook', () => ({
+  useDisableStepRappel: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
 vi.mock('@/hooks/mutations/updateUploadedFiles.hook', () => ({
   useDeleteUploadedFile: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
@@ -179,8 +183,8 @@ describe('Processing', () => {
     requeteEtapes = [
       {
         ...foreignEtapePartagee,
-        id: 'newest-step',
-        nom: 'Étape la plus récente',
+        id: 'oldest-step',
+        nom: 'Étape la plus ancienne',
         statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
       },
       {
@@ -193,8 +197,8 @@ describe('Processing', () => {
       },
       {
         ...foreignEtapePartagee,
-        id: 'oldest-step',
-        nom: 'Étape la plus ancienne',
+        id: 'newest-step',
+        nom: 'Étape la plus récente',
         statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
       },
     ];
@@ -203,7 +207,7 @@ describe('Processing', () => {
 
     expect(
       [...document.querySelectorAll('[data-timeline-item-type] h3')].map((heading) => heading.textContent?.trim()),
-    ).toEqual(['CD - Étape la plus récente', 'Création de la requête', 'CD - Étape la plus ancienne']);
+    ).toEqual(['CD - Étape la plus ancienne', 'Création de la requête', 'CD - Étape la plus récente']);
     expect(screen.getAllByRole('heading', { name: 'Création de la requête' })).toHaveLength(1);
     expect(
       screen.getByRole('heading', { name: 'Création de la requête' }).closest('[data-timeline-item-type]'),
