@@ -39,6 +39,13 @@ export const sentryContextMiddleware = (): MiddlewareHandler<SentryAppBindings> 
     // @sentry/node v10 each withScope() call retains ~1.2 KB that is never
     // reclaimed, so one fork per request leaks the heap until the pod is
     // OOMKilled (~110 MB / 50k requests, measured).
+    //
+    // Per-request isolation here relies on httpIntegration() (bundled in
+    // Sentry.defaultIntegrations) forking the isolation scope for each incoming
+    // request via diagnostics_channel. If instrument.ts ever disables the
+    // default integrations, httpIntegration() must be kept explicitly — without
+    // it getIsolationScope() is a global singleton and the request context /
+    // user set below would leak across concurrent requests.
     const scope = Sentry.getIsolationScope();
     await sentryStorage.run(scope, async () => {
       try {
