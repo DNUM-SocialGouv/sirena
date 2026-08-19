@@ -286,26 +286,26 @@ describe('sirecMigration.institutionPartenaire.transformer.ts', () => {
   });
 
   describe('sirecFileTypeKeys', () => {
-    it('should target both hors_ars<n> and rep_instit_part<n> for the n-th institution, when niv_competence_reclam is 54 (hors ARS)', () => {
+    it('should target hors_ars<n> for the n-th institution, when niv_competence_reclam is 54 (hors ARS)', () => {
       const result = transformSirecInstitutionsPartenaires(
         makeData({ institution_part: '1,2,3', niv_competence_reclam: 54 }, { 1: 'A', 2: 'B', 3: 'C' }),
         [ARS_1],
       );
 
-      expect(result[0].sirecFileTypeKeys).toEqual(['hors_ars1', 'rep_instit_part1']);
-      expect(result[1].sirecFileTypeKeys).toEqual(['hors_ars2', 'rep_instit_part2']);
-      expect(result[2].sirecFileTypeKeys).toEqual(['hors_ars3', 'rep_instit_part3']);
+      expect(result[0].sirecFileTypeKeys).toEqual(['hors_ars1']);
+      expect(result[1].sirecFileTypeKeys).toEqual(['hors_ars2']);
+      expect(result[2].sirecFileTypeKeys).toEqual(['hors_ars3']);
     });
 
-    it('should target both hors_ars<n> and rep_instit_part<n> for the n-th institution, when niv_competence_reclam is 52 (réponse hors compétence)', () => {
+    it('should target hors_ars<n> for the n-th institution, when niv_competence_reclam is 52 (réponse hors compétence)', () => {
       const result = transformSirecInstitutionsPartenaires(
         makeData({ institution_part: '1,2,3', niv_competence_reclam: 52 }, { 1: 'A', 2: 'B', 3: 'C' }),
         [ARS_1],
       );
 
-      expect(result[0].sirecFileTypeKeys).toEqual(['hors_ars1', 'rep_instit_part1']);
-      expect(result[1].sirecFileTypeKeys).toEqual(['hors_ars2', 'rep_instit_part2']);
-      expect(result[2].sirecFileTypeKeys).toEqual(['hors_ars3', 'rep_instit_part3']);
+      expect(result[0].sirecFileTypeKeys).toEqual(['hors_ars1']);
+      expect(result[1].sirecFileTypeKeys).toEqual(['hors_ars2']);
+      expect(result[2].sirecFileTypeKeys).toEqual(['hors_ars3']);
     });
 
     it('should not set sirecFileTypeKeys beyond the third institution', () => {
@@ -323,8 +323,8 @@ describe('sirecMigration.institutionPartenaire.transformer.ts', () => {
         [ARS_1, ARS_2],
       );
 
-      expect(result[0].sirecFileTypeKeys).toEqual(['hors_ars1', 'rep_instit_part1']);
-      expect(result[1].sirecFileTypeKeys).toEqual(['hors_ars1', 'rep_instit_part1']);
+      expect(result[0].sirecFileTypeKeys).toEqual(['hors_ars1']);
+      expect(result[1].sirecFileTypeKeys).toEqual(['hors_ars1']);
     });
   });
 
