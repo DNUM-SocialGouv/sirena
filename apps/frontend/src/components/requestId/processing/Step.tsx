@@ -541,7 +541,13 @@ const StepComponent = ({
           <>
             <div className={styles['request-notes']}>
               {visibleNotes.slice(0, isOpen ? visibleNotes.length : 3).map((note: StepType['notes'][number]) => (
-                <StepNote key={note.id} content={note.texte} author={note.author} createdAt={note.createdAt} />
+                <StepNote
+                  key={note.id}
+                  content={note.texte}
+                  author={note.author}
+                  createdAt={note.createdAt}
+                  nomEntiteAdministrative={nomEntiteAdministrative}
+                />
               ))}
             </div>
             <div className={styles['request-notes-distplay']}>

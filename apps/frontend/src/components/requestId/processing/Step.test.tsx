@@ -426,10 +426,11 @@ describe('Step', () => {
     expect(container.querySelector('[data-entity-relation]')).not.toBeInTheDocument();
   });
 
-  it('renders a note block with the "Note rédigée le … par …" wording', () => {
+  it('attributes a note author to the step entity in multi-entity mode', () => {
     render(
       <Step
         {...makeStep({
+          isMultiEntite: true,
           notes: [
             {
               id: 'note-1',
@@ -442,7 +443,9 @@ describe('Step', () => {
       />,
     );
 
-    expect(screen.getByText(/Note rédigée le 19\/05\/2026/)).toBeInTheDocument();
+    expect(screen.getByText(/Note rédigée le 19\/05\/2026/)).toHaveTextContent(
+      'Note rédigée le 19/05/2026 par Jeanne Moulon (ARS Normandie)',
+    );
     expect(screen.getByText('Texte de la note')).toBeInTheDocument();
   });
 
