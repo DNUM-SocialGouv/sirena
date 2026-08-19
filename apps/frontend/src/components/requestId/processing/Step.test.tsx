@@ -443,9 +443,13 @@ describe('Step', () => {
       />,
     );
 
-    expect(screen.getByText(/Note rédigée le 19\/05\/2026/)).toHaveTextContent(
-      'Note rédigée le 19/05/2026 par Jeanne Moulon (ARS Normandie)',
-    );
+    expect(
+      screen.getByText(
+        (_content, element) =>
+          element?.tagName === 'P' &&
+          element.textContent?.trim() === 'Note rédigée par Jeanne Moulon (ARS Normandie) le 19/05/2026',
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText('Texte de la note')).toBeInTheDocument();
   });
 
@@ -465,7 +469,7 @@ describe('Step', () => {
 
     expect(screen.getByText('Contenu réel')).toBeInTheDocument();
     // The two empty notes are not rendered — only one note block remains.
-    expect(screen.getAllByText(/Note rédigée le/)).toHaveLength(1);
+    expect(screen.getAllByText(/Note rédigée/)).toHaveLength(1);
   });
 
   it('renders each step-level file as its own "Fichier ajouté le … par …" event', () => {
