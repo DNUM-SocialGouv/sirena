@@ -1,8 +1,9 @@
+import { CSV_BOM, serializeCsvRow } from '@sirena/common/utils';
 import { type Prisma, prisma } from '../../../libs/prisma.js';
 import { getEntiteDescendantIds } from '../../entites/entites.service.js';
-import { buildExportRequetesCsvFromRecords } from './exportRequetesCsv.js';
+import { EXPORT_REQUETES_HEADERS } from './exportRequetesColumns.js';
 import { deriveDepartmentCodeFromPostalCode } from './exportRequetesFormatters.js';
-import type { ExportRequeteRecord } from './exportRequetesRows.js';
+import { buildExportRequetesRows, type ExportRequeteRecord } from './exportRequetesRows.js';
 
 const exportRequetesSelect = {
   id: true,
@@ -123,46 +124,112 @@ type ExportRequetePrismaPayload = Prisma.RequeteGetPayload<{
   select: typeof exportRequetesSelect;
 }>;
 
-export async function generateExportRequetesCsv(topEntiteId: string): Promise<string> {
-  const entiteIds = await getEntiteDescendantIds(topEntiteId);
-  const requetes = await prisma.requete.findMany({
-    where: {
-      requeteEntites: {
-        some: {
-          entiteId: { in: entiteIds ?? [] },
-        },
-      },
-    },
-    select: exportRequetesSelect,
-  });
-  const { departmentCodesByPostalCode, departementNamesByCode } = await getDepartmentReferences(requetes);
+// The export can span an entity's whole subtree. Reading every requête (with its
+// deep relations) in a single findMany, then holding the mapped records and the
+// full CSV string at once, keeps several copies of the dataset in memory on a pod
+// with a hard memory limit. Instead we page through the rows with a cursor and
+// emit the CSV line by line, so peak memory is one page rather than the whole set.
+const EXPORT_PAGE_SIZE = 500;
 
-  return buildExportRequetesCsvFromRecords(requetes.map(toExportRequeteRecord), {
-    topEntiteId,
-    departmentCodesByPostalCode,
-    departementNamesByCode,
-  });
+// Postal-code-bearing subset of exportRequetesSelect, used by the light first pass
+// that resolves department references before any row is emitted.
+const postalCodeSelect = {
+  id: true,
+  declarant: { select: { adresse: { select: { codePostal: true } } } },
+  participant: { select: { adresse: { select: { codePostal: true } } } },
+  situations: {
+    select: {
+      lieuDeSurvenue: { select: { codePostal: true, adresse: { select: { codePostal: true } } } },
+      misEnCause: { select: { codePostal: true } },
+    },
+  },
+} satisfies Prisma.RequeteSelect;
+
+function buildRequeteWhere(entiteIds: string[]): Prisma.RequeteWhereInput {
+  return { requeteEntites: { some: { entiteId: { in: entiteIds } } } };
 }
 
-async function getDepartmentReferences(requetes: ExportRequetePrismaPayload[]): Promise<{
+async function collectPostalCodes(where: Prisma.RequeteWhereInput): Promise<string[]> {
+  const codePostaux = new Set<string>();
+  let cursor: string | undefined;
+
+  while (true) {
+    const page = await prisma.requete.findMany({
+      where,
+      select: postalCodeSelect,
+      orderBy: { id: 'asc' },
+      take: EXPORT_PAGE_SIZE,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    });
+    if (page.length === 0) break;
+
+    for (const requete of page) {
+      for (const codePostal of [
+        requete.declarant?.adresse?.codePostal,
+        requete.participant?.adresse?.codePostal,
+        ...requete.situations.flatMap((situation) => [
+          situation.lieuDeSurvenue?.adresse?.codePostal || situation.lieuDeSurvenue?.codePostal,
+          situation.misEnCause?.codePostal,
+        ]),
+      ]) {
+        if (codePostal) codePostaux.add(codePostal);
+      }
+    }
+
+    if (page.length < EXPORT_PAGE_SIZE) break;
+    cursor = page[page.length - 1].id;
+  }
+
+  return Array.from(codePostaux);
+}
+
+// Streams the CSV in write-ready chunks: the first chunk is the BOM + header line,
+// each subsequent chunk is a newline + one row. Concatenated, the chunks are
+// byte-for-byte identical to serializeCsv(headers, rows) over the same rows.
+export async function* streamExportRequetesCsv(topEntiteId: string): AsyncGenerator<string> {
+  const entiteIds = (await getEntiteDescendantIds(topEntiteId)) ?? [];
+  const where = buildRequeteWhere(entiteIds);
+
+  const codePostaux = await collectPostalCodes(where);
+  const { departmentCodesByPostalCode, departementNamesByCode } = await getDepartmentReferences(codePostaux);
+  const options = { topEntiteId, departmentCodesByPostalCode, departementNamesByCode };
+
+  yield CSV_BOM + serializeCsvRow([...EXPORT_REQUETES_HEADERS]);
+
+  let cursor: string | undefined;
+  while (true) {
+    const page = await prisma.requete.findMany({
+      where,
+      select: exportRequetesSelect,
+      orderBy: { id: 'asc' },
+      take: EXPORT_PAGE_SIZE,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    });
+    if (page.length === 0) break;
+
+    for (const requete of page) {
+      for (const row of buildExportRequetesRows([toExportRequeteRecord(requete)], options)) {
+        yield `\n${serializeCsvRow(row)}`;
+      }
+    }
+
+    if (page.length < EXPORT_PAGE_SIZE) break;
+    cursor = page[page.length - 1].id;
+  }
+}
+
+export async function generateExportRequetesCsv(topEntiteId: string): Promise<string> {
+  let csv = '';
+  for await (const chunk of streamExportRequetesCsv(topEntiteId)) {
+    csv += chunk;
+  }
+  return csv;
+}
+
+async function getDepartmentReferences(codePostaux: string[]): Promise<{
   departmentCodesByPostalCode: Map<string, string>;
   departementNamesByCode: Map<string, string>;
 }> {
-  const codePostaux = Array.from(
-    new Set(
-      requetes
-        .flatMap((requete) => [
-          requete.declarant?.adresse?.codePostal,
-          requete.participant?.adresse?.codePostal,
-          ...requete.situations.flatMap((situation) => [
-            situation.lieuDeSurvenue?.adresse?.codePostal || situation.lieuDeSurvenue?.codePostal,
-            situation.misEnCause?.codePostal,
-          ]),
-        ])
-        .filter((codePostal): codePostal is string => !!codePostal),
-    ),
-  );
-
   if (codePostaux.length === 0) {
     return { departmentCodesByPostalCode: new Map(), departementNamesByCode: new Map() };
   }
