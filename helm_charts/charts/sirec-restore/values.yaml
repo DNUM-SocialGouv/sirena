@@ -34,6 +34,8 @@ config:
   # Dump précis à restaurer, relatif au préfixe (vide = sélection auto du plus récent).
   dumpObjectKey: ""
 
+# Mémoire : requests = limits (la plus grande des deux valeurs d'origine) → QoS
+# mémoire garantie, pas d'éviction sous pression pendant l'import. CPU inchangé.
 resources:
   # initContainer s3-download.
   download:
@@ -42,7 +44,7 @@ resources:
       memory: 512Mi
     requests:
       cpu: 100m
-      memory: 128Mi
+      memory: 512Mi
   # container mariadb-import.
   import:
     limits:
@@ -50,7 +52,7 @@ resources:
       memory: 1Gi
     requests:
       cpu: 250m
-      memory: 512Mi
+      memory: 1Gi
 
 # Contexte de sécurité du pod (partagé par tous les containers).
 podSecurityContext:
