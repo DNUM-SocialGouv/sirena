@@ -290,27 +290,29 @@ const StepRappelBadge = ({
   );
 };
 
-const StepComponent = ({
-  requestId,
-  isOwner,
-  isMultiEntite,
-  nom,
-  createdBy,
-  createdAt,
-  updatedAt,
-  statutId,
-  isAcknowledgmentSendable,
-  onSendAcknowledgment,
-  openEdit,
-  notes,
-  id,
-  requete,
-  clotureEffectiveDate,
-  entiteAdministrative,
-  timelineItemType,
-  attributedEntiteAdministrative,
-  ...step
-}: StepProps) => {
+const StepComponent = (stepProps: StepProps) => {
+  const {
+    requestId,
+    isOwner,
+    isMultiEntite,
+    nom,
+    createdBy,
+    createdAt,
+    updatedAt,
+    statutId,
+    isAcknowledgmentSendable,
+    onSendAcknowledgment,
+    openEdit,
+    notes,
+    id,
+    requete,
+    clotureEffectiveDate,
+    entiteAdministrative,
+    timelineItemType,
+    attributedEntiteAdministrative,
+    ...step
+  } = stepProps;
+
   const deleteClotureFileModal = useMemo(
     () =>
       createModal({
@@ -565,27 +567,7 @@ const StepComponent = ({
             </div>
             <StepFiles files={step.uploadedFiles} stepId={id} />
             {canEditStep ? (
-              <StepEditButton
-                className={styles['request-step__add-note']}
-                step={
-                  {
-                    id,
-                    nom,
-                    statutId,
-                    notes,
-                    createdAt,
-                    updatedAt,
-                    createdBy,
-                    requete,
-                    clotureEffectiveDate,
-                    entiteAdministrative,
-                    timelineItemType,
-                    attributedEntiteAdministrative,
-                    ...step,
-                  } as StepType
-                }
-                onEdit={openEdit}
-              />
+              <StepEditButton className={styles['request-step__add-note']} step={stepProps} onEdit={openEdit} />
             ) : null}
           </>
         )}
