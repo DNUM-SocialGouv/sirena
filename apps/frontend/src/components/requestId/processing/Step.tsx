@@ -433,7 +433,7 @@ const StepComponent = ({
           <EntiteTypeBadge
             entiteTypeId={attributedEntiteAdministrative.entiteTypeId}
             label={attributedEntiteAdministrative.entiteTypeId}
-            relation={entityRelation}
+            relation={entityRelation === 'neutral' ? undefined : entityRelation}
             className={`fr-mb-0 ${styles['timeline-entity-badge']}`}
             aria-hidden="true"
           />
@@ -567,19 +567,23 @@ const StepComponent = ({
             {canEditStep ? (
               <StepEditButton
                 className={styles['request-step__add-note']}
-                step={{
-                  id,
-                  nom,
-                  statutId,
-                  notes,
-                  createdAt,
-                  updatedAt,
-                  createdBy,
-                  requete,
-                  clotureEffectiveDate,
-                  entiteAdministrative,
-                  ...step,
-                }}
+                step={
+                  {
+                    id,
+                    nom,
+                    statutId,
+                    notes,
+                    createdAt,
+                    updatedAt,
+                    createdBy,
+                    requete,
+                    clotureEffectiveDate,
+                    entiteAdministrative,
+                    timelineItemType,
+                    attributedEntiteAdministrative,
+                    ...step,
+                  } as StepType
+                }
                 onEdit={openEdit}
               />
             ) : null}
