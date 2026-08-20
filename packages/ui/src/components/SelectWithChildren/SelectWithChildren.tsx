@@ -58,6 +58,7 @@ type CheckboxOptionItemProps = {
   onToggleSelection: (optionValue: string) => void;
   onKeyDown: (event: React.KeyboardEvent) => void;
   setRef: (el: HTMLDivElement | null) => void;
+  hasError: boolean;
 };
 
 const CheckboxOptionItem = ({
@@ -67,6 +68,7 @@ const CheckboxOptionItem = ({
   onToggleSelection,
   onKeyDown,
   setRef,
+  hasError,
 }: CheckboxOptionItemProps) => {
   const handleToggle = useCallback(() => onToggleSelection(option.value), [onToggleSelection, option.value]);
 
@@ -78,6 +80,7 @@ const CheckboxOptionItem = ({
       onKeyDown={onKeyDown}
       setRef={setRef}
       isFocused={isFocused}
+      hasError={hasError}
     />
   );
 };
@@ -244,6 +247,7 @@ export function SelectWithChildren({
                     onToggleSelection={toggleSelection}
                     onKeyDown={handleKeyDown}
                     setRef={setOptionRef(adjustedIndex)}
+                    hasError={hasError}
                   />
                 );
               })}
