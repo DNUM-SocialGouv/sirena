@@ -37,6 +37,13 @@ export const REQUETE_ETAPE_TYPES = {
 
 export type RequeteEtapeType = keyof typeof REQUETE_ETAPE_TYPES;
 
+export const ACKNOWLEDGMENT_SEND_MODES = {
+  AUTOMATIC: 'AUTOMATIC',
+  MANUAL: 'MANUAL',
+} as const;
+
+export type AcknowledgmentSendMode = keyof typeof ACKNOWLEDGMENT_SEND_MODES;
+
 export const REQUETE_ETAPE_RAPPEL_TYPES = {
   JOURS_7: 'JOURS_7',
   JOURS_15: 'JOURS_15',

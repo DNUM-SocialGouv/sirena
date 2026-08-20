@@ -1,4 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import {
+  ACKNOWLEDGMENT_SEND_MODES,
   REQUETE_ETAPE_RAPPEL_TYPES,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_ETAPE_TYPES,
@@ -6,7 +8,7 @@ import {
   type RequeteEtapeRappelType,
   requeteEtapeRappelDelaiJours,
 } from '@sirena/common/constants';
-import { getDateTodayInParis } from '@sirena/common/utils';
+import { getDateTodayInParis, isAutomaticRequest } from '@sirena/common/utils';
 import type { PinoLogger } from 'hono-pino';
 import { getOriginalFileName } from '../../helpers/file.js';
 import { capitalizeFirst, formatDateFr } from '../../helpers/string.js';
@@ -17,9 +19,11 @@ import { prisma, type RequeteEtape } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import { setEtapeFile } from '../uploadedFiles/uploadedFiles.service.js';
+import { getEtapePermissions } from './requetesEtapes.permissions.js';
 import type { AddProcessingStepDto, GetRequeteEtapesQuery, UpdateProcessingStepDto } from './requetesEtapes.type.js';
 
 export { FilesNotOwnedError } from '../uploadedFiles/uploadedFiles.service.js';
+export { getEtapePermissions } from './requetesEtapes.permissions.js';
 
 export const CREATION_STEP_NAME_PREFIX = 'Création de la requête';
 export const AUTOMATIC_CREATION_STEP_NAME_PREFIX = 'Création de la requête';
@@ -161,23 +165,6 @@ export const createDefaultRequeteEtapes = async (
   return { etape1, etape2 };
 };
 
-export const getEtapePermissions = (etape: {
-  type: string;
-  statutId: string | null;
-  uploadedFiles: { canDelete: boolean }[];
-}): { editable: boolean; canOnlyEditNotes: boolean } => {
-  if (etape.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) return { editable: false, canOnlyEditNotes: false };
-  if (etape.type === REQUETE_ETAPE_TYPES.CREATION || etape.type === REQUETE_ETAPE_TYPES.REOPEN) {
-    return { editable: false, canOnlyEditNotes: false };
-  }
-  // An acknowledgment step is locked (notes/attachments only) only once the AR was actually sent from
-  // SIRENA — i.e. its non-deletable AR PDF (canDelete === false) is attached, by the auto or semi-manual
-  // send. If the step was merely switched to "Fait" by hand (no send, no PDF), it stays fully editable.
-  const acknowledgmentSent =
-    etape.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT && etape.uploadedFiles.some((file) => !file.canDelete);
-  return { editable: true, canOnlyEditNotes: acknowledgmentSent };
-};
-
 type RappelInput = { rappelType?: RequeteEtapeRappelType | null; rappelDate?: string };
 
 export const resolveEtapeRappel = (data: RappelInput): { rappelType: string | null; rappelDate: Date | null } => {
@@ -292,7 +279,7 @@ export const createProcessingEtape = async (
 };
 
 type EtapeNoteRow = { id: string; authorId: string | null; texte: string };
-type EtapeFileRow = { id: string; canDelete: boolean; filePath: string };
+type EtapeFileRow = { id: string; canDelete: boolean; filePath: string; uploadedById: string | null };
 type NoteChangelogEntry = {
   action: ChangeLogAction;
   id: string;
@@ -414,14 +401,20 @@ export const updateProcessingEtape = async (
     where: { id: stepId },
     include: {
       notes: { select: { id: true, authorId: true, texte: true } },
-      uploadedFiles: { select: { id: true, canDelete: true, filePath: true } },
+      uploadedFiles: { select: { id: true, canDelete: true, filePath: true, uploadedById: true } },
+      requete: {
+        select: { dematSocialId: true, sirecId: true, thirdPartyAccountId: true },
+      },
     },
   });
   if (!etape) {
     return null;
   }
 
-  const { editable, canOnlyEditNotes } = getEtapePermissions(etape);
+  const { editable, canOnlyEditNotes } = getEtapePermissions({
+    ...etape,
+    requeteIsAutomatic: isAutomaticRequest(etape.requete),
+  });
   if (!editable) {
     throw new EtapeNotEditableError('ETAPE_NOT_EDITABLE');
   }
@@ -473,6 +466,31 @@ export const updateProcessingEtape = async (
   return prisma.requeteEtape.findUnique({ where: { id: stepId } });
 };
 
+// Clear the rappel on a step without touching its notes/files (unlike the full update PATCH).
+export const disableEtapeRappel = async (stepId: string): Promise<RequeteEtape | null> => {
+  const etape = await prisma.requeteEtape.findUnique({
+    where: { id: stepId },
+    include: {
+      uploadedFiles: { select: { canDelete: true } },
+    },
+  });
+  if (!etape) {
+    return null;
+  }
+
+  // canOnlyEditNotes (a sent ACR step) locks the step fields, including the rappel — only notes/files
+  // stay editable — so the rappel cannot be deactivated here either.
+  const { editable, canOnlyEditNotes } = getEtapePermissions(etape);
+  if (!editable || canOnlyEditNotes) {
+    throw new EtapeNotEditableError('ETAPE_NOT_EDITABLE');
+  }
+
+  return prisma.requeteEtape.update({
+    where: { id: stepId },
+    data: { rappelType: null, rappelDate: null },
+  });
+};
+
 /**
  * Attaches uploaded files to a CLOTUREE (closure) step at the step level (requeteEtapeId).
  */
@@ -505,10 +523,10 @@ export const getRequeteEtapes = async (
   estPartageeEnabled = false,
 ) => {
   if (!entiteId) {
-    return { data: [], total: 0 };
+    return { data: [], total: 0, isMultiEntite: false };
   }
 
-  const { offset = 0, limit, sort = 'createdAt', order = 'desc' } = query;
+  const { offset = 0, limit, sort = 'createdAt', order = 'asc' } = query;
 
   const where: Prisma.RequeteEtapeWhereInput = {
     requeteId,
@@ -517,17 +535,31 @@ export const getRequeteEtapes = async (
     ...(estPartageeEnabled ? { OR: [{ entiteId }, { estPartagee: true }] } : { entiteId }),
   };
 
-  const [raw, total] = await Promise.all([
+  const affectedEntiteCount = await prisma.requeteEntite.count({
+    where: {
+      requeteId,
+      requete: { requeteEntites: { some: { entiteId } } },
+    },
+  });
+  const shouldBuildMultiEntityTimeline = estPartageeEnabled && affectedEntiteCount > 1;
+
+  const [raw, sourceTotal] = await Promise.all([
     prisma.requeteEtape.findMany({
       where,
-      skip: offset,
-      ...(typeof limit === 'number' ? { take: limit } : {}),
-      orderBy: { [sort]: order },
+      ...(shouldBuildMultiEntityTimeline
+        ? {}
+        : {
+            skip: offset,
+            ...(typeof limit === 'number' ? { take: limit } : {}),
+          }),
+      orderBy: shouldBuildMultiEntityTimeline ? [{ createdAt: 'asc' }, { id: 'asc' }] : { [sort]: order },
       select: {
         id: true,
         nom: true,
         type: true,
         estPartagee: true,
+        acknowledgmentSendMode: true,
+        acknowledgmentSendOperationId: true,
         statutId: true,
         dateRealisation: true,
         rappelType: true,
@@ -582,8 +614,20 @@ export const getRequeteEtapes = async (
         },
         requeteId: true,
         entiteId: true,
+        requeteEntite: {
+          select: {
+            entite: {
+              select: {
+                id: true,
+                nomComplet: true,
+                entiteTypeId: true,
+              },
+            },
+          },
+        },
         requete: {
           select: {
+            createdAt: true,
             createdById: true,
             createdBy: {
               select: { prenom: true, nom: true },
@@ -595,9 +639,7 @@ export const getRequeteEtapes = async (
         },
       },
     }),
-    prisma.requeteEtape.count({
-      where,
-    }),
+    shouldBuildMultiEntityTimeline ? Promise.resolve(0) : prisma.requeteEtape.count({ where }),
   ]);
 
   const sanitizeFile = <T extends { fileName: string; metadata: Prisma.JsonValue | null }>(file: T) => {
@@ -606,30 +648,122 @@ export const getRequeteEtapes = async (
   };
 
   // closure / creation = not editable; a sent ACR (AR PDF attached) = statut/name/date locked, notes OK; else full.
-  const data = raw.map((etape) => {
+  const timelineSourceSteps = raw.map((etape) => {
+    const {
+      requeteEntite,
+      requete: { createdAt: requestCreatedAt, ...requete },
+      ...step
+    } = etape;
     const permissions = getEtapePermissions({
       type: etape.type,
       statutId: etape.statutId,
+      acknowledgmentSendMode: etape.acknowledgmentSendMode,
+      requeteIsAutomatic: isAutomaticRequest(etape.requete),
       uploadedFiles: etape.uploadedFiles,
     });
     const isOwner = etape.entiteId === entiteId;
     return {
-      ...etape,
+      ...step,
+      requete,
+      requestCreatedAt,
+      timelineItemType: 'ENTITY_STEP' as const,
+      attributedEntiteAdministrative: requeteEntite.entite,
+      entiteAdministrative: requeteEntite.entite,
       editable: isOwner && permissions.editable,
       canOnlyEditNotes: isOwner && permissions.canOnlyEditNotes,
       uploadedFiles: etape.uploadedFiles.map(sanitizeFile),
     };
   });
 
+  if (!shouldBuildMultiEntityTimeline) {
+    return {
+      data: timelineSourceSteps.map(({ requestCreatedAt: _requestCreatedAt, ...step }) => step),
+      total: sourceTotal,
+      isMultiEntite: affectedEntiteCount > 1,
+    };
+  }
+
+  const creationSources = timelineSourceSteps
+    .filter((step) => step.type === REQUETE_ETAPE_TYPES.CREATION)
+    .sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime() || left.id.localeCompare(right.id));
+  const representativeCreationSource = creationSources[0];
+  const neutralCreationEvent = representativeCreationSource
+    ? {
+        ...representativeCreationSource,
+        createdAt: representativeCreationSource.requestCreatedAt,
+        timelineItemType: 'NEUTRAL_EVENT' as const,
+        attributedEntiteAdministrative: null,
+        editable: false,
+        canOnlyEditNotes: false,
+      }
+    : null;
+
+  const entityTimelineItems = timelineSourceSteps.filter((step) => step.type !== REQUETE_ETAPE_TYPES.CREATION);
+  const automaticAcknowledgmentSourcesByOperation = new Map<string, typeof entityTimelineItems>();
+  for (const step of entityTimelineItems) {
+    if (
+      step.type !== REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT ||
+      step.acknowledgmentSendMode !== ACKNOWLEDGMENT_SEND_MODES.AUTOMATIC ||
+      !step.acknowledgmentSendOperationId
+    ) {
+      continue;
+    }
+    const operationSources = automaticAcknowledgmentSourcesByOperation.get(step.acknowledgmentSendOperationId) ?? [];
+    operationSources.push(step);
+    automaticAcknowledgmentSourcesByOperation.set(step.acknowledgmentSendOperationId, operationSources);
+  }
+
+  const groupedAutomaticAcknowledgmentSourceIds = new Set<string>();
+  const neutralAutomaticAcknowledgmentEvents = [...automaticAcknowledgmentSourcesByOperation.values()].map(
+    (operationSources) => {
+      const orderedSources = [...operationSources].sort(
+        (left, right) => left.createdAt.getTime() - right.createdAt.getTime() || left.id.localeCompare(right.id),
+      );
+      for (const source of orderedSources) {
+        groupedAutomaticAcknowledgmentSourceIds.add(source.id);
+      }
+
+      const chronologicalSource = orderedSources[0];
+      const representativeSource =
+        orderedSources.find((source) => source.uploadedFiles.length > 0) ?? chronologicalSource;
+
+      return {
+        ...representativeSource,
+        createdAt: chronologicalSource.createdAt,
+        timelineItemType: 'NEUTRAL_EVENT' as const,
+        attributedEntiteAdministrative: null,
+        editable: false,
+        canOnlyEditNotes: false,
+      };
+    },
+  );
+
+  const projectedTimeline = [
+    ...entityTimelineItems.filter((step) => !groupedAutomaticAcknowledgmentSourceIds.has(step.id)),
+    ...neutralAutomaticAcknowledgmentEvents,
+    ...(neutralCreationEvent ? [neutralCreationEvent] : []),
+  ].sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime() || left.id.localeCompare(right.id));
+  const paginatedTimeline = projectedTimeline.slice(offset, typeof limit === 'number' ? offset + limit : undefined);
+
   return {
-    data,
-    total,
+    data: paginatedTimeline.map(({ requestCreatedAt: _requestCreatedAt, ...step }) => step),
+    total: projectedTimeline.length,
+    isMultiEntite: true,
   };
 };
 
-export const getRequeteEtapeById = async (id: string) =>
+type RequeteEtapeAuthorizationContext = RequeteEtape & {
+  uploadedFiles?: { canDelete: boolean; uploadedById: string | null }[];
+  requete?: { dematSocialId: number | null; sirecId: number | null; thirdPartyAccountId: string | null };
+};
+
+export const getRequeteEtapeById = async (id: string): Promise<RequeteEtapeAuthorizationContext | null> =>
   await prisma.requeteEtape.findUnique({
     where: { id },
+    include: {
+      uploadedFiles: { select: { canDelete: true, uploadedById: true } },
+      requete: { select: { dematSocialId: true, sirecId: true, thirdPartyAccountId: true } },
+    },
   });
 
 /**
@@ -641,69 +775,85 @@ export const updateAcknowledgmentStep = async (
   requeteId: string,
   entiteIds: string[],
   sentDate: Date = new Date(),
-): Promise<void> => {
+): Promise<string | null> => {
   const logger = getLoggerStore();
 
   try {
-    const etapes = await prisma.requeteEtape.findMany({
-      where: {
-        requeteId,
-        entiteId: { in: entiteIds },
-        type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
-        statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
-        createdBy: null,
-      },
+    const transition = await prisma.$transaction(async (tx) => {
+      const etapes = await tx.requeteEtape.findMany({
+        where: {
+          requeteId,
+          entiteId: { in: entiteIds },
+          type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+          statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
+          createdBy: null,
+        },
+      });
+
+      if (etapes.length === 0) return null;
+
+      const operationId = randomUUID();
+      const updatedEtapes = await Promise.all(
+        etapes.map((etape) =>
+          tx.requeteEtape.update({
+            where: { id: etape.id },
+            data: {
+              statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+              dateRealisation: sentDate,
+              estPartagee: true,
+              acknowledgmentSendMode: ACKNOWLEDGMENT_SEND_MODES.AUTOMATIC,
+              acknowledgmentSendOperationId: operationId,
+            },
+          }),
+        ),
+      );
+
+      return { etapes, operationId, updatedEtapes };
     });
 
-    if (etapes.length === 0) {
+    if (!transition) {
       logger.debug({ requeteId, entiteIds }, 'No acknowledgment steps found to update');
-      return;
+      return null;
     }
 
+    const { etapes, operationId, updatedEtapes } = transition;
     await Promise.all(
-      etapes.map(async (etape) => {
-        const before = {
-          id: etape.id,
-          nom: etape.nom,
-          statutId: etape.statutId,
-          dateRealisation: etape.dateRealisation?.toISOString() ?? null,
-          estPartagee: etape.estPartagee,
-          requeteId: etape.requeteId,
-          entiteId: etape.entiteId,
-          createdAt: etape.createdAt.toISOString(),
-          updatedAt: etape.updatedAt.toISOString(),
-        } as Prisma.JsonObject;
+      etapes.map(async (etape, index) => {
+        const updatedEtape = updatedEtapes[index];
+        if (!updatedEtape) return;
 
-        const updatedEtape = await prisma.requeteEtape.update({
-          where: { id: etape.id },
-          data: {
-            statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-            dateRealisation: sentDate,
-            estPartagee: true,
-          },
-        });
-
-        const after = {
-          id: updatedEtape.id,
-          nom: updatedEtape.nom,
-          statutId: updatedEtape.statutId,
-          dateRealisation: updatedEtape.dateRealisation?.toISOString() ?? null,
-          estPartagee: updatedEtape.estPartagee,
-          requeteId: updatedEtape.requeteId,
-          entiteId: updatedEtape.entiteId,
-          createdAt: updatedEtape.createdAt.toISOString(),
-          updatedAt: updatedEtape.updatedAt.toISOString(),
-        } as Prisma.JsonObject;
-
-        // Create changelog
         try {
           await createChangeLog({
             entity: 'RequeteEtape',
             entityId: etape.id,
             action: ChangeLogAction.UPDATED,
-            before,
-            after,
-            changedById: null, // System action
+            before: {
+              id: etape.id,
+              nom: etape.nom,
+              statutId: etape.statutId,
+              dateRealisation: etape.dateRealisation?.toISOString() ?? null,
+              estPartagee: etape.estPartagee,
+              acknowledgmentSendMode: etape.acknowledgmentSendMode,
+              acknowledgmentSendOperationId: etape.acknowledgmentSendOperationId,
+              requeteId: etape.requeteId,
+              entiteId: etape.entiteId,
+              createdAt: etape.createdAt.toISOString(),
+              updatedAt: etape.updatedAt.toISOString(),
+            } as Prisma.JsonObject,
+            after: {
+              id: updatedEtape.id,
+              nom: updatedEtape.nom,
+              statutId: updatedEtape.statutId,
+              dateRealisation: updatedEtape.dateRealisation?.toISOString() ?? null,
+              estPartagee: updatedEtape.estPartagee,
+              acknowledgmentSendMode: updatedEtape.acknowledgmentSendMode,
+              acknowledgmentSendOperationId: updatedEtape.acknowledgmentSendOperationId,
+              requeteId: updatedEtape.requeteId,
+              entiteId: updatedEtape.entiteId,
+              createdAt: updatedEtape.createdAt.toISOString(),
+              updatedAt: updatedEtape.updatedAt.toISOString(),
+            } as Prisma.JsonObject,
+            changedById: null,
           });
         } catch (changelogError) {
           logger.error(
@@ -715,9 +865,10 @@ export const updateAcknowledgmentStep = async (
     );
 
     logger.info(
-      { requeteId, entiteIds, updatedStepsCount: etapes.length },
+      { requeteId, entiteIds, operationId, updatedStepsCount: etapes.length },
       'Acknowledgment steps updated automatically to FAIT status',
     );
+    return operationId;
   } catch (error) {
     logger.error({ requeteId, entiteIds, error }, 'Failed to update acknowledgment steps automatically');
     throw error;
@@ -730,11 +881,26 @@ export const deleteRequeteEtape = async (id: string, logger: PinoLogger, changed
     include: {
       notes: true,
       uploadedFiles: true,
+      requete: {
+        select: { dematSocialId: true, sirecId: true, thirdPartyAccountId: true },
+      },
     },
   });
 
   if (!requeteEtape) {
     return;
+  }
+
+  const permissions = getEtapePermissions({
+    type: requeteEtape.type,
+    statutId: requeteEtape.statutId,
+    acknowledgmentSendMode: requeteEtape.acknowledgmentSendMode,
+    requeteIsAutomatic: isAutomaticRequest(requeteEtape.requete),
+    uploadedFiles: requeteEtape.uploadedFiles,
+  });
+
+  if (!permissions.editable) {
+    throw new EtapeNotEditableError('ETAPE_NOT_EDITABLE');
   }
 
   const notes = requeteEtape.notes;

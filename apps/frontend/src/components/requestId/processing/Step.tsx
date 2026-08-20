@@ -2,6 +2,8 @@ import { fr } from '@codegouvfr/react-dsfr';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import {
+  ACKNOWLEDGMENT_SEND_MODES,
+  FEATURE_FLAGS,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_ETAPE_TYPES,
   ROLES,
@@ -12,10 +14,13 @@ import { Toast } from '@sirena/ui';
 
 import { clsx } from 'clsx';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
+import { EntiteTypeBadge } from '@/components/common/EntiteTypeBadge';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
+import { useDisableStepRappel } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useDeleteUploadedFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { useCanEdit } from '@/hooks/useCanEdit';
+import { useHasFeature } from '@/hooks/useHasFeature';
 import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { useUserStore } from '@/stores/userStore';
@@ -29,6 +34,7 @@ type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data
 type StepProps = StepType & {
   requestId: string;
   isOwner: boolean;
+  isMultiEntite: boolean;
   isAcknowledgmentSendable?: boolean;
   onSendAcknowledgment?: () => void;
   openEdit?(step: StepType): void;
@@ -37,16 +43,19 @@ type StepProps = StepType & {
 const formatStepCreationInfo = (
   createdBy: { prenom: string; nom: string } | null | undefined,
   createdAt: string,
+  nomEntiteAdministrative?: string,
 ): React.ReactNode => {
   const date = formatDate(createdAt);
+  const suffixeEntiteAdministrative = nomEntiteAdministrative ? ` (${nomEntiteAdministrative})` : '';
   if (createdBy) {
     return (
       <>
-        Ajouté par {formatAgent(createdBy)} le {date}
+        Ajouté par {formatAgent(createdBy)}
+        {suffixeEntiteAdministrative} le {date}
       </>
     );
   }
-  return `Ajouté automatiquement le ${date}`;
+  return `Ajouté automatiquement${suffixeEntiteAdministrative} le ${date}`;
 };
 
 const getStepTitle = (type: string, statutId: string | null, nom: string | null): string => {
@@ -66,8 +75,10 @@ type StepSubtitleArgs = {
   notes: StepType['notes'];
   requete: StepType['requete'];
   uploadedFiles: StepType['uploadedFiles'];
+  acknowledgmentSendMode?: StepType['acknowledgmentSendMode'];
   clotureEffectiveDate?: string | null;
   dateRealisation?: string | Date | null;
+  nomEntiteAdministrative?: string;
 };
 
 const getStepSubtitle = ({
@@ -79,67 +90,79 @@ const getStepSubtitle = ({
   notes,
   requete,
   uploadedFiles,
+  acknowledgmentSendMode,
   clotureEffectiveDate,
   dateRealisation,
+  nomEntiteAdministrative,
 }: StepSubtitleArgs): React.ReactNode => {
+  const suffixeEntiteAdministrative = nomEntiteAdministrative ? ` (${nomEntiteAdministrative})` : '';
   if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
     const agent = createdBy ?? notes[0]?.author;
     const closureDate = clotureEffectiveDate ?? createdAt;
     return agent ? (
       <>
         Requête clôturée le {formatDate(closureDate)} par {formatAgent(agent)}
+        {suffixeEntiteAdministrative}
       </>
     ) : (
-      `Requête clôturée le ${formatDate(closureDate)}`
+      `Requête clôturée le ${formatDate(closureDate)}${suffixeEntiteAdministrative}`
     );
   }
   if (type === REQUETE_ETAPE_TYPES.CREATION) {
     // An ingested request (DematSocial, SIREC, third-party API) was created automatically.
     if (isAutomaticRequest(requete)) {
-      return `Fait automatiquement le ${formatDate(createdAt)}`;
+      return `Fait automatiquement${suffixeEntiteAdministrative} le ${formatDate(createdAt)}`;
     }
     // Otherwise the request was created manually; the author agent may be missing if the account was deleted.
     return requete?.createdBy ? (
       <>
         Requête créée le {formatDate(createdAt)} par {formatAgent(requete.createdBy)}
+        {suffixeEntiteAdministrative}
       </>
     ) : (
-      `Requête créée le ${formatDate(createdAt)}`
+      `Requête créée le ${formatDate(createdAt)}${suffixeEntiteAdministrative}`
     );
   }
   if (type === REQUETE_ETAPE_TYPES.REOPEN) {
     return createdBy ? (
       <>
         Requête réouverte le {formatDate(createdAt)} par {formatAgent(createdBy)}
+        {suffixeEntiteAdministrative}
       </>
     ) : (
-      `Requête réouverte le ${formatDate(createdAt)}`
+      `Requête réouverte le ${formatDate(createdAt)}${suffixeEntiteAdministrative}`
     );
   }
   if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
     if (statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT) {
-      // The AR PDF is attached to the step and kept non-deletable (canDelete:false).
       const arFile = uploadedFiles.find((file) => !file.canDelete);
+      if (acknowledgmentSendMode === ACKNOWLEDGMENT_SEND_MODES.AUTOMATIC) {
+        return `Envoyé automatiquement${suffixeEntiteAdministrative} le ${formatDate(dateRealisation ?? updatedAt)}`;
+      }
       if (arFile?.uploadedBy) {
         return (
           <>
             Envoyé le {formatDate(arFile.createdAt)} par {formatAgent(arFile.uploadedBy)}
+            {suffixeEntiteAdministrative}
           </>
         );
       }
+      if (acknowledgmentSendMode === ACKNOWLEDGMENT_SEND_MODES.MANUAL) {
+        return `Envoyé${suffixeEntiteAdministrative} le ${formatDate(dateRealisation ?? updatedAt)}`;
+      }
       if (arFile) {
-        return `Envoyé automatiquement le ${formatDate(arFile.createdAt)}`;
+        return `Envoyé automatiquement${suffixeEntiteAdministrative} le ${formatDate(arFile.createdAt)}`;
       }
       if (isAutomaticRequest(requete)) {
-        return `Envoyé automatiquement le ${formatDate(updatedAt)}`;
+        return `Envoyé automatiquement${suffixeEntiteAdministrative} le ${formatDate(updatedAt)}`;
       }
-      return `Marqué comme fait le ${formatDate(updatedAt)}`;
+      return `Marqué comme fait${suffixeEntiteAdministrative} le ${formatDate(updatedAt)}`;
     }
-    return `Ajouté automatiquement le ${formatDate(createdAt)}`;
+    return `Ajouté automatiquement${suffixeEntiteAdministrative} le ${formatDate(createdAt)}`;
   }
   return (
     <>
-      {formatStepCreationInfo(createdBy, createdAt)}
+      {formatStepCreationInfo(createdBy, createdAt, nomEntiteAdministrative)}
       {statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT && dateRealisation ? (
         <>
           {' '}
@@ -209,9 +232,68 @@ const StepEditButton = ({ className, step, onEdit }: StepEditButtonProps) => {
   );
 };
 
+// rappelDate holds a calendar day stored at UTC midnight. Read its Y/M/D in UTC and rebuild a local
+// Date so both the expiry check and the display stay on the intended day in every timezone.
+const rappelCalendarDay = (rappelDate: string | Date): Date => {
+  const d = new Date(rappelDate);
+  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+};
+
+// A rappel is expired once its calendar day is today or earlier.
+const isRappelExpired = (rappelDate: string | Date): boolean => {
+  const target = rappelCalendarDay(rappelDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return target.getTime() <= today.getTime();
+};
+
+type StepRappelBadgeProps = {
+  rappelType: string | null;
+  rappelDate: string | Date | null;
+  canDeactivate: boolean;
+  isDeactivating: boolean;
+  onDeactivate: () => void;
+};
+
+const StepRappelBadge = ({
+  rappelType,
+  rappelDate,
+  canDeactivate,
+  isDeactivating,
+  onDeactivate,
+}: StepRappelBadgeProps) => {
+  if (!rappelType || !rappelDate) return null;
+  const expired = isRappelExpired(rappelDate);
+  const dayLabel = formatDate(rappelCalendarDay(rappelDate));
+
+  return (
+    <span className={styles['step-rappel']}>
+      {expired ? (
+        <span className="fr-badge fr-badge--sm fr-badge--warning fr-badge--no-icon">
+          <span className="fr-icon-notification-3-line fr-icon--sm" aria-hidden="true" />
+          Rappel<span className="fr-sr-only"> expiré le {dayLabel}</span>
+        </span>
+      ) : (
+        <span>Rappel le {dayLabel}</span>
+      )}
+      {canDeactivate ? (
+        <button
+          type="button"
+          className={styles['step-rappel__disable']}
+          onClick={onDeactivate}
+          disabled={isDeactivating}
+        >
+          Désactiver <span className="fr-sr-only">le rappel</span>
+        </button>
+      ) : null}
+    </span>
+  );
+};
+
 const StepComponent = ({
   requestId,
   isOwner,
+  isMultiEntite,
   nom,
   createdBy,
   createdAt,
@@ -224,6 +306,9 @@ const StepComponent = ({
   id,
   requete,
   clotureEffectiveDate,
+  entiteAdministrative,
+  timelineItemType,
+  attributedEntiteAdministrative,
   ...step
 }: StepProps) => {
   const deleteClotureFileModal = useMemo(
@@ -244,6 +329,7 @@ const StepComponent = ({
   const toastManager = Toast.useToastManager();
   useModalFocusRestore([deleteClotureFileModal.id]);
   const addFilesClotureDrawerRef = useRef<AddFilesClotureDrawerRef>(null);
+  const stepHeadingRef = useRef<HTMLHeadingElement>(null);
 
   const { canEdit } = useCanEdit({ requeteId: requestId });
   const userRole = useUserStore((s) => s.role);
@@ -251,8 +337,40 @@ const StepComponent = ({
     ? ([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER] as string[]).includes(userRole)
     : false;
 
+  const isRappelEnabled = useHasFeature(FEATURE_FLAGS.ETAPE_RAPPEL, false);
+  const disableRappelMutation = useDisableStepRappel(requestId);
+
   const showAFaireBadge = statutId === REQUETE_ETAPE_STATUT_TYPES.A_FAIRE;
   const canEditStep = canEdit && step.editable;
+  const isNeutralEvent = timelineItemType === 'NEUTRAL_EVENT';
+  const entityRelation = isMultiEntite ? (isNeutralEvent ? 'neutral' : isOwner ? 'owner' : 'foreign') : undefined;
+  const nomEntiteAdministrative =
+    isMultiEntite && !isNeutralEvent ? attributedEntiteAdministrative?.nomComplet : undefined;
+
+  const handleDeactivateRappel = useCallback(() => {
+    disableRappelMutation.mutate(
+      { id },
+      {
+        onSuccess: () => {
+          toastManager.add({
+            title: 'Rappel désactivé avec succès',
+            description: 'Le rappel a bien été désactivé.',
+            data: { icon: 'fr-alert--success' },
+          });
+          // The "Désactiver" button unmounts once the rappel is cleared; move focus back to the
+          // step heading so keyboard/screen-reader users keep their place instead of falling to <body>.
+          stepHeadingRef.current?.focus();
+        },
+        onError: () => {
+          toastManager.add({
+            title: 'Erreur',
+            description: 'Une erreur est survenue lors de la désactivation du rappel.',
+            data: { icon: 'fr-alert--error' },
+          });
+        },
+      },
+    );
+  }, [disableRappelMutation, id, toastManager]);
 
   // Legacy notes that only held files show up empty once the files were moved to the step level; hide them.
   const visibleNotes = notes.filter((note) => note.texte?.trim());
@@ -301,13 +419,38 @@ const StepComponent = ({
   }, []);
 
   return (
-    <div className={`fr-mb-4w ${styles['timeline-step']}`}>
-      <div className={styles['timeline-dot']} />
+    <div
+      className={clsx(
+        'fr-mb-4w',
+        styles['timeline-step'],
+        entityRelation && styles[`timeline-step--${entityRelation}`],
+      )}
+      data-entity-relation={entityRelation}
+      data-timeline-item-type={timelineItemType}
+    >
+      <div className={styles['timeline-dot']} data-testid="timeline-dot" aria-hidden="true">
+        {isMultiEntite && attributedEntiteAdministrative ? (
+          <EntiteTypeBadge
+            entiteTypeId={attributedEntiteAdministrative.entiteTypeId}
+            label={attributedEntiteAdministrative.entiteTypeId}
+            relation={entityRelation}
+            className={`fr-mb-0 ${styles['timeline-entity-badge']}`}
+            aria-hidden="true"
+          />
+        ) : null}
+      </div>
       <div className={styles.step}>
         <div className="fr-mb-1w">
           <div className="fr-grid-row fr-grid-row--middle">
             <div className="fr-col" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <h3 className="fr-h6 fr-mb-0">{getStepTitle(step.type, statutId, nom)}</h3>
+              <h3 ref={stepHeadingRef} tabIndex={-1} className="fr-h6 fr-mb-0">
+                {isMultiEntite && attributedEntiteAdministrative ? (
+                  <>
+                    <span className="fr-sr-only">{attributedEntiteAdministrative.entiteTypeId} -</span>{' '}
+                  </>
+                ) : null}
+                {getStepTitle(step.type, statutId, nom)}
+              </h3>
               {showAFaireBadge && (
                 <p className="fr-badge fr-badge--no-icon fr-badge--sm fr-badge--info fr-mb-0">
                   {requeteEtapeStatutType.A_FAIRE}
@@ -327,9 +470,24 @@ const StepComponent = ({
                   notes,
                   requete,
                   uploadedFiles: step.uploadedFiles,
+                  acknowledgmentSendMode: step.acknowledgmentSendMode,
                   clotureEffectiveDate,
                   dateRealisation: step.dateRealisation,
+                  nomEntiteAdministrative,
                 })}
+                {isRappelEnabled && step.rappelType && step.rappelDate ? (
+                  <>
+                    {' '}
+                    <span aria-hidden="true">•</span>{' '}
+                    <StepRappelBadge
+                      rappelType={step.rappelType}
+                      rappelDate={step.rappelDate}
+                      canDeactivate={canEditStep && !step.canOnlyEditNotes}
+                      isDeactivating={disableRappelMutation.isPending}
+                      onDeactivate={handleDeactivateRappel}
+                    />
+                  </>
+                ) : null}
               </p>
               {isAcknowledgmentSendable && canEdit ? (
                 <div className="fr-mt-2w">
@@ -383,7 +541,13 @@ const StepComponent = ({
           <>
             <div className={styles['request-notes']}>
               {visibleNotes.slice(0, isOpen ? visibleNotes.length : 3).map((note: StepType['notes'][number]) => (
-                <StepNote key={note.id} content={note.texte} author={note.author} createdAt={note.createdAt} />
+                <StepNote
+                  key={note.id}
+                  content={note.texte}
+                  author={note.author}
+                  createdAt={note.createdAt}
+                  nomEntiteAdministrative={nomEntiteAdministrative}
+                />
               ))}
             </div>
             <div className={styles['request-notes-distplay']}>
@@ -413,6 +577,7 @@ const StepComponent = ({
                   createdBy,
                   requete,
                   clotureEffectiveDate,
+                  entiteAdministrative,
                   ...step,
                 }}
                 onEdit={openEdit}

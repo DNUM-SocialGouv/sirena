@@ -7,4 +7,7 @@ export interface SirenaEtapeData {
   clotureReason?: string;
   clotureEffectiveDate?: Date;
   dateRealisation?: Date;
+  sirecFileTypeKeys?: string[];
+  /** id_data de la main courante SIREC à l'origine de cette étape (cf. transformSirecMainCourantes). */
+  sirecMainCouranteId?: number;
 }

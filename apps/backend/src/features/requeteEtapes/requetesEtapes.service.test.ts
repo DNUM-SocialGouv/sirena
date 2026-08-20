@@ -17,6 +17,7 @@ import {
   createDefaultRequeteEtapes,
   createProcessingEtape,
   deleteRequeteEtape,
+  disableEtapeRappel,
   EtapeNotEditableError,
   FilesNotOwnedError,
   getEtapePermissions,
@@ -34,6 +35,7 @@ vi.mock('../../libs/prisma.js', () => ({
       findUnique: vi.fn(),
     },
     requeteEntite: {
+      count: vi.fn(),
       findUnique: vi.fn(),
       upsert: vi.fn(),
     },
@@ -80,6 +82,8 @@ const requeteEtape: RequeteEtape = {
   nom: 'Etape 1',
   type: 'MANUAL',
   estPartagee: false,
+  acknowledgmentSendMode: null,
+  acknowledgmentSendOperationId: null,
   dateRealisation: null,
   statutId: 'A_FAIRE',
   createdAt: new Date(),
@@ -101,6 +105,17 @@ const uploadedFile: Pick<UploadedFile, 'id' | 'fileName' | 'size' | 'metadata' |
 const requeteEtapeWithNotesAndFiles: RequeteEtape & {
   notes: RequeteEtapeNote[];
   uploadedFiles: Pick<UploadedFile, 'id' | 'fileName' | 'size' | 'metadata' | 'filePath'>[];
+  requeteEntite: {
+    entite: { id: string; nomComplet: string; entiteTypeId: string };
+  };
+  requete: {
+    createdAt: Date;
+    createdById: string | null;
+    createdBy: { prenom: string; nom: string } | null;
+    dematSocialId: number | null;
+    sirecId: number | null;
+    thirdPartyAccountId: string | null;
+  };
 } = {
   ...requeteEtape,
   notes: [
@@ -114,11 +129,25 @@ const requeteEtapeWithNotesAndFiles: RequeteEtape & {
     },
   ],
   uploadedFiles: [uploadedFile],
+  requeteEntite: {
+    entite: { id: 'entiteId', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
+  },
+  requete: {
+    createdAt: new Date('2024-01-01T00:00:00.000Z'),
+    createdById: null,
+    createdBy: null,
+    dematSocialId: null,
+    sirecId: null,
+    thirdPartyAccountId: null,
+  },
 };
 
 describe('RequeteEtapes.service.ts', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(prisma.$transaction).mockImplementation((async (callback: (tx: typeof prisma) => unknown) =>
+      callback(prisma)) as never);
+    vi.mocked(prisma.requeteEntite.count).mockResolvedValue(1);
   });
 
   describe('createDefaultRequeteEtapes()', () => {
@@ -142,6 +171,8 @@ describe('RequeteEtapes.service.ts', () => {
         nom: 'Création de la requête',
         type: 'CREATION',
         estPartagee: false,
+        acknowledgmentSendMode: null,
+        acknowledgmentSendOperationId: null,
         dateRealisation: null,
         statutId: 'FAIT',
         createdAt: new Date(),
@@ -159,6 +190,8 @@ describe('RequeteEtapes.service.ts', () => {
         nom: "Envoi de l'accusé de réception",
         type: 'ACKNOWLEDGMENT',
         estPartagee: false,
+        acknowledgmentSendMode: null,
+        acknowledgmentSendOperationId: null,
         dateRealisation: null,
         statutId: 'A_FAIRE',
         createdAt: new Date(),
@@ -220,6 +253,8 @@ describe('RequeteEtapes.service.ts', () => {
         nom: 'Création de la requête',
         type: 'CREATION',
         estPartagee: false,
+        acknowledgmentSendMode: null,
+        acknowledgmentSendOperationId: null,
         dateRealisation: null,
         statutId: 'FAIT',
         createdAt: currentDate,
@@ -237,6 +272,8 @@ describe('RequeteEtapes.service.ts', () => {
         nom: "Envoi de l'accusé de réception",
         type: 'ACKNOWLEDGMENT',
         estPartagee: false,
+        acknowledgmentSendMode: null,
+        acknowledgmentSendOperationId: null,
         dateRealisation: null,
         statutId: 'A_FAIRE',
         createdAt: currentDate,
@@ -290,6 +327,8 @@ describe('RequeteEtapes.service.ts', () => {
         nom: 'Création de la requête',
         type: 'CREATION',
         estPartagee: false,
+        acknowledgmentSendMode: null,
+        acknowledgmentSendOperationId: null,
         dateRealisation: null,
         statutId: 'FAIT',
         createdAt: new Date(),
@@ -307,6 +346,8 @@ describe('RequeteEtapes.service.ts', () => {
         nom: "Envoi de l'accusé de réception",
         type: 'ACKNOWLEDGMENT',
         estPartagee: false,
+        acknowledgmentSendMode: null,
+        acknowledgmentSendOperationId: null,
         dateRealisation: null,
         statutId: 'A_FAIRE',
         createdAt: new Date(),
@@ -379,6 +420,8 @@ describe('RequeteEtapes.service.ts', () => {
         nom: 'Création de la requête',
         type: 'CREATION',
         estPartagee: false,
+        acknowledgmentSendMode: null,
+        acknowledgmentSendOperationId: null,
         dateRealisation: null,
         statutId: 'FAIT',
         createdAt: new Date(),
@@ -396,6 +439,8 @@ describe('RequeteEtapes.service.ts', () => {
         nom: "Envoi de l'accusé de réception",
         type: 'ACKNOWLEDGMENT',
         estPartagee: false,
+        acknowledgmentSendMode: null,
+        acknowledgmentSendOperationId: null,
         dateRealisation: null,
         statutId: 'FAIT',
         createdAt: new Date(),
@@ -436,6 +481,8 @@ describe('RequeteEtapes.service.ts', () => {
         nom: 'Création de la requête',
         type: 'CREATION',
         estPartagee: false,
+        acknowledgmentSendMode: null,
+        acknowledgmentSendOperationId: null,
         dateRealisation: null,
         statutId: 'FAIT',
         createdAt: new Date(),
@@ -453,6 +500,8 @@ describe('RequeteEtapes.service.ts', () => {
         nom: "Envoi de l'accusé de réception",
         type: 'ACKNOWLEDGMENT',
         estPartagee: false,
+        acknowledgmentSendMode: null,
+        acknowledgmentSendOperationId: null,
         dateRealisation: null,
         statutId: 'A_FAIRE',
         createdAt: new Date(),
@@ -502,6 +551,8 @@ describe('RequeteEtapes.service.ts', () => {
           nom: true,
           type: true,
           estPartagee: true,
+          acknowledgmentSendMode: true,
+          acknowledgmentSendOperationId: true,
           statutId: true,
           clotureEffectiveDate: true,
           dateRealisation: true,
@@ -558,6 +609,7 @@ describe('RequeteEtapes.service.ts', () => {
           },
           requete: {
             select: {
+              createdAt: true,
               createdById: true,
               createdBy: {
                 select: {
@@ -572,10 +624,21 @@ describe('RequeteEtapes.service.ts', () => {
           },
           requeteId: true,
           entiteId: true,
+          requeteEntite: {
+            select: {
+              entite: {
+                select: {
+                  id: true,
+                  nomComplet: true,
+                  entiteTypeId: true,
+                },
+              },
+            },
+          },
         },
         skip: 0,
         take: 10,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: 'asc' },
       });
     });
 
@@ -603,6 +666,8 @@ describe('RequeteEtapes.service.ts', () => {
           nom: true,
           type: true,
           estPartagee: true,
+          acknowledgmentSendMode: true,
+          acknowledgmentSendOperationId: true,
           statutId: true,
           clotureEffectiveDate: true,
           dateRealisation: true,
@@ -659,6 +724,7 @@ describe('RequeteEtapes.service.ts', () => {
           },
           requete: {
             select: {
+              createdAt: true,
               createdById: true,
               createdBy: {
                 select: {
@@ -673,15 +739,27 @@ describe('RequeteEtapes.service.ts', () => {
           },
           requeteId: true,
           entiteId: true,
+          requeteEntite: {
+            select: {
+              entite: {
+                select: {
+                  id: true,
+                  nomComplet: true,
+                  entiteTypeId: true,
+                },
+              },
+            },
+          },
         },
         skip: 0,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: 'asc' },
       });
     });
 
     it('should expose editability flags per step type', async () => {
       const closedEtape = {
         ...requeteEtape,
+        requeteEntite: requeteEtapeWithNotesAndFiles.requeteEntite,
         type: 'MANUAL',
         statutId: 'CLOTUREE',
         notes: [],
@@ -690,6 +768,7 @@ describe('RequeteEtapes.service.ts', () => {
       };
       const sentAckEtape = {
         ...requeteEtape,
+        requeteEntite: requeteEtapeWithNotesAndFiles.requeteEntite,
         id: 'ackEtapeId',
         type: 'ACKNOWLEDGMENT',
         statutId: 'FAIT',
@@ -698,8 +777,21 @@ describe('RequeteEtapes.service.ts', () => {
         uploadedFiles: [{ id: 'ar', fileName: 'AR.pdf', metadata: null, size: 10, canDelete: false }],
         requete: { createdById: null },
       };
+      const automaticAckWithoutPdf = {
+        ...requeteEtape,
+        requeteEntite: requeteEtapeWithNotesAndFiles.requeteEntite,
+        id: 'automaticAckEtapeId',
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'FAIT',
+        acknowledgmentSendMode: 'AUTOMATIC' as const,
+        acknowledgmentSendOperationId: '11111111-1111-4111-8111-111111111111',
+        notes: [],
+        uploadedFiles: [],
+        requete: { createdById: null },
+      };
       const handMarkedAckEtape = {
         ...requeteEtape,
+        requeteEntite: requeteEtapeWithNotesAndFiles.requeteEntite,
         id: 'handAckEtapeId',
         type: 'ACKNOWLEDGMENT',
         statutId: 'FAIT',
@@ -708,25 +800,389 @@ describe('RequeteEtapes.service.ts', () => {
         uploadedFiles: [],
         requete: { createdById: 'agent-1' },
       };
-      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([closedEtape, sentAckEtape, handMarkedAckEtape]);
-      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(3);
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
+        closedEtape,
+        sentAckEtape,
+        automaticAckWithoutPdf,
+        handMarkedAckEtape,
+      ]);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(4);
 
       const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0 });
 
       expect(result.data[0]).toMatchObject({ editable: false, canOnlyEditNotes: false });
       expect(result.data[1]).toMatchObject({ editable: true, canOnlyEditNotes: true });
-      expect(result.data[2]).toMatchObject({ editable: true, canOnlyEditNotes: false });
+      expect(result.data[2]).toMatchObject({ editable: false, canOnlyEditNotes: false });
+      expect(result.data[3]).toMatchObject({ editable: true, canOnlyEditNotes: false });
     });
 
-    it('selects owner and foreign Étapes de traitement partagées in one paginated query and makes foreign steps read-only', async () => {
+    it('returns a pending acknowledgment from an automatic request as immutable in the timeline', async () => {
       vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
-        { ...requeteEtapeWithNotesAndFiles, entiteId: 'foreign-entite', estPartagee: true },
+        {
+          ...requeteEtapeWithNotesAndFiles,
+          id: 'pending-automatic-ack',
+          type: 'ACKNOWLEDGMENT',
+          statutId: 'A_FAIRE',
+          acknowledgmentSendMode: null,
+          uploadedFiles: [],
+          requete: {
+            ...requeteEtapeWithNotesAndFiles.requete,
+            dematSocialId: 123,
+          },
+        } as never,
       ]);
       vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
 
-      const result = await getRequeteEtapes('requeteId', 'reader-entite', { offset: 5, limit: 10 }, true);
+      const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0 });
 
-      expect(result.data[0]).toMatchObject({ entiteId: 'foreign-entite', editable: false, canOnlyEditNotes: false });
+      expect(result.data[0]).toMatchObject({
+        id: 'pending-automatic-ack',
+        editable: false,
+        canOnlyEditNotes: false,
+      });
+    });
+
+    it('exposes current multi-entity metadata and each owner Entité administrative identity', async () => {
+      const foreignEtapePartagee = {
+        ...requeteEtapeWithNotesAndFiles,
+        id: 'foreign-etape-partagee',
+        entiteId: 'foreign-entite',
+        estPartagee: true,
+        requeteEntite: {
+          entite: { id: 'foreign-entite', nomComplet: 'CD du Calvados', entiteTypeId: 'CD' },
+        },
+      };
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([foreignEtapePartagee]);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
+      vi.mocked(prisma.requeteEntite.count).mockResolvedValueOnce(2);
+
+      const result = await getRequeteEtapes('requeteId', 'reader-entite', {}, true);
+
+      expect(result.isMultiEntite).toBe(true);
+      expect(result.data[0]).toMatchObject({
+        id: 'foreign-etape-partagee',
+        entiteId: 'foreign-entite',
+        entiteAdministrative: {
+          id: 'foreign-entite',
+          nomComplet: 'CD du Calvados',
+          entiteTypeId: 'CD',
+        },
+      });
+      expect(result.data[0]).not.toHaveProperty('requeteEntite');
+      expect(prisma.requeteEntite.count).toHaveBeenCalledWith({
+        where: {
+          requeteId: 'requeteId',
+          requete: { requeteEntites: { some: { entiteId: 'reader-entite' } } },
+        },
+      });
+    });
+
+    it('returns owner steps and foreign Étapes partagées in one chronology, with the latter read-only', async () => {
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
+        { ...requeteEtapeWithNotesAndFiles, id: 'owner-step', entiteId: 'reader-entite' },
+        {
+          ...requeteEtapeWithNotesAndFiles,
+          id: 'foreign-shared-step',
+          entiteId: 'foreign-entite',
+          estPartagee: true,
+        },
+      ]);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(2);
+
+      const result = await getRequeteEtapes('requeteId', 'reader-entite', {}, true);
+
+      expect(result.data).toMatchObject([
+        { id: 'owner-step', entiteId: 'reader-entite', editable: true, canOnlyEditNotes: false },
+        { id: 'foreign-shared-step', entiteId: 'foreign-entite', editable: false, canOnlyEditNotes: false },
+      ]);
+      expect(result.total).toBe(2);
+      expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ orderBy: { createdAt: 'asc' } }),
+      );
+    });
+
+    it('keeps entity-specific creation sources unchanged when the shared chronology is disabled', async () => {
+      const creationSources = [
+        {
+          ...requeteEtapeWithNotesAndFiles,
+          id: 'owner-creation',
+          type: 'CREATION' as const,
+          createdAt: new Date('2026-01-02T08:00:00.000Z'),
+        },
+        {
+          ...requeteEtapeWithNotesAndFiles,
+          id: 'later-creation',
+          type: 'CREATION' as const,
+          createdAt: new Date('2026-07-01T08:00:00.000Z'),
+        },
+      ];
+      vi.mocked(prisma.requeteEntite.count).mockResolvedValueOnce(2);
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce(creationSources);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(2);
+
+      const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0, limit: 10 }, false);
+
+      expect(result.data.map((step) => step.id)).toEqual(['owner-creation', 'later-creation']);
+      expect(result.data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            timelineItemType: 'ENTITY_STEP',
+            attributedEntiteAdministrative: expect.any(Object),
+          }),
+        ]),
+      );
+      expect(result.total).toBe(2);
+      expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ skip: 0, take: 10, orderBy: { createdAt: 'asc' } }),
+      );
+    });
+
+    it('sorts oldest-first by createdAt, not dateRealisation, after projecting one neutral creation', async () => {
+      const requestCreatedAt = new Date('2026-01-01T08:00:00.000Z');
+      const makeTimelineStep = ({
+        id,
+        type = 'MANUAL',
+        createdAt,
+        dateRealisation = null,
+        entiteId = 'reader-entite',
+      }: {
+        id: string;
+        type?: RequeteEtape['type'];
+        createdAt: Date;
+        dateRealisation?: Date | null;
+        entiteId?: string;
+      }) => ({
+        ...requeteEtapeWithNotesAndFiles,
+        id,
+        type,
+        entiteId,
+        createdAt,
+        dateRealisation,
+        requeteEntite: {
+          entite: {
+            id: entiteId,
+            nomComplet: entiteId === 'reader-entite' ? 'ARS Normandie' : 'CD du Calvados',
+            entiteTypeId: entiteId === 'reader-entite' ? 'ARS' : 'CD',
+          },
+        },
+        requete: {
+          createdAt: requestCreatedAt,
+          createdById: 'agent-1',
+          createdBy: { prenom: 'Camille', nom: 'Dupont' },
+          dematSocialId: null,
+          sirecId: null,
+          thirdPartyAccountId: null,
+        },
+      });
+
+      const sourceTimeline = [
+        makeTimelineStep({
+          id: 'creation-late-assignment',
+          type: 'CREATION',
+          createdAt: new Date('2026-07-01T08:00:00.000Z'),
+          entiteId: 'foreign-entite',
+        }),
+        makeTimelineStep({
+          id: 'most-recent-by-created-at',
+          createdAt: new Date('2026-06-01T08:00:00.000Z'),
+          dateRealisation: new Date('2025-01-01T08:00:00.000Z'),
+        }),
+        makeTimelineStep({ id: 'same-date-b', createdAt: new Date('2026-05-01T08:00:00.000Z') }),
+        makeTimelineStep({
+          id: 'creation-initial-assignment',
+          type: 'CREATION',
+          createdAt: new Date('2026-01-02T08:00:00.000Z'),
+        }),
+        makeTimelineStep({ id: 'same-date-a', createdAt: new Date('2026-05-01T08:00:00.000Z') }),
+      ];
+      vi.mocked(prisma.requeteEntite.count).mockResolvedValueOnce(3).mockResolvedValueOnce(3);
+      vi.mocked(prisma.requeteEtape.findMany)
+        .mockResolvedValueOnce(sourceTimeline)
+        .mockResolvedValueOnce(sourceTimeline);
+
+      const firstPage = await getRequeteEtapes('requeteId', 'reader-entite', { offset: 0, limit: 2 }, true);
+      const secondPage = await getRequeteEtapes('requeteId', 'reader-entite', { offset: 2, limit: 2 }, true);
+
+      expect(firstPage.total).toBe(4);
+      expect(secondPage.total).toBe(4);
+      expect(firstPage.data.map((step) => step.id)).toEqual(['creation-initial-assignment', 'same-date-a']);
+      expect(secondPage.data.map((step) => step.id)).toEqual(['same-date-b', 'most-recent-by-created-at']);
+      expect(firstPage.data[0]).toMatchObject({
+        id: 'creation-initial-assignment',
+        type: 'CREATION',
+        createdAt: requestCreatedAt,
+        timelineItemType: 'NEUTRAL_EVENT',
+        attributedEntiteAdministrative: null,
+      });
+      expect([...firstPage.data, ...secondPage.data].filter((step) => step.type === 'CREATION')).toHaveLength(1);
+      expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith(
+        expect.not.objectContaining({ skip: expect.anything(), take: expect.anything() }),
+      );
+      expect(prisma.requeteEtape.update).not.toHaveBeenCalled();
+      expect(prisma.requeteEtape.delete).not.toHaveBeenCalled();
+    });
+
+    it('groups automatic acknowledgments by durable send operation before sorting, totals, and pagination', async () => {
+      const requestCreatedAt = new Date('2026-01-01T08:00:00.000Z');
+      const firstSendOperationId = '11111111-1111-4111-8111-111111111111';
+      const laterSendOperationId = '22222222-2222-4222-8222-222222222222';
+      const makeTimelineStep = ({
+        id,
+        entiteId,
+        createdAt,
+        acknowledgmentSendMode,
+        acknowledgmentSendOperationId,
+        uploadedFiles = [],
+      }: {
+        id: string;
+        entiteId: string;
+        createdAt: Date;
+        acknowledgmentSendMode: RequeteEtape['acknowledgmentSendMode'];
+        acknowledgmentSendOperationId: string | null;
+        uploadedFiles?: typeof requeteEtapeWithNotesAndFiles.uploadedFiles;
+      }) => ({
+        ...requeteEtapeWithNotesAndFiles,
+        id,
+        type: 'ACKNOWLEDGMENT' as const,
+        entiteId,
+        estPartagee: true,
+        statutId: 'FAIT',
+        createdAt,
+        dateRealisation: new Date('2025-01-01T08:00:00.000Z'),
+        acknowledgmentSendMode,
+        acknowledgmentSendOperationId,
+        uploadedFiles,
+        requeteEntite: {
+          entite: {
+            id: entiteId,
+            nomComplet: entiteId === 'reader-entite' ? 'ARS Normandie' : 'CD du Calvados',
+            entiteTypeId: entiteId === 'reader-entite' ? 'ARS' : 'CD',
+          },
+        },
+        requete: {
+          createdAt: requestCreatedAt,
+          createdById: 'agent-1',
+          createdBy: { prenom: 'Camille', nom: 'Dupont' },
+          dematSocialId: null,
+          sirecId: null,
+          thirdPartyAccountId: null,
+        },
+      });
+      const makeAcknowledgmentFile = (id: string) => ({
+        ...uploadedFile,
+        id,
+        fileName: `${id}.pdf`,
+        metadata: { originalName: 'accuse-reception.pdf' },
+        canDelete: false,
+        status: 'READY',
+        scanStatus: 'CLEAN',
+        sanitizeStatus: 'COMPLETED',
+        createdAt: new Date('2026-06-10T08:00:00.000Z'),
+        uploadedBy: null,
+      });
+      const sourceTimeline = [
+        makeTimelineStep({
+          id: 'later-automatic-send',
+          entiteId: 'third-entite',
+          createdAt: new Date('2026-06-20T08:00:00.000Z'),
+          acknowledgmentSendMode: 'AUTOMATIC',
+          acknowledgmentSendOperationId: laterSendOperationId,
+          uploadedFiles: [makeAcknowledgmentFile('later-document')],
+        }),
+        makeTimelineStep({
+          id: 'manual-send',
+          entiteId: 'reader-entite',
+          createdAt: new Date('2026-06-15T08:00:00.000Z'),
+          acknowledgmentSendMode: 'MANUAL',
+          acknowledgmentSendOperationId: firstSendOperationId,
+          uploadedFiles: [makeAcknowledgmentFile('manual-document')],
+        }),
+        makeTimelineStep({
+          id: 'first-send-foreign-source',
+          entiteId: 'foreign-entite',
+          createdAt: new Date('2026-06-02T08:00:00.000Z'),
+          acknowledgmentSendMode: 'AUTOMATIC',
+          acknowledgmentSendOperationId: firstSendOperationId,
+          uploadedFiles: [makeAcknowledgmentFile('foreign-document-copy')],
+        }),
+        makeTimelineStep({
+          id: 'first-send-owner-source',
+          entiteId: 'reader-entite',
+          createdAt: new Date('2026-06-01T08:00:00.000Z'),
+          acknowledgmentSendMode: 'AUTOMATIC',
+          acknowledgmentSendOperationId: firstSendOperationId,
+          uploadedFiles: [],
+        }),
+        {
+          ...requeteEtapeWithNotesAndFiles,
+          id: 'creation-source',
+          type: 'CREATION' as const,
+          entiteId: 'reader-entite',
+          createdAt: new Date('2026-01-02T08:00:00.000Z'),
+          requete: {
+            createdAt: requestCreatedAt,
+            createdById: 'agent-1',
+            createdBy: { prenom: 'Camille', nom: 'Dupont' },
+            dematSocialId: null,
+            sirecId: null,
+            thirdPartyAccountId: null,
+          },
+        },
+      ];
+      const sourceIdsBeforeProjection = sourceTimeline.map((step) => step.id);
+      const sourceFilesBeforeProjection = sourceTimeline.map((step) => step.uploadedFiles.map((file) => file.id));
+      vi.mocked(prisma.requeteEntite.count).mockResolvedValueOnce(3).mockResolvedValueOnce(3);
+      vi.mocked(prisma.requeteEtape.findMany)
+        .mockResolvedValueOnce(sourceTimeline)
+        .mockResolvedValueOnce(sourceTimeline);
+
+      const firstPage = await getRequeteEtapes('requeteId', 'reader-entite', { offset: 0, limit: 2 }, true);
+      const secondPage = await getRequeteEtapes('requeteId', 'reader-entite', { offset: 2, limit: 2 }, true);
+
+      expect(firstPage.total).toBe(4);
+      expect(secondPage.total).toBe(4);
+      expect(firstPage.data.map((step) => step.id)).toEqual(['creation-source', 'first-send-foreign-source']);
+      expect(secondPage.data.map((step) => step.id)).toEqual(['manual-send', 'later-automatic-send']);
+      expect(firstPage.data[1]).toMatchObject({
+        id: 'first-send-foreign-source',
+        createdAt: new Date('2026-06-01T08:00:00.000Z'),
+        timelineItemType: 'NEUTRAL_EVENT',
+        attributedEntiteAdministrative: null,
+        entiteAdministrative: { id: 'foreign-entite' },
+        uploadedFiles: [{ id: 'foreign-document-copy', fileName: 'accuse-reception.pdf' }],
+        editable: false,
+        canOnlyEditNotes: false,
+      });
+      expect(firstPage.data[1].uploadedFiles).toHaveLength(1);
+      expect(secondPage.data[0]).toMatchObject({
+        timelineItemType: 'ENTITY_STEP',
+        attributedEntiteAdministrative: { id: 'reader-entite' },
+        acknowledgmentSendMode: 'MANUAL',
+      });
+      expect(secondPage.data[1]).toMatchObject({
+        timelineItemType: 'NEUTRAL_EVENT',
+        attributedEntiteAdministrative: null,
+        uploadedFiles: [{ id: 'later-document', fileName: 'accuse-reception.pdf' }],
+        editable: false,
+        canOnlyEditNotes: false,
+      });
+      expect(
+        [...firstPage.data, ...secondPage.data].filter((step) => step.acknowledgmentSendMode === 'AUTOMATIC'),
+      ).toHaveLength(2);
+      expect(sourceTimeline.map((step) => step.id)).toEqual(sourceIdsBeforeProjection);
+      expect(sourceTimeline.map((step) => step.uploadedFiles.map((file) => file.id))).toEqual(
+        sourceFilesBeforeProjection,
+      );
+      expect(prisma.requeteEtape.update).not.toHaveBeenCalled();
+      expect(prisma.requeteEtape.delete).not.toHaveBeenCalled();
+    });
+
+    it('selects only owner steps or Étapes partagées for a currently affected reader', async () => {
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([]);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(0);
+
+      await getRequeteEtapes('requeteId', 'reader-entite', { offset: 5, limit: 10 }, true);
+
       const sharedWhere = {
         requeteId: 'requeteId',
         requete: { requeteEntites: { some: { entiteId: 'reader-entite' } } },
@@ -740,39 +1196,79 @@ describe('RequeteEtapes.service.ts', () => {
   });
 
   describe('updateAcknowledgmentStep()', () => {
-    it('shares an automatically sent Accusé de réception in the same update and records the system transition', async () => {
+    it('assigns one durable identity and automatic mode to every step completed by one send operation', async () => {
       const sentDate = new Date('2026-07-31T09:30:00.000Z');
-      const pendingEtape = {
-        ...requeteEtape,
-        id: 'ack-1',
-        type: 'ACKNOWLEDGMENT',
-        statutId: 'A_FAIRE',
-        estPartagee: false,
-      };
-      const updatedEtape = {
-        ...pendingEtape,
-        statutId: 'FAIT',
-        dateRealisation: sentDate,
-        estPartagee: true,
+      const pendingEtapes = [
+        { ...requeteEtape, id: 'ack-1', entiteId: 'entite-1', type: 'ACKNOWLEDGMENT' },
+        { ...requeteEtape, id: 'ack-2', entiteId: 'entite-2', type: 'ACKNOWLEDGMENT' },
+      ];
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce(pendingEtapes);
+      vi.mocked(prisma.requeteEtape.update).mockImplementation((async ({
+        where,
+        data,
+      }: {
+        where: { id: string };
+        data: Record<string, unknown>;
+      }) => ({
+        ...pendingEtapes.find((etape) => etape.id === where.id),
+        ...data,
         updatedAt: sentDate,
-      };
-      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([pendingEtape]);
-      vi.mocked(prisma.requeteEtape.update).mockResolvedValueOnce(updatedEtape);
+      })) as never);
 
-      await updateAcknowledgmentStep('requeteId', ['entiteId'], sentDate);
+      const operationId = await updateAcknowledgmentStep('requeteId', ['entite-1', 'entite-2'], sentDate);
 
-      expect(prisma.requeteEtape.update).toHaveBeenCalledWith({
-        where: { id: 'ack-1' },
-        data: { statutId: 'FAIT', dateRealisation: sentDate, estPartagee: true },
-      });
+      expect(operationId).toMatch(/^[0-9a-f-]{36}$/);
+      expect(prisma.requeteEtape.update).toHaveBeenCalledTimes(2);
+      for (const pendingEtape of pendingEtapes) {
+        expect(prisma.requeteEtape.update).toHaveBeenCalledWith({
+          where: { id: pendingEtape.id },
+          data: {
+            statutId: 'FAIT',
+            dateRealisation: sentDate,
+            estPartagee: true,
+            acknowledgmentSendMode: 'AUTOMATIC',
+            acknowledgmentSendOperationId: operationId,
+          },
+        });
+      }
+      expect(createChangeLog).toHaveBeenCalledTimes(2);
       expect(createChangeLog).toHaveBeenCalledWith(
         expect.objectContaining({
-          entityId: 'ack-1',
           changedById: null,
-          before: expect.objectContaining({ estPartagee: false }),
-          after: expect.objectContaining({ estPartagee: true }),
+          before: expect.objectContaining({
+            estPartagee: false,
+            acknowledgmentSendMode: null,
+            acknowledgmentSendOperationId: null,
+          }),
+          after: expect.objectContaining({
+            estPartagee: true,
+            acknowledgmentSendMode: 'AUTOMATIC',
+            acknowledgmentSendOperationId: operationId,
+          }),
         }),
       );
+    });
+
+    it('uses a new operation identity for a later automatic send', async () => {
+      vi.mocked(prisma.requeteEtape.findMany)
+        .mockResolvedValueOnce([{ ...requeteEtape, id: 'ack-1', type: 'ACKNOWLEDGMENT' }])
+        .mockResolvedValueOnce([{ ...requeteEtape, id: 'ack-3', type: 'ACKNOWLEDGMENT' }]);
+      vi.mocked(prisma.requeteEtape.update).mockImplementation((async ({
+        where,
+        data,
+      }: {
+        where: { id: string };
+        data: Record<string, unknown>;
+      }) => ({
+        ...requeteEtape,
+        id: where.id,
+        ...data,
+      })) as never);
+
+      const firstOperationId = await updateAcknowledgmentStep('requeteId', ['entite-1']);
+      const laterOperationId = await updateAcknowledgmentStep('requeteId', ['entite-3']);
+
+      expect(firstOperationId).not.toBe(laterOperationId);
     });
 
     it('does not reinterpret an already completed historical Accusé de réception', async () => {
@@ -796,6 +1292,10 @@ describe('RequeteEtapes.service.ts', () => {
       });
       expect(prisma.requeteEtape.findUnique).toHaveBeenCalledWith({
         where: { id: 'requeteEtapeId' },
+        include: {
+          uploadedFiles: { select: { canDelete: true, uploadedById: true } },
+          requete: { select: { dematSocialId: true, sirecId: true, thirdPartyAccountId: true } },
+        },
       });
     });
 
@@ -807,7 +1307,65 @@ describe('RequeteEtapes.service.ts', () => {
       expect(result).toBeNull();
       expect(prisma.requeteEtape.findUnique).toHaveBeenCalledWith({
         where: { id: 'missing' },
+        include: {
+          uploadedFiles: { select: { canDelete: true, uploadedById: true } },
+          requete: { select: { dematSocialId: true, sirecId: true, thirdPartyAccountId: true } },
+        },
       });
+    });
+  });
+
+  describe('disableEtapeRappel()', () => {
+    const editableEtapeWithRappel = {
+      ...requeteEtape,
+      rappelType: 'JOURS_7',
+      rappelDate: new Date('2026-06-02T00:00:00.000Z'),
+      uploadedFiles: [],
+    };
+
+    it('clears rappelType and rappelDate on an editable step', async () => {
+      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(editableEtapeWithRappel);
+      const updated = { ...requeteEtape, rappelType: null, rappelDate: null };
+      vi.mocked(prisma.requeteEtape.update).mockResolvedValueOnce(updated);
+
+      const result = await disableEtapeRappel('requeteEtapeId');
+
+      expect(prisma.requeteEtape.update).toHaveBeenCalledWith({
+        where: { id: 'requeteEtapeId' },
+        data: { rappelType: null, rappelDate: null },
+      });
+      expect(result).toEqual(updated);
+    });
+
+    it('returns null when the step does not exist', async () => {
+      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(null);
+
+      const result = await disableEtapeRappel('missing');
+
+      expect(result).toBeNull();
+      expect(prisma.requeteEtape.update).not.toHaveBeenCalled();
+    });
+
+    it('throws EtapeNotEditableError when the step is not editable', async () => {
+      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce({
+        ...editableEtapeWithRappel,
+        statutId: 'CLOTUREE',
+      });
+
+      await expect(disableEtapeRappel('requeteEtapeId')).rejects.toThrow(EtapeNotEditableError);
+      expect(prisma.requeteEtape.update).not.toHaveBeenCalled();
+    });
+
+    it('throws EtapeNotEditableError on a sent ACR step (canOnlyEditNotes)', async () => {
+      const sentAcrEtape = {
+        ...editableEtapeWithRappel,
+        type: 'ACKNOWLEDGMENT',
+        uploadedFiles: [{ canDelete: false }],
+      };
+      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(sentAcrEtape);
+
+      await expect(disableEtapeRappel('requeteEtapeId')).rejects.toThrow(EtapeNotEditableError);
+      expect(prisma.requeteEtape.update).not.toHaveBeenCalled();
     });
   });
 
@@ -880,11 +1438,31 @@ describe('RequeteEtapes.service.ts', () => {
         include: {
           notes: true,
           uploadedFiles: true,
+          requete: {
+            select: { dematSocialId: true, sirecId: true, thirdPartyAccountId: true },
+          },
         },
       });
       expect(prisma.requeteEtape.delete).toHaveBeenCalledWith({ where: { id: requeteEtapeWithNotesAndFiles.id } });
       expect(createChangeLog).toHaveBeenCalledTimes(2);
       expect(deleteFileFromMinio).toHaveBeenCalledWith('path/to/file1.pdf');
+    });
+
+    it('rejects deleting an automatically sent acknowledgment even when its PDF is missing', async () => {
+      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValue({
+        ...requeteEtapeWithNotesAndFiles,
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'FAIT',
+        acknowledgmentSendMode: 'AUTOMATIC',
+        acknowledgmentSendOperationId: '11111111-1111-4111-8111-111111111111',
+        uploadedFiles: [],
+      } as never);
+
+      await expect(deleteRequeteEtape('requeteEtapeId', mockLogger, 'user-1')).rejects.toBeInstanceOf(
+        EtapeNotEditableError,
+      );
+      expect(prisma.requeteEtape.delete).not.toHaveBeenCalled();
+      expect(deleteFileFromMinio).not.toHaveBeenCalled();
     });
 
     it('should handle RequeteEtape not found', async () => {
@@ -1021,24 +1599,98 @@ describe('RequeteEtapes.service.ts', () => {
       expect(getEtapePermissions({ type: 'REOPEN', statutId: 'FAIT', uploadedFiles: [] }).editable).toBe(false);
     });
 
-    it('ACKNOWLEDGMENT is notes-only once the AR was sent (AR PDF attached)', () => {
-      expect(getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId: 'FAIT', uploadedFiles: [arPdf] })).toEqual({
-        editable: true,
-        canOnlyEditNotes: true,
-      });
+    it('makes an explicitly automatic acknowledgment fully immutable without relying on a PDF', () => {
+      expect(
+        getEtapePermissions({
+          type: 'ACKNOWLEDGMENT',
+          statutId: 'FAIT',
+          acknowledgmentSendMode: 'AUTOMATIC',
+          uploadedFiles: [],
+        }),
+      ).toEqual({ editable: false, canOnlyEditNotes: false });
     });
 
-    it('ACKNOWLEDGMENT stays fully editable when marked "Fait" by hand (no AR PDF)', () => {
-      // No send, no non-deletable AR PDF → status/name/date remain editable.
-      expect(getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId: 'FAIT', uploadedFiles: [] })).toEqual({
-        editable: true,
-        canOnlyEditNotes: false,
-      });
-      // A user-added attachment (canDelete: true) is not an AR PDF, so it does not lock the step.
-      expect(getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId: 'A_FAIRE', uploadedFiles: [userFile] })).toEqual({
-        editable: true,
-        canOnlyEditNotes: false,
-      });
+    it('makes a pending acknowledgment from an automatic request immutable before its send mode is recorded', () => {
+      expect(
+        getEtapePermissions({
+          type: 'ACKNOWLEDGMENT',
+          statutId: 'A_FAIRE',
+          acknowledgmentSendMode: null,
+          requeteIsAutomatic: true,
+          uploadedFiles: [],
+        }),
+      ).toEqual({ editable: false, canOnlyEditNotes: false });
+    });
+
+    it('keeps a pending acknowledgment from a manual request editable before its send mode is recorded', () => {
+      expect(
+        getEtapePermissions({
+          type: 'ACKNOWLEDGMENT',
+          statutId: 'A_FAIRE',
+          acknowledgmentSendMode: null,
+          requeteIsAutomatic: false,
+          uploadedFiles: [],
+        }),
+      ).toEqual({ editable: true, canOnlyEditNotes: false });
+    });
+
+    it('keeps an explicitly manually sent acknowledgment editable for notes and attachments', () => {
+      expect(
+        getEtapePermissions({
+          type: 'ACKNOWLEDGMENT',
+          statutId: 'FAIT',
+          acknowledgmentSendMode: 'MANUAL',
+          uploadedFiles: [],
+        }),
+      ).toEqual({ editable: true, canOnlyEditNotes: true });
+    });
+
+    it('conservatively identifies a historical automatic acknowledgment from its system PDF', () => {
+      expect(
+        getEtapePermissions({
+          type: 'ACKNOWLEDGMENT',
+          statutId: 'FAIT',
+          acknowledgmentSendMode: null,
+          requeteIsAutomatic: true,
+          uploadedFiles: [{ ...arPdf, uploadedById: null }],
+        }),
+      ).toEqual({ editable: false, canOnlyEditNotes: false });
+    });
+
+    it('preserves manual rights for historical and ambiguous acknowledgments', () => {
+      expect(
+        getEtapePermissions({
+          type: 'ACKNOWLEDGMENT',
+          statutId: 'FAIT',
+          acknowledgmentSendMode: null,
+          uploadedFiles: [{ ...arPdf, uploadedById: 'agent-1' }],
+        }),
+      ).toEqual({ editable: true, canOnlyEditNotes: true });
+      expect(
+        getEtapePermissions({
+          type: 'ACKNOWLEDGMENT',
+          statutId: 'FAIT',
+          acknowledgmentSendMode: null,
+          requeteIsAutomatic: false,
+          uploadedFiles: [{ ...arPdf, uploadedById: null }],
+        }),
+      ).toEqual({ editable: true, canOnlyEditNotes: true });
+      expect(
+        getEtapePermissions({
+          type: 'ACKNOWLEDGMENT',
+          statutId: 'FAIT',
+          acknowledgmentSendMode: null,
+          uploadedFiles: [],
+        }),
+      ).toEqual({ editable: true, canOnlyEditNotes: false });
+      expect(
+        getEtapePermissions({
+          type: 'ACKNOWLEDGMENT',
+          statutId: 'A_FAIRE',
+          acknowledgmentSendMode: null,
+          uploadedFiles: [userFile],
+        }),
+      ).toEqual({ editable: true, canOnlyEditNotes: false });
     });
   });
 
@@ -1245,6 +1897,40 @@ describe('RequeteEtapes.service.ts', () => {
       await expect(
         updateProcessingEtape('c', 'user-1', { nom: 'X', statutId: 'A_FAIRE', notes: [], fileIds: [] }, logger),
       ).rejects.toBeInstanceOf(EtapeNotEditableError);
+    });
+
+    it.each([
+      {
+        label: 'explicit automatic mode without a PDF',
+        acknowledgmentSendMode: 'AUTOMATIC',
+        uploadedFiles: [],
+      },
+      {
+        label: 'historical automatic send with a system PDF',
+        acknowledgmentSendMode: null,
+        uploadedFiles: [{ id: 'ar', canDelete: false, filePath: 'AR.pdf', uploadedById: null }],
+      },
+    ])('rejects updates to an automatic acknowledgment: $label', async ({ acknowledgmentSendMode, uploadedFiles }) => {
+      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce({
+        id: 'ack',
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'FAIT',
+        acknowledgmentSendMode,
+        entiteId: 'e1',
+        requete: { dematSocialId: 123, sirecId: null, thirdPartyAccountId: null },
+        notes: [],
+        uploadedFiles,
+      } as never);
+
+      await expect(
+        updateProcessingEtape(
+          'ack',
+          'user-1',
+          { nom: 'X', statutId: 'FAIT', dateRealisation: new Date(), notes: [], fileIds: [] },
+          logger,
+        ),
+      ).rejects.toBeInstanceOf(EtapeNotEditableError);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
     });
 
     it('rejects a step update when a newly attached file is not eligible', async () => {

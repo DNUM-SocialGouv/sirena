@@ -2,6 +2,7 @@
 import { RECEPTION_TYPE, REQUETE_ETAPE_STATUT_TYPES } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ACKNOWLEDGMENT_EMAIL_SUBJECT } from '../../config/tipimail.constant.js';
+import { generateEmailPdfFromText } from '../../libs/mail/mailToPdf.js';
 import { sendTipimailEmail } from '../../libs/mail/tipimail.js';
 import { uploadFileToMinio } from '../../libs/minio.js';
 import { prisma } from '../../libs/prisma.js';
@@ -388,6 +389,36 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
     expect(call?.text).toContain('Adresse e-mail : ars-interne@example.com');
   });
 
+  it('persists the automatic business transition before PDF generation can fail', async () => {
+    mockedPrismaRequete.findUnique.mockResolvedValueOnce({
+      id: 'req1',
+      receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
+      declarant: { identite: { email: 'john@example.com', prenom: 'John', nom: 'Doe' } },
+      requeteEntites: [{ entiteId: 'e1' }],
+    } as any);
+    mockedPrismaEntite.findMany.mockResolvedValueOnce([
+      {
+        id: 'e1',
+        nomComplet: 'ARS Normandie',
+        email: 'ars@example.test',
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: null,
+      },
+    ] as any);
+    mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);
+    vi.mocked(generateEmailPdfFromText).mockRejectedValueOnce(new Error('PDF unavailable'));
+
+    await sendDeclarantAcknowledgmentEmail('req1');
+
+    expect(mockedUpdateAcknowledgmentStep).toHaveBeenCalledWith('req1', ['e1'], expect.any(Date));
+    expect(mockedUpdateAcknowledgmentStep.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(generateEmailPdfFromText).mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+    );
+    expect(vi.mocked(createUploadedFile)).not.toHaveBeenCalled();
+  });
+
   it('should send email with name only when entity has no info at all', async () => {
     mockedPrismaRequete.findUnique.mockResolvedValueOnce({
       id: 'req1',
@@ -437,6 +468,7 @@ describe('sendManualAcknowledgmentEmail() — PDF attachment', () => {
   const mockedEntiteFindUnique = vi.mocked(prisma.entite.findUnique);
   const mockedUploadFileToMinio = vi.mocked(uploadFileToMinio);
   const mockedCreateUploadedFile = vi.mocked(createUploadedFile);
+  const mockedGenerateEmailPdfFromText = vi.mocked(generateEmailPdfFromText);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -518,11 +550,24 @@ describe('sendManualAcknowledgmentEmail() — PDF attachment', () => {
 
     await vi.waitFor(() => expect(mockedSendTipimailEmail).toHaveBeenCalled());
     expect(mockedRequeteEtape.updateMany).toHaveBeenCalledWith({
-      where: { id: 'etapeAck', statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
+      where: {
+        id: 'etapeAck',
+        statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
+        acknowledgmentSendMode: null,
+        requete: {
+          is: {
+            dematSocialId: null,
+            sirecId: null,
+            thirdPartyAccountId: null,
+          },
+        },
+      },
       data: {
         statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
         dateRealisation: expect.any(Date),
         estPartagee: false,
+        acknowledgmentSendMode: 'MANUAL',
+        acknowledgmentSendOperationId: null,
       },
     });
     expect(mockedRequeteEtape.update).not.toHaveBeenCalledWith({
@@ -576,6 +621,8 @@ describe('sendManualAcknowledgmentEmail() — PDF attachment', () => {
         statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
         dateRealisation: null,
         estPartagee: false,
+        acknowledgmentSendMode: null,
+        acknowledgmentSendOperationId: null,
       },
     });
     expect(mockedCreateChangeLog).not.toHaveBeenCalledWith(
@@ -601,8 +648,31 @@ describe('sendManualAcknowledgmentEmail() — PDF attachment', () => {
         statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
         dateRealisation: null,
         estPartagee: false,
+        acknowledgmentSendMode: null,
+        acknowledgmentSendOperationId: null,
       },
     });
+  });
+
+  it('keeps the explicit manual send mode when PDF generation fails', async () => {
+    mockedGenerateEmailPdfFromText.mockRejectedValueOnce(new Error('PDF unavailable'));
+
+    await sendManualAcknowledgmentEmail({
+      etapeId: 'etapeAck',
+      requeteId: 'req1',
+      entiteId: 'ent1',
+      userId: 'user123',
+    });
+
+    expect(mockedRequeteEtape.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          acknowledgmentSendMode: 'MANUAL',
+          acknowledgmentSendOperationId: null,
+        }),
+      }),
+    );
+    expect(mockedCreateUploadedFile).not.toHaveBeenCalled();
   });
 
   it('records the semi-manual sharing transition with the sending agent', async () => {

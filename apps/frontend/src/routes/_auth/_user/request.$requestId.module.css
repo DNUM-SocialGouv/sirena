@@ -11,7 +11,7 @@
 .timeline-line {
   position: absolute;
   left: calc(1.5rem + 1px);
-  top: 1.5rem;
+  top: -0.75rem;
   bottom: 1rem;
   width: 2px;
   background-color: var(--border-default-grey);
@@ -30,6 +30,25 @@
   border-radius: 50%;
   background-color: var(--background-default-grey);
   border: 2px solid var(--border-default-grey);
+}
+
+.timeline-step--owner .timeline-dot,
+.timeline-step--foreign .timeline-dot {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.timeline-entity-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+
+.timeline-step--neutral .timeline-dot {
+  background-color: var(--border-default-grey);
+  border-color: var(--border-default-grey);
 }
 
 .timeline-card {
@@ -70,8 +89,48 @@
   border-bottom: 1px solid var(--border-default-grey);
 }
 
+.timeline-step--owner .request-step,
+.timeline-step--foreign .request-step,
+.timeline-step--neutral .request-step {
+  border-bottom: none;
+}
+
 .request-step__add-note {
   margin-left: 0;
+}
+
+.step-rappel {
+  display: inline;
+}
+
+.step-rappel :global(.fr-badge) {
+  gap: 0.25rem;
+  vertical-align: middle;
+}
+
+.step-rappel__disable {
+  margin-left: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--text-mention-grey);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.step-rappel__disable:hover {
+  color: var(--text-default-grey);
+}
+
+.step-rappel__disable:focus-visible {
+  outline: 2px solid var(--focus, #0a76f6);
+  outline-offset: 2px;
+}
+
+.step-rappel__disable:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .request-notes-distplay {
@@ -94,6 +153,14 @@
   padding: 1rem 1rem;
   border-radius: 0.25rem;
   background-color: var(--background-alt-blue-cumulus);
+}
+
+.timeline-step--owner .request-note {
+  background-color: var(--light-options-illustration-color-950-default-pink-tuile-950, #fee9e7);
+}
+
+.timeline-step--foreign .request-note {
+  background-color: var(--light-options-illustration-color-950-default-yellow-moutarde-950, #feecc2);
 }
 
 .request-note__from {

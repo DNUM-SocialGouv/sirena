@@ -42,6 +42,7 @@ import {
   addClotureFilesRoute,
   addProcessingStepRoute,
   deleteRequeteEtapeRoute,
+  disableRappelRoute,
   sendAcknowledgmentRoute,
   updateProcessingStepRoute,
 } from './requetesEtapes.route.js';
@@ -55,6 +56,7 @@ import {
   addClotureEtapeFiles,
   createProcessingEtape,
   deleteRequeteEtape,
+  disableEtapeRappel,
   EtapeNotEditableError,
   FilesNotOwnedError,
   getRequeteEtapeById,
@@ -84,11 +86,11 @@ const app = factoryWithLogs
     }
 
     const estPartageeEnabled = await isEstPartageeEnabledForUser(c.get('user'));
-    const { data, total } = await getRequeteEtapes(requeteId, topEntiteId, {}, estPartageeEnabled);
+    const { data, total, isMultiEntite } = await getRequeteEtapes(requeteId, topEntiteId, {}, estPartageeEnabled);
 
     logger.info({ requestId: requeteId, stepCount: total }, 'Processing steps retrieved successfully');
 
-    return c.json({ data, meta: { total } });
+    return c.json({ data, meta: { total, isMultiEntite, etapePartageeEnabled: estPartageeEnabled } });
   })
   .get('/:id/file/:fileId', async (c) => {
     const logger = c.get('logger');
@@ -348,6 +350,63 @@ const app = factoryWithLogs
       return c.json({ data: updated });
     },
   )
+  .patch(
+    '/:id/rappel/disable',
+    disableRappelRoute,
+    requeteEtapesChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
+    async (c) => {
+      const logger = c.get('logger');
+      const { id: stepId } = c.req.param();
+      const userId = c.get('userId');
+      const topEntiteId = c.get('topEntiteId');
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+
+      const etape = await getRequeteEtapeById(stepId);
+      if (!etape) {
+        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+      }
+      if (!requeteEtapeAuthorization.canWrite(topEntiteId, etape)) {
+        throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+
+      const hasAccess = await hasAccessToRequete({ requeteId: etape.requeteId, entiteId: topEntiteId });
+      if (!hasAccess) {
+        throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+
+      let updated: Awaited<ReturnType<typeof disableEtapeRappel>>;
+      try {
+        updated = await disableEtapeRappel(stepId);
+      } catch (err) {
+        if (err instanceof EtapeNotEditableError) {
+          throwHTTPException403Forbidden("Cette étape n'est pas modifiable.", {
+            res: c.res,
+            kind: ERROR_KIND.BUSINESS,
+          });
+        }
+        throw err;
+      }
+
+      if (!updated) {
+        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+      }
+
+      c.set('changelogId', stepId);
+      logger.info({ stepId, userId }, 'Processing step rappel disabled successfully');
+      return c.json({ data: updated });
+    },
+  )
   .post('/:id/cloture-files', addClotureFilesRoute, zValidator('json', AddClotureFilesSchema), async (c) => {
     const logger = c.get('logger');
     const { id } = c.req.param();
@@ -461,7 +520,17 @@ const app = factoryWithLogs
         await updateStatusRequete(requeteEtape.requeteId, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
       }
 
-      await deleteRequeteEtape(id, logger, userId);
+      try {
+        await deleteRequeteEtape(id, logger, userId);
+      } catch (err) {
+        if (err instanceof EtapeNotEditableError) {
+          throwHTTPException403Forbidden("Cette étape n'est pas supprimable.", {
+            res: c.res,
+            kind: ERROR_KIND.BUSINESS,
+          });
+        }
+        throw err;
+      }
 
       logger.info({ requeteEtapeId: id, userId }, 'RequeteEtape deleted successfully');
       return c.body(null, 204);

@@ -12,11 +12,13 @@ import { extractClientIp } from '../helpers/middleware.js';
 import { sentryStorage } from '../libs/asyncLocalStorage.js';
 import type { Session } from '../libs/prisma.js';
 
+const getErrorType = (error: unknown) => (error instanceof Error ? error.name : 'UnknownError');
+
 const cleanAnSendError = (c: Context<AppBindings>, error: unknown, errorMessage: string, errorResponse: string) => {
   const logger = c.get('logger');
   deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
   deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
-  logger.info({ err: error }, errorMessage);
+  logger.info({ errorType: getErrorType(error) }, errorMessage);
   throwHTTPException401Unauthorized(errorResponse, { res: c.res, kind: ERROR_KIND.BUSINESS });
 };
 
@@ -56,9 +58,9 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
       return next();
     } catch (error) {
       if (!isJwtError(error)) {
-        logger.error({ err: error }, 'Error in auth token verification - not a JWT error');
+        logger.error({ errorType: getErrorType(error) }, 'Error in auth token verification - not a JWT error');
       } else {
-        logger.info({ err: error }, 'Error in auth token verification');
+        logger.info({ errorType: getErrorType(error) }, 'Error in auth token verification');
       }
     }
     deleteCookie(c, envVars.AUTH_TOKEN_NAME);
@@ -109,7 +111,7 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
       return next();
     } catch (error) {
       if (!isJwtError(error)) {
-        logger.error({ err: error }, 'Error in auth token verification - not a JWT error');
+        logger.error({ errorType: getErrorType(error) }, 'Error in auth token verification - not a JWT error');
         deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
         deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
         throwHTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired', {
