@@ -12,7 +12,7 @@
     "test": "vitest",
     "test:smoke": "vitest run --config vitest.smoke.config.ts",
     "coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --build --noEmit",
     "db:generate": "pnpm --filter @sirena/db generate",
     "db:migrate": "pnpm --filter @sirena/db migrate dev",
     "op:seed": "tsx src/scripts/seed/seed.ts",

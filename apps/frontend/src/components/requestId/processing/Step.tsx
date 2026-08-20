@@ -290,27 +290,29 @@ const StepRappelBadge = ({
   );
 };
 
-const StepComponent = ({
-  requestId,
-  isOwner,
-  isMultiEntite,
-  nom,
-  createdBy,
-  createdAt,
-  updatedAt,
-  statutId,
-  isAcknowledgmentSendable,
-  onSendAcknowledgment,
-  openEdit,
-  notes,
-  id,
-  requete,
-  clotureEffectiveDate,
-  entiteAdministrative,
-  timelineItemType,
-  attributedEntiteAdministrative,
-  ...step
-}: StepProps) => {
+const StepComponent = (stepProps: StepProps) => {
+  const {
+    requestId,
+    isOwner,
+    isMultiEntite,
+    nom,
+    createdBy,
+    createdAt,
+    updatedAt,
+    statutId,
+    isAcknowledgmentSendable,
+    onSendAcknowledgment,
+    openEdit,
+    notes,
+    id,
+    requete,
+    clotureEffectiveDate,
+    entiteAdministrative,
+    timelineItemType,
+    attributedEntiteAdministrative,
+    ...step
+  } = stepProps;
+
   const deleteClotureFileModal = useMemo(
     () =>
       createModal({
@@ -433,7 +435,7 @@ const StepComponent = ({
           <EntiteTypeBadge
             entiteTypeId={attributedEntiteAdministrative.entiteTypeId}
             label={attributedEntiteAdministrative.entiteTypeId}
-            relation={entityRelation}
+            relation={entityRelation === 'neutral' ? undefined : entityRelation}
             className={`fr-mb-0 ${styles['timeline-entity-badge']}`}
             aria-hidden="true"
           />
@@ -565,23 +567,7 @@ const StepComponent = ({
             </div>
             <StepFiles files={step.uploadedFiles} stepId={id} />
             {canEditStep ? (
-              <StepEditButton
-                className={styles['request-step__add-note']}
-                step={{
-                  id,
-                  nom,
-                  statutId,
-                  notes,
-                  createdAt,
-                  updatedAt,
-                  createdBy,
-                  requete,
-                  clotureEffectiveDate,
-                  entiteAdministrative,
-                  ...step,
-                }}
-                onEdit={openEdit}
-              />
+              <StepEditButton className={styles['request-step__add-note']} step={stepProps} onEdit={openEdit} />
             ) : null}
           </>
         )}

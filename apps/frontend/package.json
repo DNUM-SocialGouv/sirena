@@ -13,7 +13,7 @@
     "test": "vitest --typecheck",
     "build": "tsc -b && vite build",
     "build:analyze": "ANALYZE_BUNDLE=true vite build",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --build --noEmit",
     "lint": "biome check",
     "preview": "vite preview",
     "lint:staged": "git diff --cached --name-only --diff-filter=ACM | grep '^packages/frontend/' | sed 's|^packages/frontend/||' | grep -E '\\.(js|ts|tsx|jsx|json|md)$' | xargs -r pnpm biome check",
