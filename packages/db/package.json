@@ -13,7 +13,8 @@
     "erd": "node scripts/erd/generate.mjs",
     "erd:check": "node scripts/erd/check.mjs",
     "lint": "biome check",
-    "build": "tsc"
+    "build": "tsc",
+    "typecheck": "tsc --build --noEmit"
   },
   "exports": {
     ".": {
