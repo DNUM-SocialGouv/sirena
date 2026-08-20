@@ -54,6 +54,8 @@ vi.mock('@/stores/userStore', () => ({
 }));
 
 type StepProps = React.ComponentProps<typeof Step>;
+type EntityStepProps = Extract<StepProps, { timelineItemType: 'ENTITY_STEP' }>;
+type NeutralStepProps = Extract<StepProps, { timelineItemType: 'NEUTRAL_EVENT' }>;
 type StepFile = StepProps['uploadedFiles'][number];
 
 describe('Step', () => {
@@ -69,6 +71,8 @@ describe('Step', () => {
       requeteId: 'REQ-354',
       entiteId: 'ENTITE-1',
       entiteAdministrative: { id: 'ENTITE-1', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
+      timelineItemType: 'ENTITY_STEP',
+      attributedEntiteAdministrative: { id: 'ENTITE-1', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
       id: 'step-1',
       nom: '',
       type: REQUETE_ETAPE_TYPES.MANUAL,
@@ -84,6 +88,9 @@ describe('Step', () => {
       uploadedFiles: [],
       editable: false,
       canOnlyEditNotes: false,
+      estPartagee: false,
+      rappelDate: null,
+      rappelType: null,
       requete: {
         createdById: null,
         dematSocialId: null,
@@ -108,6 +115,8 @@ describe('Step', () => {
       requeteId: 'REQ-354',
       entiteId: 'ENTITE-1',
       entiteAdministrative: { id: 'ENTITE-1', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
+      timelineItemType: 'ENTITY_STEP',
+      attributedEntiteAdministrative: { id: 'ENTITE-1', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
       id: 'step-1',
       nom: '',
       type: REQUETE_ETAPE_TYPES.MANUAL,
@@ -123,6 +132,9 @@ describe('Step', () => {
       uploadedFiles: [],
       editable: false,
       canOnlyEditNotes: false,
+      estPartagee: false,
+      rappelDate: null,
+      rappelType: null,
       requete: {
         dematSocialId: null,
         sirecId: null,
@@ -192,6 +204,9 @@ describe('Step', () => {
       ],
       editable: false,
       canOnlyEditNotes: false,
+      estPartagee: true,
+      rappelDate: null,
+      rappelType: null,
       requete: {
         dematSocialId: null,
         sirecId: null,
@@ -199,7 +214,7 @@ describe('Step', () => {
         thirdPartyAccountId: null,
         createdBy: null,
       },
-      clotureReason: [{ id: 'HORS_COMPETENCE', label: 'Hors compétence' }],
+      clotureReason: [{ label: 'Hors compétence' }],
     };
 
     render(<Step {...foreignEtapePartagee} />);
@@ -227,7 +242,7 @@ describe('Step', () => {
     ...overrides,
   });
 
-  const makeStep = (overrides: Partial<StepProps> = {}): StepProps => ({
+  const makeStep = (overrides: Partial<EntityStepProps> = {}): EntityStepProps => ({
     requestId: 'REQ-1',
     isOwner: true,
     isMultiEntite: false,
@@ -251,8 +266,18 @@ describe('Step', () => {
     uploadedFiles: [],
     editable: false,
     canOnlyEditNotes: false,
+    estPartagee: false,
+    rappelDate: null,
+    rappelType: null,
     requete: { dematSocialId: null, sirecId: null, createdById: 'AGENT-1', thirdPartyAccountId: null, createdBy: null },
     clotureReason: [],
+    ...overrides,
+  });
+
+  const makeNeutralStep = (overrides: Partial<NeutralStepProps> = {}): NeutralStepProps => ({
+    ...makeStep(),
+    timelineItemType: 'NEUTRAL_EVENT',
+    attributedEntiteAdministrative: null,
     ...overrides,
   });
 
@@ -355,7 +380,7 @@ describe('Step', () => {
   it('renders the unique creation event neutrally without entity attribution', () => {
     const { container } = render(
       <Step
-        {...makeStep({
+        {...makeNeutralStep({
           id: 'neutral-creation',
           type: REQUETE_ETAPE_TYPES.CREATION,
           isMultiEntite: true,

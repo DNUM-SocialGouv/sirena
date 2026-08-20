@@ -2,7 +2,10 @@ import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES }
 import { render, screen } from '@testing-library/react';
 import { forwardRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { Processing } from './processing';
+
+type RequeteEtapeFixture = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
 
 let processingMeta = { total: 1, isMultiEntite: true, etapePartageeEnabled: true };
 let canEditRequest = false;
@@ -24,6 +27,8 @@ const foreignEtapePartagee = {
   nom: 'Clôture étrangère',
   type: REQUETE_ETAPE_TYPES.MANUAL,
   estPartagee: true,
+  rappelDate: null,
+  rappelType: null,
   acknowledgmentSendMode: null,
   acknowledgmentSendOperationId: null,
   statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
@@ -44,26 +49,7 @@ const foreignEtapePartagee = {
     thirdPartyAccountId: null,
     createdBy: null,
   },
-};
-type RequeteEtapeFixture = Omit<
-  typeof foreignEtapePartagee,
-  'acknowledgmentSendMode' | 'acknowledgmentSendOperationId' | 'attributedEntiteAdministrative' | 'uploadedFiles'
-> & {
-  acknowledgmentSendMode: 'AUTOMATIC' | 'MANUAL' | null;
-  acknowledgmentSendOperationId: string | null;
-  attributedEntiteAdministrative: typeof foreignEtapePartagee.attributedEntiteAdministrative | null;
-  uploadedFiles: Array<{
-    id: string;
-    fileName: string;
-    size: number;
-    status: string;
-    scanStatus: string;
-    sanitizeStatus: string;
-    canDelete: boolean;
-    createdAt: string;
-    uploadedBy: null;
-  }>;
-};
+} satisfies RequeteEtapeFixture;
 let requeteEtapes: RequeteEtapeFixture[] = [foreignEtapePartagee];
 
 vi.mock('@tanstack/react-router', async (importOriginal) => {
@@ -259,7 +245,12 @@ describe('Processing', () => {
 
   it('renders each automatic send as one neutral immutable event with one exact source document', () => {
     processingMeta = { total: 3, isMultiEntite: true, etapePartageeEnabled: true };
-    const makeAutomaticAcknowledgment = (id: string, operationId: string, fileId: string, fileName: string) => ({
+    const makeAutomaticAcknowledgment = (
+      id: string,
+      operationId: string,
+      fileId: string,
+      fileName: string,
+    ): RequeteEtapeFixture => ({
       ...foreignEtapePartagee,
       id,
       type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
