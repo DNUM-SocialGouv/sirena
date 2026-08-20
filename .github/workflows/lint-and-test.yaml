@@ -69,8 +69,6 @@ jobs:
             apps/*/node_modules
             packages/*/node_modules
           key: pnpm-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            pnpm-modules-${{ runner.os }}-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --prefer-offline
