@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@codegouvfr/react-dsfr": "catalog:",
-    "@sentry/react": "^10.68.0",
+    "@sentry/react": "^10.70.0",
     "@sirena/backend": "workspace:*",
     "@sirena/common": "workspace:*",
     "@sirena/ui": "workspace:*",
@@ -32,14 +32,14 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "zod": "catalog:",
-    "zustand": "^5.0.14"
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
     "@playwright/test": "^1.62.0",
     "@sentry/vite-plugin": "^5.4.0",
     "@tanstack/react-router-devtools": "^1.167.0",
-    "@tanstack/router-plugin": "^1.168.20",
+    "@tanstack/router-plugin": "^1.168.30",
     "@testing-library/dom": "catalog:",
     "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "catalog:",
@@ -49,7 +49,7 @@
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "dotenv": "catalog:",
-    "globals": "^17.7.0",
+    "globals": "^17.11.0",
     "jsdom": "catalog:",
     "playwright": "^1.62.0",
     "rollup-plugin-visualizer": "^7.0.1",
