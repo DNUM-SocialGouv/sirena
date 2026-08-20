@@ -5,6 +5,13 @@ anonymize:
   sirena_db_secret_path: databases/sirena-production
   anonymize_db_secret_path: databases/sirena-production-anonymisation
 
+sirec-restore:
+  enabled: true
+  config:
+    # Prod = vraies données : on ne restaure PAS les dumps anonymisés
+    # (`dumps_prod_anon/` = défaut du chart, réservé aux envs de dev/integration).
+    dumpObjectPrefix: "dumps_prod/"
+
 backend:
   SDPSN-devops-charts:
     namespace: org-sdpsn-ws-sirena-production
@@ -47,6 +54,14 @@ external-secrets:
   externalSecret:
     database:
       databaseName: sirena-production
+    mariadbSirec:
+      enable: true
+      host: "mariadb.org-sdpsn-ws-sirena-services-production.svc.cluster.local"
+      db: "sirec"
+      user: "sirec"
+    migrationBucket:
+      enable: true
+      bucketName: sirena-migration-s3-prod
 
   SDPSN-devops-charts:
     externalSecret:
