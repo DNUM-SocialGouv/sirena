@@ -16,7 +16,7 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test": "vitest --typecheck",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --build --noEmit",
     "prestorybook": "react-dsfr update-icons",
     "prebuild": "react-dsfr update-icons",
     "lint:staged": "git diff --cached --name-only --diff-filter=ACM | grep '^packages/ui/' | sed 's|^packages/ui/||' | grep -E '\\.(js|ts|tsx|jsx|json|md)$' | xargs -r pnpm biome check",
@@ -49,6 +49,7 @@
     "jsdom": "catalog:",
     "react-dom": "catalog:",
     "storybook": "^10.5.5",
+    "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",
     "vitest-browser-react": "^2.2.0"
