@@ -277,7 +277,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                   </Select>
                 ) : (
                   <SegmentedControl
-                    className="fr-mb-3w"
+                    className={`${styles['entity-filter']} fr-mb-3w`}
                     legend="Filtrer par entité"
                     inlineLegend
                     name="entiteId"

@@ -193,6 +193,32 @@ describe('Processing', () => {
     expect(currentEntityLabel?.querySelector('p')).not.toBeInTheDocument();
   });
 
+  it('keeps the labeled filter before the chronology in source order', () => {
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    const filter = screen.getByRole('group', { name: 'Filtrer par entité' });
+    const timeline = screen.getByTestId('timeline-line').parentElement as HTMLElement;
+    expect(filter.compareDocumentPosition(timeline) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('supports native keyboard navigation through the labeled segmented group', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    const allEntitiesRadio = screen.getByRole('radio', { name: 'Toutes les entités' });
+    const currentEntityRadio = screen.getByRole('radio', { name: 'ARS ARS courante' });
+    await user.tab();
+    expect(allEntitiesRadio).toHaveFocus();
+
+    await user.keyboard('{ArrowRight}');
+    expect(currentEntityRadio).toHaveFocus();
+    expect(navigate).toHaveBeenCalledOnce();
+
+    selectedEntityId = 'CURRENT-ENTITY';
+    rerender(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+    expect(currentEntityRadio).toBeChecked();
+  });
+
   it('replaces an unknown entity filter with the unfiltered URL without hiding the chronology', async () => {
     selectedEntityId = 'UNKNOWN-ENTITY';
 
