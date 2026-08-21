@@ -53,17 +53,17 @@
     }
   },
   "dependencies": {
-    "@fastify/busboy": "^3.2.0",
+    "@fastify/busboy": "^3.2.1",
     "@file-type/cfbf": "^0.2.2",
     "@file-type/pdf": "^0.3.0",
-    "@hono/node-server": "^2.0.11",
+    "@hono/node-server": "^2.1.0",
     "@hono/standard-validator": "catalog:",
     "@prisma/adapter-pg": "catalog:",
     "@prisma/client": "catalog:",
     "@prisma/client-runtime-utils": "^7.9.0",
-    "@scalar/hono-api-reference": "^0.11.9",
+    "@scalar/hono-api-reference": "^0.11.14",
     "@sentry/cli": "^3.6.1",
-    "@sentry/node": "^10.68.0",
+    "@sentry/node": "^10.70.0",
     "@sirena/backend-utils": "workspace:*",
     "@sirena/common": "workspace:*",
     "@sirena/db": "workspace:*",
@@ -81,7 +81,7 @@
     "jsonwebtoken": "^9.0.3",
     "mariadb": "^3.5.3",
     "minio": "^8.0.7",
-    "openid-client": "^6.8.4",
+    "openid-client": "^6.8.5",
     "pdf-lib": "^1.17.1",
     "pdfkit": "^0.19.1",
     "pino": "^10.3.1",
@@ -96,7 +96,7 @@
     "@faker-js/faker": "^10.5.0",
     "@graphql-codegen/cli": "^7.2.0",
     "@graphql-codegen/typescript": "^6.1.0",
-    "@graphql-codegen/typescript-operations": "^6.1.1",
+    "@graphql-codegen/typescript-operations": "^6.1.6",
     "@graphql-typed-document-node/core": "^3.2.0",
     "@inquirer/prompts": "^8.5.2",
     "@types/archiver": "^8.0.0",
@@ -108,6 +108,6 @@
     "prisma": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
-    "vitest-mock-extended": "5.0.0"
+    "vitest-mock-extended": "5.1.1"
   }
 }
