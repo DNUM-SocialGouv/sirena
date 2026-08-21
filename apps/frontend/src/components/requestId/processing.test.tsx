@@ -15,11 +15,23 @@ type OtherEntityAffectedFixture = {
   entiteTypeId: string;
 };
 
+const affectedEntity = (id: string, nomComplet: string, entiteTypeId = 'ARS'): OtherEntityAffectedFixture => ({
+  id,
+  statutId: 'EN_COURS',
+  label: nomComplet,
+  nomComplet,
+  entiteTypeId,
+});
+
 let processingMeta = { total: 1, isMultiEntite: true, etapePartageeEnabled: true };
 let otherEntitiesAffected: {
   otherEntites: OtherEntityAffectedFixture[];
   subAdministrativeEntites: [];
 } = { otherEntites: [], subAdministrativeEntites: [] };
+const setOtherEntitiesAffected = (...otherEntites: OtherEntityAffectedFixture[]) => {
+  otherEntitiesAffected = { otherEntites, subAdministrativeEntites: [] };
+};
+
 let canEditRequest = false;
 let selectedEntityId: string | undefined;
 let otherEntitiesQueryState = { isLoading: false, isError: false, isPlaceholderData: false };
@@ -154,7 +166,7 @@ vi.mock('./sections/OtherEntitesAffected', () => ({ OtherEntitiesAffected: () =>
 describe('Processing', () => {
   beforeEach(() => {
     processingMeta = { total: 1, isMultiEntite: true, etapePartageeEnabled: true };
-    otherEntitiesAffected = { otherEntites: [], subAdministrativeEntites: [] };
+    setOtherEntitiesAffected();
     canEditRequest = false;
     selectedEntityId = undefined;
     otherEntitiesQueryState = { isLoading: false, isError: false, isPlaceholderData: false };
@@ -247,18 +259,7 @@ describe('Processing', () => {
   ])('removes a now-meaningless filter when %s', async (_scenario, meta) => {
     selectedEntityId = 'OTHER-ENTITY';
     processingMeta = meta;
-    otherEntitiesAffected = {
-      otherEntites: [
-        {
-          id: 'OTHER-ENTITY',
-          statutId: 'EN_COURS',
-          label: 'CD du Calvados',
-          nomComplet: 'CD du Calvados',
-          entiteTypeId: 'CD',
-        },
-      ],
-      subAdministrativeEntites: [],
-    };
+    setOtherEntitiesAffected(affectedEntity('OTHER-ENTITY', 'CD du Calvados', 'CD'));
 
     render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
@@ -292,18 +293,7 @@ describe('Processing', () => {
   });
 
   it('stores a selected entity in the URL history', async () => {
-    otherEntitiesAffected = {
-      otherEntites: [
-        {
-          id: 'OTHER-ARS',
-          statutId: 'EN_COURS',
-          label: 'ARS Île-de-France',
-          nomComplet: 'ARS Île-de-France',
-          entiteTypeId: 'ARS',
-        },
-      ],
-      subAdministrativeEntites: [],
-    };
+    setOtherEntitiesAffected(affectedEntity('OTHER-ARS', 'ARS Île-de-France'));
     const user = userEvent.setup();
 
     render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
@@ -319,18 +309,7 @@ describe('Processing', () => {
 
   it('restores the URL selection and removes it when all entities are selected', async () => {
     selectedEntityId = 'OTHER-ARS';
-    otherEntitiesAffected = {
-      otherEntites: [
-        {
-          id: 'OTHER-ARS',
-          statutId: 'EN_COURS',
-          label: 'ARS Île-de-France',
-          nomComplet: 'ARS Île-de-France',
-          entiteTypeId: 'ARS',
-        },
-      ],
-      subAdministrativeEntites: [],
-    };
+    setOtherEntitiesAffected(affectedEntity('OTHER-ARS', 'ARS Île-de-France'));
     const user = userEvent.setup();
 
     render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
@@ -347,18 +326,7 @@ describe('Processing', () => {
   });
 
   it('distinguishes the viewer entity color from another entity of the same type', () => {
-    otherEntitiesAffected = {
-      otherEntites: [
-        {
-          id: 'OTHER-ARS',
-          statutId: 'EN_COURS',
-          label: 'ARS Île-de-France',
-          nomComplet: 'ARS Île-de-France',
-          entiteTypeId: 'ARS',
-        },
-      ],
-      subAdministrativeEntites: [],
-    };
+    setOtherEntitiesAffected(affectedEntity('OTHER-ARS', 'ARS Île-de-France'));
 
     render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
@@ -371,32 +339,11 @@ describe('Processing', () => {
   });
 
   it('lists the current entity first, then every other affected entity sorted by complete name', () => {
-    otherEntitiesAffected = {
-      otherEntites: [
-        {
-          id: 'ENTITY-Z',
-          statutId: 'EN_COURS',
-          label: 'CD Z',
-          nomComplet: 'Conseil départemental du Rhône',
-          entiteTypeId: 'CD',
-        },
-        {
-          id: 'ENTITY-A',
-          statutId: 'EN_COURS',
-          label: 'DD A',
-          nomComplet: 'Direction départementale de l’Ain',
-          entiteTypeId: 'DD',
-        },
-        {
-          id: 'CURRENT-ENTITY',
-          statutId: 'EN_COURS',
-          label: 'Doublon',
-          nomComplet: 'Entité courante en double',
-          entiteTypeId: 'ARS',
-        },
-      ],
-      subAdministrativeEntites: [],
-    };
+    setOtherEntitiesAffected(
+      affectedEntity('ENTITY-Z', 'Conseil départemental du Rhône', 'CD'),
+      affectedEntity('ENTITY-A', 'Direction départementale de l’Ain', 'DD'),
+      affectedEntity('CURRENT-ENTITY', 'Entité courante en double'),
+    );
 
     render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
@@ -409,39 +356,12 @@ describe('Processing', () => {
   });
 
   it('uses a Select with every typed option from five affected entities', () => {
-    otherEntitiesAffected = {
-      otherEntites: [
-        {
-          id: 'DREETS-GRAND-EST',
-          statutId: 'EN_COURS',
-          label: 'DREETS Grand Est',
-          nomComplet: 'DREETS Grand Est',
-          entiteTypeId: 'DREETS',
-        },
-        {
-          id: 'CD-CALVADOS',
-          statutId: 'EN_COURS',
-          label: 'Conseil départemental du Calvados',
-          nomComplet: 'Conseil départemental du Calvados',
-          entiteTypeId: 'CD',
-        },
-        {
-          id: 'ARS-IDF',
-          statutId: 'EN_COURS',
-          label: 'ARS Île-de-France',
-          nomComplet: 'ARS Île-de-France',
-          entiteTypeId: 'ARS',
-        },
-        {
-          id: 'DDETS-RHONE',
-          statutId: 'EN_COURS',
-          label: 'DDETS du Rhône',
-          nomComplet: 'DDETS du Rhône',
-          entiteTypeId: 'DDETS',
-        },
-      ],
-      subAdministrativeEntites: [],
-    };
+    setOtherEntitiesAffected(
+      affectedEntity('DREETS-GRAND-EST', 'DREETS Grand Est', 'DREETS'),
+      affectedEntity('CD-CALVADOS', 'Conseil départemental du Calvados', 'CD'),
+      affectedEntity('ARS-IDF', 'ARS Île-de-France'),
+      affectedEntity('DDETS-RHONE', 'DDETS du Rhône', 'DDETS'),
+    );
 
     render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
@@ -463,25 +383,10 @@ describe('Processing', () => {
 
   it('applies a Select URL selection and removes it with all entities', async () => {
     selectedEntityId = 'OTHER-ENTITY';
-    otherEntitiesAffected = {
-      otherEntites: [
-        {
-          id: 'OTHER-ENTITY',
-          statutId: 'EN_COURS',
-          label: 'CD du Calvados',
-          nomComplet: 'CD du Calvados',
-          entiteTypeId: 'CD',
-        },
-        ...['A', 'B', 'C'].map((suffix) => ({
-          id: `ENTITY-${suffix}`,
-          statutId: 'EN_COURS',
-          label: `Entité ${suffix}`,
-          nomComplet: `Entité ${suffix}`,
-          entiteTypeId: 'ARS',
-        })),
-      ],
-      subAdministrativeEntites: [],
-    };
+    setOtherEntitiesAffected(
+      affectedEntity('OTHER-ENTITY', 'CD du Calvados', 'CD'),
+      ...['A', 'B', 'C'].map((suffix) => affectedEntity(`ENTITY-${suffix}`, `Entité ${suffix}`)),
+    );
     requeteEtapes = [
       {
         ...foreignEtapePartagee,
@@ -519,16 +424,9 @@ describe('Processing', () => {
   });
 
   it('stores a Select entity change in URL history', async () => {
-    otherEntitiesAffected = {
-      otherEntites: ['A', 'B', 'C', 'D'].map((suffix) => ({
-        id: `ENTITY-${suffix}`,
-        statutId: 'EN_COURS',
-        label: `Entité ${suffix}`,
-        nomComplet: `Entité ${suffix}`,
-        entiteTypeId: 'ARS',
-      })),
-      subAdministrativeEntites: [],
-    };
+    setOtherEntitiesAffected(
+      ...['A', 'B', 'C', 'D'].map((suffix) => affectedEntity(`ENTITY-${suffix}`, `Entité ${suffix}`)),
+    );
     const user = userEvent.setup();
 
     render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
@@ -543,18 +441,7 @@ describe('Processing', () => {
 
   it('keeps the selected entity steps and every neutral event in backend order', () => {
     selectedEntityId = 'OTHER-ARS';
-    otherEntitiesAffected = {
-      otherEntites: [
-        {
-          id: 'OTHER-ARS',
-          statutId: 'EN_COURS',
-          label: 'ARS Île-de-France',
-          nomComplet: 'ARS Île-de-France',
-          entiteTypeId: 'ARS',
-        },
-      ],
-      subAdministrativeEntites: [],
-    };
+    setOtherEntitiesAffected(affectedEntity('OTHER-ARS', 'ARS Île-de-France'));
     requeteEtapes = [
       {
         ...foreignEtapePartagee,
