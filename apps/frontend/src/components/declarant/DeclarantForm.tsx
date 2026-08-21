@@ -8,7 +8,7 @@ import { Select } from '@codegouvfr/react-dsfr/Select';
 import { mappers } from '@sirena/common';
 import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
 import { DomicileFields } from '@/components/common/DomicileFields';
 import type { DeclarantData } from '@/lib/declarant';
@@ -28,6 +28,8 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
   const [phoneError, setPhoneError] = useState<string | undefined>();
   const [isSaving, setIsSaving] = useState(false);
   const [hasAttemptedSave, setHasAttemptedSave] = useState(false);
+  const phoneInputRef = useRef<HTMLInputElement>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange =
     (field: keyof DeclarantData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -75,7 +77,8 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
   const handleSave = useCallback(async () => {
     setHasAttemptedSave(true);
 
-    let hasErrors = false;
+    let hasEmailError = false;
+    let hasPhoneError = false;
 
     if (formData.courrierElectronique) {
       try {
@@ -84,7 +87,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
       } catch (error) {
         if (error instanceof z.ZodError) {
           setEmailError(error.issues[0].message);
-          hasErrors = true;
+          hasEmailError = true;
         }
       }
     }
@@ -96,12 +99,15 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
       } catch (error) {
         if (error instanceof z.ZodError) {
           setPhoneError(error.issues[0].message);
-          hasErrors = true;
+          hasPhoneError = true;
         }
       }
     }
 
-    if (hasErrors) {
+    if (hasPhoneError || hasEmailError) {
+      // Move focus to the first field in error, following DOM order (phone before email)
+      const firstErrorField = hasPhoneError ? phoneInputRef.current : emailInputRef.current;
+      firstErrorField?.focus();
       return;
     }
 
@@ -315,6 +321,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                       state={phoneError ? 'error' : undefined}
                       stateRelatedMessage={phoneError}
                       nativeInputProps={{
+                        ref: phoneInputRef,
                         value: formData.numeroTelephone || '',
                         onChange: handleInputChange('numeroTelephone'),
                         type: 'tel',
@@ -329,6 +336,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                       state={emailError ? 'error' : undefined}
                       stateRelatedMessage={emailError}
                       nativeInputProps={{
+                        ref: emailInputRef,
                         value: formData.courrierElectronique || '',
                         onChange: handleInputChange('courrierElectronique'),
                         type: 'email',
