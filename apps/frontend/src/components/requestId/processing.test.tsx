@@ -253,6 +253,24 @@ describe('Processing', () => {
     expect(navigate).toHaveBeenCalledOnce();
   });
 
+  it('replaces an empty entity filter with the canonical unfiltered URL', async () => {
+    selectedEntityId = '';
+
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(screen.getByRole('radio', { name: 'Toutes les entités' })).toBeChecked();
+    expect(screen.getByRole('heading', { name: 'CD - Clôture' })).toBeInTheDocument();
+    await waitFor(() => expect(navigate).toHaveBeenCalledOnce());
+    const [{ search, replace }] = navigate.mock.calls[0] as [
+      { search: (previous: Record<string, unknown>) => Record<string, unknown>; replace?: boolean },
+    ];
+    expect(search({ entiteId: '', preserved: 'value' })).toEqual({
+      entiteId: undefined,
+      preserved: 'value',
+    });
+    expect(replace).toBe(true);
+  });
+
   it.each([
     ['the feature flag is disabled', { total: 1, isMultiEntite: true, etapePartageeEnabled: false }],
     ['the request becomes mono-entity', { total: 1, isMultiEntite: false, etapePartageeEnabled: true }],

@@ -78,7 +78,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
       : undefined;
   const isEntityFilterVisible = isEntityFilterEligible && areOtherEntitiesReady;
   const shouldClearEntityFilter = Boolean(
-    selectedEntityId &&
+    selectedEntityId !== undefined &&
       queryProcessingSteps.data &&
       requestQuery.data &&
       (!isEntityFilterEligible || (areOtherEntitiesReady && !validEntityIds.has(selectedEntityId))),
