@@ -1,6 +1,7 @@
 import Select from '@codegouvfr/react-dsfr/Select';
 import type React from 'react';
-import { memo } from 'react';
+import { memo, useId } from 'react';
+import { ReadOnlyField } from '@/components/common/ReadOnlyField';
 import { useEntites } from '@/hooks/queries/entites.hook';
 
 type EntityLevelSelectProps = {
@@ -21,7 +22,21 @@ export function EntityLevelSelectComponent({
   parentLevel,
   disabled,
 }: EntityLevelSelectProps & React.SelectHTMLAttributes<HTMLSelectElement>) {
+  const generatedId = useId();
   const { data: response } = useEntites(parentLevel);
+
+  if (disabled) {
+    const selectedLabel = response?.data?.find((entite) => entite.id === level)?.nomComplet ?? '';
+    return (
+      <ReadOnlyField
+        id={`${generatedId}-${name}`}
+        className="fr-fieldset__content"
+        label={label}
+        hintText="Ce champ n’est pas modifiable ici."
+        value={selectedLabel}
+      />
+    );
+  }
 
   return (
     <Select

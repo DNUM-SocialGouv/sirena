@@ -44,6 +44,8 @@ interface SearchFieldProps<T> {
   state?: 'default' | 'success' | 'info' | 'error';
   stateRelatedMessage?: React.ReactNode;
   disabled?: boolean;
+  // Renders the field read-only (kept focusable, full contrast)
+  readOnly?: boolean;
   queryKey: string;
   fetchFn: (searchTerm: string) => Promise<T[]>;
   formatDisplay: (item: T) => string;
@@ -63,6 +65,7 @@ export function SearchField<T>({
   state = 'default',
   stateRelatedMessage,
   disabled,
+  readOnly,
   queryKey,
   fetchFn,
   formatDisplay,
@@ -190,11 +193,11 @@ export function SearchField<T>({
     }
   };
 
-  const showDropdown = showSuggestions && searchTerm.length >= minSearchLength && !disabled;
+  const showDropdown = showSuggestions && searchTerm.length >= minSearchLength && !disabled && !readOnly;
   const hasSuggestions = items.length > 0;
 
   return (
-    <div ref={wrapperRef} className={styles.wrapper}>
+    <div ref={wrapperRef} className={readOnly ? `${styles.wrapper} ${styles.readOnlyWrapper}` : styles.wrapper}>
       <Input
         label={label}
         hintText={displayHintText}
@@ -204,8 +207,9 @@ export function SearchField<T>({
         nativeInputProps={{
           ref: inputRef,
           value: searchTerm,
+          readOnly,
           onChange: handleInputChange,
-          onFocus: () => searchTerm.length >= minSearchLength && setShowSuggestions(true),
+          onFocus: () => !readOnly && searchTerm.length >= minSearchLength && setShowSuggestions(true),
           onKeyDown: handleKeyDown,
           autoComplete: 'off',
         }}

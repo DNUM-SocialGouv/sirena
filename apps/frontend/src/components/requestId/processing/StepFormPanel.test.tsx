@@ -374,7 +374,7 @@ describe('StepFormPanel', () => {
     ).toBeInTheDocument();
     expect(screen.queryByText(/Afficher l’étape pour les autres entités affectées/)).not.toBeInTheDocument();
     // Step metadata stays locked...
-    expect(screen.getByLabelText("Nom de l'étape (obligatoire)")).toBeDisabled();
+    expect(screen.getByLabelText(/Nom de l'étape/)).toHaveAttribute('readonly');
     expect(screen.getByLabelText('Fait')).toBeDisabled();
     expect(screen.getByLabelText('À faire')).toBeDisabled();
     // ...but notes and attachments can still be added.
@@ -402,7 +402,7 @@ describe('StepFormPanel', () => {
     ).toBeInTheDocument();
     expect(screen.queryByText(/Afficher l’étape pour les autres entités affectées/)).not.toBeInTheDocument();
     // Name and deletion stay locked (acknowledgment = system step)...
-    expect(screen.getByLabelText("Nom de l'étape (obligatoire)")).toBeDisabled();
+    expect(screen.getByLabelText(/Nom de l'étape/)).toHaveAttribute('readonly');
     expect(screen.queryByRole('button', { name: "Supprimer l'étape" })).not.toBeInTheDocument();
     // ...but status and date remain editable since the AR has not been sent.
     expect(screen.getByLabelText('Fait')).toBeEnabled();
