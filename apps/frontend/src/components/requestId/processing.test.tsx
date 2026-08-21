@@ -382,6 +382,139 @@ describe('Processing', () => {
     ]);
   });
 
+  it('uses a Select with every typed option from five affected entities', () => {
+    otherEntitiesAffected = {
+      otherEntites: [
+        {
+          id: 'DREETS-GRAND-EST',
+          statutId: 'EN_COURS',
+          label: 'DREETS Grand Est',
+          nomComplet: 'DREETS Grand Est',
+          entiteTypeId: 'DREETS',
+        },
+        {
+          id: 'CD-CALVADOS',
+          statutId: 'EN_COURS',
+          label: 'Conseil départemental du Calvados',
+          nomComplet: 'Conseil départemental du Calvados',
+          entiteTypeId: 'CD',
+        },
+        {
+          id: 'ARS-IDF',
+          statutId: 'EN_COURS',
+          label: 'ARS Île-de-France',
+          nomComplet: 'ARS Île-de-France',
+          entiteTypeId: 'ARS',
+        },
+        {
+          id: 'DDETS-RHONE',
+          statutId: 'EN_COURS',
+          label: 'DDETS du Rhône',
+          nomComplet: 'DDETS du Rhône',
+          entiteTypeId: 'DDETS',
+        },
+      ],
+      subAdministrativeEntites: [],
+    };
+
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
+    const select = screen.getByRole('combobox', { name: 'Filtrer par entité' });
+    expect(
+      within(select)
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual([
+      'Toutes les entités',
+      'ARS — ARS courante',
+      'ARS — ARS Île-de-France',
+      'CD — Conseil départemental du Calvados',
+      'DDETS — DDETS du Rhône',
+      'DREETS — DREETS Grand Est',
+    ]);
+  });
+
+  it('applies a Select URL selection and removes it with all entities', async () => {
+    selectedEntityId = 'OTHER-ENTITY';
+    otherEntitiesAffected = {
+      otherEntites: [
+        {
+          id: 'OTHER-ENTITY',
+          statutId: 'EN_COURS',
+          label: 'CD du Calvados',
+          nomComplet: 'CD du Calvados',
+          entiteTypeId: 'CD',
+        },
+        ...['A', 'B', 'C'].map((suffix) => ({
+          id: `ENTITY-${suffix}`,
+          statutId: 'EN_COURS',
+          label: `Entité ${suffix}`,
+          nomComplet: `Entité ${suffix}`,
+          entiteTypeId: 'ARS',
+        })),
+      ],
+      subAdministrativeEntites: [],
+    };
+    requeteEtapes = [
+      {
+        ...foreignEtapePartagee,
+        id: 'current-step',
+        nom: 'Étape courante',
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        entiteId: 'CURRENT-ENTITY',
+        attributedEntiteAdministrative: {
+          id: 'CURRENT-ENTITY',
+          nomComplet: 'ARS courante',
+          entiteTypeId: 'ARS',
+        },
+      },
+      foreignEtapePartagee,
+    ];
+    const user = userEvent.setup();
+
+    const { rerender } = render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    const select = screen.getByRole('combobox', { name: 'Filtrer par entité' });
+    expect(select).toHaveValue('OTHER-ENTITY');
+    expect(screen.queryByRole('heading', { name: 'ARS - Étape courante' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'CD - Clôture' })).toBeInTheDocument();
+
+    await user.selectOptions(select, '');
+    const [{ search, replace }] = navigate.mock.calls[0] as [
+      { search: (previous: Record<string, unknown>) => Record<string, unknown>; replace?: boolean },
+    ];
+    expect(search({ entiteId: 'OTHER-ENTITY' })).toEqual({ entiteId: undefined });
+    expect(replace).not.toBe(true);
+
+    selectedEntityId = undefined;
+    rerender(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+    expect(screen.getByRole('heading', { name: 'ARS - Étape courante' })).toBeInTheDocument();
+  });
+
+  it('stores a Select entity change in URL history', async () => {
+    otherEntitiesAffected = {
+      otherEntites: ['A', 'B', 'C', 'D'].map((suffix) => ({
+        id: `ENTITY-${suffix}`,
+        statutId: 'EN_COURS',
+        label: `Entité ${suffix}`,
+        nomComplet: `Entité ${suffix}`,
+        entiteTypeId: 'ARS',
+      })),
+      subAdministrativeEntites: [],
+    };
+    const user = userEvent.setup();
+
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Filtrer par entité' }), 'ENTITY-C');
+
+    const [{ search, replace }] = navigate.mock.calls[0] as [
+      { search: (previous: Record<string, unknown>) => Record<string, unknown>; replace?: boolean },
+    ];
+    expect(search({ preserved: 'value' })).toEqual({ preserved: 'value', entiteId: 'ENTITY-C' });
+    expect(replace).not.toBe(true);
+  });
+
   it('keeps the selected entity steps and every neutral event in backend order', () => {
     selectedEntityId = 'OTHER-ARS';
     otherEntitiesAffected = {
