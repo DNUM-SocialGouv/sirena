@@ -1,5 +1,6 @@
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { forwardRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
@@ -20,6 +21,8 @@ let otherEntitiesAffected: {
   subAdministrativeEntites: [];
 } = { otherEntites: [], subAdministrativeEntites: [] };
 let canEditRequest = false;
+let selectedEntityId: string | undefined;
+const navigate = vi.fn();
 const foreignEtapePartagee = {
   id: 'foreign-closure',
   requeteId: 'REQ-1',
@@ -65,7 +68,11 @@ let requeteEtapes: RequeteEtapeFixture[] = [foreignEtapePartagee];
 
 vi.mock('@tanstack/react-router', async (importOriginal) => {
   const original = await importOriginal<typeof import('@tanstack/react-router')>();
-  return { ...original, useNavigate: () => vi.fn() };
+  return {
+    ...original,
+    useNavigate: () => navigate,
+    useSearch: () => ({ entiteId: selectedEntityId }),
+  };
 });
 
 vi.mock('@/hooks/queries/processingSteps.hook', () => ({
@@ -148,6 +155,8 @@ describe('Processing', () => {
     processingMeta = { total: 1, isMultiEntite: true, etapePartageeEnabled: true };
     otherEntitiesAffected = { otherEntites: [], subAdministrativeEntites: [] };
     canEditRequest = false;
+    selectedEntityId = undefined;
+    navigate.mockReset();
     requeteEtapes = [foreignEtapePartagee];
   });
 
@@ -176,13 +185,68 @@ describe('Processing', () => {
     expect(screen.getByText('Filtrer par entité')).toHaveClass('fr-segmented__legend--inline');
     expect(screen.getByRole('radio', { name: 'Toutes les entités' })).toBeChecked();
     const currentEntityRadio = screen.getByRole('radio', { name: 'ARS ARS courante' });
-    const currentEntityLabel = currentEntityRadio.labels?.[0];
+    const currentEntityLabel = (currentEntityRadio as HTMLInputElement).labels?.[0];
     expect(currentEntityLabel).toBeTruthy();
     expect(within(currentEntityLabel as HTMLLabelElement).getByText('ARS')).toHaveClass('fr-tag');
     expect(currentEntityLabel?.querySelector('p')).not.toBeInTheDocument();
   });
 
-  it('distinguishes the current entity color from another entity of the same type', () => {
+  it('stores a selected entity in the URL history', async () => {
+    otherEntitiesAffected = {
+      otherEntites: [
+        {
+          id: 'OTHER-ARS',
+          statutId: 'EN_COURS',
+          label: 'ARS Île-de-France',
+          nomComplet: 'ARS Île-de-France',
+          entiteTypeId: 'ARS',
+        },
+      ],
+      subAdministrativeEntites: [],
+    };
+    const user = userEvent.setup();
+
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+    await user.click(screen.getByRole('radio', { name: 'ARS ARS Île-de-France' }));
+
+    expect(navigate).toHaveBeenCalledOnce();
+    const [{ search, replace }] = navigate.mock.calls[0] as [
+      { search: (previous: Record<string, unknown>) => Record<string, unknown>; replace?: boolean },
+    ];
+    expect(search({ preserved: 'value' })).toEqual({ preserved: 'value', entiteId: 'OTHER-ARS' });
+    expect(replace).not.toBe(true);
+  });
+
+  it('restores the URL selection and removes it when all entities are selected', async () => {
+    selectedEntityId = 'OTHER-ARS';
+    otherEntitiesAffected = {
+      otherEntites: [
+        {
+          id: 'OTHER-ARS',
+          statutId: 'EN_COURS',
+          label: 'ARS Île-de-France',
+          nomComplet: 'ARS Île-de-France',
+          entiteTypeId: 'ARS',
+        },
+      ],
+      subAdministrativeEntites: [],
+    };
+    const user = userEvent.setup();
+
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(screen.getByRole('radio', { name: 'ARS ARS Île-de-France' })).toBeChecked();
+    await user.click(screen.getByRole('radio', { name: 'Toutes les entités' }));
+    const [{ search }] = navigate.mock.calls[0] as [
+      { search: (previous: Record<string, unknown>) => Record<string, unknown> },
+    ];
+    expect(search({ entiteId: 'OTHER-ARS', preserved: 'value' })).toEqual({
+      entiteId: undefined,
+      preserved: 'value',
+    });
+  });
+
+  it('distinguishes the viewer entity color from another entity of the same type', () => {
     otherEntitiesAffected = {
       otherEntites: [
         {
@@ -198,8 +262,10 @@ describe('Processing', () => {
 
     render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
-    const currentEntityLabel = screen.getByRole('radio', { name: 'ARS ARS courante' }).labels?.[0];
-    const otherEntityLabel = screen.getByRole('radio', { name: 'ARS ARS Île-de-France' }).labels?.[0];
+    const currentEntityLabel = (screen.getByRole('radio', { name: 'ARS ARS courante' }) as HTMLInputElement)
+      .labels?.[0];
+    const otherEntityLabel = (screen.getByRole('radio', { name: 'ARS ARS Île-de-France' }) as HTMLInputElement)
+      .labels?.[0];
     expect(within(currentEntityLabel as HTMLLabelElement).getByText('ARS')).toHaveClass('color-pink-tuile');
     expect(within(otherEntityLabel as HTMLLabelElement).getByText('ARS')).toHaveClass('color-yellow-moutarde');
   });
@@ -240,6 +306,84 @@ describe('Processing', () => {
       screen.getByRole('radio', { name: 'CD Conseil départemental du Rhône' }),
       screen.getByRole('radio', { name: 'DD Direction départementale de l’Ain' }),
     ]);
+  });
+
+  it('keeps the selected entity steps and every neutral event in backend order', () => {
+    selectedEntityId = 'OTHER-ARS';
+    otherEntitiesAffected = {
+      otherEntites: [
+        {
+          id: 'OTHER-ARS',
+          statutId: 'EN_COURS',
+          label: 'ARS Île-de-France',
+          nomComplet: 'ARS Île-de-France',
+          entiteTypeId: 'ARS',
+        },
+      ],
+      subAdministrativeEntites: [],
+    };
+    requeteEtapes = [
+      {
+        ...foreignEtapePartagee,
+        id: 'current-step',
+        nom: 'Étape courante',
+        entiteId: 'CURRENT-ENTITY',
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        attributedEntiteAdministrative: {
+          id: 'CURRENT-ENTITY',
+          nomComplet: 'ARS courante',
+          entiteTypeId: 'ARS',
+        },
+      },
+      {
+        ...foreignEtapePartagee,
+        id: 'neutral-creation',
+        type: REQUETE_ETAPE_TYPES.CREATION,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        timelineItemType: 'NEUTRAL_EVENT',
+        attributedEntiteAdministrative: null,
+      },
+      {
+        ...foreignEtapePartagee,
+        id: 'selected-entity-step',
+        nom: 'Étape étrangère sélectionnée',
+        entiteId: 'OTHER-ARS',
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        attributedEntiteAdministrative: {
+          id: 'OTHER-ARS',
+          nomComplet: 'ARS Île-de-France',
+          entiteTypeId: 'ARS',
+        },
+      },
+      {
+        ...foreignEtapePartagee,
+        id: 'neutral-automatic-acknowledgment',
+        type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        acknowledgmentSendMode: 'AUTOMATIC',
+        acknowledgmentSendOperationId: '11111111-1111-4111-8111-111111111111',
+        timelineItemType: 'NEUTRAL_EVENT',
+        attributedEntiteAdministrative: null,
+      },
+      {
+        ...foreignEtapePartagee,
+        id: 'other-foreign-step',
+        nom: 'Étape d’une autre entité',
+        entiteId: 'THIRD-ENTITY',
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        attributedEntiteAdministrative: {
+          id: 'THIRD-ENTITY',
+          nomComplet: 'CD du Calvados',
+          entiteTypeId: 'CD',
+        },
+      },
+    ];
+
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(
+      [...document.querySelectorAll('[data-timeline-item-type] h3')].map((heading) => heading.textContent?.trim()),
+    ).toEqual(['Création de la requête', 'ARS - Étape étrangère sélectionnée', "Envoi de l'accusé de réception"]);
   });
 
   it("does not treat another entity's shared closure step as the current entity's closed status", () => {

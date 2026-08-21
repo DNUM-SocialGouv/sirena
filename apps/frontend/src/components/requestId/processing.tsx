@@ -2,7 +2,7 @@ import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { SegmentedControl, type SegmentedControlProps } from '@codegouvfr/react-dsfr/SegmentedControl';
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 import { EntiteTypeBadge } from '@/components/common/EntiteTypeBadge';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
@@ -25,7 +25,8 @@ interface ProcessingProps {
 }
 
 export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
-  const navigate = useNavigate();
+  const navigate = useNavigate({ from: '/request/$requestId/processing' });
+  const { entiteId: selectedEntityId } = useSearch({ from: '/_auth/_user/request/$requestId/processing' });
   const stepFormPanelRef = useRef<StepFormPanelRef>(null);
   const sendAcknowledgmentDrawerRef = useRef<SendAcknowledgmentDrawerRef>(null);
   const closeRequeteModalRef = useRef<CloseRequeteModalRef>(null);
@@ -66,7 +67,11 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
   const entityFilterSegments = [
     {
       label: 'Toutes les entités',
-      nativeInputProps: { value: '', defaultChecked: true },
+      nativeInputProps: {
+        value: '',
+        checked: selectedEntityId === undefined,
+        onChange: () => navigate({ search: (previous) => ({ ...previous, entiteId: undefined }) }),
+      },
     },
     ...entityFilterOptions.map((entity) => ({
       label: (
@@ -81,9 +86,14 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
           <span>{entity.nomComplet}</span>
         </span>
       ),
-      nativeInputProps: { value: entity.id, 'aria-label': `${entity.entiteTypeId} ${entity.nomComplet}` },
+      nativeInputProps: {
+        value: entity.id,
+        checked: selectedEntityId === entity.id,
+        onChange: () => navigate({ search: (previous) => ({ ...previous, entiteId: entity.id }) }),
+        'aria-label': `${entity.entiteTypeId} ${entity.nomComplet}`,
+      },
     })),
-  ] as SegmentedControlProps.Segments;
+  ] as unknown as SegmentedControlProps.Segments;
 
   useEffect(() => {
     if (
@@ -111,8 +121,16 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
           {({ data }) => {
             const isManualRequest = !!requestQuery.data?.requete?.createdById;
             const isMultiEntite = Boolean(data.meta.isMultiEntite && data.meta.etapePartageeEnabled);
+            const visibleSteps =
+              isMultiEntite && selectedEntityId
+                ? data.data.filter(
+                    (step) =>
+                      step.timelineItemType === 'NEUTRAL_EVENT' ||
+                      step.attributedEntiteAdministrative?.id === selectedEntityId,
+                  )
+                : data.data;
 
-            return data.data.map((step) => {
+            return visibleSteps.map((step) => {
               const isAcknowledgmentSendable =
                 isManualRequest &&
                 step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT &&
