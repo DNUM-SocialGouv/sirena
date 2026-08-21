@@ -35,16 +35,22 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
   const reopenRequeteButtonRef = useRef<HTMLButtonElement>(null);
   const queryProcessingSteps = useProcessingSteps(requestId || '');
   const { canEdit, hasEditRole } = useCanEdit({ requeteId: requestId });
-  const { data: { otherEntites = [], subAdministrativeEntites = [] } = {} } =
-    useRequeteOtherEntitiesAffected(requestId);
+  const otherEntitiesQuery = useRequeteOtherEntitiesAffected(requestId);
+  const { otherEntites = [], subAdministrativeEntites = [] } = otherEntitiesQuery.data ?? {};
 
   const isRequestClosed = requestQuery.data?.statutId === REQUETE_STATUT_TYPES.CLOTUREE;
 
-  const isEntityFilterVisible = Boolean(
+  const isEntityFilterEligible = Boolean(
     requestId &&
       requestQuery.data &&
       queryProcessingSteps.data?.meta.isMultiEntite &&
       queryProcessingSteps.data.meta.etapePartageeEnabled,
+  );
+  const areOtherEntitiesReady = Boolean(
+    otherEntitiesQuery.data &&
+      !otherEntitiesQuery.isLoading &&
+      !otherEntitiesQuery.isPlaceholderData &&
+      !otherEntitiesQuery.isError,
   );
 
   const otherEntitiesById = new Map(otherEntites.map((entity) => [entity.id, entity]));
@@ -64,12 +70,25 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
       ]
     : [];
 
+  const validEntityIds = new Set(entityFilterOptions.map((entity) => entity.id));
+  const activeSelectedEntityId =
+    isEntityFilterEligible && areOtherEntitiesReady && selectedEntityId && validEntityIds.has(selectedEntityId)
+      ? selectedEntityId
+      : undefined;
+  const isEntityFilterVisible = isEntityFilterEligible && areOtherEntitiesReady;
+  const shouldClearEntityFilter = Boolean(
+    selectedEntityId &&
+      queryProcessingSteps.data &&
+      requestQuery.data &&
+      (!isEntityFilterEligible || (areOtherEntitiesReady && !validEntityIds.has(selectedEntityId))),
+  );
+
   const entityFilterSegments = [
     {
       label: 'Toutes les entités',
       nativeInputProps: {
         value: '',
-        checked: selectedEntityId === undefined,
+        checked: activeSelectedEntityId === undefined,
         onChange: () => navigate({ search: (previous) => ({ ...previous, entiteId: undefined }) }),
       },
     },
@@ -88,12 +107,18 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
       ),
       nativeInputProps: {
         value: entity.id,
-        checked: selectedEntityId === entity.id,
+        checked: activeSelectedEntityId === entity.id,
         onChange: () => navigate({ search: (previous) => ({ ...previous, entiteId: entity.id }) }),
         'aria-label': `${entity.entiteTypeId} ${entity.nomComplet}`,
       },
     })),
   ] as unknown as SegmentedControlProps.Segments;
+
+  useEffect(() => {
+    if (shouldClearEntityFilter) {
+      navigate({ search: (previous) => ({ ...previous, entiteId: undefined }), replace: true });
+    }
+  }, [navigate, shouldClearEntityFilter]);
 
   useEffect(() => {
     if (
@@ -122,11 +147,11 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
             const isManualRequest = !!requestQuery.data?.requete?.createdById;
             const isMultiEntite = Boolean(data.meta.isMultiEntite && data.meta.etapePartageeEnabled);
             const visibleSteps =
-              isMultiEntite && selectedEntityId
+              isMultiEntite && activeSelectedEntityId
                 ? data.data.filter(
                     (step) =>
                       step.timelineItemType === 'NEUTRAL_EVENT' ||
-                      step.attributedEntiteAdministrative?.id === selectedEntityId,
+                      step.attributedEntiteAdministrative?.id === activeSelectedEntityId,
                   )
                 : data.data;
 

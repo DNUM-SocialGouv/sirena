@@ -1,5 +1,5 @@
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { forwardRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -22,6 +22,7 @@ let otherEntitiesAffected: {
 } = { otherEntites: [], subAdministrativeEntites: [] };
 let canEditRequest = false;
 let selectedEntityId: string | undefined;
+let otherEntitiesQueryState = { isLoading: false, isError: false, isPlaceholderData: false };
 const navigate = vi.fn();
 const foreignEtapePartagee = {
   id: 'foreign-closure',
@@ -87,7 +88,7 @@ vi.mock('@/hooks/queries/processingSteps.hook', () => ({
 }));
 
 vi.mock('@/hooks/queries/useRequeteDetails', () => ({
-  useRequeteOtherEntitiesAffected: () => ({ data: otherEntitiesAffected }),
+  useRequeteOtherEntitiesAffected: () => ({ data: otherEntitiesAffected, ...otherEntitiesQueryState }),
 }));
 
 vi.mock('@/hooks/useCanEdit', () => ({
@@ -156,6 +157,7 @@ describe('Processing', () => {
     otherEntitiesAffected = { otherEntites: [], subAdministrativeEntites: [] };
     canEditRequest = false;
     selectedEntityId = undefined;
+    otherEntitiesQueryState = { isLoading: false, isError: false, isPlaceholderData: false };
     navigate.mockReset();
     requeteEtapes = [foreignEtapePartagee];
   });
@@ -189,6 +191,78 @@ describe('Processing', () => {
     expect(currentEntityLabel).toBeTruthy();
     expect(within(currentEntityLabel as HTMLLabelElement).getByText('ARS')).toHaveClass('fr-tag');
     expect(currentEntityLabel?.querySelector('p')).not.toBeInTheDocument();
+  });
+
+  it('replaces an unknown entity filter with the unfiltered URL without hiding the chronology', async () => {
+    selectedEntityId = 'UNKNOWN-ENTITY';
+
+    const { rerender } = render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(screen.getByRole('radio', { name: 'Toutes les entités' })).toBeChecked();
+    expect(screen.getByRole('heading', { name: 'CD - Clôture' })).toBeInTheDocument();
+    await waitFor(() => expect(navigate).toHaveBeenCalledOnce());
+    const [{ search, replace }] = navigate.mock.calls[0] as [
+      { search: (previous: Record<string, unknown>) => Record<string, unknown>; replace?: boolean },
+    ];
+    expect(search({ entiteId: 'UNKNOWN-ENTITY', preserved: 'value' })).toEqual({
+      entiteId: undefined,
+      preserved: 'value',
+    });
+    expect(replace).toBe(true);
+
+    selectedEntityId = undefined;
+    rerender(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+    expect(navigate).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ['the feature flag is disabled', { total: 1, isMultiEntite: true, etapePartageeEnabled: false }],
+    ['the request becomes mono-entity', { total: 1, isMultiEntite: false, etapePartageeEnabled: true }],
+  ])('removes a now-meaningless filter when %s', async (_scenario, meta) => {
+    selectedEntityId = 'OTHER-ENTITY';
+    processingMeta = meta;
+    otherEntitiesAffected = {
+      otherEntites: [
+        {
+          id: 'OTHER-ENTITY',
+          statutId: 'EN_COURS',
+          label: 'CD du Calvados',
+          nomComplet: 'CD du Calvados',
+          entiteTypeId: 'CD',
+        },
+      ],
+      subAdministrativeEntites: [],
+    };
+
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(screen.queryByText('Filtrer par entité')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Clôture' })).toBeInTheDocument();
+    await waitFor(() => expect(navigate).toHaveBeenCalledOnce());
+    expect(navigate.mock.calls[0]?.[0]).toMatchObject({ replace: true });
+  });
+
+  it('hides a partial filter and preserves the full chronology while affected entities load', () => {
+    selectedEntityId = 'OTHER-ENTITY';
+    otherEntitiesQueryState = { isLoading: true, isError: false, isPlaceholderData: true };
+
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(screen.queryByText('Filtrer par entité')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'CD - Clôture' })).toBeInTheDocument();
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('hides the filter without duplicating errors or filtering chronology when affected entities fail', () => {
+    selectedEntityId = 'OTHER-ENTITY';
+    otherEntitiesQueryState = { isLoading: false, isError: true, isPlaceholderData: false };
+
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(screen.queryByText('Filtrer par entité')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'CD - Clôture' })).toBeInTheDocument();
+    expect(screen.queryByText('Erreur lors du chargement des autres entités affectées.')).not.toBeInTheDocument();
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('stores a selected entity in the URL history', async () => {
