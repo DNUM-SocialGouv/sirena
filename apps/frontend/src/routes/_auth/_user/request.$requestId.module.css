@@ -3,6 +3,12 @@
   border: 1px solid var(--border-default-grey);
 }
 
+.entity-filter-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .timeline-container {
   position: relative;
   padding-left: 2rem;

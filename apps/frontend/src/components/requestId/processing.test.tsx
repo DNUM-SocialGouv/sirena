@@ -1,13 +1,24 @@
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { forwardRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { Processing } from './processing';
 
 type RequeteEtapeFixture = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
+type OtherEntityAffectedFixture = {
+  id: string;
+  statutId: string;
+  label: string;
+  nomComplet: string;
+  entiteTypeId: string;
+};
 
 let processingMeta = { total: 1, isMultiEntite: true, etapePartageeEnabled: true };
+let otherEntitiesAffected: {
+  otherEntites: OtherEntityAffectedFixture[];
+  subAdministrativeEntites: [];
+} = { otherEntites: [], subAdministrativeEntites: [] };
 let canEditRequest = false;
 const foreignEtapePartagee = {
   id: 'foreign-closure',
@@ -69,7 +80,7 @@ vi.mock('@/hooks/queries/processingSteps.hook', () => ({
 }));
 
 vi.mock('@/hooks/queries/useRequeteDetails', () => ({
-  useRequeteOtherEntitiesAffected: () => ({ data: { subAdministrativeEntites: [] } }),
+  useRequeteOtherEntitiesAffected: () => ({ data: otherEntitiesAffected }),
 }));
 
 vi.mock('@/hooks/useCanEdit', () => ({
@@ -84,10 +95,6 @@ vi.mock('@/components/queryStateHandler/queryStateHandler', () => ({
     children: (value: { data: unknown }) => React.ReactNode;
     query: { data: unknown };
   }) => children({ data: query.data }),
-}));
-
-vi.mock('@/components/common/EntiteTypeBadge', () => ({
-  EntiteTypeBadge: () => null,
 }));
 
 vi.mock('./processing/AddFilesClotureDrawer', () => ({
@@ -139,6 +146,7 @@ vi.mock('./sections/OtherEntitesAffected', () => ({ OtherEntitiesAffected: () =>
 describe('Processing', () => {
   beforeEach(() => {
     processingMeta = { total: 1, isMultiEntite: true, etapePartageeEnabled: true };
+    otherEntitiesAffected = { otherEntites: [], subAdministrativeEntites: [] };
     canEditRequest = false;
     requeteEtapes = [foreignEtapePartagee];
   });
@@ -152,6 +160,87 @@ describe('Processing', () => {
     },
     error: null,
   } as never;
+
+  it('labels the treatment chronology as Étapes de traitement', () => {
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    const heading = screen.getByRole('heading', { name: 'Étapes de traitement' });
+    expect(heading).toBeInTheDocument();
+    expect(within(heading.parentElement as HTMLElement).getByText('ARS courante')).toBeInTheDocument();
+  });
+
+  it('shows the entity filter with all entities selected for an eligible request', () => {
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(screen.getByRole('group', { name: 'Filtrer par entité' })).toBeInTheDocument();
+    expect(screen.getByText('Filtrer par entité')).toHaveClass('fr-segmented__legend--inline');
+    expect(screen.getByRole('radio', { name: 'Toutes les entités' })).toBeChecked();
+    const currentEntityRadio = screen.getByRole('radio', { name: 'ARS ARS courante' });
+    const currentEntityLabel = currentEntityRadio.labels?.[0];
+    expect(currentEntityLabel).toBeTruthy();
+    expect(within(currentEntityLabel as HTMLLabelElement).getByText('ARS')).toHaveClass('fr-tag');
+    expect(currentEntityLabel?.querySelector('p')).not.toBeInTheDocument();
+  });
+
+  it('distinguishes the current entity color from another entity of the same type', () => {
+    otherEntitiesAffected = {
+      otherEntites: [
+        {
+          id: 'OTHER-ARS',
+          statutId: 'EN_COURS',
+          label: 'ARS Île-de-France',
+          nomComplet: 'ARS Île-de-France',
+          entiteTypeId: 'ARS',
+        },
+      ],
+      subAdministrativeEntites: [],
+    };
+
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    const currentEntityLabel = screen.getByRole('radio', { name: 'ARS ARS courante' }).labels?.[0];
+    const otherEntityLabel = screen.getByRole('radio', { name: 'ARS ARS Île-de-France' }).labels?.[0];
+    expect(within(currentEntityLabel as HTMLLabelElement).getByText('ARS')).toHaveClass('color-pink-tuile');
+    expect(within(otherEntityLabel as HTMLLabelElement).getByText('ARS')).toHaveClass('color-yellow-moutarde');
+  });
+
+  it('lists the current entity first, then every other affected entity sorted by complete name', () => {
+    otherEntitiesAffected = {
+      otherEntites: [
+        {
+          id: 'ENTITY-Z',
+          statutId: 'EN_COURS',
+          label: 'CD Z',
+          nomComplet: 'Conseil départemental du Rhône',
+          entiteTypeId: 'CD',
+        },
+        {
+          id: 'ENTITY-A',
+          statutId: 'EN_COURS',
+          label: 'DD A',
+          nomComplet: 'Direction départementale de l’Ain',
+          entiteTypeId: 'DD',
+        },
+        {
+          id: 'CURRENT-ENTITY',
+          statutId: 'EN_COURS',
+          label: 'Doublon',
+          nomComplet: 'Entité courante en double',
+          entiteTypeId: 'ARS',
+        },
+      ],
+      subAdministrativeEntites: [],
+    };
+
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(screen.getAllByRole('radio')).toEqual([
+      screen.getByRole('radio', { name: 'Toutes les entités' }),
+      screen.getByRole('radio', { name: 'ARS ARS courante' }),
+      screen.getByRole('radio', { name: 'CD Conseil départemental du Rhône' }),
+      screen.getByRole('radio', { name: 'DD Direction départementale de l’Ain' }),
+    ]);
+  });
 
   it("does not treat another entity's shared closure step as the current entity's closed status", () => {
     render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
@@ -241,6 +330,7 @@ describe('Processing', () => {
     expect(screen.getByText('À faire')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: "Modifier l'étape" })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Envoyer' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Filtrer par entité' })).not.toBeInTheDocument();
   });
 
   it('renders each automatic send as one neutral immutable event with one exact source document', () => {
@@ -324,5 +414,6 @@ describe('Processing', () => {
 
     expect(document.querySelector('[data-entity-relation]')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Clôture' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Filtrer par entité' })).not.toBeInTheDocument();
   });
 });

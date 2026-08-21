@@ -1,5 +1,6 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
+import { SegmentedControl, type SegmentedControlProps } from '@codegouvfr/react-dsfr/SegmentedControl';
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
@@ -33,9 +34,56 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
   const reopenRequeteButtonRef = useRef<HTMLButtonElement>(null);
   const queryProcessingSteps = useProcessingSteps(requestId || '');
   const { canEdit, hasEditRole } = useCanEdit({ requeteId: requestId });
-  const { data: { subAdministrativeEntites = [] } = {} } = useRequeteOtherEntitiesAffected(requestId);
+  const { data: { otherEntites = [], subAdministrativeEntites = [] } = {} } =
+    useRequeteOtherEntitiesAffected(requestId);
 
   const isRequestClosed = requestQuery.data?.statutId === REQUETE_STATUT_TYPES.CLOTUREE;
+
+  const isEntityFilterVisible = Boolean(
+    requestId &&
+      requestQuery.data &&
+      queryProcessingSteps.data?.meta.isMultiEntite &&
+      queryProcessingSteps.data.meta.etapePartageeEnabled,
+  );
+
+  const otherEntitiesById = new Map(otherEntites.map((entity) => [entity.id, entity]));
+
+  if (requestQuery.data) {
+    otherEntitiesById.delete(requestQuery.data.entiteId);
+  }
+
+  const entityFilterOptions = requestQuery.data
+    ? [
+        {
+          id: requestQuery.data.entiteId,
+          entiteTypeId: requestQuery.data.entite.entiteTypeId,
+          nomComplet: requestQuery.data.entite.nomComplet,
+        },
+        ...[...otherEntitiesById.values()].sort((left, right) => left.nomComplet.localeCompare(right.nomComplet, 'fr')),
+      ]
+    : [];
+
+  const entityFilterSegments = [
+    {
+      label: 'Toutes les entités',
+      nativeInputProps: { value: '', defaultChecked: true },
+    },
+    ...entityFilterOptions.map((entity) => ({
+      label: (
+        <span className={styles['entity-filter-option']}>
+          <EntiteTypeBadge
+            as="span"
+            entiteTypeId={entity.entiteTypeId}
+            label={entity.entiteTypeId}
+            relation={entity.id === requestQuery.data?.entiteId ? 'owner' : 'foreign'}
+            className="fr-mb-0"
+          />
+          <span>{entity.nomComplet}</span>
+        </span>
+      ),
+      nativeInputProps: { value: entity.id, 'aria-label': `${entity.entiteTypeId} ${entity.nomComplet}` },
+    })),
+  ] as SegmentedControlProps.Segments;
 
   useEffect(() => {
     if (
@@ -122,7 +170,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                   className="fr-col"
                   style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}
                 >
-                  <h2 className="fr-mb-0 fr-text--xl">Traitement</h2>
+                  <h2 className="fr-mb-0 fr-text--xl">Étapes de traitement</h2>
                   {requestQuery.data ? (
                     <>
                       <EntiteTypeBadge
@@ -164,6 +212,15 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                   </div>
                 )}
               </div>
+              {isEntityFilterVisible && requestQuery.data ? (
+                <SegmentedControl
+                  className="fr-mb-3w"
+                  legend="Filtrer par entité"
+                  inlineLegend
+                  name="entiteId"
+                  segments={entityFilterSegments}
+                />
+              ) : null}
               {content}
             </div>
           </div>
