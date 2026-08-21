@@ -1,10 +1,9 @@
 import Button from '@codegouvfr/react-dsfr/Button';
-import Input from '@codegouvfr/react-dsfr/Input';
 import Select from '@codegouvfr/react-dsfr/Select';
 import { ROLES, type Role, STATUT_TYPES, type StatutType, statutTypes } from '@sirena/common/constants';
 import { getAssignableRoles } from '@sirena/common/utils';
 import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { z } from 'zod';
 import { usePatchUser } from '@/hooks/mutations/updateUser.hook';
 import { useUserById } from '@/hooks/queries/users.hook';
@@ -14,6 +13,7 @@ import { useUserStore } from '@/stores/userStore';
 import './$userId.css';
 import { Toast } from '@sirena/ui';
 import { useQuery } from '@tanstack/react-query';
+import { ReadOnlyField } from '@/components/common/ReadOnlyField';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { EntityHierarchySelector } from '@/components/userId/entityHierarchySelector';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
@@ -70,6 +70,7 @@ function SubmitButton({ isPending }: { isPending: boolean }) {
 
 function RouteComponent() {
   const { userId } = Route.useParams();
+  const fieldId = useId();
   const toastManager = Toast.useToastManager();
   const navigate = useNavigate();
   const router = useRouter();
@@ -183,27 +184,35 @@ function RouteComponent() {
                   <form onSubmit={handleSubmit}>
                     <fieldset className="fr-fieldset">
                       <legend className="fr-fieldset__legend">Identifiant de l'utilisateur</legend>
-                      <Input
-                        className="fr-fieldset__content"
-                        label="Nom"
-                        disabled={true}
-                        nativeInputProps={{ defaultValue: user.nom }}
-                      />
-                      <Input
-                        className="fr-fieldset__content"
-                        label="Prénom"
-                        disabled={true}
-                        nativeInputProps={{ defaultValue: user.prenom }}
-                      />
+                      <div className="fr-fieldset__content">
+                        <ReadOnlyField
+                          id={`${fieldId}-nom`}
+                          className="fr-mb-3w"
+                          label="Nom"
+                          hintText="Ce champ n’est pas modifiable ici."
+                          value={user.nom}
+                        />
+                      </div>
+                      <div className="fr-fieldset__content">
+                        <ReadOnlyField
+                          id={`${fieldId}-prenom`}
+                          className="fr-mb-3w"
+                          label="Prénom"
+                          hintText="Ce champ n’est pas modifiable ici."
+                          value={user.prenom}
+                        />
+                      </div>
                     </fieldset>
                     <fieldset className="fr-fieldset">
                       <legend className="fr-fieldset__legend">Coordonnées de l'utilisateur</legend>
-                      <Input
-                        className="fr-fieldset__content"
-                        label="Email"
-                        disabled={true}
-                        nativeInputProps={{ defaultValue: user.email }}
-                      />
+                      <div className="fr-fieldset__content">
+                        <ReadOnlyField
+                          id={`${fieldId}-email`}
+                          label="Email"
+                          hintText="Ce champ n’est pas modifiable ici."
+                          value={user.email}
+                        />
+                      </div>
                     </fieldset>
                     <EntityHierarchySelector id={user.entiteId} setLevel={handleSetEntite} />
                     <fieldset className="fr-fieldset">
