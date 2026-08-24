@@ -638,7 +638,7 @@ describe('RequeteEtapes.service.ts', () => {
         },
         skip: 0,
         take: 10,
-        orderBy: { createdAt: 'asc' },
+        orderBy: { createdAt: 'desc' },
       });
     });
 
@@ -752,7 +752,7 @@ describe('RequeteEtapes.service.ts', () => {
           },
         },
         skip: 0,
-        orderBy: { createdAt: 'asc' },
+        orderBy: { createdAt: 'desc' },
       });
     });
 
@@ -897,7 +897,7 @@ describe('RequeteEtapes.service.ts', () => {
       ]);
       expect(result.total).toBe(2);
       expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ orderBy: { createdAt: 'asc' } }),
+        expect.objectContaining({ orderBy: { createdAt: 'desc' } }),
       );
     });
 
@@ -933,7 +933,7 @@ describe('RequeteEtapes.service.ts', () => {
       );
       expect(result.total).toBe(2);
       expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ skip: 0, take: 10, orderBy: { createdAt: 'asc' } }),
+        expect.objectContaining({ skip: 0, take: 10, orderBy: { createdAt: 'desc' } }),
       );
     });
 

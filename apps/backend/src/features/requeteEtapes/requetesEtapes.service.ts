@@ -526,7 +526,7 @@ export const getRequeteEtapes = async (
     return { data: [], total: 0, isMultiEntite: false };
   }
 
-  const { offset = 0, limit, sort = 'createdAt', order = 'asc' } = query;
+  const { offset = 0, limit, sort = 'createdAt', order = 'desc' } = query;
 
   const where: Prisma.RequeteEtapeWhereInput = {
     requeteId,
