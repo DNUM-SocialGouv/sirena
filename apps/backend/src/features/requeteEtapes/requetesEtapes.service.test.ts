@@ -937,7 +937,7 @@ describe('RequeteEtapes.service.ts', () => {
       );
     });
 
-    it('sorts oldest-first by createdAt, not dateRealisation, after projecting one neutral creation', async () => {
+    it('sorts newest-first by createdAt, not dateRealisation, after projecting one neutral creation', async () => {
       const requestCreatedAt = new Date('2026-01-01T08:00:00.000Z');
       const makeTimelineStep = ({
         id,
@@ -1005,9 +1005,9 @@ describe('RequeteEtapes.service.ts', () => {
 
       expect(firstPage.total).toBe(4);
       expect(secondPage.total).toBe(4);
-      expect(firstPage.data.map((step) => step.id)).toEqual(['creation-initial-assignment', 'same-date-a']);
-      expect(secondPage.data.map((step) => step.id)).toEqual(['same-date-b', 'most-recent-by-created-at']);
-      expect(firstPage.data[0]).toMatchObject({
+      expect(firstPage.data.map((step) => step.id)).toEqual(['most-recent-by-created-at', 'same-date-a']);
+      expect(secondPage.data.map((step) => step.id)).toEqual(['same-date-b', 'creation-initial-assignment']);
+      expect(secondPage.data[1]).toMatchObject({
         id: 'creation-initial-assignment',
         type: 'CREATION',
         createdAt: requestCreatedAt,
@@ -1141,9 +1141,9 @@ describe('RequeteEtapes.service.ts', () => {
 
       expect(firstPage.total).toBe(4);
       expect(secondPage.total).toBe(4);
-      expect(firstPage.data.map((step) => step.id)).toEqual(['creation-source', 'first-send-foreign-source']);
-      expect(secondPage.data.map((step) => step.id)).toEqual(['manual-send', 'later-automatic-send']);
-      expect(firstPage.data[1]).toMatchObject({
+      expect(firstPage.data.map((step) => step.id)).toEqual(['later-automatic-send', 'manual-send']);
+      expect(secondPage.data.map((step) => step.id)).toEqual(['first-send-foreign-source', 'creation-source']);
+      expect(secondPage.data[0]).toMatchObject({
         id: 'first-send-foreign-source',
         createdAt: new Date('2026-06-01T08:00:00.000Z'),
         timelineItemType: 'NEUTRAL_EVENT',
@@ -1153,13 +1153,13 @@ describe('RequeteEtapes.service.ts', () => {
         editable: false,
         canOnlyEditNotes: false,
       });
-      expect(firstPage.data[1].uploadedFiles).toHaveLength(1);
-      expect(secondPage.data[0]).toMatchObject({
+      expect(secondPage.data[0].uploadedFiles).toHaveLength(1);
+      expect(firstPage.data[1]).toMatchObject({
         timelineItemType: 'ENTITY_STEP',
         attributedEntiteAdministrative: { id: 'reader-entite' },
         acknowledgmentSendMode: 'MANUAL',
       });
-      expect(secondPage.data[1]).toMatchObject({
+      expect(firstPage.data[0]).toMatchObject({
         timelineItemType: 'NEUTRAL_EVENT',
         attributedEntiteAdministrative: null,
         uploadedFiles: [{ id: 'later-document', fileName: 'accuse-reception.pdf' }],

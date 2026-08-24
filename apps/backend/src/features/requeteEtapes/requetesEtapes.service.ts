@@ -742,7 +742,7 @@ export const getRequeteEtapes = async (
     ...entityTimelineItems.filter((step) => !groupedAutomaticAcknowledgmentSourceIds.has(step.id)),
     ...neutralAutomaticAcknowledgmentEvents,
     ...(neutralCreationEvent ? [neutralCreationEvent] : []),
-  ].sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime() || left.id.localeCompare(right.id));
+  ].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime() || left.id.localeCompare(right.id));
   const paginatedTimeline = projectedTimeline.slice(offset, typeof limit === 'number' ? offset + limit : undefined);
 
   return {
