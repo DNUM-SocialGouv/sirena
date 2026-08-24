@@ -2,7 +2,7 @@ import { fr } from '@codegouvfr/react-dsfr';
 import { ROLES, STATUT_TYPES } from '@sirena/common/constants';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { RequetesEntite } from '@/components/common/tables/requetesEntites.tsx';
 import { CollaborationAnnouncementModal } from '@/components/home/CollaborationAnnouncementModal';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
@@ -31,6 +31,7 @@ export function RouteComponent() {
   const { canEdit } = useCanEdit();
   const profileQuery = useQuery({ ...profileQueryOptions(), enabled: false });
   const userStore = useUserStore();
+  const homePageTitleRef = useRef<HTMLHeadingElement>(null);
 
   const label = useMemo(() => (profileQuery.data ? profileQuery.data.prenom : ''), [profileQuery.data]);
 
@@ -44,11 +45,13 @@ export function RouteComponent() {
     <QueryStateHandler query={profileQuery}>
       {() => (
         <>
-          <CollaborationAnnouncementModal />
+          <CollaborationAnnouncementModal focusReturnRef={homePageTitleRef} />
           <div className={fr.cx('fr-container', 'fr-my-8w')}>
             <div className={styles.header}>
               <div>
-                <h1 className={styles.title}>Tableau de bord des requêtes</h1>
+                <h1 ref={homePageTitleRef} className={styles.title} tabIndex={-1}>
+                  Tableau de bord des requêtes
+                </h1>
                 <p className={styles.greeting}>Bienvenue {label}</p>
               </div>
               {canEdit ? (
