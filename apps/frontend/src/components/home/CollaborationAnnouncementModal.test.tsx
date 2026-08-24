@@ -6,41 +6,61 @@ import { CollaborationAnnouncementModal } from './CollaborationAnnouncementModal
 
 const openModal = vi.hoisted(() => vi.fn());
 
-vi.mock('@codegouvfr/react-dsfr/Modal', () => ({
-  createModal: () => {
-    const id = 'collaboration-announcement-modal';
+vi.mock('@codegouvfr/react-dsfr/Modal', async () => {
+  const { useEffect } = await import('react');
 
-    return {
-      id,
-      open: openModal,
-      close: vi.fn(),
-      Component: ({
-        title,
-        children,
-        buttons,
-      }: {
-        title: React.ReactNode;
-        children: React.ReactNode;
-        buttons: {
+  return {
+    createModal: () => {
+      const id = 'collaboration-announcement-modal';
+
+      return {
+        id,
+        open: openModal,
+        close: vi.fn(),
+        Component: function MockModal({
+          title,
+          children,
+          buttons,
+        }: {
+          title: React.ReactNode;
           children: React.ReactNode;
-          linkProps?: React.AnchorHTMLAttributes<HTMLAnchorElement>;
-        }[];
-      }) => (
-        <div id={id} role="dialog" aria-label={String(title)}>
-          <h1>{title}</h1>
-          {children}
-          {buttons.map((button) =>
-            button.linkProps ? (
-              <a key={String(button.children)} {...button.linkProps}>
-                {button.children}
-              </a>
-            ) : null,
-          )}
-        </div>
-      ),
-    };
-  },
-}));
+          buttons: {
+            children: React.ReactNode;
+            doClosesModal?: boolean;
+            linkProps?: React.AnchorHTMLAttributes<HTMLAnchorElement>;
+          }[];
+        }) {
+          useEffect(() => {
+            const handleControlClick = (event: MouseEvent) => {
+              const target = event.target;
+              if (!(target instanceof Element) || !target.closest(`[aria-controls="${id}"]`)) return;
+              if (buttons.some((button) => button.doClosesModal !== false)) {
+                document.getElementById(id)?.dispatchEvent(new Event('dsfr.conceal'));
+              }
+            };
+
+            document.documentElement.addEventListener('click', handleControlClick, { capture: true });
+            return () => document.documentElement.removeEventListener('click', handleControlClick, { capture: true });
+          }, [buttons]);
+
+          return (
+            <div id={id} role="dialog" aria-label={String(title)}>
+              <h1>{title}</h1>
+              {children}
+              {buttons.map((button) =>
+                button.linkProps ? (
+                  <a key={String(button.children)} {...button.linkProps} aria-controls={id}>
+                    {button.children}
+                  </a>
+                ) : null,
+              )}
+            </div>
+          );
+        },
+      };
+    },
+  };
+});
 
 vi.mock('@/hooks/useHasFeature', () => ({
   useHasFeature: vi.fn(),
@@ -71,17 +91,20 @@ describe('CollaborationAnnouncementModal', () => {
     expect(openModal).not.toHaveBeenCalled();
   });
 
-  it('opens an accessible collaboration announcement with the release-notes link when shared processing steps are enabled', () => {
+  it('renders an accessible collaboration announcement with the release-notes link when shared processing steps are enabled', () => {
     mockedUseHasFeature.mockReturnValue(true);
 
     render(<CollaborationAnnouncementModal focusReturnRef={noFocusReturnRef} />);
 
     expect(openModal).not.toHaveBeenCalled();
     expect(screen.getByRole('dialog', { name: 'Collaborez plus facilement sur SIRENA' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Voir les nouveautés' })).toHaveAttribute(
+    const releaseNotesLink = screen.getByRole('link', { name: 'Voir les nouveautés' });
+    expect(releaseNotesLink).toHaveAttribute(
       'href',
       'https://docs.numerique.gouv.fr/docs/24ca6ea9-c64d-4e30-8555-626166cb2d45/',
     );
+    expect(releaseNotesLink).toHaveAttribute('target', '_blank');
+    expect(releaseNotesLink).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
   it('does not open when the current campaign was already dismissed', () => {
@@ -94,7 +117,7 @@ describe('CollaborationAnnouncementModal', () => {
     expect(openModal).not.toHaveBeenCalled();
   });
 
-  it('opens when a different campaign was previously dismissed', () => {
+  it('renders when a different campaign was previously dismissed', () => {
     mockedUseHasFeature.mockReturnValue(true);
     window.localStorage.setItem(STORAGE_KEY, 'collaboration-v0');
 
@@ -102,6 +125,16 @@ describe('CollaborationAnnouncementModal', () => {
 
     expect(openModal).not.toHaveBeenCalled();
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('acquits the campaign when the release-notes CTA is activated', () => {
+    mockedUseHasFeature.mockReturnValue(true);
+
+    render(<CollaborationAnnouncementModal focusReturnRef={noFocusReturnRef} />);
+    fireEvent.click(screen.getByRole('link', { name: 'Voir les nouveautés' }));
+
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBe('collaboration-v1');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('acquits every DSFR concealment and stays hidden after a remount', () => {
