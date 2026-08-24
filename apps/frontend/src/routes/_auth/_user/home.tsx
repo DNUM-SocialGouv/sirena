@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useMemo } from 'react';
 import { RequetesEntite } from '@/components/common/tables/requetesEntites.tsx';
+import { CollaborationAnnouncementModal } from '@/components/home/CollaborationAnnouncementModal';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import { useCanEdit } from '@/hooks/useCanEdit';
@@ -26,7 +27,7 @@ export const Route = createFileRoute('/_auth/_user/home')({
   component: RouteComponent,
 });
 
-function RouteComponent() {
+export function RouteComponent() {
   const { canEdit } = useCanEdit();
   const profileQuery = useQuery({ ...profileQueryOptions(), enabled: false });
   const userStore = useUserStore();
@@ -42,20 +43,23 @@ function RouteComponent() {
   return (
     <QueryStateHandler query={profileQuery}>
       {() => (
-        <div className={fr.cx('fr-container', 'fr-my-8w')}>
-          <div className={styles.header}>
-            <div>
-              <h1 className={styles.title}>Tableau de bord des requêtes</h1>
-              <p className={styles.greeting}>Bienvenue {label}</p>
+        <>
+          <CollaborationAnnouncementModal />
+          <div className={fr.cx('fr-container', 'fr-my-8w')}>
+            <div className={styles.header}>
+              <div>
+                <h1 className={styles.title}>Tableau de bord des requêtes</h1>
+                <p className={styles.greeting}>Bienvenue {label}</p>
+              </div>
+              {canEdit ? (
+                <Link to="/request/create" className={fr.cx('fr-btn', 'fr-btn--icon-left', 'fr-icon-add-line')}>
+                  Créer une requête
+                </Link>
+              ) : null}
             </div>
-            {canEdit ? (
-              <Link to="/request/create" className={fr.cx('fr-btn', 'fr-btn--icon-left', 'fr-icon-add-line')}>
-                Créer une requête
-              </Link>
-            ) : null}
+            <RequetesEntite />
           </div>
-          <RequetesEntite />
-        </div>
+        </>
       )}
     </QueryStateHandler>
   );
