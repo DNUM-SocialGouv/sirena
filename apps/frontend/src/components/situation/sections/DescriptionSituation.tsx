@@ -29,7 +29,13 @@ export type DescriptionFaitsRef = {
 
 type DateField = 'dateDebut' | 'dateFin';
 
-const INVALID_DATE_MESSAGE = 'La date saisie n’est pas valide.';
+const DATE_FIELD_LABELS: Record<DateField, string> = {
+  dateDebut: 'Date de début des faits',
+  dateFin: 'Date de fin des faits',
+};
+
+const getInvalidDateMessage = (field: DateField) =>
+  `Le champ “${DATE_FIELD_LABELS[field]}” n’est pas valide. Format attendu : JJ/MM/AAAA`;
 
 export const DescriptionFaits = forwardRef<DescriptionFaitsRef, DescriptionFaitsProps>(function DescriptionFaits(
   { formData, setFormData, initialData },
@@ -50,7 +56,7 @@ export const DescriptionFaits = forwardRef<DescriptionFaitsRef, DescriptionFaits
 
       for (const { name, input } of fields) {
         if (input && !input.validity.valid) {
-          newErrors[name] = INVALID_DATE_MESSAGE;
+          newErrors[name] = getInvalidDateMessage(name);
         }
       }
 
@@ -185,7 +191,7 @@ export const DescriptionFaits = forwardRef<DescriptionFaitsRef, DescriptionFaits
 
           <div className="fr-col-12 fr-col-md-6">
             <Input
-              label="Date de début des faits"
+              label={DATE_FIELD_LABELS.dateDebut}
               state={dateErrors.dateDebut ? 'error' : 'default'}
               stateRelatedMessage={dateErrors.dateDebut}
               nativeInputProps={{
@@ -199,7 +205,7 @@ export const DescriptionFaits = forwardRef<DescriptionFaitsRef, DescriptionFaits
 
           <div className="fr-col-12 fr-col-md-6">
             <Input
-              label="Date de fin des faits"
+              label={DATE_FIELD_LABELS.dateFin}
               state={dateErrors.dateFin ? 'error' : 'default'}
               stateRelatedMessage={dateErrors.dateFin}
               nativeInputProps={{

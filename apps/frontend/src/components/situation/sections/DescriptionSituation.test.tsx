@@ -32,7 +32,9 @@ describe('DescriptionFaits', () => {
 
     const errorId = dateDebutInput.getAttribute('aria-describedby');
     expect(errorId).toBeTruthy();
-    expect(document.getElementById(errorId as string)).toHaveTextContent('La date saisie n’est pas valide.');
+    expect(document.getElementById(errorId as string)).toHaveTextContent(
+      'Le champ “Date de début des faits” n’est pas valide. Format attendu : JJ/MM/AAAA',
+    );
   });
 
   it('focuses the end date when it is the only invalid date', () => {
@@ -51,5 +53,10 @@ describe('DescriptionFaits', () => {
     expect(dateFinInput).toHaveFocus();
     expect(dateDebutInput).not.toHaveClass('fr-input--error');
     expect(dateFinInput).toHaveClass('fr-input--error');
+
+    const errorId = dateFinInput.getAttribute('aria-describedby');
+    expect(document.getElementById(errorId as string)).toHaveTextContent(
+      'Le champ “Date de fin des faits” n’est pas valide. Format attendu : JJ/MM/AAAA',
+    );
   });
 });
