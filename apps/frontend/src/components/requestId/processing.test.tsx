@@ -182,12 +182,11 @@ describe('Processing', () => {
     error: null,
   } as never;
 
-  it('labels the treatment chronology as Étapes de traitement', () => {
+  it('labels the treatment chronology', () => {
     render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
     const heading = screen.getByRole('heading', { name: 'Étapes de traitement' });
     expect(heading).toBeInTheDocument();
-    expect(within(heading.parentElement as HTMLElement).getByText('ARS courante')).toBeInTheDocument();
   });
 
   it('does not display the other affected entities panel', () => {

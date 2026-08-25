@@ -216,20 +216,13 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                   style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}
                 >
                   <h2 className="fr-mb-0 fr-text--xl">Étapes de traitement</h2>
-                  {requestQuery.data ? (
-                    <>
-                      <EntiteTypeBadge
-                        entiteTypeId={requestQuery.data.entite.entiteTypeId}
-                        label={requestQuery.data.entite.nomComplet}
-                        className="fr-mb-0"
-                      />
-                      {subAdministrativeEntites.map((entite) => (
+                  {requestQuery.data
+                    ? subAdministrativeEntites.map((entite) => (
                         <p key={entite.directionServiceId} className="fr-tag fr-tag--sm fr-tag-default">
                           {entite.directionServiceName}
                         </p>
-                      ))}
-                    </>
-                  ) : null}
+                      ))
+                    : null}
                 </div>
                 {requestId &&
                   !requestQuery.error &&
