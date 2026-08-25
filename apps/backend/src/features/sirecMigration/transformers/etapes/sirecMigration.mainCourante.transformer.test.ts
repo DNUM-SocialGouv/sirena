@@ -26,6 +26,7 @@ const makeData = (
   typeTraitementIdDicos: [],
   misEnCauses: [],
   mainCourantes: mainCourantes as never,
+  files: [],
 });
 
 const ARS_IDS = ['ars-normandie', 'ars-grand-est'];
