@@ -1,7 +1,6 @@
 import { demarcheEngageeLabels, MOTIFS_HIERARCHICAL_DATA } from '@sirena/common/constants';
-import { getLieuPrecisionLabel, getMesureProtectionShortLabel } from '@sirena/common/utils';
+import { type CsvValue, getLieuPrecisionLabel, getMesureProtectionShortLabel } from '@sirena/common/utils';
 import { EXPORT_REQUETES_COLUMNS, type ExportRequetesColumnKey } from './exportRequetesColumns.js';
-import type { ExportRequetesCsvRow } from './exportRequetesCsv.js';
 import {
   deriveDepartmentCodeFromPostalCode,
   formatExportBoolean,
@@ -9,6 +8,8 @@ import {
   formatExportList,
   formatExportYear,
 } from './exportRequetesFormatters.js';
+
+export type ExportRequetesCsvRow = CsvValue[];
 
 export type ExportRequeteRecord = {
   id: string | null;
