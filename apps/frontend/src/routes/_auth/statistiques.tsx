@@ -4,6 +4,7 @@ import { ROLES, ROLES_STATISTICS } from '@sirena/common/constants';
 import { createFileRoute, Navigate, useNavigate, useSearch } from '@tanstack/react-router';
 import { type CSSProperties, useCallback, useMemo } from 'react';
 import { z } from 'zod';
+import { CheckboxFilter } from '@/components/common/filters/CheckboxFilter';
 import { DomaineFilter } from '@/components/common/filters/DomaineFilter';
 import { AuthLayout } from '@/components/layout/auth/layout';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
@@ -41,6 +42,7 @@ const StatisticsSearchSchema = z.object({
   startDate: z.iso.date().optional().catch(undefined),
   endDate: z.iso.date().optional().catch(undefined),
   domaineIds: z.string().optional().catch(undefined),
+  includeEIG: z.boolean().optional().catch(undefined),
 });
 
 export const Route = createFileRoute('/_auth/statistiques')({
@@ -165,7 +167,10 @@ export function RouteComponent() {
   const range = resolveDateRange(selection, new Date());
   const dataDate = formatDataDate(new Date());
   const selectedDomaines = useMemo(() => splitCsv(search.domaineIds), [search.domaineIds]);
-  const query = useStatisticsDashboard({ ...range, domaineIds: search.domaineIds }, canView);
+  const query = useStatisticsDashboard(
+    { ...range, domaineIds: search.domaineIds, includeEIG: search.includeEIG },
+    canView,
+  );
 
   const handlePeriodChange = useCallback(
     (next: PeriodSelection) => {
@@ -179,6 +184,13 @@ export function RouteComponent() {
   const handleDomaineChange = useCallback(
     (ids: string[]) => {
       navigate({ search: (prev) => ({ ...prev, domaineIds: ids.length > 0 ? ids.join(',') : undefined }) });
+    },
+    [navigate],
+  );
+
+  const handleIncludeEIGChange = useCallback(
+    (checked: boolean) => {
+      navigate({ search: (prev) => ({ ...prev, includeEIG: checked ? undefined : false }) });
     },
     [navigate],
   );
@@ -214,6 +226,11 @@ export function RouteComponent() {
               selectedIds={selectedDomaines}
               legend="Filtrer les indicateurs par domaine fonctionnel"
               onChange={handleDomaineChange}
+            />
+            <CheckboxFilter
+              label="Inclure les EIG"
+              checked={search.includeEIG !== false}
+              onChange={handleIncludeEIGChange}
             />
           </div>
           {activePeriodLabel ? (

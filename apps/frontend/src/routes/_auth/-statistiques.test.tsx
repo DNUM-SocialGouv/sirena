@@ -85,7 +85,7 @@ describe('Statistiques route — filtre Domaine fonctionnel', () => {
     render(<RouteComponent />);
 
     expect(useStatisticsDashboard).toHaveBeenLastCalledWith(
-      { startDate: '2026-01-01', endDate: '2026-03-31', domaineIds: 'SOCIAL,SANITAIRE' },
+      { startDate: '2026-01-01', endDate: '2026-03-31', domaineIds: 'SOCIAL,SANITAIRE', includeEIG: undefined },
       true,
     );
   });
@@ -100,6 +100,48 @@ describe('Statistiques route — filtre Domaine fonctionnel', () => {
 
     expect(screen.getByRole('group', { name: /Filtrer les indicateurs par domaine fonctionnel/ })).toBeInTheDocument();
     expect(screen.queryByText(/Filtrer les requêtes par domaine fonctionnel/)).not.toBeInTheDocument();
+  });
+});
+
+describe('Statistiques route — filtre EIG', () => {
+  it('includes the EIG requêtes by default', () => {
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('checkbox', { name: 'Inclure les EIG' })).toBeChecked();
+  });
+
+  it('records the exclusion in the URL when the box is unchecked', async () => {
+    const user = userEvent.setup();
+    render(<RouteComponent />);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Inclure les EIG' }));
+
+    const [{ search }] = navigate.mock.calls.at(-1) as [{ search: (prev: object) => object }];
+    expect(search({ domaineIds: 'SOCIAL' })).toEqual({ domaineIds: 'SOCIAL', includeEIG: false });
+  });
+
+  it('drops the flag from the URL when the box is checked back', async () => {
+    const user = userEvent.setup();
+    searchState.current = { includeEIG: false } as never;
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('checkbox', { name: 'Inclure les EIG' })).not.toBeChecked();
+
+    await user.click(screen.getByRole('checkbox', { name: 'Inclure les EIG' }));
+
+    const [{ search }] = navigate.mock.calls.at(-1) as [{ search: (prev: object) => object }];
+    expect(search({ includeEIG: false })).toEqual({ includeEIG: undefined });
+  });
+
+  it('passes the exclusion to the dashboard query alongside the other filters', () => {
+    searchState.current = { domaineIds: 'SOCIAL', includeEIG: false } as never;
+
+    render(<RouteComponent />);
+
+    expect(useStatisticsDashboard).toHaveBeenLastCalledWith(
+      expect.objectContaining({ domaineIds: 'SOCIAL', includeEIG: false }),
+      true,
+    );
   });
 });
 
