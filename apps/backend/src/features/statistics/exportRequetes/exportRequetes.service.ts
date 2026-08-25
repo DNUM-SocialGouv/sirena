@@ -1,4 +1,5 @@
-import { CSV_BOM, serializeCsvRow } from '@sirena/common/utils';
+import { CSV_BOM, CSV_LINE_SEPARATOR, serializeCsvRow } from '@sirena/common/utils';
+import type { ChunkWriter } from '../../../helpers/stream.js';
 import { type Prisma, prisma } from '../../../libs/prisma.js';
 import { getEntiteDescendantIds } from '../../entites/entites.service.js';
 import { EXPORT_REQUETES_HEADERS } from './exportRequetesColumns.js';
@@ -124,15 +125,10 @@ type ExportRequetePrismaPayload = Prisma.RequeteGetPayload<{
   select: typeof exportRequetesSelect;
 }>;
 
-// The export can span an entity's whole subtree. Reading every requête (with its
-// deep relations) in a single findMany, then holding the mapped records and the
-// full CSV string at once, keeps several copies of the dataset in memory on a pod
-// with a hard memory limit. Instead we page through the rows with a cursor and
-// emit the CSV line by line, so peak memory is one page rather than the whole set.
 const EXPORT_PAGE_SIZE = 500;
 
-// Postal-code-bearing subset of exportRequetesSelect, used by the light first pass
-// that resolves department references before any row is emitted.
+export type ExportRequetesCsvWriter = (write: ChunkWriter) => Promise<void>;
+
 const postalCodeSelect = {
   id: true,
   declarant: { select: { adresse: { select: { codePostal: true } } } },
@@ -145,85 +141,68 @@ const postalCodeSelect = {
   },
 } satisfies Prisma.RequeteSelect;
 
-function buildRequeteWhere(entiteIds: string[]): Prisma.RequeteWhereInput {
-  return { requeteEntites: { some: { entiteId: { in: entiteIds } } } };
+type RequetePage<S extends Prisma.RequeteSelect> = (Prisma.RequeteGetPayload<{ select: S }> & { id: string })[];
+
+async function forEachRequetePage<S extends Prisma.RequeteSelect & { id: true }>(
+  where: Prisma.RequeteWhereInput,
+  select: S,
+  onPage: (page: RequetePage<S>) => void | Promise<void>,
+): Promise<void> {
+  let cursor: string | undefined;
+
+  do {
+    const page = (await prisma.requete.findMany({
+      where,
+      select,
+      orderBy: { id: 'asc' },
+      take: EXPORT_PAGE_SIZE,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    })) as RequetePage<S>;
+
+    if (page.length === 0) return;
+    await onPage(page);
+
+    cursor = page.length < EXPORT_PAGE_SIZE ? undefined : page.at(-1)?.id;
+  } while (cursor);
 }
 
 async function collectPostalCodes(where: Prisma.RequeteWhereInput): Promise<string[]> {
   const codePostaux = new Set<string>();
-  let cursor: string | undefined;
 
-  while (true) {
-    const page = await prisma.requete.findMany({
-      where,
-      select: postalCodeSelect,
-      orderBy: { id: 'asc' },
-      take: EXPORT_PAGE_SIZE,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    });
-    if (page.length === 0) break;
-
+  await forEachRequetePage(where, postalCodeSelect, (page) => {
     for (const requete of page) {
-      for (const codePostal of [
+      const candidates = [
         requete.declarant?.adresse?.codePostal,
         requete.participant?.adresse?.codePostal,
         ...requete.situations.flatMap((situation) => [
           situation.lieuDeSurvenue?.adresse?.codePostal || situation.lieuDeSurvenue?.codePostal,
           situation.misEnCause?.codePostal,
         ]),
-      ]) {
+      ];
+      for (const codePostal of candidates) {
         if (codePostal) codePostaux.add(codePostal);
       }
     }
-
-    if (page.length < EXPORT_PAGE_SIZE) break;
-    cursor = page[page.length - 1].id;
-  }
+  });
 
   return Array.from(codePostaux);
 }
 
-// Streams the CSV in write-ready chunks: the first chunk is the BOM + header line,
-// each subsequent chunk is a newline + one row. Concatenated, the chunks are
-// byte-for-byte identical to serializeCsv(headers, rows) over the same rows.
-export async function* streamExportRequetesCsv(topEntiteId: string): AsyncGenerator<string> {
+export async function prepareExportRequetesCsv(topEntiteId: string): Promise<ExportRequetesCsvWriter> {
   const entiteIds = (await getEntiteDescendantIds(topEntiteId)) ?? [];
-  const where = buildRequeteWhere(entiteIds);
+  const where: Prisma.RequeteWhereInput = { requeteEntites: { some: { entiteId: { in: entiteIds } } } };
 
-  const codePostaux = await collectPostalCodes(where);
-  const { departmentCodesByPostalCode, departementNamesByCode } = await getDepartmentReferences(codePostaux);
-  const options = { topEntiteId, departmentCodesByPostalCode, departementNamesByCode };
+  const departmentReferences = await getDepartmentReferences(await collectPostalCodes(where));
+  const options = { topEntiteId, ...departmentReferences };
 
-  yield CSV_BOM + serializeCsvRow([...EXPORT_REQUETES_HEADERS]);
+  return async (write) => {
+    await write(CSV_BOM + serializeCsvRow([...EXPORT_REQUETES_HEADERS]));
 
-  let cursor: string | undefined;
-  while (true) {
-    const page = await prisma.requete.findMany({
-      where,
-      select: exportRequetesSelect,
-      orderBy: { id: 'asc' },
-      take: EXPORT_PAGE_SIZE,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    await forEachRequetePage(where, exportRequetesSelect, async (page) => {
+      const rows = buildExportRequetesRows(page.map(toExportRequeteRecord), options);
+      await write(CSV_LINE_SEPARATOR + rows.map(serializeCsvRow).join(CSV_LINE_SEPARATOR));
     });
-    if (page.length === 0) break;
-
-    for (const requete of page) {
-      for (const row of buildExportRequetesRows([toExportRequeteRecord(requete)], options)) {
-        yield `\n${serializeCsvRow(row)}`;
-      }
-    }
-
-    if (page.length < EXPORT_PAGE_SIZE) break;
-    cursor = page[page.length - 1].id;
-  }
-}
-
-export async function generateExportRequetesCsv(topEntiteId: string): Promise<string> {
-  let csv = '';
-  for await (const chunk of streamExportRequetesCsv(topEntiteId)) {
-    csv += chunk;
-  }
-  return csv;
+  };
 }
 
 async function getDepartmentReferences(codePostaux: string[]): Promise<{

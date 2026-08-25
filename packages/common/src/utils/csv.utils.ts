@@ -1,6 +1,7 @@
 export type CsvValue = string | number | boolean | null | undefined;
 
 export const CSV_BOM = String.fromCharCode(0xfeff);
+export const CSV_LINE_SEPARATOR = '\n';
 const NEEDS_QUOTING = /[;"\n\r]/;
 const FORMULA_START = /^[=+\-@\t\r]/;
 
@@ -11,12 +12,7 @@ const serializeCell = (value: unknown): string => {
   return text;
 };
 
-// Serialize a single CSV line (cells joined by `;`), without BOM or newline.
-// Exposed so large exports can be streamed line by line instead of materialising
-// the whole document as one string.
 export const serializeCsvRow = (row: unknown[]): string => row.map(serializeCell).join(';');
 
-export const serializeCsv = (headers: string[], rows: unknown[][]): string => {
-  const lines = [headers, ...rows].map(serializeCsvRow);
-  return CSV_BOM + lines.join('\n');
-};
+export const serializeCsv = (headers: string[], rows: unknown[][]): string =>
+  CSV_BOM + [headers, ...rows].map(serializeCsvRow).join(CSV_LINE_SEPARATOR);
