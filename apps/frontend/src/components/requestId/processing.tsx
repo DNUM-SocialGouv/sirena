@@ -16,7 +16,6 @@ import { CloseRequeteModal, type CloseRequeteModalRef } from './processing/Close
 import { ReopenRequeteModal, type ReopenRequeteModalRef } from './processing/ReopenRequeteModal';
 import { SendAcknowledgmentDrawer, type SendAcknowledgmentDrawerRef } from './processing/SendAcknowledgmentDrawer';
 import { StepFormPanel, type StepFormPanelRef } from './processing/StepFormPanel';
-import { OtherEntitiesAffected } from './sections/OtherEntitesAffected';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
 
@@ -197,7 +196,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
     <div>
       <div className="fr-container--fluid">
         <div className="fr-grid-row fr-grid-row--gutters">
-          <div className="fr-col-md-12 fr-col-lg-8 ">
+          <div className="fr-col-md-12 fr-col-lg-12">
             <div className="fr-mb-4w">
               {requestId && !canEdit && (
                 <Alert
@@ -287,9 +286,6 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
               ) : null}
               {content}
             </div>
-          </div>
-          <div className="fr-col-md-12 fr-col-lg-4 ">
-            <OtherEntitiesAffected />
           </div>
         </div>
       </div>
