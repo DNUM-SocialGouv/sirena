@@ -1,6 +1,6 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { Tag } from '@codegouvfr/react-dsfr/Tag';
-import { FEATURE_FLAGS, ROLES, ROLES_STATISTICS } from '@sirena/common/constants';
+import { ROLES, ROLES_STATISTICS } from '@sirena/common/constants';
 import { createFileRoute, Navigate, useNavigate, useSearch } from '@tanstack/react-router';
 import { type CSSProperties, useCallback, useMemo } from 'react';
 import { z } from 'zod';
@@ -20,7 +20,6 @@ import {
 } from '@/components/statistics/period';
 import { StatChart } from '@/components/statistics/StatChart';
 import { StatTable } from '@/components/statistics/StatTable';
-import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useStatisticsDashboard } from '@/hooks/queries/statistics.hook';
 import type { StatisticsCard } from '@/lib/api/fetchStatistics';
@@ -148,7 +147,6 @@ function ChartCard({ card }: { card: StatisticsCard }) {
 }
 
 export function RouteComponent() {
-  const resolvedFlagsQuery = useResolvedFeatureFlags();
   const { data: profile, isPending: isProfilePending } = useProfile();
   const search = useSearch({ from: '/_auth/statistiques' });
   const navigate = useNavigate({ from: '/statistiques' });
@@ -159,8 +157,6 @@ export function RouteComponent() {
   const hasEntityLink = profile?.entiteId != null;
   const canView = isSuperAdmin || hasEntityLink;
 
-  const areFlagsReady = resolvedFlagsQuery.status !== 'pending';
-  const isEnabled = resolvedFlagsQuery.data?.[FEATURE_FLAGS.STATISTICS] ?? false;
   const selection: PeriodSelection = {
     period: search.period,
     startDate: search.startDate,
@@ -168,9 +164,8 @@ export function RouteComponent() {
   };
   const range = resolveDateRange(selection, new Date());
   const dataDate = formatDataDate(new Date());
-  const canQuery = areFlagsReady && isEnabled && canView;
   const selectedDomaines = useMemo(() => splitCsv(search.domaineIds), [search.domaineIds]);
-  const query = useStatisticsDashboard({ ...range, domaineIds: search.domaineIds }, canQuery);
+  const query = useStatisticsDashboard({ ...range, domaineIds: search.domaineIds }, canView);
 
   const handlePeriodChange = useCallback(
     (next: PeriodSelection) => {
@@ -195,10 +190,10 @@ export function RouteComponent() {
 
   const activePeriodLabel = describeCreatedPeriod(selection);
 
-  if (isProfilePending || !areFlagsReady) {
+  if (isProfilePending) {
     return null;
   }
-  if (!isEnabled || !canView) {
+  if (!canView) {
     return <Navigate to={isSuperAdmin ? '/admin/users' : '/home'} />;
   }
 
