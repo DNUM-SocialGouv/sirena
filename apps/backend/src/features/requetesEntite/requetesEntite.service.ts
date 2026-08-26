@@ -1168,6 +1168,7 @@ const updateSituationEntites = async (
   situationId: string,
   traitementDesFaits: SituationInput['traitementDesFaits'],
   topEntiteId: string,
+  changedById?: string,
 ): Promise<{ newRequeteRootIds: string[]; newDirectionServiceIds: string[] }> => {
   const situation = await tx.situation.findUnique({
     where: { id: situationId },
@@ -1287,8 +1288,8 @@ const updateSituationEntites = async (
     where: { requeteId },
     select: { entiteId: true },
   });
-  const existingRootIds = new Set(existingRequeteEntites.map((re) => re.entiteId));
-  const newToRequeteRootIds = Array.from(entiteMereIdsToAdd).filter((id) => !existingRootIds.has(id));
+  const existingRootEntiteIds = new Set(existingRequeteEntites.map((re) => re.entiteId));
+  const newlyAssignedRootEntiteIds = Array.from(entiteMereIdsToAdd).filter((id) => !existingRootEntiteIds.has(id));
 
   // Add parent entities for all added entities
   await Promise.all(
@@ -1314,9 +1315,30 @@ const updateSituationEntites = async (
     }),
   );
 
+  if (changedById) {
+    await Promise.all(
+      newlyAssignedRootEntiteIds.map((assignedEntiteId) => {
+        const affectationDate = new Date();
+        return tx.requeteEtape.create({
+          data: {
+            requeteId,
+            entiteId: topEntiteId,
+            assignedEntiteId,
+            nom: 'Affectation',
+            type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+            statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+            estPartagee: true,
+            dateRealisation: affectationDate,
+            createdById: changedById,
+          },
+        });
+      }),
+    );
+  }
+
   const newDirectionServiceIds = entitesToAdd.filter((id) => allDirectionServiceIds.has(id));
 
-  return { newRequeteRootIds: newToRequeteRootIds, newDirectionServiceIds };
+  return { newRequeteRootIds: newlyAssignedRootEntiteIds, newDirectionServiceIds };
 };
 
 const updateExistingSituation = async (
@@ -1365,6 +1387,7 @@ const updateExistingSituation = async (
     existingSituation.id,
     situationData.traitementDesFaits,
     topEntiteId,
+    changedById,
   );
 
   if (situationData.fait?.fileIds?.length) {
@@ -1416,6 +1439,7 @@ const createNewSituation = async (
     createdSituation.id,
     situationData.traitementDesFaits,
     topEntiteId,
+    changedById,
   );
 
   if (changedById) {

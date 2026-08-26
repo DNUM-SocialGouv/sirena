@@ -33,6 +33,7 @@ export const REQUETE_ETAPE_TYPES = {
   ACKNOWLEDGMENT: 'ACKNOWLEDGMENT',
   REOPEN: 'REOPEN',
   MANUAL: 'MANUAL',
+  ASSIGNMENT: 'ASSIGNMENT',
 } as const;
 
 export type RequeteEtapeType = keyof typeof REQUETE_ETAPE_TYPES;

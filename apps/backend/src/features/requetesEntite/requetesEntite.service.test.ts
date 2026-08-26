@@ -2763,7 +2763,7 @@ describe('requetesEntite.service', () => {
       });
     });
 
-    it('should allow adding new entities from other hierarchies', async () => {
+    it('allows adding entities from other hierarchies without recording an assignment when there is no initiating agent', async () => {
       const situationId = 'sit1';
       const requeteId = 'req1';
       const userTopEntiteId = 'root1';
@@ -2844,6 +2844,132 @@ describe('requetesEntite.service', () => {
           situationId,
           entiteId: 'ent-from-other',
         },
+      });
+      expect(mockTx.requeteEtape.create).not.toHaveBeenCalledWith({
+        data: expect.objectContaining({ type: 'ASSIGNMENT' }),
+      });
+    });
+
+    it('creates a completed assignment step when an agent adds a new root entity to the request', async () => {
+      const situationId = 'sit1';
+      const requeteId = 'req1';
+      const userTopEntiteId = 'root1';
+      const assignedTopEntiteId = 'root2';
+      const changedById = 'user1';
+
+      const mockSituation = { id: situationId, requeteId };
+      const mockTx = createMockTx({
+        situation: {
+          findUnique: vi.fn().mockResolvedValue(mockSituation),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        situationEntite: {
+          findMany: vi.fn().mockResolvedValue([{ entiteId: 'ent1' }]),
+        },
+        requeteEntite: {
+          findMany: vi.fn().mockResolvedValue([{ entiteId: userTopEntiteId }]),
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue({ id: requeteId, situations: [] }),
+        },
+      });
+
+      vi.mocked(getEntiteAscendanteInfo).mockImplementation(async (entiteId: string) => {
+        if (entiteId === 'ent1') return { entiteId: userTopEntiteId, level: 1 };
+        if (entiteId === 'ent-from-other') return { entiteId: assignedTopEntiteId, level: 1 };
+        return { entiteId: null, level: 1 };
+      });
+
+      const mockRequeteForUpdate = {
+        id: requeteId,
+        situations: [{ id: situationId, faits: [] }],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
+        return callback(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+      });
+
+      await updateRequeteSituation(
+        requeteId,
+        situationId,
+        {
+          traitementDesFaits: {
+            entites: [{ entiteId: 'ent1' }, { entiteId: 'ent-from-other' }],
+          },
+        } as Parameters<typeof updateRequeteSituation>[2],
+        userTopEntiteId,
+        changedById,
+      );
+
+      expect(mockTx.requeteEtape.create).toHaveBeenCalledWith({
+        data: {
+          requeteId,
+          entiteId: userTopEntiteId,
+          assignedEntiteId: assignedTopEntiteId,
+          nom: 'Affectation',
+          type: 'ASSIGNMENT',
+          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          estPartagee: true,
+          dateRealisation: expect.any(Date),
+          createdById: changedById,
+        },
+      });
+    });
+
+    it('does not record another assignment when the target root is already attached to the request', async () => {
+      const situationId = 'sit1';
+      const requeteId = 'req1';
+      const userTopEntiteId = 'root1';
+      const assignedTopEntiteId = 'root2';
+
+      const mockSituation = { id: situationId, requeteId };
+      const mockTx = createMockTx({
+        situation: {
+          findUnique: vi.fn().mockResolvedValue(mockSituation),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        situationEntite: {
+          findMany: vi.fn().mockResolvedValue([{ entiteId: 'ent1' }]),
+        },
+        requeteEntite: {
+          findMany: vi.fn().mockResolvedValue([{ entiteId: userTopEntiteId }, { entiteId: assignedTopEntiteId }]),
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue({ id: requeteId, situations: [] }),
+        },
+      });
+
+      vi.mocked(getEntiteAscendanteInfo).mockImplementation(async (entiteId: string) => {
+        if (entiteId === 'ent1') return { entiteId: userTopEntiteId, level: 1 };
+        if (entiteId === 'ent-from-other') return { entiteId: assignedTopEntiteId, level: 1 };
+        return { entiteId: null, level: 1 };
+      });
+
+      const mockRequeteForUpdate = {
+        id: requeteId,
+        situations: [{ id: situationId, faits: [] }],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
+        return callback(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+      });
+
+      await updateRequeteSituation(
+        requeteId,
+        situationId,
+        {
+          traitementDesFaits: {
+            entites: [{ entiteId: 'ent1' }, { entiteId: 'ent-from-other' }],
+          },
+        } as Parameters<typeof updateRequeteSituation>[2],
+        userTopEntiteId,
+        'user1',
+      );
+
+      expect(mockTx.requeteEtape.create).not.toHaveBeenCalledWith({
+        data: expect.objectContaining({ type: 'ASSIGNMENT' }),
       });
     });
 
