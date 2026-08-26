@@ -1313,27 +1313,34 @@ const updateSituationEntites = async (
 
   const sortedNewlyAssignedRootEntiteIds = newlyAssignedRootEntiteIds.sort((left, right) => left.localeCompare(right));
 
+  const recordedAssignmentRootEntiteIds: string[] = [];
+
   if (changedById) {
     const firstAssignmentDate = new Date();
 
     for (const [index, assignedEntiteId] of sortedNewlyAssignedRootEntiteIds.entries()) {
       const affectationDate = new Date(firstAssignmentDate.getTime() + index * ASSIGNMENT_STEP_PAIR_INTERVAL_MS);
-
-      await tx.requeteEtape.create({
-        data: {
-          requeteId,
-          entiteId: topEntiteId,
-          assignedEntiteId,
-          nom: 'Affectation',
-          type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
-          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-          estPartagee: true,
-          dateRealisation: affectationDate,
-          createdAt: affectationDate,
-          createdById: changedById,
-        },
+      const { count } = await tx.requeteEtape.createMany({
+        data: [
+          {
+            requeteId,
+            entiteId: topEntiteId,
+            assignedEntiteId,
+            nom: 'Affectation',
+            type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+            statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+            estPartagee: true,
+            dateRealisation: affectationDate,
+            createdAt: affectationDate,
+            createdById: changedById,
+          },
+        ],
+        skipDuplicates: true,
       });
 
+      if (count === 0) continue;
+
+      recordedAssignmentRootEntiteIds.push(assignedEntiteId);
       await createDefaultRequeteEtapes(requeteId, assignedEntiteId, tx, null, {
         acknowledgmentCreatedAt: new Date(affectationDate.getTime() + ACKNOWLEDGMENT_STEP_OFFSET_MS),
       });
@@ -1349,7 +1356,10 @@ const updateSituationEntites = async (
 
   const newDirectionServiceIds = entitesToAdd.filter((id) => allDirectionServiceIds.has(id));
 
-  return { newRequeteRootIds: newlyAssignedRootEntiteIds, newDirectionServiceIds };
+  return {
+    newRequeteRootIds: changedById ? recordedAssignmentRootEntiteIds : newlyAssignedRootEntiteIds,
+    newDirectionServiceIds,
+  };
 };
 
 const updateExistingSituation = async (

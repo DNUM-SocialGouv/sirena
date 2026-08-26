@@ -584,6 +584,7 @@ model RequeteEtape {
   @@index([requeteId, entiteId])
   @@index([acknowledgmentSendOperationId])
   @@index([assignedEntiteId])
+  @@unique([requeteId, assignedEntiteId])
 }
 
 enum AcknowledgmentSendMode {
