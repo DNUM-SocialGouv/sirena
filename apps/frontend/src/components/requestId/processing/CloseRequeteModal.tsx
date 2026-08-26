@@ -307,7 +307,10 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
             label="Raisons de la clôture"
             options={reasonOptions}
             value={reasonIds}
-            onChange={setReasonIds}
+            onChange={(newReasonIds) => {
+              setReasonIds(newReasonIds);
+              setErrors((currentErrors) => ({ ...currentErrors, reasonIds: undefined }));
+            }}
             state={errors.reasonIds ? 'error' : 'default'}
             stateRelatedMessage={errors.reasonIds}
           />

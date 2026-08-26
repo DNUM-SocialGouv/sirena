@@ -15,8 +15,8 @@ describe('DescriptionFaits', () => {
     const ref = createRef<DescriptionFaitsRef>();
     render(<DescriptionFaits ref={ref} formData={{}} setFormData={vi.fn()} />);
 
-    const dateDebutInput = screen.getByLabelText('Date de début des faits') as HTMLInputElement;
-    const dateFinInput = screen.getByLabelText('Date de fin des faits') as HTMLInputElement;
+    const dateDebutInput = screen.getByLabelText('Date de début des faits', { exact: false }) as HTMLInputElement;
+    const dateFinInput = screen.getByLabelText('Date de fin des faits', { exact: false }) as HTMLInputElement;
     setInputValidity(dateDebutInput, false);
     setInputValidity(dateFinInput, false);
 
@@ -32,15 +32,17 @@ describe('DescriptionFaits', () => {
 
     const errorId = dateDebutInput.getAttribute('aria-describedby');
     expect(errorId).toBeTruthy();
-    expect(document.getElementById(errorId as string)).toHaveTextContent('La date saisie n’est pas valide.');
+    expect(document.getElementById(errorId as string)).toHaveTextContent(
+      'Le champ “Date de début des faits” n’est pas valide. Format attendu : JJ/MM/AAAA',
+    );
   });
 
   it('focuses the end date when it is the only invalid date', () => {
     const ref = createRef<DescriptionFaitsRef>();
     render(<DescriptionFaits ref={ref} formData={{}} setFormData={vi.fn()} />);
 
-    const dateDebutInput = screen.getByLabelText('Date de début des faits') as HTMLInputElement;
-    const dateFinInput = screen.getByLabelText('Date de fin des faits') as HTMLInputElement;
+    const dateDebutInput = screen.getByLabelText('Date de début des faits', { exact: false }) as HTMLInputElement;
+    const dateFinInput = screen.getByLabelText('Date de fin des faits', { exact: false }) as HTMLInputElement;
     setInputValidity(dateDebutInput, true);
     setInputValidity(dateFinInput, false);
 
@@ -51,5 +53,10 @@ describe('DescriptionFaits', () => {
     expect(dateFinInput).toHaveFocus();
     expect(dateDebutInput).not.toHaveClass('fr-input--error');
     expect(dateFinInput).toHaveClass('fr-input--error');
+
+    const errorId = dateFinInput.getAttribute('aria-describedby');
+    expect(document.getElementById(errorId as string)).toHaveTextContent(
+      'Le champ “Date de fin des faits” n’est pas valide. Format attendu : JJ/MM/AAAA',
+    );
   });
 });
