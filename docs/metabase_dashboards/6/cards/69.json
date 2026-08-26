@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 200.87603305785123,
+  "average_query_time": 217.17021276595744,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -36,7 +36,7 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "WITH RECURSIVE\n-- 1. Périmètre entités : l'entité de premier niveau de l'utilisateur (entiteMereId IS NULL)\n--    identifiée par {{entity_label}}, PLUS tous ses services descendants (récursif).\nentites_scope AS (\n  SELECT e.id\n  FROM \"Entite\" e\n  WHERE e.\"entiteMereId\" IS NULL\n    [[ AND e.label = {{entity_label}} ]]\n\n  UNION ALL\n\n  SELECT child.id\n  FROM \"Entite\" child\n  JOIN entites_scope s ON child.\"entiteMereId\" = s.id\n),\n\n-- 2. Requêtes ayant AU MOINS un motif dont le 1er niveau est \"Maltraitance professionnels ou entourage\".\n--    Les id de MotifEnum sont au format \"PARENT/ENFANT\" -> on filtre sur le parent.\nrequetes_maltraitance AS (\n  SELECT DISTINCT s.\"requeteId\" AS requete_id\n  FROM \"Situation\" s\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  WHERE s.\"requeteId\" IS NOT NULL\n    AND fm.\"motifId\" LIKE 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/%'\n)\n\nSELECT COUNT(DISTINCT r.id) AS \"Requêtes maltraitance\"\nFROM \"Requete\" r\nJOIN requetes_maltraitance rm ON rm.requete_id = r.id\nJOIN \"RequeteEntite\" re     ON re.\"requeteId\" = r.id\nJOIN entites_scope es       ON es.id = re.\"entiteId\"\nWHERE 1 = 1\n  [[ AND r.\"createdAt\"::date >= {{start_date}} ]]\n  [[ AND r.\"createdAt\"::date <= {{end_date}} ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]",
+        "native": "WITH RECURSIVE\n-- 1. Périmètre entités : l'entité de premier niveau de l'utilisateur (entiteMereId IS NULL)\n--    identifiée par {{entity_label}}, PLUS tous ses services descendants (récursif).\nentites_scope AS (\n  SELECT e.id\n  FROM \"Entite\" e\n  WHERE e.\"entiteMereId\" IS NULL\n    [[ AND e.label = {{entity_label}} ]]\n\n  UNION ALL\n\n  SELECT child.id\n  FROM \"Entite\" child\n  JOIN entites_scope s ON child.\"entiteMereId\" = s.id\n),\n\n-- 2. Requêtes ayant AU MOINS un motif dont le 1er niveau est \"Maltraitance professionnels ou entourage\".\n--    Les id de MotifEnum sont au format \"PARENT/ENFANT\" -> on filtre sur le parent.\nrequetes_maltraitance AS (\n  SELECT DISTINCT s.\"requeteId\" AS requete_id\n  FROM \"Situation\" s\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  WHERE s.\"requeteId\" IS NOT NULL\n    AND fm.\"motifId\" LIKE 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/%'\n)\n\nSELECT COUNT(DISTINCT r.id) AS \"Requêtes maltraitance\"\nFROM \"Requete\" r\nJOIN requetes_maltraitance rm ON rm.requete_id = r.id\nJOIN \"RequeteEntite\" re     ON re.\"requeteId\" = r.id\nJOIN entites_scope es       ON es.id = re.\"entiteId\"\nWHERE 1 = 1\n  [[ AND r.\"createdAt\"::date >= {{start_date}} ]]\n  [[ AND r.\"createdAt\"::date <= {{end_date}} ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                       AND {{inclure_eig}} = 'false') ]]",
         "template-tags": [
           {
             "display-name": "Entity Label",
@@ -61,6 +61,15 @@
             "id": "4f3c051b-f8ef-49d4-b26a-72a4719ba18f",
             "name": "domaine_fonctionnel",
             "type": "text"
+          },
+          {
+            "default": [
+              true
+            ],
+            "display-name": "Inclure Eig",
+            "id": "7ca1a556-dabf-4e19-9e5b-fcb8656fc6de",
+            "name": "inclure_eig",
+            "type": "boolean"
           }
         ]
       }
@@ -77,7 +86,7 @@
   "entity_id": "2P4X0t5mBkSBs54R0UTUb",
   "id": 69,
   "is_remote_synced": false,
-  "last_query_start": "2026-08-24T14:16:58.836407Z",
+  "last_query_start": "2026-08-27T10:31:13.337014Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.63.1.2 (b067da1)",
@@ -251,6 +260,23 @@
         ]
       },
       "values_source_type": "static-list"
+    },
+    {
+      "default": [
+        true
+      ],
+      "id": "7ca1a556-dabf-4e19-9e5b-fcb8656fc6de",
+      "isMultiSelect": false,
+      "name": "Inclure Eig",
+      "slug": "inclure_eig",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "inclure_eig"
+        ]
+      ],
+      "type": "boolean/="
     }
   ],
   "public_uuid": null,
@@ -275,13 +301,13 @@
         },
         "type": {
           "type/Number": {
-            "avg": 351,
+            "avg": 1824,
             "excess-kurtosis": null,
-            "max": 351,
-            "min": 351,
+            "max": 1824,
+            "min": 1824,
             "mode-fraction": 1,
-            "q1": 351,
-            "q3": 351,
+            "q1": 1824,
+            "q3": 1824,
             "sd": 0,
             "skewness": null,
             "top-3-fraction": 1,

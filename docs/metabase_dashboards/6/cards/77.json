@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 284.75,
+  "average_query_time": 615.1481481481482,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -36,7 +36,7 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "-- Requêtes « en compétence partagée » au niveau national :\n-- au moins 2 entités affectées, après avoir exclu les entités\n-- clôturées pour motif « Hors compétence ».\nSELECT\n  COUNT(*) AS nombre_requetes_competence_partagee\nFROM (\n  SELECT r.id\n  FROM \"Requete\" r\n  JOIN \"RequeteEntite\" re ON re.\"requeteId\" = r.id\n  JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n  WHERE NOT (\n    re.\"statutId\" = 'CLOTUREE'\n    AND EXISTS (\n      SELECT 1\n      FROM \"RequeteEtape\" et\n      JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n      WHERE et.\"requeteId\" = re.\"requeteId\"\n        AND et.\"entiteId\"  = re.\"entiteId\"\n        AND et.\"statutId\"  = 'CLOTUREE'\n        AND j.\"A\"          = 'HORS_COMPETENCE'\n    )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  GROUP BY r.id\n  HAVING COUNT(DISTINCT re.\"entiteId\") >= 2\n     [[ AND bool_or(e.label = {{entity_label}}) ]]\n) t;",
+        "native": "-- Requêtes « en compétence partagée » au niveau national :\n-- au moins 2 entités affectées, après avoir exclu les entités\n-- clôturées pour motif « Hors compétence ».\nSELECT\n  COUNT(*) AS nombre_requetes_competence_partagee\nFROM (\n  SELECT r.id\n  FROM \"Requete\" r\n  JOIN \"RequeteEntite\" re ON re.\"requeteId\" = r.id\n  JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n  WHERE NOT (\n    re.\"statutId\" = 'CLOTUREE'\n    AND EXISTS (\n      SELECT 1\n      FROM \"RequeteEtape\" et\n      JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n      WHERE et.\"requeteId\" = re.\"requeteId\"\n        AND et.\"entiteId\"  = re.\"entiteId\"\n        AND et.\"statutId\"  = 'CLOTUREE'\n        AND j.\"A\"          = 'HORS_COMPETENCE'\n    )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                       AND {{inclure_eig}} = 'false') ]]\n  GROUP BY r.id\n  HAVING COUNT(DISTINCT re.\"entiteId\") >= 2\n     [[ AND bool_or(e.label = {{entity_label}}) ]]\n) t;",
         "template-tags": [
           {
             "display-name": "Start Date",
@@ -61,6 +61,15 @@
             "id": "c68c73cb-0a26-4754-9e35-3c3287cdc191",
             "name": "entity_label",
             "type": "text"
+          },
+          {
+            "default": [
+              true
+            ],
+            "display-name": "Inclure Eig",
+            "id": "1fd533ad-b2b1-4d5d-bc6c-66bc6a6734af",
+            "name": "inclure_eig",
+            "type": "boolean"
           }
         ]
       }
@@ -77,12 +86,12 @@
   "entity_id": "KSCh9ti0JapmM8pcSof7f",
   "id": 77,
   "is_remote_synced": false,
-  "last_query_start": "2026-08-24T14:33:00.267784Z",
+  "last_query_start": "2026-08-27T10:31:13.241763Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.63.5 (1dca717)",
   "moderation_reviews": [],
-  "name": "requêtes en compétence partagée",
+  "name": "Requêtes en compétence partagée",
   "param_fields": {},
   "parameter_mappings": [],
   "parameter_usage_count": 0,
@@ -142,6 +151,23 @@
         ]
       ],
       "type": "string/="
+    },
+    {
+      "default": [
+        true
+      ],
+      "id": "1fd533ad-b2b1-4d5d-bc6c-66bc6a6734af",
+      "isMultiSelect": false,
+      "name": "Inclure Eig",
+      "slug": "inclure_eig",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "inclure_eig"
+        ]
+      ],
+      "type": "boolean/="
     }
   ],
   "public_uuid": null,
@@ -166,13 +192,13 @@
         },
         "type": {
           "type/Number": {
-            "avg": 13,
+            "avg": 5326,
             "excess-kurtosis": null,
-            "max": 13,
-            "min": 13,
+            "max": 5326,
+            "min": 5326,
             "mode-fraction": 1,
-            "q1": 13,
-            "q3": 13,
+            "q1": 5326,
+            "q3": 5326,
             "sd": 0,
             "skewness": null,
             "top-3-fraction": 1,
