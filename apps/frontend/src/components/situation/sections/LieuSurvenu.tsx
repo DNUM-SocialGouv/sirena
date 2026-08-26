@@ -533,7 +533,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                       <ReadOnlyField
                         id={`${fieldId}-nom-etablissement`}
                         label="Nom de l'établissement"
-                        hintText="Ce champ n’est pas modifiable ici."
+                        hintText="Ce champ est en lecture seule."
                         value={extractOrganizationName(formData.lieuDeSurvenue?.adresse)}
                       />
                     ) : (
@@ -562,7 +562,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                         <ReadOnlyField
                           id={`${fieldId}-rue`}
                           label="Rue"
-                          hintText="Ce champ n’est pas modifiable ici."
+                          hintText="Ce champ est en lecture seule."
                           value={formData.lieuDeSurvenue?.adresse?.rue || ''}
                         />
                       ) : (
@@ -590,7 +590,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                       <ReadOnlyField
                         id={`${fieldId}-code-postal`}
                         label="Code postal"
-                        hintText="Ce champ n’est pas modifiable ici."
+                        hintText="Ce champ est en lecture seule."
                         value={formData.lieuDeSurvenue?.adresse?.codePostal || ''}
                       />
                     ) : (
@@ -617,7 +617,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                       <ReadOnlyField
                         id={`${fieldId}-ville`}
                         label="Ville"
-                        hintText="Ce champ n’est pas modifiable ici."
+                        hintText="Ce champ est en lecture seule."
                         value={formData.lieuDeSurvenue?.adresse?.ville || ''}
                       />
                     ) : (

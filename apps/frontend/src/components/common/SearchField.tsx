@@ -44,7 +44,6 @@ interface SearchFieldProps<T> {
   state?: 'default' | 'success' | 'info' | 'error';
   stateRelatedMessage?: React.ReactNode;
   disabled?: boolean;
-  // Renders the field read-only (kept focusable, full contrast)
   readOnly?: boolean;
   queryKey: string;
   fetchFn: (searchTerm: string) => Promise<T[]>;

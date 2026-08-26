@@ -71,7 +71,7 @@ function LocalEntiteSirenaFields({
               <ReadOnlyField
                 id={nameReadOnlyId}
                 label={`Nom ${wording.name}`}
-                hintText="Ce champ n’est pas modifiable ici."
+                hintText="Ce champ est en lecture seule."
                 value={formData.nomComplet}
               />
             </div>
@@ -98,7 +98,7 @@ function LocalEntiteSirenaFields({
               <ReadOnlyField
                 id={abbreviationReadOnlyId}
                 label="Abréviation"
-                hintText="Ce champ n’est pas modifiable ici."
+                hintText="Ce champ est en lecture seule."
                 value={formData.label}
               />
             </div>

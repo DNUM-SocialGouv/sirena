@@ -189,7 +189,7 @@ function RouteComponent() {
                           id={`${fieldId}-nom`}
                           className="fr-mb-3w"
                           label="Nom"
-                          hintText="Ce champ n’est pas modifiable ici."
+                          hintText="Ce champ est en lecture seule."
                           value={user.nom}
                         />
                       </div>
@@ -198,7 +198,7 @@ function RouteComponent() {
                           id={`${fieldId}-prenom`}
                           className="fr-mb-3w"
                           label="Prénom"
-                          hintText="Ce champ n’est pas modifiable ici."
+                          hintText="Ce champ est en lecture seule."
                           value={user.prenom}
                         />
                       </div>
@@ -209,7 +209,7 @@ function RouteComponent() {
                         <ReadOnlyField
                           id={`${fieldId}-email`}
                           label="Email"
-                          hintText="Ce champ n’est pas modifiable ici."
+                          hintText="Ce champ est en lecture seule."
                           value={user.email}
                         />
                       </div>

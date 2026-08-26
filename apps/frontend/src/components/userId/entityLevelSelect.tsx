@@ -32,7 +32,7 @@ export function EntityLevelSelectComponent({
         id={`${generatedId}-${name}`}
         className="fr-fieldset__content"
         label={label}
-        hintText="Ce champ n’est pas modifiable ici."
+        hintText="Ce champ est en lecture seule."
         value={selectedLabel}
       />
     );

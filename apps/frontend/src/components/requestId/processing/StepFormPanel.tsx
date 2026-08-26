@@ -631,7 +631,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                       <ReadOnlyField
                         id={`${titleId}-nom`}
                         label="Nom de l'étape"
-                        hintText="Ce champ n’est pas modifiable ici."
+                        hintText="Ce champ est en lecture seule."
                         value={nom}
                       />
                     ) : (
