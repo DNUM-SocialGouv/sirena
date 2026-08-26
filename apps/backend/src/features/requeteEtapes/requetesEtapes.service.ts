@@ -34,6 +34,7 @@ export const createDefaultRequeteEtapes = async (
   entiteId: string,
   tx?: Prisma.TransactionClient,
   changedById?: string | null,
+  dates?: { acknowledgmentCreatedAt?: Date },
 ) => {
   const prismaClient = tx ?? prisma;
 
@@ -110,6 +111,7 @@ export const createDefaultRequeteEtapes = async (
       nom: ACKNOWLEDGMENT_STEP_NAME,
       type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
       estPartagee: false,
+      ...(dates?.acknowledgmentCreatedAt ? { createdAt: dates.acknowledgmentCreatedAt } : {}),
     },
   });
 

@@ -54,6 +54,9 @@ type SituationInput = z.infer<typeof SituationDataSchema>;
 
 type RequeteEntiteKey = { requeteId: string; entiteId: string };
 
+const ACKNOWLEDGMENT_STEP_OFFSET_MS = 1;
+const ASSIGNMENT_STEP_PAIR_INTERVAL_MS = ACKNOWLEDGMENT_STEP_OFFSET_MS + 1;
+
 const toNullableId = (value: string | undefined | null): string | null => {
   if (!value || value === '') return null;
   return value;
@@ -1308,30 +1311,38 @@ const updateSituationEntites = async (
     }),
   );
 
-  // Create default steps for all added top entities
-  await Promise.all(
-    Array.from(entiteMereIdsToAdd).map(async (rootId) => {
-      await createDefaultRequeteEtapes(requeteId, rootId, tx, null);
-    }),
-  );
+  const sortedNewlyAssignedRootEntiteIds = newlyAssignedRootEntiteIds.sort((left, right) => left.localeCompare(right));
 
   if (changedById) {
+    const firstAssignmentDate = new Date();
+
+    for (const [index, assignedEntiteId] of sortedNewlyAssignedRootEntiteIds.entries()) {
+      const affectationDate = new Date(firstAssignmentDate.getTime() + index * ASSIGNMENT_STEP_PAIR_INTERVAL_MS);
+
+      await tx.requeteEtape.create({
+        data: {
+          requeteId,
+          entiteId: topEntiteId,
+          assignedEntiteId,
+          nom: 'Affectation',
+          type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          estPartagee: true,
+          dateRealisation: affectationDate,
+          createdAt: affectationDate,
+          createdById: changedById,
+        },
+      });
+
+      await createDefaultRequeteEtapes(requeteId, assignedEntiteId, tx, null, {
+        acknowledgmentCreatedAt: new Date(affectationDate.getTime() + ACKNOWLEDGMENT_STEP_OFFSET_MS),
+      });
+    }
+  } else {
+    // System origin saves keep creating initial steps without recording an assignment.
     await Promise.all(
-      newlyAssignedRootEntiteIds.map((assignedEntiteId) => {
-        const affectationDate = new Date();
-        return tx.requeteEtape.create({
-          data: {
-            requeteId,
-            entiteId: topEntiteId,
-            assignedEntiteId,
-            nom: 'Affectation',
-            type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
-            statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-            estPartagee: true,
-            dateRealisation: affectationDate,
-            createdById: changedById,
-          },
-        });
+      Array.from(entiteMereIdsToAdd).map(async (rootId) => {
+        await createDefaultRequeteEtapes(requeteId, rootId, tx, null);
       }),
     );
   }
