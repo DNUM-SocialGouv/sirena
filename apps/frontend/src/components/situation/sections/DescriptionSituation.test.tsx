@@ -15,8 +15,8 @@ describe('DescriptionFaits', () => {
     const ref = createRef<DescriptionFaitsRef>();
     render(<DescriptionFaits ref={ref} formData={{}} setFormData={vi.fn()} />);
 
-    const dateDebutInput = screen.getByLabelText('Date de début des faits') as HTMLInputElement;
-    const dateFinInput = screen.getByLabelText('Date de fin des faits') as HTMLInputElement;
+    const dateDebutInput = screen.getByLabelText('Date de début des faits', { exact: false }) as HTMLInputElement;
+    const dateFinInput = screen.getByLabelText('Date de fin des faits', { exact: false }) as HTMLInputElement;
     setInputValidity(dateDebutInput, false);
     setInputValidity(dateFinInput, false);
 
@@ -41,8 +41,8 @@ describe('DescriptionFaits', () => {
     const ref = createRef<DescriptionFaitsRef>();
     render(<DescriptionFaits ref={ref} formData={{}} setFormData={vi.fn()} />);
 
-    const dateDebutInput = screen.getByLabelText('Date de début des faits') as HTMLInputElement;
-    const dateFinInput = screen.getByLabelText('Date de fin des faits') as HTMLInputElement;
+    const dateDebutInput = screen.getByLabelText('Date de début des faits', { exact: false }) as HTMLInputElement;
+    const dateFinInput = screen.getByLabelText('Date de fin des faits', { exact: false }) as HTMLInputElement;
     setInputValidity(dateDebutInput, true);
     setInputValidity(dateFinInput, false);
 

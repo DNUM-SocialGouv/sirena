@@ -36,7 +36,7 @@ describe('PersonneConcerneeForm', () => {
 
     renderForm({ onSave });
 
-    const dateNaissanceInput = screen.getByLabelText('Date de naissance') as HTMLInputElement;
+    const dateNaissanceInput = screen.getByLabelText('Date de naissance', { exact: false }) as HTMLInputElement;
     setInputValidity(dateNaissanceInput, false);
 
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
@@ -55,7 +55,7 @@ describe('PersonneConcerneeForm', () => {
 
     renderForm({ onSave });
 
-    const dateNaissanceInput = screen.getByLabelText('Date de naissance') as HTMLInputElement;
+    const dateNaissanceInput = screen.getByLabelText('Date de naissance', { exact: false }) as HTMLInputElement;
     setInputValidity(dateNaissanceInput, true);
     await user.type(screen.getByLabelText('Nom'), 'Dupont');
 

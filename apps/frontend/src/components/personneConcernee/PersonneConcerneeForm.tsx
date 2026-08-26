@@ -230,6 +230,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
               <div className="fr-col-12 fr-col-md-6">
                 <Input
                   label={personneConcerneeFieldMetadata.dateNaissance.label}
+                  hintText="Format attendu : JJ/MM/AAAA"
                   state={dateNaissanceError ? 'error' : 'default'}
                   stateRelatedMessage={dateNaissanceError}
                   nativeInputProps={{

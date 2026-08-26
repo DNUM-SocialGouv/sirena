@@ -192,6 +192,7 @@ export const DescriptionFaits = forwardRef<DescriptionFaitsRef, DescriptionFaits
           <div className="fr-col-12 fr-col-md-6">
             <Input
               label={DATE_FIELD_LABELS.dateDebut}
+              hintText="Format attendu : JJ/MM/AAAA"
               state={dateErrors.dateDebut ? 'error' : 'default'}
               stateRelatedMessage={dateErrors.dateDebut}
               nativeInputProps={{
@@ -206,6 +207,7 @@ export const DescriptionFaits = forwardRef<DescriptionFaitsRef, DescriptionFaits
           <div className="fr-col-12 fr-col-md-6">
             <Input
               label={DATE_FIELD_LABELS.dateFin}
+              hintText="Format attendu : JJ/MM/AAAA"
               state={dateErrors.dateFin ? 'error' : 'default'}
               stateRelatedMessage={dateErrors.dateFin}
               nativeInputProps={{
