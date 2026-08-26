@@ -34,6 +34,7 @@ describe('changelog.requeteEtapes.middleware.ts', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     createdById: 'user-1',
+    assignedEntiteId: null,
     clotureEffectiveDate: null,
     rappelType: null,
     rappelDate: null,

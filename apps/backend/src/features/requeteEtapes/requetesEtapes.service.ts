@@ -614,6 +614,14 @@ export const getRequeteEtapes = async (
         },
         requeteId: true,
         entiteId: true,
+        assignedEntiteId: true,
+        assignedEntite: {
+          select: {
+            id: true,
+            nomComplet: true,
+            entiteTypeId: true,
+          },
+        },
         requeteEntite: {
           select: {
             entite: {
@@ -651,6 +659,7 @@ export const getRequeteEtapes = async (
   const timelineSourceSteps = raw.map((etape) => {
     const {
       requeteEntite,
+      assignedEntite,
       requete: { createdAt: requestCreatedAt, ...requete },
       ...step
     } = etape;
@@ -669,6 +678,7 @@ export const getRequeteEtapes = async (
       timelineItemType: 'ENTITY_STEP' as const,
       attributedEntiteAdministrative: requeteEntite.entite,
       entiteAdministrative: requeteEntite.entite,
+      assignedEntite,
       editable: isOwner && permissions.editable,
       canOnlyEditNotes: isOwner && permissions.canOnlyEditNotes,
       uploadedFiles: etape.uploadedFiles.map(sanitizeFile),

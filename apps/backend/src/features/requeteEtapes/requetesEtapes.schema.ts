@@ -76,6 +76,7 @@ const AttributedEntiteAdministrativeSchema = z.object({
 // timeline presentation metadata, notes and files (see getRequeteEtapes).
 const RequeteEtapeWithDetailsBaseSchema = RequeteEtapeSchema.extend({
   entiteAdministrative: AttributedEntiteAdministrativeSchema,
+  assignedEntite: AttributedEntiteAdministrativeSchema.nullable(),
   editable: z.boolean(),
   canOnlyEditNotes: z.boolean(),
   uploadedFiles: z.array(EtapeUploadedFileSchema),

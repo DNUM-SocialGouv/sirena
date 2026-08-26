@@ -1,5 +1,5 @@
 import { Readable } from 'node:stream';
-import { ERROR_KIND } from '@sirena/common/constants';
+import { ERROR_KIND, REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
@@ -159,6 +159,7 @@ const fakeRequeteEtape: RequeteEtape = {
   acknowledgmentSendOperationId: null,
   dateRealisation: null,
   createdById: null,
+  assignedEntiteId: null,
   clotureEffectiveDate: null,
   rappelType: null,
   rappelDate: null,
@@ -733,6 +734,7 @@ describe('requeteEtapes.controller.ts', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       createdById: null,
+      assignedEntiteId: null,
       clotureEffectiveDate: null,
       rappelType: null,
       rappelDate: null,
@@ -776,6 +778,7 @@ describe('requeteEtapes.controller.ts', () => {
       timelineItemType: 'ENTITY_STEP';
       attributedEntiteAdministrative: { id: string; nomComplet: string; entiteTypeId: string };
       entiteAdministrative: { id: string; nomComplet: string; entiteTypeId: string };
+      assignedEntite: { id: string; nomComplet: string; entiteTypeId: string } | null;
     } = {
       ...requeteEtape,
       clotureReason: [],
@@ -795,6 +798,7 @@ describe('requeteEtapes.controller.ts', () => {
         nomComplet: 'ARS Normandie',
         entiteTypeId: 'ARS',
       },
+      assignedEntite: null,
       notes: [
         {
           ...note,
@@ -823,6 +827,54 @@ describe('requeteEtapes.controller.ts', () => {
       });
 
       expect(getRequeteEtapes).toHaveBeenCalledWith('1', 'e1', {}, false);
+    });
+
+    it('returns the current assigned Entité administrative for an assignment step', async () => {
+      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({
+        data: [
+          {
+            ...requeteEtapeWithNotesAndFiles,
+            id: 'assignment-step',
+            type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+            statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+            assignedEntiteId: 'assigned-entite',
+            assignedEntite: {
+              id: 'assigned-entite',
+              nomComplet: 'Conseil départemental de Seine-Maritime',
+              entiteTypeId: 'CD',
+            },
+            editable: false,
+            canOnlyEditNotes: false,
+          },
+        ],
+        total: 1,
+        isMultiEntite: true,
+      });
+
+      const res = await client[':id']['processing-steps'].$get({ param: { id: '1' } });
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toMatchObject({
+        data: [
+          {
+            id: 'assignment-step',
+            type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+            assignedEntiteId: 'assigned-entite',
+            assignedEntite: {
+              id: 'assigned-entite',
+              nomComplet: 'Conseil départemental de Seine-Maritime',
+              entiteTypeId: 'CD',
+            },
+            attributedEntiteAdministrative: {
+              id: 'entiteId',
+              nomComplet: 'ARS Normandie',
+              entiteTypeId: 'ARS',
+            },
+            editable: false,
+            canOnlyEditNotes: false,
+          },
+        ],
+      });
     });
 
     it('returns a complete projected chronology in service order with visible-item metadata', async () => {
@@ -979,6 +1031,7 @@ describe('requeteEtapes.controller.ts', () => {
         acknowledgmentSendOperationId: null,
         dateRealisation: null,
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,

@@ -1,3 +1,4 @@
+import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
 import type { PinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { deleteFileFromMinio } from '../../libs/minio.js';
@@ -89,6 +90,7 @@ const requeteEtape: RequeteEtape = {
   createdAt: new Date(),
   updatedAt: new Date(),
   createdById: null,
+  assignedEntiteId: null,
   clotureEffectiveDate: null,
   rappelType: null,
   rappelDate: null,
@@ -108,6 +110,7 @@ const requeteEtapeWithNotesAndFiles: RequeteEtape & {
   requeteEntite: {
     entite: { id: string; nomComplet: string; entiteTypeId: string };
   };
+  assignedEntite: { id: string; nomComplet: string; entiteTypeId: string } | null;
   requete: {
     createdAt: Date;
     createdById: string | null;
@@ -132,6 +135,7 @@ const requeteEtapeWithNotesAndFiles: RequeteEtape & {
   requeteEntite: {
     entite: { id: 'entiteId', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
   },
+  assignedEntite: null,
   requete: {
     createdAt: new Date('2024-01-01T00:00:00.000Z'),
     createdById: null,
@@ -178,6 +182,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -197,6 +202,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -260,6 +266,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: currentDate,
         updatedAt: currentDate,
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -279,6 +286,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: currentDate,
         updatedAt: currentDate,
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -334,6 +342,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -353,6 +362,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -427,6 +437,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -446,6 +457,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -488,6 +500,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -507,6 +520,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -624,6 +638,14 @@ describe('RequeteEtapes.service.ts', () => {
           },
           requeteId: true,
           entiteId: true,
+          assignedEntiteId: true,
+          assignedEntite: {
+            select: {
+              id: true,
+              nomComplet: true,
+              entiteTypeId: true,
+            },
+          },
           requeteEntite: {
             select: {
               entite: {
@@ -739,6 +761,14 @@ describe('RequeteEtapes.service.ts', () => {
           },
           requeteId: true,
           entiteId: true,
+          assignedEntiteId: true,
+          assignedEntite: {
+            select: {
+              id: true,
+              nomComplet: true,
+              entiteTypeId: true,
+            },
+          },
           requeteEntite: {
             select: {
               entite: {
@@ -837,6 +867,43 @@ describe('RequeteEtapes.service.ts', () => {
 
       expect(result.data[0]).toMatchObject({
         id: 'pending-automatic-ack',
+        editable: false,
+        canOnlyEditNotes: false,
+      });
+    });
+
+    it('exposes the current assigned Entité administrative identity for an assignment step', async () => {
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
+        {
+          ...requeteEtapeWithNotesAndFiles,
+          id: 'assignment-step',
+          type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          assignedEntiteId: 'assigned-entite',
+          assignedEntite: {
+            id: 'assigned-entite',
+            nomComplet: 'Conseil départemental de Seine-Maritime',
+            entiteTypeId: 'CD',
+          },
+        } as never,
+      ]);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
+
+      const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0 });
+
+      expect(result.data[0]).toMatchObject({
+        id: 'assignment-step',
+        assignedEntiteId: 'assigned-entite',
+        assignedEntite: {
+          id: 'assigned-entite',
+          nomComplet: 'Conseil départemental de Seine-Maritime',
+          entiteTypeId: 'CD',
+        },
+        attributedEntiteAdministrative: {
+          id: 'entiteId',
+          nomComplet: 'ARS Normandie',
+          entiteTypeId: 'ARS',
+        },
         editable: false,
         canOnlyEditNotes: false,
       });
@@ -1585,6 +1652,16 @@ describe('RequeteEtapes.service.ts', () => {
         editable: true,
         canOnlyEditNotes: false,
       });
+    });
+
+    it('ASSIGNMENT step is not editable', () => {
+      expect(
+        getEtapePermissions({
+          type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          uploadedFiles: [],
+        }),
+      ).toEqual({ editable: false, canOnlyEditNotes: false });
     });
 
     it('CLOTUREE step is not editable', () => {
