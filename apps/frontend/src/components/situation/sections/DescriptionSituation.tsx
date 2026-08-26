@@ -12,7 +12,7 @@ import {
   type ReceptionType,
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
-import { SelectWithChildren } from '@sirena/ui';
+import { AccordionMultiSelect, SelectWithChildren } from '@sirena/ui';
 import { forwardRef, useCallback, useImperativeHandle, useRef, useState } from 'react';
 import { shouldShowMaltraitanceWarning } from '@/utils/maltraitanceHelpers';
 
@@ -155,10 +155,13 @@ export const DescriptionFaits = forwardRef<DescriptionFaitsRef, DescriptionFaits
             </div>
           )}
           <div className="fr-col-12">
-            <SelectWithChildren
+            <AccordionMultiSelect
               options={MOTIFS_HIERARCHICAL_DATA}
               value={formData.fait?.motifs || []}
               onChange={handleMotifsChange}
+              placeholder="Sélectionner un ou plusieurs motifs"
+              itemNoun={{ singular: 'motif', plural: 'motifs' }}
+              categoryHeadingLevel={3}
             />
             {showMaltraitanceWarning && (
               <div className="fr-mt-2w">
