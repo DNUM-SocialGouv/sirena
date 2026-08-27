@@ -261,6 +261,23 @@ describe('requeteEtapes.controller.ts', () => {
       expect(addClotureEtapeFiles).not.toHaveBeenCalled();
     });
 
+    it('forbids the owner from attaching closure files to an assignment', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        estPartagee: true,
+      });
+
+      const res = await client[':id']['cloture-files'].$post({
+        param: { id: 'step1' },
+        json: { fileIds: ['forbidden-file'] },
+      });
+
+      expect(res.status).toBe(403);
+      expect(addClotureEtapeFiles).not.toHaveBeenCalled();
+    });
+
     it('forbids attaching files to an automatically sent acknowledgment owned by the current perimeter', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
@@ -665,6 +682,21 @@ describe('requeteEtapes.controller.ts', () => {
         statutId: 'FAIT',
         acknowledgmentSendMode: 'AUTOMATIC',
         acknowledgmentSendOperationId: '11111111-1111-4111-8111-111111111111',
+      });
+
+      const res = await client[':id'].$delete({ param: { id: 'step1' } });
+
+      expect(res.status).toBe(403);
+      expect(deleteRequeteEtape).not.toHaveBeenCalled();
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+    });
+
+    it('forbids the owner from deleting an assignment', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        estPartagee: true,
       });
 
       const res = await client[':id'].$delete({ param: { id: 'step1' } });
@@ -1320,6 +1352,30 @@ describe('requeteEtapes.controller.ts', () => {
       });
 
       expect(res.status).toBe(403);
+      expect(updateProcessingEtape).not.toHaveBeenCalled();
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+    });
+
+    it('forbids the owner from changing an assignment or adding content', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        estPartagee: true,
+      });
+
+      const res = await client[':id'].$patch({
+        param: { id: 'step1' },
+        json: {
+          ...validBody,
+          notes: [{ texte: 'Forbidden note' }],
+          fileIds: ['forbidden-file'],
+          rappelType: 'JOURS_7',
+        },
+      });
+
+      expect(res.status).toBe(403);
+      expect(hasAccessToRequete).not.toHaveBeenCalled();
       expect(updateProcessingEtape).not.toHaveBeenCalled();
       expect(updateStatusRequete).not.toHaveBeenCalled();
     });
