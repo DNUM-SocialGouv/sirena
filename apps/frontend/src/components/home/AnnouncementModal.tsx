@@ -16,7 +16,7 @@ function readDismissedCampaign(): string | null {
   }
 }
 
-type AnnouncementAction = {
+export type AnnouncementAction = {
   label: string;
   href: string;
   target?: '_blank';

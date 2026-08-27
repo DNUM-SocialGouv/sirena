@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef } from 'react';
 import { RequetesEntite } from '@/components/common/tables/requetesEntites.tsx';
-import { CollaborationAnnouncementModal } from '@/components/home/CollaborationAnnouncementModal';
+import { HomeAnnouncementModal } from '@/components/home/HomeAnnouncementModal';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import { useCanEdit } from '@/hooks/useCanEdit';
@@ -45,7 +45,7 @@ export function RouteComponent() {
     <QueryStateHandler query={profileQuery}>
       {() => (
         <>
-          <CollaborationAnnouncementModal focusReturnRef={homePageTitleRef} />
+          <HomeAnnouncementModal focusReturnRef={homePageTitleRef} />
           <div className={fr.cx('fr-container', 'fr-my-8w')}>
             <div className={styles.header}>
               <div>

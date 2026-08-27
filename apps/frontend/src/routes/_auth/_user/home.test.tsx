@@ -16,8 +16,8 @@ vi.mock('@/components/common/tables/requetesEntites.tsx', () => ({
   RequetesEntite: () => <div>Liste des requêtes</div>,
 }));
 
-vi.mock('@/components/home/CollaborationAnnouncementModal', () => ({
-  CollaborationAnnouncementModal: () => <div>Annonce de collaboration</div>,
+vi.mock('@/components/home/HomeAnnouncementModal', () => ({
+  HomeAnnouncementModal: () => <div>Annonce active</div>,
 }));
 
 vi.mock('@/components/queryStateHandler/queryStateHandler', () => ({
@@ -49,7 +49,7 @@ afterEach(() => {
 });
 
 describe('Home route', () => {
-  it('mounts the collaboration announcement in the business home experience', () => {
+  it('mounts the active announcement in the business home experience', () => {
     vi.mocked(useQuery).mockReturnValue({
       data: { prenom: 'Camille', statutId: 'ACTIF' },
     } as never);
@@ -58,6 +58,6 @@ describe('Home route', () => {
 
     const homeHeading = screen.getByRole('heading', { name: 'Tableau de bord des requêtes' });
     expect(homeHeading).toHaveAttribute('tabindex', '-1');
-    expect(screen.getByText('Annonce de collaboration')).toBeInTheDocument();
+    expect(screen.getByText('Annonce active')).toBeInTheDocument();
   });
 });

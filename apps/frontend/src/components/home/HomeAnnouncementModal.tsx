@@ -2,34 +2,43 @@ import { fr } from '@codegouvfr/react-dsfr';
 import { FEATURE_FLAGS } from '@sirena/common/constants';
 import type { RefObject } from 'react';
 import { useHasFeature } from '@/hooks/useHasFeature';
-import { AnnouncementModal } from './AnnouncementModal';
+import { LatestAnnouncementModal } from './LatestAnnouncementModal';
 
 const RELEASE_NOTES_URL = 'https://docs.numerique.gouv.fr/docs/24ca6ea9-c64d-4e30-8555-626166cb2d45/';
-const CAMPAIGN = 'collaboration-v1';
 
-type CollaborationAnnouncementModalProps = {
+const COLLABORATION_ANNOUNCEMENT = {
+  campaign: 'collaboration-v1',
+  title: 'De nouvelles fonctionnalités sont disponibles !',
+  action: {
+    label: 'Voir la documentation',
+    href: RELEASE_NOTES_URL,
+    target: '_blank',
+    rel: 'noopener noreferrer',
+  },
+  content: <CollaborationAnnouncementContent />,
+} as const;
+
+type HomeAnnouncementModalProps = {
   focusReturnRef: RefObject<HTMLElement | null>;
 };
 
-export function CollaborationAnnouncementModal({ focusReturnRef }: CollaborationAnnouncementModalProps) {
-  const isEligible = useHasFeature(FEATURE_FLAGS.SHARED_PROCESSING_STEPS, false);
+export function HomeAnnouncementModal({ focusReturnRef }: HomeAnnouncementModalProps) {
+  const isCollaborationEligible = useHasFeature(FEATURE_FLAGS.SHARED_PROCESSING_STEPS, false);
 
-  if (!isEligible) {
-    return null;
-  }
+  // Keep configurations ordered from oldest to newest. Only the last one can be displayed.
+  const announcements = [
+    {
+      ...COLLABORATION_ANNOUNCEMENT,
+      isEligible: isCollaborationEligible,
+    },
+  ];
 
+  return <LatestAnnouncementModal announcements={announcements} focusReturnRef={focusReturnRef} />;
+}
+
+function CollaborationAnnouncementContent() {
   return (
-    <AnnouncementModal
-      campaign={CAMPAIGN}
-      title="De nouvelles fonctionnalités sont disponibles !"
-      action={{
-        label: 'Voir la documentation',
-        href: RELEASE_NOTES_URL,
-        target: '_blank',
-        rel: 'noopener noreferrer',
-      }}
-      focusReturnRef={focusReturnRef}
-    >
+    <>
       <p className={fr.cx('fr-text--lg', 'fr-mb-3w')}>
         <strong>
           Pour les requêtes en compétences partagées, l’onglet Traitement affiche désormais les étapes réalisées par
@@ -48,6 +57,6 @@ export function CollaborationAnnouncementModal({ focusReturnRef }: Collaboration
           <span aria-hidden="true">⭐</span> Vous pouvez filtrer les étapes par entité.
         </li>
       </ul>
-    </AnnouncementModal>
+    </>
   );
 }
