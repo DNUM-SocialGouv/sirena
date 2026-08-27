@@ -5,8 +5,9 @@ exposé sur la page **Indicateurs** (`/statistiques`), comment en **définir de 
 côté Metabase, et comment **adapter les requêtes SQL** des cartes pour qu'elles en tiennent
 compte.
 
-Deux filtres sont implémentés, **cumulables** entre eux : un **filtre de période** (date de
-début / date de fin) et un **filtre de domaine fonctionnel** (multi-sélection).
+Trois filtres sont implémentés, **cumulables** entre eux : un **filtre de période** (date de
+début / date de fin), un **filtre de domaine fonctionnel** (multi-sélection) et une **exclusion
+des requêtes EIG** (case à cocher, active par défaut).
 
 ---
 
@@ -69,6 +70,7 @@ fonctionner exactement comme avant (cf. § sécurité).
 | `startDate` | `start_date` | **Enabled** (optionnel) | query string |
 | `endDate` | `end_date` | **Enabled** (optionnel) | query string |
 | `domaineIds` | `domaine_fonctionnel` | **Enabled** (optionnel) | query string |
+| `includeEIG` | `inclure_eig` | **Enabled** (optionnel) | query string |
 | _(périmètre entité)_ | `entity_label` | **Locked** (imposé serveur) | JWT (token) |
 
 > ⚠️ La visibilité **doit** être cohérente avec le mode de transmission : un paramètre
@@ -85,7 +87,10 @@ rechargement** et **partageable** via l'URL, et chaque changement relance automa
 requête (la `queryKey` inclut les dates). En revanche, elle n'est **pas** automatiquement
 conservée lors d'une navigation vers une autre page de l'application puis d'un retour sur
 `/statistiques`. Le filtre de domaine fonctionnel suit exactement la même mécanique
-(`?domaineIds=SOCIAL,SANITAIRE`).
+(`?domaineIds=SOCIAL,SANITAIRE`). L'option d'inclusion des EIG suit la même mécanique, avec la
+nuance d'être **activée par défaut** : le paramètre n'apparaît dans l'URL que lorsque
+l'utilisateur désactive l'inclusion des EIG (`?includeEIG=false`). En l'absence du paramètre,
+les EIG sont inclus.
 
 ---
 
@@ -368,6 +373,85 @@ Metabase, ses cases à cocher viennent du référentiel applicatif.
 > risque d'être transmis en query string puis refusé par Metabase, ce qui ferait tomber tout le
 > dashboard en 503. Pour désactiver le filtre, retirer le paramètre du dashboard.
 
+## 4 ter. Le filtre d'exclusion des EIG (case à cocher)
+
+Sur la page Indicateurs, une case **« Inclure les EIG »**, **cochée par défaut**, permet de
+retirer de **tous** les indicateurs les requêtes de type EIG — celles dont le **déclarant** a
+répondu « Oui » à « *Le déclarant est un professionnel qui signale des dysfonctionnements et
+événements indésirables graves (EIG)* », c'est-à-dire
+`PersonneConcernee."estSignalementProfessionnel" = true` sur la personne rattachée à la requête
+par `declarantDeId`.
+
+### Un filtre nommé d'après son état par défaut
+
+Le filtre reprend le nom de la case à cocher telle qu'elle apparaît dans l'interface :
+`includeEIG` côté URL et API, et `inclure_eig` côté Metabase. Cela évite d'introduire un
+`exclude*` qui inverserait la logique entre l'interface et le code.
+
+Le paramètre n'est envoyé que lorsque l'utilisateur décoche la case, avec la valeur `'false'`.
+La valeur `'true'` n'est donc jamais envoyée : l'absence du paramètre signifie simplement que
+les EIG sont inclus.
+
+C'est le même principe que pour les filtres rapides de la liste des requêtes (`over90Days`,
+`rappel`) : un filtre non sélectionné n'est pas transmis. Côté Metabase, cela permet au bloc
+conditionnel `[[ ]]` de ne pas être appliqué lorsque le paramètre est absent.
+
+Le schéma Zod du backend n'accepte d'ailleurs **que** `'false'` (`z.enum(['false'])`) : une
+valeur inattendue est rejetée en 400 plutôt que d'être interprétée au jugé.
+
+### Le bloc à ajouter : un `NOT EXISTS` auto-neutralisant
+
+À coller dans le `WHERE` qui délimite le périmètre des requêtes (dans la CTE de périmètre pour
+les cartes qui en ont une), où `r` est l'alias de `"Requete"` :
+
+```sql
+[[ AND NOT EXISTS (SELECT 1 FROM "PersonneConcernee" pc_eig
+                   WHERE pc_eig."declarantDeId" = r.id
+                     AND pc_eig."estSignalementProfessionnel" IS TRUE
+                     AND {{inclure_eig}} = 'false') ]]
+```
+
+Trois points expliquent cette forme :
+
+- **`IS TRUE`, et non `= true`.** La colonne est *nullable* : un déclarant qui n'a pas répondu
+  (`NULL`) ou qui a répondu « Non » (`false`) n'est **pas** un EIG. `IS TRUE` range les deux du
+  même côté, là où `= true` laisserait `NULL` remonter en `UNKNOWN` et vider la ligne du
+  `NOT EXISTS`.
+- **La comparaison `{{inclure_eig}} = 'false'` est dans la sous-requête, pas à côté.** Le
+  template tag *doit* se trouver dans le bloc `[[ ]]` pour que celui-ci soit optionnel ; le
+  placer là rend en prime le filtre inerte si une valeur `'true'` arrivait un jour (la
+  sous-requête ne renvoie alors aucune ligne, donc `NOT EXISTS` est toujours vrai et rien n'est
+  exclu).
+- **`NOT EXISTS` plutôt qu'une jointure**, pour la même raison qu'au § 4 bis : purement additif,
+  aucun `FROM`, `SELECT` ni `COUNT` existant à retoucher.
+
+L'alias `pc_eig` est délibérément distinct de tout alias déjà utilisé par les cartes.
+
+### Configuration côté Metabase
+
+**Sur chaque carte** — coller le SQL crée le template tag. Le régler ainsi :
+
+| Réglage | Valeur | Pourquoi |
+| --- | --- | --- |
+| Nom de la variable | `inclure_eig` | doit être le slug exact envoyé par le backend |
+| Type de variable | **Texte** | on compare à la chaîne `'false'` ; pas un Field Filter |
+| Les utilisateurs peuvent choisir | **une seule valeur** | le filtre est binaire |
+| Obligatoire | **non** | sinon le filtre s'appliquerait en permanence |
+| Valeur par défaut | aucune | l'absence de valeur = « inclure les EIG », l'état par défaut de l'UI |
+
+**Sur chaque dashboard** — un filtre **Texte ou catégorie → est égal à**, de slug
+**`inclure_eig`**, mappé sur **toutes** les cartes. Comme pour le domaine fonctionnel, une carte
+non mappée ignore le filtre **silencieusement** : les KPI deviennent incohérents entre eux sans
+lever d'erreur.
+
+**Visibilité d'embedding** — Partage → Embedding → Paramètres : `inclure_eig` → **Enabled**.
+
+> Tant que le dashboard ne déclare pas `inclure_eig`, décocher la case est **sans effet** sur les
+> chiffres : le backend ne transmet que les filtres déclarés. C'est le fonctionnement attendu du
+> déploiement en deux temps (code puis configuration Metabase), pas une régression.
+
+---
+
 ## 5. Ajouter un nouveau filtre
 
 Le filtre de période sert de modèle. Pour un nouveau filtre (ex. un statut), répéter les mêmes
@@ -395,14 +479,14 @@ couches :
 - **`entity_label` doit rester `Locked`.** C'est lui qui restreint les statistiques au
   périmètre de l'entité de l'utilisateur ; il est imposé côté serveur et ne doit jamais être
   pilotable par le client.
-- **Les filtres de consultation (date, domaine fonctionnel) sont `Enabled`.** Ils ne changent pas le périmètre
+- **Les filtres de consultation (date, domaine fonctionnel, exclusion des EIG) sont `Enabled`.** Ils ne changent pas le périmètre
   de sécurité, seulement le sous-ensemble temporel affiché. Le backend les signe lui-même après
   validation Zod ; aucune valeur brute du client n'atteint Metabase sans passer par cette
   validation.
 - **Si le dashboard n'expose pas encore les paramètres, les filtres sont simplement ignorés et
   le dashboard continue de fonctionner normalement.** Le backend découvre les filtres déclarés
-  par le dashboard et ne transmet `start_date` / `end_date` / `domaine_fonctionnel` (en query
-  string) que s'ils sont fournis **et** déclarés. Sélectionner une date sur un dashboard qui n'expose pas encore ces
+  par le dashboard et ne transmet `start_date` / `end_date` / `domaine_fonctionnel` /
+  `inclure_eig` (en query string) que s'ils sont fournis **et** déclarés. Sélectionner une date sur un dashboard qui n'expose pas encore ces
   paramètres est donc sans effet (filtre ignoré), et non plus une erreur Metabase. Activer le
   filtre côté Metabase (§ 3) suffit à le rendre opérant, sans changement de code.
 - **Token vs query string.** En embedding signé, un paramètre **« Enabled »** ne se lit que

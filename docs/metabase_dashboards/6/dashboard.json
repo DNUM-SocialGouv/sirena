@@ -42,7 +42,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "SELECT\n    COUNT(DISTINCT r.id) AS nombre_requetes\nFROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\nWHERE\n    TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]];",
+              "native": "SELECT\n    COUNT(DISTINCT r.id) AS nombre_requetes\nFROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\nWHERE\n    TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]];",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -67,6 +67,16 @@
                   "id": "b9b04180-c3d1-4d83-a057-3607ac41c3ae",
                   "name": "domaine_fonctionnel",
                   "type": "text"
+                },
+                {
+                  "default": [
+                    true
+                  ],
+                  "display-name": "Inclure Eig",
+                  "id": "b19ebda3-7f2c-4453-9549-3de9348c13ff",
+                  "name": "inclure_eig",
+                  "required": false,
+                  "type": "boolean"
                 }
               ]
             }
@@ -87,7 +97,7 @@
         "made_public_by_id": null,
         "metabase_version": "v0.62.3.3 (686cac9)",
         "moderation_reviews": [],
-        "name": "requêtes au total",
+        "name": "Requêtes au total",
         "parameter_mappings": [],
         "parameters": [
           {
@@ -254,10 +264,28 @@
               ]
             },
             "values_source_type": "static-list"
+          },
+          {
+            "default": [
+              true
+            ],
+            "id": "b19ebda3-7f2c-4453-9549-3de9348c13ff",
+            "isMultiSelect": false,
+            "name": "Inclure Eig",
+            "required": false,
+            "slug": "inclure_eig",
+            "target": [
+              "variable",
+              [
+                "template-tag",
+                "inclure_eig"
+              ]
+            ],
+            "type": "boolean/="
           }
         ],
         "public_uuid": null,
-        "query_average_duration": 191,
+        "query_average_duration": 566,
         "query_type": "native",
         "result_metadata": [
           {
@@ -279,13 +307,13 @@
               },
               "type": {
                 "type/Number": {
-                  "avg": 6283,
+                  "avg": 17401,
                   "excess-kurtosis": null,
-                  "max": 6283,
-                  "min": 6283,
+                  "max": 17401,
+                  "min": 17401,
                   "mode-fraction": 1,
-                  "q1": 6283,
-                  "q3": 6283,
+                  "q1": 17401,
+                  "q3": 17401,
                   "sd": 0,
                   "skewness": null,
                   "top-3-fraction": 1,
@@ -362,6 +390,17 @@
               "domaine_fonctionnel"
             ]
           ]
+        },
+        {
+          "card_id": 65,
+          "parameter_id": "a28a16da",
+          "target": [
+            "variable",
+            [
+              "template-tag",
+              "inclure_eig"
+            ]
+          ]
         }
       ],
       "row": 0,
@@ -390,7 +429,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "WITH RECURSIVE\n-- 1. Périmètre entités : l'entité de premier niveau de l'utilisateur (entiteMereId IS NULL)\n--    identifiée par {{entity_label}}, PLUS tous ses services descendants (récursif).\nentites_scope AS (\n  SELECT e.id\n  FROM \"Entite\" e\n  WHERE e.\"entiteMereId\" IS NULL\n    [[ AND e.label = {{entity_label}} ]]\n\n  UNION ALL\n\n  SELECT child.id\n  FROM \"Entite\" child\n  JOIN entites_scope s ON child.\"entiteMereId\" = s.id\n),\n\n-- 2. Requêtes ayant AU MOINS un motif dont le 1er niveau est \"Maltraitance professionnels ou entourage\".\n--    Les id de MotifEnum sont au format \"PARENT/ENFANT\" -> on filtre sur le parent.\nrequetes_maltraitance AS (\n  SELECT DISTINCT s.\"requeteId\" AS requete_id\n  FROM \"Situation\" s\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  WHERE s.\"requeteId\" IS NOT NULL\n    AND fm.\"motifId\" LIKE 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/%'\n)\n\nSELECT COUNT(DISTINCT r.id) AS \"Requêtes maltraitance\"\nFROM \"Requete\" r\nJOIN requetes_maltraitance rm ON rm.requete_id = r.id\nJOIN \"RequeteEntite\" re     ON re.\"requeteId\" = r.id\nJOIN entites_scope es       ON es.id = re.\"entiteId\"\nWHERE 1 = 1\n  [[ AND r.\"createdAt\"::date >= {{start_date}} ]]\n  [[ AND r.\"createdAt\"::date <= {{end_date}} ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]",
+              "native": "WITH RECURSIVE\n-- 1. Périmètre entités : l'entité de premier niveau de l'utilisateur (entiteMereId IS NULL)\n--    identifiée par {{entity_label}}, PLUS tous ses services descendants (récursif).\nentites_scope AS (\n  SELECT e.id\n  FROM \"Entite\" e\n  WHERE e.\"entiteMereId\" IS NULL\n    [[ AND e.label = {{entity_label}} ]]\n\n  UNION ALL\n\n  SELECT child.id\n  FROM \"Entite\" child\n  JOIN entites_scope s ON child.\"entiteMereId\" = s.id\n),\n\n-- 2. Requêtes ayant AU MOINS un motif dont le 1er niveau est \"Maltraitance professionnels ou entourage\".\n--    Les id de MotifEnum sont au format \"PARENT/ENFANT\" -> on filtre sur le parent.\nrequetes_maltraitance AS (\n  SELECT DISTINCT s.\"requeteId\" AS requete_id\n  FROM \"Situation\" s\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  WHERE s.\"requeteId\" IS NOT NULL\n    AND fm.\"motifId\" LIKE 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/%'\n)\n\nSELECT COUNT(DISTINCT r.id) AS \"Requêtes maltraitance\"\nFROM \"Requete\" r\nJOIN requetes_maltraitance rm ON rm.requete_id = r.id\nJOIN \"RequeteEntite\" re     ON re.\"requeteId\" = r.id\nJOIN entites_scope es       ON es.id = re.\"entiteId\"\nWHERE 1 = 1\n  [[ AND r.\"createdAt\"::date >= {{start_date}} ]]\n  [[ AND r.\"createdAt\"::date <= {{end_date}} ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                       AND {{inclure_eig}} = 'false') ]]",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -415,6 +454,15 @@
                   "id": "4f3c051b-f8ef-49d4-b26a-72a4719ba18f",
                   "name": "domaine_fonctionnel",
                   "type": "text"
+                },
+                {
+                  "default": [
+                    true
+                  ],
+                  "display-name": "Inclure Eig",
+                  "id": "7ca1a556-dabf-4e19-9e5b-fcb8656fc6de",
+                  "name": "inclure_eig",
+                  "type": "boolean"
                 }
               ]
             }
@@ -602,10 +650,27 @@
               ]
             },
             "values_source_type": "static-list"
+          },
+          {
+            "default": [
+              true
+            ],
+            "id": "7ca1a556-dabf-4e19-9e5b-fcb8656fc6de",
+            "isMultiSelect": false,
+            "name": "Inclure Eig",
+            "slug": "inclure_eig",
+            "target": [
+              "variable",
+              [
+                "template-tag",
+                "inclure_eig"
+              ]
+            ],
+            "type": "boolean/="
           }
         ],
         "public_uuid": null,
-        "query_average_duration": 154,
+        "query_average_duration": 221,
         "query_type": "native",
         "result_metadata": [
           {
@@ -627,13 +692,13 @@
               },
               "type": {
                 "type/Number": {
-                  "avg": 351,
+                  "avg": 1824,
                   "excess-kurtosis": null,
-                  "max": 351,
-                  "min": 351,
+                  "max": 1824,
+                  "min": 1824,
                   "mode-fraction": 1,
-                  "q1": 351,
-                  "q3": 351,
+                  "q1": 1824,
+                  "q3": 1824,
                   "sd": 0,
                   "skewness": null,
                   "top-3-fraction": 1,
@@ -710,6 +775,17 @@
               "domaine_fonctionnel"
             ]
           ]
+        },
+        {
+          "card_id": 69,
+          "parameter_id": "a28a16da",
+          "target": [
+            "variable",
+            [
+              "template-tag",
+              "inclure_eig"
+            ]
+          ]
         }
       ],
       "row": 0,
@@ -738,7 +814,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "SELECT\n    COUNT(DISTINCT r.id) AS nombre_requetes\nFROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\nWHERE\n    re.\"statutId\" = 'CLOTUREE'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]];",
+              "native": "SELECT\n    COUNT(DISTINCT r.id) AS nombre_requetes\nFROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\nWHERE\n    re.\"statutId\" = 'CLOTUREE'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]];",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -763,6 +839,15 @@
                   "id": "ac52c7c2-a09f-42cf-aa31-f003a3a0055d",
                   "name": "domaine_fonctionnel",
                   "type": "text"
+                },
+                {
+                  "default": [
+                    true
+                  ],
+                  "display-name": "Inclure Eig",
+                  "id": "1de5f835-b181-4784-929f-177e1d0e82ca",
+                  "name": "inclure_eig",
+                  "type": "boolean"
                 }
               ]
             }
@@ -783,7 +868,7 @@
         "made_public_by_id": null,
         "metabase_version": "v0.63.5 (1dca717)",
         "moderation_reviews": [],
-        "name": "requêtes clôturées",
+        "name": "Requêtes clôturées",
         "parameter_mappings": [],
         "parameters": [
           {
@@ -841,10 +926,27 @@
               ]
             ],
             "type": "string/="
+          },
+          {
+            "default": [
+              true
+            ],
+            "id": "1de5f835-b181-4784-929f-177e1d0e82ca",
+            "isMultiSelect": false,
+            "name": "Inclure Eig",
+            "slug": "inclure_eig",
+            "target": [
+              "variable",
+              [
+                "template-tag",
+                "inclure_eig"
+              ]
+            ],
+            "type": "boolean/="
           }
         ],
         "public_uuid": null,
-        "query_average_duration": 204,
+        "query_average_duration": 397,
         "query_type": "native",
         "result_metadata": [
           {
@@ -866,13 +968,13 @@
               },
               "type": {
                 "type/Number": {
-                  "avg": 5561,
+                  "avg": 16036,
                   "excess-kurtosis": null,
-                  "max": 5561,
-                  "min": 5561,
+                  "max": 16036,
+                  "min": 16036,
                   "mode-fraction": 1,
-                  "q1": 5561,
-                  "q3": 5561,
+                  "q1": 16036,
+                  "q3": 16036,
                   "sd": 0,
                   "skewness": null,
                   "top-3-fraction": 1,
@@ -949,6 +1051,17 @@
               "domaine_fonctionnel"
             ]
           ]
+        },
+        {
+          "card_id": 76,
+          "parameter_id": "a28a16da",
+          "target": [
+            "variable",
+            [
+              "template-tag",
+              "inclure_eig"
+            ]
+          ]
         }
       ],
       "row": 0,
@@ -977,7 +1090,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "-- Requêtes « en compétence partagée » au niveau national :\n-- au moins 2 entités affectées, après avoir exclu les entités\n-- clôturées pour motif « Hors compétence ».\nSELECT\n  COUNT(*) AS nombre_requetes_competence_partagee\nFROM (\n  SELECT r.id\n  FROM \"Requete\" r\n  JOIN \"RequeteEntite\" re ON re.\"requeteId\" = r.id\n  JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n  WHERE NOT (\n    re.\"statutId\" = 'CLOTUREE'\n    AND EXISTS (\n      SELECT 1\n      FROM \"RequeteEtape\" et\n      JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n      WHERE et.\"requeteId\" = re.\"requeteId\"\n        AND et.\"entiteId\"  = re.\"entiteId\"\n        AND et.\"statutId\"  = 'CLOTUREE'\n        AND j.\"A\"          = 'HORS_COMPETENCE'\n    )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  GROUP BY r.id\n  HAVING COUNT(DISTINCT re.\"entiteId\") >= 2\n     [[ AND bool_or(e.label = {{entity_label}}) ]]\n) t;",
+              "native": "-- Requêtes « en compétence partagée » au niveau national :\n-- au moins 2 entités affectées, après avoir exclu les entités\n-- clôturées pour motif « Hors compétence ».\nSELECT\n  COUNT(*) AS nombre_requetes_competence_partagee\nFROM (\n  SELECT r.id\n  FROM \"Requete\" r\n  JOIN \"RequeteEntite\" re ON re.\"requeteId\" = r.id\n  JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n  WHERE NOT (\n    re.\"statutId\" = 'CLOTUREE'\n    AND EXISTS (\n      SELECT 1\n      FROM \"RequeteEtape\" et\n      JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n      WHERE et.\"requeteId\" = re.\"requeteId\"\n        AND et.\"entiteId\"  = re.\"entiteId\"\n        AND et.\"statutId\"  = 'CLOTUREE'\n        AND j.\"A\"          = 'HORS_COMPETENCE'\n    )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                       AND {{inclure_eig}} = 'false') ]]\n  GROUP BY r.id\n  HAVING COUNT(DISTINCT re.\"entiteId\") >= 2\n     [[ AND bool_or(e.label = {{entity_label}}) ]]\n) t;",
               "template-tags": [
                 {
                   "display-name": "Start Date",
@@ -1002,6 +1115,15 @@
                   "id": "c68c73cb-0a26-4754-9e35-3c3287cdc191",
                   "name": "entity_label",
                   "type": "text"
+                },
+                {
+                  "default": [
+                    true
+                  ],
+                  "display-name": "Inclure Eig",
+                  "id": "1fd533ad-b2b1-4d5d-bc6c-66bc6a6734af",
+                  "name": "inclure_eig",
+                  "type": "boolean"
                 }
               ]
             }
@@ -1022,7 +1144,7 @@
         "made_public_by_id": null,
         "metabase_version": "v0.63.5 (1dca717)",
         "moderation_reviews": [],
-        "name": "requêtes en compétence partagée",
+        "name": "Requêtes en compétence partagée",
         "parameter_mappings": [],
         "parameters": [
           {
@@ -1080,10 +1202,27 @@
               ]
             ],
             "type": "string/="
+          },
+          {
+            "default": [
+              true
+            ],
+            "id": "1fd533ad-b2b1-4d5d-bc6c-66bc6a6734af",
+            "isMultiSelect": false,
+            "name": "Inclure Eig",
+            "slug": "inclure_eig",
+            "target": [
+              "variable",
+              [
+                "template-tag",
+                "inclure_eig"
+              ]
+            ],
+            "type": "boolean/="
           }
         ],
         "public_uuid": null,
-        "query_average_duration": 736,
+        "query_average_duration": 1066,
         "query_type": "native",
         "result_metadata": [
           {
@@ -1105,13 +1244,13 @@
               },
               "type": {
                 "type/Number": {
-                  "avg": 13,
+                  "avg": 5326,
                   "excess-kurtosis": null,
-                  "max": 13,
-                  "min": 13,
+                  "max": 5326,
+                  "min": 5326,
                   "mode-fraction": 1,
-                  "q1": 13,
-                  "q3": 13,
+                  "q1": 5326,
+                  "q3": 5326,
                   "sd": 0,
                   "skewness": null,
                   "top-3-fraction": 1,
@@ -1188,6 +1327,17 @@
               "domaine_fonctionnel"
             ]
           ]
+        },
+        {
+          "card_id": 77,
+          "parameter_id": "a28a16da",
+          "target": [
+            "variable",
+            [
+              "template-tag",
+              "inclure_eig"
+            ]
+          ]
         }
       ],
       "row": 0,
@@ -1202,6 +1352,7 @@
     "domaine_fonctionnel": "enabled",
     "end_date": "enabled",
     "entity_label": "disabled",
+    "inclure_eig": "enabled",
     "start_date": "enabled"
   },
   "embedding_type": "guest-embed",
@@ -1210,7 +1361,7 @@
   "id": 6,
   "is_remote_synced": false,
   "last_used_param_values": {},
-  "last_viewed_at": "2026-08-24T14:32:23.20386Z",
+  "last_viewed_at": "2026-08-27T10:31:13.140471Z",
   "made_public_by_id": null,
   "moderation_reviews": [],
   "name": "[integration] Dashboard national",
@@ -1348,6 +1499,16 @@
         ]
       },
       "values_source_type": "static-list"
+    },
+    {
+      "default": [
+        true
+      ],
+      "id": "a28a16da",
+      "name": "inclure_eig",
+      "sectionId": "boolean",
+      "slug": "inclure_eig",
+      "type": "boolean/="
     }
   ],
   "points_of_interest": null,
