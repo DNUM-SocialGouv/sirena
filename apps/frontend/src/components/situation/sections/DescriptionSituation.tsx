@@ -167,7 +167,6 @@ export const DescriptionFaits = forwardRef<DescriptionFaitsRef, DescriptionFaits
               onChange={handleMotifsChange}
               placeholder="Sélectionner un ou plusieurs motifs"
               itemNoun={{ singular: 'motif', plural: 'motifs' }}
-              categoryHeadingLevel={3}
             />
             {showMaltraitanceWarning && (
               <div className="fr-mt-2w">

@@ -11,17 +11,18 @@ export const getSelectedCountInCategory = (category: AccordionMultiSelectOption,
     .length;
 };
 
+export const getSelectedCountText = (
+  selectedCount: number,
+  itemNoun: { singular: string; plural: string; feminine?: boolean },
+): string => {
+  const isPlural = selectedCount > 1;
+  const noun = isPlural ? itemNoun.plural : itemNoun.singular;
+  const participle = `sélectionné${itemNoun.feminine ? 'e' : ''}${isPlural ? 's' : ''}`;
+  return `${selectedCount} ${noun} ${participle}`;
+};
+
 export const getSummaryText = (
   selectedCount: number,
   placeholder: string,
   itemNoun: { singular: string; plural: string; feminine?: boolean },
-): string => {
-  if (selectedCount === 0) {
-    return placeholder;
-  }
-  const isPlural = selectedCount > 1;
-  const noun = isPlural ? itemNoun.plural : itemNoun.singular;
-  // Agree the past participle in gender (feminine noun) and number.
-  const participle = `sélectionné${itemNoun.feminine ? 'e' : ''}${isPlural ? 's' : ''}`;
-  return `${selectedCount} ${noun} ${participle}`;
-};
+): string => (selectedCount === 0 ? placeholder : getSelectedCountText(selectedCount, itemNoun));

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { getSelectedCountText } from './AccordionMultiSelect.helpers';
 import styles from './AccordionMultiSelect.module.css';
 import type { AccordionMultiSelectOption } from './AccordionMultiSelect.types';
 
@@ -9,7 +10,8 @@ interface CategoryAccordionProps {
   panelId: string;
   isExpanded: boolean;
   selectedCount: number;
-  headingLevel: HeadingLevel;
+  itemNoun: { singular: string; plural: string; feminine?: boolean };
+  headingLevel?: HeadingLevel;
   onToggleExpand: () => void;
   children: ReactNode;
 }
@@ -19,29 +21,40 @@ export const CategoryAccordion = ({
   panelId,
   isExpanded,
   selectedCount,
+  itemNoun,
   headingLevel,
   onToggleExpand,
   children,
 }: CategoryAccordionProps) => {
-  const Heading = `h${headingLevel}` as const;
+  const Heading = headingLevel ? (`h${headingLevel}` as const) : null;
+
+  const toggleButton = (
+    <button
+      type="button"
+      className={styles.categoryButton}
+      aria-expanded={isExpanded}
+      aria-controls={panelId}
+      onClick={onToggleExpand}
+    >
+      <span className={styles.categoryLabel}>
+        {category.label}
+        {selectedCount > 0 ? (
+          <>
+            <span aria-hidden="true"> ({selectedCount})</span>
+            <span className="fr-sr-only">, {getSelectedCountText(selectedCount, itemNoun)}</span>
+          </>
+        ) : null}
+      </span>
+      <span
+        className={`fr-icon-arrow-down-s-line ${styles.chevron}${isExpanded ? ` ${styles.chevronOpen}` : ''}`}
+        aria-hidden="true"
+      />
+    </button>
+  );
 
   return (
     <li className={styles.categoryItem}>
-      <Heading className={styles.categoryHeading}>
-        <button
-          type="button"
-          className={styles.categoryButton}
-          aria-expanded={isExpanded}
-          aria-controls={panelId}
-          onClick={onToggleExpand}
-        >
-          <span className={styles.categoryLabel}>
-            {category.label}
-            {selectedCount > 0 ? ` (${selectedCount})` : ''}
-          </span>
-          <span className={isExpanded ? 'fr-icon-arrow-up-s-line' : 'fr-icon-arrow-down-s-line'} aria-hidden="true" />
-        </button>
-      </Heading>
+      {Heading ? <Heading className={styles.categoryHeading}>{toggleButton}</Heading> : toggleButton}
 
       <fieldset id={panelId} className={styles.categoryPanel} hidden={!isExpanded}>
         <legend className="fr-sr-only">Motifs : {category.label}</legend>

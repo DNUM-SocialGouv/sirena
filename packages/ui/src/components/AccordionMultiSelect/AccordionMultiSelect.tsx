@@ -18,13 +18,12 @@ export function AccordionMultiSelect({
   hint,
   options,
   id,
-  disabled = false,
   readOnly = false,
   state = 'default',
   stateRelatedMessage,
   placeholder = DEFAULT_PLACEHOLDER,
   itemNoun = DEFAULT_ITEM_NOUN,
-  categoryHeadingLevel = 2,
+  categoryHeadingLevel,
 }: AccordionMultiSelectProps) {
   const generatedId = useId();
   const componentId = id || generatedId;
@@ -34,10 +33,10 @@ export function AccordionMultiSelect({
   const panelId = `${componentId}-panel`;
   const errorId = `${componentId}-error`;
   const hasError = state === 'error';
-  const isInteractive = !disabled && !readOnly;
+  const isInteractive = !readOnly;
 
   const { isOpen, setIsOpen, containerRef, triggerRef } = useDropdownState();
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   const toggleSelection = useCallback(
     (fullValue: string) => {
@@ -51,15 +50,7 @@ export function AccordionMultiSelect({
   );
 
   const toggleCategory = useCallback((categoryValue: string) => {
-    setExpandedCategories((current) => {
-      const next = new Set(current);
-      if (next.has(categoryValue)) {
-        next.delete(categoryValue);
-      } else {
-        next.add(categoryValue);
-      }
-      return next;
-    });
+    setExpandedCategory((current) => (current === categoryValue ? null : categoryValue));
   }, []);
 
   const handleTriggerClick = useCallback(() => {
@@ -101,7 +92,6 @@ export function AccordionMultiSelect({
         inputId={`${componentId}-opt-${fullValue.replace(/\//g, '-')}`}
         name={`${componentId}-options`}
         checked={value.includes(fullValue)}
-        disabled={disabled}
         hasError={hasError}
         onToggle={() => toggleSelection(fullValue)}
       />
@@ -125,13 +115,15 @@ export function AccordionMultiSelect({
           aria-expanded={isOpen}
           aria-controls={panelId}
           aria-labelledby={`${labelId} ${summaryId}`}
-          aria-disabled={disabled || readOnly}
+          aria-disabled={readOnly || undefined}
           aria-invalid={hasError || undefined}
           aria-describedby={hasError && stateRelatedMessage ? errorId : undefined}
-          disabled={disabled}
         >
           <span id={summaryId}>{summaryText}</span>
-          <span className={isOpen ? 'fr-icon-arrow-up-s-line' : 'fr-icon-arrow-down-s-line'} aria-hidden="true" />
+          <span
+            className={`fr-icon-arrow-down-s-line ${styles.chevron}${isOpen ? ` ${styles.chevronOpen}` : ''}`}
+            aria-hidden="true"
+          />
         </button>
 
         <div id={panelId} className={styles.panel} hidden={!isOpen}>
@@ -153,8 +145,9 @@ export function AccordionMultiSelect({
                     key={option.value}
                     category={option}
                     panelId={`${componentId}-cat-${option.value}`}
-                    isExpanded={expandedCategories.has(option.value)}
+                    isExpanded={expandedCategory === option.value}
                     selectedCount={getSelectedCountInCategory(option, value)}
+                    itemNoun={itemNoun}
                     headingLevel={categoryHeadingLevel}
                     onToggleExpand={() => toggleCategory(option.value)}
                   >

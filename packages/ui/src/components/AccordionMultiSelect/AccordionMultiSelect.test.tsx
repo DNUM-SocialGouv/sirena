@@ -71,7 +71,6 @@ describe('AccordionMultiSelect', () => {
     render(<Wrapper />);
     const trigger = getTrigger();
 
-    // Categories are in the accessibility tree only once the panel is visible.
     expect(screen.queryByRole('button', { name: /Cat A/ })).not.toBeInTheDocument();
 
     fireEvent.click(trigger);
@@ -90,7 +89,6 @@ describe('AccordionMultiSelect', () => {
     expect(categoryButton).toHaveAttribute('aria-expanded', 'false');
     const categoryPanelId = categoryButton.getAttribute('aria-controls');
     expect(categoryPanelId).toBeTruthy();
-    // Checkboxes hidden while the category is collapsed.
     expect(screen.queryByRole('checkbox', { name: /A1/ })).not.toBeInTheDocument();
 
     fireEvent.click(categoryButton);
@@ -98,6 +96,35 @@ describe('AccordionMultiSelect', () => {
     expect(categoryButton).toHaveAttribute('aria-expanded', 'true');
     expect(document.getElementById(categoryPanelId as string)).not.toHaveAttribute('hidden');
     expect(screen.getByRole('checkbox', { name: /A1/ })).toBeInTheDocument();
+  });
+
+  it('opens only one category at a time (DSFR accordion group)', () => {
+    render(<Wrapper />);
+    fireEvent.click(getTrigger());
+    const catA = screen.getByRole('button', { name: /Cat A/ });
+    const catB = screen.getByRole('button', { name: /Cat B/ });
+
+    fireEvent.click(catA);
+    expect(catA).toHaveAttribute('aria-expanded', 'true');
+
+    fireEvent.click(catB);
+    expect(catB).toHaveAttribute('aria-expanded', 'true');
+    expect(catA).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('renders category toggles without a heading wrapper by default', () => {
+    render(<Wrapper />);
+    fireEvent.click(getTrigger());
+
+    expect(screen.queryByRole('heading', { name: /Cat A/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Cat A/ })).toBeInTheDocument();
+  });
+
+  it('wraps category toggles in a heading when categoryHeadingLevel is set (e.g. FAQ)', () => {
+    render(<Wrapper categoryHeadingLevel={3} />);
+    fireEvent.click(getTrigger());
+
+    expect(screen.getByRole('heading', { level: 3, name: /Cat A/ })).toBeInTheDocument();
   });
 
   it('renders native checkboxes explicitly associated to their label', () => {
@@ -109,11 +136,10 @@ describe('AccordionMultiSelect', () => {
     expect(checkbox).toHaveAttribute('type', 'checkbox');
     expect(checkbox.id).toBeTruthy();
     expect(labelForCheckbox(checkbox)).toHaveAttribute('for', checkbox.id);
-    // Description rendered as grey hint text.
     expect(screen.getByText('Description A1')).toBeInTheDocument();
   });
 
-  it('toggles selection with the hierarchical value PARENT/CHILD', () => {
+  it('selects and deselects a child option using the PARENT/CHILD value format', () => {
     const onChangeSpy = vi.fn();
     render(<Wrapper onChangeSpy={onChangeSpy} />);
     fireEvent.click(getTrigger());
@@ -126,13 +152,21 @@ describe('AccordionMultiSelect', () => {
     expect(onChangeSpy).toHaveBeenLastCalledWith([]);
   });
 
-  it('shows the per-category selected count and a dynamic summary', () => {
+  it('shows the selected count in the summary and the selected count next to the corresponding category', () => {
     render(<Wrapper initialValue={['CAT_A/A1', 'CAT_A/A2']} itemNoun={{ singular: 'motif', plural: 'motifs' }} />);
 
     expect(screen.getByText('2 motifs sélectionnés')).toBeInTheDocument();
 
     fireEvent.click(getTrigger());
-    expect(screen.getByRole('button', { name: /Cat A \(2\)/ })).toBeInTheDocument();
+    expect(screen.getByText(/\(2\)/)).toBeInTheDocument();
+  });
+
+  it('announces the number of selected items in each category', () => {
+    render(<Wrapper initialValue={['CAT_A/A1', 'CAT_A/A2']} itemNoun={{ singular: 'motif', plural: 'motifs' }} />);
+    fireEvent.click(getTrigger());
+
+    expect(screen.getByRole('button', { name: /Cat A/ })).toHaveAccessibleName(/2 motifs sélectionnés/);
+    expect(screen.getByText(/2 motifs sélectionnés/, { selector: '.fr-sr-only' })).toBeInTheDocument();
   });
 
   it('uses the singular form for a single selection', () => {
@@ -195,11 +229,9 @@ describe('AccordionMultiSelect', () => {
     const trigger = getTrigger();
     fireEvent.click(trigger);
 
-    // Clicking a checkbox in Firefox/Safari fires a blur with a null relatedTarget.
     fireEvent.blur(trigger, { relatedTarget: null });
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
 
-    // Some browsers report document.body instead of null: still not a real next field.
     fireEvent.blur(trigger, { relatedTarget: document.body });
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
   });
@@ -224,8 +256,8 @@ describe('AccordionMultiSelect', () => {
     expect(screen.getByText('Champ requis')).toHaveAttribute('id', describedBy);
   });
 
-  it('does not open when disabled', () => {
-    render(<Wrapper disabled />);
+  it('does not open when readOnly', () => {
+    render(<Wrapper readOnly />);
     const trigger = getTrigger();
 
     fireEvent.click(trigger);

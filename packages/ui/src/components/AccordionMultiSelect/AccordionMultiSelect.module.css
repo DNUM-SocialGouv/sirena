@@ -29,10 +29,21 @@
   cursor: default;
 }
 
-.trigger:focus-visible,
-.categoryButton:focus-visible {
-  outline: 2px solid var(--border-plain-blue-france);
-  outline-offset: -2px;
+.chevron {
+  display: inline-flex;
+  transition: transform 0.3s;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+:global(.fr-select-group--error) .trigger {
+  border-bottom-color: var(--border-plain-error);
+}
+
+:global(.fr-select-group--error legend.fr-label) {
+  color: var(--text-default-error);
 }
 
 .panel {
@@ -80,6 +91,14 @@
 
 .categoryButton:hover {
   background-color: var(--background-default-grey-hover);
+}
+
+.categoryButton[aria-expanded="true"] {
+  background-color: var(--background-open-blue-france);
+}
+
+.categoryButton[aria-expanded="true"]:hover {
+  background-color: var(--background-open-blue-france-hover);
 }
 
 .categoryButton [class*="fr-icon-"]::before {
