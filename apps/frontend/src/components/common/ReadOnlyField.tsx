@@ -5,11 +5,12 @@ type ReadOnlyFieldProps = {
   label: string;
   value: string;
   hintText?: string;
+  className?: string;
 };
 
-export function ReadOnlyField({ id, label, value, hintText }: ReadOnlyFieldProps) {
+export function ReadOnlyField({ id, label, value, hintText, className }: ReadOnlyFieldProps) {
   return (
-    <div className="fr-input-group">
+    <div className={className ? `fr-input-group ${className}` : 'fr-input-group'}>
       <label className="fr-label" htmlFor={id}>
         {label}
         {hintText ? <span className="fr-hint-text">{hintText}</span> : null}

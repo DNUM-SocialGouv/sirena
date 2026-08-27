@@ -1,7 +1,23 @@
+import { serializeCsv } from '@sirena/common/utils';
 import { describe, expect, it } from 'vitest';
+import {
+  EXPORT_REQUETES_COLUMNS,
+  EXPORT_REQUETES_HEADERS,
+  type ExportRequetesColumnKey,
+} from './exportRequetesColumns.js';
+import {
+  type BuildExportRequetesRowsOptions,
+  buildExportRequetesRows,
+  type ExportRequeteRecord,
+  type ExportRequetesCsvRow,
+} from './exportRequetesRows.js';
 
-import { EXPORT_REQUETES_COLUMNS, type ExportRequetesColumnKey } from './exportRequetesColumns.js';
-import { buildExportRequetesCsv, buildExportRequetesCsvFromRecords } from './exportRequetesCsv.js';
+const buildExportRequetesCsv = (rows: ExportRequetesCsvRow[]) => serializeCsv([...EXPORT_REQUETES_HEADERS], rows);
+
+const buildExportRequetesCsvFromRecords = (
+  requetes: ExportRequeteRecord[],
+  options: BuildExportRequetesRowsOptions = {},
+) => buildExportRequetesCsv(buildExportRequetesRows(requetes, options));
 
 describe('buildExportRequetesCsv', () => {
   it('exports the stable 55-column business header when there are no rows', () => {

@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { EXPORT_REQUETES_COLUMNS, type ExportRequetesColumnKey } from './exportRequetesColumns.js';
-import type { ExportRequetesCsvRow } from './exportRequetesCsv.js';
-import { buildExportRequetesRows } from './exportRequetesRows.js';
+import { buildExportRequetesRows, type ExportRequetesCsvRow } from './exportRequetesRows.js';
 
 describe('buildExportRequetesRows', () => {
   it('populates request, declarant, personne concernée, reception and provenance fields', () => {
