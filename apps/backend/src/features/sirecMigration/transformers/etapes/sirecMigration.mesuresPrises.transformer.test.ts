@@ -1,7 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import type { SirecReclamationData } from '../../sirecMigration.repository.js';
+import type { SirecFileRow, SirecReclamationData } from '../../sirecMigration.repository.js';
 import { SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import { transformSirecMesuresPrises } from './sirecMigration.mesuresPrises.transformer.js';
+
+const makeFile = (overrides: Partial<SirecFileRow> = {}): SirecFileRow => ({
+  id_data: 1,
+  sys_creation_date: new Date('2024-01-01'),
+  date_creation: new Date('2024-01-01'),
+  original_name: 'file.pdf',
+  generated_name: 'generated.pdf',
+  size: 100,
+  hash: null,
+  ext: 'pdf',
+  content_type: 'application/pdf',
+  file_type: 'mesures_prises',
+  id_ext_mc: null,
+  ...overrides,
+});
 
 const makeData = (
   overrides: {
@@ -10,6 +25,7 @@ const makeData = (
     mesures_precision?: string | null;
     sys_creation_date?: Date | null;
   } = {},
+  files: SirecFileRow[] = [],
 ) =>
   ({
     reclamation: {
@@ -27,6 +43,7 @@ const makeData = (
     typeTraitementIdDicos: [],
     mainCourantes: [],
     misEnCauses: [],
+    files,
   }) as unknown as SirecReclamationData;
 
 const ARS_1 = 'ars-normandie';
@@ -85,6 +102,66 @@ describe('sirecMigration.mesuresPrises.transformer.ts', () => {
       const result = transformSirecMesuresPrises(makeData({ mesures_prises: 1, sys_creation_date: null }), [ARS_1]);
 
       expect(result[0].createdAt).toBeNull();
+    });
+
+    it('should use the mesures_prises file date_creation instead of sys_creation_date when available', () => {
+      const fileDate = new Date('2023-02-15');
+      const sysDate = new Date('2024-05-10');
+      const result = transformSirecMesuresPrises(
+        makeData({ mesures_prises: 1, sys_creation_date: sysDate }, [makeFile({ date_creation: fileDate })]),
+        [ARS_1],
+      );
+
+      expect(result[0].createdAt).toEqual(fileDate);
+    });
+
+    it('should ignore files whose file_type is not mesures_prises', () => {
+      const sysDate = new Date('2024-05-10');
+      const result = transformSirecMesuresPrises(
+        makeData({ mesures_prises: 1, sys_creation_date: sysDate }, [
+          makeFile({ file_type: 'ar_requerant', date_creation: new Date('2023-02-15') }),
+        ]),
+        [ARS_1],
+      );
+
+      expect(result[0].createdAt).toEqual(sysDate);
+    });
+
+    it('should take the earliest date_creation when several mesures_prises files exist', () => {
+      const earliest = new Date('2023-01-01');
+      const later = new Date('2023-06-01');
+      const result = transformSirecMesuresPrises(
+        makeData({ mesures_prises: 1 }, [
+          makeFile({ id_data: 1, date_creation: later }),
+          makeFile({ id_data: 2, date_creation: earliest }),
+        ]),
+        [ARS_1],
+      );
+
+      expect(result[0].createdAt).toEqual(earliest);
+    });
+
+    it('should skip mesures_prises files with a null date_creation and use the next usable one', () => {
+      const usableDate = new Date('2023-03-01');
+      const result = transformSirecMesuresPrises(
+        makeData({ mesures_prises: 1 }, [
+          makeFile({ id_data: 1, date_creation: null }),
+          makeFile({ id_data: 2, date_creation: usableDate }),
+        ]),
+        [ARS_1],
+      );
+
+      expect(result[0].createdAt).toEqual(usableDate);
+    });
+
+    it('should fall back to sys_creation_date when no mesures_prises file has a usable date_creation', () => {
+      const sysDate = new Date('2024-05-10');
+      const result = transformSirecMesuresPrises(
+        makeData({ mesures_prises: 1, sys_creation_date: sysDate }, [makeFile({ date_creation: null })]),
+        [ARS_1],
+      );
+
+      expect(result[0].createdAt).toEqual(sysDate);
     });
 
     it('should create one etape per arsEntiteId', () => {

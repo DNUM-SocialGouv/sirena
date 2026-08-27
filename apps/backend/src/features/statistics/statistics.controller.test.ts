@@ -212,7 +212,7 @@ describe('statistics.controller.ts', () => {
       expect(response.status).toBe(200);
       expect(fetchDashboardCardsData).toHaveBeenCalledWith(
         {},
-        { start_date: undefined, end_date: undefined, domaine_fonctionnel: [] },
+        { start_date: undefined, end_date: undefined, domaine_fonctionnel: [], inclure_eig: undefined },
         'national',
       );
       expect(getEntiteById).not.toHaveBeenCalled();
@@ -229,7 +229,7 @@ describe('statistics.controller.ts', () => {
       expect(response.status).toBe(200);
       expect(fetchDashboardCardsData).toHaveBeenCalledWith(
         { entity_label: 'ARS Île-de-France' },
-        { start_date: undefined, end_date: undefined, domaine_fonctionnel: [] },
+        { start_date: undefined, end_date: undefined, domaine_fonctionnel: [], inclure_eig: undefined },
       );
     });
 
@@ -255,7 +255,42 @@ describe('statistics.controller.ts', () => {
       expect(response.status).toBe(200);
       expect(fetchDashboardCardsData).toHaveBeenCalledWith(
         { entity_label: 'ARS Île-de-France' },
-        { start_date: '2026-01-01', end_date: '2026-03-31', domaine_fonctionnel: ['SOCIAL', 'SANITAIRE'] },
+        {
+          start_date: '2026-01-01',
+          end_date: '2026-03-31',
+          domaine_fonctionnel: ['SOCIAL', 'SANITAIRE'],
+          inclure_eig: undefined,
+        },
+      );
+    });
+
+    it('forwards the EIG exclusion to Metabase when the box is unchecked', async () => {
+      entitesMiddlewareState.topEntiteId = 'root-entite';
+      vi.mocked(getEntiteById).mockResolvedValueOnce({ label: 'ARS Île-de-France' } as never);
+      vi.mocked(fetchDashboardCardsData).mockResolvedValueOnce([]);
+
+      const response = await client.dashboard.$get({ query: { includeEIG: 'false' } });
+
+      expect(response.status).toBe(200);
+      expect(fetchDashboardCardsData).toHaveBeenCalledWith(
+        { entity_label: 'ARS Île-de-France' },
+        { start_date: undefined, end_date: undefined, domaine_fonctionnel: [], inclure_eig: 'false' },
+      );
+    });
+
+    it('forwards the EIG exclusion on the national dashboard too', async () => {
+      authMiddlewareState.roleId = 'SUPER_ADMIN';
+      entitesMiddlewareState.entiteIds = null;
+      entitesMiddlewareState.topEntiteId = null;
+      vi.mocked(fetchDashboardCardsData).mockResolvedValueOnce([]);
+
+      const response = await client.dashboard.$get({ query: { includeEIG: 'false' } });
+
+      expect(response.status).toBe(200);
+      expect(fetchDashboardCardsData).toHaveBeenCalledWith(
+        {},
+        { start_date: undefined, end_date: undefined, domaine_fonctionnel: [], inclure_eig: 'false' },
+        'national',
       );
     });
 

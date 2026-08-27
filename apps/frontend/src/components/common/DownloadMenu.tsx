@@ -24,7 +24,12 @@ export const DownloadMenu = ({ requestId, disabled, hasUnsafeFiles }: DownloadMe
   const { registerTrigger } = useModalFocusRestore(WARNING_MODAL_IDS);
   const panelId = useId();
 
-  const downloadUrl = useMemo(() => `/api/requetes-entite/${requestId}/files/download-all`, [requestId]);
+  // ZIP entry dates are timezone-less: the backend writes them in the reader timezone so they display correctly.
+  const downloadUrl = useMemo(() => {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const query = timeZone ? `?timeZone=${encodeURIComponent(timeZone)}` : '';
+    return `/api/requetes-entite/${requestId}/files/download-all${query}`;
+  }, [requestId]);
   const pdfUrl = useMemo(() => `/api/requetes-entite/${requestId}/export-pdf`, [requestId]);
 
   const handleDownloadPdf = () => {

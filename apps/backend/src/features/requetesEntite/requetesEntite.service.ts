@@ -22,6 +22,7 @@ import {
   getMesureProtectionShortLabel,
   getOver90DaysCutoffDate,
   isAutomaticRequest,
+  toWallClockDate,
 } from '@sirena/common/utils';
 import { ZipArchive } from 'archiver';
 import type { z } from 'zod';
@@ -2156,7 +2157,7 @@ export const collectRequeteFiles = (requeteEntite: NonNullable<Awaited<ReturnTyp
   return { rootFiles, situationFiles };
 };
 
-export const createRequeteFilesArchive = async (requeteId: string, entiteId: string) => {
+export const createRequeteFilesArchive = async (requeteId: string, entiteId: string, timeZone?: string) => {
   const requeteEntite = await getRequeteEntiteById(requeteId, entiteId);
   if (!requeteEntite) {
     return null;
@@ -2177,7 +2178,7 @@ export const createRequeteFilesArchive = async (requeteId: string, entiteId: str
     const decryptionParams = useSafeFile ? getSafeFileEncryptionParams(file) : getFileEncryptionParams(file);
     try {
       const { stream } = await getFileStream(filePath, decryptionParams);
-      archive.append(stream, { name: entryName, date: file.createdAt });
+      archive.append(stream, { name: entryName, date: toWallClockDate(file.createdAt, timeZone) });
     } catch {
       archive.append(Buffer.from('Fichier indisponible'), { name: `${entryName}.erreur.txt` });
     }

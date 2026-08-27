@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 285.75,
+  "average_query_time": 344.1850683491062,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -36,7 +36,7 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "-- Nombre de requêtes de l'entité de l'agent connecté qui sont en compétence partagée,\n-- c.-à-d. affectées à au moins une AUTRE entité administrative « réellement » compétente.\n-- Une autre entité est ignorée si elle a clôturé la requête pour motif « Hors compétence ».\nSELECT\n  COUNT(DISTINCT re_self.\"requeteId\") AS nombre_requetes_competence_partagee\nFROM \"RequeteEntite\" re_self\nJOIN \"Entite\"   e ON e.id = re_self.\"entiteId\"\nJOIN \"Requete\"  r ON r.id = re_self.\"requeteId\"\nWHERE\n  e.label = {{entity_label}}\n  AND EXISTS (\n    -- une autre entité affectée à la même requête...\n    SELECT 1\n    FROM \"RequeteEntite\" re_other\n    WHERE re_other.\"requeteId\" = re_self.\"requeteId\"\n      AND re_other.\"entiteId\" <> re_self.\"entiteId\"\n      -- ...qui n'est PAS clôturée « Hors compétence »\n      AND NOT (\n        re_other.\"statutId\" = 'CLOTUREE'\n        AND EXISTS (\n          SELECT 1\n          FROM \"RequeteEtape\" et\n          JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n          WHERE et.\"requeteId\" = re_other.\"requeteId\"\n            AND et.\"entiteId\"  = re_other.\"entiteId\"\n            AND et.\"statutId\"  = 'CLOTUREE'\n            AND j.\"A\"          = 'HORS_COMPETENCE'\n        )\n      )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]];",
+        "native": "-- Nombre de requêtes de l'entité de l'agent connecté qui sont en compétence partagée,\n-- c.-à-d. affectées à au moins une AUTRE entité administrative « réellement » compétente.\n-- Une autre entité est ignorée si elle a clôturé la requête pour motif « Hors compétence ».\nSELECT\n  COUNT(DISTINCT re_self.\"requeteId\") AS nombre_requetes_competence_partagee\nFROM \"RequeteEntite\" re_self\nJOIN \"Entite\"   e ON e.id = re_self.\"entiteId\"\nJOIN \"Requete\"  r ON r.id = re_self.\"requeteId\"\nWHERE\n  e.label = {{entity_label}}\n  AND EXISTS (\n    -- une autre entité affectée à la même requête...\n    SELECT 1\n    FROM \"RequeteEntite\" re_other\n    WHERE re_other.\"requeteId\" = re_self.\"requeteId\"\n      AND re_other.\"entiteId\" <> re_self.\"entiteId\"\n      -- ...qui n'est PAS clôturée « Hors compétence »\n      AND NOT (\n        re_other.\"statutId\" = 'CLOTUREE'\n        AND EXISTS (\n          SELECT 1\n          FROM \"RequeteEtape\" et\n          JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n          WHERE et.\"requeteId\" = re_other.\"requeteId\"\n            AND et.\"entiteId\"  = re_other.\"entiteId\"\n            AND et.\"statutId\"  = 'CLOTUREE'\n            AND j.\"A\"          = 'HORS_COMPETENCE'\n        )\n      )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                       AND {{inclure_eig}} = 'false') ]];",
         "template-tags": [
           {
             "display-name": "Entity Label",
@@ -61,6 +61,15 @@
             "id": "d9a603fa-2047-44b1-a7bf-d5958709edd7",
             "name": "domaine_fonctionnel",
             "type": "text"
+          },
+          {
+            "default": [
+              true
+            ],
+            "display-name": "Inclure Eig",
+            "id": "842e3e54-cffd-450a-bc4a-38490699f1be",
+            "name": "inclure_eig",
+            "type": "boolean"
           }
         ]
       }
@@ -77,12 +86,12 @@
   "entity_id": "gYpEpTUnIXQCbRJm3uW7a",
   "id": 51,
   "is_remote_synced": false,
-  "last_query_start": "2026-08-04T15:46:44.817501Z",
+  "last_query_start": "2026-08-27T09:39:41.238459Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.62.3.3 (686cac9)",
   "moderation_reviews": [],
-  "name": "requêtes en compétence partagée",
+  "name": "Requêtes en compétence partagée",
   "param_fields": {},
   "parameter_mappings": [],
   "parameter_usage_count": 0,
@@ -251,54 +260,28 @@
         ]
       },
       "values_source_type": "static-list"
+    },
+    {
+      "default": [
+        true
+      ],
+      "id": "842e3e54-cffd-450a-bc4a-38490699f1be",
+      "isMultiSelect": false,
+      "name": "Inclure Eig",
+      "slug": "inclure_eig",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "inclure_eig"
+        ]
+      ],
+      "type": "boolean/="
     }
   ],
   "public_uuid": null,
   "query_type": "native",
-  "result_metadata": [
-    {
-      "base_type": "type/BigInteger",
-      "database_type": "int8",
-      "display_name": "nombre_requetes_competence_partagee",
-      "effective_type": "type/BigInteger",
-      "field_ref": [
-        "field",
-        "nombre_requetes_competence_partagee",
-        {
-          "base-type": "type/BigInteger"
-        }
-      ],
-      "fingerprint": {
-        "global": {
-          "distinct-count": 1,
-          "nil%": 0
-        },
-        "type": {
-          "type/Number": {
-            "avg": 105,
-            "excess-kurtosis": null,
-            "max": 105,
-            "min": 105,
-            "mode-fraction": 1,
-            "q1": 105,
-            "q3": 105,
-            "sd": 0,
-            "skewness": null,
-            "top-3-fraction": 1,
-            "zero-fraction": 0
-          }
-        }
-      },
-      "lib/deduplicated-name": "nombre_requetes_competence_partagee",
-      "lib/desired-column-alias": "nombre_requetes_competence_partagee",
-      "lib/original-name": "nombre_requetes_competence_partagee",
-      "lib/source": "source/native",
-      "lib/source-column-alias": "nombre_requetes_competence_partagee",
-      "name": "nombre_requetes_competence_partagee",
-      "semantic_type": null,
-      "source": "native"
-    }
-  ],
+  "result_metadata": null,
   "source_card_id": null,
   "table_id": null,
   "type": "question",
