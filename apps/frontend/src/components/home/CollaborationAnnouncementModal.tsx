@@ -30,13 +30,13 @@ export function CollaborationAnnouncementModal({ focusReturnRef }: Collaboration
       }}
       focusReturnRef={focusReturnRef}
     >
-      <p>
+      <p className={fr.cx('fr-text--lg', 'fr-mb-3w')}>
         <strong>
           Pour les requêtes en compétences partagées, l’onglet Traitement affiche désormais les étapes réalisées par
           toutes les entités affectées à la requête :
         </strong>
       </p>
-      <ul className={fr.cx('fr-raw-list')}>
+      <ul className={fr.cx('fr-raw-list', 'fr-text--md')}>
         <li className={fr.cx('fr-mb-3w')}>
           <span aria-hidden="true">⭐</span> Vous pouvez toujours ajouter et modifier vos propres étapes, et désormais
           choisir de les afficher ou non pour toutes les entités affectées à la requête ;

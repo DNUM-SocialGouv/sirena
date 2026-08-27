@@ -1,3 +1,4 @@
+import { fr } from '@codegouvfr/react-dsfr';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { type ReactNode, type RefObject, useEffect, useMemo, useState } from 'react';
 
@@ -75,6 +76,7 @@ export function AnnouncementModal({ campaign, title, children, action, focusRetu
     <modal.Component
       size="large"
       title={title}
+      titleProps={{ className: fr.cx('fr-h5', 'fr-mb-4w') }}
       buttons={
         action
           ? [
