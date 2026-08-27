@@ -10,9 +10,7 @@ vi.mock('@codegouvfr/react-dsfr/Modal', async () => {
   const { useEffect } = await import('react');
 
   return {
-    createModal: () => {
-      const id = 'collaboration-announcement-modal';
-
+    createModal: ({ id }: { id: string }) => {
       return {
         id,
         open: openModal,
@@ -67,7 +65,7 @@ vi.mock('@/hooks/useHasFeature', () => ({
 }));
 
 const mockedUseHasFeature = vi.mocked(useHasFeature);
-const STORAGE_KEY = 'sirena.collaborationAnnouncement.dismissedCampaign';
+const STORAGE_KEY = 'sirena.announcement.dismissedCampaign';
 const noFocusReturnRef = { current: null };
 
 beforeEach(() => {
@@ -91,20 +89,49 @@ describe('CollaborationAnnouncementModal', () => {
     expect(openModal).not.toHaveBeenCalled();
   });
 
-  it('renders an accessible collaboration announcement with the release-notes link when shared processing steps are enabled', () => {
+  it('does not render when the collaboration campaign was dismissed through the generic announcement storage', () => {
+    mockedUseHasFeature.mockReturnValue(true);
+    window.localStorage.setItem('sirena.announcement.dismissedCampaign', 'collaboration-v1');
+
+    const { container } = render(<CollaborationAnnouncementModal focusReturnRef={noFocusReturnRef} />);
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('renders the collaboration announcement content and documentation link when shared processing steps are enabled', () => {
     mockedUseHasFeature.mockReturnValue(true);
 
     render(<CollaborationAnnouncementModal focusReturnRef={noFocusReturnRef} />);
 
     expect(openModal).not.toHaveBeenCalled();
-    expect(screen.getByRole('dialog', { name: 'Collaborez plus facilement sur SIRENA' })).toBeInTheDocument();
-    const releaseNotesLink = screen.getByRole('link', { name: 'Voir les nouveautés' });
-    expect(releaseNotesLink).toHaveAttribute(
+    expect(screen.getByRole('dialog', { name: 'De nouvelles fonctionnalités sont disponibles !' })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Pour les requêtes en compétences partagées, l’onglet Traitement affiche désormais les étapes réalisées/,
+      ),
+    ).toBeInTheDocument();
+    const documentationLink = screen.getByRole('link', { name: 'Voir la documentation' });
+    expect(documentationLink).toHaveAttribute(
       'href',
       'https://docs.numerique.gouv.fr/docs/24ca6ea9-c64d-4e30-8555-626166cb2d45/',
     );
-    expect(releaseNotesLink).toHaveAttribute('target', '_blank');
-    expect(releaseNotesLink).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(documentationLink).toHaveAttribute('target', '_blank');
+    expect(documentationLink).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  it('presents the three collaboration changes as a semantic list with decorative stars', () => {
+    mockedUseHasFeature.mockReturnValue(true);
+
+    render(<CollaborationAnnouncementModal focusReturnRef={noFocusReturnRef} />);
+
+    const changes = screen.getAllByRole('listitem');
+    expect(changes).toHaveLength(3);
+    expect(changes[0]).toHaveTextContent(
+      'Vous pouvez toujours ajouter et modifier vos propres étapes, et désormais choisir de les afficher ou non pour toutes les entités affectées à la requête ;',
+    );
+    expect(changes[1]).toHaveTextContent('Vous pouvez visualiser les étapes ajoutées par les autres entités ;');
+    expect(changes[2]).toHaveTextContent('Vous pouvez filtrer les étapes par entité.');
+    for (const star of screen.getAllByText('⭐')) expect(star).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('does not open when the current campaign was already dismissed', () => {
@@ -127,11 +154,11 @@ describe('CollaborationAnnouncementModal', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
-  it('acquits the campaign when the release-notes CTA is activated', () => {
+  it('acquits the campaign when the documentation link is activated', () => {
     mockedUseHasFeature.mockReturnValue(true);
 
     render(<CollaborationAnnouncementModal focusReturnRef={noFocusReturnRef} />);
-    fireEvent.click(screen.getByRole('link', { name: 'Voir les nouveautés' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Voir la documentation' }));
 
     expect(window.localStorage.getItem(STORAGE_KEY)).toBe('collaboration-v1');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -141,7 +168,7 @@ describe('CollaborationAnnouncementModal', () => {
     mockedUseHasFeature.mockReturnValue(true);
 
     const firstRender = render(<CollaborationAnnouncementModal focusReturnRef={noFocusReturnRef} />);
-    fireEvent(document.getElementById('collaboration-announcement-modal') as HTMLElement, new Event('dsfr.conceal'));
+    fireEvent(document.getElementById('announcement-modal-collaboration-v1') as HTMLElement, new Event('dsfr.conceal'));
 
     expect(window.localStorage.getItem(STORAGE_KEY)).toBe('collaboration-v1');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -169,7 +196,7 @@ describe('CollaborationAnnouncementModal', () => {
     });
 
     const firstRender = render(<CollaborationAnnouncementModal focusReturnRef={noFocusReturnRef} />);
-    fireEvent(document.getElementById('collaboration-announcement-modal') as HTMLElement, new Event('dsfr.conceal'));
+    fireEvent(document.getElementById('announcement-modal-collaboration-v1') as HTMLElement, new Event('dsfr.conceal'));
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(setItemSpy).toHaveBeenCalledWith(STORAGE_KEY, 'collaboration-v1');
@@ -207,7 +234,7 @@ describe('CollaborationAnnouncementModal', () => {
         <CollaborationAnnouncementModal focusReturnRef={focusReturnRef} />
       </>,
     );
-    fireEvent(document.getElementById('collaboration-announcement-modal') as HTMLElement, new Event('dsfr.conceal'));
+    fireEvent(document.getElementById('announcement-modal-collaboration-v1') as HTMLElement, new Event('dsfr.conceal'));
 
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Tableau de bord des requêtes' })).toHaveFocus());
   });

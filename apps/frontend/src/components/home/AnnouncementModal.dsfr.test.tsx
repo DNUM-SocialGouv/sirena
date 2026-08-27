@@ -1,20 +1,13 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { useHasFeature } from '@/hooks/useHasFeature';
-import { CollaborationAnnouncementModal } from './CollaborationAnnouncementModal';
+import { AnnouncementModal } from './AnnouncementModal';
 
-vi.mock('@/hooks/useHasFeature', () => ({
-  useHasFeature: vi.fn(),
-}));
-
-const mockedUseHasFeature = vi.mocked(useHasFeature);
 const disclose = vi.fn();
 let originalDsfr: unknown;
 let isModalRegistered: boolean;
 
 beforeEach(() => {
   window.localStorage.clear();
-  mockedUseHasFeature.mockReturnValue(true);
   originalDsfr = Reflect.get(window, 'dsfr');
   isModalRegistered = false;
   disclose.mockClear();
@@ -31,9 +24,15 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-it('opens after DSFR registers a dynamically mounted modal', async () => {
-  expect(() => render(<CollaborationAnnouncementModal focusReturnRef={{ current: null }} />)).not.toThrow();
-  expect(screen.getByText('Collaborez plus facilement sur SIRENA')).toBeInTheDocument();
+it('opens after DSFR registers a dynamically mounted announcement', async () => {
+  expect(() =>
+    render(
+      <AnnouncementModal campaign="example-v1" title="Une annonce" focusReturnRef={{ current: null }}>
+        Le contenu
+      </AnnouncementModal>,
+    ),
+  ).not.toThrow();
+  expect(screen.getByText('Une annonce')).toBeInTheDocument();
 
   isModalRegistered = true;
 
