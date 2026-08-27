@@ -584,8 +584,10 @@ describe('Processing', () => {
     expect(document.querySelector('[data-entity-relation="neutral"]')).toBeInTheDocument();
   });
 
-  it('renders an immutable assignment with its current target and automatic source attribution', () => {
+  it('keeps an immutable assignment under its source filter and hides it under its target filter', () => {
     canEditRequest = true;
+    selectedEntityId = 'CURRENT-ENTITY';
+    setOtherEntitiesAffected(affectedEntity('ASSIGNED-ENTITY', 'Conseil départemental de Seine-Maritime', 'CD'));
     requeteEtapes = [
       {
         ...foreignEtapePartagee,
@@ -628,7 +630,18 @@ describe('Processing', () => {
     expect(screen.queryByText(/Jeanne Moulon/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Fait le/)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: "Modifier l'étape" })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Envoyer' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Désactiver le rappel/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Ajouter un fichier/ })).not.toBeInTheDocument();
 
+    selectedEntityId = 'ASSIGNED-ENTITY';
+    rerender(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(
+      screen.queryByRole('heading', { name: 'ARS - Affectation Conseil départemental de Seine-Maritime' }),
+    ).not.toBeInTheDocument();
+
+    selectedEntityId = undefined;
     processingMeta = { total: 1, isMultiEntite: true, etapePartageeEnabled: false };
     rerender(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
