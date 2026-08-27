@@ -16,7 +16,6 @@ import { CloseRequeteModal, type CloseRequeteModalRef } from './processing/Close
 import { ReopenRequeteModal, type ReopenRequeteModalRef } from './processing/ReopenRequeteModal';
 import { SendAcknowledgmentDrawer, type SendAcknowledgmentDrawerRef } from './processing/SendAcknowledgmentDrawer';
 import { StepFormPanel, type StepFormPanelRef } from './processing/StepFormPanel';
-import { OtherEntitiesAffected } from './sections/OtherEntitesAffected';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
 
@@ -197,7 +196,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
     <div>
       <div className="fr-container--fluid">
         <div className="fr-grid-row fr-grid-row--gutters">
-          <div className="fr-col-md-12 fr-col-lg-8 ">
+          <div className="fr-col-md-12 fr-col-lg-12">
             <div className="fr-mb-4w">
               {requestId && !canEdit && (
                 <Alert
@@ -217,20 +216,13 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                   style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}
                 >
                   <h2 className="fr-mb-0 fr-text--xl">Étapes de traitement</h2>
-                  {requestQuery.data ? (
-                    <>
-                      <EntiteTypeBadge
-                        entiteTypeId={requestQuery.data.entite.entiteTypeId}
-                        label={requestQuery.data.entite.nomComplet}
-                        className="fr-mb-0"
-                      />
-                      {subAdministrativeEntites.map((entite) => (
+                  {requestQuery.data
+                    ? subAdministrativeEntites.map((entite) => (
                         <p key={entite.directionServiceId} className="fr-tag fr-tag--sm fr-tag-default">
                           {entite.directionServiceName}
                         </p>
-                      ))}
-                    </>
-                  ) : null}
+                      ))
+                    : null}
                 </div>
                 {requestId &&
                   !requestQuery.error &&
@@ -287,9 +279,6 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
               ) : null}
               {content}
             </div>
-          </div>
-          <div className="fr-col-md-12 fr-col-lg-4 ">
-            <OtherEntitiesAffected />
           </div>
         </div>
       </div>
