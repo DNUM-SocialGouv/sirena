@@ -1,6 +1,6 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
-import { type ReactNode, type RefObject, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 const DISMISSED_CAMPAIGN_STORAGE_KEY = 'sirena.announcement.dismissedCampaign';
 
@@ -17,7 +17,7 @@ function readDismissedCampaign(): string | null {
 }
 
 export type AnnouncementAction = {
-  label: string;
+  label: ReactNode;
   href: string;
   target?: '_blank';
   rel?: string;
@@ -28,10 +28,9 @@ type AnnouncementModalProps = {
   title: string;
   children: ReactNode;
   action?: AnnouncementAction;
-  focusReturnRef: RefObject<HTMLElement | null>;
 };
 
-export function AnnouncementModal({ campaign, title, children, action, focusReturnRef }: AnnouncementModalProps) {
+export function AnnouncementModal({ campaign, title, children, action }: AnnouncementModalProps) {
   const [dismissedCampaign, setDismissedCampaign] = useState<string | null>(readDismissedCampaign);
 
   const modal = useMemo(
@@ -57,8 +56,6 @@ export function AnnouncementModal({ campaign, title, children, action, focusRetu
       }
 
       setDismissedCampaign(campaign);
-
-      setTimeout(() => focusReturnRef.current?.focus(), 0);
     };
 
     modalElement?.addEventListener('dsfr.conceal', handleConceal);
@@ -68,7 +65,7 @@ export function AnnouncementModal({ campaign, title, children, action, focusRetu
       window.cancelAnimationFrame(openFrame);
       modalElement?.removeEventListener('dsfr.conceal', handleConceal);
     };
-  }, [campaign, dismissedCampaign, focusReturnRef, modal]);
+  }, [campaign, dismissedCampaign, modal]);
 
   if (dismissedCampaign === campaign) return null;
 

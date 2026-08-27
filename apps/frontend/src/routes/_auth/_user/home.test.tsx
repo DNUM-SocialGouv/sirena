@@ -57,7 +57,6 @@ describe('Home route', () => {
     render(<RouteComponent />);
 
     const homeHeading = screen.getByRole('heading', { name: 'Tableau de bord des requêtes' });
-    expect(homeHeading).toHaveAttribute('tabindex', '-1');
     expect(screen.getByText('Annonce active')).toBeInTheDocument();
   });
 });

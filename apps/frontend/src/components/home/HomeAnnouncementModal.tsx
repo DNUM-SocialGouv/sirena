@@ -1,6 +1,5 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { FEATURE_FLAGS } from '@sirena/common/constants';
-import type { RefObject } from 'react';
 import { useHasFeature } from '@/hooks/useHasFeature';
 import { LatestAnnouncementModal } from './LatestAnnouncementModal';
 
@@ -10,7 +9,11 @@ const COLLABORATION_ANNOUNCEMENT = {
   campaign: 'collaboration-v1',
   title: 'De nouvelles fonctionnalités sont disponibles !',
   action: {
-    label: 'Voir la documentation',
+    label: (
+      <>
+        Voir la documentation <span className="fr-sr-only">- nouvel onglet</span>
+      </>
+    ),
     href: RELEASE_NOTES_URL,
     target: '_blank',
     rel: 'noopener noreferrer',
@@ -18,11 +21,7 @@ const COLLABORATION_ANNOUNCEMENT = {
   content: <CollaborationAnnouncementContent />,
 } as const;
 
-type HomeAnnouncementModalProps = {
-  focusReturnRef: RefObject<HTMLElement | null>;
-};
-
-export function HomeAnnouncementModal({ focusReturnRef }: HomeAnnouncementModalProps) {
+export function HomeAnnouncementModal() {
   const isCollaborationEligible = useHasFeature(FEATURE_FLAGS.SHARED_PROCESSING_STEPS, false);
 
   // Keep configurations ordered from oldest to newest. Only the last one can be displayed.
@@ -33,7 +32,7 @@ export function HomeAnnouncementModal({ focusReturnRef }: HomeAnnouncementModalP
     },
   ];
 
-  return <LatestAnnouncementModal announcements={announcements} focusReturnRef={focusReturnRef} />;
+  return <LatestAnnouncementModal announcements={announcements} />;
 }
 
 function CollaborationAnnouncementContent() {

@@ -27,7 +27,7 @@ afterEach(() => {
 it('opens after DSFR registers a dynamically mounted announcement', async () => {
   expect(() =>
     render(
-      <AnnouncementModal campaign="example-v1" title="Une annonce" focusReturnRef={{ current: null }}>
+      <AnnouncementModal campaign="example-v1" title="Une annonce">
         Le contenu
       </AnnouncementModal>,
     ),

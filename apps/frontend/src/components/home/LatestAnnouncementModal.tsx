@@ -1,4 +1,4 @@
-import type { ReactNode, RefObject } from 'react';
+import type { ReactNode } from 'react';
 import { type AnnouncementAction, AnnouncementModal } from './AnnouncementModal';
 
 export type AnnouncementConfiguration = {
@@ -11,10 +11,9 @@ export type AnnouncementConfiguration = {
 
 type LatestAnnouncementModalProps = {
   announcements: readonly AnnouncementConfiguration[];
-  focusReturnRef: RefObject<HTMLElement | null>;
 };
 
-export function LatestAnnouncementModal({ announcements, focusReturnRef }: LatestAnnouncementModalProps) {
+export function LatestAnnouncementModal({ announcements }: LatestAnnouncementModalProps) {
   const latestAnnouncement = announcements.at(-1);
 
   if (!latestAnnouncement?.isEligible) return null;
@@ -24,7 +23,6 @@ export function LatestAnnouncementModal({ announcements, focusReturnRef }: Lates
       campaign={latestAnnouncement.campaign}
       title={latestAnnouncement.title}
       action={latestAnnouncement.action}
-      focusReturnRef={focusReturnRef}
     >
       {latestAnnouncement.content}
     </AnnouncementModal>

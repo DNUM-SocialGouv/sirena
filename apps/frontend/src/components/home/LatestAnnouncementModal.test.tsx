@@ -8,8 +8,6 @@ vi.mock('./AnnouncementModal', () => ({
   ),
 }));
 
-const focusReturnRef = { current: null };
-
 afterEach(cleanup);
 
 describe('LatestAnnouncementModal', () => {
@@ -30,7 +28,6 @@ describe('LatestAnnouncementModal', () => {
             isEligible: true,
           },
         ]}
-        focusReturnRef={focusReturnRef}
       />,
     );
 
@@ -55,7 +52,6 @@ describe('LatestAnnouncementModal', () => {
             isEligible: false,
           },
         ]}
-        focusReturnRef={focusReturnRef}
       />,
     );
 

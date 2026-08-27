@@ -41,8 +41,6 @@ vi.mock('@/hooks/useHasFeature', () => ({
 
 const mockedUseHasFeature = vi.mocked(useHasFeature);
 const STORAGE_KEY = 'sirena.announcement.dismissedCampaign';
-const noFocusReturnRef = { current: null };
-
 beforeEach(() => {
   window.localStorage.clear();
 });
@@ -56,7 +54,7 @@ describe('HomeAnnouncementModal', () => {
   it('renders nothing when shared processing steps are disabled or unavailable', () => {
     mockedUseHasFeature.mockReturnValue(false);
 
-    const { container } = render(<HomeAnnouncementModal focusReturnRef={noFocusReturnRef} />);
+    const { container } = render(<HomeAnnouncementModal />);
 
     expect(container).toBeEmptyDOMElement();
   });
@@ -65,7 +63,7 @@ describe('HomeAnnouncementModal', () => {
     mockedUseHasFeature.mockReturnValue(true);
     window.localStorage.setItem(STORAGE_KEY, 'collaboration-v1');
 
-    const { container } = render(<HomeAnnouncementModal focusReturnRef={noFocusReturnRef} />);
+    const { container } = render(<HomeAnnouncementModal />);
 
     expect(container).toBeEmptyDOMElement();
   });
@@ -74,7 +72,7 @@ describe('HomeAnnouncementModal', () => {
     mockedUseHasFeature.mockReturnValue(true);
     window.localStorage.setItem(STORAGE_KEY, 'ancienne-campagne-v1');
 
-    render(<HomeAnnouncementModal focusReturnRef={noFocusReturnRef} />);
+    render(<HomeAnnouncementModal />);
 
     expect(screen.getByRole('dialog', { name: 'De nouvelles fonctionnalités sont disponibles !' })).toBeInTheDocument();
   });
@@ -82,7 +80,7 @@ describe('HomeAnnouncementModal', () => {
   it('renders the collaboration content, accessible list and documentation link', () => {
     mockedUseHasFeature.mockReturnValue(true);
 
-    render(<HomeAnnouncementModal focusReturnRef={noFocusReturnRef} />);
+    render(<HomeAnnouncementModal />);
 
     const changes = screen.getAllByRole('listitem');
     expect(changes).toHaveLength(3);
@@ -93,7 +91,8 @@ describe('HomeAnnouncementModal', () => {
     expect(changes[2]).toHaveTextContent('Vous pouvez filtrer les étapes par entité.');
     for (const star of screen.getAllByText('⭐')) expect(star).toHaveAttribute('aria-hidden', 'true');
 
-    const documentationLink = screen.getByRole('link', { name: 'Voir la documentation' });
+    const documentationLink = screen.getByRole('link', { name: 'Voir la documentation - nouvel onglet' });
+    expect(screen.getByText('- nouvel onglet')).toHaveClass('fr-sr-only');
     expect(documentationLink).toHaveAttribute(
       'href',
       'https://docs.numerique.gouv.fr/docs/24ca6ea9-c64d-4e30-8555-626166cb2d45/',
