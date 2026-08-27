@@ -181,6 +181,7 @@ export interface SirecReclamationData {
   typeTraitementIdDicos: number[];
   misEnCauses: SirecMisEnCause[];
   mainCourantes: SirecMainCourante[];
+  files: SirecFileRow[];
 }
 
 export async function fetchExistingSirecIds(sirecIds: number[]): Promise<number[]> {
@@ -456,6 +457,7 @@ export async function fetchSirecData(sirecId: number): Promise<SirecReclamationD
     typeTraitementIdDicos,
     misEnCauses,
     mainCourantes,
+    files,
   ] = await Promise.all([
     fetchSirecMotifsDeclaresById(sirecId),
     fetchSirecGroupIds(sirecId),
@@ -464,6 +466,7 @@ export async function fetchSirecData(sirecId: number): Promise<SirecReclamationD
     fetchSirecTypeTraitementIds(sirecId),
     fetchSirecMisEnCauses(sirecId),
     fetchSirecMainCourantes(sirecId),
+    fetchSirecFiles(sirecId),
   ]);
 
   return {
@@ -475,12 +478,15 @@ export async function fetchSirecData(sirecId: number): Promise<SirecReclamationD
     typeTraitementIdDicos,
     misEnCauses,
     mainCourantes,
+    files,
   };
 }
 
 export interface SirecFileRow {
   id_data: number;
   sys_creation_date: Date;
+  /** Date de création du fichier (peut être NULL). */
+  date_creation: Date | null;
   original_name: string;
   generated_name: string;
   size: number;
@@ -494,7 +500,7 @@ export interface SirecFileRow {
 
 export async function fetchSirecFiles(sirecId: number): Promise<SirecFileRow[]> {
   const rows = await mariadbPool.query<SirecFileRow[]>(
-    `SELECT f.id_data, f.sys_creation_date, f.original_name, f.generated_name, f.size, f.hash, f.ext, f.content_type, f.file_type, rf.id_ext_mc
+    `SELECT f.id_data, f.sys_creation_date, f.date_creation, f.original_name, f.generated_name, f.size, f.hash, f.ext, f.content_type, f.file_type, rf.id_ext_mc
      FROM sire_file_data f, sire_reclamation_file_data rf
      WHERE f.id_data = rf.id_file
        AND rf.id_ext = ?`,

@@ -1,15 +1,18 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useStatisticsDashboard } from '@/hooks/queries/statistics.hook';
 import { RouteComponent } from './statistiques';
 
-const navigate = vi.fn();
 const searchState = vi.hoisted(() => ({
-  current: {} as Record<string, string | undefined>,
+  current: {} as Record<string, unknown>,
 }));
+const navigate = vi.fn(({ search }: { search?: (prev: object) => Record<string, unknown> }) => {
+  if (typeof search === 'function') {
+    searchState.current = search(searchState.current);
+  }
+});
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => options,
@@ -18,7 +21,6 @@ vi.mock('@tanstack/react-router', () => ({
   useSearch: () => searchState.current,
 }));
 
-vi.mock('@/hooks/queries/featureFlags.hook', () => ({ useResolvedFeatureFlags: vi.fn() }));
 vi.mock('@/hooks/queries/profile.hook', () => ({ useProfile: vi.fn() }));
 vi.mock('@/hooks/queries/statistics.hook', () => ({
   useStatisticsDashboard: vi.fn(),
@@ -43,10 +45,6 @@ afterEach(() => {
 
 beforeEach(() => {
   searchState.current = {};
-  vi.mocked(useResolvedFeatureFlags).mockReturnValue({
-    status: 'success',
-    data: { STATISTICS: true },
-  } as never);
   vi.mocked(useProfile).mockReturnValue({
     data: { role: { id: 'ENTITY_ADMIN' }, entiteId: 'ent-1' },
     isPending: false,
@@ -91,7 +89,7 @@ describe('Statistiques route — filtre Domaine fonctionnel', () => {
     render(<RouteComponent />);
 
     expect(useStatisticsDashboard).toHaveBeenLastCalledWith(
-      { startDate: '2026-01-01', endDate: '2026-03-31', domaineIds: 'SOCIAL,SANITAIRE' },
+      { startDate: '2026-01-01', endDate: '2026-03-31', domaineIds: 'SOCIAL,SANITAIRE', includeEIG: undefined },
       true,
     );
   });
@@ -106,6 +104,47 @@ describe('Statistiques route — filtre Domaine fonctionnel', () => {
 
     expect(screen.getByRole('group', { name: /Filtrer les indicateurs par domaine fonctionnel/ })).toBeInTheDocument();
     expect(screen.queryByText(/Filtrer les requêtes par domaine fonctionnel/)).not.toBeInTheDocument();
+  });
+});
+
+describe('Statistiques route — filtre EIG', () => {
+  it('includes the EIG requêtes by default', () => {
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('checkbox', { name: 'Inclure les EIG' })).toBeChecked();
+  });
+
+  it('records the exclusion in the search params when the box is unchecked, keeping the other filters', async () => {
+    const user = userEvent.setup();
+    searchState.current = { domaineIds: 'SOCIAL' };
+    render(<RouteComponent />);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Inclure les EIG' }));
+
+    expect(searchState.current).toEqual({ domaineIds: 'SOCIAL', includeEIG: false });
+  });
+
+  it('clears includeEIG from the search params when the checkbox is checked back', async () => {
+    const user = userEvent.setup();
+    searchState.current = { includeEIG: false };
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('checkbox', { name: 'Inclure les EIG' })).not.toBeChecked();
+
+    await user.click(screen.getByRole('checkbox', { name: 'Inclure les EIG' }));
+
+    expect(searchState.current).toEqual({ includeEIG: undefined });
+  });
+
+  it('passes the exclusion to the dashboard query alongside the other filters', () => {
+    searchState.current = { domaineIds: 'SOCIAL', includeEIG: false };
+
+    render(<RouteComponent />);
+
+    expect(useStatisticsDashboard).toHaveBeenLastCalledWith(
+      expect.objectContaining({ domaineIds: 'SOCIAL', includeEIG: false }),
+      true,
+    );
   });
 });
 

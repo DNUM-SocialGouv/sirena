@@ -161,8 +161,6 @@ vi.mock('./processing/StepFormPanel', () => ({ StepFormPanel: () => null }));
 vi.mock('./processing/SendAcknowledgmentDrawer', () => ({ SendAcknowledgmentDrawer: () => null }));
 vi.mock('./processing/CloseRequeteModal', () => ({ CloseRequeteModal: () => null }));
 vi.mock('./processing/ReopenRequeteModal', () => ({ ReopenRequeteModal: () => null }));
-vi.mock('./sections/OtherEntitesAffected', () => ({ OtherEntitiesAffected: () => null }));
-
 describe('Processing', () => {
   beforeEach(() => {
     processingMeta = { total: 1, isMultiEntite: true, etapePartageeEnabled: true };
@@ -184,12 +182,24 @@ describe('Processing', () => {
     error: null,
   } as never;
 
-  it('labels the treatment chronology as Étapes de traitement', () => {
+  it('labels the treatment chronology', () => {
     render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
     const heading = screen.getByRole('heading', { name: 'Étapes de traitement' });
     expect(heading).toBeInTheDocument();
-    expect(within(heading.parentElement as HTMLElement).getByText('ARS courante')).toBeInTheDocument();
+  });
+
+  it('does not display the other affected entities panel', () => {
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(screen.queryByRole('heading', { name: 'Autres entités affectées' })).not.toBeInTheDocument();
+  });
+
+  it('uses the full grid width for the treatment chronology', () => {
+    render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    const chronologyColumn = screen.getByRole('heading', { name: 'Étapes de traitement' }).closest('.fr-col-md-12');
+    expect(chronologyColumn).toHaveClass('fr-col-lg-12');
   });
 
   it('shows the entity filter with all entities selected for an eligible request', () => {

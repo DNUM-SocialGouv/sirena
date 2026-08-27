@@ -49,6 +49,7 @@ import { migrateSirecFiles } from './sirecMigration.files.service.js';
 const makeFile = (overrides: Partial<SirecFileRow> = {}): SirecFileRow => ({
   id_data: 1,
   sys_creation_date: new Date('2020-05-01'),
+  date_creation: new Date('2020-05-01'),
   original_name: 'courrier.pdf',
   generated_name: 'a1b2c3.pdf',
   size: 12345,

@@ -5,7 +5,8 @@ export const getStatisticsDashboardRoute = openApiProtectedRoute({
   description:
     'Récupère les données de toutes les cartes du dashboard Metabase configuré (sans iframe). ' +
     'Filtres optionnels en query string : startDate / endDate (dates ISO YYYY-MM-DD) pour borner la période, ' +
-    'domaineIds (liste CSV de domaines fonctionnels) pour restreindre le périmètre métier.',
+    'domaineIds (liste CSV de domaines fonctionnels) pour restreindre le périmètre métier, ' +
+    "includeEIG=false pour retirer les requêtes signalées par un professionnel au titre d'un EIG.",
   tags: ['statistics'],
   responses: {
     ...openApiResponse(StatisticsDashboardPayloadSchema),

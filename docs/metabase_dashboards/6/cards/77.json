@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 482.17391304347825,
+  "average_query_time": 615.1481481481482,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -23,12 +23,12 @@
   "collection_preview": true,
   "creator_id": 7,
   "dashboard": {
-    "id": 4,
+    "id": 6,
     "moderation_status": null,
-    "name": "[integration] Dashboard local"
+    "name": "[integration] Dashboard national"
   },
   "dashboard_count": 1,
-  "dashboard_id": 4,
+  "dashboard_id": 6,
   "database_id": 4,
   "dataset_query": {
     "database": 4,
@@ -36,30 +36,30 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "-- Carte : « Demandes de confidentialité »\n-- Requêtes affectées à mon entité dont la personne concernée (participant) n'a PAS\n-- consenti à la communication de son identité (veutGarderAnonymat = true → réponse « Non »).\nSELECT\n  COUNT(*) AS nombre_requetes\nFROM\n  \"RequeteEntite\" re\n  JOIN \"Entite\"  e  ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r  ON r.id = re.\"requeteId\"\n  JOIN \"PersonneConcernee\" pc ON pc.\"participantDeId\" = r.id\nWHERE\n  pc.\"veutGarderAnonymat\" = TRUE\n  [[ AND e.label = {{entity_label}} ]]\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                       AND {{inclure_eig}} = 'false') ]];",
+        "native": "-- Requêtes « en compétence partagée » au niveau national :\n-- au moins 2 entités affectées, après avoir exclu les entités\n-- clôturées pour motif « Hors compétence ».\nSELECT\n  COUNT(*) AS nombre_requetes_competence_partagee\nFROM (\n  SELECT r.id\n  FROM \"Requete\" r\n  JOIN \"RequeteEntite\" re ON re.\"requeteId\" = r.id\n  JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n  WHERE NOT (\n    re.\"statutId\" = 'CLOTUREE'\n    AND EXISTS (\n      SELECT 1\n      FROM \"RequeteEtape\" et\n      JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n      WHERE et.\"requeteId\" = re.\"requeteId\"\n        AND et.\"entiteId\"  = re.\"entiteId\"\n        AND et.\"statutId\"  = 'CLOTUREE'\n        AND j.\"A\"          = 'HORS_COMPETENCE'\n    )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                       AND {{inclure_eig}} = 'false') ]]\n  GROUP BY r.id\n  HAVING COUNT(DISTINCT re.\"entiteId\") >= 2\n     [[ AND bool_or(e.label = {{entity_label}}) ]]\n) t;",
         "template-tags": [
           {
-            "display-name": "Entity Label",
-            "id": "acf7527c-58c2-4da3-b7f1-a92ffe3c24ba",
-            "name": "entity_label",
-            "type": "text"
-          },
-          {
             "display-name": "Start Date",
-            "id": "885c1041-446c-47f6-8545-5c04ecc1de3d",
+            "id": "1da68769-4431-49be-8456-6ceccaa49d10",
             "name": "start_date",
             "type": "date"
           },
           {
             "display-name": "End Date",
-            "id": "12726fd7-cff8-4524-8773-76c5a7b51515",
+            "id": "1ac7cc94-6a04-411f-916a-d606c70e2462",
             "name": "end_date",
             "type": "date"
           },
           {
             "display-name": "Domaine Fonctionnel",
-            "id": "5c7bf358-ac1f-4339-9724-43839a097722",
+            "id": "485dbbbb-b533-494c-a210-1244f740f0f8",
             "name": "domaine_fonctionnel",
+            "type": "text"
+          },
+          {
+            "display-name": "Entity Label",
+            "id": "c68c73cb-0a26-4754-9e35-3c3287cdc191",
+            "name": "entity_label",
             "type": "text"
           },
           {
@@ -67,7 +67,7 @@
               true
             ],
             "display-name": "Inclure Eig",
-            "id": "2a02003f-4107-4305-b1f1-5d57aa8fac4e",
+            "id": "1fd533ad-b2b1-4d5d-bc6c-66bc6a6734af",
             "name": "inclure_eig",
             "type": "boolean"
           }
@@ -75,7 +75,7 @@
       }
     ]
   },
-  "description": "Demande de confidentialité faite par la personne concernée",
+  "description": "Requête en compétence partagée",
   "dimension_mappings": null,
   "dimensions": null,
   "display": "scalar",
@@ -83,35 +83,21 @@
   "embedding_params": null,
   "embedding_type": null,
   "enable_embedding": false,
-  "entity_id": "5otXTZilAKiWTtvZDkIPA",
-  "id": 72,
+  "entity_id": "KSCh9ti0JapmM8pcSof7f",
+  "id": 77,
   "is_remote_synced": false,
-  "last_query_start": "2026-08-27T09:39:41.036365Z",
+  "last_query_start": "2026-08-27T10:31:13.241763Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.63.5 (1dca717)",
   "moderation_reviews": [],
-  "name": "Demandes de confidentialité",
+  "name": "Requêtes en compétence partagée",
   "param_fields": {},
   "parameter_mappings": [],
   "parameter_usage_count": 0,
   "parameters": [
     {
-      "id": "acf7527c-58c2-4da3-b7f1-a92ffe3c24ba",
-      "isMultiSelect": false,
-      "name": "Entity Label",
-      "slug": "entity_label",
-      "target": [
-        "variable",
-        [
-          "template-tag",
-          "entity_label"
-        ]
-      ],
-      "type": "string/="
-    },
-    {
-      "id": "885c1041-446c-47f6-8545-5c04ecc1de3d",
+      "id": "1da68769-4431-49be-8456-6ceccaa49d10",
       "isMultiSelect": false,
       "name": "Start Date",
       "slug": "start_date",
@@ -125,7 +111,7 @@
       "type": "date/single"
     },
     {
-      "id": "12726fd7-cff8-4524-8773-76c5a7b51515",
+      "id": "1ac7cc94-6a04-411f-916a-d606c70e2462",
       "isMultiSelect": false,
       "name": "End Date",
       "slug": "end_date",
@@ -139,7 +125,7 @@
       "type": "date/single"
     },
     {
-      "id": "5c7bf358-ac1f-4339-9724-43839a097722",
+      "id": "485dbbbb-b533-494c-a210-1244f740f0f8",
       "isMultiSelect": true,
       "name": "Domaine Fonctionnel",
       "slug": "domaine_fonctionnel",
@@ -153,10 +139,24 @@
       "type": "string/="
     },
     {
+      "id": "c68c73cb-0a26-4754-9e35-3c3287cdc191",
+      "isMultiSelect": false,
+      "name": "Entity Label",
+      "slug": "entity_label",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "entity_label"
+        ]
+      ],
+      "type": "string/="
+    },
+    {
       "default": [
         true
       ],
-      "id": "2a02003f-4107-4305-b1f1-5d57aa8fac4e",
+      "id": "1fd533ad-b2b1-4d5d-bc6c-66bc6a6734af",
       "isMultiSelect": false,
       "name": "Inclure Eig",
       "slug": "inclure_eig",
@@ -176,11 +176,11 @@
     {
       "base_type": "type/BigInteger",
       "database_type": "int8",
-      "display_name": "nombre_requetes",
+      "display_name": "nombre_requetes_competence_partagee",
       "effective_type": "type/BigInteger",
       "field_ref": [
         "field",
-        "nombre_requetes",
+        "nombre_requetes_competence_partagee",
         {
           "base-type": "type/BigInteger"
         }
@@ -192,13 +192,13 @@
         },
         "type": {
           "type/Number": {
-            "avg": 6,
+            "avg": 5326,
             "excess-kurtosis": null,
-            "max": 6,
-            "min": 6,
+            "max": 5326,
+            "min": 5326,
             "mode-fraction": 1,
-            "q1": 6,
-            "q3": 6,
+            "q1": 5326,
+            "q3": 5326,
             "sd": 0,
             "skewness": null,
             "top-3-fraction": 1,
@@ -206,12 +206,12 @@
           }
         }
       },
-      "lib/deduplicated-name": "nombre_requetes",
-      "lib/desired-column-alias": "nombre_requetes",
-      "lib/original-name": "nombre_requetes",
+      "lib/deduplicated-name": "nombre_requetes_competence_partagee",
+      "lib/desired-column-alias": "nombre_requetes_competence_partagee",
+      "lib/original-name": "nombre_requetes_competence_partagee",
       "lib/source": "source/native",
-      "lib/source-column-alias": "nombre_requetes",
-      "name": "nombre_requetes",
+      "lib/source-column-alias": "nombre_requetes_competence_partagee",
+      "name": "nombre_requetes_competence_partagee",
       "semantic_type": null,
       "source": "native"
     }

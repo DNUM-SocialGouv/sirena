@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 537.8939393939394,
+  "average_query_time": 223.6451612903226,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -23,12 +23,12 @@
   "collection_preview": true,
   "creator_id": 7,
   "dashboard": {
-    "id": 4,
+    "id": 6,
     "moderation_status": null,
-    "name": "[integration] Dashboard local"
+    "name": "[integration] Dashboard national"
   },
   "dashboard_count": 1,
-  "dashboard_id": 4,
+  "dashboard_id": 6,
   "database_id": 4,
   "dataset_query": {
     "database": 4,
@@ -36,29 +36,29 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "-- Carte : « Répartition des requêtes par mode de réception »\nWITH requetes AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, r.\"receptionTypeId\" AS reception_type_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]]\n),\ntotal AS (SELECT COUNT(*) AS nb_total FROM requetes),\npar_type AS (\n  SELECT COALESCE(rt.label, 'Non précisé') AS mode_reception, COUNT(*) AS nb_requetes\n  FROM requetes q\n  LEFT JOIN \"ReceptionTypeEnum\" rt ON rt.id = q.reception_type_id\n  GROUP BY COALESCE(rt.label, 'Non précisé')\n)\nSELECT\n  pt.mode_reception                                        AS \"Mode de réception\",\n  pt.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * pt.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes (%)\"\nFROM par_type pt\nCROSS JOIN total t\nORDER BY pt.nb_requetes DESC;",
+        "native": "SELECT\n    COUNT(DISTINCT r.id) AS nombre_requetes\nFROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\nWHERE\n    re.\"statutId\" = 'CLOTUREE'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]];",
         "template-tags": [
           {
             "display-name": "Entity Label",
-            "id": "1058dec6-7cd4-4a04-99ec-c99cc98869a1",
+            "id": "c87d642d-d2a5-4937-865d-0d601c2cc98f",
             "name": "entity_label",
             "type": "text"
           },
           {
             "display-name": "Start Date",
-            "id": "cc76a986-791f-4df5-936e-390ff6ee33f5",
+            "id": "f8a15d67-0d58-4843-a5fb-2a33fe3ab448",
             "name": "start_date",
             "type": "date"
           },
           {
             "display-name": "End Date",
-            "id": "8b4896e9-2a4c-4b4e-9b52-83b5a05b971a",
+            "id": "e855a48c-28f9-4bac-b0b5-19cf09935592",
             "name": "end_date",
             "type": "date"
           },
           {
             "display-name": "Domaine Fonctionnel",
-            "id": "b75bc313-539f-4567-b202-958fb6f48e35",
+            "id": "ac52c7c2-a09f-42cf-aa31-f003a3a0055d",
             "name": "domaine_fonctionnel",
             "type": "text"
           },
@@ -67,7 +67,7 @@
               true
             ],
             "display-name": "Inclure Eig",
-            "id": "8c012ba7-9df0-464f-a342-2a9e209633b5",
+            "id": "1de5f835-b181-4784-929f-177e1d0e82ca",
             "name": "inclure_eig",
             "type": "boolean"
           }
@@ -75,29 +75,29 @@
       }
     ]
   },
-  "description": "Répartition des requêtes affectées à mon entité administrative selon leur mode de réception. Mode non renseigné = « Non précisé ».",
+  "description": "Nombre de requêtes ayant au moins une entité au statut « clôturée », au niveau national.",
   "dimension_mappings": null,
   "dimensions": null,
-  "display": "pie",
+  "display": "scalar",
   "document_id": null,
   "embedding_params": null,
   "embedding_type": null,
   "enable_embedding": false,
-  "entity_id": "pfEguIi5DjK77MqToiTG4",
-  "id": 71,
+  "entity_id": "paldPpFzo9i4BjPMGje1K",
+  "id": 76,
   "is_remote_synced": false,
-  "last_query_start": "2026-08-27T09:39:40.938105Z",
+  "last_query_start": "2026-08-27T10:31:13.236825Z",
   "legacy_query": null,
   "made_public_by_id": null,
-  "metabase_version": "v0.63.1.2 (b067da1)",
+  "metabase_version": "v0.63.5 (1dca717)",
   "moderation_reviews": [],
-  "name": "Répartition des requêtes par mode de réception",
+  "name": "Requêtes clôturées",
   "param_fields": {},
   "parameter_mappings": [],
   "parameter_usage_count": 0,
   "parameters": [
     {
-      "id": "1058dec6-7cd4-4a04-99ec-c99cc98869a1",
+      "id": "c87d642d-d2a5-4937-865d-0d601c2cc98f",
       "isMultiSelect": false,
       "name": "Entity Label",
       "slug": "entity_label",
@@ -111,7 +111,7 @@
       "type": "string/="
     },
     {
-      "id": "cc76a986-791f-4df5-936e-390ff6ee33f5",
+      "id": "f8a15d67-0d58-4843-a5fb-2a33fe3ab448",
       "isMultiSelect": false,
       "name": "Start Date",
       "slug": "start_date",
@@ -125,7 +125,7 @@
       "type": "date/single"
     },
     {
-      "id": "8b4896e9-2a4c-4b4e-9b52-83b5a05b971a",
+      "id": "e855a48c-28f9-4bac-b0b5-19cf09935592",
       "isMultiSelect": false,
       "name": "End Date",
       "slug": "end_date",
@@ -139,7 +139,7 @@
       "type": "date/single"
     },
     {
-      "id": "b75bc313-539f-4567-b202-958fb6f48e35",
+      "id": "ac52c7c2-a09f-42cf-aa31-f003a3a0055d",
       "isMultiSelect": true,
       "name": "Domaine Fonctionnel",
       "slug": "domaine_fonctionnel",
@@ -156,7 +156,7 @@
       "default": [
         true
       ],
-      "id": "8c012ba7-9df0-464f-a342-2a9e209633b5",
+      "id": "1de5f835-b181-4784-929f-177e1d0e82ca",
       "isMultiSelect": false,
       "name": "Inclure Eig",
       "slug": "inclure_eig",
@@ -172,9 +172,54 @@
   ],
   "public_uuid": null,
   "query_type": "native",
-  "result_metadata": null,
+  "result_metadata": [
+    {
+      "base_type": "type/BigInteger",
+      "database_type": "int8",
+      "display_name": "nombre_requetes",
+      "effective_type": "type/BigInteger",
+      "field_ref": [
+        "field",
+        "nombre_requetes",
+        {
+          "base-type": "type/BigInteger"
+        }
+      ],
+      "fingerprint": {
+        "global": {
+          "distinct-count": 1,
+          "nil%": 0
+        },
+        "type": {
+          "type/Number": {
+            "avg": 16036,
+            "excess-kurtosis": null,
+            "max": 16036,
+            "min": 16036,
+            "mode-fraction": 1,
+            "q1": 16036,
+            "q3": 16036,
+            "sd": 0,
+            "skewness": null,
+            "top-3-fraction": 1,
+            "zero-fraction": 0
+          }
+        }
+      },
+      "lib/deduplicated-name": "nombre_requetes",
+      "lib/desired-column-alias": "nombre_requetes",
+      "lib/original-name": "nombre_requetes",
+      "lib/source": "source/native",
+      "lib/source-column-alias": "nombre_requetes",
+      "name": "nombre_requetes",
+      "semantic_type": null,
+      "source": "native"
+    }
+  ],
   "source_card_id": null,
   "table_id": null,
   "type": "question",
-  "visualization_settings": {}
+  "visualization_settings": {
+    "scalar.segments": []
+  }
 }

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { getOver90DaysCutoffDate, isCreatedOver90DaysAgo } from './date.utils.js';
+import { getOver90DaysCutoffDate, isCreatedOver90DaysAgo, isSupportedTimeZone, toWallClockDate } from './date.utils.js';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const NOW = new Date('2026-08-05T10:00:00.000Z');
@@ -83,4 +83,58 @@ describe('badge/filter equivalence across timezones', () => {
       }
     },
   );
+});
+
+describe('isSupportedTimeZone', () => {
+  it('accepts an IANA timezone name', () => {
+    expect(isSupportedTimeZone('Pacific/Noumea')).toBe(true);
+  });
+
+  it('rejects an unknown timezone name', () => {
+    expect(isSupportedTimeZone('Mars/Olympus_Mons')).toBe(false);
+  });
+});
+
+describe('toWallClockDate', () => {
+  it('exposes the Paris summer wall clock through the UTC fields', () => {
+    const result = toWallClockDate(new Date('2026-04-20T16:03:12.000Z'), 'Europe/Paris');
+
+    expect(result.toISOString()).toBe('2026-04-20T18:03:12.000Z');
+  });
+
+  it('exposes the Paris winter wall clock through the UTC fields', () => {
+    const result = toWallClockDate(new Date('2026-01-15T16:03:12.000Z'), 'Europe/Paris');
+
+    expect(result.toISOString()).toBe('2026-01-15T17:03:12.000Z');
+  });
+
+  it('uses the given timezone, including overseas ones', () => {
+    const result = toWallClockDate(new Date('2026-04-20T16:03:12.000Z'), 'Indian/Reunion');
+
+    expect(result.toISOString()).toBe('2026-04-20T20:03:12.000Z');
+  });
+
+  it('shifts the day when the reader is on the other side of the date line', () => {
+    const result = toWallClockDate(new Date('2026-04-20T16:03:12.000Z'), 'Pacific/Noumea');
+
+    expect(result.toISOString()).toBe('2026-04-21T03:03:12.000Z');
+  });
+
+  it('handles midnight without rolling over to hour 24', () => {
+    const result = toWallClockDate(new Date('2026-04-19T22:00:00.000Z'), 'Europe/Paris');
+
+    expect(result.toISOString()).toBe('2026-04-20T00:00:00.000Z');
+  });
+
+  it('falls back to Europe/Paris when no timezone is given', () => {
+    const result = toWallClockDate(new Date('2026-04-20T16:03:12.000Z'));
+
+    expect(result.toISOString()).toBe('2026-04-20T18:03:12.000Z');
+  });
+
+  it('falls back to Europe/Paris when the timezone is unknown', () => {
+    const result = toWallClockDate(new Date('2026-04-20T16:03:12.000Z'), 'Mars/Olympus_Mons');
+
+    expect(result.toISOString()).toBe('2026-04-20T18:03:12.000Z');
+  });
 });
