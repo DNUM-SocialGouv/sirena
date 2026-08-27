@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { getSelectedCountText } from './AccordionMultiSelect.helpers';
+import { getItemNounPhrase } from './AccordionMultiSelect.helpers';
 import styles from './AccordionMultiSelect.module.css';
 import type { AccordionMultiSelectOption } from './AccordionMultiSelect.types';
 
@@ -40,8 +40,8 @@ export const CategoryAccordion = ({
         {category.label}
         {selectedCount > 0 ? (
           <>
-            <span aria-hidden="true"> ({selectedCount})</span>
-            <span className="fr-sr-only">, {getSelectedCountText(selectedCount, itemNoun)}</span>
+            {' '}
+            ({selectedCount}) <span className="fr-sr-only">{getItemNounPhrase(selectedCount, itemNoun)}</span>
           </>
         ) : null}
       </span>

@@ -89,7 +89,7 @@
   font-weight: 500;
 }
 
-.categoryButton:hover {
+.categoryButton:not([aria-expanded="true"]):hover {
   background-color: var(--background-default-grey-hover);
 }
 

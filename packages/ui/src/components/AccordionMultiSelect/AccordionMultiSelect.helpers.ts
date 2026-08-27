@@ -11,15 +11,20 @@ export const getSelectedCountInCategory = (category: AccordionMultiSelectOption,
     .length;
 };
 
-export const getSelectedCountText = (
+export const getItemNounPhrase = (
   selectedCount: number,
   itemNoun: { singular: string; plural: string; feminine?: boolean },
 ): string => {
   const isPlural = selectedCount > 1;
   const noun = isPlural ? itemNoun.plural : itemNoun.singular;
   const participle = `sélectionné${itemNoun.feminine ? 'e' : ''}${isPlural ? 's' : ''}`;
-  return `${selectedCount} ${noun} ${participle}`;
+  return `${noun} ${participle}`;
 };
+
+export const getSelectedCountText = (
+  selectedCount: number,
+  itemNoun: { singular: string; plural: string; feminine?: boolean },
+): string => `${selectedCount} ${getItemNounPhrase(selectedCount, itemNoun)}`;
 
 export const getSummaryText = (
   selectedCount: number,

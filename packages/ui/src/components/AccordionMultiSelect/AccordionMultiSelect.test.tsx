@@ -165,8 +165,8 @@ describe('AccordionMultiSelect', () => {
     render(<Wrapper initialValue={['CAT_A/A1', 'CAT_A/A2']} itemNoun={{ singular: 'motif', plural: 'motifs' }} />);
     fireEvent.click(getTrigger());
 
-    expect(screen.getByRole('button', { name: /Cat A/ })).toHaveAccessibleName(/2 motifs sélectionnés/);
-    expect(screen.getByText(/2 motifs sélectionnés/, { selector: '.fr-sr-only' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Cat A/ })).toHaveAccessibleName(/\(2\) motifs sélectionnés/);
+    expect(screen.getByText(/motifs sélectionnés/, { selector: '.fr-sr-only' })).toBeInTheDocument();
   });
 
   it('uses the singular form for a single selection', () => {
