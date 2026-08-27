@@ -2913,6 +2913,7 @@ describe('requetesEntite.service', () => {
       expect(mockTx.requeteEtape.createMany).toHaveBeenCalledWith({
         data: [
           {
+            id: expect.any(String),
             requeteId,
             entiteId: userTopEntiteId,
             assignedEntiteId: assignedTopEntiteId,
@@ -2927,6 +2928,20 @@ describe('requetesEntite.service', () => {
         ],
         skipDuplicates: true,
       });
+      expect(createChangeLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entity: 'RequeteEtape',
+          action: ChangeLogAction.CREATED,
+          changedById,
+          after: expect.objectContaining({
+            requeteId,
+            entiteId: userTopEntiteId,
+            assignedEntiteId: assignedTopEntiteId,
+            type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+          }),
+        }),
+        mockTx,
+      );
     });
 
     it('creates one deterministically timed assignment and acknowledgment pair per newly assigned root', async () => {

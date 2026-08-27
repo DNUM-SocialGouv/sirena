@@ -410,6 +410,48 @@ describe('RequeteEtapes.service.ts', () => {
       });
     });
 
+    it('propagates a changelog failure when default steps are created in a transaction', async () => {
+      const requeteId = 'requeteId';
+      const entiteId = 'entiteId';
+      const changelogError = new Error('Changelog error');
+      const creationStep = {
+        ...requeteEtape,
+        id: 'creation-step',
+        requeteId,
+        entiteId,
+        type: REQUETE_ETAPE_TYPES.CREATION,
+        createdAt: new Date(),
+      };
+      const acknowledgmentStep = {
+        ...requeteEtape,
+        id: 'acknowledgment-step',
+        requeteId,
+        entiteId,
+        type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+        createdAt: new Date(),
+      };
+      const mockTx = {
+        requeteEntite: {
+          findUnique: vi.fn().mockResolvedValue({
+            requeteId,
+            entiteId,
+            requete: { dematSocialId: null, createdAt: new Date(), createdBy: null },
+          }),
+        },
+        requeteEtape: {
+          findMany: vi.fn().mockResolvedValue([]),
+          create: vi.fn().mockResolvedValueOnce(creationStep).mockResolvedValueOnce(acknowledgmentStep),
+        },
+      } as unknown as NonNullable<Parameters<typeof createDefaultRequeteEtapes>[2]>;
+      vi.mocked(createChangeLog).mockRejectedValue(changelogError);
+
+      await expect(
+        createDefaultRequeteEtapes(requeteId, entiteId, mockTx, null, { transactionalAudit: true }),
+      ).rejects.toBe(changelogError);
+
+      expect(createChangeLog).toHaveBeenCalledWith(expect.objectContaining({ entityId: creationStep.id }), mockTx);
+    });
+
     it('should format date correctly in French locale', async () => {
       const requeteId = 'requeteId';
       const entiteId = 'entiteId';

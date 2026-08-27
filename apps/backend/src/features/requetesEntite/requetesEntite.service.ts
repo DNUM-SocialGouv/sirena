@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { helpers } from '@sirena/backend-utils';
 import { mappers } from '@sirena/common';
 import {
@@ -1320,29 +1321,50 @@ const updateSituationEntites = async (
 
     for (const [index, assignedEntiteId] of sortedNewlyAssignedRootEntiteIds.entries()) {
       const affectationDate = new Date(firstAssignmentDate.getTime() + index * ASSIGNMENT_STEP_PAIR_INTERVAL_MS);
+
+      const assignmentStep = {
+        id: randomUUID(),
+        requeteId,
+        entiteId: topEntiteId,
+        assignedEntiteId,
+        nom: 'Affectation',
+        type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        estPartagee: true,
+        dateRealisation: affectationDate,
+        createdAt: affectationDate,
+        createdById: changedById,
+      };
+
       const { count } = await tx.requeteEtape.createMany({
-        data: [
-          {
-            requeteId,
-            entiteId: topEntiteId,
-            assignedEntiteId,
-            nom: 'Affectation',
-            type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
-            statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-            estPartagee: true,
-            dateRealisation: affectationDate,
-            createdAt: affectationDate,
-            createdById: changedById,
-          },
-        ],
+        data: [assignmentStep],
         skipDuplicates: true,
       });
 
       if (count === 0) continue;
 
+      await createChangeLog(
+        {
+          entity: 'RequeteEtape',
+          entityId: assignmentStep.id,
+          action: ChangeLogAction.CREATED,
+          before: null,
+          after: {
+            ...assignmentStep,
+            dateRealisation: affectationDate.toISOString(),
+            createdAt: affectationDate.toISOString(),
+            clotureReasonIds: [],
+          },
+          changedById,
+        },
+        tx,
+      );
+
       recordedAssignmentRootEntiteIds.push(assignedEntiteId);
+
       await createDefaultRequeteEtapes(requeteId, assignedEntiteId, tx, null, {
         acknowledgmentCreatedAt: new Date(affectationDate.getTime() + ACKNOWLEDGMENT_STEP_OFFSET_MS),
+        transactionalAudit: true,
       });
     }
   } else {
@@ -1417,14 +1439,17 @@ const updateExistingSituation = async (
 
   if (changedById) {
     const after = await captureSituationState(tx, existingSituation.id);
-    await createChangeLog({
-      entity: 'Situation',
-      entityId: existingSituation.id,
-      action: ChangeLogAction.UPDATED,
-      before: JSON.parse(JSON.stringify(before)) as Prisma.JsonObject,
-      after: JSON.parse(JSON.stringify(after)) as Prisma.JsonObject,
-      changedById,
-    });
+    await createChangeLog(
+      {
+        entity: 'Situation',
+        entityId: existingSituation.id,
+        action: ChangeLogAction.UPDATED,
+        before: JSON.parse(JSON.stringify(before)) as Prisma.JsonObject,
+        after: JSON.parse(JSON.stringify(after)) as Prisma.JsonObject,
+        changedById,
+      },
+      tx,
+    );
   }
 
   return { newAssignedEntiteIds, newDirectionServiceIds, deletedFilePaths };
@@ -1465,14 +1490,17 @@ const createNewSituation = async (
 
   if (changedById) {
     const after = await captureSituationState(tx, createdSituation.id);
-    await createChangeLog({
-      entity: 'Situation',
-      entityId: createdSituation.id,
-      action: ChangeLogAction.CREATED,
-      before: null,
-      after: JSON.parse(JSON.stringify(after)) as Prisma.JsonObject,
-      changedById,
-    });
+    await createChangeLog(
+      {
+        entity: 'Situation',
+        entityId: createdSituation.id,
+        action: ChangeLogAction.CREATED,
+        before: null,
+        after: JSON.parse(JSON.stringify(after)) as Prisma.JsonObject,
+        changedById,
+      },
+      tx,
+    );
   }
 
   return { id: createdSituation.id, newAssignedEntiteIds, newDirectionServiceIds };

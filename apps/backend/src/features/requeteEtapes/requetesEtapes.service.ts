@@ -34,7 +34,7 @@ export const createDefaultRequeteEtapes = async (
   entiteId: string,
   tx?: Prisma.TransactionClient,
   changedById?: string | null,
-  dates?: { acknowledgmentCreatedAt?: Date },
+  options?: { acknowledgmentCreatedAt?: Date; transactionalAudit?: boolean },
 ) => {
   const prismaClient = tx ?? prisma;
 
@@ -111,7 +111,7 @@ export const createDefaultRequeteEtapes = async (
       nom: ACKNOWLEDGMENT_STEP_NAME,
       type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
       estPartagee: false,
-      ...(dates?.acknowledgmentCreatedAt ? { createdAt: dates.acknowledgmentCreatedAt } : {}),
+      ...(options?.acknowledgmentCreatedAt ? { createdAt: options.acknowledgmentCreatedAt } : {}),
     },
   });
 
@@ -123,15 +123,20 @@ export const createDefaultRequeteEtapes = async (
   ) => {
     if (changedById !== undefined) {
       try {
-        await createChangeLog({
-          entity: 'RequeteEtape',
-          entityId: etape.id,
-          action,
-          before,
-          after,
-          changedById: changedById ?? null,
-        });
+        await createChangeLog(
+          {
+            entity: 'RequeteEtape',
+            entityId: etape.id,
+            action,
+            before,
+            after,
+            changedById: changedById ?? null,
+          },
+          options?.transactionalAudit ? tx : undefined,
+        );
       } catch (changelogError) {
+        if (options?.transactionalAudit) throw changelogError;
+
         const logger = getLoggerStore();
         logger.error(
           { requeteId, entiteId, etapeId: etape.id, error: changelogError },
