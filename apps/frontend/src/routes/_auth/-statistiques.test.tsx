@@ -5,10 +5,14 @@ import { useProfile } from '@/hooks/queries/profile.hook';
 import { useStatisticsDashboard } from '@/hooks/queries/statistics.hook';
 import { RouteComponent } from './statistiques';
 
-const navigate = vi.fn();
 const searchState = vi.hoisted(() => ({
-  current: {} as Record<string, string | undefined>,
+  current: {} as Record<string, unknown>,
 }));
+const navigate = vi.fn(({ search }: { search?: (prev: object) => Record<string, unknown> }) => {
+  if (typeof search === 'function') {
+    searchState.current = search(searchState.current);
+  }
+});
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => options,
@@ -110,31 +114,30 @@ describe('Statistiques route — filtre EIG', () => {
     expect(screen.getByRole('checkbox', { name: 'Inclure les EIG' })).toBeChecked();
   });
 
-  it('records the exclusion in the URL when the box is unchecked', async () => {
+  it('records the exclusion in the search params when the box is unchecked, keeping the other filters', async () => {
     const user = userEvent.setup();
+    searchState.current = { domaineIds: 'SOCIAL' };
     render(<RouteComponent />);
 
     await user.click(screen.getByRole('checkbox', { name: 'Inclure les EIG' }));
 
-    const [{ search }] = navigate.mock.calls.at(-1) as [{ search: (prev: object) => object }];
-    expect(search({ domaineIds: 'SOCIAL' })).toEqual({ domaineIds: 'SOCIAL', includeEIG: false });
+    expect(searchState.current).toEqual({ domaineIds: 'SOCIAL', includeEIG: false });
   });
 
-  it('drops the flag from the URL when the box is checked back', async () => {
+  it('clears includeEIG from the search params when the checkbox is checked back', async () => {
     const user = userEvent.setup();
-    searchState.current = { includeEIG: false } as never;
+    searchState.current = { includeEIG: false };
     render(<RouteComponent />);
 
     expect(screen.getByRole('checkbox', { name: 'Inclure les EIG' })).not.toBeChecked();
 
     await user.click(screen.getByRole('checkbox', { name: 'Inclure les EIG' }));
 
-    const [{ search }] = navigate.mock.calls.at(-1) as [{ search: (prev: object) => object }];
-    expect(search({ includeEIG: false })).toEqual({ includeEIG: undefined });
+    expect(searchState.current).toEqual({ includeEIG: undefined });
   });
 
   it('passes the exclusion to the dashboard query alongside the other filters', () => {
-    searchState.current = { domaineIds: 'SOCIAL', includeEIG: false } as never;
+    searchState.current = { domaineIds: 'SOCIAL', includeEIG: false };
 
     render(<RouteComponent />);
 

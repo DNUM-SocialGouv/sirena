@@ -87,9 +87,10 @@ rechargement** et **partageable** via l'URL, et chaque changement relance automa
 requête (la `queryKey` inclut les dates). En revanche, elle n'est **pas** automatiquement
 conservée lors d'une navigation vers une autre page de l'application puis d'un retour sur
 `/statistiques`. Le filtre de domaine fonctionnel suit exactement la même mécanique
-(`?domaineIds=SOCIAL,SANITAIRE`). L'exclusion des EIG suit la même mécanique, avec la nuance
-propre à un drapeau coché par défaut : elle n'apparaît dans l'URL que lorsqu'elle est **active**
-(`?includeEIG=false`), l'absence du paramètre valant « inclure les EIG ».
+(`?domaineIds=SOCIAL,SANITAIRE`). L'option d'inclusion des EIG suit la même mécanique, avec la
+nuance d'être **activée par défaut** : le paramètre n'apparaît dans l'URL que lorsque
+l'utilisateur désactive l'inclusion des EIG (`?includeEIG=false`). En l'absence du paramètre,
+les EIG sont inclus.
 
 ---
 
@@ -381,15 +382,19 @@ répondu « Oui » à « *Le déclarant est un professionnel qui signale des dys
 `PersonneConcernee."estSignalementProfessionnel" = true` sur la personne rattachée à la requête
 par `declarantDeId`.
 
-### Un drapeau nommé d'après son état par défaut
+### Un filtre nommé d'après son état par défaut
 
-Le filtre porte partout le nom de la case telle qu'elle s'affiche — `includeEIG` côté URL et
-API, `inclure_eig` côté Metabase — plutôt qu'un `exclude*` qui inverserait la lecture entre l'UI
-et le code. Seule la valeur qui **dévie** du défaut circule : le paramètre n'est transmis
-**que lorsque la case est décochée**, avec la valeur `'false'` — jamais `'true'`. C'est le même
-idiome de sobriété que les filtres rapides de la liste des requêtes (`over90Days`, `rappel`), et
-il tombe naturellement sur la découverte dynamique : un filtre non transmis est un filtre absent,
-donc un bloc `[[ ]]` qui disparaît.
+Le filtre reprend le nom de la case à cocher telle qu'elle apparaît dans l'interface :
+`includeEIG` côté URL et API, et `inclure_eig` côté Metabase. Cela évite d'introduire un
+`exclude*` qui inverserait la logique entre l'interface et le code.
+
+Le paramètre n'est envoyé que lorsque l'utilisateur décoche la case, avec la valeur `'false'`.
+La valeur `'true'` n'est donc jamais envoyée : l'absence du paramètre signifie simplement que
+les EIG sont inclus.
+
+C'est le même principe que pour les filtres rapides de la liste des requêtes (`over90Days`,
+`rappel`) : un filtre non sélectionné n'est pas transmis. Côté Metabase, cela permet au bloc
+conditionnel `[[ ]]` de ne pas être appliqué lorsque le paramètre est absent.
 
 Le schéma Zod du backend n'accepte d'ailleurs **que** `'false'` (`z.enum(['false'])`) : une
 valeur inattendue est rejetée en 400 plutôt que d'être interprétée au jugé.
@@ -430,7 +435,7 @@ L'alias `pc_eig` est délibérément distinct de tout alias déjà utilisé par 
 | --- | --- | --- |
 | Nom de la variable | `inclure_eig` | doit être le slug exact envoyé par le backend |
 | Type de variable | **Texte** | on compare à la chaîne `'false'` ; pas un Field Filter |
-| Les utilisateurs peuvent choisir | **une seule valeur** | le drapeau est binaire |
+| Les utilisateurs peuvent choisir | **une seule valeur** | le filtre est binaire |
 | Obligatoire | **non** | sinon le filtre s'appliquerait en permanence |
 | Valeur par défaut | aucune | l'absence de valeur = « inclure les EIG », l'état par défaut de l'UI |
 
