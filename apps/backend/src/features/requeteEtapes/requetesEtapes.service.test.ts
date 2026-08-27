@@ -914,13 +914,14 @@ describe('RequeteEtapes.service.ts', () => {
       });
     });
 
-    it('exposes the current assigned Entité administrative identity for an assignment step', async () => {
+    it('keeps an owned assignment visible when shared chronology is disabled', async () => {
       vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
         {
           ...requeteEtapeWithNotesAndFiles,
           id: 'assignment-step',
           type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
           statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          estPartagee: true,
           assignedEntiteId: 'assigned-entite',
           assignedEntite: {
             id: 'assigned-entite',
@@ -935,6 +936,7 @@ describe('RequeteEtapes.service.ts', () => {
 
       expect(result.data[0]).toMatchObject({
         id: 'assignment-step',
+        estPartagee: true,
         assignedEntiteId: 'assigned-entite',
         assignedEntite: {
           id: 'assigned-entite',
@@ -949,6 +951,64 @@ describe('RequeteEtapes.service.ts', () => {
         editable: false,
         canOnlyEditNotes: false,
       });
+
+      expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            requeteId: 'requeteId',
+            entiteId: 'entiteId',
+            requete: { requeteEntites: { some: { entiteId: 'entiteId' } } },
+          },
+        }),
+      );
+    });
+
+    it('shows a shared assignment to a later affected perimeter while preserving source attribution', async () => {
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
+        {
+          ...requeteEtapeWithNotesAndFiles,
+          id: 'historical-assignment',
+          type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          entiteId: 'source-entite',
+          estPartagee: true,
+          assignedEntiteId: 'target-entite',
+          assignedEntite: {
+            id: 'target-entite',
+            nomComplet: 'ARS Île-de-France',
+            entiteTypeId: 'ARS',
+          },
+          requeteEntite: {
+            entite: { id: 'source-entite', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
+          },
+        } as never,
+      ]);
+
+      vi.mocked(prisma.requeteEntite.count).mockResolvedValueOnce(3);
+
+      const result = await getRequeteEtapes('requeteId', 'later-entite', {}, true);
+
+      expect(result.data[0]).toMatchObject({
+        id: 'historical-assignment',
+        assignedEntiteId: 'target-entite',
+        attributedEntiteAdministrative: {
+          id: 'source-entite',
+          nomComplet: 'ARS Normandie',
+          entiteTypeId: 'ARS',
+        },
+        editable: false,
+        canOnlyEditNotes: false,
+      });
+
+      expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            requeteId: 'requeteId',
+            requete: { requeteEntites: { some: { entiteId: 'later-entite' } } },
+            OR: [{ entiteId: 'later-entite' }, { estPartagee: true }],
+          },
+        }),
+      );
     });
 
     it('exposes current multi-entity metadata and each owner Entité administrative identity', async () => {
@@ -1382,7 +1442,7 @@ describe('RequeteEtapes.service.ts', () => {
       expect(prisma.requeteEtape.delete).not.toHaveBeenCalled();
     });
 
-    it('selects only owner steps or Étapes partagées for a currently affected reader', async () => {
+    it('requires a current Requête affectation before selecting owner or shared steps', async () => {
       vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([]);
       vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(0);
 
