@@ -1131,6 +1131,102 @@ describe('RequeteEtapes.service.ts', () => {
       expect(prisma.requeteEtape.delete).not.toHaveBeenCalled();
     });
 
+    it('orders a target acknowledgment before its assignment while preserving assignment totals and neutral creation', async () => {
+      const requestCreatedAt = new Date('2026-01-01T08:00:00.000Z');
+      const firstAssignmentDate = new Date('2026-08-26T10:00:00.000Z');
+
+      const makeTimelineStep = ({
+        id,
+        type,
+        entiteId,
+        createdAt,
+        assignedEntiteId = null,
+      }: {
+        id: string;
+        type: RequeteEtape['type'];
+        entiteId: string;
+        createdAt: Date;
+        assignedEntiteId?: string | null;
+      }) => ({
+        ...requeteEtapeWithNotesAndFiles,
+        id,
+        type,
+        entiteId,
+        estPartagee: type !== REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+        createdAt,
+        dateRealisation: type === REQUETE_ETAPE_TYPES.ASSIGNMENT ? createdAt : null,
+        assignedEntiteId,
+        assignedEntite: assignedEntiteId
+          ? { id: assignedEntiteId, nomComplet: assignedEntiteId, entiteTypeId: 'ARS' }
+          : null,
+        requeteEntite: {
+          entite: { id: entiteId, nomComplet: entiteId, entiteTypeId: 'ARS' },
+        },
+        requete: {
+          createdAt: requestCreatedAt,
+          createdById: 'agent-1',
+          createdBy: { prenom: 'Camille', nom: 'Dupont' },
+          dematSocialId: null,
+          sirecId: null,
+          thirdPartyAccountId: null,
+        },
+      });
+
+      const sourceTimeline = [
+        makeTimelineStep({
+          id: 'target-b-acknowledgment',
+          type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+          entiteId: 'target-b',
+          createdAt: new Date(firstAssignmentDate.getTime() + 3),
+        }),
+        makeTimelineStep({
+          id: 'target-b-assignment',
+          type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+          entiteId: 'source-entite',
+          assignedEntiteId: 'target-b',
+          createdAt: new Date(firstAssignmentDate.getTime() + 2),
+        }),
+        makeTimelineStep({
+          id: 'target-a-assignment',
+          type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+          entiteId: 'source-entite',
+          assignedEntiteId: 'target-a',
+          createdAt: firstAssignmentDate,
+        }),
+        makeTimelineStep({
+          id: 'source-creation',
+          type: REQUETE_ETAPE_TYPES.CREATION,
+          entiteId: 'source-entite',
+          createdAt: new Date('2026-01-02T08:00:00.000Z'),
+        }),
+        makeTimelineStep({
+          id: 'target-creation',
+          type: REQUETE_ETAPE_TYPES.CREATION,
+          entiteId: 'target-b',
+          createdAt: new Date('2026-08-26T09:59:59.000Z'),
+        }),
+      ];
+
+      vi.mocked(prisma.requeteEntite.count).mockResolvedValueOnce(3).mockResolvedValueOnce(3);
+      vi.mocked(prisma.requeteEtape.findMany)
+        .mockResolvedValueOnce(sourceTimeline)
+        .mockResolvedValueOnce(sourceTimeline);
+
+      const firstPage = await getRequeteEtapes('requeteId', 'target-b', { offset: 0, limit: 2 }, true);
+      const secondPage = await getRequeteEtapes('requeteId', 'target-b', { offset: 2, limit: 2 }, true);
+
+      expect(firstPage.data.map((step) => step.id)).toEqual(['target-b-acknowledgment', 'target-b-assignment']);
+      expect(secondPage.data.map((step) => step.id)).toEqual(['target-a-assignment', 'source-creation']);
+      expect(firstPage.total).toBe(4);
+      expect(secondPage.total).toBe(4);
+      expect(secondPage.data[1]).toMatchObject({
+        type: REQUETE_ETAPE_TYPES.CREATION,
+        createdAt: requestCreatedAt,
+        timelineItemType: 'NEUTRAL_EVENT',
+        attributedEntiteAdministrative: null,
+      });
+    });
+
     it('groups automatic acknowledgments by durable send operation before sorting, totals, and pagination', async () => {
       const requestCreatedAt = new Date('2026-01-01T08:00:00.000Z');
       const firstSendOperationId = '11111111-1111-4111-8111-111111111111';
