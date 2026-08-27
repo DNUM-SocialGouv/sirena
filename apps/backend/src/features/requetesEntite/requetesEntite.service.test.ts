@@ -15,6 +15,7 @@ import {
   computeShouldCloseRequeteStatus,
   createChangeLogForRequeteEntite,
   createRequeteFilesArchive,
+  createRequeteSituation,
   deduplicateFileName,
   enrichSituationWithTraitementDesFaits,
   filterOtherEntitesAffectedForUser,
@@ -2848,6 +2849,71 @@ describe('requetesEntite.service', () => {
         },
       });
       expect(mockTx.requeteEtape.createMany).not.toHaveBeenCalled();
+    });
+
+    it('creates an assignment step when an agent creates a situation with a new root entity', async () => {
+      const requeteId = 'req1';
+      const situationId = 'new-situation';
+      const sourceRootEntiteId = 'root-source';
+      const targetRootEntiteId = 'root-target';
+      const changedById = 'user1';
+      const mockTx = createMockTx({
+        situation: {
+          create: vi.fn().mockResolvedValue({ id: situationId }),
+          findUnique: vi.fn().mockResolvedValue({ id: situationId, requeteId }),
+        },
+        requeteEntite: {
+          findMany: vi.fn().mockResolvedValue([{ entiteId: sourceRootEntiteId }]),
+          findUnique: vi.fn().mockResolvedValue({
+            requeteId,
+            entiteId: targetRootEntiteId,
+            statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+            requete: { dematSocialId: null, createdAt: new Date('2026-01-01T08:00:00.000Z'), createdBy: null },
+          }),
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue({ id: requeteId, situations: [{ id: situationId }] }),
+        },
+      });
+
+      vi.mocked(getEntiteAscendanteInfo).mockImplementation(async (entiteId: string) => ({
+        entiteId: entiteId === 'target-service' ? targetRootEntiteId : sourceRootEntiteId,
+        level: 1,
+      }));
+      vi.mocked(prisma.requete.findUnique)
+        .mockReset()
+        .mockResolvedValueOnce({ id: requeteId } as never);
+      vi.mocked(prisma.$transaction)
+        .mockReset()
+        .mockImplementationOnce(async (callback) =>
+          callback(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]),
+        );
+
+      const result = await createRequeteSituation(
+        requeteId,
+        {
+          traitementDesFaits: {
+            entites: [{ entiteId: 'source-service' }, { entiteId: 'target-service' }],
+          },
+        } as Parameters<typeof createRequeteSituation>[1],
+        sourceRootEntiteId,
+        changedById,
+      );
+
+      expect(mockTx.situation.create).toHaveBeenCalledOnce();
+      expect(mockTx.requeteEtape.createMany).toHaveBeenCalledWith({
+        data: [
+          expect.objectContaining({
+            requeteId,
+            entiteId: sourceRootEntiteId,
+            assignedEntiteId: targetRootEntiteId,
+            type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+            createdById: changedById,
+          }),
+        ],
+        skipDuplicates: true,
+      });
+      expect(result.newAssignedEntiteIds).toEqual([targetRootEntiteId]);
     });
 
     it('creates a completed assignment step when an agent adds a new root entity to the request', async () => {
