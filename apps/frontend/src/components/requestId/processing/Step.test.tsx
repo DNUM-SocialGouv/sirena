@@ -55,7 +55,9 @@ vi.mock('@/stores/userStore', () => ({
 
 type StepProps = React.ComponentProps<typeof Step>;
 type EntityStepProps = Extract<StepProps, { timelineItemType: 'ENTITY_STEP' }>;
+type NonAssignmentEntityStepProps = Exclude<EntityStepProps, { type: 'ASSIGNMENT' }>;
 type NeutralStepProps = Extract<StepProps, { timelineItemType: 'NEUTRAL_EVENT' }>;
+type NeutralCreationStepProps = Extract<NeutralStepProps, { type: 'CREATION' }>;
 type StepFile = StepProps['uploadedFiles'][number];
 
 describe('Step', () => {
@@ -248,7 +250,7 @@ describe('Step', () => {
     ...overrides,
   });
 
-  const makeStep = (overrides: Partial<EntityStepProps> = {}): EntityStepProps => ({
+  const makeStep = (overrides: Partial<NonAssignmentEntityStepProps> = {}): NonAssignmentEntityStepProps => ({
     requestId: 'REQ-1',
     isOwner: true,
     isMultiEntite: false,
@@ -282,8 +284,9 @@ describe('Step', () => {
     ...overrides,
   });
 
-  const makeNeutralStep = (overrides: Partial<NeutralStepProps> = {}): NeutralStepProps => ({
-    ...makeStep(),
+  const makeNeutralStep = (overrides: Partial<NeutralCreationStepProps> = {}): NeutralCreationStepProps => ({
+    ...makeStep({ type: REQUETE_ETAPE_TYPES.CREATION }),
+    type: REQUETE_ETAPE_TYPES.CREATION,
     timelineItemType: 'NEUTRAL_EVENT',
     attributedEntiteAdministrative: null,
     ...overrides,

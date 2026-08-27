@@ -2857,9 +2857,10 @@ describe('requetesEntite.service', () => {
       const sourceRootEntiteId = 'root-source';
       const targetRootEntiteId = 'root-target';
       const changedById = 'user1';
+      const situationCreate = vi.fn().mockResolvedValue({ id: situationId });
       const mockTx = createMockTx({
         situation: {
-          create: vi.fn().mockResolvedValue({ id: situationId }),
+          create: situationCreate,
           findUnique: vi.fn().mockResolvedValue({ id: situationId, requeteId }),
         },
         requeteEntite: {
@@ -2900,7 +2901,7 @@ describe('requetesEntite.service', () => {
         changedById,
       );
 
-      expect(mockTx.situation.create).toHaveBeenCalledOnce();
+      expect(situationCreate).toHaveBeenCalledOnce();
       expect(mockTx.requeteEtape.createMany).toHaveBeenCalledWith({
         data: [
           expect.objectContaining({

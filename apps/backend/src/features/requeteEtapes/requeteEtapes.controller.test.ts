@@ -810,9 +810,13 @@ describe('requeteEtapes.controller.ts', () => {
       timelineItemType: 'ENTITY_STEP';
       attributedEntiteAdministrative: { id: string; nomComplet: string; entiteTypeId: string };
       entiteAdministrative: { id: string; nomComplet: string; entiteTypeId: string };
-      assignedEntite: { id: string; nomComplet: string; entiteTypeId: string } | null;
+      type: typeof REQUETE_ETAPE_TYPES.MANUAL;
+      assignedEntiteId: null;
+      assignedEntite: null;
     } = {
       ...requeteEtape,
+      type: REQUETE_ETAPE_TYPES.MANUAL,
+      assignedEntiteId: null,
       clotureReason: [],
       createdBy: null,
       uploadedFiles: [],
