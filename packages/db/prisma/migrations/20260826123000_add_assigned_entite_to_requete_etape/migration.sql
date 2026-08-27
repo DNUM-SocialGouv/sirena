@@ -10,4 +10,12 @@ ON "RequeteEtape"("assignedEntiteId");
 ALTER TABLE "RequeteEtape"
 ADD CONSTRAINT "RequeteEtape_assignedEntiteId_fkey"
 FOREIGN KEY ("assignedEntiteId") REFERENCES "Entite"("id")
-ON DELETE SET NULL ON UPDATE CASCADE;
+ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- Only assignment steps have a target, and every assignment step must have one.
+ALTER TABLE "RequeteEtape"
+ADD CONSTRAINT "RequeteEtape_assignment_target_check"
+CHECK (
+  ("type" = 'ASSIGNMENT' AND "assignedEntiteId" IS NOT NULL)
+  OR ("type" <> 'ASSIGNMENT' AND "assignedEntiteId" IS NULL)
+);

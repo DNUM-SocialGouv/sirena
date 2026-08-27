@@ -564,7 +564,7 @@ model RequeteEtape {
   requeteEntite RequeteEntite @relation(fields: [requeteId, entiteId], references: [requeteId, entiteId])
 
   assignedEntiteId String?
-  assignedEntite   Entite? @relation("AssignedEntite", fields: [assignedEntiteId], references: [id])
+  assignedEntite   Entite? @relation("AssignedEntite", fields: [assignedEntiteId], references: [id], onDelete: Restrict)
 
   notes RequeteEtapeNote[]
 

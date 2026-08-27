@@ -963,6 +963,25 @@ describe('RequeteEtapes.service.ts', () => {
       );
     });
 
+    it('rejects an assignment that has lost its structured target', async () => {
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
+        {
+          ...requeteEtapeWithNotesAndFiles,
+          id: 'assignment-without-target',
+          type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          estPartagee: true,
+          assignedEntiteId: null,
+          assignedEntite: null,
+        } as never,
+      ]);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
+
+      await expect(getRequeteEtapes('requeteId', 'entiteId', { offset: 0 })).rejects.toThrow(
+        'Assignment step assignment-without-target has no assigned administrative entity',
+      );
+    });
+
     it('shows a shared assignment to a later affected perimeter while preserving source attribution', async () => {
       vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
         {
