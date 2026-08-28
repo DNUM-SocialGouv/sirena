@@ -263,7 +263,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                     <option value="">Toutes les entités</option>
                     {entityFilterOptions.map((entity) => (
                       <option key={entity.id} value={entity.id}>
-                        {entity.entiteTypeId} — {entity.nomComplet}
+                        {entity.nomComplet}
                       </option>
                     ))}
                   </Select>
