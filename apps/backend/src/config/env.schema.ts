@@ -318,12 +318,17 @@ export const AppEnvSchema = z.object({
     .string()
     .optional()
     .transform((val) => {
-      if (!val) return 10;
-      const parsed = Number.parseInt(val, 10);
-      if (Number.isNaN(parsed)) {
-        throw new Error("La variable d'environnement REDIS_MIGRATION_CONCURRENCY doit etre un integer");
-      }
-      return parsed;
+   if (!val) return 10;
+
+   const parsed = Number(val);
+
+   if (!Number.isInteger(parsed) || parsed < 1) {
+     throw new Error(
+       "La variable d'environnement REDIS_MIGRATION_CONCURRENCY doit être un entier positif",
+     );
+   }
+
+   return parsed;
     }),
   S3_MIGRATION_BUCKET_ACCESS_KEY: z.string().optional(),
   S3_MIGRATION_BUCKET_SECRET_KEY: z.string().optional(),
