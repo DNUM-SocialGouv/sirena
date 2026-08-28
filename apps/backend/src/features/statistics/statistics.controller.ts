@@ -94,13 +94,14 @@ const app = factoryWithLogs
     const userId = c.get('userId');
     const entiteIds = c.get('entiteIds');
     const topEntiteId = c.get('topEntiteId');
-    const { startDate, endDate, domaineIds, includeEIG } = c.req.valid('query');
+    const { startDate, endDate, domaineIds, includeEIG, lieuTypes } = c.req.valid('query');
 
     const optionalParams = {
       start_date: startDate,
       end_date: endDate,
       domaine_fonctionnel: splitCsv(domaineIds),
       inclure_eig: includeEIG,
+      lieu_de_survenue: splitCsv(lieuTypes),
     };
 
     if (entiteIds === null) {

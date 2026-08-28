@@ -6,6 +6,7 @@ import { type CSSProperties, useCallback, useMemo } from 'react';
 import { z } from 'zod';
 import { CheckboxFilter } from '@/components/common/filters/CheckboxFilter';
 import { DomaineFilter } from '@/components/common/filters/DomaineFilter';
+import { LieuTypeFilter } from '@/components/common/filters/LieuTypeFilter';
 import { AuthLayout } from '@/components/layout/auth/layout';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { CardHelp } from '@/components/statistics/CardHelp';
@@ -43,6 +44,7 @@ const StatisticsSearchSchema = z.object({
   endDate: z.iso.date().optional().catch(undefined),
   domaineIds: z.string().optional().catch(undefined),
   includeEIG: z.boolean().optional().catch(undefined),
+  lieuTypes: z.string().optional().catch(undefined),
 });
 
 export const Route = createFileRoute('/_auth/statistiques')({
@@ -167,8 +169,9 @@ export function RouteComponent() {
   const range = resolveDateRange(selection, new Date());
   const dataDate = formatDataDate(new Date());
   const selectedDomaines = useMemo(() => splitCsv(search.domaineIds), [search.domaineIds]);
+  const selectedLieuTypes = useMemo(() => splitCsv(search.lieuTypes), [search.lieuTypes]);
   const query = useStatisticsDashboard(
-    { ...range, domaineIds: search.domaineIds, includeEIG: search.includeEIG },
+    { ...range, domaineIds: search.domaineIds, includeEIG: search.includeEIG, lieuTypes: search.lieuTypes },
     canView,
   );
 
@@ -191,6 +194,13 @@ export function RouteComponent() {
   const handleIncludeEIGChange = useCallback(
     (checked: boolean) => {
       navigate({ search: (prev) => ({ ...prev, includeEIG: checked ? undefined : false }) });
+    },
+    [navigate],
+  );
+
+  const handleLieuTypeChange = useCallback(
+    (tokens: string[]) => {
+      navigate({ search: (prev) => ({ ...prev, lieuTypes: tokens.length > 0 ? tokens.join(',') : undefined }) });
     },
     [navigate],
   );
@@ -226,6 +236,11 @@ export function RouteComponent() {
               selectedIds={selectedDomaines}
               legend="Filtrer les indicateurs par domaine fonctionnel"
               onChange={handleDomaineChange}
+            />
+            <LieuTypeFilter
+              selectedTokens={selectedLieuTypes}
+              legend="Filtrer les indicateurs par type de lieu de survenue"
+              onChange={handleLieuTypeChange}
             />
             <CheckboxFilter
               label="Inclure les EIG"
