@@ -1,5 +1,6 @@
 import { type Job, UnrecoverableError, Worker } from 'bullmq';
 import { ZodError } from 'zod';
+import { envVars } from '../../config/env.js';
 import { connection } from '../../config/redis.js';
 import { migrateSirecFiles } from '../../features/sirecMigration/sirecMigration.files.service.js';
 import { fetchSirecData } from '../../features/sirecMigration/sirecMigration.repository.js';
@@ -100,7 +101,7 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
 export const createSirecMigrationWorker = (): Worker<SirecMigrationJobData> => {
   const worker = new Worker<SirecMigrationJobData>(SIREC_MIGRATION_QUEUE_NAME, processMigration, {
     connection,
-    concurrency: 5,
+    concurrency: envVars.REDIS_MIGRATION_CONCURRENCY,
   });
 
   const eventLogger = createDefaultLogger().child({ context: 'sirec-migration-worker' });

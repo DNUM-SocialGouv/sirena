@@ -314,6 +314,17 @@ export const AppEnvSchema = z.object({
     }),
   MARIADB_SIREC_USER: z.string().optional(),
   MARIADB_SIREC_PASSWORD: z.string().optional(),
+  REDIS_MIGRATION_CONCURRENCY: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (!val) return 10;
+      const parsed = Number.parseInt(val, 10);
+      if (Number.isNaN(parsed)) {
+        throw new Error("La variable d'environnement REDIS_MIGRATION_CONCURRENCY doit etre un integer");
+      }
+      return parsed;
+    }),
   S3_MIGRATION_BUCKET_ACCESS_KEY: z.string().optional(),
   S3_MIGRATION_BUCKET_SECRET_KEY: z.string().optional(),
   S3_MIGRATION_BUCKET_NAME: z.string().optional(),
