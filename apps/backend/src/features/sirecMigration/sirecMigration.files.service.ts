@@ -71,7 +71,7 @@ async function migrateSingleSirecFile(
         filePath: objectPath,
         mimeType: contentType,
         size: file.size,
-        createdAt: file.sys_creation_date,
+        createdAt: file.date_creation ?? file.sys_creation_date,
         metadata: {
           originalName: file.original_name,
           encryption: encryptionMetadata,
