@@ -205,24 +205,22 @@
 .request-note {
   padding: 1rem 1rem;
   border-radius: 0.25rem;
+  color: var(--text-default-grey);
   background-color: var(--background-alt-blue-cumulus);
 }
 
 .timeline-step--owner .request-note {
-  background-color: var(--light-options-illustration-color-950-default-pink-tuile-950, #fee9e7);
+  background-color: var(--background-contrast-pink-tuile);
 }
 
 .timeline-step--foreign .request-note {
-  background-color: var(--light-options-illustration-color-950-default-yellow-moutarde-950, #feecc2);
+  background-color: var(--background-contrast-yellow-moutarde);
 }
 
 .request-note__from {
   font-size: 0.8rem;
 }
 
-.request-note__content {
-  margin: 1rem 0;
-}
 .request-note__file {
   display: flex;
   align-items: center;
@@ -259,14 +257,14 @@
 }
 
 .cloture-block {
-  background-color: var(--light-options-illustration-color-975-default-green-emeraude-975, #dffee6);
   padding: 1rem;
   border-radius: 0.25rem;
   margin-bottom: 1rem;
+  color: var(--text-default-success);
+  background-color: var(--background-contrast-success);
 }
 
 .cloture-block__label {
-  color: var(--light-decisions-border-border-plain-success, #18753c);
   font-size: 0.75rem;
   font-weight: 400;
   line-height: 1.25rem;
@@ -274,7 +272,6 @@
 }
 
 .cloture-block__reason {
-  color: var(--light-decisions-background-background-flat-success, #18753c);
   font-family: Marianne, sans-serif;
   font-size: 1rem;
   font-style: normal;
@@ -284,7 +281,6 @@
 }
 
 .cloture-block__precision {
-  color: var(--light-decisions-background-background-flat-success, #18753c);
   font-size: 0.875rem;
   margin-bottom: 0;
 }
