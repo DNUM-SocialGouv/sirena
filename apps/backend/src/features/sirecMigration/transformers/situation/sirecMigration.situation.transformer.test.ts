@@ -99,13 +99,22 @@ describe('sirecMigration.situation.transformer.ts', () => {
       expect(result.estLieAuSignalement).toBe(true);
     });
 
-    it('should set estLieAuSignalement to undefined when ei_avere is false and num_sign_assoc is null', () => {
+    it('should set estLieAuSignalement to false when ei_avere is false and num_sign_assoc is null', () => {
       const result = transformSirecSituation(
         { ...sirecData, reclamation: { ...sirecData.reclamation, ei_avere: 0, num_sign_assoc: null } },
         [],
       );
 
-      expect(result.estLieAuSignalement).toBeUndefined();
+      expect(result.estLieAuSignalement).toBe(false);
+    });
+
+    it('should set estLieAuSignalement to true when ei_avere is false and num_sign_assoc is set', () => {
+      const result = transformSirecSituation(
+        { ...sirecData, reclamation: { ...sirecData.reclamation, ei_avere: 0, num_sign_assoc: 'SIG001' } },
+        [],
+      );
+
+      expect(result.estLieAuSignalement).toBe(true);
     });
 
     it('should set estLieAuSignalement to undefined when both fields are null', () => {

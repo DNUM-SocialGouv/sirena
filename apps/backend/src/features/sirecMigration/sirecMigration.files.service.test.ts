@@ -98,7 +98,7 @@ describe('sirecMigration.files.service.ts', () => {
         filePath: 'uploads/new-uuid.pdf',
         mimeType: 'application/pdf',
         size: 12345,
-        createdAt: file.sys_creation_date,
+        createdAt: file.date_creation,
         entiteId: null,
         uploadedById: null,
         requeteId: 'requete-1',
@@ -123,6 +123,17 @@ describe('sirecMigration.files.service.ts', () => {
       mimeType: 'application/pdf',
     });
     expect(fakeLogger.warn).not.toHaveBeenCalled();
+  });
+
+  it('should fall back to sys_creation_date when date_creation is null', async () => {
+    const file = makeFile({ date_creation: null });
+    mockFetchSirecFiles.mockResolvedValueOnce([file]);
+
+    await migrateSirecFiles(42, 'requete-1', new Map(), new Map(), []);
+
+    expect(mockUploadedFileCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ createdAt: file.sys_creation_date }),
+    });
   });
 
   it.each(['hors_process', 'fiche_synthese'])(
