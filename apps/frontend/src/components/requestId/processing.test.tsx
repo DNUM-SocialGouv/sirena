@@ -403,11 +403,11 @@ describe('Processing', () => {
         .map((option) => option.textContent),
     ).toEqual([
       'Toutes les entités',
-      'ARS — ARS courante',
-      'ARS — ARS Île-de-France',
-      'CD — Conseil départemental du Calvados',
-      'DDETS — DDETS du Rhône',
-      'DREETS — DREETS Grand Est',
+      'ARS courante',
+      'ARS Île-de-France',
+      'Conseil départemental du Calvados',
+      'DDETS du Rhône',
+      'DREETS Grand Est',
     ]);
   });
 

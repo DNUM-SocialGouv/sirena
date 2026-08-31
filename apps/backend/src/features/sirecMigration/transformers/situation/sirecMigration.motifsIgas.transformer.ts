@@ -1,6 +1,6 @@
 import { motifCategoriesById, motifLabelsById } from '@sirena/common/constants';
 import type { SirecMcIgasMotif } from '../../sirecMigration.repository.js';
-import { transcodeMotifIgas } from '../../transco/motifsIgas.transco.js';
+import { getParentMotifIgasId, transcodeMotifIgas } from '../../transco/motifsIgas.transco.js';
 
 export interface MotifsIgasResolution {
   motifs: string[];
@@ -9,14 +9,23 @@ export interface MotifsIgasResolution {
 
 const ENTREE_COMMENTAIRE_PREFIX = "Motifs IGAS d'entrée :";
 
+// Si un motif Igas parent et un de ses motifs enfants sont tous les deux présents (pour un même
+// igas_type), le motif parent est ignoré : seuls le ou les motifs enfants sont migrés.
+function excludeParentsWithChildren(idIgasList: number[]): number[] {
+  const parentIdsWithAChildPresent = new Set(
+    idIgasList
+      .map((idIgas) => getParentMotifIgasId(idIgas))
+      .filter((parentId): parentId is number => parentId !== undefined),
+  );
+  return idIgasList.filter((idIgas) => !parentIdsWithAChildPresent.has(idIgas));
+}
+
 function transcodeUnique(motifsIgas: SirecMcIgasMotif[], igasType: 'in' | 'out'): string[] {
-  return [
-    ...new Set(
-      motifsIgas
-        .filter((motifIgas) => motifIgas.igas_type === igasType)
-        .flatMap((motifIgas) => transcodeMotifIgas(motifIgas.id_igas)),
-    ),
-  ];
+  const idIgasList = motifsIgas
+    .filter((motifIgas) => motifIgas.igas_type === igasType)
+    .map((motifIgas) => motifIgas.id_igas);
+
+  return [...new Set(excludeParentsWithChildren(idIgasList).flatMap((idIgas) => transcodeMotifIgas(idIgas)))];
 }
 
 export function resolveMotifsIgas(motifsIgas: SirecMcIgasMotif[]): MotifsIgasResolution {

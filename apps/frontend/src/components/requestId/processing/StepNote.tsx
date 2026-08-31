@@ -35,7 +35,7 @@ export const StepNote = ({ author, content, createdAt, nomEntiteAdministrative }
       </div>
       {content ? (
         <div>
-          <p className="fr-text--sm fr-text--grey fr-mb-0">{content}</p>
+          <p className="fr-text--sm fr-mb-0">{content}</p>
         </div>
       ) : null}
     </div>
