@@ -87,7 +87,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
 
   const entityFilterSegments = [
     {
-      label: 'Toutes les entités',
+      label: 'Toutes',
       nativeInputProps: {
         value: '',
         checked: activeSelectedEntityId === undefined,
@@ -252,32 +252,14 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                 )}
               </div>
               {isEntityFilterVisible && requestQuery.data ? (
-                entityFilterOptions.length >= 5 ? (
-                  <Select
-                    className="fr-mb-3w"
-                    label="Filtrer par entité"
-                    nativeSelectProps={{
-                      value: activeSelectedEntityId ?? '',
-                      onChange: (event) => selectEntity(event.currentTarget.value || undefined),
-                    }}
-                  >
-                    <option value="">Toutes les entités</option>
-                    {entityFilterOptions.map((entity) => (
-                      <option key={entity.id} value={entity.id}>
-                        {entity.nomComplet}
-                      </option>
-                    ))}
-                  </Select>
-                ) : (
-                  <SegmentedControl
-                    className={`${styles['entity-filter']} fr-mb-3w`}
-                    small
-                    legend="Filtrer par entité"
-                    inlineLegend
-                    name="entiteId"
-                    segments={entityFilterSegments}
-                  />
-                )
+                <SegmentedControl
+                  className={`${styles['entity-filter']} fr-mb-3w`}
+                  small
+                  legend="Filtrer par entité"
+                  inlineLegend
+                  name="entiteId"
+                  segments={entityFilterSegments}
+                />
               ) : null}
               {content}
             </div>
