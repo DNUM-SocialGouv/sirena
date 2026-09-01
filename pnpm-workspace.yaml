@@ -13,25 +13,25 @@ allowBuilds:
   # builds skip it via PUPPETEER_SKIP_DOWNLOAD (they never render the ERD).
   puppeteer: true
 catalog:
-  "@biomejs/biome": ^2.5.9
-  "@codegouvfr/react-dsfr": ^1.32.4
+  "@biomejs/biome": ^2.5.10
+  "@codegouvfr/react-dsfr": ^1.33.0
   "@hono/standard-validator": ^0.4.0
   "@prisma/adapter-pg": ^7.9.1
   "@prisma/client": ^7.9.1
-  "@tanstack/react-router": ^1.170.29
+  "@tanstack/react-router": ^1.170.32
   "@testing-library/dom": ^10.4.1
   "@testing-library/jest-dom": ^7.0.1
   "@testing-library/react": ^16.3.2
-  "@testing-library/user-event": ^14.6.5
+  "@testing-library/user-event": ^14.6.6
   "@types/node": ^26.2.0
   "@types/react": ^19.2.18
-  "@types/react-dom": ^19.2.4
-  "@vitejs/plugin-react": ^6.0.5
-  "@vitest/browser": ^4.1.10
-  "@vitest/coverage-v8": ^4.1.10
+  "@types/react-dom": ^19.2.5
+  "@vitejs/plugin-react": ^6.1.0
+  "@vitest/browser": ^4.1.11
+  "@vitest/coverage-v8": ^4.1.11
   clsx: ^2.1.1
   dotenv: ^17.4.2
-  hono: ^4.13.1
+  hono: ^4.13.4
   hono-openapi: ^1.3.1
   jsdom: ^30.0.1
   prisma: ^7.9.1
@@ -39,8 +39,8 @@ catalog:
   react-dom: ^19.2.8
   tsx: ^4.23.12
   typescript: ~7.0.2
-  vite: ^8.2.1
-  vitest: ^4.1.10
+  vite: ^8.2.2
+  vitest: ^4.1.11
   zod: ^4.4.3
 enablePrePostScripts: true
 minimumReleaseAge: 10080
@@ -50,45 +50,16 @@ minimumReleaseAgeExclude: []
 overrides:
   # Planchers de sécurité sur des paquets tirés transitivement (@sentry/cli,
   # ajv via prisma/commitlint, minio) : leurs ranges parents résolvent aujourd'hui
-  # une version saine, mais on garde le plancher pour qu'un downgrade en amont ne
-  # réintroduise pas silencieusement la vuln.
+  # une version saine, mais on garde le plancher pour que le nettoyage annuel des
+  # ranges en amont ne réintroduise pas silencieusement la vuln.
   undici@>=6.26.0 <6.27.0: ^6.27.0
+  # decode-uri-component <=0.4.2 : DoS via une entrée percent-encoded malformée — GHSA-vcc3-ghjq-m6fr.
+  "decode-uri-component@<=0.4.2": ">=0.5.0"
   # fast-uri host confusion via backslash authority introducer, pulled in by ajv
   # (prisma/commitlint) — GHSA-7p8r-x3mc-p8w7 (extends GHSA-v2hh-gcrm-f6hx).
   "fast-uri@>=3.0.0 <3.1.5": ">=3.1.5"
   # fast-xml-parser : reset des déclarations DOCTYPE répétées — GHSA-8r6m-32jq-jx6q.
   "fast-xml-parser@>=5.9.3 <5.10.1": ">=5.10.1"
-  # find-my-way <=9.6.0 : DDoS HTTP/2 (GHSA-c96f-x56v-gq3h), tiré par prisma > @prisma/dev.
-  # Le correctif annoncé en 9.6.1 n'a jamais été publié : 9.7.0 est la première version saine.
-  "find-my-way@<9.7.0": ">=9.7.0"
-  # brace-expansion: DoS via unbounded intermediate arrays, bypasses the
-  # CVE-2026-14257 mitigation — GHSA-rgw5-rvv9-x895. Scoped to the 5.x branch,
-  # the only one present in the tree (minimatch, glob).
-  "brace-expansion@>=5.0.0 <5.0.9": ">=5.0.9"
-  # valibot <=1.4.1 : flatten() throw sur les noms de propriétés héritées d'Object
-  # dans les issue paths de record() — GHSA-5qjj-4xww-7phc.
-  "valibot@<1.4.2": ">=1.4.2"
-  # postcss <=8.5.22: attacker-controlled sourceMappingURL → reads arbitrary
-  # .map files when `from` is unset — GHSA-6g55-p6wh-862q (incomplete fix).
-  "postcss@<8.5.23": ">=8.5.23"
-  # hono <4.12.34: ReDoS in the CORS middleware. Aligns the transitive tree
-  # (prisma > @prisma/dev); direct consumers are on ^4.12.34 via the catalog.
-  "hono@<4.12.34": ">=4.12.34"
-  # mermaid <11.16.1: prototype pollution, CSS injection and several DoS in the
-  # diagram renderers (GHSA-c4c3-pg64-4m4v, GHSA-2v8p-3f2j-5mp7, GHSA-rhh3-jpg6-66xh…).
-  # Tiré transitivement par prisma-erd-generator > @mermaid-js/mermaid-cli (db:erd only).
-  "mermaid@>=11.0.0 <11.16.1": ">=11.16.1 <12"
-  # js-yaml <4.3.1: quadratic CPU consumption in !!omap resolution — CVE-2026-59870
-  # (GHSA). Tiré par @commitlint/cli, @graphql-codegen/cli et prisma-erd-generator.
-  # Borné à la ligne 4.x : le correctif est 4.3.1, on évite le saut majeur vers 5.x.
-  "js-yaml@>=4.0.0 <4.3.1": ">=4.3.1 <5"
-  # nanoid <3.3.17: custom generators can loop indefinitely when size is zero —
-  # GHSA-2v37-7h3g-55p8. Tiré par vitest/@vitest/mocker > vite > postcss (test only).
-  "nanoid@<3.3.17": ">=3.3.17"
-  # dompurify <=3.4.12: IN_PLACE hook removal leaves a detached subtree
-  # executable, causing XSS — GHSA-55q2-fjhq-7xh7. Tiré par prisma-erd-generator
-  # > @mermaid-js/mermaid-cli > mermaid/@zenuml/core (db:erd only).
-  "dompurify@<=3.4.12": ">=3.4.13"
 # extract-zip <=2.0.1: symlink path traversal — GHSA-jmr9-qjv8-65gv. Aucune
 # version corrigée n'a jamais été publiée sur npm (dernière release : 2.0.1,
 # 2020), un override est donc impossible. Tiré par prisma-erd-generator >
