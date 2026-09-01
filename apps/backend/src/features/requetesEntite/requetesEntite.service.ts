@@ -771,9 +771,7 @@ export const updateRequete = async (requeteId: string, data: UpdateRequeteInput,
             update: {
               estIdentifie: true,
               veutGarderAnonymat:
-                declarantData.consentCommuniquerIdentite === undefined
-                  ? undefined
-                  : !declarantData.consentCommuniquerIdentite,
+                declarantData.consentCommuniquerIdentite == null ? null : !declarantData.consentCommuniquerIdentite,
               isTuteur: declarantData.isTuteur ?? undefined,
               estSignalementProfessionnel: declarantData.estSignalementProfessionnel ?? null,
               estVictime: declarantData.estPersonneConcernee || false,
@@ -969,17 +967,15 @@ export const updateRequeteParticipant = async (
       data: {
         participant: {
           update: {
-            estHandicapee: participantData.estHandicapee ?? undefined,
+            estHandicapee: participantData.estHandicapee ?? null,
             veutGarderAnonymat:
-              participantData.consentCommuniquerIdentite === undefined
-                ? undefined
-                : !participantData.consentCommuniquerIdentite,
-            estVictimeInformee: participantData.estVictimeInformee ?? undefined,
+              participantData.consentCommuniquerIdentite == null ? null : !participantData.consentCommuniquerIdentite,
+            estVictimeInformee: participantData.estVictimeInformee ?? null,
             victimeInformeeCommentaire:
               participantData.estVictimeInformee === false ? participantData.victimeInformeeCommentaire || '' : '',
             autrePersonnes: participantData.autrePersonnes || '',
-            aAutrePersonnes: participantData.aAutrePersonnes ?? undefined,
-            mesureProtection: participantData.mesureProtection ?? undefined,
+            aAutrePersonnes: participantData.aAutrePersonnes ?? null,
+            mesureProtection: participantData.mesureProtection ?? null,
             commentaire: participantData.commentaire || '',
             ageId: participantData.age || undefined,
             dateNaissance: participantData.dateNaissance ? new Date(participantData.dateNaissance) : null,

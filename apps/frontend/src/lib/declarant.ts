@@ -12,6 +12,10 @@ function formatDeclarantFromServerImpl(declarant: DeclarantFromAPI) {
   const adresse = declarant.adresse ?? null;
   const civiliteId = identite?.civilite?.id || identite?.civiliteId || '';
 
+  const consentCommuniquerIdentite: boolean | null | undefined =
+    declarant.veutGarderAnonymat === null ? undefined : !declarant.veutGarderAnonymat;
+  const estSignalementProfessionnel: boolean | null | undefined = declarant.estSignalementProfessionnel ?? undefined;
+
   return {
     civilite: mappers.mapCiviliteToFrontend(civiliteId),
     nom: identite?.nom || '',
@@ -26,8 +30,8 @@ function formatDeclarantFromServerImpl(declarant: DeclarantFromAPI) {
     courrierElectronique: identite?.email || '',
     estPersonneConcernee: declarant.estVictime || false,
     isTuteur: declarant.isTuteur || false,
-    consentCommuniquerIdentite: declarant.veutGarderAnonymat === null ? undefined : !declarant.veutGarderAnonymat,
-    estSignalementProfessionnel: declarant.estSignalementProfessionnel ?? undefined,
+    consentCommuniquerIdentite,
+    estSignalementProfessionnel,
     autresPrecisions: declarant.commentaire || '',
   };
 }

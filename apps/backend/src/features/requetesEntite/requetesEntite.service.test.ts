@@ -1573,6 +1573,38 @@ describe('requetesEntite.service', () => {
         }),
       );
     });
+
+    it('clears the answers sent back as "Non renseigné"', async () => {
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        ...mockRequeteEntite.requete,
+        participant: { id: 'participant123', identite: null },
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+
+      await updateRequeteParticipant('req123', {
+        estHandicapee: null,
+        consentCommuniquerIdentite: null,
+        estVictimeInformee: null,
+        aAutrePersonnes: null,
+        mesureProtection: null,
+      });
+
+      expect(prisma.requete.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            participant: expect.objectContaining({
+              update: expect.objectContaining({
+                estHandicapee: null,
+                veutGarderAnonymat: null,
+                estVictimeInformee: null,
+                aAutrePersonnes: null,
+                mesureProtection: null,
+              }),
+            }),
+          }),
+        }),
+      );
+    });
   });
 
   describe('closeRequeteForEntite', () => {

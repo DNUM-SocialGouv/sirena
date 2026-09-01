@@ -13,7 +13,7 @@ export const DeclarantDataSchema = z.object({
   numeroTelephone: z.string().optional(),
   courrierElectronique: z.email().optional().or(z.literal('')),
   estPersonneConcernee: z.boolean().optional(),
-  consentCommuniquerIdentite: z.boolean().optional(),
+  consentCommuniquerIdentite: z.boolean().optional().nullable(),
   estSignalementProfessionnel: z.boolean().optional().nullable(),
   autresPrecisions: z.string().optional(),
 });

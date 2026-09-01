@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { DomicileFields } from '@/components/common/DomicileFields';
 import { personneConcerneeFieldMetadata } from '@/lib/fieldMetadata';
 import type { PersonneConcerneeData } from '@/lib/personneConcernee';
+import { buildNonRenseigneOption, buildOuiNonOptions } from '@/lib/radioOptions';
 
 interface PersonneConcerneeFormProps {
   mode: 'create' | 'edit';
@@ -62,16 +63,16 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
       }
     };
 
-  const handleBooleanChange = (field: keyof PersonneConcerneeData, value: boolean) => {
+  const handleBooleanChange = (field: keyof PersonneConcerneeData, value: boolean | null) => {
     setFormData((prev: PersonneConcerneeData) => {
-      if (field === 'estVictimeInformee' && value) {
+      if (field === 'estVictimeInformee' && value !== false) {
         return { ...prev, [field]: value, victimeInformeeCommentaire: '' };
       }
       return { ...prev, [field]: value };
     });
   };
 
-  const handleMesureProtectionChange = (value: MesureProtection) => {
+  const handleMesureProtectionChange = (value: MesureProtection | null) => {
     setFormData((prev: PersonneConcerneeData) => ({ ...prev, mesureProtection: value }));
   };
 
@@ -322,24 +323,9 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                 legend={personneConcerneeFieldMetadata.consentCommuniquerIdentite.label}
                 name="personne-concernee-consent-identite"
                 orientation="horizontal"
-                options={[
-                  {
-                    label: 'Oui',
-                    nativeInputProps: {
-                      value: 'true',
-                      checked: formData.consentCommuniquerIdentite === true,
-                      onChange: () => handleBooleanChange('consentCommuniquerIdentite', true),
-                    },
-                  },
-                  {
-                    label: 'Non',
-                    nativeInputProps: {
-                      value: 'false',
-                      checked: formData.consentCommuniquerIdentite === false,
-                      onChange: () => handleBooleanChange('consentCommuniquerIdentite', false),
-                    },
-                  },
-                ]}
+                options={buildOuiNonOptions(formData.consentCommuniquerIdentite, (value) =>
+                  handleBooleanChange('consentCommuniquerIdentite', value),
+                )}
               />
             </div>
 
@@ -348,24 +334,9 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                 legend={personneConcerneeFieldMetadata.estVictimeInformee.label}
                 name="personne-concernee-est-victime-informee"
                 orientation="horizontal"
-                options={[
-                  {
-                    label: 'Oui',
-                    nativeInputProps: {
-                      value: 'true',
-                      checked: formData.estVictimeInformee === true,
-                      onChange: () => handleBooleanChange('estVictimeInformee', true),
-                    },
-                  },
-                  {
-                    label: 'Non',
-                    nativeInputProps: {
-                      value: 'false',
-                      checked: formData.estVictimeInformee === false,
-                      onChange: () => handleBooleanChange('estVictimeInformee', false),
-                    },
-                  },
-                ]}
+                options={buildOuiNonOptions(formData.estVictimeInformee, (value) =>
+                  handleBooleanChange('estVictimeInformee', value),
+                )}
               />
             </div>
             {formData.estVictimeInformee === false && (
@@ -410,6 +381,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                       onChange: () => handleMesureProtectionChange('NON'),
                     },
                   },
+                  buildNonRenseigneOption(formData.mesureProtection == null, () => handleMesureProtectionChange(null)),
                 ]}
               />
             </div>
@@ -419,24 +391,9 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                 legend={personneConcerneeFieldMetadata.estHandicapee.label}
                 name="personne-concernee-est-handicapee"
                 orientation="horizontal"
-                options={[
-                  {
-                    label: 'Oui',
-                    nativeInputProps: {
-                      value: 'true',
-                      checked: formData.estHandicapee === true,
-                      onChange: () => handleBooleanChange('estHandicapee', true),
-                    },
-                  },
-                  {
-                    label: 'Non',
-                    nativeInputProps: {
-                      value: 'false',
-                      checked: formData.estHandicapee === false,
-                      onChange: () => handleBooleanChange('estHandicapee', false),
-                    },
-                  },
-                ]}
+                options={buildOuiNonOptions(formData.estHandicapee, (value) =>
+                  handleBooleanChange('estHandicapee', value),
+                )}
               />
             </div>
 
@@ -445,24 +402,9 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                 legend={personneConcerneeFieldMetadata.aAutrePersonnes.label}
                 name="personne-concernee-a-autre-personnes"
                 orientation="horizontal"
-                options={[
-                  {
-                    label: 'Oui',
-                    nativeInputProps: {
-                      value: 'true',
-                      checked: formData.aAutrePersonnes === true,
-                      onChange: () => handleBooleanChange('aAutrePersonnes', true),
-                    },
-                  },
-                  {
-                    label: 'Non',
-                    nativeInputProps: {
-                      value: 'false',
-                      checked: formData.aAutrePersonnes === false,
-                      onChange: () => handleBooleanChange('aAutrePersonnes', false),
-                    },
-                  },
-                ]}
+                options={buildOuiNonOptions(formData.aAutrePersonnes, (value) =>
+                  handleBooleanChange('aAutrePersonnes', value),
+                )}
               />
             </div>
 

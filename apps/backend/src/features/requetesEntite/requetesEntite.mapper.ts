@@ -12,7 +12,7 @@ const hasIdentiteData = (data: {
   courrierElectronique?: string;
   numeroTelephone?: string;
   civilite?: string;
-  consentCommuniquerIdentite?: boolean;
+  consentCommuniquerIdentite?: boolean | null;
   estSignalementProfessionnel?: boolean | null;
   autresPrecisions?: string;
   lienAvecPersonneConcernee?: string;
@@ -23,8 +23,8 @@ const hasIdentiteData = (data: {
   data.courrierElectronique ||
   data.numeroTelephone ||
   data.civilite ||
-  data.consentCommuniquerIdentite !== undefined ||
-  data.estSignalementProfessionnel !== undefined ||
+  data.consentCommuniquerIdentite != null ||
+  data.estSignalementProfessionnel != null ||
   data.autresPrecisions ||
   data.lienAvecPersonneConcernee ||
   data.lienAvecPersonneConcerneePrecision;
@@ -32,7 +32,7 @@ const hasIdentiteData = (data: {
 export const mapDeclarantToPrismaCreate = (declarantData: DeclarantInput) => ({
   estIdentifie: true,
   veutGarderAnonymat:
-    declarantData.consentCommuniquerIdentite === undefined ? undefined : !declarantData.consentCommuniquerIdentite,
+    declarantData.consentCommuniquerIdentite == null ? null : !declarantData.consentCommuniquerIdentite,
   isTuteur: declarantData.isTuteur ?? undefined,
   estSignalementProfessionnel: declarantData.estSignalementProfessionnel ?? null,
   estVictime: declarantData.estPersonneConcernee || false,
@@ -68,14 +68,14 @@ export const mapDeclarantToPrismaCreate = (declarantData: DeclarantInput) => ({
 });
 
 export const mapPersonneConcerneeToPrismaCreate = (participantData: PersonneConcerneeInput) => ({
-  estHandicapee: participantData.estHandicapee ?? undefined,
+  estHandicapee: participantData.estHandicapee ?? null,
   veutGarderAnonymat:
-    participantData.consentCommuniquerIdentite === undefined ? undefined : !participantData.consentCommuniquerIdentite,
-  estVictimeInformee: participantData.estVictimeInformee ?? undefined,
+    participantData.consentCommuniquerIdentite == null ? null : !participantData.consentCommuniquerIdentite,
+  estVictimeInformee: participantData.estVictimeInformee ?? null,
   victimeInformeeCommentaire: participantData.victimeInformeeCommentaire || '',
   autrePersonnes: participantData.autrePersonnes || '',
-  aAutrePersonnes: participantData.aAutrePersonnes,
-  mesureProtection: participantData.mesureProtection,
+  aAutrePersonnes: participantData.aAutrePersonnes ?? null,
+  mesureProtection: participantData.mesureProtection ?? null,
   commentaire: participantData.commentaire || '',
   ageId: participantData.age || undefined,
   dateNaissance: participantData.dateNaissance ? new Date(participantData.dateNaissance) : null,
