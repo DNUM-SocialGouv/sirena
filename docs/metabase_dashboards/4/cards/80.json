@@ -1,0 +1,180 @@
+{
+  "archived": false,
+  "archived_directly": false,
+  "average_query_time": 272.85714285714283,
+  "cache_ttl": null,
+  "can_delete": false,
+  "can_manage_db": true,
+  "can_restore": false,
+  "can_run_adhoc_query": true,
+  "can_write": true,
+  "card_schema": 23,
+  "collection": {
+    "authority_level": null,
+    "can_write": true,
+    "id": "root",
+    "is_personal": false,
+    "is_remote_synced": false,
+    "metabase.collections.models.collection.root/is-root?": true,
+    "name": "Our analytics"
+  },
+  "collection_id": null,
+  "collection_position": null,
+  "collection_preview": true,
+  "creator_id": 7,
+  "dashboard": {
+    "id": 4,
+    "moderation_status": null,
+    "name": "[integration] Dashboard local"
+  },
+  "dashboard_count": 1,
+  "dashboard_id": 4,
+  "database_id": 4,
+  "dataset_query": {
+    "database": 4,
+    "lib/type": "mbql/query",
+    "stages": [
+      {
+        "lib/type": "mbql.stage/native",
+        "native": "-- Carte : « Répartition des requêtes par priorité »\nWITH requetes AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, re.\"prioriteId\" AS priorite_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]]\n),\ntotal AS (SELECT COUNT(*) AS nb_total FROM requetes),\npar_priorite AS (\n  SELECT\n    COALESCE(p.label, 'Aucune priorité') AS priorite,\n    COALESCE(p.\"sortOrder\", 99)          AS tri,\n    COUNT(*)                             AS nb_requetes\n  FROM requetes q\n  LEFT JOIN \"RequetePrioriteEnum\" p ON p.id = q.priorite_id\n  GROUP BY COALESCE(p.label, 'Aucune priorité'), COALESCE(p.\"sortOrder\", 99)\n)\nSELECT\n  pp.priorite                                              AS \"Priorité\",\n  pp.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * pp.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes (%)\"\nFROM par_priorite pp\nCROSS JOIN total t\nORDER BY pp.tri;",
+        "template-tags": [
+          {
+            "display-name": "Entity Label",
+            "id": "20427dbf-bf65-4cc4-b89b-040d99f0faf3",
+            "name": "entity_label",
+            "type": "text"
+          },
+          {
+            "display-name": "Start Date",
+            "id": "5a2e6008-ddda-4e6c-b2f7-259f01613a3a",
+            "name": "start_date",
+            "type": "date"
+          },
+          {
+            "display-name": "End Date",
+            "id": "578478c6-434c-42e0-85e2-ed5e33d95370",
+            "name": "end_date",
+            "type": "date"
+          },
+          {
+            "display-name": "Domaine Fonctionnel",
+            "id": "124c700f-20ad-48bb-8fbe-7f074a7a84ea",
+            "name": "domaine_fonctionnel",
+            "type": "text"
+          },
+          {
+            "default": [
+              true
+            ],
+            "display-name": "Inclure Eig",
+            "id": "dda02a27-041c-4ed5-a6a0-6747b74630e9",
+            "name": "inclure_eig",
+            "type": "boolean"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "Répartition des requêtes affectées à votre entité selon leur niveau de priorité (Basse, Moyenne, Haute ou sans priorité définie).",
+  "dimension_mappings": null,
+  "dimensions": null,
+  "display": "pie",
+  "document_id": null,
+  "embedding_params": null,
+  "embedding_type": null,
+  "enable_embedding": false,
+  "entity_id": "TnpB88SnE3nvIarwo5Q_h",
+  "id": 80,
+  "is_remote_synced": false,
+  "last_query_start": "2026-08-27T15:33:52.736227Z",
+  "legacy_query": null,
+  "made_public_by_id": null,
+  "metabase_version": "v0.63.5 (1dca717)",
+  "moderation_reviews": [],
+  "name": "Répartition des requêtes par priorité",
+  "param_fields": {},
+  "parameter_mappings": [],
+  "parameter_usage_count": 0,
+  "parameters": [
+    {
+      "id": "20427dbf-bf65-4cc4-b89b-040d99f0faf3",
+      "isMultiSelect": false,
+      "name": "Entity Label",
+      "slug": "entity_label",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "entity_label"
+        ]
+      ],
+      "type": "string/="
+    },
+    {
+      "id": "5a2e6008-ddda-4e6c-b2f7-259f01613a3a",
+      "isMultiSelect": false,
+      "name": "Start Date",
+      "slug": "start_date",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "start_date"
+        ]
+      ],
+      "type": "date/single"
+    },
+    {
+      "id": "578478c6-434c-42e0-85e2-ed5e33d95370",
+      "isMultiSelect": false,
+      "name": "End Date",
+      "slug": "end_date",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "end_date"
+        ]
+      ],
+      "type": "date/single"
+    },
+    {
+      "id": "124c700f-20ad-48bb-8fbe-7f074a7a84ea",
+      "isMultiSelect": true,
+      "name": "Domaine Fonctionnel",
+      "slug": "domaine_fonctionnel",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "domaine_fonctionnel"
+        ]
+      ],
+      "type": "string/="
+    },
+    {
+      "default": [
+        true
+      ],
+      "id": "dda02a27-041c-4ed5-a6a0-6747b74630e9",
+      "isMultiSelect": false,
+      "name": "Inclure Eig",
+      "slug": "inclure_eig",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "inclure_eig"
+        ]
+      ],
+      "type": "boolean/="
+    }
+  ],
+  "public_uuid": null,
+  "query_type": "native",
+  "result_metadata": null,
+  "source_card_id": null,
+  "table_id": null,
+  "type": "question",
+  "visualization_settings": {}
+}
