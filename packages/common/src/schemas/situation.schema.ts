@@ -93,7 +93,7 @@ export const SituationDataSchema = z.object({
 
   domainesFonctionnels: z.string().optional(),
 
-  estLieAuSignalement: z.boolean().optional(),
+  estLieAuSignalement: z.boolean().optional().nullable(),
   numerosSignalement: z.string().optional(),
 });
 

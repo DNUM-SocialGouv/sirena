@@ -12,12 +12,12 @@ export interface PersonneConcerneeData {
   ville?: string;
   numeroTelephone?: string;
   courrierElectronique?: string;
-  estHandicapee?: boolean;
-  consentCommuniquerIdentite?: boolean;
-  estVictimeInformee?: boolean;
+  estHandicapee?: boolean | null;
+  consentCommuniquerIdentite?: boolean | null;
+  estVictimeInformee?: boolean | null;
   victimeInformeeCommentaire?: string;
   autrePersonnes?: string;
-  aAutrePersonnes?: boolean;
+  aAutrePersonnes?: boolean | null;
   mesureProtection?: MesureProtection | null;
   commentaire?: string;
 }
@@ -58,7 +58,7 @@ export function formatPersonneConcerneeFromServer(participant: unknown): Personn
     estVictimeInformee: (p.estVictimeInformee as boolean | null | undefined) ?? undefined,
     victimeInformeeCommentaire: (p.victimeInformeeCommentaire as string) || '',
     autrePersonnes: (p.autrePersonnes as string) || '',
-    aAutrePersonnes: p.aAutrePersonnes as boolean | undefined,
+    aAutrePersonnes: p.aAutrePersonnes as boolean | null | undefined,
     mesureProtection: p.mesureProtection as MesureProtection | null | undefined,
     commentaire: (p.commentaire as string) || '',
   };

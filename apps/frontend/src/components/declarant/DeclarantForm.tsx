@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { DomicileFields } from '@/components/common/DomicileFields';
 import type { DeclarantData } from '@/lib/declarant';
 import { declarantFieldMetadata } from '@/lib/fieldMetadata';
+import { buildOuiNonOptions } from '@/lib/radioOptions';
 
 interface DeclarantFormProps {
   mode: 'create' | 'edit';
@@ -61,7 +62,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
       }
     };
 
-  const handleBooleanChange = (field: keyof DeclarantData, value: boolean) => {
+  const handleBooleanChange = (field: keyof DeclarantData, value: boolean | null) => {
     setFormData((prev: DeclarantData) => ({ ...prev, [field]: value }));
   };
 
@@ -359,47 +360,17 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                   legend={declarantFieldMetadata.consentCommuniquerIdentite.label}
                   name="declarant-consent-identite"
                   orientation="horizontal"
-                  options={[
-                    {
-                      label: 'Oui',
-                      nativeInputProps: {
-                        value: 'true',
-                        checked: formData.consentCommuniquerIdentite === true,
-                        onChange: () => handleBooleanChange('consentCommuniquerIdentite', true),
-                      },
-                    },
-                    {
-                      label: 'Non',
-                      nativeInputProps: {
-                        value: 'false',
-                        checked: formData.consentCommuniquerIdentite === false,
-                        onChange: () => handleBooleanChange('consentCommuniquerIdentite', false),
-                      },
-                    },
-                  ]}
+                  options={buildOuiNonOptions(formData.consentCommuniquerIdentite, (value) =>
+                    handleBooleanChange('consentCommuniquerIdentite', value),
+                  )}
                 />
                 <RadioButtons
                   legend={declarantFieldMetadata.estSignalementProfessionnel.label}
                   name="declarant-signalement-pro"
                   orientation="horizontal"
-                  options={[
-                    {
-                      label: 'Oui',
-                      nativeInputProps: {
-                        value: 'true',
-                        checked: formData.estSignalementProfessionnel === true,
-                        onChange: () => handleBooleanChange('estSignalementProfessionnel', true),
-                      },
-                    },
-                    {
-                      label: 'Non',
-                      nativeInputProps: {
-                        value: 'false',
-                        checked: formData.estSignalementProfessionnel === false,
-                        onChange: () => handleBooleanChange('estSignalementProfessionnel', false),
-                      },
-                    },
-                  ]}
+                  options={buildOuiNonOptions(formData.estSignalementProfessionnel, (value) =>
+                    handleBooleanChange('estSignalementProfessionnel', value),
+                  )}
                 />
 
                 <Input

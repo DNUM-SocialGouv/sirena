@@ -62,6 +62,22 @@ describe('Identification', () => {
     expect(screen.getByLabelText(numeroLabel)).toHaveValue('');
   });
 
+  it('permet de revenir à un état neutre via "Non renseigné"', () => {
+    render(<ControlledIdentification initialData={{ estLieAuSignalement: true, numerosSignalement: '098655' }} />);
+    fireEvent.click(screen.getByLabelText('Non renseigné'));
+    expect(screen.getByLabelText('Non renseigné')).toBeChecked();
+    expect(screen.getByLabelText('Oui')).not.toBeChecked();
+    expect(screen.getByLabelText('Non')).not.toBeChecked();
+    expect(screen.queryByLabelText(numeroLabel)).not.toBeInTheDocument();
+  });
+
+  it('coche "Non renseigné" par défaut tant que la question est sans réponse', () => {
+    render(<ControlledIdentification />);
+    expect(screen.getByLabelText('Non renseigné')).toBeChecked();
+    expect(screen.getByLabelText('Oui')).not.toBeChecked();
+    expect(screen.getByLabelText('Non')).not.toBeChecked();
+  });
+
   it('accepte librement les numéros dans un format quelconque, sans restriction de caractères', () => {
     render(
       <ControlledIdentification
