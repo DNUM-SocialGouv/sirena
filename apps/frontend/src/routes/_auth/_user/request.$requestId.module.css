@@ -8,6 +8,11 @@
   max-width: 100%;
 }
 
+.entity-filter :global(.fr-segmented__legend) {
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+
 .entity-filter :global(.fr-segmented__elements) {
   min-width: 0;
   max-width: 100%;
