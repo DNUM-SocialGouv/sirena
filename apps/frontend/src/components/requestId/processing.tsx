@@ -163,6 +163,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                 step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT &&
                 step.statutId === REQUETE_ETAPE_STATUT_TYPES.A_FAIRE &&
                 step.editable;
+
               return (
                 <Step
                   key={step.id}
@@ -270,6 +271,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                 ) : (
                   <SegmentedControl
                     className={`${styles['entity-filter']} fr-mb-3w`}
+                    small
                     legend="Filtrer par entité"
                     inlineLegend
                     name="entiteId"
