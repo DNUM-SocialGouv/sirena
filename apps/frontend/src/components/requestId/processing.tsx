@@ -1,7 +1,6 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { SegmentedControl, type SegmentedControlProps } from '@codegouvfr/react-dsfr/SegmentedControl';
-import Select from '@codegouvfr/react-dsfr/Select';
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
