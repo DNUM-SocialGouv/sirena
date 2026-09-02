@@ -55,9 +55,14 @@ overrides:
   undici@>=6.26.0 <6.27.0: ^6.27.0
   # decode-uri-component <=0.4.2 : DoS via une entrée percent-encoded malformée — GHSA-vcc3-ghjq-m6fr.
   "decode-uri-component@<=0.4.2": ">=0.5.0"
-  # fast-uri host confusion via backslash authority introducer, pulled in by ajv
-  # (prisma/commitlint) — GHSA-7p8r-x3mc-p8w7 (extends GHSA-v2hh-gcrm-f6hx).
+  # fast-uri host confusion / SSRF via malformed URL normalization, pulled in
+  # by ajv (prisma/commitlint) — GHSA-7p8r-x3mc-p8w7, GHSA-5jgf-p345-68v8,
+  # GHSA-f65p-4m7j-42xc, GHSA-fph4-wmhf-6fwf, GHSA-jqff-g426-hqxp.
   "fast-uri@>=3.0.0 <3.1.5": ">=3.1.5"
+  "fast-uri@>=4.0.0 <4.1.3": ">=4.1.3"
+  # mysql2 : fuite d'identifiants par downgrade du plugin d'authentification et
+  # bombe de décompression zlib — GHSA-3f6p-5ww8-9rcr, GHSA-rgwj-5xj2-c3m3.
+  "mysql2@<=3.23.0": ">=3.23.1"
   # fast-xml-parser : reset des déclarations DOCTYPE répétées — GHSA-8r6m-32jq-jx6q.
   "fast-xml-parser@>=5.9.3 <5.10.1": ">=5.10.1"
 # extract-zip <=2.0.1: symlink path traversal — GHSA-jmr9-qjv8-65gv. Aucune
