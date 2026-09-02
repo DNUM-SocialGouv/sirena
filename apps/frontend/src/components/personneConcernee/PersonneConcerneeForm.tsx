@@ -381,7 +381,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                       onChange: () => handleMesureProtectionChange('NON'),
                     },
                   },
-                  buildNonRenseigneOption(formData.mesureProtection == null, () => handleMesureProtectionChange(null)),
+                  buildNonRenseigneOption(formData.mesureProtection === null, () => handleMesureProtectionChange(null)),
                 ]}
               />
             </div>

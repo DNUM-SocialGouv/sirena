@@ -12,13 +12,18 @@ describe('buildOuiNonOptions', () => {
     [true, 'Oui'],
     [false, 'Non'],
     [null, NON_RENSEIGNE_LABEL],
-    [undefined, NON_RENSEIGNE_LABEL],
   ] as const)('checks the option matching the value %s', (value, expectedLabel) => {
     const options = buildOuiNonOptions(value, vi.fn());
     const checked = options.filter((option) => option.nativeInputProps.checked);
 
     expect(checked).toHaveLength(1);
     expect(checked[0].label).toBe(expectedLabel);
+  });
+
+  it('leaves every option unchecked while the question has not been answered', () => {
+    const options = buildOuiNonOptions(undefined, vi.fn());
+
+    expect(options.every((option) => !option.nativeInputProps.checked)).toBe(true);
   });
 
   it.each([

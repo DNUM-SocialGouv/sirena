@@ -58,8 +58,8 @@ export function formatPersonneConcerneeFromServer(participant: unknown): Personn
     estVictimeInformee: (p.estVictimeInformee as boolean | null | undefined) ?? undefined,
     victimeInformeeCommentaire: (p.victimeInformeeCommentaire as string) || '',
     autrePersonnes: (p.autrePersonnes as string) || '',
-    aAutrePersonnes: p.aAutrePersonnes as boolean | null | undefined,
-    mesureProtection: p.mesureProtection as MesureProtection | null | undefined,
+    aAutrePersonnes: (p.aAutrePersonnes as boolean | null | undefined) ?? undefined,
+    mesureProtection: (p.mesureProtection as MesureProtection | null | undefined) ?? undefined,
     commentaire: (p.commentaire as string) || '',
   };
 }
