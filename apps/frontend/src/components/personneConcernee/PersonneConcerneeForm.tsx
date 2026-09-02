@@ -211,6 +211,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
               <div className="fr-col-12 fr-col-md-6">
                 <Select
                   label={personneConcerneeFieldMetadata.age.label}
+                  hint={<span aria-hidden="true">&nbsp;</span>}
                   nativeSelectProps={{
                     value: formData.age ?? '',
                     onChange: (e) => {
