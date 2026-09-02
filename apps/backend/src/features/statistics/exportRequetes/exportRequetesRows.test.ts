@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { EXPORT_REQUETES_COLUMNS, type ExportRequetesColumnKey } from './exportRequetesColumns.js';
-import type { ExportRequetesCsvRow } from './exportRequetesCsv.js';
-import { buildExportRequetesRows } from './exportRequetesRows.js';
+import { buildExportRequetesRows, type ExportRequetesCsvRow } from './exportRequetesRows.js';
 
 describe('buildExportRequetesRows', () => {
   it('populates request, declarant, personne concernée, reception and provenance fields', () => {
@@ -297,7 +296,7 @@ describe('buildExportRequetesRows', () => {
                   { motifDeclaratif: { label: 'Négligence' } },
                 ],
                 motifs: [
-                  { motifId: 'QUALITE_SOINS/DELAIS_PRISE_EN_CHARGE', motif: { label: 'Délais de prise en charge' } },
+                  { motifId: 'QUALITE_SOINS/DELAIS_PRISE_EN_CHARGE', motif: { label: 'Délai de prise en charge' } },
                 ],
                 consequences: [{ consequence: { label: 'Stress' } }],
               },
@@ -306,7 +305,7 @@ describe('buildExportRequetesRows', () => {
                 dateFin: new Date('2026-06-16T00:00:00.000Z'),
                 motifsDeclaratifs: [{ motifDeclaratif: { label: 'Violence verbale' } }],
                 motifs: [
-                  { motifId: 'QUALITE_SOINS/DELAIS_PRISE_EN_CHARGE', motif: { label: 'Délais de prise en charge' } },
+                  { motifId: 'QUALITE_SOINS/DELAIS_PRISE_EN_CHARGE', motif: { label: 'Délai de prise en charge' } },
                   { motif: { label: 'Défaut d’information' } },
                 ],
                 consequences: [{ consequence: { label: 'Stress' } }, { consequence: { label: 'Blessure' } }],
@@ -318,9 +317,7 @@ describe('buildExportRequetesRows', () => {
     ]);
 
     expect(cell(rows[0], 'motifsDeclaratifs')).toBe('Violence verbale, Négligence');
-    expect(cell(rows[0], 'motifsQualifies')).toBe(
-      'Délais de prise en charge (Qualité des soins), Défaut d’information',
-    );
+    expect(cell(rows[0], 'motifsQualifies')).toBe('Délai de prise en charge (Qualité des soins), Défaut d’information');
     expect(cell(rows[0], 'consequencesPersonneConcernee')).toBe('Stress, Blessure');
     expect(cell(rows[0], 'dateDebutFaits')).toBe('10/06/2026');
     expect(cell(rows[0], 'dateFinFaits')).toBe('16/06/2026');

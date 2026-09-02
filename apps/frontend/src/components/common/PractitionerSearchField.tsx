@@ -11,6 +11,7 @@ interface PractitionerSearchFieldProps {
   state?: 'default' | 'success' | 'info' | 'error';
   stateRelatedMessage?: React.ReactNode;
   disabled?: boolean;
+  readOnly?: boolean;
   searchMode: 'rpps' | 'name';
   minSearchLength?: number;
   debounceMs?: number;
@@ -40,6 +41,7 @@ export function PractitionerSearchField({
   state = 'default',
   stateRelatedMessage,
   disabled,
+  readOnly,
   searchMode,
   minSearchLength = 3,
   debounceMs = 300,
@@ -87,6 +89,7 @@ export function PractitionerSearchField({
       state={state}
       stateRelatedMessage={stateRelatedMessage}
       disabled={disabled}
+      readOnly={readOnly}
       queryKey="practitioners"
       fetchFn={fetchFn}
       formatDisplay={formatDisplay}

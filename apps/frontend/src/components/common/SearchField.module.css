@@ -54,6 +54,13 @@
   outline-offset: -2px;
 }
 
+.readOnlyWrapper :global(.fr-input) {
+  background-color: transparent !important;
+  border: 1px solid var(--border-default-grey, #ddd) !important;
+  border-radius: 4px 4px 0 0 !important;
+  box-shadow: none !important;
+}
+
 @keyframes spin {
   from {
     transform: rotate(0deg);

@@ -58,6 +58,10 @@ runs:
         # deploye dans le cluster (valkey.enabled). Ailleurs le cache est manage.
         rm -r gitops-repo/deployment-targets/${{ inputs.environment }}/valkey || true
 
+        # Idem sirec-restore : present uniquement sur les environnements ou la
+        # restauration du dump SIREC est activee (sirec-restore.enabled).
+        rm -r gitops-repo/deployment-targets/${{ inputs.environment }}/sirec-restore || true
+
         mv helm_charts/generated_manifests/sirena/charts/* gitops-repo/deployment-targets/${{ inputs.environment }}/
 
         git config --global user.name "github-actions[bot]"

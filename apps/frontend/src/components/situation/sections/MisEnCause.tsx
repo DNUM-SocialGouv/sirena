@@ -21,9 +21,10 @@ import {
   type ReceptionType,
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { OrganizationSearchField } from '@/components/common/OrganizationSearchField';
 import { PractitionerSearchField } from '@/components/common/PractitionerSearchField';
+import { ReadOnlyField } from '@/components/common/ReadOnlyField';
 import type { Organization } from '@/lib/api/fetchOrganizations';
 import type { Practitioner } from '@/lib/api/fetchPractitioners';
 
@@ -92,58 +93,89 @@ type IdentityFieldsProps = {
   setFormData: React.Dispatch<React.SetStateAction<SituationData>>;
 };
 
+const CIVILITE_DISPLAY: Record<string, string> = { M: 'M', MME: 'Mme' };
+
 function MisEnCauseIdentityFields({ formData, isSaving, setFormData }: IdentityFieldsProps) {
+  const fieldId = useId();
   const isIdentityReadOnly = isSaving || Boolean(formData.misEnCause?.rpps);
 
   return (
-    <>
-      <div className="fr-col-12 fr-col-md-2">
-        <Select
-          label="Civilité"
-          disabled={isIdentityReadOnly}
-          nativeSelectProps={{
-            value: formData.misEnCause?.civilite || '',
-            onChange: (e) =>
-              setFormData((prev) => ({
-                ...prev,
-                misEnCause: { ...prev.misEnCause, civilite: e.target.value || undefined },
-              })),
-          }}
-        >
-          <option value="">Sélectionner</option>
-          <option value="M">M</option>
-          <option value="MME">Mme</option>
-        </Select>
+    // Bottom-align so the read-only hint text wrapping in the narrow Civilité column
+    // does not push its input below the Nom/Prénom inputs.
+    <div className="fr-col-12">
+      <div className="fr-grid-row fr-grid-row--gutters fr-grid-row--bottom">
+        <div className="fr-col-12 fr-col-md-2">
+          {isIdentityReadOnly ? (
+            <ReadOnlyField
+              id={`${fieldId}-civilite`}
+              label="Civilité"
+              hintText="Ce champ est en lecture seule."
+              value={CIVILITE_DISPLAY[formData.misEnCause?.civilite || ''] ?? formData.misEnCause?.civilite ?? ''}
+            />
+          ) : (
+            <Select
+              label="Civilité"
+              nativeSelectProps={{
+                value: formData.misEnCause?.civilite || '',
+                onChange: (e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    misEnCause: { ...prev.misEnCause, civilite: e.target.value || undefined },
+                  })),
+              }}
+            >
+              <option value="">Sélectionner</option>
+              <option value="M">M</option>
+              <option value="MME">Mme</option>
+            </Select>
+          )}
+        </div>
+        <div className="fr-col-12 fr-col-md-5">
+          {isIdentityReadOnly ? (
+            <ReadOnlyField
+              id={`${fieldId}-nom`}
+              label="Nom"
+              hintText="Ce champ est en lecture seule."
+              value={formData.misEnCause?.nom || ''}
+            />
+          ) : (
+            <Input
+              label="Nom"
+              nativeInputProps={{
+                value: formData.misEnCause?.nom || '',
+                onChange: (e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    misEnCause: { ...prev.misEnCause, nom: e.target.value },
+                  })),
+              }}
+            />
+          )}
+        </div>
+        <div className="fr-col-12 fr-col-md-5">
+          {isIdentityReadOnly ? (
+            <ReadOnlyField
+              id={`${fieldId}-prenom`}
+              label="Prénom"
+              hintText="Ce champ est en lecture seule."
+              value={formData.misEnCause?.prenom || ''}
+            />
+          ) : (
+            <Input
+              label="Prénom"
+              nativeInputProps={{
+                value: formData.misEnCause?.prenom || '',
+                onChange: (e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    misEnCause: { ...prev.misEnCause, prenom: e.target.value },
+                  })),
+              }}
+            />
+          )}
+        </div>
       </div>
-      <div className="fr-col-12 fr-col-md-5">
-        <Input
-          label="Nom"
-          disabled={isIdentityReadOnly}
-          nativeInputProps={{
-            value: formData.misEnCause?.nom || '',
-            onChange: (e) =>
-              setFormData((prev) => ({
-                ...prev,
-                misEnCause: { ...prev.misEnCause, nom: e.target.value },
-              })),
-          }}
-        />
-      </div>
-      <div className="fr-col-12 fr-col-md-5">
-        <Input
-          label="Prénom"
-          disabled={isIdentityReadOnly}
-          nativeInputProps={{
-            value: formData.misEnCause?.prenom || '',
-            onChange: (e) =>
-              setFormData((prev) => ({
-                ...prev,
-                misEnCause: { ...prev.misEnCause, prenom: e.target.value },
-              })),
-          }}
-        />
-      </div>
-    </>
+    </div>
   );
 }
 
@@ -167,6 +199,7 @@ const MIS_EN_CAUSE_SERVICE_PRECISIONS: string[] = [
 ];
 
 export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps) {
+  const fieldId = useId();
   const misEnCauseType = formData.misEnCause?.misEnCauseType;
   const misEnCausePrecision = formData.misEnCause?.misEnCauseTypePrecision;
   const misEnCausePrecisions =
@@ -336,7 +369,8 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                       ? 'Si vous souhaitez rechercher par numéro FINESS, décochez la case "Le service n’a pas de numéro FINESS"'
                       : undefined
                   }
-                  disabled={isSaving || isNoFinessChecked}
+                  disabled={isSaving}
+                  readOnly={isNoFinessChecked}
                   searchMode="finess"
                   minSearchLength={6}
                 />
@@ -380,46 +414,70 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
               {isNoFinessChecked || hasCompleteServiceFromFiness ? (
                 <>
                   <div className="fr-col-12 fr-col-md-6">
-                    <Input
-                      label="Nom du service"
-                      disabled={isServiceReadOnly}
-                      nativeInputProps={{
-                        value: formData.misEnCause?.nomService || '',
-                        onChange: (e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            misEnCause: { ...prev.misEnCause, nomService: e.target.value },
-                          })),
-                      }}
-                    />
+                    {isServiceReadOnly ? (
+                      <ReadOnlyField
+                        id={`${fieldId}-nom-service`}
+                        label="Nom du service"
+                        hintText="Ce champ est en lecture seule."
+                        value={formData.misEnCause?.nomService || ''}
+                      />
+                    ) : (
+                      <Input
+                        label="Nom du service"
+                        nativeInputProps={{
+                          value: formData.misEnCause?.nomService || '',
+                          onChange: (e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              misEnCause: { ...prev.misEnCause, nomService: e.target.value },
+                            })),
+                        }}
+                      />
+                    )}
                   </div>
                   <div className="fr-col-12 fr-col-md-3">
-                    <Input
-                      label="Code postal"
-                      disabled={isServiceReadOnly}
-                      nativeInputProps={{
-                        value: formData.misEnCause?.codePostal || '',
-                        onChange: (e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            misEnCause: { ...prev.misEnCause, codePostal: e.target.value },
-                          })),
-                      }}
-                    />
+                    {isServiceReadOnly ? (
+                      <ReadOnlyField
+                        id={`${fieldId}-service-code-postal`}
+                        label="Code postal"
+                        hintText="Ce champ est en lecture seule."
+                        value={formData.misEnCause?.codePostal || ''}
+                      />
+                    ) : (
+                      <Input
+                        label="Code postal"
+                        nativeInputProps={{
+                          value: formData.misEnCause?.codePostal || '',
+                          onChange: (e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              misEnCause: { ...prev.misEnCause, codePostal: e.target.value },
+                            })),
+                        }}
+                      />
+                    )}
                   </div>
                   <div className="fr-col-12 fr-col-md-3">
-                    <Input
-                      label="Ville"
-                      disabled={isServiceReadOnly}
-                      nativeInputProps={{
-                        value: formData.misEnCause?.ville || '',
-                        onChange: (e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            misEnCause: { ...prev.misEnCause, ville: e.target.value },
-                          })),
-                      }}
-                    />
+                    {isServiceReadOnly ? (
+                      <ReadOnlyField
+                        id={`${fieldId}-service-ville`}
+                        label="Ville"
+                        hintText="Ce champ est en lecture seule."
+                        value={formData.misEnCause?.ville || ''}
+                      />
+                    ) : (
+                      <Input
+                        label="Ville"
+                        nativeInputProps={{
+                          value: formData.misEnCause?.ville || '',
+                          onChange: (e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              misEnCause: { ...prev.misEnCause, ville: e.target.value },
+                            })),
+                        }}
+                      />
+                    )}
                   </div>
                 </>
               ) : null}
@@ -439,7 +497,8 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                       ? 'Si vous souhaitez rechercher par numéro RPPS, décochez la case “Le professionnel n’a pas de numéro RPPS”'
                       : undefined
                   }
-                  disabled={isSaving || isNoRppsChecked}
+                  disabled={isSaving}
+                  readOnly={isNoRppsChecked}
                   searchMode="rpps"
                   hintText="Saisir le numéro RPPS et sélectionner le professionnel"
                   minSearchLength={6}

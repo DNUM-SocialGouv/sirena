@@ -42,6 +42,7 @@ export function transformSirecMainCourantes(
         createdAt: mc.sys_creation_date,
         ...(mc.date_action !== null ? { dateRealisation: mc.date_action } : {}),
         note,
+        sirecMainCouranteId: mc.id_data,
       });
     }
   }

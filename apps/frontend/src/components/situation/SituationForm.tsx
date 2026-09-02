@@ -7,11 +7,11 @@ import { MisEnCause } from '@/components/situation/sections/MisEnCause';
 import { useEntites } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { hasSituationContent } from '@/utils/situationHelpers';
-import { DescriptionFaits } from './sections/DescriptionSituation';
+import { DescriptionFaits, type DescriptionFaitsRef } from './sections/DescriptionSituation';
 import { Identification } from './sections/Identification';
 import { InformationsComplementaires } from './sections/InformationsComplementaires';
 import { LieuSurvenu } from './sections/LieuSurvenu';
-import TraitementDesFaitsSection from './TraitementDesFaits';
+import TraitementDesFaitsSection, { type TraitementDesFaitsSectionRef } from './TraitementDesFaits';
 
 interface SituationFormProps {
   mode: 'create' | 'edit';
@@ -45,6 +45,8 @@ export function SituationForm({
   const navigate = useNavigate();
   const internalSaveButtonRef = useRef<HTMLButtonElement>(null);
   const saveButtonRef = externalSaveButtonRef || internalSaveButtonRef;
+  const descriptionFaitsRef = useRef<DescriptionFaitsRef>(null);
+  const traitementDesFaitsRef = useRef<TraitementDesFaitsSectionRef>(null);
   const [formData, setFormData] = useState<SituationData>(initialData || {});
   const [isSaving, setIsSaving] = useState(false);
   const [faitFiles, setFaitFiles] = useState<File[]>([]);
@@ -80,7 +82,14 @@ export function SituationForm({
   const handleSave = useCallback(async () => {
     setHasAttemptedSave(true);
 
+    const areDatesValid = descriptionFaitsRef.current?.validateAndFocusFirstError() ?? true;
+    if (!areDatesValid) {
+      return;
+    }
+
     if (!isTraitementDesFaitsValid) {
+      // Move focus to the first field in error (the entity combobox)
+      traitementDesFaitsRef.current?.focusFirstError();
       return;
     }
 
@@ -120,6 +129,7 @@ export function SituationForm({
         <MisEnCause formData={formData} isSaving={isSaving} setFormData={setFormData} />
 
         <DescriptionFaits
+          ref={descriptionFaitsRef}
           formData={formData}
           setFormData={setFormData}
           receptionType={receptionType}
@@ -145,6 +155,7 @@ export function SituationForm({
         />
 
         <TraitementDesFaitsSection
+          ref={traitementDesFaitsRef}
           entites={(entitesData?.data || []).map((e: { id: string; nomComplet: string }) => ({
             id: e.id,
             nomComplet: e.nomComplet,

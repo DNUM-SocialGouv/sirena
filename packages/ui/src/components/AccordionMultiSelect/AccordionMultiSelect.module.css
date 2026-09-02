@@ -1,0 +1,136 @@
+.fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.trigger {
+  width: 100%;
+  text-align: left;
+  background-color: var(--background-contrast-grey);
+  cursor: pointer;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  color: var(--text-default-grey);
+  border-bottom: 2px solid var(--border-plain-grey);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.trigger [class*="fr-icon-"]::before {
+  margin-right: 0;
+}
+
+.triggerReadOnly {
+  cursor: default;
+}
+
+.chevron {
+  display: inline-flex;
+  transition: transform 0.3s;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+:global(.fr-select-group--error) .trigger {
+  border-bottom-color: var(--border-plain-error);
+}
+
+:global(.fr-select-group--error legend.fr-label) {
+  color: var(--text-default-error);
+}
+
+.panel {
+  border: 1px solid var(--border-default-grey);
+  border-top: none;
+  background-color: var(--background-default-grey);
+}
+
+.categoriesList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.categoryItem {
+  border-bottom: 1px solid var(--border-default-grey);
+}
+
+.categoryItem:last-child {
+  border-bottom: none;
+}
+
+.categoryHeading {
+  margin: 0;
+  padding: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.categoryButton {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-action-high-blue-france);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.categoryButton:not([aria-expanded="true"]):hover {
+  background-color: var(--background-default-grey-hover);
+}
+
+.categoryButton[aria-expanded="true"] {
+  background-color: var(--background-open-blue-france);
+}
+
+.categoryButton[aria-expanded="true"]:hover {
+  background-color: var(--background-open-blue-france-hover);
+}
+
+.categoryButton [class*="fr-icon-"]::before {
+  margin-right: 0;
+}
+
+.categoryLabel {
+  flex: 1;
+}
+
+.categoryPanel {
+  border: none;
+  margin: 0;
+  padding: 0.5rem 1rem 0.75rem 1.5rem;
+  min-width: 0;
+  background-color: var(--background-default-grey);
+}
+
+.categoryPanel[hidden] {
+  display: none;
+}
+
+.checkboxGroup {
+  margin-top: 0.25rem;
+}
+
+.optionItem {
+  list-style: none;
+  padding: 0.25rem 1rem;
+  border-bottom: 1px solid var(--border-default-grey);
+}
+
+.optionItem:last-child {
+  border-bottom: none;
+}

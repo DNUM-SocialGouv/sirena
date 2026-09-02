@@ -241,6 +241,33 @@ describe('CloseRequeteModal', () => {
     expect(closeRequeteMutateAsync).not.toHaveBeenCalled();
   });
 
+  it('clears the Raisons de la clôture error once an option is selected', async () => {
+    const user = userEvent.setup();
+    closeRequeteMutateAsync.mockResolvedValue({});
+    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(
+      mockOtherEntitiesAffectedQuery({
+        data: { otherEntites: [], subAdministrativeEntites: [] },
+        isLoading: false,
+        error: null,
+      }),
+    );
+
+    render(<CloseRequeteModal requestId="REQ-354" />);
+
+    await user.click(screen.getByRole('button', { name: 'Clôturer la requête' }));
+
+    const errorMessage =
+      'Vous devez renseigner au moins une raison de clôture pour clôturer la requête. Veuillez sélectionner une valeur dans la liste.';
+    expect(screen.getByText(errorMessage)).toBeInTheDocument();
+
+    await user.click(screen.getByText('Sélectionner une ou plusieurs options'));
+    await user.click(
+      screen.getByRole('checkbox', { name: "Mesures correctives prises par l'établissement / le mis en cause" }),
+    );
+
+    expect(screen.queryByText(errorMessage)).not.toBeInTheDocument();
+  });
+
   it('submits the Date de clôture with selected reasons', async () => {
     const user = userEvent.setup();
     closeRequeteMutateAsync.mockResolvedValue({});

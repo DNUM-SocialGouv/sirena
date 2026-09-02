@@ -1,0 +1,4 @@
+apiVersion: v2
+name: sirec-restore
+version: 0.1.0
+description: CronJob (livré suspendu) restaurant un dump SIREC depuis S3 dans la base MariaDB sirec

@@ -1,0 +1,225 @@
+{
+  "archived": false,
+  "archived_directly": false,
+  "average_query_time": 223.6451612903226,
+  "cache_ttl": null,
+  "can_delete": false,
+  "can_manage_db": true,
+  "can_restore": false,
+  "can_run_adhoc_query": true,
+  "can_write": true,
+  "card_schema": 23,
+  "collection": {
+    "authority_level": null,
+    "can_write": true,
+    "id": "root",
+    "is_personal": false,
+    "is_remote_synced": false,
+    "metabase.collections.models.collection.root/is-root?": true,
+    "name": "Our analytics"
+  },
+  "collection_id": null,
+  "collection_position": null,
+  "collection_preview": true,
+  "creator_id": 7,
+  "dashboard": {
+    "id": 6,
+    "moderation_status": null,
+    "name": "[integration] Dashboard national"
+  },
+  "dashboard_count": 1,
+  "dashboard_id": 6,
+  "database_id": 4,
+  "dataset_query": {
+    "database": 4,
+    "lib/type": "mbql/query",
+    "stages": [
+      {
+        "lib/type": "mbql.stage/native",
+        "native": "SELECT\n    COUNT(DISTINCT r.id) AS nombre_requetes\nFROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\nWHERE\n    re.\"statutId\" = 'CLOTUREE'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]];",
+        "template-tags": [
+          {
+            "display-name": "Entity Label",
+            "id": "c87d642d-d2a5-4937-865d-0d601c2cc98f",
+            "name": "entity_label",
+            "type": "text"
+          },
+          {
+            "display-name": "Start Date",
+            "id": "f8a15d67-0d58-4843-a5fb-2a33fe3ab448",
+            "name": "start_date",
+            "type": "date"
+          },
+          {
+            "display-name": "End Date",
+            "id": "e855a48c-28f9-4bac-b0b5-19cf09935592",
+            "name": "end_date",
+            "type": "date"
+          },
+          {
+            "display-name": "Domaine Fonctionnel",
+            "id": "ac52c7c2-a09f-42cf-aa31-f003a3a0055d",
+            "name": "domaine_fonctionnel",
+            "type": "text"
+          },
+          {
+            "default": [
+              true
+            ],
+            "display-name": "Inclure Eig",
+            "id": "1de5f835-b181-4784-929f-177e1d0e82ca",
+            "name": "inclure_eig",
+            "type": "boolean"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "Nombre de requêtes ayant au moins une entité au statut « clôturée », au niveau national.",
+  "dimension_mappings": null,
+  "dimensions": null,
+  "display": "scalar",
+  "document_id": null,
+  "embedding_params": null,
+  "embedding_type": null,
+  "enable_embedding": false,
+  "entity_id": "paldPpFzo9i4BjPMGje1K",
+  "id": 76,
+  "is_remote_synced": false,
+  "last_query_start": "2026-08-27T10:31:13.236825Z",
+  "legacy_query": null,
+  "made_public_by_id": null,
+  "metabase_version": "v0.63.5 (1dca717)",
+  "moderation_reviews": [],
+  "name": "Requêtes clôturées",
+  "param_fields": {},
+  "parameter_mappings": [],
+  "parameter_usage_count": 0,
+  "parameters": [
+    {
+      "id": "c87d642d-d2a5-4937-865d-0d601c2cc98f",
+      "isMultiSelect": false,
+      "name": "Entity Label",
+      "slug": "entity_label",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "entity_label"
+        ]
+      ],
+      "type": "string/="
+    },
+    {
+      "id": "f8a15d67-0d58-4843-a5fb-2a33fe3ab448",
+      "isMultiSelect": false,
+      "name": "Start Date",
+      "slug": "start_date",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "start_date"
+        ]
+      ],
+      "type": "date/single"
+    },
+    {
+      "id": "e855a48c-28f9-4bac-b0b5-19cf09935592",
+      "isMultiSelect": false,
+      "name": "End Date",
+      "slug": "end_date",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "end_date"
+        ]
+      ],
+      "type": "date/single"
+    },
+    {
+      "id": "ac52c7c2-a09f-42cf-aa31-f003a3a0055d",
+      "isMultiSelect": true,
+      "name": "Domaine Fonctionnel",
+      "slug": "domaine_fonctionnel",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "domaine_fonctionnel"
+        ]
+      ],
+      "type": "string/="
+    },
+    {
+      "default": [
+        true
+      ],
+      "id": "1de5f835-b181-4784-929f-177e1d0e82ca",
+      "isMultiSelect": false,
+      "name": "Inclure Eig",
+      "slug": "inclure_eig",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "inclure_eig"
+        ]
+      ],
+      "type": "boolean/="
+    }
+  ],
+  "public_uuid": null,
+  "query_type": "native",
+  "result_metadata": [
+    {
+      "base_type": "type/BigInteger",
+      "database_type": "int8",
+      "display_name": "nombre_requetes",
+      "effective_type": "type/BigInteger",
+      "field_ref": [
+        "field",
+        "nombre_requetes",
+        {
+          "base-type": "type/BigInteger"
+        }
+      ],
+      "fingerprint": {
+        "global": {
+          "distinct-count": 1,
+          "nil%": 0
+        },
+        "type": {
+          "type/Number": {
+            "avg": 16036,
+            "excess-kurtosis": null,
+            "max": 16036,
+            "min": 16036,
+            "mode-fraction": 1,
+            "q1": 16036,
+            "q3": 16036,
+            "sd": 0,
+            "skewness": null,
+            "top-3-fraction": 1,
+            "zero-fraction": 0
+          }
+        }
+      },
+      "lib/deduplicated-name": "nombre_requetes",
+      "lib/desired-column-alias": "nombre_requetes",
+      "lib/original-name": "nombre_requetes",
+      "lib/source": "source/native",
+      "lib/source-column-alias": "nombre_requetes",
+      "name": "nombre_requetes",
+      "semantic_type": null,
+      "source": "native"
+    }
+  ],
+  "source_card_id": null,
+  "table_id": null,
+  "type": "question",
+  "visualization_settings": {
+    "scalar.segments": []
+  }
+}

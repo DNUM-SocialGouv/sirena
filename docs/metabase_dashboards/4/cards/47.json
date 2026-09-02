@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 294.4291666666667,
+  "average_query_time": 342.5182809493265,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -36,7 +36,7 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "-- Carte : « Répartition des requêtes clôturées par motif de clôture »\n-- Une requête peut avoir plusieurs motifs de clôture : la part est calculée sur le nombre de\n-- requêtes clôturées, la somme des parts dépasse donc 100 %.\nWITH requetes_cloturees AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, re.\"entiteId\" AS entite_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE re.\"statutId\" = 'CLOTUREE'\n    AND e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n),\ntotal AS (\n  SELECT COUNT(*) AS nb_total FROM requetes_cloturees\n),\nrequete_motif AS (\n  -- 1 ligne par (requête, motif) : dédoublonne les étapes de clôture multiples\n  SELECT DISTINCT rc.requete_id, cr.label AS motif\n  FROM requetes_cloturees rc\n  JOIN \"RequeteEtape\" et\n    ON et.\"requeteId\" = rc.requete_id\n   AND et.\"entiteId\"  = rc.entite_id\n   AND et.\"statutId\"  = 'CLOTUREE'\n  JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n  JOIN \"RequeteClotureReasonEnum\" cr               ON cr.id = j.\"A\"\n),\npar_motif AS (\n  SELECT motif, COUNT(*) AS nb_requetes\n  FROM requete_motif\n  GROUP BY motif\n)\nSELECT\n  pm.motif                                                 AS \"Motif de clôture\",\n  pm.nb_requetes                                           AS \"Nombre de requêtes clôturées\",\n  ROUND(100.0 * pm.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes clôturées (%)\"\nFROM par_motif pm\nCROSS JOIN total t\nWHERE pm.nb_requetes > 0\nORDER BY pm.nb_requetes DESC;",
+        "native": "-- Carte : « Répartition des requêtes clôturées par motif de clôture »\n-- Une requête peut avoir plusieurs motifs de clôture : la part est calculée sur le nombre de\n-- requêtes clôturées, la somme des parts dépasse donc 100 %.\nWITH requetes_cloturees AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, re.\"entiteId\" AS entite_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE re.\"statutId\" = 'CLOTUREE'\n    AND e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]]\n),\ntotal AS (\n  SELECT COUNT(*) AS nb_total FROM requetes_cloturees\n),\nrequete_motif AS (\n  -- 1 ligne par (requête, motif) : dédoublonne les étapes de clôture multiples\n  SELECT DISTINCT rc.requete_id, cr.label AS motif\n  FROM requetes_cloturees rc\n  JOIN \"RequeteEtape\" et\n    ON et.\"requeteId\" = rc.requete_id\n   AND et.\"entiteId\"  = rc.entite_id\n   AND et.\"statutId\"  = 'CLOTUREE'\n  JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n  JOIN \"RequeteClotureReasonEnum\" cr               ON cr.id = j.\"A\"\n),\npar_motif AS (\n  SELECT motif, COUNT(*) AS nb_requetes\n  FROM requete_motif\n  GROUP BY motif\n)\nSELECT\n  pm.motif                                                 AS \"Motif de clôture\",\n  pm.nb_requetes                                           AS \"Nombre de requêtes clôturées\",\n  ROUND(100.0 * pm.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes clôturées (%)\"\nFROM par_motif pm\nCROSS JOIN total t\nWHERE pm.nb_requetes > 0\nORDER BY pm.nb_requetes DESC;",
         "template-tags": [
           {
             "display-name": "Entity Label",
@@ -61,6 +61,15 @@
             "id": "49b9a8ed-404c-4235-803c-2e2cf9d6a87a",
             "name": "domaine_fonctionnel",
             "type": "text"
+          },
+          {
+            "default": [
+              true
+            ],
+            "display-name": "Inclure Eig",
+            "id": "f1475599-383f-430d-9854-1d3bedd1078e",
+            "name": "inclure_eig",
+            "type": "boolean"
           }
         ]
       }
@@ -77,7 +86,7 @@
   "entity_id": "AhmL1ImfBecTkedR2qyJB",
   "id": 47,
   "is_remote_synced": false,
-  "last_query_start": "2026-08-04T15:46:44.921119Z",
+  "last_query_start": "2026-08-27T09:39:41.040692Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.60.4.4 (65c9d32)",
@@ -251,135 +260,28 @@
         ]
       },
       "values_source_type": "static-list"
+    },
+    {
+      "default": [
+        true
+      ],
+      "id": "f1475599-383f-430d-9854-1d3bedd1078e",
+      "isMultiSelect": false,
+      "name": "Inclure Eig",
+      "slug": "inclure_eig",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "inclure_eig"
+        ]
+      ],
+      "type": "boolean/="
     }
   ],
   "public_uuid": null,
   "query_type": "native",
-  "result_metadata": [
-    {
-      "base_type": "type/Text",
-      "database_type": "text",
-      "display_name": "Motif de clôture",
-      "effective_type": "type/Text",
-      "field_ref": [
-        "field",
-        "Motif de clôture",
-        {
-          "base-type": "type/Text"
-        }
-      ],
-      "fingerprint": {
-        "global": {
-          "distinct-count": 12,
-          "nil%": 0
-        },
-        "type": {
-          "type/Text": {
-            "average-length": 38,
-            "mode-fraction": 0.08333333333333333,
-            "percent-blank": 0,
-            "percent-email": 0,
-            "percent-json": 0,
-            "percent-state": 0,
-            "percent-url": 0,
-            "top-3-fraction": 0.25
-          }
-        }
-      },
-      "lib/deduplicated-name": "Motif de clôture",
-      "lib/desired-column-alias": "Motif de clôture",
-      "lib/original-name": "Motif de clôture",
-      "lib/source": "source/native",
-      "lib/source-column-alias": "Motif de clôture",
-      "name": "Motif de clôture",
-      "semantic_type": null,
-      "source": "native"
-    },
-    {
-      "base_type": "type/BigInteger",
-      "database_type": "int8",
-      "display_name": "Nombre de requêtes clôturées",
-      "effective_type": "type/BigInteger",
-      "field_ref": [
-        "field",
-        "Nombre de requêtes clôturées",
-        {
-          "base-type": "type/BigInteger"
-        }
-      ],
-      "fingerprint": {
-        "global": {
-          "distinct-count": 7,
-          "nil%": 0
-        },
-        "type": {
-          "type/Number": {
-            "avg": 4.166666666666666,
-            "excess-kurtosis": 8.947010355004357,
-            "max": 19,
-            "min": 1,
-            "mode-fraction": 0.25,
-            "q1": 1,
-            "q3": 4,
-            "sd": 4.932882862316247,
-            "skewness": 2.862938542715392,
-            "top-3-fraction": 0.6666666666666666,
-            "zero-fraction": 0
-          }
-        }
-      },
-      "lib/deduplicated-name": "Nombre de requêtes clôturées",
-      "lib/desired-column-alias": "Nombre de requêtes clôturées",
-      "lib/original-name": "Nombre de requêtes clôturées",
-      "lib/source": "source/native",
-      "lib/source-column-alias": "Nombre de requêtes clôturées",
-      "name": "Nombre de requêtes clôturées",
-      "semantic_type": null,
-      "source": "native"
-    },
-    {
-      "base_type": "type/Decimal",
-      "database_type": "numeric",
-      "display_name": "Part des requêtes clôturées (%)",
-      "effective_type": "type/Decimal",
-      "field_ref": [
-        "field",
-        "Part des requêtes clôturées (%)",
-        {
-          "base-type": "type/Decimal"
-        }
-      ],
-      "fingerprint": {
-        "global": {
-          "distinct-count": 7,
-          "nil%": 0
-        },
-        "type": {
-          "type/Number": {
-            "avg": 12.241666666666669,
-            "excess-kurtosis": 8.947037275842153,
-            "max": 55.9,
-            "min": 2.9,
-            "mode-fraction": 0.25,
-            "q1": 2.9,
-            "q3": 11.8,
-            "sd": 14.518856599942607,
-            "skewness": 2.8624433199339903,
-            "top-3-fraction": 0.6666666666666666,
-            "zero-fraction": 0
-          }
-        }
-      },
-      "lib/deduplicated-name": "Part des requêtes clôturées (%)",
-      "lib/desired-column-alias": "Part des requêtes clôturées (%)",
-      "lib/original-name": "Part des requêtes clôturées (%)",
-      "lib/source": "source/native",
-      "lib/source-column-alias": "Part des requêtes clôturées (%)",
-      "name": "Part des requêtes clôturées (%)",
-      "semantic_type": null,
-      "source": "native"
-    }
-  ],
+  "result_metadata": null,
   "source_card_id": null,
   "table_id": null,
   "type": "question",

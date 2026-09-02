@@ -68,4 +68,27 @@ describe('StatisticsDashboardQuerySchema', () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it('accepts the EIG exclusion flag', () => {
+    expect(StatisticsDashboardQuerySchema.parse({ includeEIG: 'false' }).includeEIG).toBe('false');
+  });
+
+  it('leaves the EIG flag undefined when absent, so the indicators keep the EIG requêtes', () => {
+    expect(StatisticsDashboardQuerySchema.parse({}).includeEIG).toBeUndefined();
+  });
+
+  it('rejects any other value for the EIG flag rather than guessing what to do with the EIG requêtes', () => {
+    expect(StatisticsDashboardQuerySchema.safeParse({ includeEIG: 'true' }).success).toBe(false);
+    expect(StatisticsDashboardQuerySchema.safeParse({ includeEIG: '0' }).success).toBe(false);
+  });
+
+  it('combines the EIG exclusion with the period and the domaines filters', () => {
+    const result = StatisticsDashboardQuerySchema.safeParse({
+      startDate: '2026-01-01',
+      endDate: '2026-03-31',
+      domaineIds: 'SOCIAL,SANITAIRE',
+      includeEIG: 'false',
+    });
+    expect(result.success).toBe(true);
+  });
 });

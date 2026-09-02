@@ -10,9 +10,18 @@ interface CheckboxOptionProps {
   onKeyDown: (event: React.KeyboardEvent) => void;
   setRef: (el: HTMLDivElement | null) => void;
   isFocused: boolean;
+  hasError: boolean;
 }
 
-export const CheckboxOption = ({ option, isSelected, onToggle, onKeyDown, setRef, isFocused }: CheckboxOptionProps) => {
+export const CheckboxOption = ({
+  option,
+  isSelected,
+  onToggle,
+  onKeyDown,
+  setRef,
+  isFocused,
+  hasError,
+}: CheckboxOptionProps) => {
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
@@ -35,6 +44,7 @@ export const CheckboxOption = ({ option, isSelected, onToggle, onKeyDown, setRef
       onKeyDown={handleKeyDown}
     >
       <Checkbox
+        className={hasError ? 'fr-checkbox-group--error' : undefined}
         options={[
           {
             label: option.label,

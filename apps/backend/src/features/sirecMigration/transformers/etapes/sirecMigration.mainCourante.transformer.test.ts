@@ -26,6 +26,7 @@ const makeData = (
   typeTraitementIdDicos: [],
   misEnCauses: [],
   mainCourantes: mainCourantes as never,
+  files: [],
 });
 
 const ARS_IDS = ['ars-normandie', 'ars-grand-est'];
@@ -179,6 +180,26 @@ describe('sirecMigration.mainCourante.transformer.ts', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].entiteId).toBe('ars-normandie');
+  });
+
+  it('should set sirecMainCouranteId to the main courante id_data', () => {
+    const result = transformSirecMainCourantes(
+      makeData([{ id_data: 7, type_action1: null, commentaire: null, date_action: null }]),
+      ['ars-normandie'],
+    );
+
+    expect(result[0].sirecMainCouranteId).toBe(7);
+  });
+
+  it('should set sirecMainCouranteId on every etape created for the same main courante across entités', () => {
+    const result = transformSirecMainCourantes(
+      makeData([{ id_data: 7, type_action1: null, commentaire: null, date_action: null }]),
+      ARS_IDS,
+    );
+
+    expect(result).toHaveLength(2);
+    expect(result[0].sirecMainCouranteId).toBe(7);
+    expect(result[1].sirecMainCouranteId).toBe(7);
   });
 
   it('should create etapes for multiple mains courantes', () => {

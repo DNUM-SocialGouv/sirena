@@ -1,7 +1,10 @@
+import { serializeCsv } from '@sirena/common/utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../../libs/prisma.js';
 import { getEntiteDescendantIds } from '../../entites/entites.service.js';
-import { generateExportRequetesCsv } from './exportRequetes.service.js';
+import { prepareExportRequetesCsv } from './exportRequetes.service.js';
+import { EXPORT_REQUETES_HEADERS } from './exportRequetesColumns.js';
+import { buildExportRequetesRows } from './exportRequetesRows.js';
 
 vi.mock('../../../libs/prisma.js', () => ({
   prisma: {
@@ -21,14 +24,23 @@ vi.mock('../../entites/entites.service.js', () => ({
   getEntiteDescendantIds: vi.fn(),
 }));
 
-describe('generateExportRequetesCsv', () => {
+const generateExportRequetesCsv = async (topEntiteId: string): Promise<string> => {
+  const writeCsv = await prepareExportRequetesCsv(topEntiteId);
+  let csv = '';
+  await writeCsv(async (chunk) => {
+    csv += chunk;
+  });
+  return csv;
+};
+
+describe('prepareExportRequetesCsv', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('exports requêtes scoped to the root entity and its descendants', async () => {
     vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite', 'direction-1', 'service-1']);
-    vi.mocked(prisma.requete.findMany).mockResolvedValueOnce([
+    vi.mocked(prisma.requete.findMany).mockResolvedValue([
       {
         id: 'REQ-2026-0001',
         createdAt: new Date('2026-06-18T10:00:00.000Z'),
@@ -50,7 +62,7 @@ describe('generateExportRequetesCsv', () => {
         },
       }),
     );
-    expect(vi.mocked(prisma.requete.findMany).mock.calls[0]?.[0]).toEqual(
+    expect(vi.mocked(prisma.requete.findMany).mock.calls.at(-1)?.[0]).toEqual(
       expect.objectContaining({
         select: expect.objectContaining({
           id: true,
@@ -94,13 +106,49 @@ describe('generateExportRequetesCsv', () => {
     expect(csv).toContain('18/06/2026');
   });
 
-  it('selects only exported declarant and participant fields', async () => {
+  it('produces the same document as the reference row and CSV builders', async () => {
+    const requete = { id: 'REQ-2026-0007', createdAt: new Date('2026-06-18T10:00:00.000Z'), situations: [{}] };
     vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
-    vi.mocked(prisma.requete.findMany).mockResolvedValueOnce([]);
+    vi.mocked(prisma.requete.findMany).mockResolvedValue([requete] as unknown as Awaited<
+      ReturnType<typeof prisma.requete.findMany>
+    >);
+
+    const csv = await generateExportRequetesCsv('root-entite');
+
+    expect(csv).toBe(
+      serializeCsv([...EXPORT_REQUETES_HEADERS], buildExportRequetesRows([requete], { topEntiteId: 'root-entite' })),
+    );
+  });
+
+  it('reads requêtes in two cursor-paginated passes: a light postal pass then the full pass', async () => {
+    vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
+    vi.mocked(prisma.requete.findMany).mockResolvedValue([
+      { id: 'REQ-2026-0001', createdAt: new Date('2026-06-18T10:00:00.000Z'), situations: [{}] },
+    ] as unknown as Awaited<ReturnType<typeof prisma.requete.findMany>>);
 
     await generateExportRequetesCsv('root-entite');
 
-    expect(vi.mocked(prisma.requete.findMany).mock.calls[0]?.[0]).toEqual(
+    const calls = vi.mocked(prisma.requete.findMany).mock.calls;
+    expect(calls.length).toBeGreaterThanOrEqual(2);
+
+    const firstSelect = calls[0]?.[0]?.select as Record<string, unknown>;
+    expect(firstSelect).toMatchObject({ id: true });
+    expect(firstSelect.receptionDate).toBeUndefined();
+    expect(firstSelect.etapes).toBeUndefined();
+
+    expect(calls.at(-1)?.[0]?.select).toMatchObject({ receptionDate: true, etapes: expect.anything() });
+    for (const call of calls) {
+      expect(call[0]).toMatchObject({ orderBy: { id: 'asc' }, take: expect.any(Number) });
+    }
+  });
+
+  it('selects only exported declarant and participant fields', async () => {
+    vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
+    vi.mocked(prisma.requete.findMany).mockResolvedValue([]);
+
+    await generateExportRequetesCsv('root-entite');
+
+    expect(vi.mocked(prisma.requete.findMany).mock.calls.at(-1)?.[0]).toEqual(
       expect.objectContaining({
         select: expect.objectContaining({
           declarant: {
@@ -134,7 +182,7 @@ describe('generateExportRequetesCsv', () => {
 
   it('wires department names for all exported department sources', async () => {
     vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
-    vi.mocked(prisma.requete.findMany).mockResolvedValueOnce([
+    vi.mocked(prisma.requete.findMany).mockResolvedValue([
       {
         id: 'REQ-2026-0021',
         createdAt: new Date('2026-06-18T10:00:00.000Z'),
@@ -229,7 +277,7 @@ describe('generateExportRequetesCsv', () => {
 
   it('exports the authoritative department mapping for a lieu de survenue postal code', async () => {
     vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
-    vi.mocked(prisma.requete.findMany).mockResolvedValueOnce([
+    vi.mocked(prisma.requete.findMany).mockResolvedValue([
       {
         id: 'REQ-2026-0035',
         createdAt: new Date('2026-06-18T10:00:00.000Z'),
@@ -264,7 +312,7 @@ describe('generateExportRequetesCsv', () => {
 
   it('passes the root entity scope to row building for root-scoped fields', async () => {
     vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
-    vi.mocked(prisma.requete.findMany).mockResolvedValueOnce([
+    vi.mocked(prisma.requete.findMany).mockResolvedValue([
       {
         id: 'REQ-2026-0002',
         createdAt: new Date('2026-06-18T10:00:00.000Z'),

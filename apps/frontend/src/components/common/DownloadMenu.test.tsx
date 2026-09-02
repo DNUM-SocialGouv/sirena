@@ -4,6 +4,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DownloadMenu } from './DownloadMenu';
 
 const TRIGGER_NAME = 'Télécharger les documents';
+const BROWSER_TIME_ZONE = 'Indian/Reunion';
+const DOWNLOAD_URL = `/api/requetes-entite/req-1/files/download-all?timeZone=${encodeURIComponent(BROWSER_TIME_ZONE)}`;
+
+const mockBrowserTimeZone = (timeZone: string) => {
+  const ActualDateTimeFormat = Intl.DateTimeFormat;
+  vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(((...args: ConstructorParameters<typeof Intl.DateTimeFormat>) => {
+    const formatter = new ActualDateTimeFormat(...args);
+    return new Proxy(formatter, {
+      get: (target, property, receiver) =>
+        property === 'resolvedOptions'
+          ? () => ({ ...target.resolvedOptions(), timeZone })
+          : Reflect.get(target, property, receiver),
+    });
+  }) as never);
+};
 
 afterEach(() => {
   cleanup();
@@ -12,6 +27,7 @@ afterEach(() => {
 
 beforeEach(() => {
   vi.spyOn(window, 'open').mockImplementation(() => null);
+  mockBrowserTimeZone(BROWSER_TIME_ZONE);
 
   Object.defineProperty(window, 'dsfr', {
     configurable: true,
@@ -52,7 +68,7 @@ describe('DownloadMenu', () => {
     await userEvent.click(screen.getByRole('button', { name: TRIGGER_NAME }));
     await userEvent.click(screen.getByRole('button', { name: /Télécharger les pièces jointes/ }));
 
-    expect(window.open).toHaveBeenCalledWith('/api/requetes-entite/req-1/files/download-all', '_blank');
+    expect(window.open).toHaveBeenCalledWith(DOWNLOAD_URL, '_blank');
   });
 
   it('keeps the attachments action focusable and announced when there is nothing to download', async () => {
@@ -111,7 +127,7 @@ describe('DownloadMenu', () => {
     expect(confirm).toBeEnabled();
 
     await userEvent.click(confirm);
-    expect(window.open).toHaveBeenCalledWith('/api/requetes-entite/req-1/files/download-all', '_blank');
+    expect(window.open).toHaveBeenCalledWith(DOWNLOAD_URL, '_blank');
   });
 
   it('lets the keyboard reach every action then closes when the focus leaves', async () => {

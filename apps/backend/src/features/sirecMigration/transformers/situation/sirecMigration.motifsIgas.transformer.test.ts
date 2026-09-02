@@ -7,8 +7,10 @@ vi.mock('../../transco/motifsIgas.transco.js', () => ({
     if (idIgas === 20) return ['HOTELLERIE_LOCAUX_RESTAURATION/ADMISSION', 'HOTELLERIE_LOCAUX_RESTAURATION/ACCUEIL'];
     if (idIgas === 153) return ['ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES/AUTRES'];
     if (idIgas === 122) return ['FACTURATIONS_HONORAIRES/AUTRES'];
+    if (idIgas === 10) return ['HOTELLERIE_LOCAUX_RESTAURATION/AUTRES'];
     throw new Error(`unmocked idIgas ${idIgas}`);
   }),
+  getParentMotifIgasId: vi.fn((idIgas: number) => (idIgas === 20 ? 10 : undefined)),
 }));
 
 vi.mock('@sirena/common/constants', () => ({
@@ -74,5 +76,29 @@ describe('sirecMigration.motifsIgas.transformer.ts', () => {
       'HOTELLERIE_LOCAUX_RESTAURATION/ADMISSION',
       'HOTELLERIE_LOCAUX_RESTAURATION/ACCUEIL',
     ]);
+  });
+
+  it('should ignore a parent motif when one of its child motifs is also present', () => {
+    const result = resolveMotifsIgas([outMotif(10), outMotif(20)]);
+
+    expect(result.motifs).toEqual([
+      'HOTELLERIE_LOCAUX_RESTAURATION/ADMISSION',
+      'HOTELLERIE_LOCAUX_RESTAURATION/ACCUEIL',
+    ]);
+  });
+
+  it('should still migrate a parent motif when none of its children are present', () => {
+    const result = resolveMotifsIgas([outMotif(10)]);
+
+    expect(result.motifs).toEqual(['HOTELLERIE_LOCAUX_RESTAURATION/AUTRES']);
+  });
+
+  it('should only exclude a parent motif within the same igas_type as its present child', () => {
+    const result = resolveMotifsIgas([outMotif(10), inMotif(20)]);
+
+    expect(result.motifs).toEqual(['HOTELLERIE_LOCAUX_RESTAURATION/AUTRES']);
+    expect(result.commentaireSuffix).toBe(
+      "Motifs IGAS d'entrée :\n- Hôtellerie locaux restauration / Admission\n- Hôtellerie locaux restauration / Accueil",
+    );
   });
 });

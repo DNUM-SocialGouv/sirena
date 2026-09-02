@@ -1,0 +1,196 @@
+{{- if .Values.enabled }}
+# Restaure le dump SQL déposé sur le bucket sirena-migration-s3 dans la base
+# MariaDB sirec (namespace org-sdpsn-ws-sirena-services-integration).
+#
+# Le CronJob est livré suspendu : l'import écrase la base sirec, il se déclenche
+# donc à la demande avec
+# kubectl create job --from=cronjob/sirec-restore sirec-restore-$(date +%s)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: sirec-restore
+  labels:
+    app: sirec-restore
+spec:
+  suspend: {{ .Values.suspend }}
+  schedule: {{ .Values.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: sirec-restore
+    spec:
+      # Aucune reprise automatique : un import interrompu laisse la base dans un
+      # état partiel, on préfère un échec visible à un rejeu silencieux.
+      backoffLimit: 0
+      activeDeadlineSeconds: 7200
+      template:
+        metadata:
+          labels:
+            app: sirec-restore
+          annotations:
+            prometheus.io/scrape: "false"
+        spec:
+          restartPolicy: Never
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          initContainers:
+            # Récupère le dump depuis le bucket S3 OVH vers un volume partagé.
+            # mc (MinIO Client) est un client S3-compatible générique : l'endpoint
+            # du fournisseur est un paramètre de premier ordre, pas une surcharge.
+            - name: s3-download
+              image: {{ .Values.images.s3 }}
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                {{- toYaml .Values.containerSecurityContext | nindent 16 }}
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  # -f désactive le globbing : les noms d'objets sont découpés
+                  # par le shell, on ne veut pas qu'un caractère joker s'y
+                  # applique.
+                  set -euf
+                  mc alias set migration "${S3_ENDPOINT_URL}" "${S3_ACCESS_KEY}" "${S3_SECRET_KEY}"
+                  if [ -n "${DUMP_OBJECT_KEY:-}" ]; then
+                    # Choix explicite : court-circuite la sélection automatique.
+                    # Si l'objet n'existe pas, le mc cp plus bas échoue et le job
+                    # s'arrête avant tout import.
+                    KEY="${DUMP_OBJECT_KEY}"
+                    echo "Dump imposé par DUMP_OBJECT_KEY : ${KEY}"
+                  else
+                    echo "Recherche du dump le plus récent sous ${S3_MIGRATION_BUCKET_NAME}/${DUMP_OBJECT_PREFIX}"
+                    mc ls "migration/${S3_MIGRATION_BUCKET_NAME}/${DUMP_OBJECT_PREFIX}" > /tmp/listing
+                    # L'image mc ne fournit ni awk, ni grep, ni sort, ni tail : la
+                    # sélection n'utilise que des primitives du shell. S3 renvoie
+                    # les clés triées par ordre binaire et les dumps sont horodatés
+                    # en YYYYMMDD, donc la dernière entrée listée est la plus
+                    # récente. Le nom de l'objet est le dernier champ de la ligne.
+                    KEY=""
+                    while read -r line; do
+                      field=""
+                      for f in ${line}; do field="${f}"; done
+                      # Écarte les lignes vides et les sous-préfixes (suffixe /).
+                      case "${field}" in
+                        ""|*/) continue ;;
+                      esac
+                      KEY="${field}"
+                    done < /tmp/listing
+                    # Préfixe vide ou mal orthographié : on échoue plutôt que
+                    # d'importer un fichier inattendu dans la base sirec.
+                    test -n "${KEY}"
+                    echo "Dump retenu automatiquement (le plus récent) : ${KEY}"
+                  fi
+                  # Transmis au container d'import, qui en déduit s'il doit
+                  # décompresser.
+                  echo "${KEY}" > /dump/key
+                  mc cp "migration/${S3_MIGRATION_BUCKET_NAME}/${DUMP_OBJECT_PREFIX}${KEY}" /dump/dump
+                  echo "Dump récupéré :"
+                  # Informatif uniquement : ne doit pas faire échouer un
+                  # téléchargement par ailleurs réussi.
+                  mc ls /dump/dump || true
+              envFrom:
+                - configMapRef:
+                    name: sirec-restore-variables
+              env:
+                # mc écrit sa configuration d'alias ici : le volume tmp la rend
+                # inscriptible malgré readOnlyRootFilesystem.
+                - name: MC_CONFIG_DIR
+                  value: /tmp/mc
+                - name: S3_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.migrationBucketSecretName }}
+                      key: S3_MIGRATION_BUCKET_ACCESS_KEY
+                - name: S3_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.migrationBucketSecretName }}
+                      key: S3_MIGRATION_BUCKET_SECRET_KEY
+                - name: S3_MIGRATION_BUCKET_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.migrationBucketSecretName }}
+                      key: S3_MIGRATION_BUCKET_NAME
+              volumeMounts:
+                - mountPath: /dump
+                  name: dump
+                - mountPath: /tmp
+                  name: tmp
+              resources:
+                {{- toYaml .Values.resources.download | nindent 16 }}
+          containers:
+            # Importe le dump dans MariaDB. Version du client alignée sur celle
+            # du serveur (services-integration/services/charts/mariadb).
+            - name: mariadb-import
+              image: {{ .Values.images.mariadb }}
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                {{- toYaml .Values.containerSecurityContext | nindent 16 }}
+              command: ["/bin/bash", "-c"]
+              args:
+                - |
+                  set -euo pipefail
+                  KEY=$(cat /dump/key)
+                  echo "Import de ${KEY} dans ${MARIADB_SIREC_DB} sur ${MARIADB_SIREC_HOST}:${MARIADB_SIREC_PORT}"
+                  # Certains dumps embarquent leur propre base cible via un USE,
+                  # sur laquelle l'utilisateur applicatif n'a aucun droit. Dans ce
+                  # cas DUMP_SOURCE_DB porte ce nom et on le réécrit vers
+                  # ${MARIADB_SIREC_DB}, la base que lisent le backend et le worker.
+                  #
+                  # La substitution est globale et non ancrée : elle réécrit toutes
+                  # les occurrences du nom, y compris dans les données insérées.
+                  # C'est pourquoi elle reste désactivée par défaut : un dump
+                  # mono-base (sans --databases) n'a pas de USE à corriger, et la
+                  # réécriture ne serait alors qu'un risque sans contrepartie.
+                  if [ -n "${DUMP_SOURCE_DB:-}" ]; then
+                    RENAME="s/${DUMP_SOURCE_DB}/${MARIADB_SIREC_DB}/g"
+                    echo "Réécriture du nom de base : ${DUMP_SOURCE_DB} -> ${MARIADB_SIREC_DB}"
+                  else
+                    # b termine le script sed pour la ligne courante, qui est
+                    # imprimée telle quelle : un no-op.
+                    RENAME="b"
+                    echo "Aucune réécriture de nom de base (DUMP_SOURCE_DB vide)"
+                  fi
+                  # Le CREATE DATABASE est supprimé plutôt que réécrit : il est
+                  # inutile puisque la base existe déjà, et l'exécuter exigerait un
+                  # privilège dont on n'a pas besoin.
+                  case "${KEY}" in
+                    *.gz) gunzip -c /dump/dump ;;
+                    *) cat /dump/dump ;;
+                  esac | sed -e '/^CREATE DATABASE /d' -e "${RENAME}" | mariadb --host="${MARIADB_SIREC_HOST}" --port="${MARIADB_SIREC_PORT}" --user="${MARIADB_SIREC_USER}" "${MARIADB_SIREC_DB}"
+                  echo "Import terminé."
+              envFrom:
+                - configMapRef:
+                    name: sirec-restore-variables
+                - secretRef:
+                    name: {{ .Values.mariadbSirecSecretName }}
+              env:
+                - name: HOME
+                  value: /tmp
+                # Le client MariaDB lit le mot de passe ici, ce qui évite de
+                # l'exposer sur la ligne de commande.
+                - name: MYSQL_PWD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.mariadbSirecSecretName }}
+                      key: MARIADB_SIREC_PASSWORD
+              volumeMounts:
+                - mountPath: /dump
+                  name: dump
+                - mountPath: /tmp
+                  name: tmp
+              resources:
+                {{- toYaml .Values.resources.import | nindent 16 }}
+          volumes:
+            # Stockage éphémère du dump compressé uniquement : la décompression
+            # est streamée vers le client MariaDB, le SQL brut n'atterrit jamais
+            # sur disque. Les dumps pèsent ~500 MiB, 5Gi laisse de la marge.
+            - name: dump
+              emptyDir:
+                sizeLimit: {{ .Values.volumes.dump.sizeLimit }}
+            - name: tmp
+              emptyDir:
+                sizeLimit: {{ .Values.volumes.tmp.sizeLimit }}
+{{- end }}

@@ -13,7 +13,8 @@
     "erd": "node scripts/erd/generate.mjs",
     "erd:check": "node scripts/erd/check.mjs",
     "lint": "biome check",
-    "build": "tsc"
+    "build": "tsc",
+    "typecheck": "tsc --build --noEmit"
   },
   "exports": {
     ".": {
@@ -42,9 +43,9 @@
   "devDependencies": {
     "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
-    "@types/pg": "^8.20.0",
+    "@types/pg": "^8.23.1",
     "prisma": "catalog:",
-    "prisma-erd-generator": "^2.4.4",
+    "prisma-erd-generator": "^2.5.0",
     "typescript": "catalog:"
   }
 }

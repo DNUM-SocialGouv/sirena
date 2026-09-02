@@ -1,6 +1,7 @@
 export type CsvValue = string | number | boolean | null | undefined;
 
-const BOM = String.fromCharCode(0xfeff);
+export const CSV_BOM = String.fromCharCode(0xfeff);
+export const CSV_LINE_SEPARATOR = '\n';
 const NEEDS_QUOTING = /[;"\n\r]/;
 const FORMULA_START = /^[=+\-@\t\r]/;
 
@@ -11,7 +12,7 @@ const serializeCell = (value: unknown): string => {
   return text;
 };
 
-export const serializeCsv = (headers: string[], rows: unknown[][]): string => {
-  const lines = [headers, ...rows].map((row) => row.map(serializeCell).join(';'));
-  return BOM + lines.join('\n');
-};
+export const serializeCsvRow = (row: unknown[]): string => row.map(serializeCell).join(';');
+
+export const serializeCsv = (headers: string[], rows: unknown[][]): string =>
+  CSV_BOM + [headers, ...rows].map(serializeCsvRow).join(CSV_LINE_SEPARATOR);

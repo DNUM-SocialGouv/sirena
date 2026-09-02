@@ -14,6 +14,7 @@ import { Drawer, Toast } from '@sirena/ui';
 import { forwardRef, useCallback, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { FileDropZone } from '@/components/common/FileDropZone';
+import { ReadOnlyField } from '@/components/common/ReadOnlyField';
 import { SelectedFilesList } from '@/components/common/SelectedFilesList';
 import {
   useAddProcessingStep,
@@ -626,20 +627,29 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                   ) : null}
 
                   <form onSubmit={handleFormSubmit} noValidate>
-                    <Input
-                      label="Nom de l'étape (obligatoire)"
-                      disabled={isLoading || fieldsLocked || isAcknowledgment}
-                      state={nomError ? 'error' : 'default'}
-                      stateRelatedMessage={nomError ?? undefined}
-                      nativeInputProps={{
-                        ref: nomInputRef,
-                        value: nom,
-                        onChange: (e) => {
-                          setNom(e.target.value);
-                          if (nomError) setNomError(null);
-                        },
-                      }}
-                    />
+                    {fieldsLocked || isAcknowledgment ? (
+                      <ReadOnlyField
+                        id={`${titleId}-nom`}
+                        label="Nom de l'étape"
+                        hintText="Ce champ est en lecture seule."
+                        value={nom}
+                      />
+                    ) : (
+                      <Input
+                        label="Nom de l'étape (obligatoire)"
+                        disabled={isLoading}
+                        state={nomError ? 'error' : 'default'}
+                        stateRelatedMessage={nomError ?? undefined}
+                        nativeInputProps={{
+                          ref: nomInputRef,
+                          value: nom,
+                          onChange: (e) => {
+                            setNom(e.target.value);
+                            if (nomError) setNomError(null);
+                          },
+                        }}
+                      />
+                    )}
 
                     <div className={styles.fieldBlock}>
                       <RadioButtons

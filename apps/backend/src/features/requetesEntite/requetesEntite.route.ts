@@ -116,7 +116,8 @@ export const exportPdfRoute = describeRoute({
 });
 
 export const downloadAllFilesRoute = describeRoute({
-  description: 'Download all attachments for a requete as a ZIP archive',
+  description:
+    'Download all attachments for a requete as a ZIP archive. The optional timeZone query param (IANA name) sets the entry dates to the reader local wall clock.',
   responses: {
     ...openApi401Unauthorized(),
     ...openApi404NotFound(),

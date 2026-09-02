@@ -41,6 +41,7 @@ const columns = [
 
 const CSV_FILTER_MAX = 500;
 const SEARCH_MAX = 200;
+const TIME_ZONE_MAX = 64;
 const REQUETE_STATUT_IDS = Object.values(REQUETE_STATUT_TYPES) as string[];
 
 export const GetRequetesEntiteQuerySchema = paginationQueryParamsSchema(columns).extend({
@@ -82,6 +83,11 @@ export const GetStatutCountsQuerySchema = z.object({
     }),
   entiteId: z.string().optional(),
   search: z.string().max(SEARCH_MAX).optional(),
+});
+
+// An unknown timezone is not worth failing a download for: the service falls back to Europe/Paris.
+export const DownloadAllFilesQuerySchema = z.object({
+  timeZone: z.string().max(TIME_ZONE_MAX).optional(),
 });
 
 export const GetRequeteEntiteResponseSchema = RequeteSchema.extend({

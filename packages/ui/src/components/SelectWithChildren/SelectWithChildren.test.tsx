@@ -348,4 +348,39 @@ describe('SelectWithChildren', () => {
       expect(checkbox2).toBeInTheDocument();
     });
   });
+
+  describe('Error state', () => {
+    it('should apply DSFR error styling to checkbox options when state is error', async () => {
+      const user = userEvent.setup();
+      render(
+        <SelectWithChildren
+          value={[]}
+          onChange={vi.fn()}
+          options={TEST_OPTIONS}
+          state="error"
+          stateRelatedMessage="Sélectionnez au moins une option"
+        />,
+      );
+
+      await user.click(screen.getByText('Sélectionner une ou plusieurs options'));
+      await user.click(screen.getByRole('option', { name: /catégorie a/i }));
+
+      const checkboxOption1 = screen.getByRole('option', { name: /option a1/i });
+      expect(checkboxOption1.querySelector('.fr-checkbox-group')).toHaveClass('fr-checkbox-group--error');
+
+      const checkboxOption2 = screen.getByRole('option', { name: /option a2/i });
+      expect(checkboxOption2.querySelector('.fr-checkbox-group')).toHaveClass('fr-checkbox-group--error');
+    });
+
+    it('should not apply DSFR error styling when state is default', async () => {
+      const user = userEvent.setup();
+      render(<SelectWithChildren value={[]} onChange={vi.fn()} options={TEST_OPTIONS} />);
+
+      await user.click(screen.getByText('Sélectionner une ou plusieurs options'));
+      await user.click(screen.getByRole('option', { name: /catégorie a/i }));
+
+      const checkboxOption = screen.getByRole('option', { name: /option a1/i });
+      expect(checkboxOption.querySelector('.fr-checkbox-group')).not.toHaveClass('fr-checkbox-group--error');
+    });
+  });
 });

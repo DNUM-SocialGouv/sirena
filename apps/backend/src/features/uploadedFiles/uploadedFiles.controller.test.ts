@@ -12,7 +12,12 @@ import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import extractUploadedFileMiddleware from '../../middlewares/upload.middleware.js';
 import { convertDatesToStrings } from '../../tests/formatter.js';
 import UploadedFilesController from './uploadedFiles.controller.js';
-import { createUploadedFile, deleteUploadedFile, getUploadedFileById } from './uploadedFiles.service.js';
+import {
+  createUploadedFile,
+  deleteUploadedFile,
+  getUploadedFileById,
+  isUploadedFileAttachedToImmutableAcknowledgment,
+} from './uploadedFiles.service.js';
 
 vi.mock('../config/env.js', () => ({
   envVars: {
@@ -63,6 +68,7 @@ vi.mock('./uploadedFiles.service.js', () => ({
   createUploadedFile: vi.fn(() => Promise.resolve(fakeFile)),
   getUploadedFileById: vi.fn(() => Promise.resolve(fakeFile)),
   deleteUploadedFile: vi.fn(() => Promise.resolve()),
+  isUploadedFileAttachedToImmutableAcknowledgment: vi.fn(() => Promise.resolve(false)),
 }));
 
 vi.mock('../../middlewares/upload.middleware.js', () => ({
@@ -249,6 +255,19 @@ describe('uploadedFiles.controller.ts', () => {
       expect(getUploadedFileById).toHaveBeenCalledWith('ffffffff-ffff-ffff-ffff-ffffffffffff', ['e1']);
       expect(deleteUploadedFile).toHaveBeenCalledWith('ffffffff-ffff-ffff-ffff-ffffffffffff');
       expect(deleteFileFromMinio).toHaveBeenCalledWith('/uploads/test.pdf');
+    });
+
+    it('rejects deleting a mutable file attached to an automatically sent acknowledgment', async () => {
+      vi.mocked(getUploadedFileById).mockResolvedValueOnce({ ...fakeFile, requeteEtapeId: 'ack-step' });
+      vi.mocked(isUploadedFileAttachedToImmutableAcknowledgment).mockResolvedValueOnce(true);
+
+      const res = await client[':id'].$delete({
+        param: { id: 'ffffffff-ffff-ffff-ffff-ffffffffffff' },
+      });
+
+      expect(res.status).toBe(400);
+      expect(deleteUploadedFile).not.toHaveBeenCalled();
+      expect(deleteFileFromMinio).not.toHaveBeenCalled();
     });
 
     it('should return 400 if topEntiteId is not set', async () => {

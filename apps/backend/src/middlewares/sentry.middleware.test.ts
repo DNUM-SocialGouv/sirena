@@ -7,6 +7,7 @@ const mockScope = {
 
 const mockSentryFunctions = {
   withScope: vi.fn((callback) => callback(mockScope)),
+  getIsolationScope: vi.fn(() => mockScope),
 };
 
 vi.mock('@sentry/node', () => mockSentryFunctions);
@@ -156,6 +157,13 @@ describe('sentry.middleware', () => {
 
       expect(mockScope.setContext).toHaveBeenCalled();
       expect(next).toHaveBeenCalled();
+
+      // Regression guard: the request context must be set on the per-request
+      // isolation scope, never via Sentry.withScope. Each withScope() call in
+      // @sentry/node v10 retains ~1.2 KB that is never reclaimed; one fork per
+      // request leaked the backend heap until OOMKill.
+      expect(mockSentryFunctions.getIsolationScope).toHaveBeenCalled();
+      expect(mockSentryFunctions.withScope).not.toHaveBeenCalled();
 
       // Cleanup spies
       extractRequestContextSpy.mockRestore();

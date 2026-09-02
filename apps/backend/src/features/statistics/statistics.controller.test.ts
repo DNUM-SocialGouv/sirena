@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import { getEntiteById } from '../entites/entites.service.js';
-import { generateExportRequetesCsv } from './exportRequetes/exportRequetes.service.js';
+import { prepareExportRequetesCsv } from './exportRequetes/exportRequetes.service.js';
 import StatisticsController from './statistics.controller.js';
 import { fetchDashboardCardsData } from './statistics.service.js';
 
@@ -32,7 +32,7 @@ vi.mock('hono-pino', () => ({
 }));
 
 vi.mock('./exportRequetes/exportRequetes.service.js', () => ({
-  generateExportRequetesCsv: vi.fn(),
+  prepareExportRequetesCsv: vi.fn(),
 }));
 
 vi.mock('../entites/entites.service.js', () => ({
@@ -99,21 +99,24 @@ describe('statistics.controller.ts', () => {
       const response = await client['export-requetes'].$get();
 
       expect(response.status).toBe(403);
-      expect(generateExportRequetesCsv).not.toHaveBeenCalled();
+      expect(prepareExportRequetesCsv).not.toHaveBeenCalled();
     });
 
     it('rejects export when the user has no root entity', async () => {
       const response = await client['export-requetes'].$get();
 
       expect(response.status).toBe(403);
-      expect(generateExportRequetesCsv).not.toHaveBeenCalled();
+      expect(prepareExportRequetesCsv).not.toHaveBeenCalled();
     });
 
-    it('returns the generated CSV as a dated attachment', async () => {
+    it('streams the generated CSV as a dated attachment', async () => {
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime(new Date('2026-06-18T12:00:00.000Z'));
       entitesMiddlewareState.topEntiteId = 'root-entite';
-      vi.mocked(generateExportRequetesCsv).mockResolvedValueOnce('\uFEFFNuméro de requête\nREQ-2026-0001');
+      vi.mocked(prepareExportRequetesCsv).mockResolvedValueOnce(async (write) => {
+        await write('\uFEFFNuméro de requête');
+        await write('\nREQ-2026-0001');
+      });
 
       const response = await client['export-requetes'].$get();
 
@@ -123,7 +126,7 @@ describe('statistics.controller.ts', () => {
         'attachment; filename="export-requetes-sirena-2026-06-18.csv"',
       );
       expect(await response.text()).toBe('Numéro de requête\nREQ-2026-0001');
-      expect(generateExportRequetesCsv).toHaveBeenCalledWith('root-entite');
+      expect(prepareExportRequetesCsv).toHaveBeenCalledWith('root-entite');
       expect(logger.info).toHaveBeenCalledWith(
         {
           topEntiteId: 'root-entite',
@@ -137,7 +140,7 @@ describe('statistics.controller.ts', () => {
     it('logs export failures before propagating the error', async () => {
       entitesMiddlewareState.topEntiteId = 'root-entite';
       const error = new Error('export failed');
-      vi.mocked(generateExportRequetesCsv).mockRejectedValueOnce(error);
+      vi.mocked(prepareExportRequetesCsv).mockRejectedValueOnce(error);
 
       const response = await client['export-requetes'].$get();
 
@@ -149,6 +152,50 @@ describe('statistics.controller.ts', () => {
           durationMs: expect.any(Number),
         },
         '[statistics] export requêtes generation failed',
+      );
+    });
+
+    it('logs a client abort as a normal outcome, not an export failure', async () => {
+      entitesMiddlewareState.topEntiteId = 'root-entite';
+      vi.mocked(prepareExportRequetesCsv).mockResolvedValueOnce(async (write) => {
+        await write('\uFEFFNuméro de requête');
+        await write('\nREQ-2026-0001');
+      });
+
+      const response = await client['export-requetes'].$get();
+      await response.body?.cancel();
+
+      await vi.waitFor(() =>
+        expect(logger.info).toHaveBeenCalledWith(
+          { topEntiteId: 'root-entite', durationMs: expect.any(Number), csvSizeBytes: expect.any(Number) },
+          '[statistics] export requêtes aborted by the client',
+        ),
+      );
+      expect(logger.error).not.toHaveBeenCalled();
+    });
+
+    it('errors the body when the export fails after the response is committed, rather than truncating it', async () => {
+      entitesMiddlewareState.topEntiteId = 'root-entite';
+      const error = new Error('page read failed');
+      vi.mocked(prepareExportRequetesCsv).mockResolvedValueOnce(async (write) => {
+        await write('\uFEFFNuméro de requête');
+        throw error;
+      });
+
+      const response = await client['export-requetes'].$get();
+
+      // The status is already sent; erroring the stream is what lets the client tell a
+      // failed export from a complete one.
+      expect(response.status).toBe(200);
+      await expect(response.text()).rejects.toThrow('page read failed');
+      expect(logger.error).toHaveBeenCalledWith(
+        {
+          err: error,
+          topEntiteId: 'root-entite',
+          durationMs: expect.any(Number),
+          csvSizeBytes: expect.any(Number),
+        },
+        '[statistics] export requêtes streaming failed',
       );
     });
   });
@@ -165,7 +212,7 @@ describe('statistics.controller.ts', () => {
       expect(response.status).toBe(200);
       expect(fetchDashboardCardsData).toHaveBeenCalledWith(
         {},
-        { start_date: undefined, end_date: undefined, domaine_fonctionnel: [] },
+        { start_date: undefined, end_date: undefined, domaine_fonctionnel: [], inclure_eig: undefined },
         'national',
       );
       expect(getEntiteById).not.toHaveBeenCalled();
@@ -182,7 +229,7 @@ describe('statistics.controller.ts', () => {
       expect(response.status).toBe(200);
       expect(fetchDashboardCardsData).toHaveBeenCalledWith(
         { entity_label: 'ARS Île-de-France' },
-        { start_date: undefined, end_date: undefined, domaine_fonctionnel: [] },
+        { start_date: undefined, end_date: undefined, domaine_fonctionnel: [], inclure_eig: undefined },
       );
     });
 
@@ -208,7 +255,42 @@ describe('statistics.controller.ts', () => {
       expect(response.status).toBe(200);
       expect(fetchDashboardCardsData).toHaveBeenCalledWith(
         { entity_label: 'ARS Île-de-France' },
-        { start_date: '2026-01-01', end_date: '2026-03-31', domaine_fonctionnel: ['SOCIAL', 'SANITAIRE'] },
+        {
+          start_date: '2026-01-01',
+          end_date: '2026-03-31',
+          domaine_fonctionnel: ['SOCIAL', 'SANITAIRE'],
+          inclure_eig: undefined,
+        },
+      );
+    });
+
+    it('forwards the EIG exclusion to Metabase when the box is unchecked', async () => {
+      entitesMiddlewareState.topEntiteId = 'root-entite';
+      vi.mocked(getEntiteById).mockResolvedValueOnce({ label: 'ARS Île-de-France' } as never);
+      vi.mocked(fetchDashboardCardsData).mockResolvedValueOnce([]);
+
+      const response = await client.dashboard.$get({ query: { includeEIG: 'false' } });
+
+      expect(response.status).toBe(200);
+      expect(fetchDashboardCardsData).toHaveBeenCalledWith(
+        { entity_label: 'ARS Île-de-France' },
+        { start_date: undefined, end_date: undefined, domaine_fonctionnel: [], inclure_eig: 'false' },
+      );
+    });
+
+    it('forwards the EIG exclusion on the national dashboard too', async () => {
+      authMiddlewareState.roleId = 'SUPER_ADMIN';
+      entitesMiddlewareState.entiteIds = null;
+      entitesMiddlewareState.topEntiteId = null;
+      vi.mocked(fetchDashboardCardsData).mockResolvedValueOnce([]);
+
+      const response = await client.dashboard.$get({ query: { includeEIG: 'false' } });
+
+      expect(response.status).toBe(200);
+      expect(fetchDashboardCardsData).toHaveBeenCalledWith(
+        {},
+        { start_date: undefined, end_date: undefined, domaine_fonctionnel: [], inclure_eig: 'false' },
+        'national',
       );
     });
 

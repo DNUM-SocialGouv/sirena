@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 344.17241379310343,
+  "average_query_time": 402.5533199195171,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -36,7 +36,7 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "-- Carte 52 : « Répartition des requêtes par motif (dernier niveau) »\n-- + ligne « Aucun motif qualifié » pour les requêtes sans motif qualifié.\n-- Une requête peut porter plusieurs motifs : la part est calculée sur le nombre de requêtes\n-- rattachées à cette entité, la somme des parts dépasse donc 100 %.\n-- NB : ne jamais mettre ni apostrophe ni double crochet dans ces commentaires. Metabase les\n-- analyse comme du SQL : une apostrophe isolée ou un bloc optionnel vide fait échouer la carte\n-- sur \"clauses must contain at least one {{...}} clause\".\n-- entity_label = paramètre Metabase Locked, cf. docs/metabase_dashboards/FILTERS.md\nWITH requetes_entite AS (\n  SELECT DISTINCT r.id AS requete_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n),\ntotal AS (\n  SELECT COUNT(*) AS nb_total FROM requetes_entite\n),\n-- MotifEnum ne contient que les feuilles (id = PARENT/ENFANT) ; les libellés des catégories\n-- parentes ne sont pas en base, cf. packages/common/src/constants/motifs.constant.ts\nmotif_parent (code, label) AS (\n  VALUES\n    ('ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES', 'Activités d''esthétique non réglementées'),\n    ('MEDICAMENTS', 'Médicaments'),\n    ('FACTURATIONS_HONORAIRES', 'Facturations et honoraires'),\n    ('HOTELLERIE_LOCAUX_RESTAURATION', 'Hôtellerie locaux restauration'),\n    ('INFORMATIONS_DROITS_USAGERS', 'Informations et droits des usagers'),\n    ('MAUVAISE_ATTITUDE_PROFESSIONNELS', 'Mauvaise attitude des professionnels'),\n    ('PRATIQUE_NON_CONVENTIONNELLE', 'Pratique non conventionnelle'),\n    ('PROBLEMES_ORGANISATION_RESSOURCES_HUMAINES', 'Problèmes d''organisation ou de ressources humaines'),\n    ('QUALITE_ACCOMPAGNEMENT_SERVICE', 'Qualité de l''accompagnement ou du service'),\n    ('QUALITE_SOINS', 'Qualité des soins'),\n    ('DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE', 'Difficulté de recherche d''établissement ou d''un professionnel ou de service'),\n    ('PROBLEMES_ENVIRONNEMENTAUX', 'Problèmes environnementaux'),\n    ('PROBLEMES_TRANSPORT_SANITAIRE', 'Problèmes liés au transport Sanitaire')\n),\n-- Libellés portés par plusieurs motifs du référentiel (« Autres » x8) : à préciser par leur\n-- catégorie parente, sinon deux lignes homonymes sont indiscernables.\nlabel_ambigu AS (\n  SELECT label FROM \"MotifEnum\" GROUP BY label HAVING COUNT(*) > 1\n),\nrequete_motif AS (\n  -- 1 ligne par (requête, motif) : dédoublonne les situations multiples pour une même requête\n  SELECT DISTINCT re.requete_id, m.id AS motif_id, m.label AS motif_label\n  FROM requetes_entite re\n  JOIN \"Situation\" s  ON s.\"requeteId\"    = re.requete_id\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  JOIN \"MotifEnum\" m  ON m.id             = fm.\"motifId\"\n),\npar_motif AS (\n  SELECT\n    CASE\n      WHEN rm.motif_label IN (SELECT label FROM label_ambigu)\n        THEN rm.motif_label || ' (' || COALESCE(mp.label, split_part(rm.motif_id, '/', 1)) || ')'\n      ELSE rm.motif_label\n    END      AS motif,\n    COUNT(*) AS nb_requetes\n  FROM requete_motif rm\n  LEFT JOIN motif_parent mp ON mp.code = split_part(rm.motif_id, '/', 1)\n  GROUP BY rm.motif_id, rm.motif_label, mp.label\n\n  UNION ALL\n\n  SELECT 'Aucun motif qualifié', COUNT(*)\n  FROM requetes_entite re\n  WHERE NOT EXISTS (\n    SELECT 1 FROM requete_motif rm WHERE rm.requete_id = re.requete_id\n  )\n)\nSELECT\n  pm.motif                                                 AS \"Motif (dernier niveau)\",\n  pm.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * pm.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes (%)\"\nFROM par_motif pm\nCROSS JOIN total t\nWHERE pm.nb_requetes > 0\nORDER BY pm.nb_requetes DESC;",
+        "native": "-- Carte 52 : « Répartition des requêtes par motif (dernier niveau) »\n-- + ligne « Aucun motif qualifié » pour les requêtes sans motif qualifié.\n-- Une requête peut porter plusieurs motifs : la part est calculée sur le nombre de requêtes\n-- rattachées à cette entité, la somme des parts dépasse donc 100 %.\n-- NB : ne jamais mettre ni apostrophe ni double crochet dans ces commentaires. Metabase les\n-- analyse comme du SQL : une apostrophe isolée ou un bloc optionnel vide fait échouer la carte\n-- sur \"clauses must contain at least one {{...}} clause\".\n-- entity_label = paramètre Metabase Locked, cf. docs/metabase_dashboards/FILTERS.md\nWITH requetes_entite AS (\n  SELECT DISTINCT r.id AS requete_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]]\n),\ntotal AS (\n  SELECT COUNT(*) AS nb_total FROM requetes_entite\n),\n-- MotifEnum ne contient que les feuilles (id = PARENT/ENFANT) ; les libellés des catégories\n-- parentes ne sont pas en base, cf. packages/common/src/constants/motifs.constant.ts\nmotif_parent (code, label) AS (\n  VALUES\n    ('ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES', 'Activités d''esthétique non réglementées'),\n    ('MEDICAMENTS', 'Médicaments'),\n    ('FACTURATIONS_HONORAIRES', 'Facturations et honoraires'),\n    ('HOTELLERIE_LOCAUX_RESTAURATION', 'Hôtellerie locaux restauration'),\n    ('INFORMATIONS_DROITS_USAGERS', 'Informations et droits des usagers'),\n    ('MAUVAISE_ATTITUDE_PROFESSIONNELS', 'Mauvaise attitude des professionnels'),\n    ('PRATIQUE_NON_CONVENTIONNELLE', 'Pratique non conventionnelle'),\n    ('PROBLEMES_ORGANISATION_RESSOURCES_HUMAINES', 'Problèmes d''organisation ou de ressources humaines'),\n    ('QUALITE_ACCOMPAGNEMENT_SERVICE', 'Qualité de l''accompagnement ou du service'),\n    ('QUALITE_SOINS', 'Qualité des soins'),\n    ('DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE', 'Difficulté de recherche d''établissement ou d''un professionnel ou de service'),\n    ('PROBLEMES_ENVIRONNEMENTAUX', 'Problèmes environnementaux'),\n    ('PROBLEMES_TRANSPORT_SANITAIRE', 'Problèmes liés au transport Sanitaire')\n),\n-- Libellés portés par plusieurs motifs du référentiel (« Autres » x8) : à préciser par leur\n-- catégorie parente, sinon deux lignes homonymes sont indiscernables.\nlabel_ambigu AS (\n  SELECT label FROM \"MotifEnum\" GROUP BY label HAVING COUNT(*) > 1\n),\nrequete_motif AS (\n  -- 1 ligne par (requête, motif) : dédoublonne les situations multiples pour une même requête\n  SELECT DISTINCT re.requete_id, m.id AS motif_id, m.label AS motif_label\n  FROM requetes_entite re\n  JOIN \"Situation\" s  ON s.\"requeteId\"    = re.requete_id\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  JOIN \"MotifEnum\" m  ON m.id             = fm.\"motifId\"\n),\npar_motif AS (\n  SELECT\n    CASE\n      WHEN rm.motif_label IN (SELECT label FROM label_ambigu)\n        THEN rm.motif_label || ' (' || COALESCE(mp.label, split_part(rm.motif_id, '/', 1)) || ')'\n      ELSE rm.motif_label\n    END      AS motif,\n    COUNT(*) AS nb_requetes\n  FROM requete_motif rm\n  LEFT JOIN motif_parent mp ON mp.code = split_part(rm.motif_id, '/', 1)\n  GROUP BY rm.motif_id, rm.motif_label, mp.label\n\n  UNION ALL\n\n  SELECT 'Aucun motif qualifié', COUNT(*)\n  FROM requetes_entite re\n  WHERE NOT EXISTS (\n    SELECT 1 FROM requete_motif rm WHERE rm.requete_id = re.requete_id\n  )\n)\nSELECT\n  pm.motif                                                 AS \"Motif (dernier niveau)\",\n  pm.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * pm.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes (%)\"\nFROM par_motif pm\nCROSS JOIN total t\nWHERE pm.nb_requetes > 0\nORDER BY pm.nb_requetes DESC;",
         "template-tags": [
           {
             "display-name": "Entity Label",
@@ -61,6 +61,15 @@
             "id": "9c642426-0461-4056-a5a7-19a7e87aa14c",
             "name": "domaine_fonctionnel",
             "type": "text"
+          },
+          {
+            "default": [
+              true
+            ],
+            "display-name": "Inclure Eig",
+            "id": "92c39afa-a123-4d1d-8011-eb8737971596",
+            "name": "inclure_eig",
+            "type": "boolean"
           }
         ]
       }
@@ -77,7 +86,7 @@
   "entity_id": "MmxPkcVOEKaX9pyTrPVfM",
   "id": 52,
   "is_remote_synced": false,
-  "last_query_start": "2026-08-04T15:46:45.022306Z",
+  "last_query_start": "2026-08-27T09:39:41.235948Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.62.3.3 (686cac9)",
@@ -251,6 +260,23 @@
         ]
       },
       "values_source_type": "static-list"
+    },
+    {
+      "default": [
+        true
+      ],
+      "id": "92c39afa-a123-4d1d-8011-eb8737971596",
+      "isMultiSelect": false,
+      "name": "Inclure Eig",
+      "slug": "inclure_eig",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "inclure_eig"
+        ]
+      ],
+      "type": "boolean/="
     }
   ],
   "public_uuid": null,
@@ -270,19 +296,19 @@
       ],
       "fingerprint": {
         "global": {
-          "distinct-count": 35,
+          "distinct-count": 91,
           "nil%": 0
         },
         "type": {
           "type/Text": {
-            "average-length": 40.857142857142854,
-            "mode-fraction": 0.02857142857142857,
+            "average-length": 45.94505494505494,
+            "mode-fraction": 0.01098901098901099,
             "percent-blank": 0,
             "percent-email": 0,
             "percent-json": 0,
             "percent-state": 0,
             "percent-url": 0,
-            "top-3-fraction": 0.08571428571428572
+            "top-3-fraction": 0.03296703296703297
           }
         }
       },
@@ -309,21 +335,21 @@
       ],
       "fingerprint": {
         "global": {
-          "distinct-count": 7,
+          "distinct-count": 72,
           "nil%": 0
         },
         "type": {
           "type/Number": {
-            "avg": 10.542857142857148,
-            "excess-kurtosis": 34.916743959336486,
-            "max": 304,
+            "avg": 343.098901098901,
+            "excess-kurtosis": 16.437047540858856,
+            "max": 4211,
             "min": 1,
-            "mode-fraction": 0.5714285714285714,
-            "q1": 1,
-            "q3": 2,
-            "sd": 51.09008356477275,
-            "skewness": 5.905927109202411,
-            "top-3-fraction": 0.8857142857142857,
+            "mode-fraction": 0.03296703296703297,
+            "q1": 18,
+            "q3": 347,
+            "sd": 719.6500238147406,
+            "skewness": 3.8541323506126393,
+            "top-3-fraction": 0.0989010989010989,
             "zero-fraction": 0
           }
         }
@@ -351,22 +377,22 @@
       ],
       "fingerprint": {
         "global": {
-          "distinct-count": 7,
+          "distinct-count": 35,
           "nil%": 0
         },
         "type": {
           "type/Number": {
-            "avg": 3.119999999999999,
-            "excess-kurtosis": 34.91392190610341,
-            "max": 89.7,
-            "min": 0.3,
-            "mode-fraction": 0.5714285714285714,
-            "q1": 0.3,
-            "q3": 0.6,
-            "sd": 15.073619339760441,
-            "skewness": 5.905584785770335,
-            "top-3-fraction": 0.8857142857142857,
-            "zero-fraction": 0
+            "avg": 1.971428571428572,
+            "excess-kurtosis": 16.414249842418283,
+            "max": 24.2,
+            "min": 0,
+            "mode-fraction": 0.15384615384615385,
+            "q1": 0.1,
+            "q3": 2,
+            "sd": 4.139089693648048,
+            "skewness": 3.8516599269413376,
+            "top-3-fraction": 0.4065934065934066,
+            "zero-fraction": 0.1538461538461538
           }
         }
       },

@@ -41,6 +41,7 @@ export function transformSirecReponsePlaignant(
       createdAt: date_rep_plaignant || sys_creation_date,
       ...(date_rep_plaignant && { dateRealisation: date_rep_plaignant }),
       note: noteParts.length > 0 ? noteParts.join('\n') : null,
+      sirecFileTypeKeys: ['rep_plaignant'],
     }),
   );
 }

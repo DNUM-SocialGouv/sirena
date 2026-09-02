@@ -33,13 +33,14 @@ export interface SirenaSituationData {
 const SAISINE_PLAINTE = 75;
 
 function resolveEstLieAuSignalement(ei_avere: number | null, num_sign_assoc: string | null): boolean | undefined {
-  let eiAvereIsTrue = false;
+  let eiAvere: boolean | undefined;
   if (ei_avere !== null && ei_avere !== 77) {
     const value = SIREC_BOOLEAN_TRANSCO[ei_avere];
     if (value === undefined) throw new SirecTranscoError(ei_avere, 'ei_avere');
-    eiAvereIsTrue = value;
+    eiAvere = value;
   }
-  return eiAvereIsTrue || num_sign_assoc ? true : undefined;
+  if (eiAvere || num_sign_assoc) return true;
+  return eiAvere;
 }
 
 export function transformSirecSituation(sirecData: SirecReclamationData, entiteIds: string[]): SirenaSituationData {

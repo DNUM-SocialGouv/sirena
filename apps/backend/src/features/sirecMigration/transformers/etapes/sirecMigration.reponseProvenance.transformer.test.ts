@@ -202,4 +202,34 @@ describe('sirecMigration.reponseProvenance.transformer.ts', () => {
       ]),
     ).toThrow(SirecTranscoError);
   });
+
+  describe('sirecFileTypeKeys', () => {
+    it('should target rep_instit_part<n> for the n-th provenance', () => {
+      const date1 = new Date('2024-01-10');
+      const date2 = new Date('2024-02-15');
+      const date3 = new Date('2024-03-20');
+      const result = transformSirecReponseProvenances(
+        makeData({ date_rep_provenance1: date1, date_rep_provenance2: date2, date_rep_provenance3: date3 }, [
+          { id_provenance: 103 },
+          { id_provenance: 104 },
+          { id_provenance: 105 },
+        ]),
+        ['ars-normandie'],
+      );
+
+      expect(result[0].sirecFileTypeKeys).toEqual(['rep_instit_part1']);
+      expect(result[1].sirecFileTypeKeys).toEqual(['rep_instit_part2']);
+      expect(result[2].sirecFileTypeKeys).toEqual(['rep_instit_part3']);
+    });
+
+    it('should set the same sirecFileTypeKeys on every etape created for the same provenance across ARS entités', () => {
+      const result = transformSirecReponseProvenances(
+        makeData({ date_rep_provenance1: new Date('2024-03-05') }, [{ id_provenance: 103 }]),
+        ARS_IDS,
+      );
+
+      expect(result[0].sirecFileTypeKeys).toEqual(['rep_instit_part1']);
+      expect(result[1].sirecFileTypeKeys).toEqual(['rep_instit_part1']);
+    });
+  });
 });

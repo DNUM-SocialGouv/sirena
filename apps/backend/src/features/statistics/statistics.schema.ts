@@ -22,6 +22,7 @@ export const StatisticsDashboardQuerySchema = z
     startDate: z.iso.date().optional(),
     endDate: z.iso.date().optional(),
     domaineIds: domaineIdsSchema,
+    includeEIG: z.enum(['false']).optional(),
   })
   .refine((q) => !q.startDate || !q.endDate || q.startDate <= q.endDate, {
     message: 'startDate doit être antérieure ou égale à endDate',

@@ -1,6 +1,6 @@
 import type { IncomingMessage } from 'node:http';
 import { type Readable, Transform } from 'node:stream';
-import { Busboy, type BusboyFileStream } from '@fastify/busboy';
+import { Busboy, type BusboyFileStream, type BusboyInstance } from '@fastify/busboy';
 import { throwHTTPException400BadRequest } from '@sirena/backend-utils/helpers';
 import { API_ERROR_CODES, ERROR_KIND } from '@sirena/common/constants';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '../config/files.constant.js';
@@ -44,7 +44,7 @@ interface ParsedFilePart {
  */
 const parseFirstFile = (req: IncomingMessage): Promise<ParsedFilePart> =>
   new Promise((resolve, reject) => {
-    let bb: Busboy;
+    let bb: BusboyInstance;
     try {
       // The size limiter Transform (downstream) is the authoritative check.
       // We set busboy's fileSize one byte higher so an over-limit upload

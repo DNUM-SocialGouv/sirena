@@ -86,11 +86,11 @@ const app = factoryWithLogs
     }
 
     const estPartageeEnabled = await isEstPartageeEnabledForUser(c.get('user'));
-    const { data, total } = await getRequeteEtapes(requeteId, topEntiteId, {}, estPartageeEnabled);
+    const { data, total, isMultiEntite } = await getRequeteEtapes(requeteId, topEntiteId, {}, estPartageeEnabled);
 
     logger.info({ requestId: requeteId, stepCount: total }, 'Processing steps retrieved successfully');
 
-    return c.json({ data, meta: { total } });
+    return c.json({ data, meta: { total, isMultiEntite, etapePartageeEnabled: estPartageeEnabled } });
   })
   .get('/:id/file/:fileId', async (c) => {
     const logger = c.get('logger');
@@ -520,7 +520,17 @@ const app = factoryWithLogs
         await updateStatusRequete(requeteEtape.requeteId, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
       }
 
-      await deleteRequeteEtape(id, logger, userId);
+      try {
+        await deleteRequeteEtape(id, logger, userId);
+      } catch (err) {
+        if (err instanceof EtapeNotEditableError) {
+          throwHTTPException403Forbidden("Cette étape n'est pas supprimable.", {
+            res: c.res,
+            kind: ERROR_KIND.BUSINESS,
+          });
+        }
+        throw err;
+      }
 
       logger.info({ requeteEtapeId: id, userId }, 'RequeteEtape deleted successfully');
       return c.body(null, 204);

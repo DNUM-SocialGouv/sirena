@@ -165,6 +165,8 @@ export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situation
       updatedAt: new Date(),
       entiteId: 'ent123',
       estPartagee: false,
+      acknowledgmentSendMode: null,
+      acknowledgmentSendOperationId: null,
       dateRealisation: null,
       nom: 'Etape 1',
       requeteId: 'req123',
@@ -4180,6 +4182,78 @@ describe('requetesEntite.service', () => {
       expect(result).not.toBe('NO_FILES');
       expect(result).toHaveProperty('archive');
       expect(result).toHaveProperty('requeteId', 'req123');
+    });
+
+    it('should date entries with the reader wall clock, not UTC', async () => {
+      const mockStream = { pipe: vi.fn() } as unknown as Readable;
+      vi.mocked(getFileStream).mockResolvedValue({ stream: mockStream, metadata: {} } as never);
+
+      mockedRequeteEntite.findFirst.mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        requeteId: 'req123',
+        requete: {
+          ...mockRequeteEntite.requete,
+          fichiersRequeteOriginale: [
+            {
+              id: 'f1',
+              fileName: 'test.png',
+              filePath: '/files/test.png',
+              mimeType: 'image/png',
+              size: 1024,
+              scanStatus: 'CLEAN',
+              sanitizeStatus: 'COMPLETED',
+              safeFilePath: null,
+              createdAt: new Date('2026-04-20T16:03:12.000Z'),
+              metadata: { originalName: 'photo.png' },
+            },
+          ],
+          situations: [],
+        },
+      } as never);
+
+      const result = await createRequeteFilesArchive('req123', 'ent123', 'Indian/Reunion');
+      const archive = (result as unknown as { archive: { append: ReturnType<typeof vi.fn> } }).archive;
+
+      expect(archive.append).toHaveBeenCalledWith(mockStream, {
+        name: 'photo.png',
+        date: new Date('2026-04-20T20:03:12.000Z'),
+      });
+    });
+
+    it('should fall back to the Paris wall clock when no timezone is provided', async () => {
+      const mockStream = { pipe: vi.fn() } as unknown as Readable;
+      vi.mocked(getFileStream).mockResolvedValue({ stream: mockStream, metadata: {} } as never);
+
+      mockedRequeteEntite.findFirst.mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        requeteId: 'req123',
+        requete: {
+          ...mockRequeteEntite.requete,
+          fichiersRequeteOriginale: [
+            {
+              id: 'f1',
+              fileName: 'test.png',
+              filePath: '/files/test.png',
+              mimeType: 'image/png',
+              size: 1024,
+              scanStatus: 'CLEAN',
+              sanitizeStatus: 'COMPLETED',
+              safeFilePath: null,
+              createdAt: new Date('2026-04-20T16:03:12.000Z'),
+              metadata: { originalName: 'photo.png' },
+            },
+          ],
+          situations: [],
+        },
+      } as never);
+
+      const result = await createRequeteFilesArchive('req123', 'ent123');
+      const archive = (result as unknown as { archive: { append: ReturnType<typeof vi.fn> } }).archive;
+
+      expect(archive.append).toHaveBeenCalledWith(mockStream, {
+        name: 'photo.png',
+        date: new Date('2026-04-20T18:03:12.000Z'),
+      });
     });
   });
 });

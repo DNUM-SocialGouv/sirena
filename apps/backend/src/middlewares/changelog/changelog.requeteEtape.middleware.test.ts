@@ -28,6 +28,8 @@ describe('changelog.requeteEtapes.middleware.ts', () => {
     statutId: 'EN_ATTENTE',
     type: 'MANUAL',
     estPartagee: false,
+    acknowledgmentSendMode: null,
+    acknowledgmentSendOperationId: null,
     dateRealisation: null,
     createdAt: new Date(),
     updatedAt: new Date(),

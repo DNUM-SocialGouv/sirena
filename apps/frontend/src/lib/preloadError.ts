@@ -8,6 +8,10 @@ const PROBE_TIMEOUT_MS = 5000;
 /** Vite dispatches `vite:preloadError` with the underlying error as `payload`. */
 type PreloadErrorEvent = Event & { payload?: unknown };
 
+function isDepPreloadError(payload: unknown): boolean {
+  return payload instanceof Error && payload.message.startsWith('Unable to preload CSS for ');
+}
+
 function extractAssetUrl(payload: unknown): string | null {
   if (!(payload instanceof Error)) {
     return null;
@@ -45,13 +49,6 @@ async function isStaleDeploy(url: string): Promise<boolean> {
   }
 }
 
-/**
- * We suppress the throw (which otherwise surfaces as an ErrorBoundary crash and
- * Sentry noise) unconditionally, then flag that a refresh is available only when
- * the failure is confirmed to be a stale deploy. We deliberately do NOT reload
- * automatically: a reload here would discard an in-progress form. The UI
- * surfaces a non-blocking notice and lets the user refresh when they are ready.
- */
 export function registerPreloadErrorHandler(): void {
   if (isRegistered) {
     return;
@@ -59,9 +56,13 @@ export function registerPreloadErrorHandler(): void {
   isRegistered = true;
 
   window.addEventListener('vite:preloadError', (event) => {
-    event.preventDefault();
+    const { payload } = event as PreloadErrorEvent;
 
-    const url = extractAssetUrl((event as PreloadErrorEvent).payload);
+    if (isDepPreloadError(payload)) {
+      event.preventDefault();
+    }
+
+    const url = extractAssetUrl(payload);
     if (!url) {
       // No identifiable asset to probe: surface the notice conservatively. The
       // notice alone never discards a form — only the user's refresh click does.

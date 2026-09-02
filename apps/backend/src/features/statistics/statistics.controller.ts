@@ -2,13 +2,14 @@ import { throwHTTPException403Forbidden } from '@sirena/backend-utils/helpers';
 import { ERROR_KIND, ROLES_STATISTICS } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
+import { createTextStream, StreamCancelledError } from '../../helpers/stream.js';
 import { splitCsv } from '../../helpers/string.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { getEntiteById } from '../entites/entites.service.js';
-import { generateExportRequetesCsv } from './exportRequetes/exportRequetes.service.js';
+import { type ExportRequetesCsvWriter, prepareExportRequetesCsv } from './exportRequetes/exportRequetes.service.js';
 import { getExportRequetesRoute, getStatisticsDashboardRoute } from './statistics.route.js';
 import { StatisticsDashboardQuerySchema } from './statistics.schema.js';
 import { fetchDashboardCardsData } from './statistics.service.js';
@@ -45,23 +46,47 @@ const app = factoryWithLogs
 
     const startedAt = Date.now();
 
+    let writeCsv: ExportRequetesCsvWriter;
     try {
-      const csv = await generateExportRequetesCsv(topEntiteId);
-      const durationMs = Date.now() - startedAt;
-      const csvSizeBytes = Buffer.byteLength(csv, 'utf8');
-      const today = new Date().toISOString().slice(0, 10);
-
-      logger.info({ topEntiteId, durationMs, csvSizeBytes }, '[statistics] export requêtes generated successfully');
-
-      c.header('Content-Type', 'text/csv; charset=utf-8');
-      c.header('Content-Disposition', `attachment; filename="export-requetes-sirena-${today}.csv"`);
-
-      return c.body(csv);
+      writeCsv = await prepareExportRequetesCsv(topEntiteId);
     } catch (err) {
       const durationMs = Date.now() - startedAt;
       logger.error({ err, topEntiteId, durationMs }, '[statistics] export requêtes generation failed');
       throw err;
     }
+
+    const today = new Date().toISOString().slice(0, 10);
+    c.header('Content-Type', 'text/csv; charset=utf-8');
+    c.header('Content-Disposition', `attachment; filename="export-requetes-sirena-${today}.csv"`);
+
+    let csvSizeBytes = 0;
+
+    return c.body(
+      createTextStream(async (write) => {
+        try {
+          await writeCsv(async (chunk) => {
+            csvSizeBytes += Buffer.byteLength(chunk, 'utf8');
+            await write(chunk);
+          });
+          const durationMs = Date.now() - startedAt;
+          logger.info({ topEntiteId, durationMs, csvSizeBytes }, '[statistics] export requêtes generated successfully');
+        } catch (err) {
+          const durationMs = Date.now() - startedAt;
+          if (err instanceof StreamCancelledError) {
+            logger.info(
+              { topEntiteId, durationMs, csvSizeBytes },
+              '[statistics] export requêtes aborted by the client',
+            );
+          } else {
+            logger.error(
+              { err, topEntiteId, durationMs, csvSizeBytes },
+              '[statistics] export requêtes streaming failed',
+            );
+          }
+          throw err;
+        }
+      }),
+    );
   })
 
   .get('/dashboard', getStatisticsDashboardRoute, zValidator('query', StatisticsDashboardQuerySchema), async (c) => {
@@ -69,12 +94,13 @@ const app = factoryWithLogs
     const userId = c.get('userId');
     const entiteIds = c.get('entiteIds');
     const topEntiteId = c.get('topEntiteId');
-    const { startDate, endDate, domaineIds } = c.req.valid('query');
+    const { startDate, endDate, domaineIds, includeEIG } = c.req.valid('query');
 
     const optionalParams = {
       start_date: startDate,
       end_date: endDate,
       domaine_fonctionnel: splitCsv(domaineIds),
+      inclure_eig: includeEIG,
     };
 
     if (entiteIds === null) {

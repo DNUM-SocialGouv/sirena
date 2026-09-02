@@ -155,6 +155,8 @@ const fakeRequeteEtape: RequeteEtape = {
   createdAt: new Date(),
   updatedAt: new Date(),
   estPartagee: false,
+  acknowledgmentSendMode: null,
+  acknowledgmentSendOperationId: null,
   dateRealisation: null,
   createdById: null,
   clotureEffectiveDate: null,
@@ -258,7 +260,25 @@ describe('requeteEtapes.controller.ts', () => {
       expect(addClotureEtapeFiles).not.toHaveBeenCalled();
     });
 
-    it('forbids attaching files to a foreign Étape de traitement partagée', async () => {
+    it('forbids attaching files to an automatically sent acknowledgment owned by the current perimeter', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'FAIT',
+        acknowledgmentSendMode: 'AUTOMATIC',
+        acknowledgmentSendOperationId: '11111111-1111-4111-8111-111111111111',
+      });
+
+      const res = await client[':id']['cloture-files'].$post({
+        param: { id: 'step1' },
+        json: { fileIds: ['file1'] },
+      });
+
+      expect(res.status).toBe(403);
+      expect(addClotureEtapeFiles).not.toHaveBeenCalled();
+    });
+
+    it('forbids attaching files to a foreign Étape partagée', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
         entiteId: 'e2',
@@ -370,7 +390,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(getFileStream).toHaveBeenCalledWith('/uploads/test.pdf', undefined);
     });
 
-    it('allows an affected reader with sharing enabled to download a foreign Étape de traitement partagée file', async () => {
+    it('allows an affected reader with sharing enabled to download a foreign Étape partagée file', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
         entiteId: 'e2',
@@ -393,7 +413,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(getRequeteEtapeUploadedFile).toHaveBeenCalledWith('step1', 'file1');
     });
 
-    it('denies a foreign Étape de traitement partagée file when the reader feature flag is disabled', async () => {
+    it('denies a foreign Étape partagée file when the reader feature flag is disabled', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
         entiteId: 'e2',
@@ -424,7 +444,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(getRequeteEtapeUploadedFile).not.toHaveBeenCalled();
     });
 
-    it('denies a foreign Étape de traitement partagée file when the reader is not affected to the Requête SIRENA', async () => {
+    it('denies a foreign Étape partagée file when the reader is not affected to the Requête SIRENA', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
         entiteId: 'e2',
@@ -550,7 +570,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.headers.get('content-disposition')).toBe('inline; filename="fallback.pdf"');
     });
 
-    it('streams the safe version of a foreign Étape de traitement partagée file when available', async () => {
+    it('streams the safe version of a foreign Étape partagée file when available', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
         entiteId: 'e2',
@@ -637,7 +657,39 @@ describe('requeteEtapes.controller.ts', () => {
       expect(deleteRequeteEtape).not.toHaveBeenCalled();
     });
 
-    it('forbids deleting a foreign shared processing step', async () => {
+    it('forbids deleting an automatically sent acknowledgment owned by the current perimeter', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'FAIT',
+        acknowledgmentSendMode: 'AUTOMATIC',
+        acknowledgmentSendOperationId: '11111111-1111-4111-8111-111111111111',
+      });
+
+      const res = await client[':id'].$delete({ param: { id: 'step1' } });
+
+      expect(res.status).toBe(403);
+      expect(deleteRequeteEtape).not.toHaveBeenCalled();
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+    });
+
+    it('forbids deleting a pending acknowledgment from an automatic request', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'A_FAIRE',
+        acknowledgmentSendMode: null,
+        requete: { dematSocialId: 123, sirecId: null, thirdPartyAccountId: null },
+        uploadedFiles: [],
+      } as never);
+
+      const res = await client[':id'].$delete({ param: { id: 'step1' } });
+
+      expect(res.status).toBe(403);
+      expect(deleteRequeteEtape).not.toHaveBeenCalled();
+    });
+
+    it('forbids deleting a foreign Étape partagée', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
         entiteId: 'other-entite',
@@ -674,6 +726,8 @@ describe('requeteEtapes.controller.ts', () => {
       nom: 'Etape 1',
       type: 'MANUAL',
       estPartagee: false,
+      acknowledgmentSendMode: null,
+      acknowledgmentSendOperationId: null,
       dateRealisation: null,
       statutId: 'A_FAIRE',
       createdAt: new Date(),
@@ -719,6 +773,9 @@ describe('requeteEtapes.controller.ts', () => {
       };
       editable: boolean;
       canOnlyEditNotes: boolean;
+      timelineItemType: 'ENTITY_STEP';
+      attributedEntiteAdministrative: { id: string; nomComplet: string; entiteTypeId: string };
+      entiteAdministrative: { id: string; nomComplet: string; entiteTypeId: string };
     } = {
       ...requeteEtape,
       clotureReason: [],
@@ -727,6 +784,17 @@ describe('requeteEtapes.controller.ts', () => {
       requete: { createdById: null, dematSocialId: null, sirecId: null, thirdPartyAccountId: null, createdBy: null },
       editable: true,
       canOnlyEditNotes: false,
+      timelineItemType: 'ENTITY_STEP',
+      attributedEntiteAdministrative: {
+        id: 'entiteId',
+        nomComplet: 'ARS Normandie',
+        entiteTypeId: 'ARS',
+      },
+      entiteAdministrative: {
+        id: 'entiteId',
+        nomComplet: 'ARS Normandie',
+        entiteTypeId: 'ARS',
+      },
       notes: [
         {
           ...note,
@@ -737,7 +805,11 @@ describe('requeteEtapes.controller.ts', () => {
     };
 
     it('should return processing steps for a requete', async () => {
-      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({ data: [requeteEtapeWithNotesAndFiles], total: 2 });
+      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({
+        data: [requeteEtapeWithNotesAndFiles],
+        total: 2,
+        isMultiEntite: true,
+      });
 
       const res = await client[':id']['processing-steps'].$get({
         param: { id: '1' },
@@ -747,26 +819,134 @@ describe('requeteEtapes.controller.ts', () => {
       const json = await res.json();
       expect(json).toEqual({
         data: convertDatesToStrings([requeteEtapeWithNotesAndFiles]),
-        meta: { total: 2 },
+        meta: { total: 2, isMultiEntite: true, etapePartageeEnabled: false },
       });
 
       expect(getRequeteEtapes).toHaveBeenCalledWith('1', 'e1', {}, false);
     });
 
-    it('requests the shared chronology only when the targeted feature is enabled', async () => {
+    it('returns a complete projected chronology in service order with visible-item metadata', async () => {
+      const automaticAcknowledgmentFile = {
+        id: 'acknowledgment-file',
+        fileName: 'accuse-reception.pdf',
+        size: 1024,
+        status: 'READY',
+        scanStatus: 'CLEAN',
+        sanitizeStatus: 'COMPLETED',
+        canDelete: false,
+        createdAt: new Date('2026-06-01T08:00:00.000Z'),
+        uploadedBy: null,
+      };
       vi.mocked(hasFeature).mockResolvedValueOnce(true);
-      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({ data: [], total: 0 });
+      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({
+        data: [
+          {
+            ...requeteEtapeWithNotesAndFiles,
+            id: 'later-automatic-acknowledgment',
+            type: 'ACKNOWLEDGMENT',
+            acknowledgmentSendMode: 'AUTOMATIC',
+            acknowledgmentSendOperationId: '22222222-2222-4222-8222-222222222222',
+            timelineItemType: 'NEUTRAL_EVENT' as const,
+            attributedEntiteAdministrative: null,
+            uploadedFiles: [{ ...automaticAcknowledgmentFile, id: 'later-acknowledgment-file' }],
+            editable: false,
+          },
+          {
+            ...requeteEtapeWithNotesAndFiles,
+            id: 'owner-step',
+          },
+          {
+            ...requeteEtapeWithNotesAndFiles,
+            id: 'foreign-shared-step',
+            entiteId: 'e2',
+            estPartagee: true,
+            editable: false,
+            attributedEntiteAdministrative: { id: 'e2', nomComplet: 'CD du Calvados', entiteTypeId: 'CD' },
+            entiteAdministrative: { id: 'e2', nomComplet: 'CD du Calvados', entiteTypeId: 'CD' },
+          },
+          {
+            ...requeteEtapeWithNotesAndFiles,
+            id: 'first-grouped-automatic-acknowledgment',
+            type: 'ACKNOWLEDGMENT',
+            acknowledgmentSendMode: 'AUTOMATIC',
+            acknowledgmentSendOperationId: '11111111-1111-4111-8111-111111111111',
+            timelineItemType: 'NEUTRAL_EVENT' as const,
+            attributedEntiteAdministrative: null,
+            uploadedFiles: [automaticAcknowledgmentFile],
+            editable: false,
+          },
+          {
+            ...requeteEtapeWithNotesAndFiles,
+            id: 'neutral-creation',
+            type: 'CREATION',
+            timelineItemType: 'NEUTRAL_EVENT' as const,
+            attributedEntiteAdministrative: null,
+            editable: false,
+          },
+        ],
+        total: 5,
+        isMultiEntite: true,
+      });
 
       const res = await client[':id']['processing-steps'].$get({ param: { id: '1' } });
 
       expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.meta).toEqual({ total: 5, isMultiEntite: true, etapePartageeEnabled: true });
+      expect(json.data.map((step) => step.id)).toEqual([
+        'later-automatic-acknowledgment',
+        'owner-step',
+        'foreign-shared-step',
+        'first-grouped-automatic-acknowledgment',
+        'neutral-creation',
+      ]);
+      expect(json.data).toMatchObject([
+        {
+          acknowledgmentSendOperationId: '22222222-2222-4222-8222-222222222222',
+          timelineItemType: 'NEUTRAL_EVENT',
+          attributedEntiteAdministrative: null,
+          uploadedFiles: [{ id: 'later-acknowledgment-file' }],
+          editable: false,
+        },
+        {
+          timelineItemType: 'ENTITY_STEP',
+          attributedEntiteAdministrative: { id: 'entiteId', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
+        },
+        {
+          estPartagee: true,
+          editable: false,
+          timelineItemType: 'ENTITY_STEP',
+          attributedEntiteAdministrative: { id: 'e2', nomComplet: 'CD du Calvados', entiteTypeId: 'CD' },
+        },
+        {
+          acknowledgmentSendOperationId: '11111111-1111-4111-8111-111111111111',
+          timelineItemType: 'NEUTRAL_EVENT',
+          attributedEntiteAdministrative: null,
+          uploadedFiles: [{ id: 'acknowledgment-file' }],
+          editable: false,
+        },
+        { type: 'CREATION', timelineItemType: 'NEUTRAL_EVENT', attributedEntiteAdministrative: null, editable: false },
+      ]);
+    });
+
+    it('requests the shared chronology only when the targeted feature is enabled', async () => {
+      vi.mocked(hasFeature).mockResolvedValueOnce(true);
+      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({ data: [], total: 0, isMultiEntite: true });
+
+      const res = await client[':id']['processing-steps'].$get({ param: { id: '1' } });
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        data: [],
+        meta: { total: 0, isMultiEntite: true, etapePartageeEnabled: true },
+      });
       expect(hasFeature).toHaveBeenCalledWith('SHARED_PROCESSING_STEPS', false, 'agent@example.test', 'e1');
       expect(getUserById).not.toHaveBeenCalled();
       expect(getRequeteEtapes).toHaveBeenCalledWith('1', 'e1', {}, true);
     });
 
     it('should return 400 if topEntiteId is missing', async () => {
-      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({ data: [], total: 0 });
+      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({ data: [], total: 0, isMultiEntite: false });
 
       const res = await client[':id']['processing-steps'].$get({
         param: { id: 'nonexistent' },
@@ -774,7 +954,10 @@ describe('requeteEtapes.controller.ts', () => {
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json).toEqual({ data: [], meta: { total: 0 } });
+      expect(json).toEqual({
+        data: [],
+        meta: { total: 0, isMultiEntite: false, etapePartageeEnabled: false },
+      });
     });
   });
 
@@ -792,6 +975,8 @@ describe('requeteEtapes.controller.ts', () => {
         updatedAt: new Date(0),
         entiteId: 'e1',
         estPartagee: false,
+        acknowledgmentSendMode: null,
+        acknowledgmentSendOperationId: null,
         dateRealisation: null,
         createdById: null,
         clotureEffectiveDate: null,
@@ -947,6 +1132,25 @@ describe('requeteEtapes.controller.ts', () => {
   });
 
   describe('POST /:id/send-acknowledgment', () => {
+    it('forbids manually sending a pending acknowledgment from an automatic request', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'A_FAIRE',
+        acknowledgmentSendMode: null,
+        requete: { dematSocialId: 123, sirecId: null, thirdPartyAccountId: null },
+        uploadedFiles: [],
+      } as never);
+
+      const res = await client[':id']['send-acknowledgment'].$post({
+        param: { id: 'step1' },
+        json: {},
+      });
+
+      expect(res.status).toBe(403);
+      expect(sendManualAcknowledgmentEmail).not.toHaveBeenCalled();
+    });
+
     it('returns a conflict when the acknowledgment step has already been processed', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
@@ -1012,6 +1216,24 @@ describe('requeteEtapes.controller.ts', () => {
       );
     });
 
+    it('allows another agent from the owner root perimeter to update an editable step', async () => {
+      const stepCreatedByAnotherAgent = {
+        ...fakeRequeteEtape,
+        createdById: 'creator-agent-id',
+      };
+      const stepUpdatedByCurrentAgent = {
+        ...stepCreatedByAnotherAgent,
+        nom: 'Updated',
+      };
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(stepCreatedByAnotherAgent);
+      vi.mocked(updateProcessingEtape).mockResolvedValueOnce(stepUpdatedByCurrentAgent);
+
+      const res = await client[':id'].$patch({ param: { id: 'step1' }, json: validBody });
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ data: convertDatesToStrings(stepUpdatedByCurrentAgent) });
+    });
+
     it('updates sharing on an owned manual step when the feature is enabled', async () => {
       vi.mocked(hasFeature).mockResolvedValueOnce(true);
       vi.mocked(updateProcessingEtape).mockResolvedValueOnce({ ...fakeUpdatedNomRequeteEtape, estPartagee: false });
@@ -1028,6 +1250,42 @@ describe('requeteEtapes.controller.ts', () => {
         { ...validBody, estPartagee: false },
         expect.anything(),
       );
+    });
+
+    it('forbids changing notes and files on an automatically sent acknowledgment owned by the current perimeter', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'FAIT',
+        acknowledgmentSendMode: 'AUTOMATIC',
+        acknowledgmentSendOperationId: '11111111-1111-4111-8111-111111111111',
+      });
+
+      const res = await client[':id'].$patch({
+        param: { id: 'step1' },
+        json: { ...validBody, notes: [{ texte: 'Forbidden note' }], fileIds: ['forbidden-file'] },
+      });
+
+      expect(res.status).toBe(403);
+      expect(updateProcessingEtape).not.toHaveBeenCalled();
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+    });
+
+    it('forbids updating a pending acknowledgment from an automatic request', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'A_FAIRE',
+        acknowledgmentSendMode: null,
+        requete: { dematSocialId: 123, sirecId: null, thirdPartyAccountId: null },
+        uploadedFiles: [],
+      } as never);
+
+      const res = await client[':id'].$patch({ param: { id: 'step1' }, json: validBody });
+
+      expect(res.status).toBe(403);
+      expect(updateProcessingEtape).not.toHaveBeenCalled();
+      expect(updateStatusRequete).not.toHaveBeenCalled();
     });
 
     it('denies updates rejected by the common authorization policy', async () => {
@@ -1050,11 +1308,12 @@ describe('requeteEtapes.controller.ts', () => {
       expect(updateProcessingEtape).not.toHaveBeenCalled();
     });
 
-    it('forbids changing notes or files on a foreign shared processing step', async () => {
+    it('forbids the creator from changing notes or files after leaving the owner root perimeter', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
         entiteId: 'other-entite',
         estPartagee: true,
+        createdById: 'test-user-id',
       });
 
       const res = await client[':id'].$patch({

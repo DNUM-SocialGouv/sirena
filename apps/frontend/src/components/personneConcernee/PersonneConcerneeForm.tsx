@@ -5,7 +5,7 @@ import { Select } from '@codegouvfr/react-dsfr/Select';
 import { mappers } from '@sirena/common';
 import { type MesureProtection, optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
 import { DomicileFields } from '@/components/common/DomicileFields';
 import { personneConcerneeFieldMetadata } from '@/lib/fieldMetadata';
@@ -18,13 +18,19 @@ interface PersonneConcerneeFormProps {
   onSave: (data: PersonneConcerneeData, shouldCreateRequest: boolean) => Promise<void>;
 }
 
+const INVALID_DATE_NAISSANCE_MESSAGE = 'Le champ “Date de naissance” n’est pas valide. Format attendu : JJ/MM/AAAA';
+
 export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: PersonneConcerneeFormProps) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<PersonneConcerneeData>(initialData || {});
   const [emailError, setEmailError] = useState<string | undefined>();
   const [phoneError, setPhoneError] = useState<string | undefined>();
+  const [dateNaissanceError, setDateNaissanceError] = useState<string | undefined>();
   const [isSaving, setIsSaving] = useState(false);
   const [hasAttemptedSave, setHasAttemptedSave] = useState(false);
+  const phoneInputRef = useRef<HTMLInputElement>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const dateNaissanceInputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange =
     (field: keyof PersonneConcerneeData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -72,7 +78,12 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
   const handleSave = useCallback(async () => {
     setHasAttemptedSave(true);
 
-    let hasErrors = false;
+    let hasEmailError = false;
+    let hasPhoneError = false;
+
+    const dateNaissanceInput = dateNaissanceInputRef.current;
+    const hasDateNaissanceError = Boolean(dateNaissanceInput && !dateNaissanceInput.validity.valid);
+    setDateNaissanceError(hasDateNaissanceError ? INVALID_DATE_NAISSANCE_MESSAGE : undefined);
 
     if (formData.courrierElectronique) {
       try {
@@ -81,7 +92,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
       } catch (error) {
         if (error instanceof z.ZodError) {
           setEmailError(error.issues[0].message);
-          hasErrors = true;
+          hasEmailError = true;
         }
       }
     }
@@ -93,12 +104,19 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
       } catch (error) {
         if (error instanceof z.ZodError) {
           setPhoneError(error.issues[0].message);
-          hasErrors = true;
+          hasPhoneError = true;
         }
       }
     }
 
-    if (hasErrors) {
+    if (hasDateNaissanceError || hasPhoneError || hasEmailError) {
+      // Move focus to the first field in error, following DOM order (birth date, then phone, then email)
+      const firstErrorField = hasDateNaissanceError
+        ? dateNaissanceInputRef.current
+        : hasPhoneError
+          ? phoneInputRef.current
+          : emailInputRef.current;
+      firstErrorField?.focus();
       return;
     }
 
@@ -212,13 +230,21 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
               <div className="fr-col-12 fr-col-md-6">
                 <Input
                   label={personneConcerneeFieldMetadata.dateNaissance.label}
+                  hintText="Format attendu : JJ/MM/AAAA"
+                  state={dateNaissanceError ? 'error' : 'default'}
+                  stateRelatedMessage={dateNaissanceError}
                   nativeInputProps={{
+                    ref: dateNaissanceInputRef,
                     type: 'date',
                     max: new Date().toISOString().split('T')[0],
                     value: formData.dateNaissance || '',
                     onChange: (e) => {
                       const value = e.target.value;
+                      const isValid = e.currentTarget.validity.valid;
                       setFormData((prev: PersonneConcerneeData) => ({ ...prev, dateNaissance: value || undefined }));
+                      if (isValid) {
+                        setDateNaissanceError(undefined);
+                      }
                     },
                   }}
                 />
@@ -256,6 +282,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                   state={phoneError ? 'error' : undefined}
                   stateRelatedMessage={phoneError}
                   nativeInputProps={{
+                    ref: phoneInputRef,
                     value: formData.numeroTelephone || '',
                     onChange: handleInputChange('numeroTelephone'),
                     type: 'tel',
@@ -270,6 +297,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                   state={emailError ? 'error' : undefined}
                   stateRelatedMessage={emailError}
                   nativeInputProps={{
+                    ref: emailInputRef,
                     value: formData.courrierElectronique || '',
                     onChange: handleInputChange('courrierElectronique'),
                     type: 'email',

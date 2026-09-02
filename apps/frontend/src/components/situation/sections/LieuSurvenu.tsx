@@ -24,8 +24,9 @@ import {
   // transportTypeLabels,
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { OrganizationSearchField } from '@/components/common/OrganizationSearchField';
+import { ReadOnlyField } from '@/components/common/ReadOnlyField';
 import type { Organization } from '@/lib/api/fetchOrganizations';
 import { buildOrganizationAddress, extractOrganizationName, updateOrganizationName } from '@/utils/organizationHelpers';
 
@@ -44,6 +45,7 @@ const finessEtablissementTypes = [
 ] as string[];
 
 export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: LieuSurvenuProps) {
+  const fieldId = useId();
   const lieuType = formData.lieuDeSurvenue?.lieuType;
   const lieuPrecision = formData.lieuDeSurvenue?.lieuPrecision;
   const isOrganizationReadOnly = isSaving || Boolean(formData.lieuDeSurvenue?.finess);
@@ -470,7 +472,8 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                       ? 'Si vous souhaitez rechercher par numéro FINESS, décochez la case “L’établissement n’a pas de numéro FINESS”'
                       : undefined
                   }
-                  disabled={isSaving || isNoFinessChecked}
+                  disabled={isSaving}
+                  readOnly={isNoFinessChecked}
                   searchMode="finess"
                   minSearchLength={6}
                 />
@@ -526,81 +529,113 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                   <div
                     className={shouldShowCabinetMedicalStreetField ? 'fr-col-12 fr-col-md-4' : 'fr-col-12 fr-col-md-6'}
                   >
-                    <Input
-                      label="Nom de l'établissement"
-                      disabled={isOrganizationReadOnly}
-                      nativeInputProps={{
-                        value: extractOrganizationName(formData.lieuDeSurvenue?.adresse),
-                        onChange: (e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            lieuDeSurvenue: {
-                              ...prev.lieuDeSurvenue,
-                              adresse:
-                                e.target.value === ''
-                                  ? undefined
-                                  : updateOrganizationName(prev.lieuDeSurvenue?.adresse, e.target.value),
-                            },
-                          })),
-                      }}
-                    />
-                  </div>
-                  {shouldShowCabinetMedicalStreetField ? (
-                    <div className="fr-col-12 fr-col-md-4">
+                    {isOrganizationReadOnly ? (
+                      <ReadOnlyField
+                        id={`${fieldId}-nom-etablissement`}
+                        label="Nom de l'établissement"
+                        hintText="Ce champ est en lecture seule."
+                        value={extractOrganizationName(formData.lieuDeSurvenue?.adresse)}
+                      />
+                    ) : (
                       <Input
-                        label="Rue"
-                        disabled={isOrganizationReadOnly}
+                        label="Nom de l'établissement"
                         nativeInputProps={{
-                          value: formData.lieuDeSurvenue?.adresse?.rue || '',
+                          value: extractOrganizationName(formData.lieuDeSurvenue?.adresse),
                           onChange: (e) =>
                             setFormData((prev) => ({
                               ...prev,
                               lieuDeSurvenue: {
                                 ...prev.lieuDeSurvenue,
-                                adresse: { ...prev.lieuDeSurvenue?.adresse, rue: e.target.value },
+                                adresse:
+                                  e.target.value === ''
+                                    ? undefined
+                                    : updateOrganizationName(prev.lieuDeSurvenue?.adresse, e.target.value),
                               },
                             })),
                         }}
                       />
+                    )}
+                  </div>
+                  {shouldShowCabinetMedicalStreetField ? (
+                    <div className="fr-col-12 fr-col-md-4">
+                      {isOrganizationReadOnly ? (
+                        <ReadOnlyField
+                          id={`${fieldId}-rue`}
+                          label="Rue"
+                          hintText="Ce champ est en lecture seule."
+                          value={formData.lieuDeSurvenue?.adresse?.rue || ''}
+                        />
+                      ) : (
+                        <Input
+                          label="Rue"
+                          nativeInputProps={{
+                            value: formData.lieuDeSurvenue?.adresse?.rue || '',
+                            onChange: (e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                lieuDeSurvenue: {
+                                  ...prev.lieuDeSurvenue,
+                                  adresse: { ...prev.lieuDeSurvenue?.adresse, rue: e.target.value },
+                                },
+                              })),
+                          }}
+                        />
+                      )}
                     </div>
                   ) : null}
                   <div
                     className={shouldShowCabinetMedicalStreetField ? 'fr-col-12 fr-col-md-2' : 'fr-col-12 fr-col-md-3'}
                   >
-                    <Input
-                      label="Code postal"
-                      disabled={isOrganizationReadOnly}
-                      nativeInputProps={{
-                        value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
-                        onChange: (e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            lieuDeSurvenue: {
-                              ...prev.lieuDeSurvenue,
-                              adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
-                            },
-                          })),
-                      }}
-                    />
+                    {isOrganizationReadOnly ? (
+                      <ReadOnlyField
+                        id={`${fieldId}-code-postal`}
+                        label="Code postal"
+                        hintText="Ce champ est en lecture seule."
+                        value={formData.lieuDeSurvenue?.adresse?.codePostal || ''}
+                      />
+                    ) : (
+                      <Input
+                        label="Code postal"
+                        nativeInputProps={{
+                          value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
+                          onChange: (e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              lieuDeSurvenue: {
+                                ...prev.lieuDeSurvenue,
+                                adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
+                              },
+                            })),
+                        }}
+                      />
+                    )}
                   </div>
                   <div
                     className={shouldShowCabinetMedicalStreetField ? 'fr-col-12 fr-col-md-2' : 'fr-col-12 fr-col-md-3'}
                   >
-                    <Input
-                      label="Ville"
-                      disabled={isOrganizationReadOnly}
-                      nativeInputProps={{
-                        value: formData.lieuDeSurvenue?.adresse?.ville || '',
-                        onChange: (e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            lieuDeSurvenue: {
-                              ...prev.lieuDeSurvenue,
-                              adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
-                            },
-                          })),
-                      }}
-                    />
+                    {isOrganizationReadOnly ? (
+                      <ReadOnlyField
+                        id={`${fieldId}-ville`}
+                        label="Ville"
+                        hintText="Ce champ est en lecture seule."
+                        value={formData.lieuDeSurvenue?.adresse?.ville || ''}
+                      />
+                    ) : (
+                      <Input
+                        label="Ville"
+                        nativeInputProps={{
+                          value: formData.lieuDeSurvenue?.adresse?.ville || '',
+                          onChange: (e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              lieuDeSurvenue: {
+                                ...prev.lieuDeSurvenue,
+                                adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
+                              },
+                            })),
+                        }}
+                      />
+                    )}
                   </div>
                 </>
               ) : null}

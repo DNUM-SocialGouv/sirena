@@ -58,6 +58,7 @@ import {
 import {
   CloseRequeteBodySchema,
   CreateRequeteBodySchema,
+  DownloadAllFilesQuerySchema,
   GetDepartementCountsQuerySchema,
   GetDomaineCountsQuerySchema,
   GetRequetesEntiteQuerySchema,
@@ -455,50 +456,59 @@ const app = factoryWithLogs
     },
   )
 
-  .get('/:id/files/download-all', downloadAllFilesRoute, async (c) => {
-    const logger = c.get('logger');
-    const { id } = c.req.param();
-    const topEntiteId = c.get('topEntiteId');
-    if (!topEntiteId) {
-      throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
-        res: c.res,
-        kind: ERROR_KIND.BUSINESS,
+  .get(
+    '/:id/files/download-all',
+    downloadAllFilesRoute,
+    zValidator('query', DownloadAllFilesQuerySchema),
+    async (c) => {
+      const logger = c.get('logger');
+      const { id } = c.req.param();
+      const { timeZone } = c.req.valid('query');
+      const topEntiteId = c.get('topEntiteId');
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+
+      const result = await createRequeteFilesArchive(id, topEntiteId, timeZone);
+
+      if (!result) {
+        throwHTTPException404NotFound('Requete not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+      }
+
+      if (result === 'NO_FILES') {
+        throwHTTPException404NotFound('No attachments found for this requete', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+
+      const { archive, requeteId } = result;
+      const zipFileName = `requete-${requeteId}-pieces-jointes.zip`;
+
+      c.header('Content-Type', 'application/zip');
+      c.header('Content-Disposition', `attachment; filename="${zipFileName}"`);
+
+      logger.info({ requeteId: id }, 'Downloading all files as ZIP');
+
+      return honoStream(c, async (s) => {
+        const webStream = Readable.toWeb(archive) as unknown as ReadableStream<Uint8Array>;
+
+        archive.on('error', (err) => {
+          logger.error({ requeteId: id, err }, 'Archive stream error');
+          s.close();
+        });
+
+        s.onAbort(() => {
+          archive.abort();
+        });
+
+        await s.pipe(webStream);
       });
-    }
-
-    const result = await createRequeteFilesArchive(id, topEntiteId);
-
-    if (!result) {
-      throwHTTPException404NotFound('Requete not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
-    }
-
-    if (result === 'NO_FILES') {
-      throwHTTPException404NotFound('No attachments found for this requete', { res: c.res, kind: ERROR_KIND.BUSINESS });
-    }
-
-    const { archive, requeteId } = result;
-    const zipFileName = `requete-${requeteId}-pieces-jointes.zip`;
-
-    c.header('Content-Type', 'application/zip');
-    c.header('Content-Disposition', `attachment; filename="${zipFileName}"`);
-
-    logger.info({ requeteId: id }, 'Downloading all files as ZIP');
-
-    return honoStream(c, async (s) => {
-      const webStream = Readable.toWeb(archive) as unknown as ReadableStream<Uint8Array>;
-
-      archive.on('error', (err) => {
-        logger.error({ requeteId: id, err }, 'Archive stream error');
-        s.close();
-      });
-
-      s.onAbort(() => {
-        archive.abort();
-      });
-
-      await s.pipe(webStream);
-    });
-  })
+    },
+  )
 
   .patch('/:id/statut', updateStatutRoute, zValidator('json', UpdateStatutBodySchema), async (c) => {
     const logger = c.get('logger');

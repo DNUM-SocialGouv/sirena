@@ -3,6 +3,7 @@ import { useAppUpdateStore } from '@/stores/appUpdateStore';
 import { registerPreloadErrorHandler } from './preloadError';
 
 const CHUNK_URL = 'https://app.test/assets/index-abc123.js';
+const CSS_URL = 'https://app.test/assets/index-abc123.css';
 
 function dispatchPreloadError(payload?: unknown): Event {
   const event = new Event('vite:preloadError', { cancelable: true }) as Event & { payload?: unknown };
@@ -13,6 +14,10 @@ function dispatchPreloadError(payload?: unknown): Event {
 
 function preloadError(url = CHUNK_URL): Error {
   return new Error(`Failed to fetch dynamically imported module: ${url}`);
+}
+
+function depPreloadError(url = CSS_URL): Error {
+  return new Error(`Unable to preload CSS for ${url}`);
 }
 
 describe('registerPreloadErrorHandler', () => {
@@ -28,7 +33,7 @@ describe('registerPreloadErrorHandler', () => {
 
     const event = dispatchPreloadError(preloadError());
 
-    expect(event.defaultPrevented).toBe(true);
+    expect(event.defaultPrevented).toBe(false);
     await vi.waitFor(() => expect(useAppUpdateStore.getState().isUpdateAvailable).toBe(true));
     expect(fetch).toHaveBeenCalledWith(CHUNK_URL, expect.objectContaining({ method: 'HEAD', cache: 'no-store' }));
   });
@@ -39,7 +44,7 @@ describe('registerPreloadErrorHandler', () => {
 
     const event = dispatchPreloadError(preloadError());
 
-    expect(event.defaultPrevented).toBe(true);
+    expect(event.defaultPrevented).toBe(false);
     await vi.waitFor(() => expect(fetch).toHaveBeenCalled());
     expect(useAppUpdateStore.getState().isUpdateAvailable).toBe(false);
   });
@@ -74,9 +79,28 @@ describe('registerPreloadErrorHandler', () => {
 
     const event = dispatchPreloadError(new Error('boom without any url'));
 
-    expect(event.defaultPrevented).toBe(true);
+    expect(event.defaultPrevented).toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
     expect(useAppUpdateStore.getState().isUpdateAvailable).toBe(true);
+  });
+
+  it('cancels a CSS dependency preload failure, which Vite recovers from on its own', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 404 })));
+    registerPreloadErrorHandler();
+
+    const event = dispatchPreloadError(depPreloadError());
+
+    expect(event.defaultPrevented).toBe(true);
+    await vi.waitFor(() => expect(useAppUpdateStore.getState().isUpdateAvailable).toBe(true));
+  });
+
+  it('lets a module load failure reject so the router never receives an undefined module', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 404 })));
+    registerPreloadErrorHandler();
+
+    const event = dispatchPreloadError(preloadError());
+
+    expect(event.defaultPrevented).toBe(false);
   });
 
   it('registers the listener only once', async () => {

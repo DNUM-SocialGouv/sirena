@@ -58,6 +58,7 @@ type CheckboxOptionItemProps = {
   onToggleSelection: (optionValue: string) => void;
   onKeyDown: (event: React.KeyboardEvent) => void;
   setRef: (el: HTMLDivElement | null) => void;
+  hasError: boolean;
 };
 
 const CheckboxOptionItem = ({
@@ -67,6 +68,7 @@ const CheckboxOptionItem = ({
   onToggleSelection,
   onKeyDown,
   setRef,
+  hasError,
 }: CheckboxOptionItemProps) => {
   const handleToggle = useCallback(() => onToggleSelection(option.value), [onToggleSelection, option.value]);
 
@@ -78,6 +80,7 @@ const CheckboxOptionItem = ({
       onKeyDown={onKeyDown}
       setRef={setRef}
       isFocused={isFocused}
+      hasError={hasError}
     />
   );
 };
@@ -91,11 +94,15 @@ export function SelectWithChildren({
   id,
   disabled = false,
   readOnly = false,
+  state = 'default',
+  stateRelatedMessage,
 }: SelectWithChildrenProps) {
   const generatedId = useId();
   const componentId = id || generatedId;
   const buttonId = `${componentId}-button`;
   const dropdownId = `${componentId}-dropdown`;
+  const errorId = `${componentId}-error`;
+  const hasError = state === 'error';
 
   const { isOpen, setIsOpen, dropdownRef, buttonRef, handleBlur } = useDropdownState();
   const { navigationPath, navigateInto, navigateBack } = useSelectNavigation();
@@ -155,7 +162,7 @@ export function SelectWithChildren({
   const displayText = getDisplayText(value, labelsMap);
 
   return (
-    <div className="fr-select-group">
+    <div className={`fr-select-group${hasError ? ' fr-select-group--error' : ''}`}>
       <label className="fr-label" htmlFor={buttonId}>
         {label}
         {hint ? <span className="fr-hint-text">{hint}</span> : null}
@@ -175,6 +182,8 @@ export function SelectWithChildren({
           aria-labelledby={buttonId}
           aria-controls={dropdownId}
           aria-disabled={disabled || readOnly}
+          aria-invalid={hasError || undefined}
+          aria-describedby={hasError && stateRelatedMessage ? errorId : undefined}
           disabled={disabled}
         >
           {displayText}
@@ -238,6 +247,7 @@ export function SelectWithChildren({
                     onToggleSelection={toggleSelection}
                     onKeyDown={handleKeyDown}
                     setRef={setOptionRef(adjustedIndex)}
+                    hasError={hasError}
                   />
                 );
               })}
@@ -245,6 +255,12 @@ export function SelectWithChildren({
           </div>
         ) : null}
       </div>
+
+      {hasError && stateRelatedMessage ? (
+        <p id={errorId} className="fr-message fr-message--error">
+          {stateRelatedMessage}
+        </p>
+      ) : null}
     </div>
   );
 }

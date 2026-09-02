@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 299.1901584653878,
+  "average_query_time": 333.9249518922386,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -36,7 +36,7 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'CLOTUREE'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]];",
+        "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'CLOTUREE'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]];",
         "template-tags": [
           {
             "display-name": "Entity Label",
@@ -62,6 +62,15 @@
             "id": "d9c60aec-e4e0-42da-a7c8-810d9021669d",
             "name": "domaine_fonctionnel",
             "type": "text"
+          },
+          {
+            "default": [
+              true
+            ],
+            "display-name": "Inclure Eig",
+            "id": "3d576d88-8c7b-4211-a258-6d21c51e3637",
+            "name": "inclure_eig",
+            "type": "boolean"
           }
         ]
       }
@@ -78,12 +87,12 @@
   "entity_id": "_9ybydYPyhKzf76tn1pu5",
   "id": 45,
   "is_remote_synced": false,
-  "last_query_start": "2026-08-04T15:46:45.017943Z",
+  "last_query_start": "2026-08-27T09:39:40.27063Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.60.4.4 (65c9d32)",
   "moderation_reviews": [],
-  "name": "requêtes cloturées",
+  "name": "Requêtes cloturées",
   "param_fields": {},
   "parameter_mappings": [],
   "parameter_usage_count": 0,
@@ -246,54 +255,28 @@
         ]
       },
       "values_source_type": "static-list"
+    },
+    {
+      "default": [
+        true
+      ],
+      "id": "3d576d88-8c7b-4211-a258-6d21c51e3637",
+      "isMultiSelect": false,
+      "name": "Inclure Eig",
+      "slug": "inclure_eig",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "inclure_eig"
+        ]
+      ],
+      "type": "boolean/="
     }
   ],
   "public_uuid": null,
   "query_type": "native",
-  "result_metadata": [
-    {
-      "base_type": "type/BigInteger",
-      "database_type": "int8",
-      "display_name": "nombre_requetes",
-      "effective_type": "type/BigInteger",
-      "field_ref": [
-        "field",
-        "nombre_requetes",
-        {
-          "base-type": "type/BigInteger"
-        }
-      ],
-      "fingerprint": {
-        "global": {
-          "distinct-count": 1,
-          "nil%": 0
-        },
-        "type": {
-          "type/Number": {
-            "avg": 34,
-            "excess-kurtosis": null,
-            "max": 34,
-            "min": 34,
-            "mode-fraction": 1,
-            "q1": 34,
-            "q3": 34,
-            "sd": 0,
-            "skewness": null,
-            "top-3-fraction": 1,
-            "zero-fraction": 0
-          }
-        }
-      },
-      "lib/deduplicated-name": "nombre_requetes",
-      "lib/desired-column-alias": "nombre_requetes",
-      "lib/original-name": "nombre_requetes",
-      "lib/source": "source/native",
-      "lib/source-column-alias": "nombre_requetes",
-      "name": "nombre_requetes",
-      "semantic_type": null,
-      "source": "native"
-    }
-  ],
+  "result_metadata": null,
   "source_card_id": null,
   "table_id": null,
   "type": "question",

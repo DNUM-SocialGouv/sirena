@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { transcodeMotifIgas } from './motifsIgas.transco.js';
+import { getParentMotifIgasId, transcodeMotifIgas } from './motifsIgas.transco.js';
 
 describe('motifsIgas.transco.ts', () => {
   it('should transcode a known id_igas to a single SIRENA motif id', () => {
@@ -16,6 +16,21 @@ describe('motifsIgas.transco.ts', () => {
   it('should transcode multiple ids mapping to the same SIRENA value', () => {
     expect(transcodeMotifIgas(146)).toEqual(['ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES/NON_RESPECT_REGLES']);
     expect(transcodeMotifIgas(148)).toEqual(['ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES/NON_RESPECT_REGLES']);
+  });
+
+  describe('getParentMotifIgasId', () => {
+    it('should return the parent id_igas for a motif that has one', () => {
+      expect(getParentMotifIgasId(20)).toBe(10);
+      expect(getParentMotifIgasId(153)).toBe(19);
+    });
+
+    it('should return undefined for a top-level motif with no parent', () => {
+      expect(getParentMotifIgasId(10)).toBeUndefined();
+    });
+
+    it('should return undefined for an unknown id_igas', () => {
+      expect(getParentMotifIgasId(99999)).toBeUndefined();
+    });
   });
 
   // it('should throw SirecDataError for an unknown id_igas', () => {

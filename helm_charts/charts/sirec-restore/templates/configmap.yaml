@@ -1,0 +1,44 @@
+{{- if .Values.enabled }}
+# Paramètres non sensibles de la restauration du dump SIREC.
+# Les credentials S3 et MariaDB proviennent des secrets existants
+# migration-bucket-secret et mariadb-sirec-secret.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sirec-restore-variables
+  labels:
+    app: sirec-restore
+data:
+  # Endpoint S3 OVH du bucket sirena-migration-s3 (resources/s3_migration.yaml).
+  S3_ENDPOINT_URL: {{ .Values.config.s3EndpointUrl | quote }}
+  # Nom de la base à réécrire vers MARIADB_SIREC_DB pendant l'import.
+  #
+  # Vide, aucune réécriture n'est faite. C'est le cas des dumps de
+  # dumps_prod_anon/, produits sans --databases : ils ne portent ni
+  # CREATE DATABASE ni USE, et s'appliquent donc directement à la base sur
+  # laquelle le client est connecté.
+  #
+  # À renseigner avec "sirec_voo4" si l'on repasse sur dumps_preprod/, dont les
+  # dumps embarquent un USE `sirec_voo4` qu'il faut détourner vers sirec.
+  DUMP_SOURCE_DB: {{ .Values.config.dumpSourceDb | quote }}
+  # Préfixe des dumps à restaurer. Le job retient automatiquement l'objet le
+  # plus récent sous ce préfixe, en s'appuyant sur l'ordre lexicographique des
+  # noms : les dumps sont horodatés en YYYYMMDD
+  # (sirec_national_anon_20260809.sql.gz), ce qui rend les deux ordres
+  # équivalents. Ils sont déposés chaque dimanche, et pèsent ~640 MiB.
+  #
+  # L'intégration repart des dumps de production anonymisés. Basculer sur
+  # "dumps_preprod/" pour revenir aux dumps de preproduction, dont les données
+  # ne bougent plus depuis le 4 août 2026.
+  DUMP_OBJECT_PREFIX: {{ .Values.config.dumpObjectPrefix | quote }}
+  # Choix explicite du dump à restaurer, relatif à DUMP_OBJECT_PREFIX
+  # (exemple : "sirec_preprod_20260805.sql.gz").
+  #
+  # Vide, le job sélectionne automatiquement le dump le plus récent. Renseigné,
+  # il court-circuite cette sélection et restaure exactement ce fichier.
+  #
+  # Cette valeur est persistante : tant qu'elle n'est pas remise à vide, toutes
+  # les exécutions restaureront ce même dump. Le mode retenu est journalisé au
+  # démarrage du job.
+  DUMP_OBJECT_KEY: {{ .Values.config.dumpObjectKey | quote }}
+{{- end }}
