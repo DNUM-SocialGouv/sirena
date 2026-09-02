@@ -22,9 +22,10 @@
   margin-right: 0;
 }
 
-.selectButton:focus {
-  outline: 2px solid var(--border-plain-blue-france);
-  outline-offset: 2px;
+/* Higher specificity is required to keep the native DSFR focus ring visible after
+   programmatic focus(), despite its `button:focus:not(:focus-visible)` reset. */
+.selectWrapper .selectButton:focus {
+  outline-style: solid;
 }
 
 .selectButtonReadOnly {

@@ -544,6 +544,9 @@ model RequeteEtape {
   type        String  @default("MANUAL")
   estPartagee Boolean @default(false)
 
+  acknowledgmentSendMode        AcknowledgmentSendMode?
+  acknowledgmentSendOperationId String?                  @db.Uuid
+
   statutId String?
   statut   RequeteEtapeStatutEnum? @relation(fields: [statutId], references: [id])
 
@@ -575,6 +578,12 @@ model RequeteEtape {
 
   @@index([requeteId, entiteId, createdAt])
   @@index([requeteId, entiteId])
+  @@index([acknowledgmentSendOperationId])
+}
+
+enum AcknowledgmentSendMode {
+  AUTOMATIC
+  MANUAL
 }
 
 model RequeteEtapeStatutEnum {

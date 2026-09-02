@@ -16,7 +16,7 @@ export function transformSirecExamenCommission(
       nom: 'Examen en commission',
       entiteId,
       statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-      createdAt: sirecData.reclamation.sys_creation_date,
+      createdAt: sirecData.reclamation.sys_last_mod_date,
       dateRealisation: date_commission,
       note: `Date d'examen en commission : ${formatSirecDate(date_commission)}`,
     }),

@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 416.125,
+  "average_query_time": 482.17391304347825,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -36,7 +36,7 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "-- Carte : « Demandes de confidentialité »\n-- Requêtes affectées à mon entité dont la personne concernée (participant) n'a PAS\n-- consenti à la communication de son identité (veutGarderAnonymat = true → réponse « Non »).\nSELECT\n  COUNT(*) AS nombre_requetes\nFROM\n  \"RequeteEntite\" re\n  JOIN \"Entite\"  e  ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r  ON r.id = re.\"requeteId\"\n  JOIN \"PersonneConcernee\" pc ON pc.\"participantDeId\" = r.id\nWHERE\n  pc.\"veutGarderAnonymat\" = TRUE\n  [[ AND e.label = {{entity_label}} ]]\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]];",
+        "native": "-- Carte : « Demandes de confidentialité »\n-- Requêtes affectées à mon entité dont la personne concernée (participant) n'a PAS\n-- consenti à la communication de son identité (veutGarderAnonymat = true → réponse « Non »).\nSELECT\n  COUNT(*) AS nombre_requetes\nFROM\n  \"RequeteEntite\" re\n  JOIN \"Entite\"  e  ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r  ON r.id = re.\"requeteId\"\n  JOIN \"PersonneConcernee\" pc ON pc.\"participantDeId\" = r.id\nWHERE\n  pc.\"veutGarderAnonymat\" = TRUE\n  [[ AND e.label = {{entity_label}} ]]\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                       AND {{inclure_eig}} = 'false') ]];",
         "template-tags": [
           {
             "display-name": "Entity Label",
@@ -61,6 +61,15 @@
             "id": "5c7bf358-ac1f-4339-9724-43839a097722",
             "name": "domaine_fonctionnel",
             "type": "text"
+          },
+          {
+            "default": [
+              true
+            ],
+            "display-name": "Inclure Eig",
+            "id": "2a02003f-4107-4305-b1f1-5d57aa8fac4e",
+            "name": "inclure_eig",
+            "type": "boolean"
           }
         ]
       }
@@ -77,7 +86,7 @@
   "entity_id": "5otXTZilAKiWTtvZDkIPA",
   "id": 72,
   "is_remote_synced": false,
-  "last_query_start": "2026-08-07T15:02:44.039612Z",
+  "last_query_start": "2026-08-27T09:39:41.036365Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.63.5 (1dca717)",
@@ -142,6 +151,23 @@
         ]
       ],
       "type": "string/="
+    },
+    {
+      "default": [
+        true
+      ],
+      "id": "2a02003f-4107-4305-b1f1-5d57aa8fac4e",
+      "isMultiSelect": false,
+      "name": "Inclure Eig",
+      "slug": "inclure_eig",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "inclure_eig"
+        ]
+      ],
+      "type": "boolean/="
     }
   ],
   "public_uuid": null,
@@ -166,13 +192,13 @@
         },
         "type": {
           "type/Number": {
-            "avg": 279,
+            "avg": 6,
             "excess-kurtosis": null,
-            "max": 279,
-            "min": 279,
+            "max": 6,
+            "min": 6,
             "mode-fraction": 1,
-            "q1": 279,
-            "q3": 279,
+            "q1": 6,
+            "q3": 6,
             "sd": 0,
             "skewness": null,
             "top-3-fraction": 1,

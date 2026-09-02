@@ -35,6 +35,7 @@ export function transformSirecReponseProvenances(
         createdAt: sys_creation_date,
         dateRealisation: date,
         note: `Date de la réponse : ${formatSirecDate(date)}`,
+        sirecFileTypeKeys: [`rep_instit_part${i + 1}`],
       });
     }
   }

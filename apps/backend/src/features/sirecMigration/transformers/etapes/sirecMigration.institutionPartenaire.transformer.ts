@@ -59,15 +59,20 @@ export function transformSirecInstitutionsPartenaires(
     const noteParts: string[] = [formatTransfertNote(date)];
     if (prec_niv_comp !== null) noteParts.push(`Précision : ${prec_niv_comp}`);
 
+    // Une étape institution partenaire accueille les pièces jointes SIREC hors_ars<n>,
+    // indépendamment de niv_competence_reclam. Les rep_instit_part<n> ciblent l'étape "réponse à
+    // l'institution de provenance" (cf. sirecMigration.reponseProvenance.transformer.ts).
+    const sirecFileTypeKeys = i < 3 ? [`hors_ars${i + 1}`] : undefined;
+
     for (const entiteId of arsEntiteIds) {
       etapes.push({
         nom: `${prefix}${institutionNom}`,
         entiteId,
         statutId: date !== null ? REQUETE_ETAPE_STATUT_TYPES.FAIT : REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
-        ...(date !== null ? { createdAt: date } : {}),
         note: noteParts.join('\n'),
-        createdAt: sirecData.reclamation.sys_creation_date,
+        createdAt: transferDates[i] || sirecData.reclamation.sys_creation_date,
         dateRealisation: transferDates[i] || undefined,
+        ...(sirecFileTypeKeys ? { sirecFileTypeKeys } : {}),
       });
     }
   }

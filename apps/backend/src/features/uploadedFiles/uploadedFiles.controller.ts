@@ -17,7 +17,12 @@ import {
   getFileProcessingStatusRoute,
 } from './uploadedFiles.route.js';
 import { UploadedFileParamsIdSchema } from './uploadedFiles.schema.js';
-import { createUploadedFile, deleteUploadedFile, getUploadedFileById } from './uploadedFiles.service.js';
+import {
+  createUploadedFile,
+  deleteUploadedFile,
+  getUploadedFileById,
+  isUploadedFileAttachedToImmutableAcknowledgment,
+} from './uploadedFiles.service.js';
 
 const app = factoryWithLogs
   .createApp()
@@ -141,7 +146,10 @@ const app = factoryWithLogs
         });
       }
 
-      if (!uploadedFile.canDelete) {
+      if (
+        !uploadedFile.canDelete ||
+        (uploadedFile.requeteEtapeId && (await isUploadedFileAttachedToImmutableAcknowledgment(id)))
+      ) {
         throwHTTPException400BadRequest('You are not allowed to delete this uploaded file.', {
           res: c.res,
           kind: ERROR_KIND.BUSINESS,

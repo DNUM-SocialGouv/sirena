@@ -1,8 +1,10 @@
+import { CSV_BOM, CSV_LINE_SEPARATOR, serializeCsvRow } from '@sirena/common/utils';
+import type { ChunkWriter } from '../../../helpers/stream.js';
 import { type Prisma, prisma } from '../../../libs/prisma.js';
 import { getEntiteDescendantIds } from '../../entites/entites.service.js';
-import { buildExportRequetesCsvFromRecords } from './exportRequetesCsv.js';
+import { EXPORT_REQUETES_HEADERS } from './exportRequetesColumns.js';
 import { deriveDepartmentCodeFromPostalCode } from './exportRequetesFormatters.js';
-import type { ExportRequeteRecord } from './exportRequetesRows.js';
+import { buildExportRequetesRows, type ExportRequeteRecord } from './exportRequetesRows.js';
 
 const exportRequetesSelect = {
   id: true,
@@ -123,46 +125,90 @@ type ExportRequetePrismaPayload = Prisma.RequeteGetPayload<{
   select: typeof exportRequetesSelect;
 }>;
 
-export async function generateExportRequetesCsv(topEntiteId: string): Promise<string> {
-  const entiteIds = await getEntiteDescendantIds(topEntiteId);
-  const requetes = await prisma.requete.findMany({
-    where: {
-      requeteEntites: {
-        some: {
-          entiteId: { in: entiteIds ?? [] },
-        },
-      },
-    },
-    select: exportRequetesSelect,
-  });
-  const { departmentCodesByPostalCode, departementNamesByCode } = await getDepartmentReferences(requetes);
+const EXPORT_PAGE_SIZE = 500;
 
-  return buildExportRequetesCsvFromRecords(requetes.map(toExportRequeteRecord), {
-    topEntiteId,
-    departmentCodesByPostalCode,
-    departementNamesByCode,
-  });
+export type ExportRequetesCsvWriter = (write: ChunkWriter) => Promise<void>;
+
+const postalCodeSelect = {
+  id: true,
+  declarant: { select: { adresse: { select: { codePostal: true } } } },
+  participant: { select: { adresse: { select: { codePostal: true } } } },
+  situations: {
+    select: {
+      lieuDeSurvenue: { select: { codePostal: true, adresse: { select: { codePostal: true } } } },
+      misEnCause: { select: { codePostal: true } },
+    },
+  },
+} satisfies Prisma.RequeteSelect;
+
+type RequetePage<S extends Prisma.RequeteSelect> = (Prisma.RequeteGetPayload<{ select: S }> & { id: string })[];
+
+async function forEachRequetePage<S extends Prisma.RequeteSelect & { id: true }>(
+  where: Prisma.RequeteWhereInput,
+  select: S,
+  onPage: (page: RequetePage<S>) => void | Promise<void>,
+): Promise<void> {
+  let cursor: string | undefined;
+
+  do {
+    const page = (await prisma.requete.findMany({
+      where,
+      select,
+      orderBy: { id: 'asc' },
+      take: EXPORT_PAGE_SIZE,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    })) as RequetePage<S>;
+
+    if (page.length === 0) return;
+    await onPage(page);
+
+    cursor = page.length < EXPORT_PAGE_SIZE ? undefined : page.at(-1)?.id;
+  } while (cursor);
 }
 
-async function getDepartmentReferences(requetes: ExportRequetePrismaPayload[]): Promise<{
+async function collectPostalCodes(where: Prisma.RequeteWhereInput): Promise<string[]> {
+  const codePostaux = new Set<string>();
+
+  await forEachRequetePage(where, postalCodeSelect, (page) => {
+    for (const requete of page) {
+      const candidates = [
+        requete.declarant?.adresse?.codePostal,
+        requete.participant?.adresse?.codePostal,
+        ...requete.situations.flatMap((situation) => [
+          situation.lieuDeSurvenue?.adresse?.codePostal || situation.lieuDeSurvenue?.codePostal,
+          situation.misEnCause?.codePostal,
+        ]),
+      ];
+      for (const codePostal of candidates) {
+        if (codePostal) codePostaux.add(codePostal);
+      }
+    }
+  });
+
+  return Array.from(codePostaux);
+}
+
+export async function prepareExportRequetesCsv(topEntiteId: string): Promise<ExportRequetesCsvWriter> {
+  const entiteIds = (await getEntiteDescendantIds(topEntiteId)) ?? [];
+  const where: Prisma.RequeteWhereInput = { requeteEntites: { some: { entiteId: { in: entiteIds } } } };
+
+  const departmentReferences = await getDepartmentReferences(await collectPostalCodes(where));
+  const options = { topEntiteId, ...departmentReferences };
+
+  return async (write) => {
+    await write(CSV_BOM + serializeCsvRow([...EXPORT_REQUETES_HEADERS]));
+
+    await forEachRequetePage(where, exportRequetesSelect, async (page) => {
+      const rows = buildExportRequetesRows(page.map(toExportRequeteRecord), options);
+      await write(CSV_LINE_SEPARATOR + rows.map(serializeCsvRow).join(CSV_LINE_SEPARATOR));
+    });
+  };
+}
+
+async function getDepartmentReferences(codePostaux: string[]): Promise<{
   departmentCodesByPostalCode: Map<string, string>;
   departementNamesByCode: Map<string, string>;
 }> {
-  const codePostaux = Array.from(
-    new Set(
-      requetes
-        .flatMap((requete) => [
-          requete.declarant?.adresse?.codePostal,
-          requete.participant?.adresse?.codePostal,
-          ...requete.situations.flatMap((situation) => [
-            situation.lieuDeSurvenue?.adresse?.codePostal || situation.lieuDeSurvenue?.codePostal,
-            situation.misEnCause?.codePostal,
-          ]),
-        ])
-        .filter((codePostal): codePostal is string => !!codePostal),
-    ),
-  );
-
   if (codePostaux.length === 0) {
     return { departmentCodesByPostalCode: new Map(), departementNamesByCode: new Map() };
   }

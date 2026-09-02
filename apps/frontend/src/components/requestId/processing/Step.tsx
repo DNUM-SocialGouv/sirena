@@ -2,6 +2,7 @@ import { fr } from '@codegouvfr/react-dsfr';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import {
+  ACKNOWLEDGMENT_SEND_MODES,
   FEATURE_FLAGS,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_ETAPE_TYPES,
@@ -13,6 +14,7 @@ import { Toast } from '@sirena/ui';
 
 import { clsx } from 'clsx';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
+import { EntiteTypeBadge } from '@/components/common/EntiteTypeBadge';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { useDisableStepRappel } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useDeleteUploadedFile } from '@/hooks/mutations/updateUploadedFiles.hook';
@@ -32,6 +34,7 @@ type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data
 type StepProps = StepType & {
   requestId: string;
   isOwner: boolean;
+  isMultiEntite: boolean;
   isAcknowledgmentSendable?: boolean;
   onSendAcknowledgment?: () => void;
   openEdit?(step: StepType): void;
@@ -40,16 +43,19 @@ type StepProps = StepType & {
 const formatStepCreationInfo = (
   createdBy: { prenom: string; nom: string } | null | undefined,
   createdAt: string,
+  nomEntiteAdministrative?: string,
 ): React.ReactNode => {
   const date = formatDate(createdAt);
+  const suffixeEntiteAdministrative = nomEntiteAdministrative ? ` (${nomEntiteAdministrative})` : '';
   if (createdBy) {
     return (
       <>
-        Ajouté par {formatAgent(createdBy)} le {date}
+        Ajouté par {formatAgent(createdBy)}
+        {suffixeEntiteAdministrative} le {date}
       </>
     );
   }
-  return `Ajouté automatiquement le ${date}`;
+  return `Ajouté automatiquement${suffixeEntiteAdministrative} le ${date}`;
 };
 
 const getStepTitle = (type: string, statutId: string | null, nom: string | null): string => {
@@ -69,8 +75,10 @@ type StepSubtitleArgs = {
   notes: StepType['notes'];
   requete: StepType['requete'];
   uploadedFiles: StepType['uploadedFiles'];
+  acknowledgmentSendMode?: StepType['acknowledgmentSendMode'];
   clotureEffectiveDate?: string | null;
   dateRealisation?: string | Date | null;
+  nomEntiteAdministrative?: string;
 };
 
 const getStepSubtitle = ({
@@ -82,67 +90,79 @@ const getStepSubtitle = ({
   notes,
   requete,
   uploadedFiles,
+  acknowledgmentSendMode,
   clotureEffectiveDate,
   dateRealisation,
+  nomEntiteAdministrative,
 }: StepSubtitleArgs): React.ReactNode => {
+  const suffixeEntiteAdministrative = nomEntiteAdministrative ? ` (${nomEntiteAdministrative})` : '';
   if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
     const agent = createdBy ?? notes[0]?.author;
     const closureDate = clotureEffectiveDate ?? createdAt;
     return agent ? (
       <>
         Requête clôturée le {formatDate(closureDate)} par {formatAgent(agent)}
+        {suffixeEntiteAdministrative}
       </>
     ) : (
-      `Requête clôturée le ${formatDate(closureDate)}`
+      `Requête clôturée le ${formatDate(closureDate)}${suffixeEntiteAdministrative}`
     );
   }
   if (type === REQUETE_ETAPE_TYPES.CREATION) {
     // An ingested request (DematSocial, SIREC, third-party API) was created automatically.
     if (isAutomaticRequest(requete)) {
-      return `Fait automatiquement le ${formatDate(createdAt)}`;
+      return `Fait automatiquement${suffixeEntiteAdministrative} le ${formatDate(createdAt)}`;
     }
     // Otherwise the request was created manually; the author agent may be missing if the account was deleted.
     return requete?.createdBy ? (
       <>
         Requête créée le {formatDate(createdAt)} par {formatAgent(requete.createdBy)}
+        {suffixeEntiteAdministrative}
       </>
     ) : (
-      `Requête créée le ${formatDate(createdAt)}`
+      `Requête créée le ${formatDate(createdAt)}${suffixeEntiteAdministrative}`
     );
   }
   if (type === REQUETE_ETAPE_TYPES.REOPEN) {
     return createdBy ? (
       <>
         Requête réouverte le {formatDate(createdAt)} par {formatAgent(createdBy)}
+        {suffixeEntiteAdministrative}
       </>
     ) : (
-      `Requête réouverte le ${formatDate(createdAt)}`
+      `Requête réouverte le ${formatDate(createdAt)}${suffixeEntiteAdministrative}`
     );
   }
   if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
     if (statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT) {
-      // The AR PDF is attached to the step and kept non-deletable (canDelete:false).
       const arFile = uploadedFiles.find((file) => !file.canDelete);
+      if (acknowledgmentSendMode === ACKNOWLEDGMENT_SEND_MODES.AUTOMATIC) {
+        return `Envoyé automatiquement${suffixeEntiteAdministrative} le ${formatDate(dateRealisation ?? updatedAt)}`;
+      }
       if (arFile?.uploadedBy) {
         return (
           <>
             Envoyé le {formatDate(arFile.createdAt)} par {formatAgent(arFile.uploadedBy)}
+            {suffixeEntiteAdministrative}
           </>
         );
       }
+      if (acknowledgmentSendMode === ACKNOWLEDGMENT_SEND_MODES.MANUAL) {
+        return `Envoyé${suffixeEntiteAdministrative} le ${formatDate(dateRealisation ?? updatedAt)}`;
+      }
       if (arFile) {
-        return `Envoyé automatiquement le ${formatDate(arFile.createdAt)}`;
+        return `Envoyé automatiquement${suffixeEntiteAdministrative} le ${formatDate(arFile.createdAt)}`;
       }
       if (isAutomaticRequest(requete)) {
-        return `Envoyé automatiquement le ${formatDate(updatedAt)}`;
+        return `Envoyé automatiquement${suffixeEntiteAdministrative} le ${formatDate(updatedAt)}`;
       }
-      return `Marqué comme fait le ${formatDate(updatedAt)}`;
+      return `Marqué comme fait${suffixeEntiteAdministrative} le ${formatDate(updatedAt)}`;
     }
-    return `Ajouté automatiquement le ${formatDate(createdAt)}`;
+    return `Ajouté automatiquement${suffixeEntiteAdministrative} le ${formatDate(createdAt)}`;
   }
   return (
     <>
-      {formatStepCreationInfo(createdBy, createdAt)}
+      {formatStepCreationInfo(createdBy, createdAt, nomEntiteAdministrative)}
       {statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT && dateRealisation ? (
         <>
           {' '}
@@ -206,7 +226,14 @@ const StepEditButton = ({ className, step, onEdit }: StepEditButtonProps) => {
   }, [onEdit, step]);
 
   return (
-    <Button className={className} type="button" priority="tertiary" iconId="fr-icon-edit-line" onClick={handleClick}>
+    <Button
+      className={className}
+      type="button"
+      priority="tertiary"
+      iconId="fr-icon-edit-line"
+      onClick={handleClick}
+      size="small"
+    >
       Modifier l'étape
     </Button>
   );
@@ -270,23 +297,29 @@ const StepRappelBadge = ({
   );
 };
 
-const StepComponent = ({
-  requestId,
-  isOwner,
-  nom,
-  createdBy,
-  createdAt,
-  updatedAt,
-  statutId,
-  isAcknowledgmentSendable,
-  onSendAcknowledgment,
-  openEdit,
-  notes,
-  id,
-  requete,
-  clotureEffectiveDate,
-  ...step
-}: StepProps) => {
+const StepComponent = (stepProps: StepProps) => {
+  const {
+    requestId,
+    isOwner,
+    isMultiEntite,
+    nom,
+    createdBy,
+    createdAt,
+    updatedAt,
+    statutId,
+    isAcknowledgmentSendable,
+    onSendAcknowledgment,
+    openEdit,
+    notes,
+    id,
+    requete,
+    clotureEffectiveDate,
+    entiteAdministrative,
+    timelineItemType,
+    attributedEntiteAdministrative,
+    ...step
+  } = stepProps;
+
   const deleteClotureFileModal = useMemo(
     () =>
       createModal({
@@ -295,6 +328,7 @@ const StepComponent = ({
       }),
     [id],
   );
+
   const [isOpen, setIsOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState<{
     id: string;
@@ -318,6 +352,10 @@ const StepComponent = ({
 
   const showAFaireBadge = statutId === REQUETE_ETAPE_STATUT_TYPES.A_FAIRE;
   const canEditStep = canEdit && step.editable;
+  const isNeutralEvent = timelineItemType === 'NEUTRAL_EVENT';
+  const entityRelation = isMultiEntite ? (isNeutralEvent ? 'neutral' : isOwner ? 'owner' : 'foreign') : undefined;
+  const nomEntiteAdministrative =
+    isMultiEntite && !isNeutralEvent ? attributedEntiteAdministrative?.nomComplet : undefined;
 
   const handleDeactivateRappel = useCallback(() => {
     disableRappelMutation.mutate(
@@ -391,13 +429,36 @@ const StepComponent = ({
   }, []);
 
   return (
-    <div className={`fr-mb-4w ${styles['timeline-step']}`}>
-      <div className={styles['timeline-dot']} />
+    <div
+      className={clsx(
+        'fr-mb-4w',
+        styles['timeline-step'],
+        entityRelation && styles[`timeline-step--${entityRelation}`],
+      )}
+      data-entity-relation={entityRelation}
+      data-timeline-item-type={timelineItemType}
+    >
+      <div className={styles['timeline-dot']} data-testid="timeline-dot" aria-hidden="true">
+        {isMultiEntite && attributedEntiteAdministrative ? (
+          <EntiteTypeBadge
+            entiteTypeId={attributedEntiteAdministrative.entiteTypeId}
+            label={attributedEntiteAdministrative.entiteTypeId}
+            relation={entityRelation === 'neutral' ? undefined : entityRelation}
+            className={`fr-mb-0 ${styles['timeline-entity-badge']}`}
+            aria-hidden="true"
+          />
+        ) : null}
+      </div>
       <div className={styles.step}>
         <div className="fr-mb-1w">
           <div className="fr-grid-row fr-grid-row--middle">
             <div className="fr-col" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
               <h3 ref={stepHeadingRef} tabIndex={-1} className="fr-h6 fr-mb-0">
+                {isMultiEntite && attributedEntiteAdministrative ? (
+                  <>
+                    <span className="fr-sr-only">{attributedEntiteAdministrative.entiteTypeId} -</span>{' '}
+                  </>
+                ) : null}
                 {getStepTitle(step.type, statutId, nom)}
               </h3>
               {showAFaireBadge && (
@@ -419,8 +480,10 @@ const StepComponent = ({
                   notes,
                   requete,
                   uploadedFiles: step.uploadedFiles,
+                  acknowledgmentSendMode: step.acknowledgmentSendMode,
                   clotureEffectiveDate,
                   dateRealisation: step.dateRealisation,
+                  nomEntiteAdministrative,
                 })}
                 {isRappelEnabled && step.rappelType && step.rappelDate ? (
                   <>
@@ -488,7 +551,13 @@ const StepComponent = ({
           <>
             <div className={styles['request-notes']}>
               {visibleNotes.slice(0, isOpen ? visibleNotes.length : 3).map((note: StepType['notes'][number]) => (
-                <StepNote key={note.id} content={note.texte} author={note.author} createdAt={note.createdAt} />
+                <StepNote
+                  key={note.id}
+                  content={note.texte}
+                  author={note.author}
+                  createdAt={note.createdAt}
+                  nomEntiteAdministrative={nomEntiteAdministrative}
+                />
               ))}
             </div>
             <div className={styles['request-notes-distplay']}>
@@ -506,22 +575,7 @@ const StepComponent = ({
             </div>
             <StepFiles files={step.uploadedFiles} stepId={id} />
             {canEditStep ? (
-              <StepEditButton
-                className={styles['request-step__add-note']}
-                step={{
-                  id,
-                  nom,
-                  statutId,
-                  notes,
-                  createdAt,
-                  updatedAt,
-                  createdBy,
-                  requete,
-                  clotureEffectiveDate,
-                  ...step,
-                }}
-                onEdit={openEdit}
-              />
+              <StepEditButton className={styles['request-step__add-note']} step={stepProps} onEdit={openEdit} />
             ) : null}
           </>
         )}

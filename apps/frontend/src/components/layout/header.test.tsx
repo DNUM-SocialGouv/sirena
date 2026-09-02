@@ -8,6 +8,7 @@ import {
   RouterProvider,
 } from '@tanstack/react-router';
 import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import { HeaderMenu } from './header';
 
 setLink({ Link });

@@ -12,8 +12,8 @@ import {
   type ReceptionType,
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
-import { SelectWithChildren } from '@sirena/ui';
-import { useCallback } from 'react';
+import { AccordionMultiSelect, SelectWithChildren } from '@sirena/ui';
+import { forwardRef, useCallback, useImperativeHandle, useRef, useState } from 'react';
 import { shouldShowMaltraitanceWarning } from '@/utils/maltraitanceHelpers';
 
 type DescriptionFaitsProps = {
@@ -23,8 +23,50 @@ type DescriptionFaitsProps = {
   initialData?: SituationData;
 };
 
-export function DescriptionFaits({ formData, setFormData, initialData }: DescriptionFaitsProps) {
+export type DescriptionFaitsRef = {
+  validateAndFocusFirstError: () => boolean;
+};
+
+type DateField = 'dateDebut' | 'dateFin';
+
+const DATE_FIELD_LABELS: Record<DateField, string> = {
+  dateDebut: 'Date de début des faits',
+  dateFin: 'Date de fin des faits',
+};
+
+const getInvalidDateMessage = (field: DateField) =>
+  `Le champ “${DATE_FIELD_LABELS[field]}” n’est pas valide. Format attendu : JJ/MM/AAAA`;
+
+export const DescriptionFaits = forwardRef<DescriptionFaitsRef, DescriptionFaitsProps>(function DescriptionFaits(
+  { formData, setFormData, initialData },
+  ref,
+) {
   const ignoredMotifs: string[] = [MALTRAITANCE_TYPE.NON];
+  const dateDebutRef = useRef<HTMLInputElement>(null);
+  const dateFinRef = useRef<HTMLInputElement>(null);
+  const [dateErrors, setDateErrors] = useState<Partial<Record<DateField, string>>>({});
+
+  useImperativeHandle(ref, () => ({
+    validateAndFocusFirstError: () => {
+      const fields = [
+        { name: 'dateDebut' as const, input: dateDebutRef.current },
+        { name: 'dateFin' as const, input: dateFinRef.current },
+      ];
+      const newErrors: Partial<Record<DateField, string>> = {};
+
+      for (const { name, input } of fields) {
+        if (input && !input.validity.valid) {
+          newErrors[name] = getInvalidDateMessage(name);
+        }
+      }
+
+      setDateErrors(newErrors);
+      const firstInvalidInput = fields.find(({ name }) => newErrors[name])?.input;
+      firstInvalidInput?.focus();
+
+      return Object.keys(newErrors).length === 0;
+    },
+  }));
 
   const motifs = [
     ...(formData.fait?.maltraitanceTypes || []).flatMap((maltraitance) => {
@@ -56,6 +98,13 @@ export function DescriptionFaits({ formData, setFormData, initialData }: Descrip
         },
       }));
     };
+
+  const handleDateChange = (field: DateField) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleFaitInputChange(field)(e);
+    if (e.currentTarget.validity.valid) {
+      setDateErrors((currentErrors) => ({ ...currentErrors, [field]: undefined }));
+    }
+  };
 
   const handleMotifsChange = useCallback(
     (values: string[]) =>
@@ -112,10 +161,12 @@ export function DescriptionFaits({ formData, setFormData, initialData }: Descrip
             </div>
           )}
           <div className="fr-col-12">
-            <SelectWithChildren
+            <AccordionMultiSelect
               options={MOTIFS_HIERARCHICAL_DATA}
               value={formData.fait?.motifs || []}
               onChange={handleMotifsChange}
+              placeholder="Sélectionner un ou plusieurs motifs"
+              itemNoun={{ singular: 'motif', plural: 'motifs' }}
             />
             {showMaltraitanceWarning && (
               <div className="fr-mt-2w">
@@ -142,22 +193,30 @@ export function DescriptionFaits({ formData, setFormData, initialData }: Descrip
 
           <div className="fr-col-12 fr-col-md-6">
             <Input
-              label="Date de début des faits"
+              label={DATE_FIELD_LABELS.dateDebut}
+              hintText="Format attendu : JJ/MM/AAAA"
+              state={dateErrors.dateDebut ? 'error' : 'default'}
+              stateRelatedMessage={dateErrors.dateDebut}
               nativeInputProps={{
+                ref: dateDebutRef,
                 type: 'date',
                 value: formData.fait?.dateDebut || '',
-                onChange: handleFaitInputChange('dateDebut'),
+                onChange: handleDateChange('dateDebut'),
               }}
             />
           </div>
 
           <div className="fr-col-12 fr-col-md-6">
             <Input
-              label="Date de fin des faits"
+              label={DATE_FIELD_LABELS.dateFin}
+              hintText="Format attendu : JJ/MM/AAAA"
+              state={dateErrors.dateFin ? 'error' : 'default'}
+              stateRelatedMessage={dateErrors.dateFin}
               nativeInputProps={{
+                ref: dateFinRef,
                 type: 'date',
                 value: formData.fait?.dateFin || '',
-                onChange: handleFaitInputChange('dateFin'),
+                onChange: handleDateChange('dateFin'),
               }}
             />
           </div>
@@ -189,4 +248,4 @@ export function DescriptionFaits({ formData, setFormData, initialData }: Descrip
       </fieldset>
     </div>
   );
-}
+});

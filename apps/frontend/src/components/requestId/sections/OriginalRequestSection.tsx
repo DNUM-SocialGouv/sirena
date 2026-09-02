@@ -95,7 +95,7 @@ const RenderCompleted = ({
         <p className="text-vertical-align">
           Reçue le {new Date(date).toLocaleDateString('fr-FR')} par {receptionTypeLabels[receptionType]}
           {receptionType === RECEPTION_TYPE.FORMULAIRE && (
-            <span className={fr.cx('fr-text--xs')}>Dossier Demat.Social n° {dematSocialId}</span>
+            <span className={fr.cx('fr-text--xs')}> Dossier Demat.Social n° {dematSocialId}</span>
           )}
         </p>
         {extras}

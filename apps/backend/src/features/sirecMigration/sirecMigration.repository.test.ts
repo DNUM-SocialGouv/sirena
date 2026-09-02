@@ -614,6 +614,7 @@ describe('sirecMigration.repository.ts', () => {
         .mockResolvedValueOnce([{ id_dico: 344 }])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
         .mockResolvedValueOnce([]);
 
       const result = await fetchSirecData(42);
@@ -630,6 +631,7 @@ describe('sirecMigration.repository.ts', () => {
         typeTraitementIdDicos: [344],
         misEnCauses: [],
         mainCourantes: [],
+        files: [],
       });
     });
 
@@ -644,6 +646,7 @@ describe('sirecMigration.repository.ts', () => {
           { id_data: 10, institution: 'CPAM de Rouen' },
           { id_data: 20, institution: 'DREETS Normandie' },
         ])
+        .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
@@ -664,12 +667,13 @@ describe('sirecMigration.repository.ts', () => {
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
         .mockResolvedValueOnce([]);
 
       const result = await fetchSirecData(42);
 
       expect(result?.institutionPartenaires).toEqual({});
-      expect(mariadbPool.query).toHaveBeenCalledTimes(8);
+      expect(mariadbPool.query).toHaveBeenCalledTimes(9);
     });
 
     it('should return null when the reclamation is not found', async () => {
@@ -729,10 +733,12 @@ describe('sirecMigration.repository.ts', () => {
   describe('fetchSirecFiles', () => {
     it('should return the files rows when found', async () => {
       const date = new Date('2024-02-10');
+      const creationDate = new Date('2024-02-05');
       vi.mocked(mariadbPool.query).mockResolvedValueOnce([
         {
           id_data: 1,
           sys_creation_date: date,
+          date_creation: creationDate,
           original_name: 'courrier.pdf',
           generated_name: 'a1b2c3.pdf',
           size: 12345,
@@ -740,6 +746,7 @@ describe('sirecMigration.repository.ts', () => {
           ext: 'pdf',
           content_type: 'application/pdf',
           file_type: null,
+          id_ext_mc: null,
         },
       ]);
 
@@ -749,6 +756,7 @@ describe('sirecMigration.repository.ts', () => {
         {
           id_data: 1,
           sys_creation_date: date,
+          date_creation: creationDate,
           original_name: 'courrier.pdf',
           generated_name: 'a1b2c3.pdf',
           size: 12345,
@@ -756,20 +764,20 @@ describe('sirecMigration.repository.ts', () => {
           ext: 'pdf',
           content_type: 'application/pdf',
           file_type: null,
+          id_ext_mc: null,
         },
       ]);
       expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_reclamation_file_data'), [42]);
+      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('rf.id_ext_mc'), [42]);
+      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('f.date_creation'), [42]);
     });
 
-    it('should filter on file_type NULL or hors_process/fiche_synthese in the query', async () => {
+    it('should not filter on file_type (all files are fetched, dispatch happens downstream)', async () => {
       vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
 
       await fetchSirecFiles(42);
 
-      expect(mariadbPool.query).toHaveBeenCalledWith(
-        expect.stringContaining("f.file_type IS NULL OR f.file_type IN ('hors_process', 'fiche_synthese')"),
-        [42],
-      );
+      expect(mariadbPool.query).toHaveBeenCalledWith(expect.not.stringContaining('file_type IS NULL'), [42]);
     });
 
     it('should return an empty array when no files found', async () => {

@@ -123,6 +123,7 @@ describe('sirecMigration.transformer.ts', () => {
     typeTraitementIdDicos: [] as number[],
     mainCourantes: [],
     misEnCauses: [],
+    files: [],
   };
 
   it('should map all fields correctly', () => {

@@ -91,7 +91,13 @@ export const useDeclarantSave = ({ requestId, identiteUpdatedAt, onRefetch }: Us
 
   const handleSave = async (data: DeclarantData) => {
     pendingDataRef.current = data;
-    await saveMutation.mutateAsync(data);
+    try {
+      await saveMutation.mutateAsync(data);
+    } catch (error) {
+      if ((error as { status?: number } | null)?.status !== 409) {
+        throw error;
+      }
+    }
   };
 
   const handleConflictResolve = async (resolutions: Record<string, 'current' | 'server'>) => {

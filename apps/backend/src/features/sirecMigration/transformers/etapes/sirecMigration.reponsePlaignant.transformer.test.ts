@@ -21,6 +21,7 @@ const makeData = (overrides: {
   typeTraitementIdDicos: [],
   mainCourantes: [],
   misEnCauses: [],
+  files: [],
 });
 
 const ARS_IDS = ['ars-normandie', 'ars-grand-est'];
@@ -74,6 +75,14 @@ describe('sirecMigration.reponsePlaignant.transformer.ts', () => {
 
       expect(result[0].entiteId).toBe('ars-normandie');
       expect(result[1].entiteId).toBe('ars-grand-est');
+    });
+  });
+
+  describe('sirecFileTypeKeys', () => {
+    it('should set sirecFileTypeKeys to [rep_plaignant]', () => {
+      const result = transformSirecReponsePlaignant(makeData({ reponse_plaignant: 1 }), ['ars-1']);
+
+      expect(result[0].sirecFileTypeKeys).toEqual(['rep_plaignant']);
     });
   });
 

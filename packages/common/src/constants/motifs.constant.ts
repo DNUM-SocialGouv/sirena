@@ -1,41 +1,75 @@
 // Value used to identify the maltraitance motifs
 export const MALTRAITANCE_PARENT_VALUE = 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE';
 
+// Labels, descriptions and ordering follow the "Liste des motifs V6" referential.
+// The `value` codes are stable identifiers persisted in the database and must never change.
 export const MOTIFS_HIERARCHICAL_DATA = [
   {
     label: "Activités d'esthétique non réglementées",
     value: 'ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES',
     children: [
       {
-        label: 'Autres',
-        value: 'AUTRES',
-      },
-      {
         label: "Défaut de déclaration d'activité",
         value: 'DEFAUT_DECLARATION_ACTIVITE',
       },
       {
-        label:
-          'Non respect des règles (hygiène, conformité des locaux, consentement éclairé, tarifs pratiqués, formations…)',
+        label: 'Non respect des règles',
+        description: 'Hygiène, conformité des locaux, consentement éclairé, tarifs pratiqués, etc.',
         value: 'NON_RESPECT_REGLES',
+      },
+      {
+        label: 'Autres',
+        value: 'AUTRES',
       },
     ],
   },
   {
-    label: 'Médicaments',
-    value: 'MEDICAMENTS',
+    label: "Difficulté de recherche d'établissement ou d'un professionnel ou de service",
+    value: 'DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE',
     children: [
       {
-        label: 'Problématique de circuit du médicament',
-        value: 'PROBLEMATIQUE_CIRCUIT_MEDICAMENT',
+        label: "Délais d'attente pour une place au sein de l'établissement",
+        value: 'DELAIS_ATTENTE_PLACE_ETABLISSEMENT',
       },
       {
-        label: 'Stockage des médicaments',
-        value: 'STOCKAGE_MEDICAMENTS',
+        label: 'Garde et permanence des soins ambulatoires',
+        value: 'GARDE_PERMANENCE_SOINS_AMBULATOIRES',
       },
       {
-        label: 'Vente de médicaments sur internet',
-        value: 'VENTE_MEDICAMENTS_INTERNET',
+        label: 'Médecin traitant',
+        value: 'MEDECIN_TRAITANT',
+      },
+      {
+        label: "Recherche d'un service d'accompagnement à domicile PA",
+        value: 'RECHERCHE_SERVICE_ACCOMPAGNEMENT_DOMICILE_PA',
+      },
+      {
+        label: "Recherche d'un service d'accompagnement à domicile PH",
+        value: 'RECHERCHE_SERVICE_ACCOMPAGNEMENT_DOMICILE_PH',
+      },
+      {
+        label: 'Recherche de SMR',
+        value: 'RECHERCHE_SMR',
+      },
+      {
+        label: 'Spécialiste',
+        value: 'SPECIALISTE',
+      },
+      {
+        label: 'Transfert par manque de lit',
+        value: 'TRANSFERT_MANQUE_LIT',
+      },
+      {
+        label: 'Établissement médico-social PA',
+        value: 'ETABLISSEMENT_MEDICO_SOCIAL_PA',
+      },
+      {
+        label: 'Établissement médico-social PH',
+        value: 'ETABLISSEMENT_MEDICO_SOCIAL_PH',
+      },
+      {
+        label: 'Autres',
+        value: 'AUTRES',
       },
     ],
   },
@@ -44,8 +78,8 @@ export const MOTIFS_HIERARCHICAL_DATA = [
     value: 'FACTURATIONS_HONORAIRES',
     children: [
       {
-        label: 'Autres',
-        value: 'AUTRES',
+        label: 'Honoraires professions libérales',
+        value: 'HONORAIRES_PROFESSIONS_LIBERALES',
       },
       {
         label: "Problème d'honoraires",
@@ -56,8 +90,8 @@ export const MOTIFS_HIERARCHICAL_DATA = [
         value: 'PROBLEME_FACTURATION',
       },
       {
-        label: 'Honoraires professions libérales',
-        value: 'HONORAIRES_PROFESSIONS_LIBERALES',
+        label: 'Autres',
+        value: 'AUTRES',
       },
     ],
   },
@@ -66,7 +100,12 @@ export const MOTIFS_HIERARCHICAL_DATA = [
     value: 'HOTELLERIE_LOCAUX_RESTAURATION',
     children: [
       {
-        label: 'Accessibilité des locaux (aux personnes à mobilité réduite, parking…)',
+        label: "Absence de lieu d'accueil pour la famille",
+        value: 'ABSENCE_LIEU_ACCUEIL_FAMILLE',
+      },
+      {
+        label: 'Accessibilité des locaux',
+        description: 'Aux personnes à mobilité réduite, parking, etc.',
         value: 'ACCESSIBILITE_LOCAUX',
       },
       {
@@ -78,44 +117,48 @@ export const MOTIFS_HIERARCHICAL_DATA = [
         value: 'ADMISSION',
       },
       {
-        label: 'Autres',
-        value: 'AUTRES',
-      },
-      {
-        label: 'Configuration des locaux (équipement sanitaire, superficie chambre, équipements divers)',
+        label: 'Configuration des locaux',
+        description: 'Équipement sanitaire, superficie des chambres, équipements divers',
         value: 'CONFIGURATION_LOCAUX',
       },
       {
-        label: 'Entretien (fenêtre endommagé, digicode non fonctionnel, …)',
+        label: 'Entretien',
+        description: 'Fenêtre endommagé, digicode non fonctionnel, etc.',
         value: 'ENTRETIEN',
       },
       {
-        label: 'Hygiène (entretien, ménage…)',
+        label: 'Hygiène',
+        description: 'Entretien, ménage, etc.',
         value: 'HYGIENE',
       },
       {
-        label: 'La gestion des ressources ou des biens de la personne (dépôt, vols, perte…)',
+        label: 'Gestion des ressources ou des biens de la personne',
+        description: 'Dépôt, vols, perte, etc.',
         value: 'GESTION_RESSOURCES_BIENS',
       },
       {
-        label: 'Les équipements à usage personnel (télévision…)',
+        label: 'Équipements à usage personnel',
+        description: 'Télévision ou autre',
         value: 'EQUIPEMENTS_USAGE_PERSONNEL',
       },
       {
-        label: "Absence de lieu d'accueil pour la famille",
-        value: 'ABSENCE_LIEU_ACCUEIL_FAMILLE',
+        label: 'Service de restauration',
+        description: 'Horaires des repas, quantité servie, qualité, etc.',
+        value: 'SERVICE_RESTAURATION',
       },
       {
-        label: 'Sécurité des locaux (locaux mal sécurisé)',
+        label: 'Sécurité des locaux',
+        description: 'Locaux mal sécurisés',
         value: 'SECURITE_LOCAUX',
       },
       {
-        label: 'Sécurité des personnes (chute...)',
+        label: 'Sécurité des personnes',
+        description: 'Chute ou autre',
         value: 'SECURITE_PERSONNES',
       },
       {
-        label: 'Service de restauration (horaires des repas, quantité servie, qualité des repas…)',
-        value: 'SERVICE_RESTAURATION',
+        label: 'Autres',
+        value: 'AUTRES',
       },
     ],
   },
@@ -124,40 +167,41 @@ export const MOTIFS_HIERARCHICAL_DATA = [
     value: 'INFORMATIONS_DROITS_USAGERS',
     children: [
       {
-        label: "Informations sur l'accompagnement à la fin de vie (Loi Léonetti, demande évolutions législation)",
+        label: "Défaut d'information suite à un événement indésirable",
+        value: 'INFO_PATIENT_EVENEMENT',
+      },
+      {
+        label: "Défaut d'information sur une pathologie, une opération ou les risques encourus",
+        value: 'INFO_PATIENT_PATHOLOGIE',
+      },
+      {
+        label: "Défaut d'information sur l'accompagnement à la fin de vie",
+        description: 'Loi Léonetti, demande évolutions législation',
         value: 'INFO_ACCOMPAGNEMENT_FIN_VIE',
       },
       {
-        label: 'Autres',
-        value: 'AUTRES',
+        label: "Défaut d'information sur la désignation d'une personne de confiance",
+        value: 'INFO_DESIGNATION_PERSONNE_CONFIANCE',
       },
       {
         label: 'Dossier médical non communiqué',
         value: 'DOSSIER_MEDICAL_NON_COMMUNIQUE',
       },
       {
-        label: "Informations sur la désignation d'une personne de confiance",
-        value: 'INFO_DESIGNATION_PERSONNE_CONFIANCE',
-      },
-      {
-        label: 'Informations du patient et résident suite à un événement (indésirable)',
-        value: 'INFO_PATIENT_EVENEMENT',
-      },
-      {
-        label: 'Informations du patient sur sa pathologie, son opération, les risques encourus',
-        value: 'INFO_PATIENT_PATHOLOGIE',
-      },
-      {
         label: "Modalités d'annonce d'un décès",
         value: 'MODALITES_ANNONCE_DECES',
+      },
+      {
+        label: 'Non-respect du secret médical',
+        value: 'NON_RESPECT_SECRET_MEDICAL',
       },
       {
         label: 'Recueil du consentement',
         value: 'RECUEIL_CONSENTEMENT',
       },
       {
-        label: 'Non-respect du secret médical',
-        value: 'NON_RESPECT_SECRET_MEDICAL',
+        label: 'Autres',
+        value: 'AUTRES',
       },
     ],
   },
@@ -216,32 +260,51 @@ export const MOTIFS_HIERARCHICAL_DATA = [
     value: 'MAUVAISE_ATTITUDE_PROFESSIONNELS',
     children: [
       {
-        label: 'Autres',
-        value: 'AUTRES',
-      },
-      {
         label: "Défaut d'encadrement en stage",
         value: 'DEFAUT_ENCADREMENT_STAGE',
+      },
+      {
+        label: "Refus d'intervention au domicile",
+        description: 'SOS médecins, IDEL, etc.',
+        value: 'REFUS_INTERVENTION_DOMICILE',
+      },
+      {
+        label: 'Refus de consultation par un professionnel de santé libéral',
+        value: 'REFUS_CONSULTATION_PROFESSIONNEL_LIBERAL',
       },
       {
         label: "Refus d'aide de la part d'un professionnel",
         value: 'REFUS_AIDE_PROFESSIONNEL',
       },
       {
-        label: "Relations entre la famille/l'entourage et les professionnels",
-        value: 'RELATIONS_FAMILLE_PROFESSIONNELS',
-      },
-      {
         label: "Relations entre l'usager et les professionnels",
         value: 'RELATIONS_USAGER_PROFESSIONNELS',
       },
       {
-        label: 'Refus de consultation par un professionnel de santé libéral ',
-        value: 'REFUS_CONSULTATION_PROFESSIONNEL_LIBERAL',
+        label: "Relations entre l'entourage et les professionnels",
+        value: 'RELATIONS_FAMILLE_PROFESSIONNELS',
       },
       {
-        label: "Refus d'intervention au domicile (exemple : SOS médecins, IDEL ...)",
-        value: 'REFUS_INTERVENTION_DOMICILE',
+        label: 'Autres',
+        value: 'AUTRES',
+      },
+    ],
+  },
+  {
+    label: 'Médicaments',
+    value: 'MEDICAMENTS',
+    children: [
+      {
+        label: 'Problématique de circuit du médicament',
+        value: 'PROBLEMATIQUE_CIRCUIT_MEDICAMENT',
+      },
+      {
+        label: 'Stockage des médicaments',
+        value: 'STOCKAGE_MEDICAMENTS',
+      },
+      {
+        label: 'Vente de médicaments sur internet',
+        value: 'VENTE_MEDICAMENTS_INTERNET',
       },
     ],
   },
@@ -254,7 +317,8 @@ export const MOTIFS_HIERARCHICAL_DATA = [
         value: 'DERIVES_SECTAIRES',
       },
       {
-        label: 'Exercice illegal / usurpation de titre (médecine ou autre profession)',
+        label: 'Exercice illégal ou usurpation de titre',
+        description: 'Médecine ou autre profession',
         value: 'EXERCICE_ILLEGAL_USURPATION_TITRE',
       },
     ],
@@ -264,6 +328,10 @@ export const MOTIFS_HIERARCHICAL_DATA = [
     value: 'PROBLEMES_ORGANISATION_RESSOURCES_HUMAINES',
     children: [
       {
+        label: 'Absence de MEDEC',
+        value: 'ABSENCE_MEDEC',
+      },
+      {
         label: "Conflit avec la direction d'établissement ou de service",
         value: 'CONFLIT_DIRECTION_ETABLISSEMENT',
       },
@@ -272,196 +340,22 @@ export const MOTIFS_HIERARCHICAL_DATA = [
         value: 'CONFLIT_SOCIAL',
       },
       {
-        label: 'Manque de personnels encadrant dans les instituts de formation (profession para-médical et sociale)',
-        value: 'MANQUE_PERSONNELS_ENCADRANT_INSTITUTS',
+        label: 'Manque de personnel non soignant',
+        value: 'MANQUE_PERSONNEL_NON_SOIGNANT',
       },
       {
         label: 'Manque de personnel soignant',
         value: 'MANQUE_PERSONNEL_SOIGNANT',
       },
       {
-        label: 'Absence de MEDEC',
-        value: 'ABSENCE_MEDEC',
+        label: 'Manque de personnels encadrant dans les instituts de formation',
+        description: 'Profession para-médical et sociale',
+        value: 'MANQUE_PERSONNELS_ENCADRANT_INSTITUTS',
       },
       {
-        label: 'Manque de qualification du personnel (diplôme...)',
+        label: 'Manque de qualification du personnel',
+        description: 'Diplôme ou autre',
         value: 'MANQUE_QUALIFICATION_PERSONNEL',
-      },
-      {
-        label: 'Manque de personnel non soignant',
-        value: 'MANQUE_PERSONNEL_NON_SOIGNANT',
-      },
-    ],
-  },
-  {
-    label: "Qualité de l'accompagnement ou du service",
-    value: 'QUALITE_ACCOMPAGNEMENT_SERVICE',
-    children: [
-      {
-        label:
-          "Problème d'accompagnement et/ou suivi individuel : projet de vie, suivi social, éducatif, administratif…",
-        value: 'PROBLEME_ACCOMPAGNEMENT_SUIVI_INDIVIDUEL',
-      },
-      {
-        label: 'Non respect des programmes de formation',
-        value: 'NON_RESPECT_PROGRAMMES_FORMATION',
-      },
-      {
-        label: "Absence d'animation",
-        value: 'ABSENCE_ANIMATION',
-      },
-      {
-        label: 'Autres',
-        value: 'AUTRES',
-      },
-      {
-        label: "Qualité des animations au lieu d'interventions",
-        value: 'QUALITE_ANIMATIONS_LIEU_INTERVENTIONS',
-      },
-      {
-        label: "Problématique de fonctionnement de l'ESSMS (règlement intérieur, …)",
-        value: 'PROBLEMATIQUE_FONCTIONNEMENT_ESSMS',
-      },
-      {
-        label: 'Violences physiques entre usagers',
-        value: 'VIOLENCES_PHYSIQUES_ENTRE_USAGERS',
-      },
-      {
-        label: 'Violences sexuelles entre usagers',
-        value: 'VIOLENCES_SEXUELLES_ENTRE_USAGERS',
-      },
-      {
-        label: 'Violences psychologiques entre usagers',
-        value: 'VIOLENCES_PSYCHOLOGIQUES_ENTRE_USAGERS',
-      },
-      {
-        label: "Violences d'un usager envers son entourage",
-        value: 'VIOLENCES_USAGER_ENTOURAGE',
-      },
-      {
-        label: "Violences d'un usager envers un professionnel",
-        value: 'VIOLENCES_USAGER_PROFESSIONNEL',
-      },
-      {
-        label: 'Défaut de surveillance (fugue / disparition inquiétante)',
-        value: 'DEFAUT_SURVEILLANCE',
-      },
-    ],
-  },
-  {
-    label: 'Qualité des soins',
-    value: 'QUALITE_SOINS',
-    children: [
-      {
-        label: 'Absence ou insuffisance de soins médicaux',
-        value: 'ABSENCE_INSUFFISANCE_SOINS_MEDICAUX',
-      },
-      {
-        label: 'Absence ou insuffisance de soins paramédicaux (repas, hygiène…)',
-        value: 'ABSENCE_INSUFFISANCE_SOINS_PARAMEDICAUX',
-      },
-      {
-        label: 'Absence ou insuffisance de la rééducation',
-        value: 'ABSENCE_INSUFFISANCE_REEDUCATION',
-      },
-      {
-        label:
-          'Affections iatrogénes : infections liées aux soins, infections nosocomiales, événements liés à un produit de santé',
-        value: 'AFFECTIONS_IATROGENES',
-      },
-      {
-        label: 'Aide médicale urgente (SAMU)',
-        value: 'AIDE_MEDICALE_URGENTE_SAMU',
-      },
-      {
-        label: 'Autres',
-        value: 'AUTRES',
-      },
-      {
-        label: 'Défaillance ou incident lié aux soins ou à la surveillance (complications, incapacité, décès)',
-        value: 'DEFAILLANCE_INCIDENT_SOINS_SURVEILLANCE',
-      },
-      {
-        label: 'Délais de prise en charge',
-        value: 'DELAIS_PRISE_EN_CHARGE',
-      },
-      {
-        label: 'Diagnostic, pertinence des examens',
-        value: 'DIAGNOSTIC_PERTINENCE_EXAMENS',
-      },
-      {
-        label: 'Etat du matériel (en rapport avec les soins)',
-        value: 'ETAT_MATERIEL',
-      },
-      {
-        label: 'Les conditions de prélèvements biologiques',
-        value: 'CONDITIONS_PRELEVEMENTS_BIOLOGIQUES',
-      },
-      {
-        label: 'Prise en charge de la douleur',
-        value: 'PRISE_EN_CHARGE_DOULEUR',
-      },
-      {
-        label: "Résultats d'examens",
-        value: 'RESULTATS_EXAMENS',
-      },
-      {
-        label: 'Soins palliatifs (absence ou défaut de plan de soin)',
-        value: 'SOINS_PALLIATIFS',
-      },
-      {
-        label: 'Soins post-mortem, conservation du corps',
-        value: 'SOINS_POST_MORTEM',
-      },
-    ],
-  },
-  {
-    label: "Difficulté de recherche d'établissement ou d'un professionnel ou de service",
-    value: 'DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE',
-    children: [
-      {
-        label: 'Autres',
-        value: 'AUTRES',
-      },
-      {
-        label: 'Garde et permanence des soins ambulatoires',
-        value: 'GARDE_PERMANENCE_SOINS_AMBULATOIRES',
-      },
-      {
-        label: 'Médecin traitant',
-        value: 'MEDECIN_TRAITANT',
-      },
-      {
-        label: 'Spécialiste',
-        value: 'SPECIALISTE',
-      },
-      {
-        label: 'Recherche de SMR',
-        value: 'RECHERCHE_SMR',
-      },
-      {
-        label: 'Établissement médico-social PA',
-        value: 'ETABLISSEMENT_MEDICO_SOCIAL_PA',
-      },
-      {
-        label: 'Établissement médico-social PH',
-        value: 'ETABLISSEMENT_MEDICO_SOCIAL_PH',
-      },
-      {
-        label: 'Transfert par manque de lit',
-        value: 'TRANSFERT_MANQUE_LIT',
-      },
-      {
-        label: "Délais d'attente pour une place au sein de l'établissement",
-        value: 'DELAIS_ATTENTE_PLACE_ETABLISSEMENT',
-      },
-      {
-        label: "Recherche d'un service d'accompagnement à domicile PA",
-        value: 'RECHERCHE_SERVICE_ACCOMPAGNEMENT_DOMICILE_PA',
-      },
-      {
-        label: "Recherche d'un service d'accompagnement à domicile PH",
-        value: 'RECHERCHE_SERVICE_ACCOMPAGNEMENT_DOMICILE_PH',
       },
     ],
   },
@@ -470,11 +364,12 @@ export const MOTIFS_HIERARCHICAL_DATA = [
     value: 'PROBLEMES_ENVIRONNEMENTAUX',
     children: [
       {
-        label: "Problématiques ou gestion des déchets d'activités de soins à risques infectieux (DASRI)",
+        label: "Gestion des déchets d'activités de soins à risques infectieux (DASRI)",
         value: 'GESTION_DECHETS_DASRI',
       },
       {
-        label: 'Situation exceptionnelle (exemple : canicule, innondations..)',
+        label: 'Situation exceptionnelle',
+        description: 'Canicule, innondations, etc.',
         value: 'SITUATION_EXCEPTIONNELLE',
       },
     ],
@@ -488,8 +383,8 @@ export const MOTIFS_HIERARCHICAL_DATA = [
         value: 'CONDITIONS_CONDUITE_VEHICULE',
       },
       {
-        label:
-          "Conditions de prise en charge du patient au début et à la fin (par exemple, délai d'attente, lieu de dépôt...)",
+        label: 'Conditions de prise en charge du patient',
+        description: "Au début et à la fin : délai d'attente, lieu de dépôt, etc.",
         value: 'CONDITIONS_PRISE_EN_CHARGE_PATIENT',
       },
       {
@@ -501,13 +396,142 @@ export const MOTIFS_HIERARCHICAL_DATA = [
         value: 'DEFAUT_GARDE',
       },
       {
-        label:
-          "Non-respect des dispositions réglementaires en vigueur (absence de tenue professionnelle, véhicule nonconforme et hygiène, non-respect de l'obligation de présence d'un ambulancier dans la cellule sanitaire...)",
+        label: 'Non-respect des dispositions réglementaires en vigueur',
+        description:
+          "Absence de tenue professionnelle, véhicule nonconforme et hygiène, non-respect de l'obligation de présence d'un ambulancier dans la cellule sanitaire, etc.",
         value: 'NON_RESPECT_DISPOSITIONS_REGLEMENTAIRES',
       },
       {
         label: 'Transfert entre établissements',
         value: 'TRANSFERT_ENTRE_ETABLISSEMENTS',
+      },
+    ],
+  },
+  {
+    label: "Qualité de l'accompagnement ou du service",
+    value: 'QUALITE_ACCOMPAGNEMENT_SERVICE',
+    children: [
+      {
+        label: "Absence d'animation",
+        value: 'ABSENCE_ANIMATION',
+      },
+      {
+        label: 'Défaut de surveillance',
+        description: 'Fugue ou disparition inquiétante',
+        value: 'DEFAUT_SURVEILLANCE',
+      },
+      {
+        label: 'Non respect des programmes de formation',
+        value: 'NON_RESPECT_PROGRAMMES_FORMATION',
+      },
+      {
+        label: "Problème d'accompagnement ou suivi individuel",
+        description: 'Projet de vie, suivi social, éducatif, administratif, etc.',
+        value: 'PROBLEME_ACCOMPAGNEMENT_SUIVI_INDIVIDUEL',
+      },
+      {
+        label: "Problématique de fonctionnement de l'ESSMS",
+        description: 'Règlement intérieur ou autre',
+        value: 'PROBLEMATIQUE_FONCTIONNEMENT_ESSMS',
+      },
+      {
+        label: "Qualité des animations au lieu d'intervention",
+        value: 'QUALITE_ANIMATIONS_LIEU_INTERVENTIONS',
+      },
+      {
+        label: "Violences d'un usager envers son entourage",
+        value: 'VIOLENCES_USAGER_ENTOURAGE',
+      },
+      {
+        label: "Violences d'un usager envers un professionnel",
+        value: 'VIOLENCES_USAGER_PROFESSIONNEL',
+      },
+      {
+        label: 'Violences physiques entre usagers',
+        value: 'VIOLENCES_PHYSIQUES_ENTRE_USAGERS',
+      },
+      {
+        label: 'Violences psychologiques entre usagers',
+        value: 'VIOLENCES_PSYCHOLOGIQUES_ENTRE_USAGERS',
+      },
+      {
+        label: 'Violences sexuelles entre usagers',
+        value: 'VIOLENCES_SEXUELLES_ENTRE_USAGERS',
+      },
+      {
+        label: 'Autres',
+        value: 'AUTRES',
+      },
+    ],
+  },
+  {
+    label: 'Qualité des soins',
+    value: 'QUALITE_SOINS',
+    children: [
+      {
+        label: 'Absence ou insuffisance de la rééducation',
+        value: 'ABSENCE_INSUFFISANCE_REEDUCATION',
+      },
+      {
+        label: 'Absence ou insuffisance de soins médicaux',
+        value: 'ABSENCE_INSUFFISANCE_SOINS_MEDICAUX',
+      },
+      {
+        label: 'Absence ou insuffisance de soins paramédicaux',
+        description: 'Repas, hygiène, etc.',
+        value: 'ABSENCE_INSUFFISANCE_SOINS_PARAMEDICAUX',
+      },
+      {
+        label: 'Affections iatrogénes',
+        description: 'Infections liées aux soins, infections nosocomiales, événements liés à un produit de santé',
+        value: 'AFFECTIONS_IATROGENES',
+      },
+      {
+        label: 'Aide médicale urgente (SAMU)',
+        value: 'AIDE_MEDICALE_URGENTE_SAMU',
+      },
+      {
+        label: 'Diagnostic, pertinence des examens',
+        value: 'DIAGNOSTIC_PERTINENCE_EXAMENS',
+      },
+      {
+        label: 'Défaillance ou incident lié aux soins ou à la surveillance',
+        description: 'Complications, incapacité, décès',
+        value: 'DEFAILLANCE_INCIDENT_SOINS_SURVEILLANCE',
+      },
+      {
+        label: 'Délai de prise en charge',
+        value: 'DELAIS_PRISE_EN_CHARGE',
+      },
+      {
+        label: 'État du matériel',
+        description: 'En rapport avec les soins',
+        value: 'ETAT_MATERIEL',
+      },
+      {
+        label: 'Conditions de prélèvements biologiques',
+        value: 'CONDITIONS_PRELEVEMENTS_BIOLOGIQUES',
+      },
+      {
+        label: 'Prise en charge de la douleur',
+        value: 'PRISE_EN_CHARGE_DOULEUR',
+      },
+      {
+        label: "Résultats d'examens",
+        value: 'RESULTATS_EXAMENS',
+      },
+      {
+        label: 'Soins palliatifs',
+        description: 'Absence ou défaut de plan de soin',
+        value: 'SOINS_PALLIATIFS',
+      },
+      {
+        label: 'Soins post-mortem, conservation du corps',
+        value: 'SOINS_POST_MORTEM',
+      },
+      {
+        label: 'Autres',
+        value: 'AUTRES',
       },
     ],
   },

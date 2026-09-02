@@ -1,7 +1,23 @@
+import { serializeCsv } from '@sirena/common/utils';
 import { describe, expect, it } from 'vitest';
+import {
+  EXPORT_REQUETES_COLUMNS,
+  EXPORT_REQUETES_HEADERS,
+  type ExportRequetesColumnKey,
+} from './exportRequetesColumns.js';
+import {
+  type BuildExportRequetesRowsOptions,
+  buildExportRequetesRows,
+  type ExportRequeteRecord,
+  type ExportRequetesCsvRow,
+} from './exportRequetesRows.js';
 
-import { EXPORT_REQUETES_COLUMNS, type ExportRequetesColumnKey } from './exportRequetesColumns.js';
-import { buildExportRequetesCsv, buildExportRequetesCsvFromRecords } from './exportRequetesCsv.js';
+const buildExportRequetesCsv = (rows: ExportRequetesCsvRow[]) => serializeCsv([...EXPORT_REQUETES_HEADERS], rows);
+
+const buildExportRequetesCsvFromRecords = (
+  requetes: ExportRequeteRecord[],
+  options: BuildExportRequetesRowsOptions = {},
+) => buildExportRequetesCsv(buildExportRequetesRows(requetes, options));
 
 describe('buildExportRequetesCsv', () => {
   it('exports the stable 55-column business header when there are no rows', () => {
@@ -146,7 +162,7 @@ describe('buildExportRequetesCsv', () => {
                 {
                   motifsDeclaratifs: [],
                   motifs: [
-                    { motifId: 'QUALITE_SOINS/DELAIS_PRISE_EN_CHARGE', motif: { label: 'Délais de prise en charge' } },
+                    { motifId: 'QUALITE_SOINS/DELAIS_PRISE_EN_CHARGE', motif: { label: 'Délai de prise en charge' } },
                   ],
                   consequences: [],
                 },
@@ -178,7 +194,7 @@ describe('buildExportRequetesCsv', () => {
     expect(csvCell(row, 'dateDepotPlainte')).toBe('12/06/2026');
     expect(csvCell(row, 'lieuDepotPlainte')).toBe('Gendarmerie');
     expect(csvCell(row, 'demarchesAutresOrganismes')).toBe('Oui');
-    expect(csvCell(row, 'motifsQualifies')).toBe('Délais de prise en charge (Qualité des soins)');
+    expect(csvCell(row, 'motifsQualifies')).toBe('Délai de prise en charge (Qualité des soins)');
     expect(csvCell(row, 'departementMisEnCause')).toBe('980');
   });
 

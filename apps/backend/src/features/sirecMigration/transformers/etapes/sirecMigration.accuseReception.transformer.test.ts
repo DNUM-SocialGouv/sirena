@@ -21,6 +21,7 @@ const makeData = (overrides: {
   typeTraitementIdDicos: [],
   mainCourantes: [],
   misEnCauses: [],
+  files: [],
 });
 
 const ARS_IDS = ['ars-normandie', 'ars-grand-est'];
@@ -151,6 +152,19 @@ describe('sirecMigration.accuseReception.transformer.ts', () => {
       );
 
       expect(result[0].note).toBe('Précisions : Par courrier');
+    });
+  });
+
+  describe('sirecFileTypeKeys', () => {
+    it('should set sirecFileTypeKeys to [ar_requerant] regardless of accuser_reception value', () => {
+      const withoutAr = transformSirecAccuseReception(makeData({ accuser_reception: 111 }), ['ars-1']);
+      const withAr = transformSirecAccuseReception(
+        makeData({ accuser_reception: 1, date_envoi_ar: new Date('2024-03-05') }),
+        ['ars-1'],
+      );
+
+      expect(withoutAr[0].sirecFileTypeKeys).toEqual(['ar_requerant']);
+      expect(withAr[0].sirecFileTypeKeys).toEqual(['ar_requerant']);
     });
   });
 

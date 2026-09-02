@@ -11,6 +11,7 @@ interface OrganizationSearchFieldProps {
   state?: 'default' | 'success' | 'info' | 'error';
   stateRelatedMessage?: React.ReactNode;
   disabled?: boolean;
+  readOnly?: boolean;
   searchMode: 'finess' | 'name';
   minSearchLength?: number;
   debounceMs?: number;
@@ -46,6 +47,7 @@ export function OrganizationSearchField({
   state = 'default',
   stateRelatedMessage,
   disabled,
+  readOnly,
   searchMode,
   minSearchLength = 3,
   debounceMs = 300,
@@ -94,6 +96,7 @@ export function OrganizationSearchField({
       state={state}
       stateRelatedMessage={stateRelatedMessage}
       disabled={disabled}
+      readOnly={readOnly}
       queryKey="organizations"
       fetchFn={fetchFn}
       formatDisplay={formatDisplay}
