@@ -38,5 +38,5 @@ export const buildOuiNonOptions = (
       onChange: () => onChange(false),
     },
   },
-  buildNonRenseigneOption(value == null, () => onChange(null)),
+  buildNonRenseigneOption(value === null, () => onChange(null)),
 ];

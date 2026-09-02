@@ -71,11 +71,11 @@ describe('Identification', () => {
     expect(screen.queryByLabelText(numeroLabel)).not.toBeInTheDocument();
   });
 
-  it('coche "Non renseigné" par défaut tant que la question est sans réponse', () => {
+  it('ne coche aucune option tant que la question est sans réponse', () => {
     render(<ControlledIdentification />);
-    expect(screen.getByLabelText('Non renseigné')).toBeChecked();
     expect(screen.getByLabelText('Oui')).not.toBeChecked();
     expect(screen.getByLabelText('Non')).not.toBeChecked();
+    expect(screen.getByLabelText('Non renseigné')).not.toBeChecked();
   });
 
   it('accepte librement les numéros dans un format quelconque, sans restriction de caractères', () => {
