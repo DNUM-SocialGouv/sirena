@@ -39,6 +39,9 @@ backend:
 
     deployment:
       replicas: 2
+      additionalsecretRef:
+        - mariadb-sirec-secret
+        - migration-bucket-secret
 
     ingress:
       host: sirena-sante.social.gouv.fr
@@ -102,3 +105,7 @@ worker:
   SDPSN-devops-charts:
     deployment:
       replicas: 2
+      additionalsecretRef:
+        - backend
+        - mariadb-sirec-secret
+        - migration-bucket-secret
