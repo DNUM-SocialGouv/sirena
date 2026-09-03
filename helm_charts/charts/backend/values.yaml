@@ -99,7 +99,6 @@ SDPSN-devops-charts:
     MONITORING_PORT: "9090"
     CLAMAV_PORT: "3310"
     TRUSTED_IP_HEADERS: "x-forwarded-for"
-    REDIS_MIGRATION_CONCURRENCY: "20"
 
   ingress:
     enable: true
