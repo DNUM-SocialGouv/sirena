@@ -24,6 +24,7 @@ backend:
       TIPIMAIL_DISABLE_SENDING: "false"
       APP_ENV: integration
       ACCESS_LOG_RETENTION_DAYS: "1"
+      REDIS_MIGRATION_CONCURRENCY: "30"
 
     deployment:
       replicas: 1

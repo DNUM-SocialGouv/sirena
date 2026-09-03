@@ -318,7 +318,7 @@ export const AppEnvSchema = z.object({
     .string()
     .optional()
     .transform((val) => {
-      if (!val) return 10;
+      if (!val) return 20;
 
       const parsed = Number(val);
 
