@@ -8,9 +8,8 @@ anonymize:
 sirec-restore:
   enabled: true
   config:
-    # Prod = vraies données : on ne restaure PAS les dumps anonymisés
-    # (`dumps_prod_anon/` = défaut du chart, réservé aux envs de dev/integration).
     dumpObjectPrefix: "dumps_prod/"
+    dumpSourceDb: "sirec_national"
 
 backend:
   SDPSN-devops-charts:
