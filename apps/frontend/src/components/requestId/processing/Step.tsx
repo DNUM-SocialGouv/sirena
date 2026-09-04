@@ -58,6 +58,12 @@ const formatStepCreationInfo = (
   return `Ajouté automatiquement${suffixeEntiteAdministrative} le ${date}`;
 };
 
+const ASSIGNMENT_PREPOSITIONS: Record<string, string> = {
+  ARS: 'de l’',
+  DD: 'de la ',
+  CD: 'du ',
+};
+
 const getStepTitle = (
   type: string,
   statutId: string | null,
@@ -69,8 +75,10 @@ const getStepTitle = (
   if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) return "Envoi de l'accusé de réception";
   if (type === REQUETE_ETAPE_TYPES.REOPEN) return 'Réouverture de la requête';
   if (type === REQUETE_ETAPE_TYPES.ASSIGNMENT && assignedEntite) {
-    return `Affectation ${assignedEntite.nomComplet}`;
+    const preposition = ASSIGNMENT_PREPOSITIONS[assignedEntite.entiteTypeId] ?? '';
+    return `Affectation ${preposition}${assignedEntite.nomComplet}`;
   }
+
   return nom ?? '';
 };
 

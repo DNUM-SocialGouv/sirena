@@ -618,7 +618,7 @@ describe('Processing', () => {
     const { rerender } = render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
     expect(
-      screen.getByRole('heading', { name: 'ARS - Affectation Conseil départemental de Seine-Maritime' }),
+      screen.getByRole('heading', { name: 'ARS - Affectation du Conseil départemental de Seine-Maritime' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Ajouté automatiquement (ARS courante) le 19/05/2026')).toBeInTheDocument();
     expect(screen.queryByText(/Jeanne Moulon/)).not.toBeInTheDocument();
@@ -632,7 +632,7 @@ describe('Processing', () => {
     rerender(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
     expect(
-      screen.queryByRole('heading', { name: 'ARS - Affectation Conseil départemental de Seine-Maritime' }),
+      screen.queryByRole('heading', { name: 'ARS - Affectation du Conseil départemental de Seine-Maritime' }),
     ).not.toBeInTheDocument();
 
     selectedEntityId = undefined;
@@ -640,7 +640,7 @@ describe('Processing', () => {
     rerender(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
     expect(
-      screen.getByRole('heading', { name: 'Affectation Conseil départemental de Seine-Maritime' }),
+      screen.getByRole('heading', { name: 'Affectation du Conseil départemental de Seine-Maritime' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Ajouté automatiquement (ARS courante) le 19/05/2026')).toBeInTheDocument();
   });
