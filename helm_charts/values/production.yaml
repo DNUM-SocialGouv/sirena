@@ -8,9 +8,8 @@ anonymize:
 sirec-restore:
   enabled: true
   config:
-    # Prod = vraies données : on ne restaure PAS les dumps anonymisés
-    # (`dumps_prod_anon/` = défaut du chart, réservé aux envs de dev/integration).
     dumpObjectPrefix: "dumps_prod/"
+    dumpSourceDb: "sirec_national"
 
 backend:
   SDPSN-devops-charts:
@@ -39,6 +38,9 @@ backend:
 
     deployment:
       replicas: 2
+      additionalsecretRef:
+        - mariadb-sirec-secret
+        - migration-bucket-secret
 
     ingress:
       host: sirena-sante.social.gouv.fr
@@ -102,3 +104,7 @@ worker:
   SDPSN-devops-charts:
     deployment:
       replicas: 2
+      additionalsecretRef:
+        - backend
+        - mariadb-sirec-secret
+        - migration-bucket-secret
