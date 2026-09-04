@@ -1,4 +1,5 @@
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { booleanToReponseOuiNon } from '@sirena/common/utils';
 import { type Prisma, prisma } from '../../libs/prisma.js';
 import type { PersonneBlueprint, RequeteBlueprint, SituationBlueprint } from './blueprint.js';
 import type { Agent, SeedContext } from './context.js';
@@ -44,8 +45,8 @@ const generateRequeteId = async (
 const mapPersonne = (p: PersonneBlueprint) => ({
   estVictime: p.estVictime,
   estIdentifie: p.estIdentifie,
-  estHandicapee: p.estHandicapee,
-  veutGarderAnonymat: p.veutGarderAnonymat,
+  estHandicapee: booleanToReponseOuiNon(p.estHandicapee),
+  veutGarderAnonymat: booleanToReponseOuiNon(p.veutGarderAnonymat),
   mesureProtection: p.mesureProtection ?? undefined,
   age: p.ageId ? { connect: { id: p.ageId } } : undefined,
   lienVictime: p.lienVictimeId ? { connect: { id: p.lienVictimeId } } : undefined,

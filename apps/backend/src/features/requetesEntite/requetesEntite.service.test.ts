@@ -880,7 +880,7 @@ describe('requetesEntite.service', () => {
         estVictime: false,
         estVictimeInformee: null,
         victimeInformeeCommentaire: '',
-        veutGarderAnonymat: false,
+        veutGarderAnonymat: 'NON',
         commentaire: '',
         autrePersonnes: '',
         ageId: null,
@@ -959,7 +959,7 @@ describe('requetesEntite.service', () => {
         estVictime: false,
         estVictimeInformee: null,
         victimeInformeeCommentaire: '',
-        veutGarderAnonymat: false,
+        veutGarderAnonymat: 'NON',
         commentaire: '',
         autrePersonnes: '',
         ageId: null,
@@ -1032,7 +1032,7 @@ describe('requetesEntite.service', () => {
       estVictime: false,
       estVictimeInformee: null,
       victimeInformeeCommentaire: '',
-      veutGarderAnonymat: false,
+      veutGarderAnonymat: 'NON',
       commentaire: '',
       autrePersonnes: '',
       ageId: null,
@@ -1172,7 +1172,7 @@ describe('requetesEntite.service', () => {
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
           participantDeId: 'req123',
-          veutGarderAnonymat: false,
+          veutGarderAnonymat: 'NON',
           estHandicapee: null,
           estVictimeInformee: null,
           victimeInformeeCommentaire: '',
@@ -1203,7 +1203,7 @@ describe('requetesEntite.service', () => {
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
           participantDeId: 'req123',
-          veutGarderAnonymat: false,
+          veutGarderAnonymat: 'NON',
           estHandicapee: null,
           estVictimeInformee: null,
           victimeInformeeCommentaire: '',
@@ -1247,7 +1247,7 @@ describe('requetesEntite.service', () => {
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
           participantDeId: 'req123',
-          veutGarderAnonymat: false,
+          veutGarderAnonymat: 'NON',
           estHandicapee: null,
           estVictimeInformee: null,
           victimeInformeeCommentaire: '',
@@ -1282,12 +1282,12 @@ describe('requetesEntite.service', () => {
         adresse: mockAdresse,
         ageId: 'age-adulte',
         dateNaissance: new Date('1940-06-15'),
-        veutGarderAnonymat: true,
-        estHandicapee: false,
-        estVictimeInformee: true,
+        veutGarderAnonymat: 'OUI' as const,
+        estHandicapee: 'NON' as const,
+        estVictimeInformee: 'OUI' as const,
         victimeInformeeCommentaire: 'commentaire informee',
         commentaire: 'autres précisions',
-        aAutrePersonnes: true,
+        aAutrePersonnes: 'OUI' as const,
         autrePersonnes: 'un enfant',
       };
       vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteWithoutDeclarant);
@@ -1305,12 +1305,12 @@ describe('requetesEntite.service', () => {
           participantDeId: 'req123',
           ageId: 'age-adulte',
           dateNaissance: new Date('1940-06-15'),
-          veutGarderAnonymat: true,
-          estHandicapee: false,
-          estVictimeInformee: true,
+          veutGarderAnonymat: 'OUI',
+          estHandicapee: 'NON',
+          estVictimeInformee: 'OUI',
           victimeInformeeCommentaire: 'commentaire informee',
           commentaire: 'autres précisions',
-          aAutrePersonnes: true,
+          aAutrePersonnes: 'OUI',
           autrePersonnes: 'un enfant',
           identite: {
             create: {
@@ -1371,7 +1371,7 @@ describe('requetesEntite.service', () => {
         estVictime: false,
         estVictimeInformee: null,
         victimeInformeeCommentaire: '',
-        veutGarderAnonymat: false,
+        veutGarderAnonymat: 'NON',
         commentaire: '',
         autrePersonnes: '',
         ageId: null,
@@ -1380,7 +1380,7 @@ describe('requetesEntite.service', () => {
         lienAutrePrecision: null,
         declarantDeId: 'req123',
         participantDeId: null,
-        aAutrePersonnes: false,
+        aAutrePersonnes: 'NON',
         createdAt: timestamp,
         updatedAt: timestamp,
         isTuteur: null,
@@ -1436,7 +1436,7 @@ describe('requetesEntite.service', () => {
       estVictime: false,
       estVictimeInformee: null,
       victimeInformeeCommentaire: '',
-      veutGarderAnonymat: false,
+      veutGarderAnonymat: 'NON',
       commentaire: '',
       autrePersonnes: '',
       ageId: null,
@@ -1445,7 +1445,7 @@ describe('requetesEntite.service', () => {
       lienAutrePrecision: null,
       declarantDeId: 'req123',
       participantDeId: null,
-      aAutrePersonnes: false,
+      aAutrePersonnes: 'NON',
       createdAt: new Date('2024-01-01T10:00:00Z'),
       updatedAt: new Date('2024-01-01T10:00:00Z'),
       isTuteur: null,
@@ -1601,6 +1601,38 @@ describe('requetesEntite.service', () => {
                 estVictimeInformee: null,
                 aAutrePersonnes: null,
                 mesureProtection: null,
+              }),
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('persists an explicit "Non renseigné" answer without collapsing it to null', async () => {
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        ...mockRequeteEntite.requete,
+        participant: { id: 'participant123', identite: null },
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+
+      await updateRequeteParticipant('req123', {
+        estHandicapee: 'NON_RENSEIGNE',
+        consentCommuniquerIdentite: 'NON_RENSEIGNE',
+        estVictimeInformee: 'NON_RENSEIGNE',
+        aAutrePersonnes: 'NON_RENSEIGNE',
+        mesureProtection: 'NON_RENSEIGNE',
+      });
+
+      expect(prisma.requete.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            participant: expect.objectContaining({
+              update: expect.objectContaining({
+                estHandicapee: 'NON_RENSEIGNE',
+                veutGarderAnonymat: 'NON_RENSEIGNE',
+                estVictimeInformee: 'NON_RENSEIGNE',
+                aAutrePersonnes: 'NON_RENSEIGNE',
+                mesureProtection: 'NON_RENSEIGNE',
               }),
             }),
           }),

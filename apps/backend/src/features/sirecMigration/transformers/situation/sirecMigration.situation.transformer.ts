@@ -1,4 +1,6 @@
-import { DEMARCHES_ENGAGEES } from '@sirena/common/constants';
+import { DEMARCHES_ENGAGEES, REPONSE_OUI_NON } from '@sirena/common/constants';
+import type { ReponseOuiNonValue } from '@sirena/common/schemas';
+import { booleanToReponseOuiNon } from '@sirena/common/utils';
 import type { SirecReclamationData } from '../../sirecMigration.repository.js';
 import { SIREC_BOOLEAN_TRANSCO } from '../../transco/dictionnaire.transco.js';
 import { transcodeDomaineFonctionnel } from '../../transco/domaineFonctionnel.transco.js';
@@ -25,22 +27,22 @@ export interface SirenaSituationData {
   misEnCauseData: SirenaMisEnCauseData | null;
   lieuDeSurvenueData: SirenaLieuDeSurvenueData | null;
   domainesFonctionnelsId: string | null;
-  estLieAuSignalement: boolean | undefined;
+  estLieAuSignalement: ReponseOuiNonValue;
   numerosSignalement: string;
   sirecDepartement: string | null;
 }
 
 const SAISINE_PLAINTE = 75;
 
-function resolveEstLieAuSignalement(ei_avere: number | null, num_sign_assoc: string | null): boolean | undefined {
+function resolveEstLieAuSignalement(ei_avere: number | null, num_sign_assoc: string | null): ReponseOuiNonValue {
   let eiAvere: boolean | undefined;
   if (ei_avere !== null && ei_avere !== 77) {
     const value = SIREC_BOOLEAN_TRANSCO[ei_avere];
     if (value === undefined) throw new SirecTranscoError(ei_avere, 'ei_avere');
     eiAvere = value;
   }
-  if (eiAvere || num_sign_assoc) return true;
-  return eiAvere;
+  if (eiAvere || num_sign_assoc) return REPONSE_OUI_NON.OUI;
+  return booleanToReponseOuiNon(eiAvere) ?? undefined;
 }
 
 export function transformSirecSituation(sirecData: SirecReclamationData, entiteIds: string[]): SirenaSituationData {

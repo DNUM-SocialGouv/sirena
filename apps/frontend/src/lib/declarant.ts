@@ -1,4 +1,6 @@
 import { mappers } from '@sirena/common';
+import type { ReponseOuiNonValue } from '@sirena/common/schemas';
+import { negateReponseOuiNon } from '@sirena/common/utils';
 import type { client } from './api/hc';
 
 type RequeteEntiteGetResponse = Awaited<
@@ -12,9 +14,8 @@ function formatDeclarantFromServerImpl(declarant: DeclarantFromAPI) {
   const adresse = declarant.adresse ?? null;
   const civiliteId = identite?.civilite?.id || identite?.civiliteId || '';
 
-  const consentCommuniquerIdentite: boolean | null | undefined =
-    declarant.veutGarderAnonymat === null ? undefined : !declarant.veutGarderAnonymat;
-  const estSignalementProfessionnel: boolean | null | undefined = declarant.estSignalementProfessionnel ?? undefined;
+  const consentCommuniquerIdentite: ReponseOuiNonValue = negateReponseOuiNon(declarant.veutGarderAnonymat) ?? undefined;
+  const estSignalementProfessionnel: ReponseOuiNonValue = declarant.estSignalementProfessionnel ?? undefined;
 
   return {
     civilite: mappers.mapCiviliteToFrontend(civiliteId),

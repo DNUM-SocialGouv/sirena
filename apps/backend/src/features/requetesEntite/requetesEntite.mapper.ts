@@ -1,5 +1,12 @@
 import { mappers } from '@sirena/common';
-import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
+import { REPONSE_OUI_NON } from '@sirena/common/constants';
+import type {
+  DeclarantDataSchema,
+  PersonneConcerneeDataSchema,
+  ReponseOuiNonValue,
+  SituationDataSchema,
+} from '@sirena/common/schemas';
+import { negateReponseOuiNon } from '@sirena/common/utils';
 import type { z } from 'zod';
 
 type DeclarantInput = z.infer<typeof DeclarantDataSchema>;
@@ -12,8 +19,8 @@ const hasIdentiteData = (data: {
   courrierElectronique?: string;
   numeroTelephone?: string;
   civilite?: string;
-  consentCommuniquerIdentite?: boolean | null;
-  estSignalementProfessionnel?: boolean | null;
+  consentCommuniquerIdentite?: ReponseOuiNonValue;
+  estSignalementProfessionnel?: ReponseOuiNonValue;
   autresPrecisions?: string;
   lienAvecPersonneConcernee?: string;
   lienAvecPersonneConcerneePrecision?: string;
@@ -31,8 +38,7 @@ const hasIdentiteData = (data: {
 
 export const mapDeclarantToPrismaCreate = (declarantData: DeclarantInput) => ({
   estIdentifie: true,
-  veutGarderAnonymat:
-    declarantData.consentCommuniquerIdentite == null ? null : !declarantData.consentCommuniquerIdentite,
+  veutGarderAnonymat: negateReponseOuiNon(declarantData.consentCommuniquerIdentite),
   isTuteur: declarantData.isTuteur ?? undefined,
   estSignalementProfessionnel: declarantData.estSignalementProfessionnel ?? null,
   estVictime: declarantData.estPersonneConcernee || false,
@@ -69,11 +75,10 @@ export const mapDeclarantToPrismaCreate = (declarantData: DeclarantInput) => ({
 
 export const mapPersonneConcerneeToPrismaCreate = (participantData: PersonneConcerneeInput) => ({
   estHandicapee: participantData.estHandicapee ?? null,
-  veutGarderAnonymat:
-    participantData.consentCommuniquerIdentite == null ? null : !participantData.consentCommuniquerIdentite,
+  veutGarderAnonymat: negateReponseOuiNon(participantData.consentCommuniquerIdentite),
   estVictimeInformee: participantData.estVictimeInformee ?? null,
   victimeInformeeCommentaire: participantData.victimeInformeeCommentaire || '',
-  autrePersonnes: participantData.autrePersonnes || '',
+  autrePersonnes: participantData.aAutrePersonnes === REPONSE_OUI_NON.OUI ? participantData.autrePersonnes || '' : '',
   aAutrePersonnes: participantData.aAutrePersonnes ?? null,
   mesureProtection: participantData.mesureProtection ?? null,
   commentaire: participantData.commentaire || '',
@@ -116,7 +121,8 @@ export const mapSituationToPrismaCreate = (situationData: SituationInput) => {
 
   return {
     estLieAuSignalement: situationData.estLieAuSignalement ?? null,
-    numerosSignalement: situationData.estLieAuSignalement === true ? situationData.numerosSignalement || '' : '',
+    numerosSignalement:
+      situationData.estLieAuSignalement === REPONSE_OUI_NON.OUI ? situationData.numerosSignalement || '' : '',
     lieuDeSurvenue: {
       create: {
         lieuTypeId: lieuData?.lieuType || null,
