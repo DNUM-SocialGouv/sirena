@@ -1,3 +1,5 @@
+import { REPONSE_OUI_NON } from '@sirena/common/constants';
+import { REPONSE_NON_RENSEIGNE_LABEL } from '@sirena/common/utils';
 import { InfoSection } from '@sirena/ui';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
@@ -49,7 +51,7 @@ export const DeclarantSection = ({ requestId, id, declarant, editHref }: Declara
     !!declarant?.commentaire ||
     declarant?.veutGarderAnonymat !== null ||
     !!declarant?.isTuteur ||
-    !!declarant?.estSignalementProfessionnel;
+    declarant?.estSignalementProfessionnel != null;
 
   const renderSummary = () => {
     if (isDeclarantPC) {
@@ -90,7 +92,7 @@ export const DeclarantSection = ({ requestId, id, declarant, editHref }: Declara
       !!declarant?.commentaire ||
       (declarant?.veutGarderAnonymat !== null && declarant?.veutGarderAnonymat !== undefined) ||
       !!declarant?.isTuteur ||
-      !!declarant?.estSignalementProfessionnel;
+      declarant?.estSignalementProfessionnel != null;
 
     if (!hasIdentitySection && !hasAddressSection && !hasContactSection && !hasComplementaryInfo) {
       return null;
@@ -139,16 +141,22 @@ export const DeclarantSection = ({ requestId, id, declarant, editHref }: Declara
               {declarant.veutGarderAnonymat !== null && declarant.veutGarderAnonymat !== undefined && (
                 <li>{renderConsentIdentite(declarant.veutGarderAnonymat)}</li>
               )}
-              {declarant.estSignalementProfessionnel === true && (
+              {declarant.estSignalementProfessionnel === REPONSE_OUI_NON.OUI && (
                 <li>
                   Il/elle est un professionnel qui signale des dysfonctionnements et événements indésirables graves
                   (EIG)
                 </li>
               )}
-              {declarant.estSignalementProfessionnel === false && (
+              {declarant.estSignalementProfessionnel === REPONSE_OUI_NON.NON && (
                 <li>
                   Il/elle n&apos;est pas un professionnel qui signale des dysfonctionnements et événements indésirables
                   graves (EIG)
+                </li>
+              )}
+              {declarant.estSignalementProfessionnel === REPONSE_OUI_NON.NON_RENSEIGNE && (
+                <li>
+                  Professionnel qui signale des dysfonctionnements et événements indésirables graves (EIG) :{' '}
+                  {REPONSE_NON_RENSEIGNE_LABEL}
                 </li>
               )}
               {declarant.isTuteur ? <li>Le déclarant est curateur ou tuteur de la personne concernée</li> : null}

@@ -90,31 +90,31 @@ describe('sirecMigration.situation.transformer.ts', () => {
   });
 
   describe('estLieAuSignalement and numerosSignalement', () => {
-    it('should set estLieAuSignalement to true when ei_avere is true (1)', () => {
+    it('should set estLieAuSignalement to OUI when ei_avere is true (1)', () => {
       const result = transformSirecSituation(
         { ...sirecData, reclamation: { ...sirecData.reclamation, ei_avere: 1 } },
         [],
       );
 
-      expect(result.estLieAuSignalement).toBe(true);
+      expect(result.estLieAuSignalement).toBe('OUI');
     });
 
-    it('should set estLieAuSignalement to false when ei_avere is false and num_sign_assoc is null', () => {
+    it('should set estLieAuSignalement to NON when ei_avere is false and num_sign_assoc is null', () => {
       const result = transformSirecSituation(
         { ...sirecData, reclamation: { ...sirecData.reclamation, ei_avere: 0, num_sign_assoc: null } },
         [],
       );
 
-      expect(result.estLieAuSignalement).toBe(false);
+      expect(result.estLieAuSignalement).toBe('NON');
     });
 
-    it('should set estLieAuSignalement to true when ei_avere is false and num_sign_assoc is set', () => {
+    it('should set estLieAuSignalement to OUI when ei_avere is false and num_sign_assoc is set', () => {
       const result = transformSirecSituation(
         { ...sirecData, reclamation: { ...sirecData.reclamation, ei_avere: 0, num_sign_assoc: 'SIG001' } },
         [],
       );
 
-      expect(result.estLieAuSignalement).toBe(true);
+      expect(result.estLieAuSignalement).toBe('OUI');
     });
 
     it('should set estLieAuSignalement to undefined when both fields are null', () => {
@@ -123,22 +123,22 @@ describe('sirecMigration.situation.transformer.ts', () => {
       expect(result.estLieAuSignalement).toBeUndefined();
     });
 
-    it('should set estLieAuSignalement to true when num_sign_assoc is non-empty', () => {
+    it('should set estLieAuSignalement to OUI when num_sign_assoc is non-empty', () => {
       const result = transformSirecSituation(
         { ...sirecData, reclamation: { ...sirecData.reclamation, ei_avere: null, num_sign_assoc: 'SIG001' } },
         [],
       );
 
-      expect(result.estLieAuSignalement).toBe(true);
+      expect(result.estLieAuSignalement).toBe('OUI');
     });
 
-    it('should set estLieAuSignalement to true when both ei_avere is true and num_sign_assoc is set', () => {
+    it('should set estLieAuSignalement to OUI when both ei_avere is true and num_sign_assoc is set', () => {
       const result = transformSirecSituation(
         { ...sirecData, reclamation: { ...sirecData.reclamation, ei_avere: 1, num_sign_assoc: 'SIG001' } },
         [],
       );
 
-      expect(result.estLieAuSignalement).toBe(true);
+      expect(result.estLieAuSignalement).toBe('OUI');
     });
 
     it('should throw SirecTranscoError when ei_avere has an unknown id', () => {

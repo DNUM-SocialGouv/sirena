@@ -1,6 +1,7 @@
 import {
   AGE,
   LIEU_TYPE,
+  MESURE_PROTECTION,
   MIS_EN_CAUSE_TYPE,
   RECEPTION_TYPE,
   REQUETE_ETAPE_STATUT_TYPES,
@@ -213,7 +214,7 @@ export const FAMILIES: Family[] = [
         ...makeIdentifiedPersonne(ctx, true),
         ageId: ctx.refs.ages.requireOrPick(ctx.faker, AGE['-18']),
         estHandicapee: true,
-        mesureProtection: 'MANDATAIRE_JUDICIAIRE',
+        mesureProtection: MESURE_PROTECTION.MANDATAIRE_JUDICIAIRE,
       };
       return bp;
     },

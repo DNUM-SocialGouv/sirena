@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ReponseOuiNonSchema } from './reponseOuiNon.schema.js';
 
 export const DeclarantDataSchema = z.object({
   civilite: z.string().optional(),
@@ -13,8 +14,8 @@ export const DeclarantDataSchema = z.object({
   numeroTelephone: z.string().optional(),
   courrierElectronique: z.email().optional().or(z.literal('')),
   estPersonneConcernee: z.boolean().optional(),
-  consentCommuniquerIdentite: z.boolean().optional().nullable(),
-  estSignalementProfessionnel: z.boolean().optional().nullable(),
+  consentCommuniquerIdentite: ReponseOuiNonSchema.optional().nullable(),
+  estSignalementProfessionnel: ReponseOuiNonSchema.optional().nullable(),
   autresPrecisions: z.string().optional(),
 });
 

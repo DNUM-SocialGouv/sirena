@@ -5,6 +5,7 @@ import {
   type EntiteType,
   ERROR_KIND,
   MOTIFS_HIERARCHICAL_DATA,
+  REPONSE_OUI_NON,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_ETAPE_TYPES,
   REQUETE_STATUT_TYPES,
@@ -16,11 +17,15 @@ import {
 } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import {
+  formatReponseOuiNon,
   getDateTodayInParis,
   getLieuPrecisionLabel,
   getMesureProtectionShortLabel,
   getOver90DaysCutoffDate,
   isAutomaticRequest,
+  isReponseOuiNonRenseignee,
+  negateReponseOuiNon,
+  REPONSE_NON_RENSEIGNE_LABEL,
   toWallClockDate,
 } from '@sirena/common/utils';
 import { ZipArchive } from 'archiver';
@@ -770,8 +775,7 @@ export const updateRequete = async (requeteId: string, data: UpdateRequeteInput,
           declarant: {
             update: {
               estIdentifie: true,
-              veutGarderAnonymat:
-                declarantData.consentCommuniquerIdentite == null ? null : !declarantData.consentCommuniquerIdentite,
+              veutGarderAnonymat: negateReponseOuiNon(declarantData.consentCommuniquerIdentite),
               isTuteur: declarantData.isTuteur ?? undefined,
               estSignalementProfessionnel: declarantData.estSignalementProfessionnel ?? null,
               estVictime: declarantData.estPersonneConcernee || false,
@@ -968,12 +972,14 @@ export const updateRequeteParticipant = async (
         participant: {
           update: {
             estHandicapee: participantData.estHandicapee ?? null,
-            veutGarderAnonymat:
-              participantData.consentCommuniquerIdentite == null ? null : !participantData.consentCommuniquerIdentite,
+            veutGarderAnonymat: negateReponseOuiNon(participantData.consentCommuniquerIdentite),
             estVictimeInformee: participantData.estVictimeInformee ?? null,
             victimeInformeeCommentaire:
-              participantData.estVictimeInformee === false ? participantData.victimeInformeeCommentaire || '' : '',
-            autrePersonnes: participantData.autrePersonnes || '',
+              participantData.estVictimeInformee === REPONSE_OUI_NON.NON
+                ? participantData.victimeInformeeCommentaire || ''
+                : '',
+            autrePersonnes:
+              participantData.aAutrePersonnes === REPONSE_OUI_NON.OUI ? participantData.autrePersonnes || '' : '',
             aAutrePersonnes: participantData.aAutrePersonnes ?? null,
             mesureProtection: participantData.mesureProtection ?? null,
             commentaire: participantData.commentaire || '',
@@ -1337,7 +1343,8 @@ const updateExistingSituation = async (
     where: { id: existingSituation.id },
     data: {
       estLieAuSignalement: situationData.estLieAuSignalement ?? null,
-      numerosSignalement: situationData.estLieAuSignalement === true ? situationData.numerosSignalement || '' : '',
+      numerosSignalement:
+        situationData.estLieAuSignalement === REPONSE_OUI_NON.OUI ? situationData.numerosSignalement || '' : '',
       lieuDeSurvenue: { update: buildLieuDeSurvenueUpdate(situationData.lieuDeSurvenue) },
       misEnCause: { update: buildMisEnCauseUpdate(situationData.misEnCause) },
       demarchesEngagees: { update: buildDemarchesEngageesUpdate(situationData.demarchesEngagees) },
@@ -2129,11 +2136,6 @@ export const createRequeteFilesArchive = async (requeteId: string, entiteId: str
   return { archive, requeteId: requeteEntite.requeteId };
 };
 
-const booleanLabel = (value: boolean | null | undefined): string | null => {
-  if (value === null || value === undefined) return null;
-  return value ? 'Oui' : 'Non';
-};
-
 const formatRue = (adresse: { numero: string | null; rue: string | null } | null) =>
   adresse ? [adresse.numero, adresse.rue].filter(Boolean).join(' ') || null : null;
 
@@ -2361,18 +2363,21 @@ export const generateRequetePdfBuffer = async (
         .field('Téléphone', d.identite?.telephone || null)
         .field(
           'Consent à ce que son identité soit communiquée',
-          booleanLabel(
-            d.veutGarderAnonymat === null || d.veutGarderAnonymat === undefined ? null : !d.veutGarderAnonymat,
-          ),
+          formatReponseOuiNon(negateReponseOuiNon(d.veutGarderAnonymat)),
         );
 
       if (d.isTuteur) {
         pdf.paragraph('Le déclarant est curateur ou tuteur de la personne concernée');
       }
 
-      if (d.estSignalementProfessionnel !== null && d.estSignalementProfessionnel !== undefined) {
+      if (isReponseOuiNonRenseignee(d.estSignalementProfessionnel)) {
         pdf.paragraph(
-          `Le déclarant ${d.estSignalementProfessionnel ? 'est' : "n'est pas"} un professionnel qui signale des dysfonctionnements et évènements indésirables graves (EIG)`,
+          `Le déclarant ${d.estSignalementProfessionnel === REPONSE_OUI_NON.OUI ? 'est' : "n'est pas"} un professionnel qui signale des dysfonctionnements et évènements indésirables graves (EIG)`,
+        );
+      } else if (d.estSignalementProfessionnel === REPONSE_OUI_NON.NON_RENSEIGNE) {
+        pdf.field(
+          'Professionnel qui signale des dysfonctionnements et évènements indésirables graves (EIG)',
+          REPONSE_NON_RENSEIGNE_LABEL,
         );
       }
 
@@ -2392,22 +2397,23 @@ export const generateRequetePdfBuffer = async (
       .field('Nom', p.identite?.nom || null)
       .field('Date de naissance', p.dateNaissance ? formatDateFr(p.dateNaissance) : null)
       .field("Tranche d'âge", p.age ? p.age.label : null)
-      .field('En situation de handicap', booleanLabel(p.estHandicapee))
+      .field('En situation de handicap', formatReponseOuiNon(p.estHandicapee))
       .field('Adresse', formatRue(p.adresse))
       .field('Code postal', p.adresse?.codePostal || null)
       .field('Ville', p.adresse?.ville || null)
       .field('Email', p.identite?.email || null)
       .field('Téléphone', p.identite?.telephone || null)
-      .field('A été informé(e) de la démarche par le déclarant', booleanLabel(p.estVictimeInformee))
+      .field('A été informé(e) de la démarche par le déclarant', formatReponseOuiNon(p.estVictimeInformee))
       .field("Raison pour laquelle elle n'a pas été informée", p.victimeInformeeCommentaire || null)
       .field(
         'Consent à ce que son identité soit communiquée',
-        booleanLabel(
-          p.veutGarderAnonymat === null || p.veutGarderAnonymat === undefined ? null : !p.veutGarderAnonymat,
-        ),
+        formatReponseOuiNon(negateReponseOuiNon(p.veutGarderAnonymat)),
       )
-      .field("D'autres personnes sont concernées par la requête", booleanLabel(p.aAutrePersonnes))
-      .field('Précisions sur les autres personnes concernées', p.autrePersonnes || null)
+      .field("D'autres personnes sont concernées par la requête", formatReponseOuiNon(p.aAutrePersonnes))
+      .field(
+        'Précisions sur les autres personnes concernées',
+        p.aAutrePersonnes === REPONSE_OUI_NON.OUI ? p.autrePersonnes || null : null,
+      )
       .field('Autres précisions', p.commentaire || null);
 
     if (mesureProtectionLabel) {
@@ -2424,11 +2430,14 @@ export const generateRequetePdfBuffer = async (
       : 'Description de la situation';
     pdf.subsection(situationTitle);
 
-    if (situation.estLieAuSignalement !== null && situation.estLieAuSignalement !== undefined) {
+    if (situation.estLieAuSignalement != null) {
       pdf
         .subsubsection('Identification')
-        .field('Situation en lien avec un ou plusieurs signalement(s)', situation.estLieAuSignalement ? 'Oui' : 'Non');
-      if (situation.estLieAuSignalement && situation.numerosSignalement) {
+        .field(
+          'Situation en lien avec un ou plusieurs signalement(s)',
+          formatReponseOuiNon(situation.estLieAuSignalement),
+        );
+      if (situation.estLieAuSignalement === REPONSE_OUI_NON.OUI && situation.numerosSignalement) {
         pdf.field('Numéro(s) de signalement associé(s)', situation.numerosSignalement);
       }
     }

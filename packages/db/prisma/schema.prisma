@@ -236,23 +236,30 @@ enum MesureProtection {
   MANDATAIRE_JUDICIAIRE
   MANDATAIRE_FAMILIAL
   NON
+  NON_RENSEIGNE
+}
+
+enum ReponseOuiNon {
+  OUI
+  NON
+  NON_RENSEIGNE
 }
 
 model PersonneConcernee {
   id                          String   @id @default(uuid())
   estNonIdentifiee            Boolean?
-  estHandicapee               Boolean?
+  estHandicapee               ReponseOuiNon?
   estIdentifie                Boolean?
   estVictime                  Boolean?
-  estVictimeInformee          Boolean?
-  victimeInformeeCommentaire  String   @default("")
+  estVictimeInformee          ReponseOuiNon?
+  victimeInformeeCommentaire  String         @default("")
   isTuteur                    Boolean?
-  veutGarderAnonymat          Boolean?
-  estSignalementProfessionnel Boolean?
+  veutGarderAnonymat          ReponseOuiNon?
+  estSignalementProfessionnel ReponseOuiNon?
   estPersonneMorale           Boolean?
-  commentaire                 String   @default("")
-  autrePersonnes              String   @default("")
-  aAutrePersonnes             Boolean?
+  commentaire                 String         @default("")
+  autrePersonnes              String         @default("")
+  aAutrePersonnes             ReponseOuiNon?
   mesureProtection            MesureProtection?
 
   identite Identite? @relation("PersonneIdentite")
@@ -348,8 +355,8 @@ model Situation {
   domainesFonctionnelsId String?
   domainesFonctionnels   DomainesFonctionnelsEnum? @relation(fields: [domainesFonctionnelsId], references: [id], onDelete: SetNull)
 
-  estLieAuSignalement Boolean?
-  numerosSignalement  String   @default("")
+  estLieAuSignalement ReponseOuiNon?
+  numerosSignalement  String         @default("")
 
   sirecDepartement String?
 

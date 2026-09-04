@@ -6,7 +6,7 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import { mappers } from '@sirena/common';
-import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
+import { optionalEmailSchema, optionalPhoneSchema, type ReponseOuiNon } from '@sirena/common/schemas';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
@@ -62,7 +62,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
       }
     };
 
-  const handleBooleanChange = (field: keyof DeclarantData, value: boolean | null) => {
+  const handleReponseChange = (field: keyof DeclarantData, value: ReponseOuiNon) => {
     setFormData((prev: DeclarantData) => ({ ...prev, [field]: value }));
   };
 
@@ -360,16 +360,20 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                   legend={declarantFieldMetadata.consentCommuniquerIdentite.label}
                   name="declarant-consent-identite"
                   orientation="horizontal"
-                  options={buildOuiNonOptions(formData.consentCommuniquerIdentite, (value) =>
-                    handleBooleanChange('consentCommuniquerIdentite', value),
+                  options={buildOuiNonOptions(
+                    formData.consentCommuniquerIdentite,
+                    (value) => handleReponseChange('consentCommuniquerIdentite', value),
+                    'communication de son identité',
                   )}
                 />
                 <RadioButtons
                   legend={declarantFieldMetadata.estSignalementProfessionnel.label}
                   name="declarant-signalement-pro"
                   orientation="horizontal"
-                  options={buildOuiNonOptions(formData.estSignalementProfessionnel, (value) =>
-                    handleBooleanChange('estSignalementProfessionnel', value),
+                  options={buildOuiNonOptions(
+                    formData.estSignalementProfessionnel,
+                    (value) => handleReponseChange('estSignalementProfessionnel', value),
+                    'signalement professionnel',
                   )}
                 />
 

@@ -29,6 +29,10 @@ const departementLabel = /Département en charge/i;
 
 const numeroLabel = /Numéro de signalement associé/i;
 
+const ouiLabel = /^Oui\b/;
+const nonLabel = /^Non —/;
+const nonRenseigneLabel = /^Non renseigné/;
+
 afterEach(() => {
   cleanup();
 });
@@ -47,41 +51,47 @@ describe('Identification', () => {
 
   it('affiche le champ numéro avec son aide à la saisie quand Oui est coché', () => {
     render(<ControlledIdentification />);
-    fireEvent.click(screen.getByLabelText('Oui'));
+    fireEvent.click(screen.getByLabelText(ouiLabel));
     expect(screen.getByLabelText(numeroLabel)).toBeInTheDocument();
     expect(screen.getByText(/séparer les valeurs par des virgules\. Exemples : 098655, 446789/i)).toBeInTheDocument();
   });
 
-  it('masque et vide les numéros quand on repasse à Non', () => {
-    render(<ControlledIdentification initialData={{ estLieAuSignalement: true, numerosSignalement: '098655' }} />);
+  it('masque les numéros quand on repasse à Non sans détruire la saisie', () => {
+    render(<ControlledIdentification initialData={{ estLieAuSignalement: 'OUI', numerosSignalement: '098655' }} />);
     expect(screen.getByLabelText(numeroLabel)).toHaveValue('098655');
-    fireEvent.click(screen.getByLabelText('Non'));
+    fireEvent.click(screen.getByLabelText(nonLabel));
     expect(screen.queryByLabelText(numeroLabel)).not.toBeInTheDocument();
-    // Re-cocher Oui : le champ est de nouveau vide
-    fireEvent.click(screen.getByLabelText('Oui'));
-    expect(screen.getByLabelText(numeroLabel)).toHaveValue('');
+    fireEvent.click(screen.getByLabelText(ouiLabel));
+    expect(screen.getByLabelText(numeroLabel)).toHaveValue('098655');
   });
 
   it('permet de revenir à un état neutre via "Non renseigné"', () => {
-    render(<ControlledIdentification initialData={{ estLieAuSignalement: true, numerosSignalement: '098655' }} />);
-    fireEvent.click(screen.getByLabelText('Non renseigné'));
-    expect(screen.getByLabelText('Non renseigné')).toBeChecked();
-    expect(screen.getByLabelText('Oui')).not.toBeChecked();
-    expect(screen.getByLabelText('Non')).not.toBeChecked();
+    render(<ControlledIdentification initialData={{ estLieAuSignalement: 'OUI', numerosSignalement: '098655' }} />);
+    fireEvent.click(screen.getByLabelText(nonRenseigneLabel));
+    expect(screen.getByLabelText(nonRenseigneLabel)).toBeChecked();
+    expect(screen.getByLabelText(ouiLabel)).not.toBeChecked();
+    expect(screen.getByLabelText(nonLabel)).not.toBeChecked();
     expect(screen.queryByLabelText(numeroLabel)).not.toBeInTheDocument();
   });
 
   it('ne coche aucune option tant que la question est sans réponse', () => {
     render(<ControlledIdentification />);
-    expect(screen.getByLabelText('Oui')).not.toBeChecked();
-    expect(screen.getByLabelText('Non')).not.toBeChecked();
-    expect(screen.getByLabelText('Non renseigné')).not.toBeChecked();
+    expect(screen.getByLabelText(ouiLabel)).not.toBeChecked();
+    expect(screen.getByLabelText(nonLabel)).not.toBeChecked();
+    expect(screen.getByLabelText(nonRenseigneLabel)).not.toBeChecked();
+  });
+
+  it('recoche "Non renseigné" quand la réponse a été enregistrée', () => {
+    render(<ControlledIdentification initialData={{ estLieAuSignalement: 'NON_RENSEIGNE' }} />);
+    expect(screen.getByLabelText(nonRenseigneLabel)).toBeChecked();
+    expect(screen.getByLabelText(ouiLabel)).not.toBeChecked();
+    expect(screen.getByLabelText(nonLabel)).not.toBeChecked();
   });
 
   it('accepte librement les numéros dans un format quelconque, sans restriction de caractères', () => {
     render(
       <ControlledIdentification
-        initialData={{ estLieAuSignalement: true, numerosSignalement: 'SIG-2024/098-655, ABC.123' }}
+        initialData={{ estLieAuSignalement: 'OUI', numerosSignalement: 'SIG-2024/098-655, ABC.123' }}
       />,
     );
     expect(screen.getByLabelText(numeroLabel)).toHaveValue('SIG-2024/098-655, ABC.123');

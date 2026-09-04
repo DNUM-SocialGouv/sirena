@@ -1,4 +1,5 @@
 import { SituationDataSchema } from '@sirena/common/schemas';
+import { booleanToReponseOuiNon } from '@sirena/common/utils';
 import { prisma, type Requete } from '@sirena/db';
 import { UnrecoverableError } from 'bullmq';
 import { isPrismaUniqueConstraintError } from '../../helpers/prisma.js';
@@ -178,7 +179,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<SaveFromSi
           demarchesEngageesId: demarchesEngagees.id,
           requeteId: sirenaRequete.id,
           domainesFonctionnelsId: situationData.domainesFonctionnelsId,
-          estLieAuSignalement: situationData.estLieAuSignalement,
+          estLieAuSignalement: situationData.estLieAuSignalement ?? null,
           numerosSignalement: situationData.numerosSignalement,
           sirecDepartement: situationData.sirecDepartement,
         },
@@ -280,11 +281,11 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<SaveFromSi
           createdAt: data.sysCreationDate,
           declarantDeId: sirenaRequete.id,
           estVictime: data.declarant.estVictime,
-          veutGarderAnonymat: data.declarant.veutGarderAnonymat,
+          veutGarderAnonymat: booleanToReponseOuiNon(data.declarant.veutGarderAnonymat),
           lienVictimeId: data.declarant.lienVictimeId,
           lienAutrePrecision: data.declarant.lienAutrePrecision,
           commentaire: data.declarant.commentaire,
-          estSignalementProfessionnel: data.declarant.estSignalementProfessionnel,
+          estSignalementProfessionnel: booleanToReponseOuiNon(data.declarant.estSignalementProfessionnel),
           estPersonneMorale: data.declarant.estPersonneMorale,
           ...(data.declarant.adresse !== null
             ? {
@@ -325,7 +326,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<SaveFromSi
           mesureProtection: data.victime?.mesureProtection ?? null,
           ...(data.declarant?.estVictime && {
             declarantDeId: sirenaRequete.id,
-            estSignalementProfessionnel: data.declarant.estSignalementProfessionnel,
+            estSignalementProfessionnel: booleanToReponseOuiNon(data.declarant.estSignalementProfessionnel),
           }),
           ...(data.victime?.adresse !== null && data.victime?.adresse !== undefined
             ? {

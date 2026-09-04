@@ -1,5 +1,6 @@
 import { mappers } from '@sirena/common';
-import type { MesureProtection } from '@sirena/common/schemas';
+import type { MesureProtection, ReponseOuiNonValue } from '@sirena/common/schemas';
+import { negateReponseOuiNon } from '@sirena/common/utils';
 
 export interface PersonneConcerneeData {
   civilite?: string;
@@ -12,12 +13,12 @@ export interface PersonneConcerneeData {
   ville?: string;
   numeroTelephone?: string;
   courrierElectronique?: string;
-  estHandicapee?: boolean | null;
-  consentCommuniquerIdentite?: boolean | null;
-  estVictimeInformee?: boolean | null;
+  estHandicapee?: ReponseOuiNonValue;
+  consentCommuniquerIdentite?: ReponseOuiNonValue;
+  estVictimeInformee?: ReponseOuiNonValue;
   victimeInformeeCommentaire?: string;
   autrePersonnes?: string;
-  aAutrePersonnes?: boolean | null;
+  aAutrePersonnes?: ReponseOuiNonValue;
   mesureProtection?: MesureProtection | null;
   commentaire?: string;
 }
@@ -49,16 +50,12 @@ export function formatPersonneConcerneeFromServer(participant: unknown): Personn
     ville: (adresse.ville as string) || '',
     numeroTelephone: (identite.telephone as string) || '',
     courrierElectronique: (identite.email as string) || '',
-    estHandicapee: (p.estHandicapee as boolean | null | undefined) ?? undefined,
-    consentCommuniquerIdentite:
-      (p.veutGarderAnonymat as boolean | null | undefined) === null ||
-      (p.veutGarderAnonymat as boolean | null | undefined) === undefined
-        ? undefined
-        : !(p.veutGarderAnonymat as boolean),
-    estVictimeInformee: (p.estVictimeInformee as boolean | null | undefined) ?? undefined,
+    estHandicapee: (p.estHandicapee as ReponseOuiNonValue) ?? undefined,
+    consentCommuniquerIdentite: negateReponseOuiNon(p.veutGarderAnonymat as ReponseOuiNonValue) ?? undefined,
+    estVictimeInformee: (p.estVictimeInformee as ReponseOuiNonValue) ?? undefined,
     victimeInformeeCommentaire: (p.victimeInformeeCommentaire as string) || '',
     autrePersonnes: (p.autrePersonnes as string) || '',
-    aAutrePersonnes: (p.aAutrePersonnes as boolean | null | undefined) ?? undefined,
+    aAutrePersonnes: (p.aAutrePersonnes as ReponseOuiNonValue) ?? undefined,
     mesureProtection: (p.mesureProtection as MesureProtection | null | undefined) ?? undefined,
     commentaire: (p.commentaire as string) || '',
   };
