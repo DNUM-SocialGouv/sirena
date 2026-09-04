@@ -156,10 +156,16 @@ spec:
                   # Le CREATE DATABASE est supprimé plutôt que réécrit : il est
                   # inutile puisque la base existe déjà, et l'exécuter exigerait un
                   # privilège dont on n'a pas besoin.
+                  #
+                  # Les clauses DEFINER=`user`@`host` (fonctions, vues, triggers)
+                  # sont retirées pour la même raison : recréer l'objet avec un
+                  # définer différent de l'utilisateur connecté exige le privilège
+                  # SET USER (ex-SUPER) depuis MariaDB 10.5, que MARIADB_SIREC_USER
+                  # n'a pas. Sans DEFINER explicite, MariaDB utilise CURRENT_USER.
                   case "${KEY}" in
                     *.gz) gunzip -c /dump/dump ;;
                     *) cat /dump/dump ;;
-                  esac | sed -e '/^CREATE DATABASE /d' -e "${RENAME}" | mariadb --host="${MARIADB_SIREC_HOST}" --port="${MARIADB_SIREC_PORT}" --user="${MARIADB_SIREC_USER}" "${MARIADB_SIREC_DB}"
+                  esac | sed -e '/^CREATE DATABASE /d' -e 's/DEFINER=`[^`]*`@`[^`]*` //g' -e "${RENAME}" | mariadb --host="${MARIADB_SIREC_HOST}" --port="${MARIADB_SIREC_PORT}" --user="${MARIADB_SIREC_USER}" "${MARIADB_SIREC_DB}"
                   echo "Import terminé."
               envFrom:
                 - configMapRef:
