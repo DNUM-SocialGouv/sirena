@@ -321,11 +321,7 @@ const processFile = async (job: Job<FileProcessingJobData>): Promise<void> => {
 export const createFileProcessingWorker = (): Worker<FileProcessingJobData> => {
   const worker = new Worker<FileProcessingJobData>('file-processing', processFile, {
     connection,
-    concurrency: 2,
-    limiter: {
-      max: 10,
-      duration: 60000,
-    },
+    concurrency: 5,
   });
 
   const eventLogger = createDefaultLogger().child({ context: 'file-processing-worker' });

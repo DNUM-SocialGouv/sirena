@@ -3,7 +3,7 @@ import { FEATURE_FLAGS } from '@sirena/common/constants';
 import { useHasFeature } from '@/hooks/useHasFeature';
 import { LatestAnnouncementModal } from './LatestAnnouncementModal';
 
-const RELEASE_NOTES_URL = 'https://docs.numerique.gouv.fr/docs/24ca6ea9-c64d-4e30-8555-626166cb2d45/';
+const RELEASE_NOTES_URL = 'https://docs.numerique.gouv.fr/docs/ecc192e9-8d57-4782-b40d-3f5346786b52/';
 
 const COLLABORATION_ANNOUNCEMENT = {
   campaign: 'collaboration-v1',

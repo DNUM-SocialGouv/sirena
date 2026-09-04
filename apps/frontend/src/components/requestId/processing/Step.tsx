@@ -237,7 +237,14 @@ const StepEditButton = ({ className, step, onEdit }: StepEditButtonProps) => {
   }, [onEdit, step]);
 
   return (
-    <Button className={className} type="button" priority="tertiary" iconId="fr-icon-edit-line" onClick={handleClick}>
+    <Button
+      className={className}
+      type="button"
+      priority="tertiary"
+      iconId="fr-icon-edit-line"
+      onClick={handleClick}
+      size="small"
+    >
       Modifier l'étape
     </Button>
   );
@@ -332,6 +339,7 @@ const StepComponent = (stepProps: StepProps) => {
       }),
     [id],
   );
+
   const [isOpen, setIsOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState<{
     id: string;

@@ -95,7 +95,7 @@ describe('HomeAnnouncementModal', () => {
     expect(screen.getByText('- nouvel onglet')).toHaveClass('fr-sr-only');
     expect(documentationLink).toHaveAttribute(
       'href',
-      'https://docs.numerique.gouv.fr/docs/24ca6ea9-c64d-4e30-8555-626166cb2d45/',
+      'https://docs.numerique.gouv.fr/docs/ecc192e9-8d57-4782-b40d-3f5346786b52/',
     );
     expect(documentationLink).toHaveAttribute('target', '_blank');
     expect(documentationLink).toHaveAttribute('rel', 'noopener noreferrer');

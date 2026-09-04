@@ -1,7 +1,6 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { SegmentedControl, type SegmentedControlProps } from '@codegouvfr/react-dsfr/SegmentedControl';
-import Select from '@codegouvfr/react-dsfr/Select';
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
@@ -87,7 +86,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
 
   const entityFilterSegments = [
     {
-      label: 'Toutes les entités',
+      label: 'Toutes',
       nativeInputProps: {
         value: '',
         checked: activeSelectedEntityId === undefined,
@@ -163,6 +162,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                 step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT &&
                 step.statutId === REQUETE_ETAPE_STATUT_TYPES.A_FAIRE &&
                 step.editable;
+
               return (
                 <Step
                   key={step.id}
@@ -251,31 +251,14 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                 )}
               </div>
               {isEntityFilterVisible && requestQuery.data ? (
-                entityFilterOptions.length >= 5 ? (
-                  <Select
-                    className="fr-mb-3w"
-                    label="Filtrer par entité"
-                    nativeSelectProps={{
-                      value: activeSelectedEntityId ?? '',
-                      onChange: (event) => selectEntity(event.currentTarget.value || undefined),
-                    }}
-                  >
-                    <option value="">Toutes les entités</option>
-                    {entityFilterOptions.map((entity) => (
-                      <option key={entity.id} value={entity.id}>
-                        {entity.nomComplet}
-                      </option>
-                    ))}
-                  </Select>
-                ) : (
-                  <SegmentedControl
-                    className={`${styles['entity-filter']} fr-mb-3w`}
-                    legend="Filtrer par entité"
-                    inlineLegend
-                    name="entiteId"
-                    segments={entityFilterSegments}
-                  />
-                )
+                <SegmentedControl
+                  className={`${styles['entity-filter']} fr-mb-3w`}
+                  small
+                  legend="Filtrer par entité"
+                  inlineLegend
+                  name="entiteId"
+                  segments={entityFilterSegments}
+                />
               ) : null}
               {content}
             </div>

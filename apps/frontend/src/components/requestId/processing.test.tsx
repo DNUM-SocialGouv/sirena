@@ -209,7 +209,7 @@ describe('Processing', () => {
 
     expect(screen.getByRole('group', { name: 'Filtrer par entité' })).toBeInTheDocument();
     expect(screen.getByText('Filtrer par entité')).toHaveClass('fr-segmented__legend--inline');
-    expect(screen.getByRole('radio', { name: 'Toutes les entités' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Toutes' })).toBeChecked();
     const currentEntityRadio = screen.getByRole('radio', { name: 'ARS ARS courante' });
     const currentEntityLabel = (currentEntityRadio as HTMLInputElement).labels?.[0];
     expect(currentEntityLabel).toBeTruthy();
@@ -229,7 +229,7 @@ describe('Processing', () => {
     const user = userEvent.setup();
     const { rerender } = render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
-    const allEntitiesRadio = screen.getByRole('radio', { name: 'Toutes les entités' });
+    const allEntitiesRadio = screen.getByRole('radio', { name: 'Toutes' });
     const currentEntityRadio = screen.getByRole('radio', { name: 'ARS ARS courante' });
     await user.tab();
     expect(allEntitiesRadio).toHaveFocus();
@@ -248,7 +248,7 @@ describe('Processing', () => {
 
     const { rerender } = render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
-    expect(screen.getByRole('radio', { name: 'Toutes les entités' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Toutes' })).toBeChecked();
     expect(screen.getByRole('heading', { name: 'CD - Clôture' })).toBeInTheDocument();
     await waitFor(() => expect(navigate).toHaveBeenCalledOnce());
     const [{ search, replace }] = navigate.mock.calls[0] as [
@@ -270,7 +270,7 @@ describe('Processing', () => {
 
     render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
-    expect(screen.getByRole('radio', { name: 'Toutes les entités' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Toutes' })).toBeChecked();
     expect(screen.getByRole('heading', { name: 'CD - Clôture' })).toBeInTheDocument();
     await waitFor(() => expect(navigate).toHaveBeenCalledOnce());
     const [{ search, replace }] = navigate.mock.calls[0] as [
@@ -345,7 +345,7 @@ describe('Processing', () => {
     render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
     expect(screen.getByRole('radio', { name: 'ARS ARS Île-de-France' })).toBeChecked();
-    await user.click(screen.getByRole('radio', { name: 'Toutes les entités' }));
+    await user.click(screen.getByRole('radio', { name: 'Toutes' }));
     const [{ search }] = navigate.mock.calls[0] as [
       { search: (previous: Record<string, unknown>) => Record<string, unknown> },
     ];
@@ -378,14 +378,14 @@ describe('Processing', () => {
     render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
     expect(screen.getAllByRole('radio')).toEqual([
-      screen.getByRole('radio', { name: 'Toutes les entités' }),
+      screen.getByRole('radio', { name: 'Toutes' }),
       screen.getByRole('radio', { name: 'ARS ARS courante' }),
       screen.getByRole('radio', { name: 'CD Conseil départemental du Rhône' }),
       screen.getByRole('radio', { name: 'DD Direction départementale de l’Ain' }),
     ]);
   });
 
-  it('uses a Select with every typed option from five affected entities', () => {
+  it('uses a segmented control with every typed option from five affected entities', () => {
     setOtherEntitiesAffected(
       affectedEntity('DREETS-GRAND-EST', 'DREETS Grand Est', 'DREETS'),
       affectedEntity('CD-CALVADOS', 'Conseil départemental du Calvados', 'CD'),
@@ -395,23 +395,18 @@ describe('Processing', () => {
 
     render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
-    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
-    const select = screen.getByRole('combobox', { name: 'Filtrer par entité' });
-    expect(
-      within(select)
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual([
-      'Toutes les entités',
-      'ARS courante',
-      'ARS Île-de-France',
-      'Conseil départemental du Calvados',
-      'DDETS du Rhône',
-      'DREETS Grand Est',
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('radio')).toEqual([
+      screen.getByRole('radio', { name: 'Toutes' }),
+      screen.getByRole('radio', { name: 'ARS ARS courante' }),
+      screen.getByRole('radio', { name: 'ARS ARS Île-de-France' }),
+      screen.getByRole('radio', { name: 'CD Conseil départemental du Calvados' }),
+      screen.getByRole('radio', { name: 'DDETS DDETS du Rhône' }),
+      screen.getByRole('radio', { name: 'DREETS DREETS Grand Est' }),
     ]);
   });
 
-  it('applies a Select URL selection and removes it with all entities', async () => {
+  it('applies a segmented control URL selection and removes it with all entities', async () => {
     selectedEntityId = 'OTHER-ENTITY';
     setOtherEntitiesAffected(
       affectedEntity('OTHER-ENTITY', 'CD du Calvados', 'CD'),
@@ -436,12 +431,11 @@ describe('Processing', () => {
 
     const { rerender } = render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
 
-    const select = screen.getByRole('combobox', { name: 'Filtrer par entité' });
-    expect(select).toHaveValue('OTHER-ENTITY');
+    expect(screen.getByRole('radio', { name: 'CD CD du Calvados' })).toBeChecked();
     expect(screen.queryByRole('heading', { name: 'ARS - Étape courante' })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'CD - Clôture' })).toBeInTheDocument();
 
-    await user.selectOptions(select, '');
+    await user.click(screen.getByRole('radio', { name: 'Toutes' }));
     const [{ search, replace }] = navigate.mock.calls[0] as [
       { search: (previous: Record<string, unknown>) => Record<string, unknown>; replace?: boolean },
     ];
@@ -453,14 +447,14 @@ describe('Processing', () => {
     expect(screen.getByRole('heading', { name: 'ARS - Étape courante' })).toBeInTheDocument();
   });
 
-  it('stores a Select entity change in URL history', async () => {
+  it('stores a segmented control entity change in URL history', async () => {
     setOtherEntitiesAffected(
       ...['A', 'B', 'C', 'D'].map((suffix) => affectedEntity(`ENTITY-${suffix}`, `Entité ${suffix}`)),
     );
     const user = userEvent.setup();
 
     render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Filtrer par entité' }), 'ENTITY-C');
+    await user.click(screen.getByRole('radio', { name: 'ARS Entité C' }));
 
     const [{ search, replace }] = navigate.mock.calls[0] as [
       { search: (previous: Record<string, unknown>) => Record<string, unknown>; replace?: boolean },
