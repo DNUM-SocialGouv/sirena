@@ -3,13 +3,20 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import { mappers } from '@sirena/common';
-import { type MesureProtection, optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
+import { MESURE_PROTECTION, REPONSE_OUI_NON } from '@sirena/common/constants';
+import {
+  type MesureProtection,
+  optionalEmailSchema,
+  optionalPhoneSchema,
+  type ReponseOuiNon,
+} from '@sirena/common/schemas';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
 import { DomicileFields } from '@/components/common/DomicileFields';
 import { personneConcerneeFieldMetadata } from '@/lib/fieldMetadata';
 import type { PersonneConcerneeData } from '@/lib/personneConcernee';
+import { buildNonRenseigneOption, buildOuiNonOptions } from '@/lib/radioOptions';
 
 interface PersonneConcerneeFormProps {
   mode: 'create' | 'edit';
@@ -62,13 +69,8 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
       }
     };
 
-  const handleBooleanChange = (field: keyof PersonneConcerneeData, value: boolean) => {
-    setFormData((prev: PersonneConcerneeData) => {
-      if (field === 'estVictimeInformee' && value) {
-        return { ...prev, [field]: value, victimeInformeeCommentaire: '' };
-      }
-      return { ...prev, [field]: value };
-    });
+  const handleReponseChange = (field: keyof PersonneConcerneeData, value: ReponseOuiNon) => {
+    setFormData((prev: PersonneConcerneeData) => ({ ...prev, [field]: value }));
   };
 
   const handleMesureProtectionChange = (value: MesureProtection) => {
@@ -322,24 +324,11 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                 legend={personneConcerneeFieldMetadata.consentCommuniquerIdentite.label}
                 name="personne-concernee-consent-identite"
                 orientation="horizontal"
-                options={[
-                  {
-                    label: 'Oui',
-                    nativeInputProps: {
-                      value: 'true',
-                      checked: formData.consentCommuniquerIdentite === true,
-                      onChange: () => handleBooleanChange('consentCommuniquerIdentite', true),
-                    },
-                  },
-                  {
-                    label: 'Non',
-                    nativeInputProps: {
-                      value: 'false',
-                      checked: formData.consentCommuniquerIdentite === false,
-                      onChange: () => handleBooleanChange('consentCommuniquerIdentite', false),
-                    },
-                  },
-                ]}
+                options={buildOuiNonOptions(
+                  formData.consentCommuniquerIdentite,
+                  (value) => handleReponseChange('consentCommuniquerIdentite', value),
+                  'communication de son identité',
+                )}
               />
             </div>
 
@@ -348,37 +337,26 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                 legend={personneConcerneeFieldMetadata.estVictimeInformee.label}
                 name="personne-concernee-est-victime-informee"
                 orientation="horizontal"
-                options={[
-                  {
-                    label: 'Oui',
-                    nativeInputProps: {
-                      value: 'true',
-                      checked: formData.estVictimeInformee === true,
-                      onChange: () => handleBooleanChange('estVictimeInformee', true),
-                    },
-                  },
-                  {
-                    label: 'Non',
-                    nativeInputProps: {
-                      value: 'false',
-                      checked: formData.estVictimeInformee === false,
-                      onChange: () => handleBooleanChange('estVictimeInformee', false),
-                    },
-                  },
-                ]}
+                options={buildOuiNonOptions(
+                  formData.estVictimeInformee,
+                  (value) => handleReponseChange('estVictimeInformee', value),
+                  'personne informée de la démarche',
+                )}
               />
             </div>
-            {formData.estVictimeInformee === false && (
-              <div className="fr-mb-3w">
-                <Input
-                  label={personneConcerneeFieldMetadata.victimeInformeeCommentaire.label}
-                  nativeInputProps={{
-                    value: formData.victimeInformeeCommentaire || '',
-                    onChange: handleInputChange('victimeInformeeCommentaire'),
-                  }}
-                />
-              </div>
-            )}
+            <div aria-live="polite">
+              {formData.estVictimeInformee === REPONSE_OUI_NON.NON && (
+                <div className="fr-mb-3w">
+                  <Input
+                    label={personneConcerneeFieldMetadata.victimeInformeeCommentaire.label}
+                    nativeInputProps={{
+                      value: formData.victimeInformeeCommentaire || '',
+                      onChange: handleInputChange('victimeInformeeCommentaire'),
+                    }}
+                  />
+                </div>
+              )}
+            </div>
 
             <div className="fr-mb-3w">
               <RadioButtons
@@ -389,27 +367,32 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                   {
                     label: 'Mandataire judiciaire',
                     nativeInputProps: {
-                      value: 'MANDATAIRE_JUDICIAIRE',
-                      checked: formData.mesureProtection === 'MANDATAIRE_JUDICIAIRE',
-                      onChange: () => handleMesureProtectionChange('MANDATAIRE_JUDICIAIRE'),
+                      value: MESURE_PROTECTION.MANDATAIRE_JUDICIAIRE,
+                      checked: formData.mesureProtection === MESURE_PROTECTION.MANDATAIRE_JUDICIAIRE,
+                      onChange: () => handleMesureProtectionChange(MESURE_PROTECTION.MANDATAIRE_JUDICIAIRE),
                     },
                   },
                   {
                     label: 'Mandataire familial',
                     nativeInputProps: {
-                      value: 'MANDATAIRE_FAMILIAL',
-                      checked: formData.mesureProtection === 'MANDATAIRE_FAMILIAL',
-                      onChange: () => handleMesureProtectionChange('MANDATAIRE_FAMILIAL'),
+                      value: MESURE_PROTECTION.MANDATAIRE_FAMILIAL,
+                      checked: formData.mesureProtection === MESURE_PROTECTION.MANDATAIRE_FAMILIAL,
+                      onChange: () => handleMesureProtectionChange(MESURE_PROTECTION.MANDATAIRE_FAMILIAL),
                     },
                   },
                   {
                     label: 'Non',
                     nativeInputProps: {
-                      value: 'NON',
-                      checked: formData.mesureProtection === 'NON',
-                      onChange: () => handleMesureProtectionChange('NON'),
+                      value: MESURE_PROTECTION.NON,
+                      checked: formData.mesureProtection === MESURE_PROTECTION.NON,
+                      onChange: () => handleMesureProtectionChange(MESURE_PROTECTION.NON),
                     },
                   },
+                  buildNonRenseigneOption(
+                    formData.mesureProtection === MESURE_PROTECTION.NON_RENSEIGNE,
+                    () => handleMesureProtectionChange(MESURE_PROTECTION.NON_RENSEIGNE),
+                    'mesure de protection',
+                  ),
                 ]}
               />
             </div>
@@ -419,24 +402,11 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                 legend={personneConcerneeFieldMetadata.estHandicapee.label}
                 name="personne-concernee-est-handicapee"
                 orientation="horizontal"
-                options={[
-                  {
-                    label: 'Oui',
-                    nativeInputProps: {
-                      value: 'true',
-                      checked: formData.estHandicapee === true,
-                      onChange: () => handleBooleanChange('estHandicapee', true),
-                    },
-                  },
-                  {
-                    label: 'Non',
-                    nativeInputProps: {
-                      value: 'false',
-                      checked: formData.estHandicapee === false,
-                      onChange: () => handleBooleanChange('estHandicapee', false),
-                    },
-                  },
-                ]}
+                options={buildOuiNonOptions(
+                  formData.estHandicapee,
+                  (value) => handleReponseChange('estHandicapee', value),
+                  'situation de handicap',
+                )}
               />
             </div>
 
@@ -445,39 +415,28 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                 legend={personneConcerneeFieldMetadata.aAutrePersonnes.label}
                 name="personne-concernee-a-autre-personnes"
                 orientation="horizontal"
-                options={[
-                  {
-                    label: 'Oui',
-                    nativeInputProps: {
-                      value: 'true',
-                      checked: formData.aAutrePersonnes === true,
-                      onChange: () => handleBooleanChange('aAutrePersonnes', true),
-                    },
-                  },
-                  {
-                    label: 'Non',
-                    nativeInputProps: {
-                      value: 'false',
-                      checked: formData.aAutrePersonnes === false,
-                      onChange: () => handleBooleanChange('aAutrePersonnes', false),
-                    },
-                  },
-                ]}
+                options={buildOuiNonOptions(
+                  formData.aAutrePersonnes,
+                  (value) => handleReponseChange('aAutrePersonnes', value),
+                  'autres personnes concernées',
+                )}
               />
             </div>
 
-            {formData.aAutrePersonnes ? (
-              <Input
-                label={personneConcerneeFieldMetadata.autrePersonnes.label}
-                hintText="Nom, prénom, lien avec la personne concernée, etc."
-                textArea
-                nativeTextAreaProps={{
-                  value: formData.autrePersonnes || '',
-                  onChange: handleInputChange('autrePersonnes'),
-                  rows: 3,
-                }}
-              />
-            ) : null}
+            <div aria-live="polite">
+              {formData.aAutrePersonnes === REPONSE_OUI_NON.OUI ? (
+                <Input
+                  label={personneConcerneeFieldMetadata.autrePersonnes.label}
+                  hintText="Nom, prénom, lien avec la personne concernée, etc."
+                  textArea
+                  nativeTextAreaProps={{
+                    value: formData.autrePersonnes || '',
+                    onChange: handleInputChange('autrePersonnes'),
+                    rows: 3,
+                  }}
+                />
+              ) : null}
+            </div>
 
             <Input
               label={personneConcerneeFieldMetadata.commentaire.label}

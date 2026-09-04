@@ -11,8 +11,9 @@ import {
   misEnCauseTypeLabels,
   motifLabels,
   RECEPTION_TYPE,
+  REPONSE_OUI_NON,
 } from '@sirena/common/constants';
-import { getLieuPrecisionLabel } from '@sirena/common/utils';
+import { formatReponseOuiNon, getLieuPrecisionLabel } from '@sirena/common/utils';
 import { InfoSection } from '@sirena/ui';
 import { useCallback } from 'react';
 import { EntiteTypeBadge } from '@/components/common/EntiteTypeBadge';
@@ -332,9 +333,9 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
               <>
                 <p className={fr.cx('fr-mb-1w')}>
                   <span>Situation en lien avec un ou plusieurs signalement(s) :</span>{' '}
-                  {situation.estLieAuSignalement ? 'Oui' : 'Non'}
+                  {formatReponseOuiNon(situation.estLieAuSignalement)}
                 </p>
-                {situation.estLieAuSignalement && situation.numerosSignalement ? (
+                {situation.estLieAuSignalement === REPONSE_OUI_NON.OUI && situation.numerosSignalement ? (
                   <p className={fr.cx('fr-mb-3w')}>
                     <span>Numéro(s) de signalement associé(s) :</span> {situation.numerosSignalement}
                   </p>

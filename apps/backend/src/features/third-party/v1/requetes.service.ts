@@ -1,3 +1,5 @@
+import { REPONSE_OUI_NON } from '@sirena/common/constants';
+import { booleanToReponseOuiNon } from '@sirena/common/utils';
 import { isPrismaUniqueConstraintError } from '../../../helpers/prisma.js';
 import { retryWithBackoff } from '../../../helpers/retry.js';
 import { addFileProcessingJob } from '../../../jobs/queues/fileProcessing.queue.js';
@@ -47,7 +49,7 @@ export const createRequeteFromThirdParty = async ({
             estHandicapee: null,
             isTuteur: declarant.isTuteur ?? null,
             estVictime: declarant.estVictime ?? null,
-            veutGarderAnonymat: declarant.veutGarderAnonymat ?? null,
+            veutGarderAnonymat: booleanToReponseOuiNon(declarant.veutGarderAnonymat),
             lienVictime: declarant.lienVictimeId ? { connect: { id: declarant.lienVictimeId } } : undefined,
             age: declarant.ageId ? { connect: { id: declarant.ageId } } : undefined,
             declarantDe: { connect: { id: requete.id } },
@@ -81,12 +83,12 @@ export const createRequeteFromThirdParty = async ({
                 },
               },
               commentaire: victime.commentaire ?? '',
-              estHandicapee: victime.estHandicapee ?? null,
-              veutGarderAnonymat: victime.veutGarderAnonymat ?? null,
-              estVictimeInformee: victime.estVictimeInformee ?? null,
+              estHandicapee: booleanToReponseOuiNon(victime.estHandicapee),
+              veutGarderAnonymat: booleanToReponseOuiNon(victime.veutGarderAnonymat),
+              estVictimeInformee: booleanToReponseOuiNon(victime.estVictimeInformee),
               autrePersonnes: victime.autrePersonnes ?? '',
               dateNaissance: victime.dateNaissance ?? null,
-              aAutrePersonnes: victime.autrePersonnes != null ? true : null,
+              aAutrePersonnes: victime.autrePersonnes != null ? REPONSE_OUI_NON.OUI : null,
               age: victime.ageId ? { connect: { id: victime.ageId } } : undefined,
               participantDe: { connect: { id: requete.id } },
             },

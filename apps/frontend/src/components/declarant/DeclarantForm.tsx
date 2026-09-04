@@ -6,13 +6,14 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import { mappers } from '@sirena/common';
-import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
+import { optionalEmailSchema, optionalPhoneSchema, type ReponseOuiNon } from '@sirena/common/schemas';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
 import { DomicileFields } from '@/components/common/DomicileFields';
 import type { DeclarantData } from '@/lib/declarant';
 import { declarantFieldMetadata } from '@/lib/fieldMetadata';
+import { buildOuiNonOptions } from '@/lib/radioOptions';
 
 interface DeclarantFormProps {
   mode: 'create' | 'edit';
@@ -61,7 +62,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
       }
     };
 
-  const handleBooleanChange = (field: keyof DeclarantData, value: boolean) => {
+  const handleReponseChange = (field: keyof DeclarantData, value: ReponseOuiNon) => {
     setFormData((prev: DeclarantData) => ({ ...prev, [field]: value }));
   };
 
@@ -359,47 +360,21 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                   legend={declarantFieldMetadata.consentCommuniquerIdentite.label}
                   name="declarant-consent-identite"
                   orientation="horizontal"
-                  options={[
-                    {
-                      label: 'Oui',
-                      nativeInputProps: {
-                        value: 'true',
-                        checked: formData.consentCommuniquerIdentite === true,
-                        onChange: () => handleBooleanChange('consentCommuniquerIdentite', true),
-                      },
-                    },
-                    {
-                      label: 'Non',
-                      nativeInputProps: {
-                        value: 'false',
-                        checked: formData.consentCommuniquerIdentite === false,
-                        onChange: () => handleBooleanChange('consentCommuniquerIdentite', false),
-                      },
-                    },
-                  ]}
+                  options={buildOuiNonOptions(
+                    formData.consentCommuniquerIdentite,
+                    (value) => handleReponseChange('consentCommuniquerIdentite', value),
+                    'communication de son identité',
+                  )}
                 />
                 <RadioButtons
                   legend={declarantFieldMetadata.estSignalementProfessionnel.label}
                   name="declarant-signalement-pro"
                   orientation="horizontal"
-                  options={[
-                    {
-                      label: 'Oui',
-                      nativeInputProps: {
-                        value: 'true',
-                        checked: formData.estSignalementProfessionnel === true,
-                        onChange: () => handleBooleanChange('estSignalementProfessionnel', true),
-                      },
-                    },
-                    {
-                      label: 'Non',
-                      nativeInputProps: {
-                        value: 'false',
-                        checked: formData.estSignalementProfessionnel === false,
-                        onChange: () => handleBooleanChange('estSignalementProfessionnel', false),
-                      },
-                    },
-                  ]}
+                  options={buildOuiNonOptions(
+                    formData.estSignalementProfessionnel,
+                    (value) => handleReponseChange('estSignalementProfessionnel', value),
+                    'signalement professionnel',
+                  )}
                 />
 
                 <Input

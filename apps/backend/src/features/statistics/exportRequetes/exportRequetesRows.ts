@@ -1,11 +1,18 @@
-import { demarcheEngageeLabels, MOTIFS_HIERARCHICAL_DATA } from '@sirena/common/constants';
-import { type CsvValue, getLieuPrecisionLabel, getMesureProtectionShortLabel } from '@sirena/common/utils';
+import { demarcheEngageeLabels, MESURE_PROTECTION, MOTIFS_HIERARCHICAL_DATA } from '@sirena/common/constants';
+import type { ReponseOuiNonValue } from '@sirena/common/schemas';
+import {
+  type CsvValue,
+  getLieuPrecisionLabel,
+  getMesureProtectionShortLabel,
+  negateReponseOuiNon,
+} from '@sirena/common/utils';
 import { EXPORT_REQUETES_COLUMNS, type ExportRequetesColumnKey } from './exportRequetesColumns.js';
 import {
   deriveDepartmentCodeFromPostalCode,
   formatExportBoolean,
   formatExportDate,
   formatExportList,
+  formatExportReponseOuiNon,
   formatExportYear,
 } from './exportRequetesFormatters.js';
 
@@ -46,8 +53,8 @@ type ExportDeclarantRecord = {
   lienAutrePrecision?: string | null;
   isTuteur: boolean | null;
   adresse?: ExportAdresseRecord | null;
-  veutGarderAnonymat: boolean | null;
-  estSignalementProfessionnel: boolean | null;
+  veutGarderAnonymat: ReponseOuiNonValue;
+  estSignalementProfessionnel: ReponseOuiNonValue;
 };
 
 type ExportParticipantRecord = {
@@ -55,11 +62,11 @@ type ExportParticipantRecord = {
   age?: ExportLabelRecord | null;
   dateNaissance?: Date | null;
   adresse?: ExportAdresseRecord | null;
-  veutGarderAnonymat: boolean | null;
-  estVictimeInformee: boolean | null;
+  veutGarderAnonymat: ReponseOuiNonValue;
+  estVictimeInformee: ReponseOuiNonValue;
   mesureProtection?: string | null;
-  estHandicapee: boolean | null;
-  aAutrePersonnes: boolean | null;
+  estHandicapee: ReponseOuiNonValue;
+  aAutrePersonnes: ReponseOuiNonValue;
   autrePersonnes?: string | null;
 };
 
@@ -212,7 +219,7 @@ function buildDeclarantFields(
       ? formatDepartementWithName(departementDeclarant, departmentReferences.namesByCode)
       : '',
     declarantConsentIdentiteCommuniquee: formatConsentIdentite(declarant?.veutGarderAnonymat),
-    declarantProfessionnelEig: formatExportBoolean(declarant?.estSignalementProfessionnel),
+    declarantProfessionnelEig: formatExportReponseOuiNon(declarant?.estSignalementProfessionnel),
   };
 }
 
@@ -236,10 +243,10 @@ function buildPersonneConcerneeFields(
       ? formatDepartementWithName(departementPersonneConcernee, departmentReferences.namesByCode)
       : '',
     personneConcerneeConsentIdentiteCommuniquee: formatConsentIdentite(participant?.veutGarderAnonymat),
-    personneConcerneeInformeeDemarche: formatExportBoolean(participant?.estVictimeInformee),
+    personneConcerneeInformeeDemarche: formatExportReponseOuiNon(participant?.estVictimeInformee),
     mesureProtectionPersonneConcernee: formatMesureProtectionShortLabel(participant?.mesureProtection),
-    personneConcerneeHandicap: formatExportBoolean(participant?.estHandicapee),
-    autrePersonneConcernee: formatExportBoolean(participant?.aAutrePersonnes),
+    personneConcerneeHandicap: formatExportReponseOuiNon(participant?.estHandicapee),
+    autrePersonneConcernee: formatExportReponseOuiNon(participant?.aAutrePersonnes),
   };
 }
 
@@ -514,9 +521,9 @@ function getLatestEtapeCloturee(
 
 function formatMesureProtectionShortLabel(mesureProtection: string | null | undefined): string {
   if (
-    mesureProtection !== 'MANDATAIRE_JUDICIAIRE' &&
-    mesureProtection !== 'MANDATAIRE_FAMILIAL' &&
-    mesureProtection !== 'NON'
+    mesureProtection !== MESURE_PROTECTION.MANDATAIRE_JUDICIAIRE &&
+    mesureProtection !== MESURE_PROTECTION.MANDATAIRE_FAMILIAL &&
+    mesureProtection !== MESURE_PROTECTION.NON
   ) {
     return '';
   }
@@ -536,12 +543,8 @@ function formatLienVictime(declarant: ExportDeclarantRecord | null | undefined):
   return declarant.lienVictime.label;
 }
 
-function formatConsentIdentite(veutGarderAnonymat: boolean | null | undefined): string {
-  if (veutGarderAnonymat == null) {
-    return '';
-  }
-
-  return formatExportBoolean(!veutGarderAnonymat);
+function formatConsentIdentite(veutGarderAnonymat: ReponseOuiNonValue): string {
+  return formatExportReponseOuiNon(negateReponseOuiNon(veutGarderAnonymat));
 }
 
 function toExportRequetesCsvRow(row: ExportRequeteKeyedRow): ExportRequetesCsvRow {
