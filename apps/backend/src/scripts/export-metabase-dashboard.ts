@@ -21,6 +21,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { extractValuesSourceCardIds } from './metabase/snapshot.js';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 // apps/backend/src/scripts -> repo root
@@ -137,6 +138,18 @@ async function exportDashboard(dashboardId: number): Promise<void> {
   console.log(`  dashboard fetched, ${cardIds.length} unique card(s) referenced`);
 
   const cards = await Promise.all(cardIds.map(async (id) => ({ id, raw: await apiGet<unknown>(`/api/card/${id}`) })));
+
+  // Cards feeding a filter dropdown are never on the grid, so `extractCardIds` misses them.
+  // Without them the snapshot cannot recreate the filter on another instance.
+  const fetched = new Set(cardIds);
+  const pending = extractValuesSourceCardIds([dashboardRaw, ...cards.map((card) => card.raw)]).filter(
+    (id) => !fetched.has(id),
+  );
+  for (const id of pending) {
+    fetched.add(id);
+    cards.push({ id, raw: await apiGet<unknown>(`/api/card/${id}`) });
+  }
+  if (pending.length > 0) console.log(`  + ${pending.length} filter values-source card(s): ${pending.join(', ')}`);
 
   const outDir = resolve(OUTPUT_ROOT, String(dashboardId));
   await writeJson(resolve(outDir, 'dashboard.json'), normalize(dashboardRaw));
