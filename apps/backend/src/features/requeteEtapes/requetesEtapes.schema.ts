@@ -2,6 +2,7 @@ import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
 import {
   ACKNOWLEDGMENT_SEND_MODES,
   RAPPEL_DATE_REQUIRED_MESSAGE,
+  REQUETE_ETAPE_NON_ASSIGNMENT_TYPES,
   REQUETE_ETAPE_RAPPEL_TYPES,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_ETAPE_TYPES,
@@ -17,6 +18,7 @@ export const RequeteEtapeSchema = z.object({
     REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
     REQUETE_ETAPE_TYPES.REOPEN,
     REQUETE_ETAPE_TYPES.MANUAL,
+    REQUETE_ETAPE_TYPES.ASSIGNMENT,
   ]),
   estPartagee: z.boolean(),
   acknowledgmentSendMode: z.enum(ACKNOWLEDGMENT_SEND_MODES).nullable(),
@@ -34,6 +36,7 @@ export const RequeteEtapeSchema = z.object({
   rappelDate: z.coerce.date().nullable(),
   requeteId: z.string(),
   entiteId: z.string(),
+  assignedEntiteId: z.string().nullable(),
   clotureReasonIds: z.array(z.string()).optional(),
   clotureEffectiveDate: z.coerce.date().nullable(),
   createdAt: z.coerce.date(),
@@ -72,7 +75,7 @@ const AttributedEntiteAdministrativeSchema = z.object({
 
 // Response schema for the list endpoint, which enriches each step with editability,
 // timeline presentation metadata, notes and files (see getRequeteEtapes).
-const RequeteEtapeWithDetailsBaseSchema = RequeteEtapeSchema.extend({
+const RequeteEtapeWithDetailsBaseSchema = RequeteEtapeSchema.omit({ type: true, assignedEntiteId: true }).extend({
   entiteAdministrative: AttributedEntiteAdministrativeSchema,
   editable: z.boolean(),
   canOnlyEditNotes: z.boolean(),
@@ -80,15 +83,36 @@ const RequeteEtapeWithDetailsBaseSchema = RequeteEtapeSchema.extend({
   notes: z.array(RequeteEtapeNoteSchema),
 });
 
-export const RequeteEtapeWithDetailsSchema = z.discriminatedUnion('timelineItemType', [
-  RequeteEtapeWithDetailsBaseSchema.extend({
-    timelineItemType: z.literal('ENTITY_STEP'),
-    attributedEntiteAdministrative: AttributedEntiteAdministrativeSchema,
-  }),
-  RequeteEtapeWithDetailsBaseSchema.extend({
-    timelineItemType: z.literal('NEUTRAL_EVENT'),
-    attributedEntiteAdministrative: z.null(),
-  }),
+const NonAssignmentRequeteEtapeTypeSchema = z.enum(REQUETE_ETAPE_NON_ASSIGNMENT_TYPES);
+
+const EntityAssignmentStepSchema = RequeteEtapeWithDetailsBaseSchema.extend({
+  type: z.literal(REQUETE_ETAPE_TYPES.ASSIGNMENT),
+  assignedEntiteId: z.string(),
+  assignedEntite: AttributedEntiteAdministrativeSchema,
+  timelineItemType: z.literal('ENTITY_STEP'),
+  attributedEntiteAdministrative: AttributedEntiteAdministrativeSchema,
+});
+
+const EntityNonAssignmentStepSchema = RequeteEtapeWithDetailsBaseSchema.extend({
+  type: NonAssignmentRequeteEtapeTypeSchema,
+  assignedEntiteId: z.null(),
+  assignedEntite: z.null(),
+  timelineItemType: z.literal('ENTITY_STEP'),
+  attributedEntiteAdministrative: AttributedEntiteAdministrativeSchema,
+});
+
+const NeutralTimelineEventSchema = RequeteEtapeWithDetailsBaseSchema.extend({
+  type: NonAssignmentRequeteEtapeTypeSchema,
+  assignedEntiteId: z.null(),
+  assignedEntite: z.null(),
+  timelineItemType: z.literal('NEUTRAL_EVENT'),
+  attributedEntiteAdministrative: z.null(),
+});
+
+export const RequeteEtapeWithDetailsSchema = z.union([
+  EntityAssignmentStepSchema,
+  EntityNonAssignmentStepSchema,
+  NeutralTimelineEventSchema,
 ]);
 
 const columns = [

@@ -61,6 +61,19 @@ describe('requeteEtapeAuthorization', () => {
     },
   );
 
+  it('allows the owner to read an assignment but rejects writes', () => {
+    const assignment = {
+      entiteId: ownerEntiteId,
+      estPartagee: true,
+      type: 'ASSIGNMENT',
+      statutId: 'FAIT',
+      acknowledgmentSendMode: null,
+    };
+
+    expect(requeteEtapeAuthorization.canRead(ownerEntiteId, assignment, false)).toBe(true);
+    expect(requeteEtapeAuthorization.canWrite(ownerEntiteId, assignment)).toBe(false);
+  });
+
   it('rejects writes to an automatically sent acknowledgment owned by the viewer perimeter', () => {
     expect(
       requeteEtapeAuthorization.canWrite(ownerEntiteId, {

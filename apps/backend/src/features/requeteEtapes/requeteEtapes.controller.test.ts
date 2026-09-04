@@ -1,5 +1,5 @@
 import { Readable } from 'node:stream';
-import { ERROR_KIND } from '@sirena/common/constants';
+import { ERROR_KIND, REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
@@ -159,6 +159,7 @@ const fakeRequeteEtape: RequeteEtape = {
   acknowledgmentSendOperationId: null,
   dateRealisation: null,
   createdById: null,
+  assignedEntiteId: null,
   clotureEffectiveDate: null,
   rappelType: null,
   rappelDate: null,
@@ -257,6 +258,23 @@ describe('requeteEtapes.controller.ts', () => {
       });
 
       expect(res.status).toBe(404);
+      expect(addClotureEtapeFiles).not.toHaveBeenCalled();
+    });
+
+    it('forbids the owner from attaching closure files to an assignment', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        estPartagee: true,
+      });
+
+      const res = await client[':id']['cloture-files'].$post({
+        param: { id: 'step1' },
+        json: { fileIds: ['forbidden-file'] },
+      });
+
+      expect(res.status).toBe(403);
       expect(addClotureEtapeFiles).not.toHaveBeenCalled();
     });
 
@@ -673,6 +691,21 @@ describe('requeteEtapes.controller.ts', () => {
       expect(updateStatusRequete).not.toHaveBeenCalled();
     });
 
+    it('forbids the owner from deleting an assignment', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        estPartagee: true,
+      });
+
+      const res = await client[':id'].$delete({ param: { id: 'step1' } });
+
+      expect(res.status).toBe(403);
+      expect(deleteRequeteEtape).not.toHaveBeenCalled();
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+    });
+
     it('forbids deleting a pending acknowledgment from an automatic request', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
         ...fakeRequeteEtape,
@@ -733,6 +766,7 @@ describe('requeteEtapes.controller.ts', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       createdById: null,
+      assignedEntiteId: null,
       clotureEffectiveDate: null,
       rappelType: null,
       rappelDate: null,
@@ -776,8 +810,13 @@ describe('requeteEtapes.controller.ts', () => {
       timelineItemType: 'ENTITY_STEP';
       attributedEntiteAdministrative: { id: string; nomComplet: string; entiteTypeId: string };
       entiteAdministrative: { id: string; nomComplet: string; entiteTypeId: string };
+      type: typeof REQUETE_ETAPE_TYPES.MANUAL;
+      assignedEntiteId: null;
+      assignedEntite: null;
     } = {
       ...requeteEtape,
+      type: REQUETE_ETAPE_TYPES.MANUAL,
+      assignedEntiteId: null,
       clotureReason: [],
       createdBy: null,
       uploadedFiles: [],
@@ -795,6 +834,7 @@ describe('requeteEtapes.controller.ts', () => {
         nomComplet: 'ARS Normandie',
         entiteTypeId: 'ARS',
       },
+      assignedEntite: null,
       notes: [
         {
           ...note,
@@ -823,6 +863,54 @@ describe('requeteEtapes.controller.ts', () => {
       });
 
       expect(getRequeteEtapes).toHaveBeenCalledWith('1', 'e1', {}, false);
+    });
+
+    it('returns the current assigned Entité administrative for an assignment step', async () => {
+      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({
+        data: [
+          {
+            ...requeteEtapeWithNotesAndFiles,
+            id: 'assignment-step',
+            type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+            statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+            assignedEntiteId: 'assigned-entite',
+            assignedEntite: {
+              id: 'assigned-entite',
+              nomComplet: 'Conseil départemental de Seine-Maritime',
+              entiteTypeId: 'CD',
+            },
+            editable: false,
+            canOnlyEditNotes: false,
+          },
+        ],
+        total: 1,
+        isMultiEntite: true,
+      });
+
+      const res = await client[':id']['processing-steps'].$get({ param: { id: '1' } });
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toMatchObject({
+        data: [
+          {
+            id: 'assignment-step',
+            type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+            assignedEntiteId: 'assigned-entite',
+            assignedEntite: {
+              id: 'assigned-entite',
+              nomComplet: 'Conseil départemental de Seine-Maritime',
+              entiteTypeId: 'CD',
+            },
+            attributedEntiteAdministrative: {
+              id: 'entiteId',
+              nomComplet: 'ARS Normandie',
+              entiteTypeId: 'ARS',
+            },
+            editable: false,
+            canOnlyEditNotes: false,
+          },
+        ],
+      });
     });
 
     it('returns a complete projected chronology in service order with visible-item metadata', async () => {
@@ -979,6 +1067,7 @@ describe('requeteEtapes.controller.ts', () => {
         acknowledgmentSendOperationId: null,
         dateRealisation: null,
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -1267,6 +1356,30 @@ describe('requeteEtapes.controller.ts', () => {
       });
 
       expect(res.status).toBe(403);
+      expect(updateProcessingEtape).not.toHaveBeenCalled();
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+    });
+
+    it('forbids the owner from changing an assignment or adding content', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        estPartagee: true,
+      });
+
+      const res = await client[':id'].$patch({
+        param: { id: 'step1' },
+        json: {
+          ...validBody,
+          notes: [{ texte: 'Forbidden note' }],
+          fileIds: ['forbidden-file'],
+          rappelType: 'JOURS_7',
+        },
+      });
+
+      expect(res.status).toBe(403);
+      expect(hasAccessToRequete).not.toHaveBeenCalled();
       expect(updateProcessingEtape).not.toHaveBeenCalled();
       expect(updateStatusRequete).not.toHaveBeenCalled();
     });

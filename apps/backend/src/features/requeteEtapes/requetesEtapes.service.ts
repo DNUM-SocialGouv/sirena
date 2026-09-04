@@ -1,10 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import {
   ACKNOWLEDGMENT_SEND_MODES,
+  REQUETE_ETAPE_NON_ASSIGNMENT_TYPES,
   REQUETE_ETAPE_RAPPEL_TYPES,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_ETAPE_TYPES,
   REQUETE_STATUT_TYPES,
+  type RequeteEtapeNonAssignmentType,
   type RequeteEtapeRappelType,
   requeteEtapeRappelDelaiJours,
 } from '@sirena/common/constants';
@@ -29,11 +31,15 @@ export const CREATION_STEP_NAME_PREFIX = 'Création de la requête';
 export const AUTOMATIC_CREATION_STEP_NAME_PREFIX = 'Création de la requête';
 export const ACKNOWLEDGMENT_STEP_NAME = "Envoi de l'accusé de réception";
 
+const isNonAssignmentStepType = (type: string): type is RequeteEtapeNonAssignmentType =>
+  REQUETE_ETAPE_NON_ASSIGNMENT_TYPES.some((candidate) => candidate === type);
+
 export const createDefaultRequeteEtapes = async (
   requeteId: string,
   entiteId: string,
   tx?: Prisma.TransactionClient,
   changedById?: string | null,
+  options?: { acknowledgmentCreatedAt?: Date; transactionalAudit?: boolean },
 ) => {
   const prismaClient = tx ?? prisma;
 
@@ -110,6 +116,7 @@ export const createDefaultRequeteEtapes = async (
       nom: ACKNOWLEDGMENT_STEP_NAME,
       type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
       estPartagee: false,
+      ...(options?.acknowledgmentCreatedAt ? { createdAt: options.acknowledgmentCreatedAt } : {}),
     },
   });
 
@@ -121,15 +128,20 @@ export const createDefaultRequeteEtapes = async (
   ) => {
     if (changedById !== undefined) {
       try {
-        await createChangeLog({
-          entity: 'RequeteEtape',
-          entityId: etape.id,
-          action,
-          before,
-          after,
-          changedById: changedById ?? null,
-        });
+        await createChangeLog(
+          {
+            entity: 'RequeteEtape',
+            entityId: etape.id,
+            action,
+            before,
+            after,
+            changedById: changedById ?? null,
+          },
+          options?.transactionalAudit ? tx : undefined,
+        );
       } catch (changelogError) {
+        if (options?.transactionalAudit) throw changelogError;
+
         const logger = getLoggerStore();
         logger.error(
           { requeteId, entiteId, etapeId: etape.id, error: changelogError },
@@ -614,6 +626,14 @@ export const getRequeteEtapes = async (
         },
         requeteId: true,
         entiteId: true,
+        assignedEntiteId: true,
+        assignedEntite: {
+          select: {
+            id: true,
+            nomComplet: true,
+            entiteTypeId: true,
+          },
+        },
         requeteEntite: {
           select: {
             entite: {
@@ -651,9 +671,11 @@ export const getRequeteEtapes = async (
   const timelineSourceSteps = raw.map((etape) => {
     const {
       requeteEntite,
+      assignedEntite,
       requete: { createdAt: requestCreatedAt, ...requete },
       ...step
     } = etape;
+
     const permissions = getEtapePermissions({
       type: etape.type,
       statutId: etape.statutId,
@@ -661,8 +683,10 @@ export const getRequeteEtapes = async (
       requeteIsAutomatic: isAutomaticRequest(etape.requete),
       uploadedFiles: etape.uploadedFiles,
     });
+
     const isOwner = etape.entiteId === entiteId;
-    return {
+
+    const timelineStep = {
       ...step,
       requete,
       requestCreatedAt,
@@ -672,6 +696,34 @@ export const getRequeteEtapes = async (
       editable: isOwner && permissions.editable,
       canOnlyEditNotes: isOwner && permissions.canOnlyEditNotes,
       uploadedFiles: etape.uploadedFiles.map(sanitizeFile),
+    };
+
+    if (step.type === REQUETE_ETAPE_TYPES.ASSIGNMENT) {
+      if (!step.assignedEntiteId || !assignedEntite) {
+        throw new Error(`Assignment step ${step.id} has no assigned administrative entity`);
+      }
+
+      return {
+        ...timelineStep,
+        type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+        assignedEntiteId: step.assignedEntiteId,
+        assignedEntite,
+      };
+    }
+
+    if (!isNonAssignmentStepType(step.type)) {
+      throw new Error(`Processing step ${step.id} has unsupported type ${step.type}`);
+    }
+
+    if (step.assignedEntiteId != null || assignedEntite != null) {
+      throw new Error(`Non-assignment step ${step.id} has an assigned administrative entity`);
+    }
+
+    return {
+      ...timelineStep,
+      type: step.type,
+      assignedEntiteId: null,
+      assignedEntite: null,
     };
   });
 
@@ -690,6 +742,9 @@ export const getRequeteEtapes = async (
   const neutralCreationEvent = representativeCreationSource
     ? {
         ...representativeCreationSource,
+        type: REQUETE_ETAPE_TYPES.CREATION,
+        assignedEntiteId: null,
+        assignedEntite: null,
         createdAt: representativeCreationSource.requestCreatedAt,
         timelineItemType: 'NEUTRAL_EVENT' as const,
         attributedEntiteAdministrative: null,
@@ -729,6 +784,9 @@ export const getRequeteEtapes = async (
 
       return {
         ...representativeSource,
+        type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+        assignedEntiteId: null,
+        assignedEntite: null,
         createdAt: chronologicalSource.createdAt,
         timelineItemType: 'NEUTRAL_EVENT' as const,
         attributedEntiteAdministrative: null,

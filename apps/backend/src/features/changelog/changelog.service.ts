@@ -1,8 +1,8 @@
 import { type Prisma, prisma } from '../../libs/prisma.js';
 import type { CreateChangeLogDto } from './changelog.type.js';
 
-export const createChangeLog = async (data: CreateChangeLogDto) => {
-  return prisma.changeLog.create({
+export const createChangeLog = async (data: CreateChangeLogDto, tx?: Prisma.TransactionClient) => {
+  return (tx ?? prisma).changeLog.create({
     data: {
       entity: data.entity,
       entityId: data.entityId,

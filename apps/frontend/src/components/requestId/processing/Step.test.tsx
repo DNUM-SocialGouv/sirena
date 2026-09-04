@@ -55,7 +55,10 @@ vi.mock('@/stores/userStore', () => ({
 
 type StepProps = React.ComponentProps<typeof Step>;
 type EntityStepProps = Extract<StepProps, { timelineItemType: 'ENTITY_STEP' }>;
+type NonAssignmentEntityStepProps = Exclude<EntityStepProps, { type: 'ASSIGNMENT' }>;
+type AssignmentEntityStepProps = Extract<EntityStepProps, { type: 'ASSIGNMENT' }>;
 type NeutralStepProps = Extract<StepProps, { timelineItemType: 'NEUTRAL_EVENT' }>;
+type NeutralCreationStepProps = Extract<NeutralStepProps, { type: 'CREATION' }>;
 type StepFile = StepProps['uploadedFiles'][number];
 
 describe('Step', () => {
@@ -70,6 +73,8 @@ describe('Step', () => {
       isMultiEntite: false,
       requeteId: 'REQ-354',
       entiteId: 'ENTITE-1',
+      assignedEntiteId: null,
+      assignedEntite: null,
       entiteAdministrative: { id: 'ENTITE-1', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
       timelineItemType: 'ENTITY_STEP',
       attributedEntiteAdministrative: { id: 'ENTITE-1', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
@@ -114,6 +119,8 @@ describe('Step', () => {
       isMultiEntite: false,
       requeteId: 'REQ-354',
       entiteId: 'ENTITE-1',
+      assignedEntiteId: null,
+      assignedEntite: null,
       entiteAdministrative: { id: 'ENTITE-1', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
       timelineItemType: 'ENTITY_STEP',
       attributedEntiteAdministrative: { id: 'ENTITE-1', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
@@ -159,6 +166,8 @@ describe('Step', () => {
       isMultiEntite: true,
       requeteId: 'REQ-354',
       entiteId: 'FOREIGN-ENTITE',
+      assignedEntiteId: null,
+      assignedEntite: null,
       entiteAdministrative: {
         id: 'FOREIGN-ENTITE',
         nomComplet: 'CD du Calvados',
@@ -242,12 +251,14 @@ describe('Step', () => {
     ...overrides,
   });
 
-  const makeStep = (overrides: Partial<EntityStepProps> = {}): EntityStepProps => ({
+  const makeStep = (overrides: Partial<NonAssignmentEntityStepProps> = {}): NonAssignmentEntityStepProps => ({
     requestId: 'REQ-1',
     isOwner: true,
     isMultiEntite: false,
     requeteId: 'REQ-1',
     entiteId: 'ENTITE-1',
+    assignedEntiteId: null,
+    assignedEntite: null,
     entiteAdministrative: { id: 'ENTITE-1', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
     timelineItemType: 'ENTITY_STEP',
     attributedEntiteAdministrative: { id: 'ENTITE-1', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
@@ -274,11 +285,81 @@ describe('Step', () => {
     ...overrides,
   });
 
-  const makeNeutralStep = (overrides: Partial<NeutralStepProps> = {}): NeutralStepProps => ({
+  const makeAssignmentStep = (overrides: Partial<AssignmentEntityStepProps> = {}): AssignmentEntityStepProps => ({
     ...makeStep(),
+    assignedEntiteId: 'ASSIGNED-ENTITE',
+    assignedEntite: {
+      id: 'ASSIGNED-ENTITE',
+      nomComplet: 'ARS Bretagne',
+      entiteTypeId: 'ARS',
+    },
+    nom: 'Affectation',
+    type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+    ...overrides,
+  });
+
+  const makeNeutralStep = (overrides: Partial<NeutralCreationStepProps> = {}): NeutralCreationStepProps => ({
+    ...makeStep({ type: REQUETE_ETAPE_TYPES.CREATION }),
+    type: REQUETE_ETAPE_TYPES.CREATION,
     timelineItemType: 'NEUTRAL_EVENT',
     attributedEntiteAdministrative: null,
     ...overrides,
+  });
+
+  it("uses 'de l’' before an assigned ARS", () => {
+    render(<Step {...makeAssignmentStep()} />);
+
+    expect(screen.getByRole('heading', { name: 'Affectation de l’ARS Bretagne' })).toBeInTheDocument();
+  });
+
+  it("uses 'de la' before an assigned DDETS", () => {
+    render(
+      <Step
+        {...makeAssignmentStep({
+          assignedEntite: {
+            id: 'ASSIGNED-ENTITE',
+            nomComplet: 'DDETS du Rhône',
+            entiteTypeId: 'DD',
+          },
+        })}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Affectation de la DDETS du Rhône' })).toBeInTheDocument();
+  });
+
+  it("uses 'du' before an assigned Conseil départemental", () => {
+    render(
+      <Step
+        {...makeAssignmentStep({
+          assignedEntite: {
+            id: 'ASSIGNED-ENTITE',
+            nomComplet: 'Conseil départemental de Seine-Maritime',
+            entiteTypeId: 'CD',
+          },
+        })}
+      />,
+    );
+
+    expect(
+      screen.getByRole('heading', { name: 'Affectation du Conseil départemental de Seine-Maritime' }),
+    ).toBeInTheDocument();
+  });
+
+  it('keeps the assignment title readable for an unknown entity type', () => {
+    render(
+      <Step
+        {...makeAssignmentStep({
+          assignedEntite: {
+            id: 'ASSIGNED-ENTITE',
+            nomComplet: 'Entité expérimentale',
+            entiteTypeId: 'UNKNOWN',
+          },
+        })}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Affectation Entité expérimentale' })).toBeInTheDocument();
   });
 
   it('shows the edit action to another agent from the owner root perimeter', () => {

@@ -18,6 +18,35 @@ describe('ChangeLog Service', () => {
     vi.clearAllMocks();
   });
 
+  it('uses the transaction client when provided', async () => {
+    const testData: CreateChangeLogDto = {
+      entity: 'RequeteEtape',
+      entityId: 'step-123',
+      action: ChangeLogAction.CREATED,
+      before: null,
+      after: { type: 'ASSIGNMENT' },
+      changedById: 'user-123',
+    };
+    const transactionCreate = vi.fn().mockResolvedValue({ id: 'changelog-123', changedAt: new Date(), ...testData });
+    const tx = { changeLog: { create: transactionCreate } } as unknown as NonNullable<
+      Parameters<typeof createChangeLog>[1]
+    >;
+
+    await createChangeLog(testData, tx);
+
+    expect(transactionCreate).toHaveBeenCalledWith({
+      data: {
+        entity: testData.entity,
+        entityId: testData.entityId,
+        action: testData.action,
+        before: testData.before,
+        after: testData.after,
+        changedById: testData.changedById,
+      },
+    });
+    expect(mockedChangeLog.create).not.toHaveBeenCalled();
+  });
+
   it('should create a changelog entry', async () => {
     const testData: CreateChangeLogDto = {
       entity: 'User',
