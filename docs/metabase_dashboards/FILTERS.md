@@ -5,9 +5,10 @@ exposé sur la page **Indicateurs** (`/statistiques`), comment en **définir de 
 côté Metabase, et comment **adapter les requêtes SQL** des cartes pour qu'elles en tiennent
 compte.
 
-Trois filtres sont implémentés, **cumulables** entre eux : un **filtre de période** (date de
-début / date de fin), un **filtre de domaine fonctionnel** (multi-sélection) et une **exclusion
-des requêtes EIG** (case à cocher, active par défaut).
+Quatre filtres sont implémentés, **cumulables** entre eux : un **filtre de période** (date de
+début / date de fin), un **filtre de domaine fonctionnel** (multi-sélection), une **exclusion
+des requêtes EIG** (case à cocher, active par défaut) et un **filtre de type de lieu de
+survenue** (multi-sélection hiérarchique type / précision).
 
 ---
 
@@ -71,6 +72,7 @@ fonctionner exactement comme avant (cf. § sécurité).
 | `endDate` | `end_date` | **Enabled** (optionnel) | query string |
 | `domaineIds` | `domaine_fonctionnel` | **Enabled** (optionnel) | query string |
 | `includeEIG` | `inclure_eig` | **Enabled** (optionnel) | query string |
+| `lieuTypes` | `lieu_de_survenue` | **Enabled** (optionnel) | query string |
 | _(périmètre entité)_ | `entity_label` | **Locked** (imposé serveur) | JWT (token) |
 
 > ⚠️ La visibilité **doit** être cohérente avec le mode de transmission : un paramètre
@@ -86,11 +88,11 @@ personnalisée) via `validateSearch` de TanStack Router. Elle est donc **conserv
 rechargement** et **partageable** via l'URL, et chaque changement relance automatiquement la
 requête (la `queryKey` inclut les dates). En revanche, elle n'est **pas** automatiquement
 conservée lors d'une navigation vers une autre page de l'application puis d'un retour sur
-`/statistiques`. Le filtre de domaine fonctionnel suit exactement la même mécanique
-(`?domaineIds=SOCIAL,SANITAIRE`). L'option d'inclusion des EIG suit la même mécanique, avec la
-nuance d'être **activée par défaut** : le paramètre n'apparaît dans l'URL que lorsque
-l'utilisateur désactive l'inclusion des EIG (`?includeEIG=false`). En l'absence du paramètre,
-les EIG sont inclus.
+`/statistiques`. Les filtres de domaine fonctionnel (`?domaineIds=SOCIAL,SANITAIRE`) et de type
+de lieu de survenue (`?lieuTypes=DOMICILE,ETABLISSEMENT_SANTE:CHU`) suivent exactement la même
+mécanique. L'option d'inclusion des EIG suit la même mécanique, avec la nuance d'être
+**activée par défaut** : le paramètre n'apparaît dans l'URL que lorsque l'utilisateur désactive
+l'inclusion des EIG (`?includeEIG=false`). En l'absence du paramètre, les EIG sont inclus.
 
 ---
 
@@ -451,6 +453,52 @@ lever d'erreur.
 > déploiement en deux temps (code puis configuration Metabase), pas une régression.
 
 ---
+## 4 quater. Le filtre de type de lieu de survenue (hiérarchique)
+
+Le lieu est porté par la **situation** (`Situation."lieuDeSurvenueId"` →
+`LieuDeSurvenue."lieuTypeId"` + `LieuDeSurvenue."lieuPrecision"`). Comme le domaine
+fonctionnel, c'est un filtre **multivalué** en **OU** entre les valeurs cochées, cumulé en
+**ET** avec les autres filtres, et appliqué via un `EXISTS` au niveau de la **requête**.
+
+Sa particularité est la **hiérarchie à deux niveaux** : l'agent peut cocher un type de lieu
+entier (ex. « Etablissements de santé ») ou seulement certaines précisions (ex. « Domicile —
+Chez un tiers »). Les deux cas sont encodés dans **une seule** variable multivaluée
+`lieu_de_survenue`, avec un token par valeur cochée :
+
+- `DOMICILE` — type entier : toutes les requêtes dont une situation a ce `lieuTypeId`, quelle
+  que soit la précision (y compris vide) ;
+- `ETABLISSEMENT_SANTE:CHU` — précision : `lieuTypeId` **et** `lieuPrecision` doivent
+  correspondre. Le préfixe type est indispensable car les ids de précision ne sont pas uniques
+  entre types (`CHU` existe pour les établissements de santé **et** les établissements sociaux,
+  `AUTRE` presque partout).
+
+Le backend valide chaque token contre le référentiel applicatif
+(`LIEU_TYPE` / `lieuPrecisionLabelsByType` de `@sirena/common`) avant de le transmettre.
+
+### Le bloc à ajouter aux cartes
+
+```sql
+[[ AND EXISTS (SELECT 1 FROM "Situation" s_lieu
+               JOIN "LieuDeSurvenue" l_lieu ON l_lieu.id = s_lieu."lieuDeSurvenueId"
+               WHERE s_lieu."requeteId" = r.id
+                 AND (l_lieu."lieuTypeId" IN ({{lieu_de_survenue}})
+                      OR (l_lieu."lieuTypeId" || ':' || l_lieu."lieuPrecision") IN ({{lieu_de_survenue}}))) ]]
+```
+
+La même liste de tokens alimente les deux membres du `OR` : un token « type entier » ne peut
+matcher que le premier (`lieuPrecision` n'est jamais vide dans un token), un token
+« type:précision » que le second (`lieuTypeId` seul ne contient jamais de `:`). Les lignes à
+`lieuTypeId` NULL sont écartées naturellement. L'alias `s_lieu`/`l_lieu` est distinct de `s`
+et de `s_df` (domaine fonctionnel) pour que les deux blocs cohabitent dans la même carte.
+
+### Configuration côté Metabase
+
+Identique au domaine fonctionnel : variable **Texte**, « plusieurs valeurs », non
+obligatoire, sans valeur par défaut, nommée **`lieu_de_survenue`** ; paramètre de dashboard
+**Texte ou catégorie → est égal à** de slug **`lieu_de_survenue`**, mappé sur **toutes** les
+cartes, visibilité d'embedding **Enabled**. Tant que le paramètre n'est pas déclaré sur le
+dashboard, le backend n'envoie rien (découverte dynamique) : le filtre est un no-op côté
+Metabase et l'UI reste fonctionnelle.
 
 ## 5. Ajouter un nouveau filtre
 

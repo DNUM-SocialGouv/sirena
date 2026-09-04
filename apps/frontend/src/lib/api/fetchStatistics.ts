@@ -9,6 +9,7 @@ export type StatisticsDashboardFilters = {
   endDate?: string;
   domaineIds?: string;
   includeEIG?: boolean;
+  lieuTypes?: string;
 };
 
 export async function fetchStatisticsDashboard(
@@ -19,6 +20,7 @@ export async function fetchStatisticsDashboard(
   if (filters.endDate) query.endDate = filters.endDate;
   if (filters.domaineIds) query.domaineIds = filters.domaineIds;
   if (filters.includeEIG === false) query.includeEIG = 'false';
+  if (filters.lieuTypes) query.lieuTypes = filters.lieuTypes;
 
   const res = await client.statistics.dashboard.$get({ query });
   await handleRequestErrors(res);

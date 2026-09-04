@@ -1,0 +1,145 @@
+.dropdownTree {
+  position: relative;
+  width: auto;
+}
+
+.button {
+  white-space: nowrap;
+}
+
+.button:global(.fr-btn) {
+  width: auto;
+  justify-content: space-between;
+  margin: 0;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% - 1px);
+  left: 0;
+
+  min-width: min(22rem, calc(100vw - 2rem));
+  max-width: min(32rem, calc(100vw - 2rem));
+  max-height: min(24rem, 60vh);
+  overflow-y: auto;
+
+  padding-inline: 0;
+  padding-block: 2px;
+  scroll-padding-block: 0.5rem;
+
+  border-top: none;
+  border-radius: var(--radius-1);
+  box-shadow: var(--shadow-overlap);
+
+  background-color: var(--background-default-grey);
+  z-index: 1000;
+}
+
+.fieldset,
+.options {
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-inline-size: auto;
+}
+
+.options[hidden] {
+  display: none;
+}
+
+.categories {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  padding-block: 0.5rem;
+  padding-inline: calc(1rem + min(var(--depth, 0), 3) * 1.5rem) 1rem;
+  border-bottom: 1px solid var(--border-default-grey);
+}
+
+.header:hover {
+  background-color: var(--background-alt-grey-hover, #f6f6f6);
+}
+
+.header[data-expanded="true"] {
+  background-color: var(--background-open-blue-france, #ececfe);
+}
+
+.header[data-expanded="true"]:hover {
+  background-color: var(--background-action-low-blue-france-hover, #e3e3fd);
+}
+
+.header :global(.fr-checkbox-group),
+.selectAll {
+  margin: 0;
+  flex: none;
+}
+
+.selectAll {
+  min-inline-size: 1rem;
+  min-block-size: 1.5rem;
+}
+
+.trigger:global(.fr-btn) {
+  --hover: transparent;
+  --active: transparent;
+
+  flex: 1;
+  justify-content: space-between;
+  margin: 0;
+  padding: 0.25rem 0;
+  min-block-size: 2rem;
+  font-weight: 500;
+  color: var(--text-action-high-blue-france);
+  text-align: left;
+}
+
+.lockedHint {
+  margin: 0;
+  padding-block: 0.25rem;
+  padding-inline: calc(1rem + min(var(--depth, 0), 3) * 1.5rem) 1rem;
+}
+
+.option {
+  padding-block: 0.25rem;
+  padding-inline: calc(1rem + min(var(--depth, 0), 3) * 1.5rem) 1rem;
+  margin: 0;
+}
+
+.dropdownTree input[type="checkbox"]:indeterminate + label::before {
+  background-color: var(--border-action-high-blue-france);
+  background-image: linear-gradient(var(--background-default-grey), var(--background-default-grey));
+  background-size: 50% 2px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+@media (max-width: 36em) {
+  .dropdownTree {
+    width: 100%;
+  }
+
+  .button:global(.fr-btn) {
+    width: 100%;
+    white-space: normal;
+    text-align: left;
+  }
+
+  .dropdown {
+    min-width: 100%;
+    max-width: 100%;
+  }
+}
+
+@media (forced-colors: active) {
+  .dropdownTree input[type="checkbox"]:indeterminate + label::before {
+    border-block-end: 2px solid CanvasText;
+    background-color: Canvas;
+  }
+}

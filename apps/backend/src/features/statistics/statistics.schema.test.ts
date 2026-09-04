@@ -91,4 +91,48 @@ describe('StatisticsDashboardQuerySchema', () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it('accepts one or several known lieu types', () => {
+    expect(StatisticsDashboardQuerySchema.safeParse({ lieuTypes: 'DOMICILE' }).success).toBe(true);
+    expect(StatisticsDashboardQuerySchema.safeParse({ lieuTypes: 'DOMICILE,ETABLISSEMENT_SANTE' }).success).toBe(true);
+  });
+
+  it('accepts a precision token scoped to its lieu type', () => {
+    expect(StatisticsDashboardQuerySchema.safeParse({ lieuTypes: 'DOMICILE:CHEZ_TIERS' }).success).toBe(true);
+    expect(StatisticsDashboardQuerySchema.safeParse({ lieuTypes: 'ETABLISSEMENT_SANTE:CHU,DOMICILE' }).success).toBe(
+      true,
+    );
+  });
+
+  it('rejects an unknown lieu type or precision', () => {
+    expect(StatisticsDashboardQuerySchema.safeParse({ lieuTypes: 'NOT_A_LIEU' }).success).toBe(false);
+    expect(StatisticsDashboardQuerySchema.safeParse({ lieuTypes: 'DOMICILE:NOT_A_PRECISION' }).success).toBe(false);
+  });
+
+  it('rejects a precision that belongs to another lieu type', () => {
+    expect(StatisticsDashboardQuerySchema.safeParse({ lieuTypes: 'DOMICILE:CHU' }).success).toBe(false);
+  });
+
+  it('rejects a malformed lieu token', () => {
+    expect(StatisticsDashboardQuerySchema.safeParse({ lieuTypes: 'DOMICILE:CHEZ_TIERS:EXTRA' }).success).toBe(false);
+    expect(StatisticsDashboardQuerySchema.safeParse({ lieuTypes: 'ETABLISSEMENT_FICTIF:AUTRE' }).success).toBe(false);
+  });
+
+  it('normalises and deduplicates the lieu list', () => {
+    expect(StatisticsDashboardQuerySchema.parse({ lieuTypes: '' }).lieuTypes).toBeUndefined();
+    expect(StatisticsDashboardQuerySchema.parse({ lieuTypes: ' , ' }).lieuTypes).toBeUndefined();
+    expect(
+      StatisticsDashboardQuerySchema.parse({ lieuTypes: ' DOMICILE , DOMICILE,ETABLISSEMENT_SANTE:CHU ' }).lieuTypes,
+    ).toBe('DOMICILE,ETABLISSEMENT_SANTE:CHU');
+  });
+
+  it('combines the period, domaines and lieu filters', () => {
+    const result = StatisticsDashboardQuerySchema.safeParse({
+      startDate: '2026-01-01',
+      endDate: '2026-03-31',
+      domaineIds: 'SOCIAL',
+      lieuTypes: 'DOMICILE:CHEZ_TIERS,ETABLISSEMENT_SANTE',
+    });
+    expect(result.success).toBe(true);
+  });
 });
