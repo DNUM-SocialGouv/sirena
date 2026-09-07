@@ -1103,10 +1103,10 @@ describe('RequetesEntite endpoints: /', () => {
       });
       const tx = mockDeep<Prisma.TransactionClient>();
       prismaMock.$transaction.mockImplementation(async (callback) => callback(tx));
-      tx.requeteEtape.create.mockImplementation(async ({ data }) => ({
+      tx.requeteEtape.create.mockResolvedValueOnce({
         ...fakeResult.etape,
-        estPartagee: data.estPartagee ?? false,
-      }));
+        estPartagee: true,
+      });
 
       const res = await client[':id'].reopen.$post({
         param: { id: 'requeteId' },
