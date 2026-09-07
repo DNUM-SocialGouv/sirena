@@ -1,8 +1,11 @@
-import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useRequeteOtherEntitiesAffected } from '@/hooks/queries/useRequeteDetails';
-import { ReopenRequeteModal } from './ReopenRequeteModal';
+import { fetchRequeteOtherEntitiesAffected } from '@/lib/api/fetchRequetesEntite';
+import { ReopenRequeteModal, type ReopenRequeteModalRef } from './ReopenRequeteModal';
 
 const { mutateAsync, close } = vi.hoisted(() => ({ mutateAsync: vi.fn(), close: vi.fn() }));
 
@@ -38,6 +41,40 @@ vi.mock('@/hooks/queries/useRequeteDetails', () => ({
   useRequeteOtherEntitiesAffected: vi.fn(),
 }));
 
+vi.mock('@/lib/api/fetchRequetesEntite', () => ({
+  fetchRequeteOtherEntitiesAffected: vi.fn(),
+}));
+
+const ModalWithTrigger = () => {
+  const modal = useRef<ReopenRequeteModalRef>(null);
+  const handleOpen = () => modal.current?.openModal();
+  return (
+    <>
+      <button type="button" onClick={handleOpen}>
+        Ouvrir la confirmation
+      </button>
+      <ReopenRequeteModal ref={modal} requestId="REQ-354" />
+    </>
+  );
+};
+
+const renderWithCachedRecipients = async () => {
+  const actual = await vi.importActual<typeof import('@/hooks/queries/useRequeteDetails')>(
+    '@/hooks/queries/useRequeteDetails',
+  );
+  vi.mocked(useRequeteOtherEntitiesAffected).mockImplementation(actual.useRequeteOtherEntitiesAffected);
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
+  queryClient.setQueryData(['requeteOtherEntitiesAffected', 'REQ-354'], {
+    otherEntites: [ars],
+    subAdministrativeEntites: [],
+  });
+  render(
+    <QueryClientProvider client={queryClient}>
+      <ModalWithTrigger />
+    </QueryClientProvider>,
+  );
+};
+
 type Query = ReturnType<typeof useRequeteOtherEntitiesAffected>;
 const setQuery = (query: Pick<Query, 'data' | 'isPlaceholderData' | 'isError'>) =>
   vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(query as Query);
@@ -56,6 +93,7 @@ const confirmation =
 describe('ReopenRequeteModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(fetchRequeteOtherEntitiesAffected).mockReset();
     mutateAsync.mockResolvedValue(undefined);
     setQuery({
       data: { otherEntites: [ars], subAdministrativeEntites: [] },
@@ -110,6 +148,57 @@ describe('ReopenRequeteModal', () => {
 
     await userEvent.click(submit);
 
+    expect(mutateAsync).toHaveBeenCalledExactlyOnceWith();
+  });
+
+  it('refreshes cached recipients on every opening using the existing query', async () => {
+    vi.mocked(fetchRequeteOtherEntitiesAffected)
+      .mockResolvedValueOnce({
+        otherEntites: [{ ...ars, id: 'ddets', nomComplet: 'DDETS du Nord' }],
+        subAdministrativeEntites: [],
+      })
+      .mockResolvedValueOnce({ otherEntites: [], subAdministrativeEntites: [] });
+    await renderWithCachedRecipients();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
+    expect(await screen.findByText('Cette étape sera visible par DDETS du Nord.')).toBeInTheDocument();
+    expect(screen.queryByText('Cette étape sera visible par ARS Bretagne.')).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
+    await waitFor(() => expect(screen.queryByText(/Cette étape sera visible/)).not.toBeInTheDocument());
+    expect(fetchRequeteOtherEntitiesAffected).toHaveBeenCalledTimes(2);
+  });
+
+  it('hides cached names during refresh without blocking reopening', async () => {
+    vi.mocked(fetchRequeteOtherEntitiesAffected).mockReturnValueOnce(new Promise(() => {}));
+    await renderWithCachedRecipients();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
+    expect(
+      await screen.findByText(
+        'Cette étape sera visible par les autres entités administratives affectées à la requête.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Cette étape sera visible par ARS Bretagne.')).not.toBeInTheDocument();
+    const submit = screen.getByRole('button', { name: 'Rouvrir la requête' });
+    expect(submit).toBeEnabled();
+    await userEvent.click(submit);
+    expect(mutateAsync).toHaveBeenCalledExactlyOnceWith();
+  });
+
+  it('keeps the fallback after a failed refresh instead of restoring cached names', async () => {
+    vi.mocked(fetchRequeteOtherEntitiesAffected).mockRejectedValueOnce(new Error('refresh failed'));
+    await renderWithCachedRecipients();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
+    expect(
+      await screen.findByText(
+        'Cette étape sera visible par les autres entités administratives affectées à la requête.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Cette étape sera visible par ARS Bretagne.')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Rouvrir la requête' }));
     expect(mutateAsync).toHaveBeenCalledExactlyOnceWith();
   });
 

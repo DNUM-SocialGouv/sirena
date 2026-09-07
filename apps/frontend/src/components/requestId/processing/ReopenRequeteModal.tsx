@@ -28,7 +28,10 @@ export const ReopenRequeteModal = forwardRef<ReopenRequeteModalRef, ReopenRequet
     const recipients = new Intl.ListFormat('fr', { style: 'long', type: 'conjunction' }).format(recipientNames);
 
     const visibilityMessage =
-      otherEntitiesQuery.isPlaceholderData || otherEntitiesQuery.isError || !otherEntitiesQuery.data
+      otherEntitiesQuery.isFetching ||
+      otherEntitiesQuery.isPlaceholderData ||
+      otherEntitiesQuery.isError ||
+      !otherEntitiesQuery.data
         ? 'Cette étape sera visible par les autres entités administratives affectées à la requête.'
         : recipientNames.length > 0
           ? `Cette étape sera visible par ${recipients}.`
@@ -53,6 +56,8 @@ export const ReopenRequeteModal = forwardRef<ReopenRequeteModalRef, ReopenRequet
       if (triggerButtonRef?.current) {
         registerTrigger(triggerButtonRef.current);
       }
+
+      void otherEntitiesQuery.refetch();
 
       reopenModal.open();
     };
