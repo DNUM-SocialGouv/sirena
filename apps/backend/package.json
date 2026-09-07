@@ -61,7 +61,7 @@
     "@prisma/adapter-pg": "catalog:",
     "@prisma/client": "catalog:",
     "@prisma/client-runtime-utils": "^7.9.0",
-    "@scalar/hono-api-reference": "^0.11.16",
+    "@scalar/hono-api-reference": "^0.12.0",
     "@sentry/cli": "^3.6.1",
     "@sentry/node": "^10.71.0",
     "@sirena/backend-utils": "workspace:*",
