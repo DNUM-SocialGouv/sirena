@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { deleteFileFromMinio, uploadFileToMinio } from './minio.js';
+import { deleteFileFromMinio, deleteFilesFromMinio, uploadFileToMinio } from './minio.js';
 
 vi.mock('../config/env.js', () => ({
   envVars: {
@@ -19,6 +19,7 @@ const { mockMinioClient, mockReadStream, mockUnlink, mockReadFile } = vi.hoisted
     copyObject: vi.fn(),
     presignedUrl: vi.fn(),
     removeObject: vi.fn(),
+    removeObjects: vi.fn(),
     statObject: vi.fn(),
     getObject: vi.fn(),
   };
@@ -152,6 +153,40 @@ describe('minio.ts', () => {
       const filePath = 'uploads/test-file.pdf';
       await deleteFileFromMinio(filePath);
       expect(mockMinioClient.removeObject).toHaveBeenCalledWith('test-bucket', filePath);
+    });
+  });
+
+  describe('deleteFilesFromMinio', () => {
+    it('should return an empty array without calling the API when given no paths', async () => {
+      const result = await deleteFilesFromMinio([]);
+      expect(result).toEqual([]);
+      expect(mockMinioClient.removeObjects).not.toHaveBeenCalled();
+    });
+
+    it('should delete a batch of files and return no errors when all succeed', async () => {
+      mockMinioClient.removeObjects.mockResolvedValue([]);
+      const paths = ['uploads/a.pdf', 'uploads/b.pdf'];
+
+      const result = await deleteFilesFromMinio(paths);
+
+      expect(mockMinioClient.removeObjects).toHaveBeenCalledWith('test-bucket', paths);
+      expect(result).toEqual([]);
+    });
+
+    it('should report failed keys returned by the API', async () => {
+      mockMinioClient.removeObjects.mockResolvedValue([{ Key: 'uploads/bad.pdf', Message: 'AccessDenied' }]);
+
+      const result = await deleteFilesFromMinio(['uploads/bad.pdf']);
+
+      expect(result).toEqual([{ key: 'uploads/bad.pdf', message: 'AccessDenied' }]);
+    });
+
+    it('should support the nested Error shape from the SDK typings', async () => {
+      mockMinioClient.removeObjects.mockResolvedValue([{ Error: { Key: 'uploads/bad.pdf', Message: 'AccessDenied' } }]);
+
+      const result = await deleteFilesFromMinio(['uploads/bad.pdf']);
+
+      expect(result).toEqual([{ key: 'uploads/bad.pdf', message: 'AccessDenied' }]);
     });
   });
 });

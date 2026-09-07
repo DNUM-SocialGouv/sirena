@@ -135,6 +135,44 @@ export const deleteFileFromMinio = async (filePath: string): Promise<void> => {
   await minioClient.removeObject(S3_BUCKET_NAME, filePath);
 };
 
+export interface RemoveObjectsError {
+  key: string;
+  message: string;
+}
+
+/**
+ * Deletes multiple objects from MinIO in a single call to the DeleteObjects API.
+ *
+ * The caller is responsible for chunking `filePaths` to a reasonable size:
+ * the underlying S3/MinIO API accepts at most 1000 keys per request, and the
+ * minio SDK would otherwise split larger inputs into parallel sub-requests,
+ * which can overwhelm the server when deleting hundreds of thousands of keys.
+ *
+ * Returns the list of keys that failed to delete (S3 reports only failures,
+ * successful deletions are silent).
+ */
+export const deleteFilesFromMinio = async (filePaths: string[]): Promise<RemoveObjectsError[]> => {
+  if (!minioClient) {
+    throw new Error('MinIO client not initialized, check your S3_BUCKET_ENDPOINT');
+  }
+  if (filePaths.length === 0) return [];
+
+  const results = await minioClient.removeObjects(S3_BUCKET_NAME, filePaths);
+
+  // The minio SDK's published types wrap each failure under `.Error`, but at
+  // runtime the parsed XML <Error> entries are returned directly with `Key`/
+  // `Message` on them. Support both shapes defensively.
+  return results
+    .filter((r): r is NonNullable<typeof r> => Boolean(r))
+    .map((r) => {
+      const entry = 'Error' in r && r.Error ? r.Error : r;
+      return {
+        key: (entry as { Key?: string }).Key ?? '(unknown key)',
+        message: (entry as { Message?: string }).Message ?? 'Unknown error',
+      };
+    });
+};
+
 export interface FileStreamResult {
   stream: Readable;
   metadata: {
