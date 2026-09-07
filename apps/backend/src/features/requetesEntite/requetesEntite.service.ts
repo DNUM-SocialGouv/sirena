@@ -1985,6 +1985,7 @@ export const reopenRequeteForEntite = async (requeteId: string, entiteId: string
         entiteId,
         statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
         type: REQUETE_ETAPE_TYPES.REOPEN,
+        estPartagee: true,
         createdById: authorId,
         nom: `Requête rouverte le ${new Date().toLocaleDateString('fr-FR', {
           day: '2-digit',

@@ -3,10 +3,12 @@ import { type EntiteType, ERROR_KIND, RECEPTION_TYPE, REQUETE_STATUT_TYPES } fro
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { mockDeep } from 'vitest-mock-extended';
 import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
+import { prisma as prismaMock } from '../../libs/__mocks__/prisma.js';
 import { getFileStream } from '../../libs/minio.js';
-import type { UploadedFile } from '../../libs/prisma.js';
+import type { Prisma, UploadedFile } from '../../libs/prisma.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import { convertDatesToStrings } from '../../tests/formatter.js';
@@ -39,6 +41,10 @@ vi.mock('./requetesEntite.service.js', () => ({
   getOtherEntitesAffected: vi.fn(),
   reopenRequeteForEntite: vi.fn(),
   updateStatusRequete: vi.fn(),
+}));
+
+vi.mock('../changelog/changelog.service.js', () => ({
+  createChangeLog: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('../accessLog/accessLog.service.js', () => ({
@@ -106,13 +112,10 @@ vi.mock('../users/users.service.js', () => ({
 
 vi.mock('../../libs/prisma.js', async () => {
   const generated = await vi.importActual<typeof import('@sirena/db/generated-client')>('@sirena/db/generated-client');
+  const { prisma } = await import('../../libs/__mocks__/prisma.js');
   return {
     ...generated,
-    prisma: {
-      entite: {
-        findUnique: vi.fn(),
-      },
-    },
+    prisma,
     createPrismaAdapter: vi.fn(),
   };
 });
@@ -1065,7 +1068,7 @@ describe('RequetesEntite endpoints: /', () => {
   });
 
   describe('POST /:id/reopen', () => {
-    it('should reopen a closed requete successfully', async () => {
+    it('returns a shared reopening created by the real service', async () => {
       const fakeResult = {
         etapeId: 'etape-reopen-id',
         reopenedAt: '2026-03-30T00:00:00.000Z',
@@ -1091,16 +1094,45 @@ describe('RequetesEntite endpoints: /', () => {
       };
 
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
-      vi.mocked(reopenRequeteForEntite).mockResolvedValueOnce(fakeResult);
+      const { reopenRequeteForEntite: reopen } =
+        await vi.importActual<typeof import('./requetesEntite.service.js')>('./requetesEntite.service.js');
+      vi.mocked(reopenRequeteForEntite).mockImplementationOnce(reopen);
+      prismaMock.requeteEntite.findUnique.mockResolvedValueOnce({
+        ...fakeRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+      });
+      const tx = mockDeep<Prisma.TransactionClient>();
+      prismaMock.$transaction.mockImplementation(async (callback) => callback(tx));
+      tx.requeteEtape.create.mockImplementation(async ({ data }) => ({
+        ...fakeResult.etape,
+        estPartagee: data.estPartagee ?? false,
+      }));
 
       const res = await client[':id'].reopen.$post({
         param: { id: 'requeteId' },
       });
 
       expect(res.status).toBe(200);
-      const body = (await res.json()) as { data: { etapeId: string } };
+      const body = (await res.json()) as { data: { etapeId: string; etape: { estPartagee: boolean } } };
       expect(body.data.etapeId).toBe('etape-reopen-id');
-      expect(reopenRequeteForEntite).toHaveBeenCalledWith('requeteId', 'entiteId', 'id1');
+      expect(body.data.etape.estPartagee).toBe(true);
+      expect(tx.requeteEtape.create).toHaveBeenCalledExactlyOnceWith({
+        data: {
+          requeteId: 'requeteId',
+          entiteId: 'entiteId',
+          type: 'REOPEN',
+          statutId: 'FAIT',
+          estPartagee: true,
+          createdById: 'id1',
+          nom: expect.any(String),
+        },
+      });
+      expect(tx.requeteEntite.update).toHaveBeenCalledExactlyOnceWith({
+        where: { requeteId_entiteId: { requeteId: 'requeteId', entiteId: 'entiteId' } },
+        data: { statutId: REQUETE_STATUT_TYPES.EN_COURS },
+      });
+      expect(prismaMock.requeteEntite.update).not.toHaveBeenCalled();
+      expect(prismaMock.requeteEtape.create).not.toHaveBeenCalled();
     });
 
     it('should return 403 if user has no access', async () => {
