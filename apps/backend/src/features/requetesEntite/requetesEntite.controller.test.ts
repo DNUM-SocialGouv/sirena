@@ -1150,7 +1150,10 @@ describe('RequetesEntite endpoints: /', () => {
 
     it('should return 404 if requete not found', async () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
-      vi.mocked(reopenRequeteForEntite).mockRejectedValueOnce(new Error('REQUETE_NOT_FOUND'));
+      const { reopenRequeteForEntite: reopen } =
+        await vi.importActual<typeof import('./requetesEntite.service.js')>('./requetesEntite.service.js');
+      vi.mocked(reopenRequeteForEntite).mockImplementationOnce(reopen);
+      prismaMock.requeteEntite.findUnique.mockResolvedValueOnce(null);
 
       const res = await client[':id'].reopen.$post({
         param: { id: 'nonexistent' },
@@ -1159,24 +1162,45 @@ describe('RequetesEntite endpoints: /', () => {
       expect(res.status).toBe(404);
       const body = (await res.json()) as { message: string };
       expect(body.message).toBe('Requête not found');
+      expect(prismaMock.$transaction).not.toHaveBeenCalled();
+      expect(prismaMock.requeteEtape.create).not.toHaveBeenCalled();
+      expect(prismaMock.requeteEntite.update).not.toHaveBeenCalled();
     });
 
-    it('should return 400 if requete is not closed', async () => {
-      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
-      vi.mocked(reopenRequeteForEntite).mockRejectedValueOnce(new Error('REQUETE_NOT_CLOSED'));
+    it.each([REQUETE_STATUT_TYPES.NOUVEAU, REQUETE_STATUT_TYPES.EN_COURS, REQUETE_STATUT_TYPES.TRAITEE])(
+      'returns 400 without writing when the real service receives status %s',
+      async (statutId) => {
+        vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+        const { reopenRequeteForEntite: reopen } =
+          await vi.importActual<typeof import('./requetesEntite.service.js')>('./requetesEntite.service.js');
+        vi.mocked(reopenRequeteForEntite).mockImplementationOnce(reopen);
+        prismaMock.requeteEntite.findUnique.mockResolvedValueOnce({ ...fakeRequeteEntite, statutId });
 
-      const res = await client[':id'].reopen.$post({
-        param: { id: 'requeteId' },
+        const res = await client[':id'].reopen.$post({
+          param: { id: 'requeteId' },
+        });
+
+        expect(res.status).toBe(400);
+        const body = (await res.json()) as { error: string };
+        expect(body.error).toBe('REQUETE_NOT_CLOSED');
+        expect(prismaMock.$transaction).not.toHaveBeenCalled();
+        expect(prismaMock.requeteEtape.create).not.toHaveBeenCalled();
+        expect(prismaMock.requeteEntite.update).not.toHaveBeenCalled();
+      },
+    );
+
+    it('returns 500 without updating the status when reopening step creation fails', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+      const { reopenRequeteForEntite: reopen } =
+        await vi.importActual<typeof import('./requetesEntite.service.js')>('./requetesEntite.service.js');
+      vi.mocked(reopenRequeteForEntite).mockImplementationOnce(reopen);
+      prismaMock.requeteEntite.findUnique.mockResolvedValueOnce({
+        ...fakeRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.CLOTUREE,
       });
-
-      expect(res.status).toBe(400);
-      const body = (await res.json()) as { error: string };
-      expect(body.error).toBe('REQUETE_NOT_CLOSED');
-    });
-
-    it('should return 500 on unexpected error', async () => {
-      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
-      vi.mocked(reopenRequeteForEntite).mockRejectedValueOnce(new Error('DATABASE_FAILURE'));
+      const tx = mockDeep<Prisma.TransactionClient>();
+      prismaMock.$transaction.mockImplementation(async (callback) => callback(tx));
+      tx.requeteEtape.create.mockRejectedValueOnce(new Error('DATABASE_FAILURE'));
 
       const res = await client[':id'].reopen.$post({
         param: { id: 'requeteId' },
@@ -1185,6 +1209,9 @@ describe('RequetesEntite endpoints: /', () => {
       expect(res.status).toBe(500);
       const body = (await res.json()) as { error: string };
       expect(body.error).toBe('INTERNAL_ERROR');
+      expect(tx.requeteEtape.create).toHaveBeenCalledOnce();
+      expect(tx.requeteEntite.update).not.toHaveBeenCalled();
+      expect(prismaMock.requeteEntite.update).not.toHaveBeenCalled();
     });
   });
 });
