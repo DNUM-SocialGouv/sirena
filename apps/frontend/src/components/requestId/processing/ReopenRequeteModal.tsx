@@ -29,6 +29,7 @@ export const ReopenRequeteModal = forwardRef<ReopenRequeteModalRef, ReopenRequet
 
     const visibilityMessage =
       otherEntitiesQuery.isFetching ||
+      otherEntitiesQuery.isPaused ||
       otherEntitiesQuery.isPlaceholderData ||
       otherEntitiesQuery.isError ||
       !otherEntitiesQuery.data

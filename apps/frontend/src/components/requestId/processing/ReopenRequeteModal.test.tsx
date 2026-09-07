@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useRef } from 'react';
@@ -68,7 +68,7 @@ const renderWithCachedRecipients = async () => {
     otherEntites: [ars],
     subAdministrativeEntites: [],
   });
-  render(
+  return render(
     <QueryClientProvider client={queryClient}>
       <ModalWithTrigger />
     </QueryClientProvider>,
@@ -170,22 +170,36 @@ describe('ReopenRequeteModal', () => {
     expect(fetchRequeteOtherEntitiesAffected).toHaveBeenCalledTimes(2);
   });
 
-  it('hides cached names during refresh without blocking reopening', async () => {
-    vi.mocked(fetchRequeteOtherEntitiesAffected).mockReturnValueOnce(new Promise(() => {}));
-    await renderWithCachedRecipients();
+  it.each([
+    { state: 'pending', online: true, expectedFetches: 1 },
+    { state: 'paused offline', online: false, expectedFetches: 0 },
+  ])(
+    'hides cached recipients without blocking reopening when refresh is $state',
+    async ({ online, expectedFetches }) => {
+      vi.mocked(fetchRequeteOtherEntitiesAffected).mockReturnValueOnce(new Promise(() => {}));
+      const view = await renderWithCachedRecipients();
+      const wasOnline = onlineManager.isOnline();
+      onlineManager.setOnline(online);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
-    expect(
-      await screen.findByText(
-        'Cette étape sera visible par les autres entités administratives affectées à la requête.',
-      ),
-    ).toBeInTheDocument();
-    expect(screen.queryByText('Cette étape sera visible par ARS Bretagne.')).not.toBeInTheDocument();
-    const submit = screen.getByRole('button', { name: 'Rouvrir la requête' });
-    expect(submit).toBeEnabled();
-    await userEvent.click(submit);
-    expect(mutateAsync).toHaveBeenCalledExactlyOnceWith();
-  });
+      try {
+        await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
+        expect(
+          await screen.findByText(
+            'Cette étape sera visible par les autres entités administratives affectées à la requête.',
+          ),
+        ).toBeInTheDocument();
+        expect(screen.queryByText('Cette étape sera visible par ARS Bretagne.')).not.toBeInTheDocument();
+        const submit = screen.getByRole('button', { name: 'Rouvrir la requête' });
+        expect(submit).toBeEnabled();
+        expect(fetchRequeteOtherEntitiesAffected).toHaveBeenCalledTimes(expectedFetches);
+        await userEvent.click(submit);
+        expect(mutateAsync).toHaveBeenCalledExactlyOnceWith();
+      } finally {
+        view.unmount();
+        onlineManager.setOnline(wasOnline);
+      }
+    },
+  );
 
   it('keeps the fallback after a failed refresh instead of restoring cached names', async () => {
     vi.mocked(fetchRequeteOtherEntitiesAffected).mockRejectedValueOnce(new Error('refresh failed'));
