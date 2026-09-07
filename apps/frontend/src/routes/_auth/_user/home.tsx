@@ -2,7 +2,7 @@ import { fr } from '@codegouvfr/react-dsfr';
 import { ROLES, STATUT_TYPES } from '@sirena/common/constants';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { RequetesEntite } from '@/components/common/tables/requetesEntites.tsx';
 import { HomeAnnouncementModal } from '@/components/home/HomeAnnouncementModal';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
@@ -32,8 +32,6 @@ export function RouteComponent() {
   const profileQuery = useQuery({ ...profileQueryOptions(), enabled: false });
   const userStore = useUserStore();
 
-  const label = useMemo(() => (profileQuery.data ? profileQuery.data.prenom : ''), [profileQuery.data]);
-
   useEffect(() => {
     if (userStore.role === ROLES.PENDING || profileQuery.data?.statutId !== STATUT_TYPES.ACTIF) {
       router.navigate({ to: '/inactive' });
@@ -47,10 +45,7 @@ export function RouteComponent() {
           <HomeAnnouncementModal />
           <div className={fr.cx('fr-my-8w')}>
             <div className={styles.header}>
-              <div>
-                <h1 className={styles.title}>Tableau de bord des requêtes</h1>
-                <p className={styles.greeting}>Bienvenue {label}</p>
-              </div>
+              <h1 className={styles.title}>Liste des requêtes</h1>
               {canEdit ? (
                 <Link to="/request/create" className={fr.cx('fr-btn', 'fr-btn--icon-left', 'fr-icon-add-line')}>
                   Créer une requête
