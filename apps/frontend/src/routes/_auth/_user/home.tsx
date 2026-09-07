@@ -45,7 +45,7 @@ export function RouteComponent() {
       {() => (
         <>
           <HomeAnnouncementModal />
-          <div className={fr.cx('fr-container', 'fr-my-8w')}>
+          <div className={fr.cx('fr-my-8w')}>
             <div className={styles.header}>
               <div>
                 <h1 className={styles.title}>Tableau de bord des requêtes</h1>

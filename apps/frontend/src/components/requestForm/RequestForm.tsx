@@ -107,7 +107,7 @@ export function RequestForm({ requestId, activeTab: activeTabProp = 0 }: Request
   return (
     <>
       <div className="bg-cumulus fr-mb-4w">
-        <div className="fr-container fr-py-2w">
+        <div className="fr-py-2w">
           <div className="fr-mb-2w">
             <Link className="fr-link fr-mb-1w" to="/home" search={requetesListSearch ?? {}}>
               <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span> Liste des requêtes
@@ -124,7 +124,7 @@ export function RequestForm({ requestId, activeTab: activeTabProp = 0 }: Request
           />{' '}
         </div>
       </div>
-      <div className="fr-container">
+      <div>
         <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange} className={styles['request-tabs']}>
           {activeTab === 0 && <Details requestId={requestId} requestQuery={requestQuery} />}
           {activeTab === 1 && <Processing requestId={requestId} requestQuery={requestQuery} />}

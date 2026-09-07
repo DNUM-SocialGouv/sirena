@@ -213,7 +213,7 @@ export function RouteComponent() {
 
   return (
     <AuthLayout>
-      <div className={fr.cx('fr-container', 'fr-my-8w')}>
+      <div className={fr.cx('fr-my-8w')}>
         <div className={styles['page-header']}>
           <h1 className="fr-mb-0">Indicateurs</h1>
           {!isSuperAdmin && <ExportRequetesButton />}
