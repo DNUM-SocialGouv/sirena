@@ -1,6 +1,7 @@
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useReopenRequete } from '@/hooks/mutations/reopenRequete.hook';
+import { useRequeteOtherEntitiesAffected } from '@/hooks/queries/useRequeteDetails';
 import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
 
 export type ReopenRequeteModalRef = {
@@ -18,6 +19,20 @@ export const ReopenRequeteModal = forwardRef<ReopenRequeteModalRef, ReopenRequet
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const wasActionTakenRef = useRef(false);
     const reopenMutation = useReopenRequete(requestId);
+    const otherEntitiesQuery = useRequeteOtherEntitiesAffected(requestId);
+
+    const recipientNames = (otherEntitiesQuery.data?.otherEntites.map((entite) => entite.nomComplet) ?? []).sort(
+      (a, b) => a.localeCompare(b, 'fr'),
+    );
+
+    const recipients = new Intl.ListFormat('fr', { style: 'long', type: 'conjunction' }).format(recipientNames);
+
+    const visibilityMessage =
+      otherEntitiesQuery.isPlaceholderData || otherEntitiesQuery.isError || !otherEntitiesQuery.data
+        ? 'Cette étape sera visible par les autres entités administratives affectées à la requête.'
+        : recipientNames.length > 0
+          ? `Cette étape sera visible par ${recipients}.`
+          : null;
 
     const reopenModal = useMemo(
       () =>
@@ -87,6 +102,7 @@ export const ReopenRequeteModal = forwardRef<ReopenRequeteModalRef, ReopenRequet
           Êtes-vous sûr de vouloir rouvrir cette requête ? La requête repassera au statut « En cours » et sera de
           nouveau modifiable.
         </p>
+        {visibilityMessage ? <p>{visibilityMessage}</p> : null}
         {errorMessage ? (
           <p className="fr-text--sm" style={{ color: 'var(--text-default-error)' }}>
             {errorMessage}
