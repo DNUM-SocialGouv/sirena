@@ -30,6 +30,8 @@ const NODES: TreeNode[] = [
   },
 ];
 
+const SELECT_ALL_HINT = 'Permet de sélectionner ou désélectionner toute la catégorie.';
+
 const renderTree = (selectedValues: string[], onChange = vi.fn()) => {
   render(
     <DropdownTree
@@ -40,9 +42,9 @@ const renderTree = (selectedValues: string[], onChange = vi.fn()) => {
       selectedValues={selectedValues}
       labels={{
         selectAll: (label) => `Toute la catégorie ${label}`,
-        selectAllHint: 'Permet de sélectionner ou désélectionner toute la catégorie.',
+        selectAllHint: SELECT_ALL_HINT,
         optionsLegend: (label) => `Options de la catégorie ${label}`,
-        lockedHint: (label) => `${label} est sélectionnée en entier.`,
+        allSelectedHint: (label) => `${label} est sélectionnée en entier.`,
       }}
       onChange={onChange}
     />,
@@ -52,14 +54,15 @@ const renderTree = (selectedValues: string[], onChange = vi.fn()) => {
 
 const openMenu = () => userEvent.click(screen.getByRole('button', { name: /Territoire/ }));
 const expand = (label: string) => userEvent.click(screen.getByRole('button', { name: label }));
-const category = (label: string) => screen.getByRole('checkbox', { name: `Toute la catégorie ${label}` });
+const categoryName = (label: string) => `Toute la catégorie ${label}. ${SELECT_ALL_HINT}`;
+const category = (label: string) => screen.getByRole('checkbox', { name: categoryName(label) });
 
 describe('DropdownTree', () => {
   it('walks down three levels of nesting', async () => {
     renderTree([]);
 
     await openMenu();
-    expect(screen.queryByRole('checkbox', { name: `Toute la catégorie Île-de-France` })).not.toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: categoryName('Île-de-France') })).not.toBeInTheDocument();
 
     await expand('France');
     expect(category('Île-de-France')).toBeInTheDocument();
@@ -114,19 +117,53 @@ describe('DropdownTree', () => {
     expect(screen.getByRole('checkbox', { name: 'Paris' })).toBeChecked();
   });
 
-  it('locks every descendant, at any depth, when an ancestor is selected', async () => {
+  it('shows every descendant as checked, at any depth, when an ancestor is selected', async () => {
     renderTree(['FR']);
 
     await openMenu();
     await expand('France');
     const child = category('Île-de-France') as HTMLInputElement;
     expect(child.checked).toBe(true);
-    expect(child.disabled).toBe(true);
+    expect(child.disabled).toBe(false);
 
     await expand('Île-de-France');
     const grandChild = screen.getByRole('checkbox', { name: 'Paris' }) as HTMLInputElement;
     expect(grandChild.checked).toBe(true);
-    expect(grandChild.disabled).toBe(true);
+    expect(grandChild.disabled).toBe(false);
+  });
+
+  it('replaces a branch selected as a whole by its siblings when one option is unchecked', async () => {
+    const onChange = renderTree(['FR']);
+
+    await openMenu();
+    await expand('France');
+    await expand('Île-de-France');
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Paris' }));
+
+    expect(onChange).toHaveBeenCalledWith(['FR:BRE', 'FR:IDF:92']);
+  });
+
+  it('collapses a branch back into its parent once its last option is checked again', async () => {
+    const onChange = renderTree(['FR:BRE', 'FR:IDF:92']);
+
+    await openMenu();
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Paris' }));
+
+    expect(onChange).toHaveBeenCalledWith(['FR']);
+  });
+
+  it('keeps a single category open at a time, like the motifs filter', async () => {
+    renderTree([]);
+
+    await openMenu();
+    await expand('France');
+    await expand('Île-de-France');
+    expect(screen.getByRole('checkbox', { name: 'Paris' })).toBeInTheDocument();
+
+    await expand('Bretagne');
+
+    expect(screen.queryByRole('checkbox', { name: 'Paris' })).not.toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Ille-et-Vilaine' })).toBeInTheDocument();
   });
 
   it('keeps every aria-controls valid once the deepest level is open', async () => {
@@ -156,9 +193,9 @@ describe('DropdownTree', () => {
         selectedValues={[]}
         labels={{
           selectAll: (label) => `Toute la catégorie ${label}`,
-          selectAllHint: 'Permet de sélectionner ou désélectionner toute la catégorie.',
+          selectAllHint: SELECT_ALL_HINT,
           optionsLegend: (label) => `Options de la catégorie ${label}`,
-          lockedHint: (label) => `${label} est sélectionnée en entier.`,
+          allSelectedHint: (label) => `${label} est sélectionnée en entier.`,
         }}
         onChange={onChange}
       />,
@@ -208,6 +245,22 @@ describe('DropdownTree', () => {
     expect(screen.getByRole('status')).toHaveAttribute('aria-live', 'polite');
   });
 
+  it('walks from the disclosure button to the first category, then to its select-all checkbox', async () => {
+    renderTree([]);
+
+    await openMenu();
+
+    expect(screen.getByRole('button', { name: /Territoire/ })).toHaveFocus();
+
+    await userEvent.tab();
+
+    expect(screen.getByRole('button', { name: 'France' })).toHaveFocus();
+
+    await userEvent.tab();
+
+    expect(category('France')).toHaveFocus();
+  });
+
   describe('structure DOM cible', () => {
     it('lists the categories, each as an item carrying a header and its options', async () => {
       renderTree([]);
@@ -219,7 +272,7 @@ describe('DropdownTree', () => {
       expect(item?.parentElement?.tagName).toBe('UL');
     });
 
-    it('keeps the select-all checkbox out of the expand button', async () => {
+    it('keeps the select-all checkbox out of the expand button, and after it', async () => {
       renderTree([]);
 
       await openMenu();
@@ -227,16 +280,18 @@ describe('DropdownTree', () => {
       const trigger = screen.getByRole('button', { name: 'France' });
 
       expect(trigger.contains(checkbox)).toBe(false);
-      expect(checkbox.compareDocumentPosition(trigger) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(trigger.compareDocumentPosition(checkbox) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 
     it('describes what the select-all checkbox does, beyond naming it', async () => {
       renderTree([]);
 
       await openMenu();
-      const description = document.getElementById(category('France').getAttribute('aria-describedby') as string);
+      const checkbox = category('France') as HTMLInputElement;
+      const [label] = checkbox.labels ?? [];
 
-      expect(description).toHaveTextContent('Permet de sélectionner ou désélectionner toute la catégorie.');
+      expect(checkbox).not.toHaveAttribute('aria-describedby');
+      expect(label).toHaveTextContent(SELECT_ALL_HINT);
     });
 
     it('groups the options in a fieldset named after its category, hidden until expanded', async () => {
@@ -269,16 +324,16 @@ describe('DropdownTree', () => {
     });
   });
 
-  it('shows the lock explanation to sighted users, not only to screen readers', async () => {
+  it('states, for sighted users too, that a category is selected as a whole', async () => {
     renderTree(['FR']);
 
     await openMenu();
     await expand('France');
-    const locked = category('Île-de-France');
-    const [, hintId] = (locked.getAttribute('aria-describedby') as string).split(' ');
-    const hint = document.getElementById(hintId);
+    const options = document.getElementById(
+      screen.getByRole('button', { name: 'France' }).getAttribute('aria-controls') as string,
+    ) as HTMLElement;
+    const hint = options.querySelector('p');
 
-    expect(locked).toBeDisabled();
     expect(hint).toHaveTextContent('France est sélectionnée en entier.');
     expect(hint).not.toHaveClass('fr-sr-only');
   });

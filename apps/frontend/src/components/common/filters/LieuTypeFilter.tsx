@@ -9,8 +9,7 @@ const LABELS: DropdownTreeLabels = {
   selectAll: (label) => `Tous les lieux de la catégorie ${label}`,
   selectAllHint: 'Permet de sélectionner ou désélectionner tous les lieux de cette catégorie.',
   optionsLegend: (label) => `Lieux de la catégorie ${label}`,
-  lockedHint: (label) =>
-    `La catégorie ${label} est sélectionnée en entier : tous ses lieux sont inclus et ne sont pas modifiables.`,
+  allSelectedHint: (label) => `Tous les lieux de la catégorie ${label} sont sélectionnés.`,
 };
 
 export const lieuChildToken = (lieuTypeId: string, precision: string) => `${lieuTypeId}:${precision}`;

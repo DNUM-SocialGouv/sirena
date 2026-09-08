@@ -47,6 +47,10 @@
   display: none;
 }
 
+.options:not([hidden]) {
+  border-block-end: 1px solid var(--border-default-grey);
+}
+
 .categories {
   list-style: none;
   margin: 0;
@@ -82,7 +86,10 @@
 }
 
 .selectAll {
-  min-inline-size: 1rem;
+  order: -1;
+}
+
+.selectAll :global(label) {
   min-block-size: 1.5rem;
 }
 
@@ -100,7 +107,7 @@
   text-align: left;
 }
 
-.lockedHint {
+.allSelectedHint {
   margin: 0;
   padding-block: 0.25rem;
   padding-inline: calc(1rem + min(var(--depth, 0), 3) * 1.5rem) 1rem;

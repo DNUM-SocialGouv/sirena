@@ -13,7 +13,7 @@ export type DropdownTreeLabels = {
   selectAll: (label: string) => string;
   selectAllHint: string;
   optionsLegend: (label: string) => string;
-  lockedHint: (label: string) => string;
+  allSelectedHint: (label: string) => string;
 };
 
 const plural = (count: number, one: string, many: string) => `${count} ${count > 1 ? many : one}`;
@@ -40,13 +40,52 @@ const pathsWithSelectedDescendant = (nodes: TreeNode[], selected: Set<string>): 
   return paths;
 };
 
+const ancestorPaths = (path: string) => {
+  const parts = path.split('-');
+  return parts.map((_, i) => parts.slice(0, i + 1).join('-'));
+};
+
+const expansionForSelection = (nodes: TreeNode[], selected: Set<string>) => {
+  const paths = [...pathsWithSelectedDescendant(nodes, selected)];
+  if (paths.length === 0) return new Set<string>();
+
+  const [firstRoot] = paths.map((path) => path.split('-')[0]).sort();
+  const branch = paths.filter((path) => path.startsWith(firstRoot));
+  const deepest = branch.reduce((a, b) => (b.split('-').length > a.split('-').length ? b : a));
+  return new Set(ancestorPaths(deepest));
+};
+
+const collapseFullBranches = (nodes: TreeNode[], values: string[]): string[] => {
+  const present = new Set(values);
+  const added = new Set<string>();
+  const dropped = new Set<string>();
+
+  const isFull = (node: TreeNode): boolean => {
+    if (present.has(node.value)) return true;
+
+    const children = childrenOf(node);
+    if (children.length === 0) return false;
+    if (!children.map(isFull).every(Boolean)) return false;
+
+    added.add(node.value);
+    for (const value of descendantValues(node)) dropped.add(value);
+    return true;
+  };
+
+  nodes.forEach((node) => {
+    isFull(node);
+  });
+
+  return [...values, ...added].filter((value) => !dropped.has(value));
+};
+
 type LevelContext = {
   idPrefix: string;
   selected: Set<string>;
   expanded: Set<string>;
   branchesWithSelection: Set<string>;
   labels: DropdownTreeLabels;
-  onToggleValue: (node: TreeNode) => void;
+  onToggleValue: (node: TreeNode, ancestors: TreeNode[]) => void;
   onToggleExpanded: (path: string) => void;
 };
 
@@ -54,11 +93,11 @@ type NodeProps = LevelContext & {
   node: TreeNode;
   depth: number;
   path: string;
-  isLocked: boolean;
-  lockedHintId?: string;
+  ancestors: TreeNode[];
+  isAncestorSelected: boolean;
 };
 
-function Option({ node, depth, path, idPrefix, selected, isLocked, lockedHintId, onToggleValue }: NodeProps) {
+function Option({ node, depth, path, ancestors, idPrefix, selected, isAncestorSelected, onToggleValue }: NodeProps) {
   const optionId = `${idPrefix}-${path}`;
 
   return (
@@ -70,10 +109,8 @@ function Option({ node, depth, path, idPrefix, selected, isLocked, lockedHintId,
         type="checkbox"
         id={optionId}
         value={node.value}
-        checked={isLocked || selected.has(node.value)}
-        disabled={isLocked}
-        aria-describedby={isLocked ? lockedHintId : undefined}
-        onChange={() => onToggleValue(node)}
+        checked={isAncestorSelected || selected.has(node.value)}
+        onChange={() => onToggleValue(node, ancestors)}
       />
       <label className={fr.cx('fr-label')} htmlFor={optionId}>
         {node.label}
@@ -86,8 +123,8 @@ function Category({
   node,
   depth,
   path,
-  isLocked,
-  lockedHintId,
+  ancestors,
+  isAncestorSelected,
   idPrefix,
   selected,
   expanded,
@@ -97,15 +134,14 @@ function Category({
   onToggleExpanded,
 }: NodeProps) {
   const allId = `${idPrefix}-${path}-all`;
-  const descriptionId = `${allId}-description`;
   const optionsId = `${idPrefix}-${path}-options`;
-  const ownLockedHintId = `${idPrefix}-${path}-locked`;
 
-  const isChecked = isLocked || selected.has(node.value);
+  const isChecked = isAncestorSelected || selected.has(node.value);
   const isExpanded = expanded.has(path);
   const isMixed = !isChecked && branchesWithSelection.has(path);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  // `indeterminate` n'existe que comme propriété DOM : aucun attribut HTML ne la porte.
   useEffect(() => {
     if (inputRef.current) inputRef.current.indeterminate = isMixed;
   }, [isMixed]);
@@ -113,25 +149,6 @@ function Category({
   return (
     <>
       <div className={styles.header} data-expanded={isExpanded} style={{ '--depth': depth } as CSSProperties}>
-        <div className={`${styles.selectAll} ${fr.cx('fr-checkbox-group', 'fr-checkbox-group--sm')}`}>
-          <input
-            ref={inputRef}
-            type="checkbox"
-            id={allId}
-            value={node.value}
-            checked={isChecked}
-            disabled={isLocked}
-            aria-describedby={isLocked && lockedHintId ? `${descriptionId} ${lockedHintId}` : descriptionId}
-            onChange={() => onToggleValue(node)}
-          />
-          <label className="fr-sr-only" htmlFor={allId}>
-            {labels.selectAll(node.label)}
-          </label>
-          <span id={descriptionId} className="fr-sr-only">
-            {labels.selectAllHint}
-          </span>
-        </div>
-
         <button
           type="button"
           className={`${styles.trigger} fr-btn fr-btn--tertiary-no-outline fr-btn--icon-right ${isExpanded ? 'fr-icon-arrow-up-s-line' : 'fr-icon-arrow-down-s-line'}`}
@@ -141,25 +158,38 @@ function Category({
         >
           {node.label}
         </button>
+
+        <div className={`${styles.selectAll} ${fr.cx('fr-checkbox-group', 'fr-checkbox-group--sm')}`}>
+          <input
+            ref={inputRef}
+            type="checkbox"
+            id={allId}
+            value={node.value}
+            checked={isChecked}
+            onChange={() => onToggleValue(node, ancestors)}
+          />
+          <label className={fr.cx('fr-label')} htmlFor={allId}>
+            <span className="fr-sr-only">{`${labels.selectAll(node.label)}. ${labels.selectAllHint}`}</span>
+          </label>
+        </div>
       </div>
 
       <fieldset id={optionsId} className={styles.options} hidden={!isExpanded}>
         <legend className="fr-sr-only">{labels.optionsLegend(node.label)}</legend>
         {isChecked ? (
           <p
-            className={`${styles.lockedHint} ${fr.cx('fr-hint-text')}`}
-            id={ownLockedHintId}
+            className={`${styles.allSelectedHint} ${fr.cx('fr-hint-text')}`}
             style={{ '--depth': depth + 1 } as CSSProperties}
           >
-            {labels.lockedHint(node.label)}
+            {labels.allSelectedHint(node.label)}
           </p>
         ) : null}
         <Level
           nodes={childrenOf(node)}
           depth={depth + 1}
           parentPath={path}
-          isLocked={isChecked}
-          lockedHintId={isChecked ? ownLockedHintId : lockedHintId}
+          ancestors={[...ancestors, node]}
+          isAncestorSelected={isChecked}
           idPrefix={idPrefix}
           selected={selected}
           expanded={expanded}
@@ -177,16 +207,16 @@ type LevelProps = LevelContext & {
   nodes: TreeNode[];
   depth: number;
   parentPath?: string;
-  isLocked: boolean;
-  lockedHintId?: string;
+  ancestors: TreeNode[];
+  isAncestorSelected: boolean;
 };
 
-function Level({ nodes, depth, parentPath, isLocked, lockedHintId, ...context }: LevelProps): ReactNode {
+function Level({ nodes, depth, parentPath, ancestors, isAncestorSelected, ...context }: LevelProps): ReactNode {
   const pathOf = (i: number) => (parentPath === undefined ? `${i}` : `${parentPath}-${i}`);
   const hasCategories = nodes.some((node) => childrenOf(node).length > 0);
 
   const renderNode = (node: TreeNode, i: number) => {
-    const shared = { ...context, node, depth, path: pathOf(i), isLocked, lockedHintId };
+    const shared = { ...context, node, depth, path: pathOf(i), ancestors, isAncestorSelected };
     return childrenOf(node).length > 0 ? <Category {...shared} /> : <Option {...shared} />;
   };
 
@@ -231,7 +261,7 @@ export function DropdownTree({
   const selected = useMemo(() => new Set(selectedValues), [selectedValues]);
   const hasSelection = selectedValues.length > 0;
   const branchesWithSelection = useMemo(() => pathsWithSelectedDescendant(nodes, selected), [nodes, selected]);
-  const [expanded, setExpanded] = useState(() => pathsWithSelectedDescendant(nodes, new Set(selectedValues)));
+  const [expanded, setExpanded] = useState(() => expansionForSelection(nodes, new Set(selectedValues)));
   const [announcement, setAnnouncement] = useState('');
 
   useEffect(() => {
@@ -246,37 +276,53 @@ export function DropdownTree({
     };
     panel?.addEventListener('focusout', onFocusOut);
 
-    requestAnimationFrame(() => {
-      const first = panel?.querySelector<HTMLInputElement>('input:not([disabled])');
-      first?.focus();
-    });
-
     return () => panel?.removeEventListener('focusout', onFocusOut);
   }, [isOpen, panelRef, triggerRef, close]);
 
   const openOrClose = () => {
     if (!isOpen) {
-      setExpanded((current) => new Set([...current, ...pathsWithSelectedDescendant(nodes, selected)]));
+      const fromSelection = expansionForSelection(nodes, selected);
+      if (fromSelection.size > 0) setExpanded(fromSelection);
     }
     toggle();
   };
 
   const toggleExpanded = (path: string) => {
-    setExpanded((current) => {
-      const next = new Set(current);
-      next.has(path) ? next.delete(path) : next.add(path);
-      return next;
-    });
+    setExpanded((current) =>
+      current.has(path)
+        ? new Set([...current].filter((open) => open !== path && !open.startsWith(`${path}-`)))
+        : new Set(ancestorPaths(path)),
+    );
   };
 
-  const toggleValue = (node: TreeNode) => {
+  const announceRemoval = (label: string, remaining: number) => {
+    setAnnouncement(`${label} désélectionné. ${plural(remaining, 'sélection restante', 'sélections restantes')}.`);
+  };
+
+  const toggleValue = (node: TreeNode, ancestors: TreeNode[]) => {
+    const selectedAncestor = ancestors.findIndex((ancestor) => selected.has(ancestor.value));
+
+    if (selectedAncestor !== -1) {
+      const chain = [...ancestors.slice(selectedAncestor), node];
+      const kept = chain
+        .slice(0, -1)
+        .flatMap((parent, i) => childrenOf(parent).filter((child) => child !== chain[i + 1]));
+      const [branch] = chain;
+      const next = collapseFullBranches(nodes, [
+        ...selectedValues.filter((value) => value !== branch.value),
+        ...kept.map((child) => child.value),
+      ]);
+
+      announceRemoval(node.label, next.length);
+      onChange(next);
+      return;
+    }
+
     const below = new Set(descendantValues(node));
 
     if (selected.has(node.value)) {
       const next = selectedValues.filter((value) => value !== node.value && !below.has(value));
-      setAnnouncement(
-        `${node.label} désélectionné. ${plural(next.length, 'sélection restante', 'sélections restantes')}.`,
-      );
+      announceRemoval(node.label, next.length);
       onChange(next);
       return;
     }
@@ -287,7 +333,7 @@ export function DropdownTree({
         ? `${node.label} sélectionné en entier : ${plural(absorbed, 'sélection plus précise remplacée', 'sélections plus précises remplacées')}.`
         : `${node.label} sélectionné.`,
     );
-    onChange([...selectedValues.filter((value) => !below.has(value)), node.value]);
+    onChange(collapseFullBranches(nodes, [...selectedValues.filter((value) => !below.has(value)), node.value]));
   };
 
   return (
@@ -321,7 +367,8 @@ export function DropdownTree({
             <Level
               nodes={nodes}
               depth={0}
-              isLocked={false}
+              ancestors={[]}
+              isAncestorSelected={false}
               idPrefix={menuId}
               selected={selected}
               expanded={expanded}

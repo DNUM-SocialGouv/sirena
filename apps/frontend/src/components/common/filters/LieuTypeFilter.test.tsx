@@ -16,8 +16,10 @@ const expandGroup = async (label: string) => {
   await userEvent.click(screen.getByRole('button', { name: label }));
 };
 
-const categoryCheckbox = (label: string) =>
-  screen.getByRole('checkbox', { name: `Tous les lieux de la catégorie ${label}` });
+const categoryName = (label: string) =>
+  `Tous les lieux de la catégorie ${label}. Permet de sélectionner ou désélectionner tous les lieux de cette catégorie.`;
+
+const categoryCheckbox = (label: string) => screen.getByRole('checkbox', { name: categoryName(label) });
 
 describe('LieuTypeFilter', () => {
   it('opens the list and selects a whole lieu type', async () => {
@@ -25,12 +27,12 @@ describe('LieuTypeFilter', () => {
     render(<LieuTypeFilter selectedTokens={[]} onChange={onChange} />);
 
     await openMenu();
-    await userEvent.click(categoryCheckbox('Etablissements de santé'));
+    await userEvent.click(categoryCheckbox('Établissements de santé'));
 
     expect(onChange).toHaveBeenCalledWith(['ETABLISSEMENT_SANTE']);
   });
 
-  it('keeps the precisions collapsed until the type is expanded', async () => {
+  it('keeps the options collapsed until the category is expanded', async () => {
     render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);
 
     await openMenu();
@@ -41,7 +43,7 @@ describe('LieuTypeFilter', () => {
     expect(screen.getByRole('checkbox', { name: 'Chez un tiers' })).toBeInTheDocument();
   });
 
-  it('collapses an expanded type again', async () => {
+  it('collapses an expanded category again', async () => {
     render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);
 
     await openMenu();
@@ -51,7 +53,7 @@ describe('LieuTypeFilter', () => {
     expect(screen.queryByRole('checkbox', { name: 'Chez un tiers' })).not.toBeInTheDocument();
   });
 
-  it('expands on its own the types that already carry a selected precision', async () => {
+  it('expands on its own the categories that already carry a selected option', async () => {
     render(<LieuTypeFilter selectedTokens={['DOMICILE:CHEZ_TIERS']} onChange={vi.fn()} />);
 
     await openMenu();
@@ -59,17 +61,15 @@ describe('LieuTypeFilter', () => {
     expect(screen.getByRole('checkbox', { name: 'Chez un tiers' })).toBeChecked();
   });
 
-  it('leaves out the lieu types that have no precision in the référentiel', async () => {
+  it('leaves out the lieu types that have no option in the référentiel', async () => {
     render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);
 
     await openMenu();
 
-    expect(
-      screen.queryByRole('checkbox', { name: 'Tous les lieux de la catégorie Etablissement fictif' }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: categoryName('Établissement fictif') })).not.toBeInTheDocument();
   });
 
-  it('selects a precision of a lieu type', async () => {
+  it('selects an option of a lieu category', async () => {
     const onChange = vi.fn();
     render(<LieuTypeFilter selectedTokens={[]} onChange={onChange} />);
 
@@ -80,7 +80,7 @@ describe('LieuTypeFilter', () => {
     expect(onChange).toHaveBeenCalledWith(['DOMICILE:CHEZ_TIERS']);
   });
 
-  it('marks the parent as mixed when only a precision is selected', async () => {
+  it('marks the parent as mixed when only one of its options is selected', async () => {
     render(<LieuTypeFilter selectedTokens={['DOMICILE:CHEZ_TIERS']} onChange={vi.fn()} />);
 
     await openMenu();
@@ -90,7 +90,7 @@ describe('LieuTypeFilter', () => {
     expect(parent.indeterminate).toBe(true);
   });
 
-  it('replaces selected precisions by the whole type when the parent is checked', async () => {
+  it('replaces selected options by the whole category when the parent is checked', async () => {
     const onChange = vi.fn();
     render(<LieuTypeFilter selectedTokens={['DOMICILE:CHEZ_TIERS', 'ETABLISSEMENT_SANTE:CHU']} onChange={onChange} />);
 
@@ -100,7 +100,7 @@ describe('LieuTypeFilter', () => {
     expect(onChange).toHaveBeenCalledWith(['ETABLISSEMENT_SANTE:CHU', 'DOMICILE']);
   });
 
-  it('clears the whole type and its precisions when the parent is unchecked', async () => {
+  it('clears the whole category and its options when the parent is unchecked', async () => {
     const onChange = vi.fn();
     render(<LieuTypeFilter selectedTokens={['DOMICILE', 'ETABLISSEMENT_SANTE:CHU']} onChange={onChange} />);
 
@@ -110,7 +110,7 @@ describe('LieuTypeFilter', () => {
     expect(onChange).toHaveBeenCalledWith(['ETABLISSEMENT_SANTE:CHU']);
   });
 
-  it('unselects a precision', async () => {
+  it('unselects a single option', async () => {
     const onChange = vi.fn();
     render(<LieuTypeFilter selectedTokens={['DOMICILE:CHEZ_TIERS', 'DOMICILE:REQUERANT']} onChange={onChange} />);
 
@@ -128,15 +128,36 @@ describe('LieuTypeFilter', () => {
     expect(trigger).toHaveTextContent('(2)');
   });
 
-  it('disables the precisions while the whole type is selected', async () => {
-    render(<LieuTypeFilter selectedTokens={['DOMICILE']} onChange={vi.fn()} />);
+  it('keeps the options modifiable one by one while the whole type is selected', async () => {
+    const onChange = vi.fn();
+    render(<LieuTypeFilter selectedTokens={['DOMICILE']} onChange={onChange} />);
 
     await openMenu();
     await expandGroup('Domicile');
     const child = screen.getByRole('checkbox', { name: 'Chez un tiers' }) as HTMLInputElement;
 
     expect(child.checked).toBe(true);
-    expect(child.disabled).toBe(true);
+    expect(child.disabled).toBe(false);
+
+    await userEvent.click(child);
+    const [tokens] = onChange.mock.calls.at(-1) as [string[]];
+
+    expect(tokens).not.toContain('DOMICILE');
+    expect(tokens).not.toContain('DOMICILE:CHEZ_TIERS');
+    expect(tokens).toContain('DOMICILE:REQUERANT');
+  });
+
+  it('closes the open lieu type when another one is expanded', async () => {
+    render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);
+
+    await openMenu();
+    await expandGroup('Domicile');
+    expect(screen.getByRole('checkbox', { name: 'Chez un tiers' })).toBeInTheDocument();
+
+    await expandGroup('Établissements de santé');
+
+    expect(screen.queryByRole('checkbox', { name: 'Chez un tiers' })).not.toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'CHU' })).toBeInTheDocument();
   });
   describe('accessibilité', () => {
     it('exposes the expanded state of each lieu type on its disclosure button', async () => {
@@ -169,20 +190,20 @@ describe('LieuTypeFilter', () => {
       }
     });
 
-    it('keeps the collapsed precisions out of the accessibility tree', async () => {
+    it('keeps the collapsed options out of the accessibility tree', async () => {
       render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);
 
       await openMenu();
-      const precisions = document.getElementById(
+      const options = document.getElementById(
         screen.getByRole('button', { name: 'Domicile' }).getAttribute('aria-controls') as string,
       );
 
-      expect(precisions).toBeInTheDocument();
-      expect(precisions).toHaveAttribute('hidden');
+      expect(options).toBeInTheDocument();
+      expect(options).toHaveAttribute('hidden');
       expect(screen.queryByRole('checkbox', { name: 'Chez un tiers' })).not.toBeInTheDocument();
     });
 
-    it('names each group of precisions after its lieu type', async () => {
+    it('names each group of options after its lieu category', async () => {
       render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);
 
       await openMenu();
@@ -191,17 +212,18 @@ describe('LieuTypeFilter', () => {
       expect(screen.getByRole('group', { name: 'Lieux de la catégorie Domicile' })).toBeInTheDocument();
     });
 
-    it('explains, on each frozen option, why it cannot be changed', async () => {
+    it('states that a lieu type is selected as a whole', async () => {
       render(<LieuTypeFilter selectedTokens={['DOMICILE']} onChange={vi.fn()} />);
 
       await openMenu();
       await expandGroup('Domicile');
-      const option = screen.getByRole('checkbox', { name: 'Chez un tiers' });
-      expect(option).toBeDisabled();
+      const options = document.getElementById(
+        screen.getByRole('button', { name: 'Domicile' }).getAttribute('aria-controls') as string,
+      ) as HTMLElement;
 
-      const hint = document.getElementById(option.getAttribute('aria-describedby') as string);
-
-      expect(hint).toHaveTextContent(/La catégorie Domicile est sélectionnée en entier/);
+      expect(options.querySelector('p')).toHaveTextContent(
+        'Tous les lieux de la catégorie Domicile sont sélectionnés.',
+      );
     });
 
     it('closes on Escape and hands the focus back to the trigger', async () => {
