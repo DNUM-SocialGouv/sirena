@@ -360,20 +360,16 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                   legend={declarantFieldMetadata.consentCommuniquerIdentite.label}
                   name="declarant-consent-identite"
                   orientation="horizontal"
-                  options={buildOuiNonOptions(
-                    formData.consentCommuniquerIdentite,
-                    (value) => handleReponseChange('consentCommuniquerIdentite', value),
-                    'communication de son identité',
+                  options={buildOuiNonOptions(formData.consentCommuniquerIdentite, (value) =>
+                    handleReponseChange('consentCommuniquerIdentite', value),
                   )}
                 />
                 <RadioButtons
                   legend={declarantFieldMetadata.estSignalementProfessionnel.label}
                   name="declarant-signalement-pro"
                   orientation="horizontal"
-                  options={buildOuiNonOptions(
-                    formData.estSignalementProfessionnel,
-                    (value) => handleReponseChange('estSignalementProfessionnel', value),
-                    'signalement professionnel',
+                  options={buildOuiNonOptions(formData.estSignalementProfessionnel, (value) =>
+                    handleReponseChange('estSignalementProfessionnel', value),
                   )}
                 />
 

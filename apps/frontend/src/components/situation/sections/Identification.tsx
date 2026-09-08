@@ -43,26 +43,24 @@ export function Identification({
           name="situation-est-lie-au-signalement"
           orientation="horizontal"
           disabled={isSaving}
-          options={buildOuiNonOptions(estLieAuSignalement, handleEstLieChange, 'signalement associé')}
+          options={buildOuiNonOptions(estLieAuSignalement, handleEstLieChange)}
         />
 
-        <div aria-live="polite">
-          {estLieAuSignalement === REPONSE_OUI_NON.OUI && (
-            <Input
-              label="Numéro de signalement associé"
-              hintText="Si plusieurs signalements, séparer les valeurs par des virgules. Exemples : 098655, 446789"
-              nativeInputProps={{
-                value: formData.numerosSignalement || '',
-                onChange: (e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    numerosSignalement: e.target.value,
-                  })),
-                disabled: isSaving,
-              }}
-            />
-          )}
-        </div>
+        {estLieAuSignalement === REPONSE_OUI_NON.OUI && (
+          <Input
+            label="Numéro de signalement associé"
+            hintText="Si plusieurs signalements, séparer les valeurs par des virgules. Exemples : 098655, 446789"
+            nativeInputProps={{
+              value: formData.numerosSignalement || '',
+              onChange: (e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  numerosSignalement: e.target.value,
+                })),
+              disabled: isSaving,
+            }}
+          />
+        )}
 
         {isFromSirec ? (
           <ReadOnlyField

@@ -29,9 +29,9 @@ const departementLabel = /Département en charge/i;
 
 const numeroLabel = /Numéro de signalement associé/i;
 
-const ouiLabel = /^Oui\b/;
-const nonLabel = /^Non —/;
-const nonRenseigneLabel = /^Non renseigné/;
+const ouiLabel = 'Oui';
+const nonLabel = 'Non';
+const nonRenseigneLabel = 'Non renseigné';
 
 afterEach(() => {
   cleanup();

@@ -1,11 +1,9 @@
-import { fr } from '@codegouvfr/react-dsfr';
 import { REPONSE_OUI_NON } from '@sirena/common/constants';
 import type { ReponseOuiNon, ReponseOuiNonValue } from '@sirena/common/schemas';
 import { REPONSE_NON_RENSEIGNE_LABEL } from '@sirena/common/utils';
-import type { ReactNode } from 'react';
 
 type RadioOption = {
-  label: ReactNode;
+  label: string;
   nativeInputProps: {
     value: string;
     checked: boolean;
@@ -13,19 +11,8 @@ type RadioOption = {
   };
 };
 
-const withGroupContext = (label: string, groupLabel: string | undefined): ReactNode => {
-  if (!groupLabel) return label;
-
-  return (
-    <>
-      {label}
-      <span className={fr.cx('fr-sr-only')}> — {groupLabel}</span>
-    </>
-  );
-};
-
-export const buildNonRenseigneOption = (checked: boolean, onChange: () => void, groupLabel?: string): RadioOption => ({
-  label: withGroupContext(REPONSE_NON_RENSEIGNE_LABEL, groupLabel),
+export const buildNonRenseigneOption = (checked: boolean, onChange: () => void): RadioOption => ({
+  label: REPONSE_NON_RENSEIGNE_LABEL,
   nativeInputProps: {
     value: REPONSE_OUI_NON.NON_RENSEIGNE,
     checked,
@@ -36,10 +23,9 @@ export const buildNonRenseigneOption = (checked: boolean, onChange: () => void, 
 export const buildOuiNonOptions = (
   value: ReponseOuiNonValue,
   onChange: (value: ReponseOuiNon) => void,
-  groupLabel?: string,
 ): RadioOption[] => [
   {
-    label: withGroupContext('Oui', groupLabel),
+    label: 'Oui',
     nativeInputProps: {
       value: REPONSE_OUI_NON.OUI,
       checked: value === REPONSE_OUI_NON.OUI,
@@ -47,16 +33,12 @@ export const buildOuiNonOptions = (
     },
   },
   {
-    label: withGroupContext('Non', groupLabel),
+    label: 'Non',
     nativeInputProps: {
       value: REPONSE_OUI_NON.NON,
       checked: value === REPONSE_OUI_NON.NON,
       onChange: () => onChange(REPONSE_OUI_NON.NON),
     },
   },
-  buildNonRenseigneOption(
-    value === REPONSE_OUI_NON.NON_RENSEIGNE,
-    () => onChange(REPONSE_OUI_NON.NON_RENSEIGNE),
-    groupLabel,
-  ),
+  buildNonRenseigneOption(value === REPONSE_OUI_NON.NON_RENSEIGNE, () => onChange(REPONSE_OUI_NON.NON_RENSEIGNE)),
 ];
