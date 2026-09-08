@@ -655,6 +655,96 @@ describe('assignEntitesToRequeteTask', () => {
     });
   });
 
+  it("should match Collectivité européenne d'Alsace CD by ctcdCode only, ignoring departementCode", async () => {
+    const mockRequete = {
+      id: 'requete-1',
+      receptionDate: new Date('2024-01-01'),
+      situations: [
+        {
+          id: 'situation-1',
+          lieuDeSurvenue: {
+            adresse: { codePostal: '68000' },
+          },
+          misEnCause: {},
+          faits: [],
+        },
+      ],
+    };
+
+    const mockEntite = {
+      id: 'entite-cea',
+      nomComplet: "Collectivité européenne d'Alsace",
+    };
+
+    vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);
+    (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
+      postalCode: '68000',
+    });
+    (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['CD'] as EntiteAdminType[]);
+    // Both Bas-Rhin (67) and Haut-Rhin (68) communes carry ctcdCode "6AE"
+    (findGeoByPostalCode as ReturnType<typeof vi.fn>).mockReturnValue({
+      departementCode: '68',
+      ctcdCode: '6AE',
+      regionCode: '44',
+    });
+    vi.mocked(prisma.entite.findFirst).mockResolvedValue(mockEntite as never);
+
+    await assignEntitesToRequeteTask('requete-1');
+
+    expect(prisma.entite.findFirst).toHaveBeenCalledWith({
+      where: {
+        entiteTypeId: 'CD',
+        entiteMereId: null,
+        ctcdCode: '6AE',
+      },
+    });
+  });
+
+  it('should keep per-department matching for Alsace DD entities', async () => {
+    const mockRequete = {
+      id: 'requete-1',
+      receptionDate: new Date('2024-01-01'),
+      situations: [
+        {
+          id: 'situation-1',
+          lieuDeSurvenue: {
+            adresse: { codePostal: '68000' },
+          },
+          misEnCause: {},
+          faits: [],
+        },
+      ],
+    };
+
+    const mockEntite = {
+      id: 'entite-dd-68',
+      nomComplet: 'DDETSPP68',
+    };
+
+    vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);
+    (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
+      postalCode: '68000',
+    });
+    (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['DD'] as EntiteAdminType[]);
+    (findGeoByPostalCode as ReturnType<typeof vi.fn>).mockReturnValue({
+      departementCode: '68',
+      ctcdCode: '6AE',
+      regionCode: '44',
+    });
+    vi.mocked(prisma.entite.findFirst).mockResolvedValue(mockEntite as never);
+
+    await assignEntitesToRequeteTask('requete-1');
+
+    expect(prisma.entite.findFirst).toHaveBeenCalledWith({
+      where: {
+        entiteTypeId: 'DD',
+        entiteMereId: null,
+        ctcdCode: { in: ['6AE', '68DD'] },
+        departementCode: '68',
+      },
+    });
+  });
+
   it('should use regionCode for ARS entity type', async () => {
     const mockRequete = {
       id: 'requete-1',

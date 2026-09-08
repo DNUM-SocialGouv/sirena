@@ -149,17 +149,23 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
         ? [geo.ctcdCode, `${geo.departementCode}${t}`].filter((c, i, arr) => arr.indexOf(c) === i)
         : null;
 
+      // CeA: one CD entity (ctcdCode "6AE") covers depts 67 and 68, so match by
+      // ctcdCode alone. DD entities keep per-department matching below.
+      const isAlsaceCd = t === 'CD' && geo.ctcdCode === '6AE';
+
       const whereClause = {
         entiteTypeId: t,
         entiteMereId: null,
-        ...(ctcdCodesForCdDd
-          ? {
-              ctcdCode: { in: ctcdCodesForCdDd },
-              departementCode: geo.departementCode,
-            }
-          : {}),
+        ...(isAlsaceCd
+          ? { ctcdCode: '6AE' }
+          : ctcdCodesForCdDd
+            ? {
+                ctcdCode: { in: ctcdCodesForCdDd },
+                departementCode: geo.departementCode,
+              }
+            : {}),
         ...(['ARS'].includes(t) ? { regionCode: geo.regionCode } : {}),
-      };
+      } satisfies Prisma.EntiteWhereInput;
       logger.info(
         { type: t, whereClause },
         `Searching for entity of type ${t} for request ${requeteId} - situation ${s.id}`,
