@@ -114,6 +114,71 @@ describe('StepFormPanel', () => {
     expect(addMutateAsync.mock.calls[0][0].statutId).toBeUndefined();
   });
 
+  it('hides the sharing choice and creates a private step for a mono-entity request', async () => {
+    useFeatureFlagStore.getState().setFlags({ SHARED_PROCESSING_STEPS: true });
+
+    const ref = createRef<StepFormPanelRef>();
+
+    render(<StepFormPanel ref={ref} requestId="REQ-1" isMultiEntite={false} />);
+
+    act(() => ref.current?.openCreate());
+
+    expect(screen.queryByText(/Afficher l’étape pour les autres entités affectées/)).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Nom de l'étape (obligatoire)"), {
+      target: { value: 'Étape mono-entité' },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    });
+
+    expect(addMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ estPartagee: false }));
+  });
+
+  it('creates a private step when the request becomes mono-entity after sharing was selected', async () => {
+    useFeatureFlagStore.getState().setFlags({ SHARED_PROCESSING_STEPS: true });
+
+    const ref = createRef<StepFormPanelRef>();
+
+    const { rerender } = render(<StepFormPanel ref={ref} requestId="REQ-1" isMultiEntite={true} />);
+
+    act(() => ref.current?.openCreate());
+
+    fireEvent.change(screen.getByLabelText("Nom de l'étape (obligatoire)"), {
+      target: { value: 'Étape devenue mono-entité' },
+    });
+    fireEvent.click(screen.getByLabelText('Oui'));
+
+    rerender(<StepFormPanel ref={ref} requestId="REQ-1" isMultiEntite={false} />);
+
+    expect(screen.queryByText(/Afficher l’étape pour les autres entités affectées/)).not.toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    });
+
+    expect(addMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ estPartagee: false }));
+  });
+
+  it('hides the sharing choice and preserves its value when editing a mono-entity request', async () => {
+    useFeatureFlagStore.getState().setFlags({ SHARED_PROCESSING_STEPS: true });
+
+    const ref = createRef<StepFormPanelRef>();
+
+    render(<StepFormPanel ref={ref} requestId="REQ-1" isMultiEntite={false} />);
+
+    act(() => ref.current?.openEdit(makeStep({ estPartagee: true })));
+
+    expect(screen.queryByText(/Afficher l’étape pour les autres entités affectées/)).not.toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    });
+
+    expect(updateMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ estPartagee: true }));
+  });
+
   it('requires an explicit sharing choice when enabled, focuses the radio group, and sends the choice', async () => {
     useFeatureFlagStore.getState().setFlags({ SHARED_PROCESSING_STEPS: true });
     const ref = createRef<StepFormPanelRef>();
