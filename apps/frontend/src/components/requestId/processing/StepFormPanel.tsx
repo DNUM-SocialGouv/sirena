@@ -273,8 +273,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   const uploadFileMutation = useUploadFile({ silentToastError: true });
   const toastManager = Toast.useToastManager();
   const estPartageeEnabled = useHasFeature(FEATURE_FLAGS.SHARED_PROCESSING_STEPS, false);
-  const requestIsMultiEntite = isMultiEntite ?? true;
-  const isSharingChoiceVisible = estPartageeEnabled && isManualStep && requestIsMultiEntite;
+  const isSharingChoiceVisible = estPartageeEnabled && isManualStep && isMultiEntite !== false;
 
   const resetForm = () => {
     setNom('');
@@ -495,7 +494,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
 
     try {
       if (mode === 'create') {
-        const submittedEstPartagee = requestIsMultiEntite ? estPartagee : false;
+        const submittedEstPartagee = isMultiEntite === false ? false : estPartagee;
         await addStepMutation.mutateAsync({
           nom: nom.trim(),
           ...(statutId ? { statutId } : {}),

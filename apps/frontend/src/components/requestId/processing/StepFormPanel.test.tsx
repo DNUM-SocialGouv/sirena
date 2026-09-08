@@ -161,7 +161,7 @@ describe('StepFormPanel', () => {
     expect(addMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ estPartagee: false }));
   });
 
-  it('hides the sharing choice and preserves its value when editing a mono-entity request', async () => {
+  it('preserves a shared step when editing another field on a mono-entity request', async () => {
     useFeatureFlagStore.getState().setFlags({ SHARED_PROCESSING_STEPS: true });
 
     const ref = createRef<StepFormPanelRef>();
@@ -171,12 +171,39 @@ describe('StepFormPanel', () => {
     act(() => ref.current?.openEdit(makeStep({ estPartagee: true })));
 
     expect(screen.queryByText(/Afficher l’étape pour les autres entités affectées/)).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Nom de l'étape (obligatoire)"), {
+      target: { value: 'Relance modifiée' },
+    });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
     });
 
-    expect(updateMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ estPartagee: true }));
+    expect(updateMutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ nom: 'Relance modifiée', estPartagee: true }),
+    );
+  });
+
+  it('preserves a private step when editing another field on a mono-entity request', async () => {
+    useFeatureFlagStore.getState().setFlags({ SHARED_PROCESSING_STEPS: true });
+
+    const ref = createRef<StepFormPanelRef>();
+
+    render(<StepFormPanel ref={ref} requestId="REQ-1" isMultiEntite={false} />);
+
+    act(() => ref.current?.openEdit(makeStep({ estPartagee: false })));
+
+    fireEvent.change(screen.getByLabelText("Nom de l'étape (obligatoire)"), {
+      target: { value: 'Relance privée modifiée' },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    });
+
+    expect(updateMutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ nom: 'Relance privée modifiée', estPartagee: false }),
+    );
   });
 
   it('requires an explicit sharing choice for a multi-entity request, focuses the radio group, and sends the choice', async () => {
