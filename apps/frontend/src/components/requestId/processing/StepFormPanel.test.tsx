@@ -179,10 +179,10 @@ describe('StepFormPanel', () => {
     expect(updateMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ estPartagee: true }));
   });
 
-  it('requires an explicit sharing choice when enabled, focuses the radio group, and sends the choice', async () => {
+  it('requires an explicit sharing choice for a multi-entity request, focuses the radio group, and sends the choice', async () => {
     useFeatureFlagStore.getState().setFlags({ SHARED_PROCESSING_STEPS: true });
     const ref = createRef<StepFormPanelRef>();
-    render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+    render(<StepFormPanel ref={ref} requestId="REQ-1" isMultiEntite={true} />);
 
     act(() => ref.current?.openCreate());
     await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
@@ -207,15 +207,37 @@ describe('StepFormPanel', () => {
     expect(addMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ estPartagee: true }));
   });
 
-  it('prefills and updates the persisted sharing choice when editing', async () => {
+  it('keeps the sharing choice required while entity cardinality is unknown', async () => {
     useFeatureFlagStore.getState().setFlags({ SHARED_PROCESSING_STEPS: true });
+
     const ref = createRef<StepFormPanelRef>();
-    render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+
+    render(<StepFormPanel ref={ref} requestId="REQ-1" isMultiEntite={undefined} />);
+
+    act(() => ref.current?.openCreate());
+    fireEvent.change(screen.getByLabelText("Nom de l'étape (obligatoire)"), {
+      target: { value: 'Étape avant chargement des entités' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+
+    expect(addMutateAsync).not.toHaveBeenCalled();
+    expect(screen.getByText(EST_PARTAGEE_REQUIRED_ERROR)).toBeInTheDocument();
+  });
+
+  it('prefills and updates the persisted sharing choice when editing a multi-entity request', async () => {
+    useFeatureFlagStore.getState().setFlags({ SHARED_PROCESSING_STEPS: true });
+
+    const ref = createRef<StepFormPanelRef>();
+
+    render(<StepFormPanel ref={ref} requestId="REQ-1" isMultiEntite={true} />);
 
     act(() => ref.current?.openEdit(makeStep({ estPartagee: false })));
 
     expect(screen.getByLabelText('Non')).toBeChecked();
+
     fireEvent.click(screen.getByLabelText('Oui'));
+
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
     });
@@ -225,7 +247,7 @@ describe('StepFormPanel', () => {
 
   it('hides sharing controls and omits the value when the feature is disabled', () => {
     const ref = createRef<StepFormPanelRef>();
-    render(<StepFormPanel ref={ref} requestId="REQ-1" />);
+    render(<StepFormPanel ref={ref} requestId="REQ-1" isMultiEntite={true} />);
 
     act(() => ref.current?.openCreate());
 
