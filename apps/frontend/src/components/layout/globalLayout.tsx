@@ -53,7 +53,7 @@ export const GlobalLayout = ({ children }: GlobalLayoutProps) => {
       <main id={mainId} role="main" className="main-content">
         <EnvironmentBanner />
         <UpdateBanner />
-        <div className="fr-container">{children}</div>
+        <div className="fr-container app-container--wide">{children}</div>
       </main>
       <AppFooter />
     </div>

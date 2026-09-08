@@ -25,6 +25,39 @@ dialog {
   }
 }
 
+.fr-container.app-container--wide {
+  --wide-gutter: 1rem;
+  padding-left: var(--wide-gutter);
+  padding-right: var(--wide-gutter);
+}
+
+@media (min-width: 62em) {
+  .fr-container.app-container--wide {
+    --wide-gutter: 1.5rem;
+  }
+}
+
+@media (min-width: 78em) {
+  .fr-container.app-container--wide {
+    --wide-gutter: 3.5rem;
+    max-width: none;
+  }
+
+  .fr-header .fr-container,
+  .fr-footer .fr-container {
+    max-width: none;
+    padding-left: 3.5rem;
+    padding-right: 3.5rem;
+  }
+}
+
+.bg-cumulus {
+  margin-left: calc(-1 * var(--wide-gutter, 1rem));
+  margin-right: calc(-1 * var(--wide-gutter, 1rem));
+  padding-left: var(--wide-gutter, 1rem);
+  padding-right: var(--wide-gutter, 1rem);
+}
+
 .center-icon-with-sr-only:before {
   margin: auto !important;
 }
