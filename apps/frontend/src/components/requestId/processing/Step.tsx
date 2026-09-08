@@ -58,11 +58,27 @@ const formatStepCreationInfo = (
   return `Ajouté automatiquement${suffixeEntiteAdministrative} le ${date}`;
 };
 
-const getStepTitle = (type: string, statutId: string | null, nom: string | null): string => {
+const ASSIGNMENT_PREPOSITIONS: Record<string, string> = {
+  ARS: 'de l’',
+  DD: 'de la ',
+  CD: 'du ',
+};
+
+const getStepTitle = (
+  type: string,
+  statutId: string | null,
+  nom: string | null,
+  assignedEntite: StepType['assignedEntite'],
+): string => {
   if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) return 'Clôture';
   if (type === REQUETE_ETAPE_TYPES.CREATION) return 'Création de la requête';
   if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) return "Envoi de l'accusé de réception";
   if (type === REQUETE_ETAPE_TYPES.REOPEN) return 'Réouverture de la requête';
+  if (type === REQUETE_ETAPE_TYPES.ASSIGNMENT && assignedEntite) {
+    const preposition = ASSIGNMENT_PREPOSITIONS[assignedEntite.entiteTypeId] ?? '';
+    return `Affectation ${preposition}${assignedEntite.nomComplet}`;
+  }
+
   return nom ?? '';
 };
 
@@ -132,6 +148,9 @@ const getStepSubtitle = ({
     ) : (
       `Requête réouverte le ${formatDate(createdAt)}${suffixeEntiteAdministrative}`
     );
+  }
+  if (type === REQUETE_ETAPE_TYPES.ASSIGNMENT) {
+    return `Ajouté automatiquement${suffixeEntiteAdministrative} le ${formatDate(dateRealisation ?? createdAt)}`;
   }
   if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
     if (statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT) {
@@ -354,8 +373,8 @@ const StepComponent = (stepProps: StepProps) => {
   const canEditStep = canEdit && step.editable;
   const isNeutralEvent = timelineItemType === 'NEUTRAL_EVENT';
   const entityRelation = isMultiEntite ? (isNeutralEvent ? 'neutral' : isOwner ? 'owner' : 'foreign') : undefined;
-  const nomEntiteAdministrative =
-    isMultiEntite && !isNeutralEvent ? attributedEntiteAdministrative?.nomComplet : undefined;
+  const shouldShowEntityName = !isNeutralEvent && (isMultiEntite || step.type === REQUETE_ETAPE_TYPES.ASSIGNMENT);
+  const nomEntiteAdministrative = shouldShowEntityName ? attributedEntiteAdministrative?.nomComplet : undefined;
 
   const handleDeactivateRappel = useCallback(() => {
     disableRappelMutation.mutate(
@@ -459,7 +478,7 @@ const StepComponent = (stepProps: StepProps) => {
                     <span className="fr-sr-only">{attributedEntiteAdministrative.entiteTypeId} -</span>{' '}
                   </>
                 ) : null}
-                {getStepTitle(step.type, statutId, nom)}
+                {getStepTitle(step.type, statutId, nom, step.assignedEntite)}
               </h3>
               {showAFaireBadge && (
                 <p className="fr-badge fr-badge--no-icon fr-badge--sm fr-badge--info fr-mb-0">

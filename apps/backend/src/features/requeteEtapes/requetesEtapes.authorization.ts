@@ -1,6 +1,6 @@
 import { isAutomaticRequest } from '@sirena/common/utils';
 import type { RequeteEtape, UploadedFile } from '../../libs/prisma.js';
-import { isAutomaticAcknowledgment } from './requetesEtapes.permissions.js';
+import { getEtapePermissions } from './requetesEtapes.permissions.js';
 
 type AuthorizableRequeteEtape = Pick<
   RequeteEtape,
@@ -22,11 +22,11 @@ export const requeteEtapeAuthorization = {
     isOwner(viewerEntiteId, step) || (estPartageeEnabled && step.estPartagee),
   canWrite: (viewerEntiteId: string, step: AuthorizableRequeteEtape): boolean =>
     isOwner(viewerEntiteId, step) &&
-    !isAutomaticAcknowledgment({
+    getEtapePermissions({
       type: step.type,
       statutId: step.statutId,
       acknowledgmentSendMode: step.acknowledgmentSendMode,
       requeteIsAutomatic: isAutomaticRequest(step.requete),
       uploadedFiles: step.uploadedFiles ?? [],
-    }),
+    }).editable,
 };

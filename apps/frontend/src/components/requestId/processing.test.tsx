@@ -40,6 +40,8 @@ const foreignEtapePartagee = {
   id: 'foreign-closure',
   requeteId: 'REQ-1',
   entiteId: 'OTHER-ENTITY',
+  assignedEntiteId: null,
+  assignedEntite: null,
   entiteAdministrative: {
     id: 'OTHER-ENTITY',
     nomComplet: 'CD du Calvados',
@@ -574,6 +576,73 @@ describe('Processing', () => {
       screen.getByRole('heading', { name: 'Création de la requête' }).closest('[data-timeline-item-type]'),
     ).toHaveAttribute('data-timeline-item-type', 'NEUTRAL_EVENT');
     expect(document.querySelector('[data-entity-relation="neutral"]')).toBeInTheDocument();
+  });
+
+  it('keeps an immutable assignment under its source filter and hides it under its target filter', () => {
+    canEditRequest = true;
+    selectedEntityId = 'CURRENT-ENTITY';
+    setOtherEntitiesAffected(affectedEntity('ASSIGNED-ENTITY', 'Conseil départemental de Seine-Maritime', 'CD'));
+    requeteEtapes = [
+      {
+        ...foreignEtapePartagee,
+        id: 'assignment-step',
+        entiteId: 'CURRENT-ENTITY',
+        entiteAdministrative: {
+          id: 'CURRENT-ENTITY',
+          nomComplet: 'ARS courante',
+          entiteTypeId: 'ARS',
+        },
+        attributedEntiteAdministrative: {
+          id: 'CURRENT-ENTITY',
+          nomComplet: 'ARS courante',
+          entiteTypeId: 'ARS',
+        },
+        assignedEntiteId: 'ASSIGNED-ENTITY',
+        assignedEntite: {
+          id: 'ASSIGNED-ENTITY',
+          nomComplet: 'Conseil départemental de Seine-Maritime',
+          entiteTypeId: 'CD',
+        },
+        nom: 'Affectation Ancien libellé',
+        type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        dateRealisation: '2026-05-19T10:00:00.000Z',
+        createdAt: '2026-05-19T10:00:00.000Z',
+        updatedAt: '2026-05-19T10:00:00.000Z',
+        createdBy: { prenom: 'jeanne', nom: 'moulon' },
+        editable: false,
+        canOnlyEditNotes: false,
+      },
+    ];
+
+    const { rerender } = render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(
+      screen.getByRole('heading', { name: 'ARS - Affectation du Conseil départemental de Seine-Maritime' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Ajouté automatiquement (ARS courante) le 19/05/2026')).toBeInTheDocument();
+    expect(screen.queryByText(/Jeanne Moulon/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Fait le/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "Modifier l'étape" })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Envoyer' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Désactiver le rappel/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Ajouter un fichier/ })).not.toBeInTheDocument();
+
+    selectedEntityId = 'ASSIGNED-ENTITY';
+    rerender(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(
+      screen.queryByRole('heading', { name: 'ARS - Affectation du Conseil départemental de Seine-Maritime' }),
+    ).not.toBeInTheDocument();
+
+    selectedEntityId = undefined;
+    processingMeta = { total: 1, isMultiEntite: true, etapePartageeEnabled: false };
+    rerender(<Processing requestId="REQ-1" requestQuery={requestQuery} />);
+
+    expect(
+      screen.getByRole('heading', { name: 'Affectation du Conseil départemental de Seine-Maritime' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Ajouté automatiquement (ARS courante) le 19/05/2026')).toBeInTheDocument();
   });
 
   it('renders a pending acknowledgment from an automatic request without mutation actions', () => {

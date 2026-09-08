@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { helpers } from '@sirena/backend-utils';
 import { mappers } from '@sirena/common';
 import {
@@ -54,6 +55,9 @@ type PersonneConcerneeInput = z.infer<typeof PersonneConcerneeDataSchema>;
 type SituationInput = z.infer<typeof SituationDataSchema>;
 
 type RequeteEntiteKey = { requeteId: string; entiteId: string };
+
+const ACKNOWLEDGMENT_STEP_OFFSET_MS = 1;
+const ASSIGNMENT_STEP_PAIR_INTERVAL_MS = ACKNOWLEDGMENT_STEP_OFFSET_MS + 1;
 
 const toNullableId = (value: string | undefined | null): string | null => {
   if (!value || value === '') return null;
@@ -1169,6 +1173,7 @@ const updateSituationEntites = async (
   situationId: string,
   traitementDesFaits: SituationInput['traitementDesFaits'],
   topEntiteId: string,
+  changedById?: string,
 ): Promise<{ newRequeteRootIds: string[]; newDirectionServiceIds: string[] }> => {
   const situation = await tx.situation.findUnique({
     where: { id: situationId },
@@ -1288,8 +1293,8 @@ const updateSituationEntites = async (
     where: { requeteId },
     select: { entiteId: true },
   });
-  const existingRootIds = new Set(existingRequeteEntites.map((re) => re.entiteId));
-  const newToRequeteRootIds = Array.from(entiteMereIdsToAdd).filter((id) => !existingRootIds.has(id));
+  const existingRootEntiteIds = new Set(existingRequeteEntites.map((re) => re.entiteId));
+  const newlyAssignedRootEntiteIds = Array.from(entiteMereIdsToAdd).filter((id) => !existingRootEntiteIds.has(id));
 
   // Add parent entities for all added entities
   await Promise.all(
@@ -1308,16 +1313,76 @@ const updateSituationEntites = async (
     }),
   );
 
-  // Create default steps for all added top entities
-  await Promise.all(
-    Array.from(entiteMereIdsToAdd).map(async (rootId) => {
-      await createDefaultRequeteEtapes(requeteId, rootId, tx, null);
-    }),
-  );
+  const sortedNewlyAssignedRootEntiteIds = newlyAssignedRootEntiteIds.sort((left, right) => left.localeCompare(right));
+
+  const recordedAssignmentRootEntiteIds: string[] = [];
+
+  if (changedById) {
+    const firstAssignmentDate = new Date();
+
+    for (const [index, assignedEntiteId] of sortedNewlyAssignedRootEntiteIds.entries()) {
+      const affectationDate = new Date(firstAssignmentDate.getTime() + index * ASSIGNMENT_STEP_PAIR_INTERVAL_MS);
+
+      const assignmentStep = {
+        id: randomUUID(),
+        requeteId,
+        entiteId: topEntiteId,
+        assignedEntiteId,
+        nom: 'Affectation',
+        type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        estPartagee: true,
+        dateRealisation: affectationDate,
+        createdAt: affectationDate,
+        createdById: changedById,
+      };
+
+      const { count } = await tx.requeteEtape.createMany({
+        data: [assignmentStep],
+        skipDuplicates: true,
+      });
+
+      if (count === 0) continue;
+
+      await createChangeLog(
+        {
+          entity: 'RequeteEtape',
+          entityId: assignmentStep.id,
+          action: ChangeLogAction.CREATED,
+          before: null,
+          after: {
+            ...assignmentStep,
+            dateRealisation: affectationDate.toISOString(),
+            createdAt: affectationDate.toISOString(),
+            clotureReasonIds: [],
+          },
+          changedById,
+        },
+        tx,
+      );
+
+      recordedAssignmentRootEntiteIds.push(assignedEntiteId);
+
+      await createDefaultRequeteEtapes(requeteId, assignedEntiteId, tx, null, {
+        acknowledgmentCreatedAt: new Date(affectationDate.getTime() + ACKNOWLEDGMENT_STEP_OFFSET_MS),
+        transactionalAudit: true,
+      });
+    }
+  } else {
+    // System origin saves keep creating initial steps without recording an assignment.
+    await Promise.all(
+      Array.from(entiteMereIdsToAdd).map(async (rootId) => {
+        await createDefaultRequeteEtapes(requeteId, rootId, tx, null);
+      }),
+    );
+  }
 
   const newDirectionServiceIds = entitesToAdd.filter((id) => allDirectionServiceIds.has(id));
 
-  return { newRequeteRootIds: newToRequeteRootIds, newDirectionServiceIds };
+  return {
+    newRequeteRootIds: changedById ? recordedAssignmentRootEntiteIds : newlyAssignedRootEntiteIds,
+    newDirectionServiceIds,
+  };
 };
 
 const updateExistingSituation = async (
@@ -1366,6 +1431,7 @@ const updateExistingSituation = async (
     existingSituation.id,
     situationData.traitementDesFaits,
     topEntiteId,
+    changedById,
   );
 
   if (situationData.fait?.fileIds?.length) {
@@ -1374,14 +1440,17 @@ const updateExistingSituation = async (
 
   if (changedById) {
     const after = await captureSituationState(tx, existingSituation.id);
-    await createChangeLog({
-      entity: 'Situation',
-      entityId: existingSituation.id,
-      action: ChangeLogAction.UPDATED,
-      before: JSON.parse(JSON.stringify(before)) as Prisma.JsonObject,
-      after: JSON.parse(JSON.stringify(after)) as Prisma.JsonObject,
-      changedById,
-    });
+    await createChangeLog(
+      {
+        entity: 'Situation',
+        entityId: existingSituation.id,
+        action: ChangeLogAction.UPDATED,
+        before: JSON.parse(JSON.stringify(before)) as Prisma.JsonObject,
+        after: JSON.parse(JSON.stringify(after)) as Prisma.JsonObject,
+        changedById,
+      },
+      tx,
+    );
   }
 
   return { newAssignedEntiteIds, newDirectionServiceIds, deletedFilePaths };
@@ -1417,18 +1486,22 @@ const createNewSituation = async (
     createdSituation.id,
     situationData.traitementDesFaits,
     topEntiteId,
+    changedById,
   );
 
   if (changedById) {
     const after = await captureSituationState(tx, createdSituation.id);
-    await createChangeLog({
-      entity: 'Situation',
-      entityId: createdSituation.id,
-      action: ChangeLogAction.CREATED,
-      before: null,
-      after: JSON.parse(JSON.stringify(after)) as Prisma.JsonObject,
-      changedById,
-    });
+    await createChangeLog(
+      {
+        entity: 'Situation',
+        entityId: createdSituation.id,
+        action: ChangeLogAction.CREATED,
+        before: null,
+        after: JSON.parse(JSON.stringify(after)) as Prisma.JsonObject,
+        changedById,
+      },
+      tx,
+    );
   }
 
   return { id: createdSituation.id, newAssignedEntiteIds, newDirectionServiceIds };

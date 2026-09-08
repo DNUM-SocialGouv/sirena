@@ -33,7 +33,11 @@ export const getEtapePermissions = (etape: EtapePermissionInput): { editable: bo
     return { editable: false, canOnlyEditNotes: false };
   }
 
-  if (etape.type === REQUETE_ETAPE_TYPES.CREATION || etape.type === REQUETE_ETAPE_TYPES.REOPEN) {
+  if (
+    etape.type === REQUETE_ETAPE_TYPES.CREATION ||
+    etape.type === REQUETE_ETAPE_TYPES.REOPEN ||
+    etape.type === REQUETE_ETAPE_TYPES.ASSIGNMENT
+  ) {
     return { editable: false, canOnlyEditNotes: false };
   }
 

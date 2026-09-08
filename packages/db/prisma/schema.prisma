@@ -103,8 +103,9 @@ model Entite {
 
   users            User[]
   uploads          UploadedFile[]
-  requeteEntite    RequeteEntite[]
-  situationEntites SituationEntite[]
+  requeteEntite             RequeteEntite[]
+  situationEntites          SituationEntite[]
+  assignmentStepsReceived RequeteEtape[]  @relation("AssignedEntite")
 }
 
 model EntiteTypeEnum {
@@ -562,6 +563,9 @@ model RequeteEtape {
 
   requeteEntite RequeteEntite @relation(fields: [requeteId, entiteId], references: [requeteId, entiteId])
 
+  assignedEntiteId String?
+  assignedEntite   Entite? @relation("AssignedEntite", fields: [assignedEntiteId], references: [id], onDelete: Restrict)
+
   notes RequeteEtapeNote[]
 
   uploadedFiles UploadedFile[]
@@ -579,6 +583,8 @@ model RequeteEtape {
   @@index([requeteId, entiteId, createdAt])
   @@index([requeteId, entiteId])
   @@index([acknowledgmentSendOperationId])
+  @@index([assignedEntiteId])
+  @@unique([requeteId, assignedEntiteId])
 }
 
 enum AcknowledgmentSendMode {
