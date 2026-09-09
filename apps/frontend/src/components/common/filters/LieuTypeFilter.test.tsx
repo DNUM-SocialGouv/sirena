@@ -1,3 +1,4 @@
+import { lieuPrecisionLabelsByType } from '@sirena/common/utils';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -121,11 +122,20 @@ describe('LieuTypeFilter', () => {
   });
 
   it('carries the selection count in the accessible name, not only in the visible badge', () => {
-    render(<LieuTypeFilter selectedTokens={['DOMICILE', 'ETABLISSEMENT_SANTE:CHU']} onChange={vi.fn()} />);
+    render(<LieuTypeFilter selectedTokens={['DOMICILE:CHEZ_TIERS', 'ETABLISSEMENT_SANTE:CHU']} onChange={vi.fn()} />);
 
     const trigger = screen.getByRole('button', { name: 'Type de lieu de survenue, 2 types de lieu sélectionnés' });
 
     expect(trigger).toHaveTextContent('(2)');
+  });
+
+  it('counts every lieu of a category selected as a whole, not the category as one', () => {
+    render(<LieuTypeFilter selectedTokens={['DOMICILE', 'ETABLISSEMENT_SANTE:CHU']} onChange={vi.fn()} />);
+
+    const domicileLieux = Object.keys(lieuPrecisionLabelsByType.DOMICILE).length;
+    const trigger = screen.getByRole('button', { name: /Type de lieu de survenue/ });
+
+    expect(trigger).toHaveTextContent(`(${domicileLieux + 1})`);
   });
 
   it('keeps the options modifiable one by one while the whole type is selected', async () => {

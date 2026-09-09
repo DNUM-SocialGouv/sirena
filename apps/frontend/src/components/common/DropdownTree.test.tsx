@@ -219,30 +219,18 @@ describe('DropdownTree', () => {
     expect(screen.getByRole('group', { name: 'Options de la catégorie France' })).toBeInTheDocument();
   });
 
-  it('announces the descendants absorbed when a branch is checked over them', async () => {
-    renderTree(['FR:IDF:75', 'FR:BRE:35']);
+  it('counts the options behind a selected branch, not the branch itself', () => {
+    renderTree(['FR:IDF']);
 
-    await openMenu();
-    await userEvent.click(category('France'));
+    const trigger = screen.getByRole('button', { name: 'Territoire, 2 territoire(s)' });
 
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'France sélectionné en entier : 2 sélections plus précises remplacées.',
-    );
+    expect(trigger).toHaveTextContent('(2)');
   });
 
-  it('announces what is left after a deselection', async () => {
-    renderTree(['FR:IDF', 'FR:BRE:35']);
+  it('counts every option once the whole tree is selected', () => {
+    renderTree(['FR']);
 
-    await openMenu();
-    await userEvent.click(category('Île-de-France'));
-
-    expect(screen.getByRole('status')).toHaveTextContent('Île-de-France désélectionné. 1 sélection restante.');
-  });
-
-  it('keeps the status region outside the panel, so it exists before the change it announces', () => {
-    renderTree([]);
-
-    expect(screen.getByRole('status')).toHaveAttribute('aria-live', 'polite');
+    expect(screen.getByRole('button', { name: /Territoire/ })).toHaveTextContent('(3)');
   });
 
   it('walks from the disclosure button to the first category, then to its select-all checkbox', async () => {

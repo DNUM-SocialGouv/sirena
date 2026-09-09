@@ -16,26 +16,35 @@ export type DropdownTreeLabels = {
   allSelectedHint: (label: string) => string;
 };
 
-const plural = (count: number, one: string, many: string) => `${count} ${count > 1 ? many : one}`;
-
-const childrenOf = (node: TreeNode) => node.children ?? [];
+const getChildNodes = (node: TreeNode) => node.children ?? [];
 
 const descendantValues = (node: TreeNode): string[] =>
-  childrenOf(node).flatMap((child) => [child.value, ...descendantValues(child)]);
+  getChildNodes(node).flatMap((child) => [child.value, ...descendantValues(child)]);
+
+const countSelectedOptions = (nodes: TreeNode[], selected: Set<string>): number => {
+  const countInNode = (node: TreeNode, isAncestorSelected: boolean): number => {
+    const isSelected = isAncestorSelected || selected.has(node.value);
+    const children = getChildNodes(node);
+    if (children.length === 0) return isSelected ? 1 : 0;
+    return children.reduce((total, child) => total + countInNode(child, isSelected), 0);
+  };
+
+  return nodes.reduce((total, node) => total + countInNode(node, false), 0);
+};
 
 const pathsWithSelectedDescendant = (nodes: TreeNode[], selected: Set<string>): Set<string> => {
   const paths = new Set<string>();
 
-  const visit = (node: TreeNode, path: string): boolean => {
-    const hasSelectedBelow = childrenOf(node)
-      .map((child, i) => visit(child, `${path}-${i}`))
+  const hasSelectedDescendant = (node: TreeNode, path: string): boolean => {
+    const hasSelectedBelow = getChildNodes(node)
+      .map((child, i) => hasSelectedDescendant(child, `${path}-${i}`))
       .some(Boolean);
     if (hasSelectedBelow) paths.add(path);
     return hasSelectedBelow || selected.has(node.value);
   };
 
   nodes.forEach((node, i) => {
-    visit(node, `${i}`);
+    hasSelectedDescendant(node, `${i}`);
   });
   return paths;
 };
@@ -45,7 +54,7 @@ const ancestorPaths = (path: string) => {
   return parts.map((_, i) => parts.slice(0, i + 1).join('-'));
 };
 
-const expansionForSelection = (nodes: TreeNode[], selected: Set<string>) => {
+const getPathsToExpandForSelection = (nodes: TreeNode[], selected: Set<string>) => {
   const paths = [...pathsWithSelectedDescendant(nodes, selected)];
   if (paths.length === 0) return new Set<string>();
 
@@ -63,7 +72,7 @@ const collapseFullBranches = (nodes: TreeNode[], values: string[]): string[] => 
   const isFull = (node: TreeNode): boolean => {
     if (present.has(node.value)) return true;
 
-    const children = childrenOf(node);
+    const children = getChildNodes(node);
     if (children.length === 0) return false;
     if (!children.map(isFull).every(Boolean)) return false;
 
@@ -185,7 +194,7 @@ function Category({
           </p>
         ) : null}
         <Level
-          nodes={childrenOf(node)}
+          nodes={getChildNodes(node)}
           depth={depth + 1}
           parentPath={path}
           ancestors={[...ancestors, node]}
@@ -213,11 +222,11 @@ type LevelProps = LevelContext & {
 
 function Level({ nodes, depth, parentPath, ancestors, isAncestorSelected, ...context }: LevelProps): ReactNode {
   const pathOf = (i: number) => (parentPath === undefined ? `${i}` : `${parentPath}-${i}`);
-  const hasCategories = nodes.some((node) => childrenOf(node).length > 0);
+  const hasCategories = nodes.some((node) => getChildNodes(node).length > 0);
 
   const renderNode = (node: TreeNode, i: number) => {
     const shared = { ...context, node, depth, path: pathOf(i), ancestors, isAncestorSelected };
-    return childrenOf(node).length > 0 ? <Category {...shared} /> : <Option {...shared} />;
+    return getChildNodes(node).length > 0 ? <Category {...shared} /> : <Option {...shared} />;
   };
 
   if (!hasCategories) {
@@ -259,10 +268,10 @@ export function DropdownTree({
   const menuId = useId();
   const { isOpen, toggle, close, panelRef, triggerRef } = useDisclosureMenu({ onOpen, onClose });
   const selected = useMemo(() => new Set(selectedValues), [selectedValues]);
-  const hasSelection = selectedValues.length > 0;
+  const selectedOptionCount = useMemo(() => countSelectedOptions(nodes, selected), [nodes, selected]);
+  const hasSelection = selectedOptionCount > 0;
   const branchesWithSelection = useMemo(() => pathsWithSelectedDescendant(nodes, selected), [nodes, selected]);
-  const [expanded, setExpanded] = useState(() => expansionForSelection(nodes, new Set(selectedValues)));
-  const [announcement, setAnnouncement] = useState('');
+  const [expanded, setExpanded] = useState(() => getPathsToExpandForSelection(nodes, new Set(selectedValues)));
 
   useEffect(() => {
     if (!isOpen) return;
@@ -281,7 +290,7 @@ export function DropdownTree({
 
   const openOrClose = () => {
     if (!isOpen) {
-      const fromSelection = expansionForSelection(nodes, selected);
+      const fromSelection = getPathsToExpandForSelection(nodes, selected);
       if (fromSelection.size > 0) setExpanded(fromSelection);
     }
     toggle();
@@ -295,25 +304,20 @@ export function DropdownTree({
     );
   };
 
-  const announceRemoval = (label: string, remaining: number) => {
-    setAnnouncement(`${label} désélectionné. ${plural(remaining, 'sélection restante', 'sélections restantes')}.`);
-  };
-
-  const toggleValue = (node: TreeNode, ancestors: TreeNode[]) => {
+  const handleNodeSelectionChange = (node: TreeNode, ancestors: TreeNode[]) => {
     const selectedAncestor = ancestors.findIndex((ancestor) => selected.has(ancestor.value));
 
     if (selectedAncestor !== -1) {
       const chain = [...ancestors.slice(selectedAncestor), node];
       const kept = chain
         .slice(0, -1)
-        .flatMap((parent, i) => childrenOf(parent).filter((child) => child !== chain[i + 1]));
+        .flatMap((parent, i) => getChildNodes(parent).filter((child) => child !== chain[i + 1]));
       const [branch] = chain;
       const next = collapseFullBranches(nodes, [
         ...selectedValues.filter((value) => value !== branch.value),
         ...kept.map((child) => child.value),
       ]);
 
-      announceRemoval(node.label, next.length);
       onChange(next);
       return;
     }
@@ -321,26 +325,15 @@ export function DropdownTree({
     const below = new Set(descendantValues(node));
 
     if (selected.has(node.value)) {
-      const next = selectedValues.filter((value) => value !== node.value && !below.has(value));
-      announceRemoval(node.label, next.length);
-      onChange(next);
+      onChange(selectedValues.filter((value) => value !== node.value && !below.has(value)));
       return;
     }
 
-    const absorbed = selectedValues.filter((value) => below.has(value)).length;
-    setAnnouncement(
-      absorbed > 0
-        ? `${node.label} sélectionné en entier : ${plural(absorbed, 'sélection plus précise remplacée', 'sélections plus précises remplacées')}.`
-        : `${node.label} sélectionné.`,
-    );
     onChange(collapseFullBranches(nodes, [...selectedValues.filter((value) => !below.has(value)), node.value]));
   };
 
   return (
     <div className={styles.dropdownTree}>
-      <p role="status" aria-live="polite" className="fr-sr-only">
-        {announcement}
-      </p>
       <button
         ref={triggerRef}
         type="button"
@@ -353,9 +346,9 @@ export function DropdownTree({
         {hasSelection && (
           <>
             <span aria-hidden="true">
-              {' '}({selectedValues.length})
+              {' '}({selectedOptionCount})
             </span>
-            <span className="fr-sr-only">{`, ${selectedValuesLabel(selectedValues.length)}`}</span>
+            <span className="fr-sr-only">{`, ${selectedValuesLabel(selectedOptionCount)}`}</span>
           </>
         )}
       </button>
@@ -374,7 +367,7 @@ export function DropdownTree({
               expanded={expanded}
               branchesWithSelection={branchesWithSelection}
               labels={labels}
-              onToggleValue={toggleValue}
+              onToggleValue={handleNodeSelectionChange}
               onToggleExpanded={toggleExpanded}
             />
           </fieldset>
