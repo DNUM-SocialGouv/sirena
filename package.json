@@ -18,7 +18,7 @@
     "db:studio": "dotenv -e .env -- pnpm --filter @sirena/db studio",
     "db:migrate": "dotenv -e .env -- pnpm --filter @sirena/db migrate",
     "op:seed": "dotenv -e .env -- pnpm --filter @sirena/backend op:seed",
-    "op:import:geodata": "dotenv -e .env -- pnpm --filter @sirena/backend op:import:geodata",
+    "op:sync:geodata": "dotenv -e .env -- pnpm --filter @sirena/backend op:sync:geodata",
     "op:diff:enums": "dotenv -e .env -- pnpm --filter @sirena/backend op:diff:enums",
     "op:diff:entites:analyze": "dotenv -e .env -- pnpm --filter @sirena/backend op:diff:entites:analyze",
     "op:diff:entites:up": "dotenv -e .env -- pnpm --filter @sirena/backend op:diff:entites:up",

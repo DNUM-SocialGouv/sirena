@@ -47,7 +47,7 @@ src/
 | `pnpm db:generate`                         | Generate the Prisma client from the schema                                                   |
 | `pnpm db:migrate`                          | Apply pending migrations in development (`prisma migrate dev`)                               |
 | `pnpm db:migrate:resolve`                  | Mark a migration as rolled back (`prisma migrate resolve --rolled-back`)                     |
-| `pnpm op:import:geodata`                   | Import geographic reference data (communes / postal codes) into the database                 |
+| `pnpm op:sync:geodata`                     | Sync geographic reference data (communes / postal codes) from data.gouv.fr                   |
 | `pnpm op:diff:autorite-competente:analyze` | Analyze differences between CSV referentiel and database (AutoriteCompetenteReferentiel)     |
 | `pnpm op:diff:autorite-competente:up`      | Generate up migration SQL (INSERT) from CSV referentiel differences                            |
 | `pnpm op:diff:autorite-competente:down`    | Generate down migration SQL (DELETE) from CSV referentiel differences                         |
