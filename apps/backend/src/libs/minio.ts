@@ -224,13 +224,13 @@ export const getFileStream = async (
   };
 };
 
-export interface MinioObjectInfo {
-  name: string;
-  size: number;
-  lastModified: Date;
-}
-
-export const listMinioObjects = async (prefix?: string): Promise<MinioObjectInfo[]> => {
+/**
+ * Lists every object in the bucket in a single pass as a `name -> size` map,
+ * without materializing a `{name, size, lastModified}` object per entry: at
+ * hundreds of thousands of objects, that per-entry `Date` (unused beyond an
+ * occasional log line) is the single biggest avoidable memory cost.
+ */
+export const listMinioObjects = async (prefix?: string): Promise<Map<string, number>> => {
   if (!minioClient) {
     throw new Error('MinIO client not initialized, check your S3_BUCKET_ENDPOINT');
   }
@@ -239,14 +239,12 @@ export const listMinioObjects = async (prefix?: string): Promise<MinioObjectInfo
   const stream = minioClient.listObjectsV2(S3_BUCKET_NAME, effectivePrefix, true);
 
   return new Promise((resolve, reject) => {
-    const objects: MinioObjectInfo[] = [];
+    const sizeByName = new Map<string, number>();
     stream.on('data', (obj) => {
-      if (obj.name) {
-        objects.push({ name: obj.name, size: obj.size, lastModified: obj.lastModified });
-      }
+      if (obj.name) sizeByName.set(obj.name, obj.size);
     });
     stream.on('error', reject);
-    stream.on('end', () => resolve(objects));
+    stream.on('end', () => resolve(sizeByName));
   });
 };
 

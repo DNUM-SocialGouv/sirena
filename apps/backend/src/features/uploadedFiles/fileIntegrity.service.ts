@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { abortControllerStorage, getLoggerStore } from '../../libs/asyncLocalStorage.js';
-import { deleteFilesFromMinio, listMinioObjects, type MinioObjectInfo } from '../../libs/minio.js';
+import { deleteFilesFromMinio, listMinioObjects } from '../../libs/minio.js';
 import { prisma } from '../../libs/prisma.js';
 
 export type FileIntegrityResult = {
@@ -98,13 +98,16 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
     'Starting file integrity check',
   );
 
-  // Phase 1: list every S3 object once. Needed up front to classify DB rows as
-  // orphan/dangling while scanning them, and to detect S3-only orphans afterwards.
+  // Phase 1: list every S3 object once, as a `name -> size` map. Needed up
+  // front to classify DB rows as orphan/dangling while scanning them, and to
+  // detect S3-only orphans afterwards. Deliberately not an array of
+  // {name, size, lastModified} objects: at hundreds of thousands of objects,
+  // the per-entry Date is the single biggest avoidable memory cost, and
+  // nothing here needs it (see removeOrphanDbFiles / the orphan-s3 log below).
   throwIfAborted('s3-list');
   const s3StartedAt = Date.now();
-  const s3Objects = await listMinioObjects();
-  const s3Paths = new Set(s3Objects.map((o) => o.name));
-  logger.info({ count: s3Objects.length, durationMs: Date.now() - s3StartedAt }, 'Listed objects from S3');
+  const s3Sizes = await listMinioObjects();
+  logger.info({ count: s3Sizes.size, durationMs: Date.now() - s3StartedAt }, 'Listed objects from S3');
 
   // Phase 2: page through `uploadedFile` with keyset pagination instead of loading
   // the whole table at once. Orphan/dangling rows are removed page by page (when
@@ -167,7 +170,7 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
         pageOrphans.push(f);
       }
 
-      if (!s3Paths.has(f.filePath)) {
+      if (!s3Sizes.has(f.filePath)) {
         danglingCount++;
         danglingSize += f.size;
         if (danglingSample.length < LOG_SAMPLE_SIZE) danglingSample.push(f);
@@ -178,7 +181,7 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
 
     if (removeOrphans && pageOrphans.length > 0) {
       removedOrphanDbCount += await removeOrphanDbFiles(pageOrphans, {
-        s3Paths,
+        s3Sizes,
         s3BatchSize: effectiveS3BatchSize,
         dbBatchSize,
         logger,
@@ -206,13 +209,22 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
 
   // Phase 3: S3 objects with no matching DB row. Requires the full `dbPaths` set,
   // so it can only run after the DB scan above has completed.
-  const s3FilesWithoutDb = s3Objects.filter((o) => !dbPaths.has(o.name));
-  const s3FilesWithoutDbSize = s3FilesWithoutDb.reduce((s, o) => s + o.size, 0);
-  for (const o of s3FilesWithoutDb) writeReport('orphan-s3', o);
+  let s3OrphanCount = 0;
+  let s3OrphanSize = 0;
+  const s3OrphanKeys: string[] = [];
+  const s3OrphanSample: { name: string; size: number }[] = [];
+  for (const [name, size] of s3Sizes) {
+    if (dbPaths.has(name)) continue;
+    s3OrphanCount++;
+    s3OrphanSize += size;
+    s3OrphanKeys.push(name);
+    if (s3OrphanSample.length < LOG_SAMPLE_SIZE) s3OrphanSample.push({ name, size });
+    writeReport('orphan-s3', { name, size });
+  }
 
   let removedOrphanS3Count = 0;
-  if (removeOrphans && s3FilesWithoutDb.length > 0) {
-    removedOrphanS3Count = await removeS3OnlyOrphans(s3FilesWithoutDb, effectiveS3BatchSize, logger, throwIfAborted);
+  if (removeOrphans && s3OrphanKeys.length > 0) {
+    removedOrphanS3Count = await removeS3OnlyOrphans(s3OrphanKeys, effectiveS3BatchSize, logger, throwIfAborted);
   }
 
   if (reportStream) {
@@ -237,21 +249,19 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
   }
   if (removeDangling) logger.info(`Removed ${removedDanglingCount}/${danglingCount} dangling DB records`);
 
-  logger.info(`S3 files without DB entry: ${s3FilesWithoutDb.length} (${formatBytes(s3FilesWithoutDbSize)})`);
-  for (const [i, o] of s3FilesWithoutDb.slice(0, LOG_SAMPLE_SIZE).entries()) {
-    logger.warn(
-      `orphan-s3 | ${i + 1}/${s3FilesWithoutDb.length} | ${o.name} | ${formatBytes(o.size)} | ${o.lastModified.toISOString()}`,
-    );
+  logger.info(`S3 files without DB entry: ${s3OrphanCount} (${formatBytes(s3OrphanSize)})`);
+  for (const [i, o] of s3OrphanSample.entries()) {
+    logger.warn(`orphan-s3 | ${i + 1}/${s3OrphanCount} | ${o.name} | ${formatBytes(o.size)}`);
   }
-  if (removeOrphans) logger.info(`Removed ${removedOrphanS3Count}/${s3FilesWithoutDb.length} orphan S3 files`);
+  if (removeOrphans) logger.info(`Removed ${removedOrphanS3Count}/${s3OrphanCount} orphan S3 files`);
 
   const result: FileIntegrityResult = {
     orphanDbFiles: orphanCount,
     orphanDbFilesSize: orphanSize,
     dbFilesWithoutS3: danglingCount,
     dbFilesWithoutS3Size: danglingSize,
-    s3FilesWithoutDb: s3FilesWithoutDb.length,
-    s3FilesWithoutDbSize: s3FilesWithoutDbSize,
+    s3FilesWithoutDb: s3OrphanCount,
+    s3FilesWithoutDbSize: s3OrphanSize,
   };
 
   logger.info(result, 'File integrity check completed');
@@ -268,19 +278,19 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
 async function removeOrphanDbFiles(
   orphans: DbFile[],
   ctx: {
-    s3Paths: Set<string>;
+    s3Sizes: Map<string, number>;
     s3BatchSize: number;
     dbBatchSize: number;
     logger: ReturnType<typeof getLoggerStore>;
     throwIfAborted: (phase: string) => void;
   },
 ): Promise<number> {
-  const { s3Paths, s3BatchSize, dbBatchSize, logger, throwIfAborted } = ctx;
+  const { s3Sizes, s3BatchSize, dbBatchSize, logger, throwIfAborted } = ctx;
 
   const keysToDelete: string[] = [];
   for (const f of orphans) {
-    if (s3Paths.has(f.filePath)) keysToDelete.push(f.filePath);
-    if (f.safeFilePath && s3Paths.has(f.safeFilePath)) keysToDelete.push(f.safeFilePath);
+    if (s3Sizes.has(f.filePath)) keysToDelete.push(f.filePath);
+    if (f.safeFilePath && s3Sizes.has(f.safeFilePath)) keysToDelete.push(f.safeFilePath);
   }
 
   const failedKeys = new Set<string>();
@@ -300,8 +310,8 @@ async function removeOrphanDbFiles(
 
   const removableIds = orphans
     .filter((f) => {
-      const filePathOk = !s3Paths.has(f.filePath) || !failedKeys.has(f.filePath);
-      const safePathOk = !f.safeFilePath || !s3Paths.has(f.safeFilePath) || !failedKeys.has(f.safeFilePath);
+      const filePathOk = !s3Sizes.has(f.filePath) || !failedKeys.has(f.filePath);
+      const safePathOk = !f.safeFilePath || !s3Sizes.has(f.safeFilePath) || !failedKeys.has(f.safeFilePath);
       return filePathOk && safePathOk;
     })
     .map((f) => f.id);
@@ -330,23 +340,22 @@ async function removeDbRowsByIds(
 }
 
 async function removeS3OnlyOrphans(
-  s3Files: MinioObjectInfo[],
+  keys: string[],
   s3BatchSize: number,
   logger: ReturnType<typeof getLoggerStore>,
   throwIfAborted: (phase: string) => void,
 ): Promise<number> {
   let removed = 0;
-  for (const batch of chunk(s3Files, s3BatchSize)) {
+  for (const batch of chunk(keys, s3BatchSize)) {
     throwIfAborted('remove-orphans-s3-only');
-    const keys = batch.map((o) => o.name);
     try {
-      const errors = await deleteFilesFromMinio(keys);
-      removed += keys.length - errors.length;
+      const errors = await deleteFilesFromMinio(batch);
+      removed += batch.length - errors.length;
       if (errors.length > 0) {
         logger.error({ count: errors.length, sample: errors.slice(0, 5) }, 'Some S3-only orphan deletions failed');
       }
     } catch (err) {
-      logger.error({ err, count: keys.length }, 'Failed to delete S3 batch of orphan objects');
+      logger.error({ err, count: batch.length }, 'Failed to delete S3 batch of orphan objects');
     }
   }
   return removed;

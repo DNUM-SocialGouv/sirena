@@ -1,5 +1,6 @@
+import { EventEmitter } from 'node:events';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { deleteFileFromMinio, deleteFilesFromMinio, uploadFileToMinio } from './minio.js';
+import { deleteFileFromMinio, deleteFilesFromMinio, listMinioObjects, uploadFileToMinio } from './minio.js';
 
 vi.mock('../config/env.js', () => ({
   envVars: {
@@ -22,6 +23,7 @@ const { mockMinioClient, mockReadStream, mockUnlink, mockReadFile } = vi.hoisted
     removeObjects: vi.fn(),
     statObject: vi.fn(),
     getObject: vi.fn(),
+    listObjectsV2: vi.fn(),
   };
 
   const mockReadStream = vi.fn();
@@ -187,6 +189,58 @@ describe('minio.ts', () => {
       const result = await deleteFilesFromMinio(['uploads/bad.pdf']);
 
       expect(result).toEqual([{ key: 'uploads/bad.pdf', message: 'AccessDenied' }]);
+    });
+  });
+
+  describe('listMinioObjects', () => {
+    const emitListing = (entries: Array<{ name: string; size: number; lastModified?: Date }>) => {
+      const stream = new EventEmitter();
+      mockMinioClient.listObjectsV2.mockReturnValue(stream);
+      const promise = listMinioObjects();
+      for (const entry of entries) stream.emit('data', entry);
+      stream.emit('end');
+      return promise;
+    };
+
+    it('resolves a name -> size map (not an array of {name,size,lastModified} objects)', async () => {
+      const result = await emitListing([
+        { name: 'uploads/a.pdf', size: 100, lastModified: new Date() },
+        { name: 'uploads/b.pdf', size: 200, lastModified: new Date() },
+      ]);
+
+      expect(result).toBeInstanceOf(Map);
+      expect(result.size).toBe(2);
+      expect(result.get('uploads/a.pdf')).toBe(100);
+      expect(result.get('uploads/b.pdf')).toBe(200);
+    });
+
+    it('skips entries without a name', async () => {
+      const result = await emitListing([{ name: '', size: 1 }]);
+      expect(result.size).toBe(0);
+    });
+
+    it('rejects when the underlying stream errors', async () => {
+      const stream = new EventEmitter();
+      mockMinioClient.listObjectsV2.mockReturnValue(stream);
+      const promise = listMinioObjects();
+      stream.emit('error', new Error('boom'));
+      await expect(promise).rejects.toThrow('boom');
+    });
+
+    it('uses the given prefix, defaulting to the configured root dir', async () => {
+      const stream = new EventEmitter();
+      mockMinioClient.listObjectsV2.mockReturnValue(stream);
+      const promise = listMinioObjects('custom-prefix');
+      stream.emit('end');
+      await promise;
+      expect(mockMinioClient.listObjectsV2).toHaveBeenCalledWith('test-bucket', 'custom-prefix', true);
+
+      const stream2 = new EventEmitter();
+      mockMinioClient.listObjectsV2.mockReturnValue(stream2);
+      const promise2 = listMinioObjects();
+      stream2.emit('end');
+      await promise2;
+      expect(mockMinioClient.listObjectsV2).toHaveBeenCalledWith('test-bucket', 'uploads', true);
     });
   });
 });

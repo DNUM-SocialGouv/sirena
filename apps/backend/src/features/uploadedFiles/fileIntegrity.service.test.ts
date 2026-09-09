@@ -62,6 +62,10 @@ const makeFile = (overrides: Partial<DbFileFixture> & { id: string }): DbFileFix
   ...overrides,
 });
 
+/** Builds the `name -> size` map `listMinioObjects` now resolves with. */
+const s3Map = (objects: { name: string; size: number }[]): Map<string, number> =>
+  new Map(objects.map((o) => [o.name, o.size]));
+
 /** Makes findMany resolve with one page per call, then an empty page. */
 const mockDbPages = (pages: DbFileFixture[][]) => {
   for (const page of pages) {
@@ -113,7 +117,7 @@ const createFakeUploadedFileTable = (initialRows: DbFileFixture[]) => {
 describe('fileIntegrity.service.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedListMinioObjects.mockResolvedValue([]);
+    mockedListMinioObjects.mockResolvedValue(new Map());
     mockedDeleteFilesFromMinio.mockResolvedValue([]);
     mockedDeleteMany.mockResolvedValue({ count: 0 } as never);
     mockDbPages([]);
@@ -122,7 +126,7 @@ describe('fileIntegrity.service.ts', () => {
   it('returns all zeros when DB and S3 are in sync', async () => {
     const file = makeFile({ id: 'f1' });
     mockDbPages([[file]]);
-    mockedListMinioObjects.mockResolvedValue([{ name: file.filePath, size: 100, lastModified: new Date() }]);
+    mockedListMinioObjects.mockResolvedValue(s3Map([{ name: file.filePath, size: 100 }]));
 
     const result = await runFileIntegrityCheck();
 
@@ -141,7 +145,7 @@ describe('fileIntegrity.service.ts', () => {
   it('detects orphan DB files (unlinked to any entity) without removing them by default', async () => {
     const orphan = makeFile({ id: 'orphan1', requeteId: null, size: 250 });
     mockDbPages([[orphan]]);
-    mockedListMinioObjects.mockResolvedValue([{ name: orphan.filePath, size: 250, lastModified: new Date() }]);
+    mockedListMinioObjects.mockResolvedValue(s3Map([{ name: orphan.filePath, size: 250 }]));
 
     const result = await runFileIntegrityCheck();
 
@@ -154,7 +158,7 @@ describe('fileIntegrity.service.ts', () => {
   it('detects DB rows missing their S3 object (dangling)', async () => {
     const dangling = makeFile({ id: 'dangling1', size: 50 });
     mockDbPages([[dangling]]);
-    mockedListMinioObjects.mockResolvedValue([]);
+    mockedListMinioObjects.mockResolvedValue(new Map());
 
     const result = await runFileIntegrityCheck();
 
@@ -164,7 +168,7 @@ describe('fileIntegrity.service.ts', () => {
 
   it('detects S3 objects without a DB row', async () => {
     mockDbPages([]);
-    mockedListMinioObjects.mockResolvedValue([{ name: 'uploads/ghost.pdf', size: 10, lastModified: new Date() }]);
+    mockedListMinioObjects.mockResolvedValue(s3Map([{ name: 'uploads/ghost.pdf', size: 10 }]));
 
     const result = await runFileIntegrityCheck();
 
@@ -177,7 +181,7 @@ describe('fileIntegrity.service.ts', () => {
     const page2 = [makeFile({ id: 'c' })];
     mockDbPages([page1, page2]);
     mockedListMinioObjects.mockResolvedValue(
-      [...page1, ...page2].map((f) => ({ name: f.filePath, size: f.size, lastModified: new Date() })),
+      s3Map([...page1, ...page2].map((f) => ({ name: f.filePath, size: f.size }))),
     );
 
     await runFileIntegrityCheck({ dbBatchSize: 2 });
@@ -200,7 +204,7 @@ describe('fileIntegrity.service.ts', () => {
     const table = createFakeUploadedFileTable([makeFile({ id: 'a' }), makeFile({ id: 'b' }), makeFile({ id: 'c' })]);
     mockedFindMany.mockImplementation(table.findMany as never);
     mockedDeleteMany.mockImplementation(table.deleteMany as never);
-    mockedListMinioObjects.mockResolvedValue([]); // nothing in S3 -> every row is dangling
+    mockedListMinioObjects.mockResolvedValue(new Map()); // nothing in S3 -> every row is dangling
 
     const result = await runFileIntegrityCheck({ removeDangling: true, dbBatchSize: 2 });
 
@@ -211,9 +215,7 @@ describe('fileIntegrity.service.ts', () => {
   it('removes orphan DB files and their S3 objects in batches when removeOrphans is set', async () => {
     const orphans = [makeFile({ id: 'o1', requeteId: null }), makeFile({ id: 'o2', requeteId: null })];
     mockDbPages([orphans]);
-    mockedListMinioObjects.mockResolvedValue(
-      orphans.map((f) => ({ name: f.filePath, size: f.size, lastModified: new Date() })),
-    );
+    mockedListMinioObjects.mockResolvedValue(s3Map(orphans.map((f) => ({ name: f.filePath, size: f.size }))));
     mockedDeleteFilesFromMinio.mockResolvedValue([]);
     mockedDeleteMany.mockResolvedValue({ count: 2 } as never);
 
@@ -230,9 +232,7 @@ describe('fileIntegrity.service.ts', () => {
   it('keeps the DB row when its S3 deletion fails, so the next run retries it', async () => {
     const orphans = [makeFile({ id: 'o1', requeteId: null }), makeFile({ id: 'o2', requeteId: null })];
     mockDbPages([orphans]);
-    mockedListMinioObjects.mockResolvedValue(
-      orphans.map((f) => ({ name: f.filePath, size: f.size, lastModified: new Date() })),
-    );
+    mockedListMinioObjects.mockResolvedValue(s3Map(orphans.map((f) => ({ name: f.filePath, size: f.size }))));
     mockedDeleteFilesFromMinio.mockResolvedValue([{ key: 'uploads/o1.pdf', message: 'AccessDenied' }]);
 
     await runFileIntegrityCheck({ removeOrphans: true });
@@ -242,7 +242,7 @@ describe('fileIntegrity.service.ts', () => {
 
   it('removes S3 objects without a DB row when removeOrphans is set', async () => {
     mockDbPages([]);
-    mockedListMinioObjects.mockResolvedValue([{ name: 'uploads/ghost.pdf', size: 10, lastModified: new Date() }]);
+    mockedListMinioObjects.mockResolvedValue(s3Map([{ name: 'uploads/ghost.pdf', size: 10 }]));
     mockedDeleteFilesFromMinio.mockResolvedValue([]);
 
     await runFileIntegrityCheck({ removeOrphans: true });
@@ -250,10 +250,25 @@ describe('fileIntegrity.service.ts', () => {
     expect(mockedDeleteFilesFromMinio).toHaveBeenCalledWith(['uploads/ghost.pdf']);
   });
 
+  it('logs a name+size sample of S3-only orphans without fetching their lastModified date', async () => {
+    // Regression test: `listMinioObjects` only returns a `name -> size` map
+    // (no per-object Date), and S3-only orphans are only known once compared
+    // against `dbPaths` — after the listing pass is long over. The orphan-s3
+    // log must therefore work from name+size alone, with zero extra MinIO calls.
+    mockDbPages([]);
+    mockedListMinioObjects.mockResolvedValue(s3Map([{ name: 'uploads/ghost.pdf', size: 2048 }]));
+
+    await runFileIntegrityCheck();
+
+    expect(loggerMock.warn).toHaveBeenCalledWith(expect.stringContaining('orphan-s3 | 1/1 | uploads/ghost.pdf | 2 KB'));
+    // listMinioObjects is the only MinIO read call; nothing extra is fetched for the sample.
+    expect(mockedListMinioObjects).toHaveBeenCalledTimes(1);
+  });
+
   it('removes dangling DB rows in batches when removeDangling is set', async () => {
     const dangling = [makeFile({ id: 'd1' }), makeFile({ id: 'd2' })];
     mockDbPages([dangling]);
-    mockedListMinioObjects.mockResolvedValue([]);
+    mockedListMinioObjects.mockResolvedValue(new Map());
     mockedDeleteMany.mockResolvedValue({ count: 1 } as never);
 
     await runFileIntegrityCheck({ removeDangling: true, dbBatchSize: 1 });
@@ -264,7 +279,7 @@ describe('fileIntegrity.service.ts', () => {
 
   it('does not delete anything for dangling files when removeDangling is not set', async () => {
     mockDbPages([[makeFile({ id: 'd1' })]]);
-    mockedListMinioObjects.mockResolvedValue([]);
+    mockedListMinioObjects.mockResolvedValue(new Map());
 
     await runFileIntegrityCheck();
 
@@ -273,7 +288,7 @@ describe('fileIntegrity.service.ts', () => {
 
   it('caps s3BatchSize to the S3 DeleteObjects API limit of 1000', async () => {
     mockDbPages([]);
-    mockedListMinioObjects.mockResolvedValue([]);
+    mockedListMinioObjects.mockResolvedValue(new Map());
 
     await runFileIntegrityCheck({ s3BatchSize: 5000 });
 
