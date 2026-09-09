@@ -12,6 +12,19 @@ const createFhirBundleSchema = <T extends z.ZodTypeAny>(resourceSchema: T) =>
       .optional(),
   });
 
+// A FHIR resource exposes several identifiers. We need `system` and `type` to
+// select the real FINESS/RPPS instead of the national structure/practitioner id
+// (IDNST/IDNPS), which is prefixed with a type digit. See SIRENA-723.
+const FhirIdentifierSchema = z.object({
+  value: z.string().optional(),
+  system: z.string().optional(),
+  type: z
+    .object({
+      coding: z.array(z.object({ code: z.string().optional() })).optional(),
+    })
+    .optional(),
+});
+
 const PractitionerResourceSchema = z.object({
   name: z
     .array(
@@ -23,24 +36,12 @@ const PractitionerResourceSchema = z.object({
       }),
     )
     .optional(),
-  identifier: z
-    .array(
-      z.object({
-        value: z.string().optional(),
-      }),
-    )
-    .optional(),
+  identifier: z.array(FhirIdentifierSchema).optional(),
 });
 
 const OrganizationResourceSchema = z.object({
   name: z.string().optional(),
-  identifier: z
-    .array(
-      z.object({
-        value: z.string().optional(),
-      }),
-    )
-    .optional(),
+  identifier: z.array(FhirIdentifierSchema).optional(),
   address: z
     .array(
       z.object({

@@ -15,6 +15,7 @@ import {
   computeShouldCloseRequeteStatus,
   createChangeLogForRequeteEntite,
   createRequeteFilesArchive,
+  createRequeteSituation,
   deduplicateFileName,
   enrichSituationWithTraitementDesFaits,
   filterOtherEntitesAffectedForUser,
@@ -171,6 +172,7 @@ export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situation
       nom: 'Etape 1',
       requeteId: 'req123',
       createdById: 'user123',
+      assignedEntiteId: null,
       clotureEffectiveDate: null,
       rappelType: null,
       rappelDate: null,
@@ -2223,6 +2225,7 @@ describe('requetesEntite.service', () => {
         },
         requeteEtape: {
           findMany: vi.fn().mockResolvedValue([]),
+          createMany: vi.fn().mockResolvedValue({ count: 1 }),
           create: vi
             .fn()
             .mockResolvedValueOnce({
@@ -2763,7 +2766,7 @@ describe('requetesEntite.service', () => {
       });
     });
 
-    it('should allow adding new entities from other hierarchies', async () => {
+    it('allows adding entities from other hierarchies without recording an assignment when there is no initiating agent', async () => {
       const situationId = 'sit1';
       const requeteId = 'req1';
       const userTopEntiteId = 'root1';
@@ -2845,6 +2848,453 @@ describe('requetesEntite.service', () => {
           entiteId: 'ent-from-other',
         },
       });
+      expect(mockTx.requeteEtape.createMany).not.toHaveBeenCalled();
+    });
+
+    it('creates an assignment step when an agent creates a situation with a new root entity', async () => {
+      const requeteId = 'req1';
+      const situationId = 'new-situation';
+      const sourceRootEntiteId = 'root-source';
+      const targetRootEntiteId = 'root-target';
+      const changedById = 'user1';
+      const situationCreate = vi.fn().mockResolvedValue({ id: situationId });
+      const mockTx = createMockTx({
+        situation: {
+          create: situationCreate,
+          findUnique: vi.fn().mockResolvedValue({ id: situationId, requeteId }),
+        },
+        requeteEntite: {
+          findMany: vi.fn().mockResolvedValue([{ entiteId: sourceRootEntiteId }]),
+          findUnique: vi.fn().mockResolvedValue({
+            requeteId,
+            entiteId: targetRootEntiteId,
+            statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+            requete: { dematSocialId: null, createdAt: new Date('2026-01-01T08:00:00.000Z'), createdBy: null },
+          }),
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue({ id: requeteId, situations: [{ id: situationId }] }),
+        },
+      });
+
+      vi.mocked(getEntiteAscendanteInfo).mockImplementation(async (entiteId: string) => ({
+        entiteId: entiteId === 'target-service' ? targetRootEntiteId : sourceRootEntiteId,
+        level: 1,
+      }));
+      vi.mocked(prisma.requete.findUnique)
+        .mockReset()
+        .mockResolvedValueOnce({ id: requeteId } as never);
+      vi.mocked(prisma.$transaction)
+        .mockReset()
+        .mockImplementationOnce(async (callback) =>
+          callback(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]),
+        );
+
+      const result = await createRequeteSituation(
+        requeteId,
+        {
+          traitementDesFaits: {
+            entites: [{ entiteId: 'source-service' }, { entiteId: 'target-service' }],
+          },
+        } as Parameters<typeof createRequeteSituation>[1],
+        sourceRootEntiteId,
+        changedById,
+      );
+
+      expect(situationCreate).toHaveBeenCalledOnce();
+      expect(mockTx.requeteEtape.createMany).toHaveBeenCalledWith({
+        data: [
+          expect.objectContaining({
+            requeteId,
+            entiteId: sourceRootEntiteId,
+            assignedEntiteId: targetRootEntiteId,
+            type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+            createdById: changedById,
+          }),
+        ],
+        skipDuplicates: true,
+      });
+      expect(result.newAssignedEntiteIds).toEqual([targetRootEntiteId]);
+    });
+
+    it('creates a completed assignment step when an agent adds a new root entity to the request', async () => {
+      const situationId = 'sit1';
+      const requeteId = 'req1';
+      const userTopEntiteId = 'root1';
+      const assignedTopEntiteId = 'root2';
+      const changedById = 'user1';
+
+      const mockSituation = { id: situationId, requeteId };
+      const mockTx = createMockTx({
+        situation: {
+          findUnique: vi.fn().mockResolvedValue(mockSituation),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        situationEntite: {
+          findMany: vi.fn().mockResolvedValue([{ entiteId: 'ent1' }]),
+        },
+        requeteEntite: {
+          findMany: vi.fn().mockResolvedValue([{ entiteId: userTopEntiteId }]),
+        },
+        requeteEtape: {
+          create: vi.fn().mockImplementation(async ({ data }) => ({
+            id: crypto.randomUUID(),
+            ...data,
+            createdAt: data.createdAt ?? new Date(),
+            updatedAt: new Date(),
+          })),
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue({ id: requeteId, situations: [] }),
+        },
+      });
+
+      vi.mocked(getEntiteAscendanteInfo).mockImplementation(async (entiteId: string) => {
+        if (entiteId === 'ent1') return { entiteId: userTopEntiteId, level: 1 };
+        if (entiteId === 'ent-from-other') return { entiteId: assignedTopEntiteId, level: 1 };
+        return { entiteId: null, level: 1 };
+      });
+
+      const mockRequeteForUpdate = {
+        id: requeteId,
+        situations: [{ id: situationId, faits: [] }],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
+        return callback(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+      });
+
+      await updateRequeteSituation(
+        requeteId,
+        situationId,
+        {
+          traitementDesFaits: {
+            entites: [{ entiteId: 'ent1' }, { entiteId: 'ent-from-other' }],
+          },
+        } as Parameters<typeof updateRequeteSituation>[2],
+        userTopEntiteId,
+        changedById,
+      );
+
+      expect(mockTx.requeteEtape.createMany).toHaveBeenCalledWith({
+        data: [
+          {
+            id: expect.any(String),
+            requeteId,
+            entiteId: userTopEntiteId,
+            assignedEntiteId: assignedTopEntiteId,
+            nom: 'Affectation',
+            type: 'ASSIGNMENT',
+            statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+            estPartagee: true,
+            dateRealisation: expect.any(Date),
+            createdAt: expect.any(Date),
+            createdById: changedById,
+          },
+        ],
+        skipDuplicates: true,
+      });
+      expect(createChangeLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entity: 'RequeteEtape',
+          action: ChangeLogAction.CREATED,
+          changedById,
+          after: expect.objectContaining({
+            requeteId,
+            entiteId: userTopEntiteId,
+            assignedEntiteId: assignedTopEntiteId,
+            type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+          }),
+        }),
+        mockTx,
+      );
+    });
+
+    it('creates one deterministically timed assignment and acknowledgment pair per newly assigned root', async () => {
+      const situationId = 'sit1';
+      const requeteId = 'req1';
+      const userTopEntiteId = 'root-source';
+      const changedById = 'user1';
+      const requestCreatedAt = new Date('2026-01-01T08:00:00.000Z');
+      const createAssignmentSteps = vi.fn().mockResolvedValue({ count: 1 });
+      const createStep = vi.fn().mockImplementation(async ({ data }) => ({
+        id: `step-${createStep.mock.calls.length}`,
+        ...data,
+        createdAt: data.createdAt ?? new Date(),
+        updatedAt: new Date(),
+      }));
+
+      const mockRequeteForUpdate = {
+        id: requeteId,
+        situations: [{ id: situationId, faits: [] }],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+      const mockTx = createMockTx({
+        situation: {
+          findUnique: vi.fn().mockResolvedValue({ id: situationId, requeteId }),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        situationEntite: {
+          findMany: vi.fn().mockResolvedValue([{ entiteId: 'source-service' }]),
+        },
+        requeteEntite: {
+          findMany: vi.fn().mockResolvedValue([{ entiteId: userTopEntiteId }]),
+          findUnique: vi.fn().mockImplementation(async ({ where }) => ({
+            requeteId,
+            entiteId: where.requeteId_entiteId.entiteId,
+            statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+            requete: { dematSocialId: null, createdAt: requestCreatedAt, createdBy: null },
+          })),
+        },
+        requeteEtape: {
+          findMany: vi.fn().mockResolvedValue([]),
+          createMany: createAssignmentSteps,
+          create: createStep,
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue({ id: requeteId, situations: [] }),
+        },
+      });
+
+      vi.mocked(getEntiteAscendanteInfo).mockImplementation(async (entiteId: string) => {
+        const rootsByEntityId: Record<string, string> = {
+          'source-service': userTopEntiteId,
+          'target-b-service': 'root-b',
+          'target-a-service-1': 'root-a',
+          'target-a-service-2': 'root-a',
+        };
+        return { entiteId: rootsByEntityId[entiteId] ?? null, level: 1 };
+      });
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
+        return callback(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+      });
+
+      await updateRequeteSituation(
+        requeteId,
+        situationId,
+        {
+          traitementDesFaits: {
+            entites: [
+              { entiteId: 'source-service' },
+              { entiteId: 'target-b-service' },
+              { entiteId: 'target-a-service-1' },
+              { entiteId: 'target-a-service-2' },
+            ],
+          },
+        } as Parameters<typeof updateRequeteSituation>[2],
+        userTopEntiteId,
+        changedById,
+      );
+
+      const assignments = createAssignmentSteps.mock.calls.flatMap(([{ data }]) => data);
+      const createdSteps = createStep.mock.calls.map(([{ data }]) => data);
+      const acknowledgments = createdSteps.filter(({ type }) => type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT);
+
+      expect(assignments).toHaveLength(2);
+      expect(acknowledgments).toHaveLength(2);
+      expect(assignments.map(({ assignedEntiteId }) => assignedEntiteId)).toEqual(['root-a', 'root-b']);
+
+      for (const assignment of assignments) {
+        const acknowledgment = acknowledgments.find(({ entiteId }) => entiteId === assignment.assignedEntiteId);
+        expect(assignment.createdAt).toBeInstanceOf(Date);
+        expect(assignment.dateRealisation).toEqual(assignment.createdAt);
+        expect(acknowledgment?.createdAt.getTime()).toBe(assignment.createdAt.getTime() + 1);
+      }
+
+      expect(assignments[1].createdAt.getTime()).toBe(assignments[0].createdAt.getTime() + 2);
+      expect(mockTx.requeteEntite.updateMany).toHaveBeenCalledWith({
+        where: { requeteId, entiteId: { in: [] } },
+        data: { statutId: REQUETE_STATUT_TYPES.NOUVEAU },
+      });
+    });
+
+    it('rejects the save inside the transaction when an initial target step cannot be created', async () => {
+      const situationId = 'sit1';
+      const requeteId = 'req1';
+      const userTopEntiteId = 'root-source';
+      const targetRootEntiteId = 'root-target';
+      const stepCreationError = new Error('initial step creation failed');
+      const mockRequeteForUpdate = {
+        id: requeteId,
+        situations: [{ id: situationId, faits: [] }],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+      const createStep = vi.fn().mockImplementation(async ({ data }) => {
+        if (data.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) throw stepCreationError;
+        return {
+          id: crypto.randomUUID(),
+          ...data,
+          createdAt: data.createdAt ?? new Date(),
+          updatedAt: new Date(),
+        };
+      });
+      const mockTx = createMockTx({
+        situation: {
+          findUnique: vi.fn().mockResolvedValue({ id: situationId, requeteId }),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        situationEntite: {
+          findMany: vi.fn().mockResolvedValue([{ entiteId: 'source-service' }]),
+        },
+        requeteEntite: {
+          findMany: vi.fn().mockResolvedValue([{ entiteId: userTopEntiteId }]),
+          findUnique: vi.fn().mockResolvedValue({
+            requeteId,
+            entiteId: targetRootEntiteId,
+            statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+            requete: { dematSocialId: null, createdAt: new Date(), createdBy: null },
+          }),
+        },
+        requeteEtape: {
+          findMany: vi.fn().mockResolvedValue([]),
+          create: createStep,
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue({ id: requeteId, situations: [] }),
+        },
+      });
+
+      vi.mocked(getEntiteAscendanteInfo).mockImplementation(async (entiteId: string) => ({
+        entiteId: entiteId === 'target-service' ? targetRootEntiteId : userTopEntiteId,
+        level: 1,
+      }));
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
+        return callback(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+      });
+
+      await expect(
+        updateRequeteSituation(
+          requeteId,
+          situationId,
+          {
+            traitementDesFaits: {
+              entites: [{ entiteId: 'source-service' }, { entiteId: 'target-service' }],
+            },
+          } as Parameters<typeof updateRequeteSituation>[2],
+          userTopEntiteId,
+          'user1',
+        ),
+      ).rejects.toBe(stepCreationError);
+
+      expect(mockTx.requeteEtape.createMany).toHaveBeenCalledOnce();
+      expect(createStep.mock.calls.map(([{ data }]) => data.type)).toEqual([
+        REQUETE_ETAPE_TYPES.CREATION,
+        REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+      ]);
+      expect(mockTx.requete.findUnique).not.toHaveBeenCalled();
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    });
+
+    it('ignores a concurrent duplicate assignment without creating initial steps again', async () => {
+      const situationId = 'sit1';
+      const requeteId = 'req1';
+      const userTopEntiteId = 'root-source';
+      const targetRootEntiteId = 'root-target';
+      const mockRequeteForUpdate = {
+        id: requeteId,
+        situations: [{ id: situationId, faits: [] }],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+      const mockTx = createMockTx({
+        situation: {
+          findUnique: vi.fn().mockResolvedValue({ id: situationId, requeteId }),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        situationEntite: {
+          findMany: vi.fn().mockResolvedValue([{ entiteId: 'source-service' }]),
+        },
+        requeteEntite: {
+          findMany: vi.fn().mockResolvedValue([{ entiteId: userTopEntiteId }]),
+        },
+        requeteEtape: {
+          createMany: vi.fn().mockResolvedValue({ count: 0 }),
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue({ id: requeteId, situations: [] }),
+        },
+      });
+
+      vi.mocked(getEntiteAscendanteInfo).mockImplementation(async (entiteId: string) => ({
+        entiteId: entiteId === 'target-service' ? targetRootEntiteId : userTopEntiteId,
+        level: 1,
+      }));
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      const transactionSpy = vi.mocked(prisma.$transaction);
+      transactionSpy.mockImplementationOnce(async (callback) => {
+        return callback(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+      });
+
+      const result = await updateRequeteSituation(
+        requeteId,
+        situationId,
+        {
+          traitementDesFaits: {
+            entites: [{ entiteId: 'source-service' }, { entiteId: 'target-service' }],
+          },
+        } as Parameters<typeof updateRequeteSituation>[2],
+        userTopEntiteId,
+        'user1',
+      );
+
+      expect(transactionSpy).toHaveBeenCalledOnce();
+      expect(mockTx.requeteEtape.createMany).toHaveBeenCalledOnce();
+      expect(result.newAssignedEntiteIds).toEqual([]);
+      expect(mockTx.requeteEtape.create).not.toHaveBeenCalled();
+    });
+
+    it('does not record another assignment when the target root is already attached to the request', async () => {
+      const situationId = 'sit1';
+      const requeteId = 'req1';
+      const userTopEntiteId = 'root1';
+      const assignedTopEntiteId = 'root2';
+
+      const mockSituation = { id: situationId, requeteId };
+      const mockTx = createMockTx({
+        situation: {
+          findUnique: vi.fn().mockResolvedValue(mockSituation),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        situationEntite: {
+          findMany: vi.fn().mockResolvedValue([{ entiteId: 'ent1' }]),
+        },
+        requeteEntite: {
+          findMany: vi.fn().mockResolvedValue([{ entiteId: userTopEntiteId }, { entiteId: assignedTopEntiteId }]),
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue({ id: requeteId, situations: [] }),
+        },
+      });
+
+      vi.mocked(getEntiteAscendanteInfo).mockImplementation(async (entiteId: string) => {
+        if (entiteId === 'ent1') return { entiteId: userTopEntiteId, level: 1 };
+        if (entiteId === 'ent-from-other') return { entiteId: assignedTopEntiteId, level: 1 };
+        return { entiteId: null, level: 1 };
+      });
+
+      const mockRequeteForUpdate = {
+        id: requeteId,
+        situations: [{ id: situationId, faits: [] }],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
+        return callback(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+      });
+
+      await updateRequeteSituation(
+        requeteId,
+        situationId,
+        {
+          traitementDesFaits: {
+            entites: [{ entiteId: 'ent1' }, { entiteId: 'ent-from-other' }],
+          },
+        } as Parameters<typeof updateRequeteSituation>[2],
+        userTopEntiteId,
+        'user1',
+      );
+
+      expect(mockTx.requeteEtape.createMany).not.toHaveBeenCalled();
     });
 
     it('should throw error when no entities remain after update', async () => {

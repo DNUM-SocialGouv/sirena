@@ -1,3 +1,4 @@
+import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
 import type { PinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { deleteFileFromMinio } from '../../libs/minio.js';
@@ -89,6 +90,7 @@ const requeteEtape: RequeteEtape = {
   createdAt: new Date(),
   updatedAt: new Date(),
   createdById: null,
+  assignedEntiteId: null,
   clotureEffectiveDate: null,
   rappelType: null,
   rappelDate: null,
@@ -108,6 +110,7 @@ const requeteEtapeWithNotesAndFiles: RequeteEtape & {
   requeteEntite: {
     entite: { id: string; nomComplet: string; entiteTypeId: string };
   };
+  assignedEntite: { id: string; nomComplet: string; entiteTypeId: string } | null;
   requete: {
     createdAt: Date;
     createdById: string | null;
@@ -132,6 +135,7 @@ const requeteEtapeWithNotesAndFiles: RequeteEtape & {
   requeteEntite: {
     entite: { id: 'entiteId', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
   },
+  assignedEntite: null,
   requete: {
     createdAt: new Date('2024-01-01T00:00:00.000Z'),
     createdById: null,
@@ -178,6 +182,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -197,6 +202,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -260,6 +266,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: currentDate,
         updatedAt: currentDate,
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -279,6 +286,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: currentDate,
         updatedAt: currentDate,
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -334,6 +342,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -353,6 +362,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -400,6 +410,48 @@ describe('RequeteEtapes.service.ts', () => {
       });
     });
 
+    it('propagates a changelog failure when default steps are created in a transaction', async () => {
+      const requeteId = 'requeteId';
+      const entiteId = 'entiteId';
+      const changelogError = new Error('Changelog error');
+      const creationStep = {
+        ...requeteEtape,
+        id: 'creation-step',
+        requeteId,
+        entiteId,
+        type: REQUETE_ETAPE_TYPES.CREATION,
+        createdAt: new Date(),
+      };
+      const acknowledgmentStep = {
+        ...requeteEtape,
+        id: 'acknowledgment-step',
+        requeteId,
+        entiteId,
+        type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+        createdAt: new Date(),
+      };
+      const mockTx = {
+        requeteEntite: {
+          findUnique: vi.fn().mockResolvedValue({
+            requeteId,
+            entiteId,
+            requete: { dematSocialId: null, createdAt: new Date(), createdBy: null },
+          }),
+        },
+        requeteEtape: {
+          findMany: vi.fn().mockResolvedValue([]),
+          create: vi.fn().mockResolvedValueOnce(creationStep).mockResolvedValueOnce(acknowledgmentStep),
+        },
+      } as unknown as NonNullable<Parameters<typeof createDefaultRequeteEtapes>[2]>;
+      vi.mocked(createChangeLog).mockRejectedValue(changelogError);
+
+      await expect(
+        createDefaultRequeteEtapes(requeteId, entiteId, mockTx, null, { transactionalAudit: true }),
+      ).rejects.toBe(changelogError);
+
+      expect(createChangeLog).toHaveBeenCalledWith(expect.objectContaining({ entityId: creationStep.id }), mockTx);
+    });
+
     it('should format date correctly in French locale', async () => {
       const requeteId = 'requeteId';
       const entiteId = 'entiteId';
@@ -427,6 +479,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -446,6 +499,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -488,6 +542,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -507,6 +562,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        assignedEntiteId: null,
         clotureEffectiveDate: null,
         rappelType: null,
         rappelDate: null,
@@ -624,6 +680,14 @@ describe('RequeteEtapes.service.ts', () => {
           },
           requeteId: true,
           entiteId: true,
+          assignedEntiteId: true,
+          assignedEntite: {
+            select: {
+              id: true,
+              nomComplet: true,
+              entiteTypeId: true,
+            },
+          },
           requeteEntite: {
             select: {
               entite: {
@@ -739,6 +803,14 @@ describe('RequeteEtapes.service.ts', () => {
           },
           requeteId: true,
           entiteId: true,
+          assignedEntiteId: true,
+          assignedEntite: {
+            select: {
+              id: true,
+              nomComplet: true,
+              entiteTypeId: true,
+            },
+          },
           requeteEntite: {
             select: {
               entite: {
@@ -840,6 +912,122 @@ describe('RequeteEtapes.service.ts', () => {
         editable: false,
         canOnlyEditNotes: false,
       });
+    });
+
+    it('keeps an owned assignment visible when shared chronology is disabled', async () => {
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
+        {
+          ...requeteEtapeWithNotesAndFiles,
+          id: 'assignment-step',
+          type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          estPartagee: true,
+          assignedEntiteId: 'assigned-entite',
+          assignedEntite: {
+            id: 'assigned-entite',
+            nomComplet: 'Conseil départemental de Seine-Maritime',
+            entiteTypeId: 'CD',
+          },
+        } as never,
+      ]);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
+
+      const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0 });
+
+      expect(result.data[0]).toMatchObject({
+        id: 'assignment-step',
+        estPartagee: true,
+        assignedEntiteId: 'assigned-entite',
+        assignedEntite: {
+          id: 'assigned-entite',
+          nomComplet: 'Conseil départemental de Seine-Maritime',
+          entiteTypeId: 'CD',
+        },
+        attributedEntiteAdministrative: {
+          id: 'entiteId',
+          nomComplet: 'ARS Normandie',
+          entiteTypeId: 'ARS',
+        },
+        editable: false,
+        canOnlyEditNotes: false,
+      });
+
+      expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            requeteId: 'requeteId',
+            entiteId: 'entiteId',
+            requete: { requeteEntites: { some: { entiteId: 'entiteId' } } },
+          },
+        }),
+      );
+    });
+
+    it('rejects an assignment that has lost its structured target', async () => {
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
+        {
+          ...requeteEtapeWithNotesAndFiles,
+          id: 'assignment-without-target',
+          type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          estPartagee: true,
+          assignedEntiteId: null,
+          assignedEntite: null,
+        } as never,
+      ]);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
+
+      await expect(getRequeteEtapes('requeteId', 'entiteId', { offset: 0 })).rejects.toThrow(
+        'Assignment step assignment-without-target has no assigned administrative entity',
+      );
+    });
+
+    it('shows a shared assignment to a later affected perimeter while preserving source attribution', async () => {
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
+        {
+          ...requeteEtapeWithNotesAndFiles,
+          id: 'historical-assignment',
+          type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          entiteId: 'source-entite',
+          estPartagee: true,
+          assignedEntiteId: 'target-entite',
+          assignedEntite: {
+            id: 'target-entite',
+            nomComplet: 'ARS Île-de-France',
+            entiteTypeId: 'ARS',
+          },
+          requeteEntite: {
+            entite: { id: 'source-entite', nomComplet: 'ARS Normandie', entiteTypeId: 'ARS' },
+          },
+        } as never,
+      ]);
+
+      vi.mocked(prisma.requeteEntite.count).mockResolvedValueOnce(3);
+
+      const result = await getRequeteEtapes('requeteId', 'later-entite', {}, true);
+
+      expect(result.data[0]).toMatchObject({
+        id: 'historical-assignment',
+        assignedEntiteId: 'target-entite',
+        attributedEntiteAdministrative: {
+          id: 'source-entite',
+          nomComplet: 'ARS Normandie',
+          entiteTypeId: 'ARS',
+        },
+        editable: false,
+        canOnlyEditNotes: false,
+      });
+
+      expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            requeteId: 'requeteId',
+            requete: { requeteEntites: { some: { entiteId: 'later-entite' } } },
+            OR: [{ entiteId: 'later-entite' }, { estPartagee: true }],
+          },
+        }),
+      );
     });
 
     it('exposes current multi-entity metadata and each owner Entité administrative identity', async () => {
@@ -1022,6 +1210,102 @@ describe('RequeteEtapes.service.ts', () => {
       expect(prisma.requeteEtape.delete).not.toHaveBeenCalled();
     });
 
+    it('orders a target acknowledgment before its assignment while preserving assignment totals and neutral creation', async () => {
+      const requestCreatedAt = new Date('2026-01-01T08:00:00.000Z');
+      const firstAssignmentDate = new Date('2026-08-26T10:00:00.000Z');
+
+      const makeTimelineStep = ({
+        id,
+        type,
+        entiteId,
+        createdAt,
+        assignedEntiteId = null,
+      }: {
+        id: string;
+        type: RequeteEtape['type'];
+        entiteId: string;
+        createdAt: Date;
+        assignedEntiteId?: string | null;
+      }) => ({
+        ...requeteEtapeWithNotesAndFiles,
+        id,
+        type,
+        entiteId,
+        estPartagee: type !== REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+        createdAt,
+        dateRealisation: type === REQUETE_ETAPE_TYPES.ASSIGNMENT ? createdAt : null,
+        assignedEntiteId,
+        assignedEntite: assignedEntiteId
+          ? { id: assignedEntiteId, nomComplet: assignedEntiteId, entiteTypeId: 'ARS' }
+          : null,
+        requeteEntite: {
+          entite: { id: entiteId, nomComplet: entiteId, entiteTypeId: 'ARS' },
+        },
+        requete: {
+          createdAt: requestCreatedAt,
+          createdById: 'agent-1',
+          createdBy: { prenom: 'Camille', nom: 'Dupont' },
+          dematSocialId: null,
+          sirecId: null,
+          thirdPartyAccountId: null,
+        },
+      });
+
+      const sourceTimeline = [
+        makeTimelineStep({
+          id: 'target-b-acknowledgment',
+          type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+          entiteId: 'target-b',
+          createdAt: new Date(firstAssignmentDate.getTime() + 3),
+        }),
+        makeTimelineStep({
+          id: 'target-b-assignment',
+          type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+          entiteId: 'source-entite',
+          assignedEntiteId: 'target-b',
+          createdAt: new Date(firstAssignmentDate.getTime() + 2),
+        }),
+        makeTimelineStep({
+          id: 'target-a-assignment',
+          type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+          entiteId: 'source-entite',
+          assignedEntiteId: 'target-a',
+          createdAt: firstAssignmentDate,
+        }),
+        makeTimelineStep({
+          id: 'source-creation',
+          type: REQUETE_ETAPE_TYPES.CREATION,
+          entiteId: 'source-entite',
+          createdAt: new Date('2026-01-02T08:00:00.000Z'),
+        }),
+        makeTimelineStep({
+          id: 'target-creation',
+          type: REQUETE_ETAPE_TYPES.CREATION,
+          entiteId: 'target-b',
+          createdAt: new Date('2026-08-26T09:59:59.000Z'),
+        }),
+      ];
+
+      vi.mocked(prisma.requeteEntite.count).mockResolvedValueOnce(3).mockResolvedValueOnce(3);
+      vi.mocked(prisma.requeteEtape.findMany)
+        .mockResolvedValueOnce(sourceTimeline)
+        .mockResolvedValueOnce(sourceTimeline);
+
+      const firstPage = await getRequeteEtapes('requeteId', 'target-b', { offset: 0, limit: 2 }, true);
+      const secondPage = await getRequeteEtapes('requeteId', 'target-b', { offset: 2, limit: 2 }, true);
+
+      expect(firstPage.data.map((step) => step.id)).toEqual(['target-b-acknowledgment', 'target-b-assignment']);
+      expect(secondPage.data.map((step) => step.id)).toEqual(['target-a-assignment', 'source-creation']);
+      expect(firstPage.total).toBe(4);
+      expect(secondPage.total).toBe(4);
+      expect(secondPage.data[1]).toMatchObject({
+        type: REQUETE_ETAPE_TYPES.CREATION,
+        createdAt: requestCreatedAt,
+        timelineItemType: 'NEUTRAL_EVENT',
+        attributedEntiteAdministrative: null,
+      });
+    });
+
     it('groups automatic acknowledgments by durable send operation before sorting, totals, and pagination', async () => {
       const requestCreatedAt = new Date('2026-01-01T08:00:00.000Z');
       const firstSendOperationId = '11111111-1111-4111-8111-111111111111';
@@ -1177,7 +1461,7 @@ describe('RequeteEtapes.service.ts', () => {
       expect(prisma.requeteEtape.delete).not.toHaveBeenCalled();
     });
 
-    it('selects only owner steps or Étapes partagées for a currently affected reader', async () => {
+    it('requires a current Requête affectation before selecting owner or shared steps', async () => {
       vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([]);
       vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(0);
 
@@ -1585,6 +1869,16 @@ describe('RequeteEtapes.service.ts', () => {
         editable: true,
         canOnlyEditNotes: false,
       });
+    });
+
+    it('ASSIGNMENT step is not editable', () => {
+      expect(
+        getEtapePermissions({
+          type: REQUETE_ETAPE_TYPES.ASSIGNMENT,
+          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          uploadedFiles: [],
+        }),
+      ).toEqual({ editable: false, canOnlyEditNotes: false });
     });
 
     it('CLOTUREE step is not editable', () => {
