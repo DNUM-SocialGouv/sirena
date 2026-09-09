@@ -1,9 +1,18 @@
-import { DOMAINES_FONCTIONNELS } from '@sirena/common/constants';
+import { DOMAINES_FONCTIONNELS, LIEU_TYPE } from '@sirena/common/constants';
+import { lieuPrecisionLabelsByType } from '@sirena/common/utils';
 import { z } from 'zod';
 import { splitCsv } from '../../helpers/string.js';
 
 const DOMAINE_IDS: string[] = Object.values(DOMAINES_FONCTIONNELS);
+const LIEU_TYPE_IDS: string[] = Object.values(LIEU_TYPE);
 const CSV_FILTER_MAX = 500;
+
+const isValidLieuToken = (token: string): boolean => {
+  const [lieuTypeId, precision, rest] = token.split(':');
+  if (rest !== undefined || !LIEU_TYPE_IDS.includes(lieuTypeId)) return false;
+  if (precision === undefined) return true;
+  return lieuPrecisionLabelsByType[lieuTypeId]?.[precision] !== undefined;
+};
 
 const domaineIdsSchema = z
   .string()
@@ -17,12 +26,25 @@ const domaineIdsSchema = z
     return ids.length > 0 ? ids.join(',') : undefined;
   });
 
+const lieuTypesSchema = z
+  .string()
+  .max(CSV_FILTER_MAX)
+  .refine((value) => splitCsv(value).every(isValidLieuToken), {
+    message: 'Type(s) de lieu invalide(s)',
+  })
+  .optional()
+  .transform((value) => {
+    const tokens = [...new Set(splitCsv(value))];
+    return tokens.length > 0 ? tokens.join(',') : undefined;
+  });
+
 export const StatisticsDashboardQuerySchema = z
   .object({
     startDate: z.iso.date().optional(),
     endDate: z.iso.date().optional(),
     domaineIds: domaineIdsSchema,
     includeEIG: z.enum(['false']).optional(),
+    lieuTypes: lieuTypesSchema,
   })
   .refine((q) => !q.startDate || !q.endDate || q.startDate <= q.endDate, {
     message: 'startDate doit être antérieure ou égale à endDate',
