@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ReponseOuiNonSchema } from './reponseOuiNon.schema.js';
 
 export const SituationDataSchema = z.object({
   lieuDeSurvenue: z
@@ -93,7 +94,7 @@ export const SituationDataSchema = z.object({
 
   domainesFonctionnels: z.string().optional(),
 
-  estLieAuSignalement: z.boolean().optional(),
+  estLieAuSignalement: ReponseOuiNonSchema.optional().nullable(),
   numerosSignalement: z.string().optional(),
 });
 
