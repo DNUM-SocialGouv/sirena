@@ -11,6 +11,12 @@ allowBuilds:
   # ERD (pnpm db:erd): Puppeteer downloads its Chromium at install time (into
   # ~/.cache/puppeteer, outside node_modules → absent from prod images). Docker
   # builds skip it via PUPPETEER_SKIP_DOWNLOAD (they never render the ERD).
+  # Il est déclaré dans @sirena/db (au lieu d'être une peer auto-installée de
+  # @mermaid-js/mermaid-cli) pour tenir la v25 : les v23/v24 embarquent
+  # @puppeteer/browsers 2.x, donc extract-zip 2.0.1, dont les traversées de
+  # chemin par lien symbolique n'ont jamais été corrigées (GHSA-jmr9-qjv8-65gv,
+  # GHSA-7pqw-9j4j-h8q3 ; dernière publication : 2020). @puppeteer/browsers 3
+  # l'a remplacé par modern-tar.
   puppeteer: true
 catalog:
   "@biomejs/biome": ^2.5.11
@@ -65,14 +71,12 @@ overrides:
   "mysql2@<=3.23.0": ">=3.23.1"
   # fast-xml-parser : reset des déclarations DOCTYPE répétées — GHSA-8r6m-32jq-jx6q.
   "fast-xml-parser@>=5.9.3 <5.10.1": ">=5.10.1"
-# extract-zip <=2.0.1: symlink path traversal — GHSA-jmr9-qjv8-65gv. Aucune
-# version corrigée n'a jamais été publiée sur npm (dernière release : 2.0.1,
-# 2020), un override est donc impossible. Tiré par prisma-erd-generator >
-# @mermaid-js/mermaid-cli > puppeteer(-core) > @puppeteer/browsers (db:erd
-# only ; zips générés localement, pas de contenu attaquant).
+  # js-yaml <4.3.2 : les sources de fusion vides échappent à maxTotalMergeKeys,
+  # d'où une consommation CPU non bornée — GHSA-2883-xcg3-v3hh. Tiré par
+  # cosmiconfig (commitlint, @graphql-codegen/cli).
+  "js-yaml@>=4.0.0 <4.3.2": "^4.3.2"
 auditConfig:
   ignoreGhsas:
-    - GHSA-jmr9-qjv8-65gv
     # deepmerge-ts <8: stack exhaustion requires attacker-controlled cyclic
     # JavaScript object graphs. Current consumers use static configuration, and
     # Prisma pins 7.1.5; remove when upstream supports deepmerge-ts >=8.
