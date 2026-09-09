@@ -8,6 +8,7 @@ vi.mock('../../config/env.js', () => ({
     CRON_QUEUE_UNPROCESSED_FILES: '60',
     CRON_FILE_INTEGRITY_CHECK: '60',
     CRON_PURGE_ACCESS_LOGS: '60',
+    CRON_SYNC_GEO_REFERENTIEL: '60',
     ACCESS_LOG_RETENTION_DAYS: 365,
   },
 }));
@@ -32,6 +33,10 @@ vi.mock('../tasks/purgeAccessLogs.task.js', () => ({
   purgeAccessLogs: vi.fn(),
 }));
 
+vi.mock('../tasks/syncGeoReferentiel.task.js', () => ({
+  syncGeoReferentiel: vi.fn(),
+}));
+
 describe('job.definitions', () => {
   describe('handlerMap', () => {
     it('should resolve the right handler for each job', async () => {
@@ -39,6 +44,15 @@ describe('job.definitions', () => {
       const handlerMap = Object.fromEntries(jobHandlers.map((j) => [j.name, j.task]));
       for (const job of jobHandlers) {
         expect(handlerMap[job.name]).toBe(job.task);
+      }
+    });
+
+    it('should derive a usable interval for every job', async () => {
+      const { jobHandlers } = await import('./job.definitions.js');
+      // Une variable d'environnement déclarée dans le schéma mais oubliée dans env.ts
+      // remonterait ici sous la forme d'un NaN, et le job ne serait jamais planifié.
+      for (const job of jobHandlers) {
+        expect(job.repeatEveryMs).toBeGreaterThan(0);
       }
     });
   });

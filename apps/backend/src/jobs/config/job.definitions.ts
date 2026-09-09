@@ -5,6 +5,7 @@ import { purgeAccessLogs } from '../tasks/purgeAccessLogs.task.js';
 import { queueUnprocessedFiles } from '../tasks/queueUnprocessedFiles.task.js';
 import { retryAffectation } from '../tasks/retryAffectation.task.js';
 import { retryImportRequetes } from '../tasks/retryImportRequetes.task.js';
+import { syncGeoReferentiel } from '../tasks/syncGeoReferentiel.task.js';
 
 export const jobHandlers = [
   {
@@ -57,6 +58,19 @@ export const jobHandlers = [
     data: {
       retentionDays: envVars.ACCESS_LOG_RETENTION_DAYS,
     },
+    runOnStart: true,
+  },
+  {
+    name: 'sync-geo-referentiel',
+    task: syncGeoReferentiel,
+    repeatEveryMs: parseInt(envVars.CRON_SYNC_GEO_REFERENTIEL, 10) * 1000,
+    data: {
+      timeoutMs: 1000 * 60 * 10,
+      minIntervalDays: 25,
+    },
+    // L'intervalle dépasse la durée de vie usuelle d'un déploiement : sans exécution au
+    // démarrage, la synchronisation risquerait de ne jamais se déclencher. La garde de
+    // fraîcheur de la tâche évite de la rejouer à chaque redémarrage.
     runOnStart: true,
   },
 ] as const;

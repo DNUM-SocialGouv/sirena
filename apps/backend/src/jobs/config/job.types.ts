@@ -17,6 +17,10 @@ export type JobDataMap = {
   'purge-access-logs': {
     retentionDays: number;
   };
+  'sync-geo-referentiel': {
+    timeoutMs: number;
+    minIntervalDays: number;
+  };
 };
 
 export type JobName = keyof JobDataMap;
