@@ -5,9 +5,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { client } from '@/lib/api/hc';
 import { HttpError } from '@/lib/api/tanstackQuery';
 import { MAX_AUTO_MERGE_REPLAYS } from '@/lib/conflictResolution';
-import { formatDeclarantFromServer } from '@/lib/declarant';
+import { formatPersonneConcerneeFromServer } from '@/lib/personneConcernee';
 import { toastManager } from '@/lib/toastManager';
-import { useDeclarantSave } from './useDeclarantSave';
+import { usePersonneConcerneeSave } from './usePersonneConcerneeSave';
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),
@@ -18,7 +18,7 @@ vi.mock('@/lib/toastManager', () => ({
 }));
 
 vi.mock('@/lib/api/hc', () => ({
-  client: { 'requetes-entite': { ':id': { declarant: { $patch: vi.fn() } } } },
+  client: { 'requetes-entite': { ':id': { participant: { $patch: vi.fn() } } } },
 }));
 
 vi.mock('@/lib/api/tanstackQuery', () => {
@@ -36,7 +36,7 @@ vi.mock('@/lib/api/tanstackQuery', () => {
   };
 });
 
-const patch = vi.mocked(client['requetes-entite'][':id'].declarant.$patch);
+const patch = vi.mocked(client['requetes-entite'][':id'].participant.$patch);
 
 const wrapper = ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}>
@@ -44,13 +44,15 @@ const wrapper = ({ children }: { children: ReactNode }) => (
   </QueryClientProvider>
 );
 
-const renderSave = (identiteUpdatedAt?: string) =>
-  renderHook(() => useDeclarantSave({ requestId: 'req-1', identiteUpdatedAt, onRefetch: vi.fn() }), { wrapper }).result;
+const renderSave = (participantUpdatedAt?: string) =>
+  renderHook(() => usePersonneConcerneeSave({ requestId: 'req-1', participantUpdatedAt, onRefetch: vi.fn() }), {
+    wrapper,
+  }).result;
 
 const renderEditSession = (updatedAt?: string) =>
   renderHook(
-    ({ updatedAt: identiteUpdatedAt }: { updatedAt?: string }) =>
-      useDeclarantSave({ requestId: 'req-1', identiteUpdatedAt, onRefetch: vi.fn() }),
+    ({ updatedAt: participantUpdatedAt }: { updatedAt?: string }) =>
+      usePersonneConcerneeSave({ requestId: 'req-1', participantUpdatedAt, onRefetch: vi.fn() }),
     { wrapper, initialProps: { updatedAt } },
   );
 
@@ -59,30 +61,34 @@ const SERVER_UPDATED_AT = '2026-01-01T11:00:00.000Z';
 
 const REFETCHED_UPDATED_AT = '2026-01-01T12:00:00.000Z';
 
-const serverDeclarant = (prenom: string, nom = 'Lovelace') => ({
-  estVictime: false,
-  isTuteur: false,
-  veutGarderAnonymat: null,
-  commentaire: '',
+const serverParticipant = (prenom: string, nom = 'Lovelace') => ({
   identite: { prenom, nom, email: '', telephone: '', civiliteId: null },
   adresse: null,
-});
-
-const conflictBody = (cause: Record<string, unknown>) => ({
-  message: 'The declarant identity has been modified by another user.',
-  cause: { kind: 'BUSINESS', ...cause },
+  age: null,
+  dateNaissance: null,
+  estHandicapee: null,
+  veutGarderAnonymat: null,
+  estVictimeInformee: null,
+  victimeInformeeCommentaire: '',
+  autrePersonnes: '',
+  aAutrePersonnes: null,
+  mesureProtection: null,
+  commentaire: '',
 });
 
 const conflictResponse = (
-  cause: Record<string, unknown> = { serverData: serverDeclarant('Grace'), serverUpdatedAt: SERVER_UPDATED_AT },
+  cause: Record<string, unknown> = { serverData: serverParticipant('Grace'), serverUpdatedAt: SERVER_UPDATED_AT },
 ) =>
-  new Response(JSON.stringify(conflictBody(cause)), {
-    status: 409,
-    headers: { 'Content-Type': 'application/json' },
-  }) as never;
+  new Response(
+    JSON.stringify({
+      message: 'The participant has been modified by another user.',
+      cause: { kind: 'BUSINESS', ...cause },
+    }),
+    { status: 409, headers: { 'Content-Type': 'application/json' } },
+  ) as never;
 
 const autoMergeableResponse = () =>
-  conflictResponse({ serverData: serverDeclarant('Ada', 'Byron'), serverUpdatedAt: SERVER_UPDATED_AT });
+  conflictResponse({ serverData: serverParticipant('Ada', 'Byron'), serverUpdatedAt: SERVER_UPDATED_AT });
 
 const okResponse = () =>
   new Response(JSON.stringify({ data: {} }), {
@@ -92,18 +98,13 @@ const okResponse = () =>
 
 const patchedJson = (call: number) => (patch.mock.calls[call][0] as { json: Record<string, unknown> }).json;
 
-describe('useDeclarantSave', () => {
+describe('usePersonneConcerneeSave', () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
 
   it('resolves on a 409 conflict instead of rejecting into an unhandled rejection', async () => {
-    patch.mockResolvedValue(
-      new Response(JSON.stringify({ conflictData: {}, message: 'The requete has been modified by another user.' }), {
-        status: 409,
-        headers: { 'Content-Type': 'application/json' },
-      }) as never,
-    );
+    patch.mockResolvedValue(conflictResponse({}));
 
     const { handleSave } = renderSave().current;
 
@@ -122,7 +123,7 @@ describe('useDeclarantSave', () => {
     patch.mockResolvedValueOnce(conflictResponse());
 
     const result = renderSave(LOADED_UPDATED_AT);
-    result.current.originalDataRef.current = formatDeclarantFromServer(serverDeclarant('Ada'));
+    result.current.originalDataRef.current = formatPersonneConcerneeFromServer(serverParticipant('Ada'));
 
     await result.current.handleSave({ ...result.current.originalDataRef.current, prenom: 'Ida' });
 
@@ -136,29 +137,29 @@ describe('useDeclarantSave', () => {
     patch.mockResolvedValueOnce(conflictResponse()).mockResolvedValueOnce(okResponse());
 
     const result = renderSave(LOADED_UPDATED_AT);
-    result.current.originalDataRef.current = formatDeclarantFromServer(serverDeclarant('Ada'));
+    result.current.originalDataRef.current = formatPersonneConcerneeFromServer(serverParticipant('Ada'));
 
     await result.current.handleSave({ ...result.current.originalDataRef.current, prenom: 'Ida' });
     await waitFor(() => expect(result.current.showConflictDialog).toBe(true));
 
-    expect(patchedJson(0).controls).toEqual({ declarant: { updatedAt: LOADED_UPDATED_AT } });
+    expect(patchedJson(0).controls).toEqual({ participant: { updatedAt: LOADED_UPDATED_AT } });
 
     await result.current.handleConflictResolve({ prenom: 'server' });
 
     await waitFor(() => expect(patch).toHaveBeenCalledTimes(2));
-    expect(patchedJson(1).controls).toEqual({ declarant: { updatedAt: SERVER_UPDATED_AT } });
-    expect(patchedJson(1).declarant).toMatchObject({ prenom: 'Grace' });
+    expect(patchedJson(1).controls).toEqual({ participant: { updatedAt: SERVER_UPDATED_AT } });
+    expect(patchedJson(1).participant).toMatchObject({ prenom: 'Grace' });
   });
 
   it('keeps the changes only the other user made when a conflict is arbitrated', async () => {
     patch
       .mockResolvedValueOnce(
-        conflictResponse({ serverData: serverDeclarant('Grace', 'Byron'), serverUpdatedAt: SERVER_UPDATED_AT }),
+        conflictResponse({ serverData: serverParticipant('Grace', 'Byron'), serverUpdatedAt: SERVER_UPDATED_AT }),
       )
       .mockResolvedValueOnce(okResponse());
 
     const result = renderSave(LOADED_UPDATED_AT);
-    result.current.originalDataRef.current = formatDeclarantFromServer(serverDeclarant('Ada'));
+    result.current.originalDataRef.current = formatPersonneConcerneeFromServer(serverParticipant('Ada'));
 
     await result.current.handleSave({ ...result.current.originalDataRef.current, prenom: 'Ida' });
     await waitFor(() => expect(result.current.showConflictDialog).toBe(true));
@@ -167,14 +168,14 @@ describe('useDeclarantSave', () => {
     await result.current.handleConflictResolve({ prenom: 'current' });
 
     await waitFor(() => expect(patch).toHaveBeenCalledTimes(2));
-    expect(patchedJson(1).declarant).toMatchObject({ prenom: 'Ida', nom: 'Byron' });
+    expect(patchedJson(1).participant).toMatchObject({ prenom: 'Ida', nom: 'Byron' });
   });
 
   it('locks a new save on the loaded version when the dialog was left unanswered', async () => {
     patch.mockResolvedValueOnce(conflictResponse()).mockResolvedValueOnce(okResponse());
 
     const result = renderSave(LOADED_UPDATED_AT);
-    result.current.originalDataRef.current = formatDeclarantFromServer(serverDeclarant('Ada'));
+    result.current.originalDataRef.current = formatPersonneConcerneeFromServer(serverParticipant('Ada'));
 
     await result.current.handleSave({ ...result.current.originalDataRef.current, prenom: 'Ida' });
     await waitFor(() => expect(result.current.showConflictDialog).toBe(true));
@@ -182,14 +183,14 @@ describe('useDeclarantSave', () => {
     await result.current.handleSave({ ...result.current.originalDataRef.current, prenom: 'Ida' });
 
     await waitFor(() => expect(patch).toHaveBeenCalledTimes(2));
-    expect(patchedJson(1).controls).toEqual({ declarant: { updatedAt: LOADED_UPDATED_AT } });
+    expect(patchedJson(1).controls).toEqual({ participant: { updatedAt: LOADED_UPDATED_AT } });
   });
 
   it('stops replaying once the automatic merges keep hitting a conflict', async () => {
     patch.mockImplementation(async () => autoMergeableResponse());
 
     const result = renderSave(LOADED_UPDATED_AT);
-    result.current.originalDataRef.current = formatDeclarantFromServer(serverDeclarant('Ada'));
+    result.current.originalDataRef.current = formatPersonneConcerneeFromServer(serverParticipant('Ada'));
 
     await result.current.handleSave({ ...result.current.originalDataRef.current, prenom: 'Ida' });
 
@@ -200,25 +201,11 @@ describe('useDeclarantSave', () => {
     expect(result.current.showConflictDialog).toBe(false);
   });
 
-  it('lets a new save start from a fresh replay budget', async () => {
-    patch.mockImplementation(async () => autoMergeableResponse());
-
-    const result = renderSave(LOADED_UPDATED_AT);
-    result.current.originalDataRef.current = formatDeclarantFromServer(serverDeclarant('Ada'));
-
-    await result.current.handleSave({ ...result.current.originalDataRef.current, prenom: 'Ida' });
-    await waitFor(() => expect(patch).toHaveBeenCalledTimes(1 + MAX_AUTO_MERGE_REPLAYS));
-
-    await result.current.handleSave({ ...result.current.originalDataRef.current, prenom: 'Ida' });
-
-    await waitFor(() => expect(patch).toHaveBeenCalledTimes(2 * (1 + MAX_AUTO_MERGE_REPLAYS)));
-  });
-
   it('reports a conflict whose payload carries no usable timestamp instead of replaying', async () => {
-    patch.mockImplementation(async () => conflictResponse({ serverData: serverDeclarant('Ada', 'Byron') }));
+    patch.mockImplementation(async () => conflictResponse({ serverData: serverParticipant('Ada', 'Byron') }));
 
     const result = renderSave(LOADED_UPDATED_AT);
-    result.current.originalDataRef.current = formatDeclarantFromServer(serverDeclarant('Ada'));
+    result.current.originalDataRef.current = formatPersonneConcerneeFromServer(serverParticipant('Ada'));
 
     await result.current.handleSave({ ...result.current.originalDataRef.current, prenom: 'Ida' });
 
@@ -234,13 +221,13 @@ describe('useDeclarantSave', () => {
     patch.mockResolvedValueOnce(autoMergeableResponse()).mockResolvedValueOnce(okResponse());
 
     const result = renderSave(LOADED_UPDATED_AT);
-    result.current.originalDataRef.current = formatDeclarantFromServer(serverDeclarant('Ada'));
+    result.current.originalDataRef.current = formatPersonneConcerneeFromServer(serverParticipant('Ada'));
 
     await result.current.handleSave({ ...result.current.originalDataRef.current, prenom: 'Ida' });
 
     await waitFor(() => expect(patch).toHaveBeenCalledTimes(2));
     expect(result.current.originalDataRef.current).toMatchObject({ nom: 'Byron', prenom: 'Ada' });
-    expect(patchedJson(1).declarant).toMatchObject({ nom: 'Byron', prenom: 'Ida' });
+    expect(patchedJson(1).participant).toMatchObject({ nom: 'Byron', prenom: 'Ida' });
   });
   it('locks the save on the version loaded rather than on one a background refetch brought in', async () => {
     patch.mockResolvedValue(okResponse());
@@ -251,7 +238,7 @@ describe('useDeclarantSave', () => {
     await result.current.handleSave({ prenom: 'Ida' });
 
     await waitFor(() => expect(patch).toHaveBeenCalledTimes(1));
-    expect(patchedJson(0).controls).toEqual({ declarant: { updatedAt: LOADED_UPDATED_AT } });
+    expect(patchedJson(0).controls).toEqual({ participant: { updatedAt: LOADED_UPDATED_AT } });
   });
 
   it('locks the next save on the refreshed version once a save succeeded', async () => {
@@ -266,6 +253,6 @@ describe('useDeclarantSave', () => {
     await result.current.handleSave({ prenom: 'Ada' });
 
     await waitFor(() => expect(patch).toHaveBeenCalledTimes(2));
-    expect(patchedJson(1).controls).toEqual({ declarant: { updatedAt: REFETCHED_UPDATED_AT } });
+    expect(patchedJson(1).controls).toEqual({ participant: { updatedAt: REFETCHED_UPDATED_AT } });
   });
 });

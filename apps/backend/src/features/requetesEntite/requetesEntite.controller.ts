@@ -694,37 +694,25 @@ const app = factoryWithLogs
         });
       }
 
-      try {
-        const updatedRequete = await updateRequeteParticipant(id, participantData, controls);
+      const updatedRequete = await updateRequeteParticipant(id, participantData, controls);
 
-        if (updatedRequete.participant) {
-          c.set('changelogId', updatedRequete.participant.id);
-        }
-
-        sseEventManager.emitRequeteUpdated({
-          requeteId: id,
-          entiteId: topEntiteId,
-          field: REQUETE_UPDATE_FIELDS.PARTICIPANT,
-        });
-
-        if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
-          await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
-        }
-
-        logger.info({ requeteId: id, userId }, 'Participant data updated successfully');
-
-        return c.json({ data: updatedRequete });
-      } catch (error: unknown) {
-        if (error instanceof Error && error.message.startsWith('CONFLICT')) {
-          const conflictResponse = {
-            message: 'The participant identity has been modified by another user.',
-            conflictData: (error as Error & { conflictData?: unknown }).conflictData || null,
-          };
-
-          return c.json(conflictResponse, 409);
-        }
-        throw error;
+      if (updatedRequete.participant) {
+        c.set('changelogId', updatedRequete.participant.id);
       }
+
+      sseEventManager.emitRequeteUpdated({
+        requeteId: id,
+        entiteId: topEntiteId,
+        field: REQUETE_UPDATE_FIELDS.PARTICIPANT,
+      });
+
+      if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
+        await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+      }
+
+      logger.info({ requeteId: id, userId }, 'Participant data updated successfully');
+
+      return c.json({ data: updatedRequete });
     },
   )
 
@@ -791,36 +779,23 @@ const app = factoryWithLogs
         payload.provenancePrecision = provenancePrecision;
       }
 
-      try {
-        const updatedRequete = await updateDateAndTypeRequete(id, payload, controls);
+      const updatedRequete = await updateDateAndTypeRequete(id, payload, controls);
 
-        c.set('changelogId', id);
+      c.set('changelogId', id);
 
-        sseEventManager.emitRequeteUpdated({
-          requeteId: id,
-          entiteId: topEntiteId,
-          field: REQUETE_UPDATE_FIELDS.DATE_TYPE,
-        });
+      sseEventManager.emitRequeteUpdated({
+        requeteId: id,
+        entiteId: topEntiteId,
+        field: REQUETE_UPDATE_FIELDS.DATE_TYPE,
+      });
 
-        if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
-          await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
-        }
-
-        logger.info({ requeteId: id, userId }, 'Reception date and type updated successfully');
-
-        return c.json({ data: updatedRequete });
-      } catch (error: unknown) {
-        if (error instanceof Error && error.message.startsWith('CONFLICT')) {
-          const conflictResponse = {
-            message: 'The requete has been modified by another user.',
-            conflictData: (error as Error & { conflictData?: unknown }).conflictData || null,
-          };
-
-          return c.json(conflictResponse, 409);
-        }
-
-        throw error;
+      if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
+        await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
       }
+
+      logger.info({ requeteId: id, userId }, 'Reception date and type updated successfully');
+
+      return c.json({ data: updatedRequete });
     },
   )
 
@@ -978,7 +953,7 @@ const app = factoryWithLogs
         kind: ERROR_KIND.BUSINESS,
       });
     }
-    const { situation: situationData } = c.req.valid('json');
+    const { situation: situationData, controls } = c.req.valid('json');
 
     const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
 
@@ -1019,7 +994,16 @@ const app = factoryWithLogs
       newAssignedEntiteIds,
       newDirectionServiceIds,
       shouldCloseRequeteStatus,
-    } = await updateRequeteSituation(id, situationId, situationData, topEntiteId, userId, userEntityIds, topEntiteId);
+    } = await updateRequeteSituation(
+      id,
+      situationId,
+      situationData,
+      topEntiteId,
+      userId,
+      userEntityIds,
+      topEntiteId,
+      controls,
+    );
 
     if (newAssignedEntiteIds.length > 0) {
       await sendEntiteAssignedNotification(id, newAssignedEntiteIds);
