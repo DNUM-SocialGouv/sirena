@@ -74,6 +74,23 @@ const fetchEsanteData = async <T>(
   }
 };
 
+// ANS FHIR returns several identifiers per resource. The first one is the
+// national id (IDNST for structures, IDNPS for practitioners): a type digit
+// prefixed to the FINESS/RPPS (e.g. 1640022190, 810000509124). The real
+// FINESS/RPPS is another entry, selected by its type code and system. SIRENA-723.
+const FINESS_SYSTEM = 'https://finess.esante.gouv.fr';
+const RPPS_SYSTEM = 'https://rpps.esante.gouv.fr';
+
+type FhirIdentifier = { value?: string; system?: string; type?: { coding?: Array<{ code?: string }> } };
+
+const selectIdentifier = (
+  identifiers: FhirIdentifier[] | undefined,
+  { typeCode, system }: { typeCode: string; system: string },
+): FhirIdentifier | undefined => {
+  const list = identifiers ?? [];
+  return list.find((i) => i.type?.coding?.some((c) => c.code === typeCode)) ?? list.find((i) => i.system === system);
+};
+
 const mapBundleEntries = <TEntry, TResult>(
   data: { entry?: TEntry[] } | undefined,
   mapper: (entry: TEntry) => TResult | undefined,
@@ -98,7 +115,7 @@ export const getPractionners = async (params: GetPractionnersParams) => {
 
   return mapBundleEntries(data, (entry) => {
     const resourceName = entry.resource?.name?.[0];
-    const identifier = entry.resource?.identifier?.[0];
+    const identifier = selectIdentifier(entry.resource?.identifier, { typeCode: 'RPPS', system: RPPS_SYSTEM });
 
     if (!resourceName || !identifier) {
       return undefined;
@@ -126,7 +143,7 @@ export const getOrganizations = async (params: GetOrganizationsParams) => {
 
   return mapBundleEntries(data, (entry) => {
     const resource = entry.resource;
-    const identifier = resource?.identifier?.[0];
+    const identifier = selectIdentifier(resource?.identifier, { typeCode: 'FINEG', system: FINESS_SYSTEM });
     const address = resource?.address?.[0];
 
     if (!resource?.name || !identifier) {
