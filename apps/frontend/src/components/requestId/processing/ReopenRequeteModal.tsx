@@ -1,7 +1,7 @@
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useReopenRequete } from '@/hooks/mutations/reopenRequete.hook';
-import { useRequeteOtherEntitiesAffected } from '@/hooks/queries/useRequeteDetails';
+import type { useRequeteOtherEntitiesAffected } from '@/hooks/queries/useRequeteDetails';
 import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
 
 export type ReopenRequeteModalRef = {
@@ -10,16 +10,20 @@ export type ReopenRequeteModalRef = {
 
 export type ReopenRequeteModalProps = {
   requestId: string;
+  otherEntitiesQuery: Pick<
+    ReturnType<typeof useRequeteOtherEntitiesAffected>,
+    'data' | 'isPaused' | 'isError' | 'isPlaceholderData'
+  >;
+  onRefreshRecipients: () => void;
   triggerButtonRef?: React.RefObject<HTMLButtonElement | null>;
 };
 
 export const ReopenRequeteModal = forwardRef<ReopenRequeteModalRef, ReopenRequeteModalProps>(
-  ({ requestId, triggerButtonRef }, ref) => {
+  ({ requestId, otherEntitiesQuery, onRefreshRecipients, triggerButtonRef }, ref) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const wasActionTakenRef = useRef(false);
     const reopenMutation = useReopenRequete(requestId);
-    const otherEntitiesQuery = useRequeteOtherEntitiesAffected(requestId);
 
     const recipientNames = (otherEntitiesQuery.data?.otherEntites.map((entite) => entite.nomComplet) ?? []).sort(
       (a, b) => a.localeCompare(b, 'fr'),
@@ -56,7 +60,7 @@ export const ReopenRequeteModal = forwardRef<ReopenRequeteModalRef, ReopenRequet
         registerTrigger(triggerButtonRef.current);
       }
 
-      void otherEntitiesQuery.refetch();
+      onRefreshRecipients();
 
       reopenModal.open();
     };

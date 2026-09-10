@@ -36,6 +36,7 @@ let canEditRequest = false;
 let selectedEntityId: string | undefined;
 let otherEntitiesQueryState = { isLoading: false, isError: false, isPlaceholderData: false };
 const navigate = vi.fn();
+const refreshOtherEntities = vi.fn();
 const foreignEtapePartagee = {
   id: 'foreign-closure',
   requeteId: 'REQ-1',
@@ -102,7 +103,12 @@ vi.mock('@/hooks/queries/processingSteps.hook', () => ({
 }));
 
 vi.mock('@/hooks/queries/useRequeteDetails', () => ({
-  useRequeteOtherEntitiesAffected: () => ({ data: otherEntitiesAffected, ...otherEntitiesQueryState }),
+  useRequeteOtherEntitiesAffected: () => ({
+    data: otherEntitiesAffected,
+    ...otherEntitiesQueryState,
+    isPaused: false,
+    refetch: refreshOtherEntities,
+  }),
 }));
 
 vi.mock('@/hooks/useCanEdit', () => ({
@@ -162,7 +168,9 @@ vi.mock('@/stores/userStore', () => ({
 vi.mock('./processing/StepFormPanel', () => ({ StepFormPanel: () => null }));
 vi.mock('./processing/SendAcknowledgmentDrawer', () => ({ SendAcknowledgmentDrawer: () => null }));
 vi.mock('./processing/CloseRequeteModal', () => ({ CloseRequeteModal: () => null }));
-vi.mock('./processing/ReopenRequeteModal', () => ({ ReopenRequeteModal: () => null }));
+vi.mock('@/hooks/mutations/reopenRequete.hook', () => ({
+  useReopenRequete: () => ({ mutateAsync: vi.fn() }),
+}));
 describe('Processing', () => {
   beforeEach(() => {
     processingMeta = { total: 1, isMultiEntite: true, etapePartageeEnabled: true };
@@ -171,6 +179,7 @@ describe('Processing', () => {
     selectedEntityId = undefined;
     otherEntitiesQueryState = { isLoading: false, isError: false, isPlaceholderData: false };
     navigate.mockReset();
+    refreshOtherEntities.mockReset();
     requeteEtapes = [foreignEtapePartagee];
   });
 
@@ -183,6 +192,35 @@ describe('Processing', () => {
     },
     error: null,
   } as never;
+
+  it('refreshes reopening recipients through the page on each opening', async () => {
+    canEditRequest = true;
+    setOtherEntitiesAffected(affectedEntity('OTHER-ARS', 'ARS Île-de-France'));
+    const closedRequestQuery = {
+      data: {
+        entiteId: 'CURRENT-ENTITY',
+        statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+        entite: { entiteTypeId: 'ARS', nomComplet: 'ARS courante' },
+        requete: { createdById: null },
+      },
+      error: null,
+    } as never;
+    const { rerender } = render(<Processing requestId="REQ-1" requestQuery={closedRequestQuery} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Rouvrir', exact: true }));
+    expect(refreshOtherEntities).toHaveBeenCalledOnce();
+    expect(screen.getByRole('status')).toHaveTextContent('Cette étape sera visible par ARS Île-de-France.');
+
+    setOtherEntitiesAffected(affectedEntity('OTHER-CD', 'Conseil départemental du Calvados', 'CD'));
+    rerender(<Processing requestId="REQ-1" requestQuery={closedRequestQuery} />);
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Cette étape sera visible par Conseil départemental du Calvados.',
+    );
+    expect(screen.getByRole('status')).not.toHaveTextContent('ARS Île-de-France');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Rouvrir', exact: true }));
+    expect(refreshOtherEntities).toHaveBeenCalledTimes(2);
+  });
 
   it('labels the treatment chronology', () => {
     render(<Processing requestId="REQ-1" requestQuery={requestQuery} />);

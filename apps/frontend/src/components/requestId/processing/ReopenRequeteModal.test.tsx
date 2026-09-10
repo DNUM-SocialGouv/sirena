@@ -1,11 +1,11 @@
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useRef } from 'react';
+import { forwardRef, useRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useRequeteOtherEntitiesAffected } from '@/hooks/queries/useRequeteDetails';
 import { fetchRequeteOtherEntitiesAffected } from '@/lib/api/fetchRequetesEntite';
-import { ReopenRequeteModal, type ReopenRequeteModalRef } from './ReopenRequeteModal';
+import { type ReopenRequeteModalRef, ReopenRequeteModal as ReopenRequeteModalView } from './ReopenRequeteModal';
 
 const { mutateAsync, close } = vi.hoisted(() => ({ mutateAsync: vi.fn(), close: vi.fn() }));
 
@@ -44,6 +44,18 @@ vi.mock('@/hooks/queries/useRequeteDetails', () => ({
 vi.mock('@/lib/api/fetchRequetesEntite', () => ({
   fetchRequeteOtherEntitiesAffected: vi.fn(),
 }));
+
+const ReopenRequeteModal = forwardRef<ReopenRequeteModalRef, { requestId: string }>(({ requestId }, ref) => {
+  const otherEntitiesQuery = useRequeteOtherEntitiesAffected(requestId);
+  return (
+    <ReopenRequeteModalView
+      ref={ref}
+      requestId={requestId}
+      otherEntitiesQuery={otherEntitiesQuery}
+      onRefreshRecipients={otherEntitiesQuery.refetch}
+    />
+  );
+});
 
 const ModalWithTrigger = () => {
   const modal = useRef<ReopenRequeteModalRef>(null);
@@ -102,6 +114,31 @@ describe('ReopenRequeteModal', () => {
       isPlaceholderData: false,
       isError: false,
     });
+  });
+
+  it('displays the recipients supplied by the page and follows their updates', () => {
+    const query = {
+      data: { otherEntites: [{ ...ars, nomComplet: 'DDETS du Nord' }], subAdministrativeEntites: [] },
+      isError: false,
+      isPaused: false,
+      isPlaceholderData: false,
+    };
+    const refresh = vi.fn();
+    const { rerender } = render(
+      <ReopenRequeteModalView requestId="REQ-354" otherEntitiesQuery={query} onRefreshRecipients={refresh} />,
+    );
+
+    expect(screen.getByText('Cette étape sera visible par DDETS du Nord.')).toBeInTheDocument();
+
+    rerender(
+      <ReopenRequeteModalView
+        requestId="REQ-354"
+        otherEntitiesQuery={{ ...query, data: { otherEntites: [], subAdministrativeEntites: [] } }}
+        onRefreshRecipients={refresh}
+      />,
+    );
+
+    expect(screen.queryByText(/Cette étape sera visible/)).not.toBeInTheDocument();
   });
 
   it.each([
