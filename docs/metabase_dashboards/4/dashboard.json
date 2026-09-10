@@ -42,7 +42,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'CLOTUREE'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]];",
+              "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'CLOTUREE'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                         AND {{inclure_eig}} = 'false') ]];",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -596,52 +596,10 @@
           }
         ],
         "public_uuid": null,
+        "public_uuid_prefix": null,
         "query_average_duration": null,
         "query_type": "native",
-        "result_metadata": [
-          {
-            "base_type": "type/BigInteger",
-            "database_type": "int8",
-            "display_name": "nombre_requetes",
-            "effective_type": "type/BigInteger",
-            "field_ref": [
-              "field",
-              "nombre_requetes",
-              {
-                "base-type": "type/BigInteger"
-              }
-            ],
-            "fingerprint": {
-              "global": {
-                "distinct-count": 1,
-                "nil%": 0
-              },
-              "type": {
-                "type/Number": {
-                  "avg": 9388,
-                  "excess-kurtosis": null,
-                  "max": 9388,
-                  "min": 9388,
-                  "mode-fraction": 1,
-                  "q1": 9388,
-                  "q3": 9388,
-                  "sd": 0,
-                  "skewness": null,
-                  "top-3-fraction": 1,
-                  "zero-fraction": 0
-                }
-              }
-            },
-            "lib/deduplicated-name": "nombre_requetes",
-            "lib/desired-column-alias": "nombre_requetes",
-            "lib/original-name": "nombre_requetes",
-            "lib/source": "source/native",
-            "lib/source-column-alias": "nombre_requetes",
-            "name": "nombre_requetes",
-            "semantic_type": null,
-            "source": "native"
-          }
-        ],
+        "result_metadata": null,
         "source_card_id": null,
         "table_id": null,
         "type": "question",
@@ -751,7 +709,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'NOUVEAU'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]];",
+              "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'NOUVEAU'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                         AND {{inclure_eig}} = 'false') ]];",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -1305,6 +1263,7 @@
           }
         ],
         "public_uuid": null,
+        "public_uuid_prefix": null,
         "query_average_duration": null,
         "query_type": "native",
         "result_metadata": [
@@ -1312,7 +1271,6 @@
             "base_type": "type/BigInteger",
             "database_type": "int8",
             "display_name": "nombre_requetes",
-            "effective_type": "type/BigInteger",
             "field_ref": [
               "field",
               "nombre_requetes",
@@ -1320,35 +1278,7 @@
                 "base-type": "type/BigInteger"
               }
             ],
-            "fingerprint": {
-              "global": {
-                "distinct-count": 1,
-                "nil%": 0
-              },
-              "type": {
-                "type/Number": {
-                  "avg": 23,
-                  "excess-kurtosis": null,
-                  "max": 23,
-                  "min": 23,
-                  "mode-fraction": 1,
-                  "q1": 23,
-                  "q3": 23,
-                  "sd": 0,
-                  "skewness": null,
-                  "top-3-fraction": 1,
-                  "zero-fraction": 0
-                }
-              }
-            },
-            "lib/deduplicated-name": "nombre_requetes",
-            "lib/desired-column-alias": "nombre_requetes",
-            "lib/original-name": "nombre_requetes",
-            "lib/source": "source/native",
-            "lib/source-column-alias": "nombre_requetes",
-            "name": "nombre_requetes",
-            "semantic_type": null,
-            "source": "native"
+            "name": "nombre_requetes"
           }
         ],
         "source_card_id": null,
@@ -1461,7 +1391,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'EN_COURS'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]];",
+              "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'EN_COURS'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                         AND {{inclure_eig}} = 'false') ]];",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -2013,6 +1943,7 @@
           }
         ],
         "public_uuid": null,
+        "public_uuid_prefix": null,
         "query_average_duration": null,
         "query_type": "native",
         "result_metadata": [
@@ -2020,7 +1951,6 @@
             "base_type": "type/BigInteger",
             "database_type": "int8",
             "display_name": "nombre_requetes",
-            "effective_type": "type/BigInteger",
             "field_ref": [
               "field",
               "nombre_requetes",
@@ -2028,35 +1958,7 @@
                 "base-type": "type/BigInteger"
               }
             ],
-            "fingerprint": {
-              "global": {
-                "distinct-count": 1,
-                "nil%": 0
-              },
-              "type": {
-                "type/Number": {
-                  "avg": 1820,
-                  "excess-kurtosis": null,
-                  "max": 1820,
-                  "min": 1820,
-                  "mode-fraction": 1,
-                  "q1": 1820,
-                  "q3": 1820,
-                  "sd": 0,
-                  "skewness": null,
-                  "top-3-fraction": 1,
-                  "zero-fraction": 0
-                }
-              }
-            },
-            "lib/deduplicated-name": "nombre_requetes",
-            "lib/desired-column-alias": "nombre_requetes",
-            "lib/original-name": "nombre_requetes",
-            "lib/source": "source/native",
-            "lib/source-column-alias": "nombre_requetes",
-            "name": "nombre_requetes",
-            "semantic_type": null,
-            "source": "native"
+            "name": "nombre_requetes"
           }
         ],
         "source_card_id": null,
@@ -2168,7 +2070,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "  SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]];",
+              "native": "  SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                         AND {{inclure_eig}} = 'false') ]];",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -2720,6 +2622,7 @@
           }
         ],
         "public_uuid": null,
+        "public_uuid_prefix": null,
         "query_average_duration": null,
         "query_type": "native",
         "result_metadata": [
@@ -2727,7 +2630,6 @@
             "base_type": "type/BigInteger",
             "database_type": "int8",
             "display_name": "nombre_requetes",
-            "effective_type": "type/BigInteger",
             "field_ref": [
               "field",
               "nombre_requetes",
@@ -2735,35 +2637,7 @@
                 "base-type": "type/BigInteger"
               }
             ],
-            "fingerprint": {
-              "global": {
-                "distinct-count": 1,
-                "nil%": 0
-              },
-              "type": {
-                "type/Number": {
-                  "avg": 23305,
-                  "excess-kurtosis": null,
-                  "max": 23305,
-                  "min": 23305,
-                  "mode-fraction": 1,
-                  "q1": 23305,
-                  "q3": 23305,
-                  "sd": 0,
-                  "skewness": null,
-                  "top-3-fraction": 1,
-                  "zero-fraction": 0
-                }
-              }
-            },
-            "lib/deduplicated-name": "nombre_requetes",
-            "lib/desired-column-alias": "nombre_requetes",
-            "lib/original-name": "nombre_requetes",
-            "lib/source": "source/native",
-            "lib/source-column-alias": "nombre_requetes",
-            "name": "nombre_requetes",
-            "semantic_type": null,
-            "source": "native"
+            "name": "nombre_requetes"
           }
         ],
         "source_card_id": null,
@@ -2875,7 +2749,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "-- Nombre de requêtes de l'entité de l'agent connecté qui sont en compétence partagée,\n-- c.-à-d. affectées à au moins une AUTRE entité administrative « réellement » compétente.\n-- Une autre entité est ignorée si elle a clôturé la requête pour motif « Hors compétence ».\nSELECT\n  COUNT(DISTINCT re_self.\"requeteId\") AS nombre_requetes_competence_partagee\nFROM \"RequeteEntite\" re_self\nJOIN \"Entite\"   e ON e.id = re_self.\"entiteId\"\nJOIN \"Requete\"  r ON r.id = re_self.\"requeteId\"\nWHERE\n  e.label = {{entity_label}}\n  AND EXISTS (\n    -- une autre entité affectée à la même requête...\n    SELECT 1\n    FROM \"RequeteEntite\" re_other\n    WHERE re_other.\"requeteId\" = re_self.\"requeteId\"\n      AND re_other.\"entiteId\" <> re_self.\"entiteId\"\n      -- ...qui n'est PAS clôturée « Hors compétence »\n      AND NOT (\n        re_other.\"statutId\" = 'CLOTUREE'\n        AND EXISTS (\n          SELECT 1\n          FROM \"RequeteEtape\" et\n          JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n          WHERE et.\"requeteId\" = re_other.\"requeteId\"\n            AND et.\"entiteId\"  = re_other.\"entiteId\"\n            AND et.\"statutId\"  = 'CLOTUREE'\n            AND j.\"A\"          = 'HORS_COMPETENCE'\n        )\n      )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                 JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                 WHERE s_lieu.\"requeteId\" = r.id\n                   AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                        OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                       AND {{inclure_eig}} = 'false') ]];",
+              "native": "-- Nombre de requêtes de l'entité de l'agent connecté qui sont en compétence partagée,\n-- c.-à-d. affectées à au moins une AUTRE entité administrative « réellement » compétente.\n-- Une autre entité est ignorée si elle a clôturé la requête pour motif « Hors compétence ».\nSELECT\n  COUNT(DISTINCT re_self.\"requeteId\") AS nombre_requetes_competence_partagee\nFROM \"RequeteEntite\" re_self\nJOIN \"Entite\"   e ON e.id = re_self.\"entiteId\"\nJOIN \"Requete\"  r ON r.id = re_self.\"requeteId\"\nWHERE\n  e.label = {{entity_label}}\n  AND EXISTS (\n    -- une autre entité affectée à la même requête...\n    SELECT 1\n    FROM \"RequeteEntite\" re_other\n    WHERE re_other.\"requeteId\" = re_self.\"requeteId\"\n      AND re_other.\"entiteId\" <> re_self.\"entiteId\"\n      -- ...qui n'est PAS clôturée « Hors compétence »\n      AND NOT (\n        re_other.\"statutId\" = 'CLOTUREE'\n        AND EXISTS (\n          SELECT 1\n          FROM \"RequeteEtape\" et\n          JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n          WHERE et.\"requeteId\" = re_other.\"requeteId\"\n            AND et.\"entiteId\"  = re_other.\"entiteId\"\n            AND et.\"statutId\"  = 'CLOTUREE'\n            AND j.\"A\"          = 'HORS_COMPETENCE'\n        )\n      )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                 JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                 WHERE s_lieu.\"requeteId\" = r.id\n                   AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                        OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                       AND {{inclure_eig}} = 'false') ]];",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -3434,6 +3308,7 @@
           }
         ],
         "public_uuid": null,
+        "public_uuid_prefix": null,
         "query_average_duration": null,
         "query_type": "native",
         "result_metadata": null,
@@ -3546,7 +3421,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "-- Carte 52 : « Répartition des requêtes par motif (dernier niveau) »\n-- + ligne « Aucun motif qualifié » pour les requêtes sans motif qualifié.\n-- Une requête peut porter plusieurs motifs : la part est calculée sur le nombre de requêtes\n-- rattachées à cette entité, la somme des parts dépasse donc 100 %.\n-- NB : ne jamais mettre ni apostrophe ni double crochet dans ces commentaires. Metabase les\n-- analyse comme du SQL : une apostrophe isolée ou un bloc optionnel vide fait échouer la carte\n-- sur \"clauses must contain at least one {{...}} clause\".\n-- entity_label = paramètre Metabase Locked, cf. docs/metabase_dashboards/FILTERS.md\nWITH requetes_entite AS (\n  SELECT DISTINCT r.id AS requete_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]]\n),\ntotal AS (\n  SELECT COUNT(*) AS nb_total FROM requetes_entite\n),\n-- MotifEnum ne contient que les feuilles (id = PARENT/ENFANT) ; les libellés des catégories\n-- parentes ne sont pas en base, cf. packages/common/src/constants/motifs.constant.ts\nmotif_parent (code, label) AS (\n  VALUES\n    ('ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES', 'Activités d''esthétique non réglementées'),\n    ('MEDICAMENTS', 'Médicaments'),\n    ('FACTURATIONS_HONORAIRES', 'Facturations et honoraires'),\n    ('HOTELLERIE_LOCAUX_RESTAURATION', 'Hôtellerie locaux restauration'),\n    ('INFORMATIONS_DROITS_USAGERS', 'Informations et droits des usagers'),\n    ('MAUVAISE_ATTITUDE_PROFESSIONNELS', 'Mauvaise attitude des professionnels'),\n    ('PRATIQUE_NON_CONVENTIONNELLE', 'Pratique non conventionnelle'),\n    ('PROBLEMES_ORGANISATION_RESSOURCES_HUMAINES', 'Problèmes d''organisation ou de ressources humaines'),\n    ('QUALITE_ACCOMPAGNEMENT_SERVICE', 'Qualité de l''accompagnement ou du service'),\n    ('QUALITE_SOINS', 'Qualité des soins'),\n    ('DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE', 'Difficulté de recherche d''établissement ou d''un professionnel ou de service'),\n    ('PROBLEMES_ENVIRONNEMENTAUX', 'Problèmes environnementaux'),\n    ('PROBLEMES_TRANSPORT_SANITAIRE', 'Problèmes liés au transport Sanitaire')\n),\n-- Libellés portés par plusieurs motifs du référentiel (« Autres » x8) : à préciser par leur\n-- catégorie parente, sinon deux lignes homonymes sont indiscernables.\nlabel_ambigu AS (\n  SELECT label FROM \"MotifEnum\" GROUP BY label HAVING COUNT(*) > 1\n),\nrequete_motif AS (\n  -- 1 ligne par (requête, motif) : dédoublonne les situations multiples pour une même requête\n  SELECT DISTINCT re.requete_id, m.id AS motif_id, m.label AS motif_label\n  FROM requetes_entite re\n  JOIN \"Situation\" s  ON s.\"requeteId\"    = re.requete_id\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  JOIN \"MotifEnum\" m  ON m.id             = fm.\"motifId\"\n),\npar_motif AS (\n  SELECT\n    CASE\n      WHEN rm.motif_label IN (SELECT label FROM label_ambigu)\n        THEN rm.motif_label || ' (' || COALESCE(mp.label, split_part(rm.motif_id, '/', 1)) || ')'\n      ELSE rm.motif_label\n    END      AS motif,\n    COUNT(*) AS nb_requetes\n  FROM requete_motif rm\n  LEFT JOIN motif_parent mp ON mp.code = split_part(rm.motif_id, '/', 1)\n  GROUP BY rm.motif_id, rm.motif_label, mp.label\n\n  UNION ALL\n\n  SELECT 'Aucun motif qualifié', COUNT(*)\n  FROM requetes_entite re\n  WHERE NOT EXISTS (\n    SELECT 1 FROM requete_motif rm WHERE rm.requete_id = re.requete_id\n  )\n)\nSELECT\n  pm.motif                                                 AS \"Motif (dernier niveau)\",\n  pm.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * pm.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes (%)\"\nFROM par_motif pm\nCROSS JOIN total t\nWHERE pm.nb_requetes > 0\nORDER BY pm.nb_requetes DESC;",
+              "native": "-- Carte 52 : « Répartition des requêtes par motif (dernier niveau) »\n-- + ligne « Aucun motif qualifié » pour les requêtes sans motif qualifié.\n-- Une requête peut porter plusieurs motifs : la part est calculée sur le nombre de requêtes\n-- rattachées à cette entité, la somme des parts dépasse donc 100 %.\n-- NB : ne jamais mettre ni apostrophe ni double crochet dans ces commentaires. Metabase les\n-- analyse comme du SQL : une apostrophe isolée ou un bloc optionnel vide fait échouer la carte\n-- sur \"clauses must contain at least one {{...}} clause\".\n-- entity_label = paramètre Metabase Locked, cf. docs/metabase_dashboards/FILTERS.md\nWITH requetes_entite AS (\n  SELECT DISTINCT r.id AS requete_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                         AND {{inclure_eig}} = 'false') ]]\n),\ntotal AS (\n  SELECT COUNT(*) AS nb_total FROM requetes_entite\n),\n-- MotifEnum ne contient que les feuilles (id = PARENT/ENFANT) ; les libellés des catégories\n-- parentes ne sont pas en base, cf. packages/common/src/constants/motifs.constant.ts\nmotif_parent (code, label) AS (\n  VALUES\n    ('ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES', 'Activités d''esthétique non réglementées'),\n    ('MEDICAMENTS', 'Médicaments'),\n    ('FACTURATIONS_HONORAIRES', 'Facturations et honoraires'),\n    ('HOTELLERIE_LOCAUX_RESTAURATION', 'Hôtellerie locaux restauration'),\n    ('INFORMATIONS_DROITS_USAGERS', 'Informations et droits des usagers'),\n    ('MAUVAISE_ATTITUDE_PROFESSIONNELS', 'Mauvaise attitude des professionnels'),\n    ('PRATIQUE_NON_CONVENTIONNELLE', 'Pratique non conventionnelle'),\n    ('PROBLEMES_ORGANISATION_RESSOURCES_HUMAINES', 'Problèmes d''organisation ou de ressources humaines'),\n    ('QUALITE_ACCOMPAGNEMENT_SERVICE', 'Qualité de l''accompagnement ou du service'),\n    ('QUALITE_SOINS', 'Qualité des soins'),\n    ('DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE', 'Difficulté de recherche d''établissement ou d''un professionnel ou de service'),\n    ('PROBLEMES_ENVIRONNEMENTAUX', 'Problèmes environnementaux'),\n    ('PROBLEMES_TRANSPORT_SANITAIRE', 'Problèmes liés au transport Sanitaire')\n),\n-- Libellés portés par plusieurs motifs du référentiel (« Autres » x8) : à préciser par leur\n-- catégorie parente, sinon deux lignes homonymes sont indiscernables.\nlabel_ambigu AS (\n  SELECT label FROM \"MotifEnum\" GROUP BY label HAVING COUNT(*) > 1\n),\nrequete_motif AS (\n  -- 1 ligne par (requête, motif) : dédoublonne les situations multiples pour une même requête\n  SELECT DISTINCT re.requete_id, m.id AS motif_id, m.label AS motif_label\n  FROM requetes_entite re\n  JOIN \"Situation\" s  ON s.\"requeteId\"    = re.requete_id\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  JOIN \"MotifEnum\" m  ON m.id             = fm.\"motifId\"\n),\npar_motif AS (\n  SELECT\n    CASE\n      WHEN rm.motif_label IN (SELECT label FROM label_ambigu)\n        THEN rm.motif_label || ' (' || COALESCE(mp.label, split_part(rm.motif_id, '/', 1)) || ')'\n      ELSE rm.motif_label\n    END      AS motif,\n    COUNT(*) AS nb_requetes\n  FROM requete_motif rm\n  LEFT JOIN motif_parent mp ON mp.code = split_part(rm.motif_id, '/', 1)\n  GROUP BY rm.motif_id, rm.motif_label, mp.label\n\n  UNION ALL\n\n  SELECT 'Aucun motif qualifié', COUNT(*)\n  FROM requetes_entite re\n  WHERE NOT EXISTS (\n    SELECT 1 FROM requete_motif rm WHERE rm.requete_id = re.requete_id\n  )\n)\nSELECT\n  pm.motif                                                 AS \"Motif (dernier niveau)\",\n  pm.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * pm.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes (%)\"\nFROM par_motif pm\nCROSS JOIN total t\nWHERE pm.nb_requetes > 0\nORDER BY pm.nb_requetes DESC;",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -4105,6 +3980,7 @@
           }
         ],
         "public_uuid": null,
+        "public_uuid_prefix": null,
         "query_average_duration": null,
         "query_type": "native",
         "result_metadata": [
@@ -4112,7 +3988,6 @@
             "base_type": "type/Text",
             "database_type": "text",
             "display_name": "Motif (dernier niveau)",
-            "effective_type": "type/Text",
             "field_ref": [
               "field",
               "Motif (dernier niveau)",
@@ -4120,38 +3995,12 @@
                 "base-type": "type/Text"
               }
             ],
-            "fingerprint": {
-              "global": {
-                "distinct-count": 91,
-                "nil%": 0
-              },
-              "type": {
-                "type/Text": {
-                  "average-length": 45.94505494505494,
-                  "mode-fraction": 0.01098901098901099,
-                  "percent-blank": 0,
-                  "percent-email": 0,
-                  "percent-json": 0,
-                  "percent-state": 0,
-                  "percent-url": 0,
-                  "top-3-fraction": 0.03296703296703297
-                }
-              }
-            },
-            "lib/deduplicated-name": "Motif (dernier niveau)",
-            "lib/desired-column-alias": "Motif (dernier niveau)",
-            "lib/original-name": "Motif (dernier niveau)",
-            "lib/source": "source/native",
-            "lib/source-column-alias": "Motif (dernier niveau)",
-            "name": "Motif (dernier niveau)",
-            "semantic_type": null,
-            "source": "native"
+            "name": "Motif (dernier niveau)"
           },
           {
             "base_type": "type/BigInteger",
             "database_type": "int8",
             "display_name": "Nombre de requêtes",
-            "effective_type": "type/BigInteger",
             "field_ref": [
               "field",
               "Nombre de requêtes",
@@ -4159,41 +4008,12 @@
                 "base-type": "type/BigInteger"
               }
             ],
-            "fingerprint": {
-              "global": {
-                "distinct-count": 72,
-                "nil%": 0
-              },
-              "type": {
-                "type/Number": {
-                  "avg": 343.098901098901,
-                  "excess-kurtosis": 16.434201872072673,
-                  "max": 4211,
-                  "min": 1,
-                  "mode-fraction": 0.03296703296703297,
-                  "q1": 18,
-                  "q3": 347,
-                  "sd": 719.6249031412136,
-                  "skewness": 3.853862205615997,
-                  "top-3-fraction": 0.0989010989010989,
-                  "zero-fraction": 0
-                }
-              }
-            },
-            "lib/deduplicated-name": "Nombre de requêtes",
-            "lib/desired-column-alias": "Nombre de requêtes",
-            "lib/original-name": "Nombre de requêtes",
-            "lib/source": "source/native",
-            "lib/source-column-alias": "Nombre de requêtes",
-            "name": "Nombre de requêtes",
-            "semantic_type": null,
-            "source": "native"
+            "name": "Nombre de requêtes"
           },
           {
             "base_type": "type/Decimal",
             "database_type": "numeric",
             "display_name": "Part des requêtes (%)",
-            "effective_type": "type/Decimal",
             "field_ref": [
               "field",
               "Part des requêtes (%)",
@@ -4201,35 +4021,7 @@
                 "base-type": "type/Decimal"
               }
             ],
-            "fingerprint": {
-              "global": {
-                "distinct-count": 35,
-                "nil%": 0
-              },
-              "type": {
-                "type/Number": {
-                  "avg": 1.971428571428572,
-                  "excess-kurtosis": 16.414249842418283,
-                  "max": 24.2,
-                  "min": 0,
-                  "mode-fraction": 0.15384615384615385,
-                  "q1": 0.1,
-                  "q3": 2,
-                  "sd": 4.139089693648048,
-                  "skewness": 3.8516599269413376,
-                  "top-3-fraction": 0.4065934065934066,
-                  "zero-fraction": 0.1538461538461538
-                }
-              }
-            },
-            "lib/deduplicated-name": "Part des requêtes (%)",
-            "lib/desired-column-alias": "Part des requêtes (%)",
-            "lib/original-name": "Part des requêtes (%)",
-            "lib/source": "source/native",
-            "lib/source-column-alias": "Part des requêtes (%)",
-            "name": "Part des requêtes (%)",
-            "semantic_type": null,
-            "source": "native"
+            "name": "Part des requêtes (%)"
           }
         ],
         "source_card_id": null,
@@ -4347,7 +4139,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "-- Carte : « Répartition des requêtes clôturées par motif de clôture »\n-- Une requête peut avoir plusieurs motifs de clôture : la part est calculée sur le nombre de\n-- requêtes clôturées, la somme des parts dépasse donc 100 %.\nWITH requetes_cloturees AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, re.\"entiteId\" AS entite_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE re.\"statutId\" = 'CLOTUREE'\n    AND e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]]\n),\ntotal AS (\n  SELECT COUNT(*) AS nb_total FROM requetes_cloturees\n),\nrequete_motif AS (\n  -- 1 ligne par (requête, motif) : dédoublonne les étapes de clôture multiples\n  SELECT DISTINCT rc.requete_id, cr.label AS motif\n  FROM requetes_cloturees rc\n  JOIN \"RequeteEtape\" et\n    ON et.\"requeteId\" = rc.requete_id\n   AND et.\"entiteId\"  = rc.entite_id\n   AND et.\"statutId\"  = 'CLOTUREE'\n  JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n  JOIN \"RequeteClotureReasonEnum\" cr               ON cr.id = j.\"A\"\n),\npar_motif AS (\n  SELECT motif, COUNT(*) AS nb_requetes\n  FROM requete_motif\n  GROUP BY motif\n)\nSELECT\n  pm.motif                                                 AS \"Motif de clôture\",\n  pm.nb_requetes                                           AS \"Nombre de requêtes clôturées\",\n  ROUND(100.0 * pm.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes clôturées (%)\"\nFROM par_motif pm\nCROSS JOIN total t\nWHERE pm.nb_requetes > 0\nORDER BY pm.nb_requetes DESC;",
+              "native": "-- Carte : « Répartition des requêtes clôturées par motif de clôture »\n-- Une requête peut avoir plusieurs motifs de clôture : la part est calculée sur le nombre de\n-- requêtes clôturées, la somme des parts dépasse donc 100 %.\nWITH requetes_cloturees AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, re.\"entiteId\" AS entite_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE re.\"statutId\" = 'CLOTUREE'\n    AND e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                         AND {{inclure_eig}} = 'false') ]]\n),\ntotal AS (\n  SELECT COUNT(*) AS nb_total FROM requetes_cloturees\n),\nrequete_motif AS (\n  -- 1 ligne par (requête, motif) : dédoublonne les étapes de clôture multiples\n  SELECT DISTINCT rc.requete_id, cr.label AS motif\n  FROM requetes_cloturees rc\n  JOIN \"RequeteEtape\" et\n    ON et.\"requeteId\" = rc.requete_id\n   AND et.\"entiteId\"  = rc.entite_id\n   AND et.\"statutId\"  = 'CLOTUREE'\n  JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n  JOIN \"RequeteClotureReasonEnum\" cr               ON cr.id = j.\"A\"\n),\npar_motif AS (\n  SELECT motif, COUNT(*) AS nb_requetes\n  FROM requete_motif\n  GROUP BY motif\n)\nSELECT\n  pm.motif                                                 AS \"Motif de clôture\",\n  pm.nb_requetes                                           AS \"Nombre de requêtes clôturées\",\n  ROUND(100.0 * pm.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes clôturées (%)\"\nFROM par_motif pm\nCROSS JOIN total t\nWHERE pm.nb_requetes > 0\nORDER BY pm.nb_requetes DESC;",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -4906,6 +4698,7 @@
           }
         ],
         "public_uuid": null,
+        "public_uuid_prefix": null,
         "query_average_duration": null,
         "query_type": "native",
         "result_metadata": null,
@@ -5027,7 +4820,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "-- Carte : « Répartition des requêtes par mode de réception »\nWITH requetes AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, r.\"receptionTypeId\" AS reception_type_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]]\n),\ntotal AS (SELECT COUNT(*) AS nb_total FROM requetes),\npar_type AS (\n  SELECT COALESCE(rt.label, 'Non précisé') AS mode_reception, COUNT(*) AS nb_requetes\n  FROM requetes q\n  LEFT JOIN \"ReceptionTypeEnum\" rt ON rt.id = q.reception_type_id\n  GROUP BY COALESCE(rt.label, 'Non précisé')\n)\nSELECT\n  pt.mode_reception                                        AS \"Mode de réception\",\n  pt.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * pt.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes (%)\"\nFROM par_type pt\nCROSS JOIN total t\nORDER BY pt.nb_requetes DESC;",
+              "native": "-- Carte : « Répartition des requêtes par mode de réception »\nWITH requetes AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, r.\"receptionTypeId\" AS reception_type_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                         AND {{inclure_eig}} = 'false') ]]\n),\ntotal AS (SELECT COUNT(*) AS nb_total FROM requetes),\npar_type AS (\n  SELECT COALESCE(rt.label, 'Non précisé') AS mode_reception, COUNT(*) AS nb_requetes\n  FROM requetes q\n  LEFT JOIN \"ReceptionTypeEnum\" rt ON rt.id = q.reception_type_id\n  GROUP BY COALESCE(rt.label, 'Non précisé')\n)\nSELECT\n  pt.mode_reception                                        AS \"Mode de réception\",\n  pt.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * pt.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes (%)\"\nFROM par_type pt\nCROSS JOIN total t\nORDER BY pt.nb_requetes DESC;",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -5477,6 +5270,7 @@
           }
         ],
         "public_uuid": null,
+        "public_uuid_prefix": null,
         "query_average_duration": null,
         "query_type": "native",
         "result_metadata": null,
@@ -5587,7 +5381,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "-- Carte : « Demandes de confidentialité »\n-- Requêtes affectées à mon entité dont la personne concernée (participant) n'a PAS\n-- consenti à la communication de son identité (veutGarderAnonymat = true → réponse « Non »).\nSELECT\n  COUNT(*) AS nombre_requetes\nFROM\n  \"RequeteEntite\" re\n  JOIN \"Entite\"  e  ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r  ON r.id = re.\"requeteId\"\n  JOIN \"PersonneConcernee\" pc ON pc.\"participantDeId\" = r.id\nWHERE\n  pc.\"veutGarderAnonymat\" = TRUE\n  [[ AND e.label = {{entity_label}} ]]\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                 JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                 WHERE s_lieu.\"requeteId\" = r.id\n                   AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                        OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                       AND {{inclure_eig}} = 'false') ]];",
+              "native": "-- Carte : « Demandes de confidentialité »\n-- Requêtes affectées à mon entité dont la personne concernée (participant) n'a PAS\n-- consenti à la communication de son identité (veutGarderAnonymat = true → réponse « Non »).\nSELECT\n  COUNT(*) AS nombre_requetes\nFROM\n  \"RequeteEntite\" re\n  JOIN \"Entite\"  e  ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r  ON r.id = re.\"requeteId\"\n  JOIN \"PersonneConcernee\" pc ON pc.\"participantDeId\" = r.id\nWHERE\n  pc.\"veutGarderAnonymat\" = 'OUI'\n  [[ AND e.label = {{entity_label}} ]]\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                 JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                 WHERE s_lieu.\"requeteId\" = r.id\n                   AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                        OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                       AND {{inclure_eig}} = 'false') ]];",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -6037,6 +5831,7 @@
           }
         ],
         "public_uuid": null,
+        "public_uuid_prefix": null,
         "query_average_duration": null,
         "query_type": "native",
         "result_metadata": [
@@ -6044,7 +5839,6 @@
             "base_type": "type/BigInteger",
             "database_type": "int8",
             "display_name": "nombre_requetes",
-            "effective_type": "type/BigInteger",
             "field_ref": [
               "field",
               "nombre_requetes",
@@ -6052,35 +5846,7 @@
                 "base-type": "type/BigInteger"
               }
             ],
-            "fingerprint": {
-              "global": {
-                "distinct-count": 1,
-                "nil%": 0
-              },
-              "type": {
-                "type/Number": {
-                  "avg": 6,
-                  "excess-kurtosis": null,
-                  "max": 6,
-                  "min": 6,
-                  "mode-fraction": 1,
-                  "q1": 6,
-                  "q3": 6,
-                  "sd": 0,
-                  "skewness": null,
-                  "top-3-fraction": 1,
-                  "zero-fraction": 0
-                }
-              }
-            },
-            "lib/deduplicated-name": "nombre_requetes",
-            "lib/desired-column-alias": "nombre_requetes",
-            "lib/original-name": "nombre_requetes",
-            "lib/source": "source/native",
-            "lib/source-column-alias": "nombre_requetes",
-            "name": "nombre_requetes",
-            "semantic_type": null,
-            "source": "native"
+            "name": "nombre_requetes"
           }
         ],
         "source_card_id": null,
@@ -6192,7 +5958,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "-- Carte : « Répartition des requêtes par priorité »\nWITH requetes AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, re.\"prioriteId\" AS priorite_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]]\n),\ntotal AS (SELECT COUNT(*) AS nb_total FROM requetes),\npar_priorite AS (\n  SELECT\n    COALESCE(p.label, 'Aucune priorité') AS priorite,\n    COALESCE(p.\"sortOrder\", 99)          AS tri,\n    COUNT(*)                             AS nb_requetes\n  FROM requetes q\n  LEFT JOIN \"RequetePrioriteEnum\" p ON p.id = q.priorite_id\n  GROUP BY COALESCE(p.label, 'Aucune priorité'), COALESCE(p.\"sortOrder\", 99)\n)\nSELECT\n  pp.priorite                                              AS \"Priorité\",\n  pp.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * pp.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes (%)\"\nFROM par_priorite pp\nCROSS JOIN total t\nORDER BY pp.tri;",
+              "native": "-- Carte : « Répartition des requêtes par priorité »\nWITH requetes AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, re.\"prioriteId\" AS priorite_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                         AND {{inclure_eig}} = 'false') ]]\n),\ntotal AS (SELECT COUNT(*) AS nb_total FROM requetes),\npar_priorite AS (\n  SELECT\n    COALESCE(p.label, 'Aucune priorité') AS priorite,\n    COALESCE(p.\"sortOrder\", 99)          AS tri,\n    COUNT(*)                             AS nb_requetes\n  FROM requetes q\n  LEFT JOIN \"RequetePrioriteEnum\" p ON p.id = q.priorite_id\n  GROUP BY COALESCE(p.label, 'Aucune priorité'), COALESCE(p.\"sortOrder\", 99)\n)\nSELECT\n  pp.priorite                                              AS \"Priorité\",\n  pp.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * pp.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes (%)\"\nFROM par_priorite pp\nCROSS JOIN total t\nORDER BY pp.tri;",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -6642,6 +6408,7 @@
           }
         ],
         "public_uuid": null,
+        "public_uuid_prefix": null,
         "query_average_duration": null,
         "query_type": "native",
         "result_metadata": null,
@@ -6748,7 +6515,7 @@
   "id": 4,
   "is_remote_synced": false,
   "last_used_param_values": {},
-  "last_viewed_at": "2026-08-31T15:32:20.438568Z",
+  "last_viewed_at": "2026-09-10T15:58:49.416474Z",
   "made_public_by_id": null,
   "moderation_reviews": [],
   "name": "[integration] Dashboard local",
@@ -7205,6 +6972,7 @@
   "points_of_interest": null,
   "position": null,
   "public_uuid": null,
+  "public_uuid_prefix": null,
   "show_in_getting_started": false,
   "tabs": [],
   "width": "fixed"

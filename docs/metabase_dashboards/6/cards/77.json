@@ -1,12 +1,11 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 655.8333333333334,
+  "average_query_time": 772.9782608695652,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
   "can_restore": false,
-  "can_run_adhoc_query": true,
   "can_write": true,
   "card_schema": 23,
   "collection": {
@@ -36,7 +35,7 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "-- Requêtes « en compétence partagée » au niveau national :\n-- au moins 2 entités affectées, après avoir exclu les entités\n-- clôturées pour motif « Hors compétence ».\nSELECT\n  COUNT(*) AS nombre_requetes_competence_partagee\nFROM (\n  SELECT r.id\n  FROM \"Requete\" r\n  JOIN \"RequeteEntite\" re ON re.\"requeteId\" = r.id\n  JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n  WHERE NOT (\n    re.\"statutId\" = 'CLOTUREE'\n    AND EXISTS (\n      SELECT 1\n      FROM \"RequeteEtape\" et\n      JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n      WHERE et.\"requeteId\" = re.\"requeteId\"\n        AND et.\"entiteId\"  = re.\"entiteId\"\n        AND et.\"statutId\"  = 'CLOTUREE'\n        AND j.\"A\"          = 'HORS_COMPETENCE'\n    )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                 JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                 WHERE s_lieu.\"requeteId\" = r.id\n                   AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                        OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                       AND {{inclure_eig}} = 'false') ]]\n  GROUP BY r.id\n  HAVING COUNT(DISTINCT re.\"entiteId\") >= 2\n     [[ AND bool_or(e.label = {{entity_label}}) ]]\n) t;",
+        "native": "-- Requêtes « en compétence partagée » au niveau national :\n-- au moins 2 entités affectées, après avoir exclu les entités\n-- clôturées pour motif « Hors compétence ».\nSELECT\n  COUNT(*) AS nombre_requetes_competence_partagee\nFROM (\n  SELECT r.id\n  FROM \"Requete\" r\n  JOIN \"RequeteEntite\" re ON re.\"requeteId\" = r.id\n  JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n  WHERE NOT (\n    re.\"statutId\" = 'CLOTUREE'\n    AND EXISTS (\n      SELECT 1\n      FROM \"RequeteEtape\" et\n      JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n      WHERE et.\"requeteId\" = re.\"requeteId\"\n        AND et.\"entiteId\"  = re.\"entiteId\"\n        AND et.\"statutId\"  = 'CLOTUREE'\n        AND j.\"A\"          = 'HORS_COMPETENCE'\n    )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                 JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                 WHERE s_lieu.\"requeteId\" = r.id\n                   AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                        OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                       AND {{inclure_eig}} = 'false') ]]\n  GROUP BY r.id\n  HAVING COUNT(DISTINCT re.\"entiteId\") >= 2\n     [[ AND bool_or(e.label = {{entity_label}}) ]]\n) t;",
         "template-tags": [
           {
             "display-name": "Start Date",
@@ -92,7 +91,7 @@
   "entity_id": "KSCh9ti0JapmM8pcSof7f",
   "id": 77,
   "is_remote_synced": false,
-  "last_query_start": "2026-08-31T13:07:18.435612Z",
+  "last_query_start": "2026-09-10T16:00:27.816206Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.63.5 (1dca717)",
@@ -489,6 +488,7 @@
     }
   ],
   "public_uuid": null,
+  "public_uuid_prefix": null,
   "query_type": "native",
   "result_metadata": [
     {
@@ -510,13 +510,13 @@
         },
         "type": {
           "type/Number": {
-            "avg": 5327,
+            "avg": 5329,
             "excess-kurtosis": null,
-            "max": 5327,
-            "min": 5327,
+            "max": 5329,
+            "min": 5329,
             "mode-fraction": 1,
-            "q1": 5327,
-            "q3": 5327,
+            "q1": 5329,
+            "q3": 5329,
             "sd": 0,
             "skewness": null,
             "top-3-fraction": 1,

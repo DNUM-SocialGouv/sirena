@@ -1,12 +1,11 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 359.0606989576947,
+  "average_query_time": 482.66476949345474,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
   "can_restore": false,
-  "can_run_adhoc_query": true,
   "can_write": true,
   "card_schema": 23,
   "collection": {
@@ -36,7 +35,7 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "-- Carte : « Répartition des requêtes clôturées par motif de clôture »\n-- Une requête peut avoir plusieurs motifs de clôture : la part est calculée sur le nombre de\n-- requêtes clôturées, la somme des parts dépasse donc 100 %.\nWITH requetes_cloturees AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, re.\"entiteId\" AS entite_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE re.\"statutId\" = 'CLOTUREE'\n    AND e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]]\n),\ntotal AS (\n  SELECT COUNT(*) AS nb_total FROM requetes_cloturees\n),\nrequete_motif AS (\n  -- 1 ligne par (requête, motif) : dédoublonne les étapes de clôture multiples\n  SELECT DISTINCT rc.requete_id, cr.label AS motif\n  FROM requetes_cloturees rc\n  JOIN \"RequeteEtape\" et\n    ON et.\"requeteId\" = rc.requete_id\n   AND et.\"entiteId\"  = rc.entite_id\n   AND et.\"statutId\"  = 'CLOTUREE'\n  JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n  JOIN \"RequeteClotureReasonEnum\" cr               ON cr.id = j.\"A\"\n),\npar_motif AS (\n  SELECT motif, COUNT(*) AS nb_requetes\n  FROM requete_motif\n  GROUP BY motif\n)\nSELECT\n  pm.motif                                                 AS \"Motif de clôture\",\n  pm.nb_requetes                                           AS \"Nombre de requêtes clôturées\",\n  ROUND(100.0 * pm.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes clôturées (%)\"\nFROM par_motif pm\nCROSS JOIN total t\nWHERE pm.nb_requetes > 0\nORDER BY pm.nb_requetes DESC;",
+        "native": "-- Carte : « Répartition des requêtes clôturées par motif de clôture »\n-- Une requête peut avoir plusieurs motifs de clôture : la part est calculée sur le nombre de\n-- requêtes clôturées, la somme des parts dépasse donc 100 %.\nWITH requetes_cloturees AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, re.\"entiteId\" AS entite_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE re.\"statutId\" = 'CLOTUREE'\n    AND e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                         AND {{inclure_eig}} = 'false') ]]\n),\ntotal AS (\n  SELECT COUNT(*) AS nb_total FROM requetes_cloturees\n),\nrequete_motif AS (\n  -- 1 ligne par (requête, motif) : dédoublonne les étapes de clôture multiples\n  SELECT DISTINCT rc.requete_id, cr.label AS motif\n  FROM requetes_cloturees rc\n  JOIN \"RequeteEtape\" et\n    ON et.\"requeteId\" = rc.requete_id\n   AND et.\"entiteId\"  = rc.entite_id\n   AND et.\"statutId\"  = 'CLOTUREE'\n  JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n  JOIN \"RequeteClotureReasonEnum\" cr               ON cr.id = j.\"A\"\n),\npar_motif AS (\n  SELECT motif, COUNT(*) AS nb_requetes\n  FROM requete_motif\n  GROUP BY motif\n)\nSELECT\n  pm.motif                                                 AS \"Motif de clôture\",\n  pm.nb_requetes                                           AS \"Nombre de requêtes clôturées\",\n  ROUND(100.0 * pm.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes clôturées (%)\"\nFROM par_motif pm\nCROSS JOIN total t\nWHERE pm.nb_requetes > 0\nORDER BY pm.nb_requetes DESC;",
         "template-tags": [
           {
             "display-name": "Entity Label",
@@ -92,7 +91,7 @@
   "entity_id": "AhmL1ImfBecTkedR2qyJB",
   "id": 47,
   "is_remote_synced": false,
-  "last_query_start": "2026-08-31T15:32:20.240836Z",
+  "last_query_start": "2026-09-10T15:58:50.914066Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.60.4.4 (65c9d32)",
@@ -598,6 +597,7 @@
     }
   ],
   "public_uuid": null,
+  "public_uuid_prefix": null,
   "query_type": "native",
   "result_metadata": null,
   "source_card_id": null,
