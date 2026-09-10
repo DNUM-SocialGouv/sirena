@@ -58,16 +58,18 @@ const ModalWithTrigger = () => {
   );
 };
 
-const renderWithKnownRecipients = async (otherEntites: NonNullable<Query['data']>['otherEntites'] = [ars]) => {
+const renderWithRecipientQuery = async (otherEntites: NonNullable<Query['data']>['otherEntites'] | null = [ars]) => {
   const actual = await vi.importActual<typeof import('@/hooks/queries/useRequeteDetails')>(
     '@/hooks/queries/useRequeteDetails',
   );
   vi.mocked(useRequeteOtherEntitiesAffected).mockImplementation(actual.useRequeteOtherEntitiesAffected);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
-  queryClient.setQueryData(['requeteOtherEntitiesAffected', 'REQ-354'], {
-    otherEntites,
-    subAdministrativeEntites: [],
-  });
+  if (otherEntites !== null) {
+    queryClient.setQueryData(['requeteOtherEntitiesAffected', 'REQ-354'], {
+      otherEntites,
+      subAdministrativeEntites: [],
+    });
+  }
   return render(
     <QueryClientProvider client={queryClient}>
       <ModalWithTrigger />
@@ -124,10 +126,16 @@ describe('ReopenRequeteModal', () => {
   });
 
   it.each([
-    { state: 'recipient names still loading', isPlaceholderData: true, isError: false, fallback: true },
+    {
+      state: 'recipient names still loading',
+      isPlaceholderData: true,
+      isError: false,
+      fallback: true,
+      message: 'Chargement des entités concernées par le partage…',
+    },
     { state: 'failed retrieval', isPlaceholderData: false, isError: true, fallback: true },
     { state: 'no other affected entity', isPlaceholderData: false, isError: false, fallback: false },
-  ])('keeps reopening available with $state', async ({ isPlaceholderData, isError, fallback }) => {
+  ])('keeps reopening available with $state', async ({ isPlaceholderData, isError, fallback, message }) => {
     setQuery({
       data: { otherEntites: [], subAdministrativeEntites: [] },
       isPlaceholderData,
@@ -137,7 +145,9 @@ describe('ReopenRequeteModal', () => {
 
     if (fallback) {
       expect(
-        screen.getByText('Cette étape sera visible par les autres entités administratives affectées à la requête.'),
+        screen.getByText(
+          message ?? 'Cette étape sera visible par les autres entités administratives affectées à la requête.',
+        ),
       ).toBeInTheDocument();
     } else {
       expect(screen.queryByText(/Cette étape sera visible/)).not.toBeInTheDocument();
@@ -151,6 +161,27 @@ describe('ReopenRequeteModal', () => {
     expect(mutateAsync).toHaveBeenCalledExactlyOnceWith();
   });
 
+  it.each([
+    { outcome: 'recipients are found', otherEntites: [ars], expected: 'Cette étape sera visible par ARS Bretagne.' },
+    { outcome: 'no other entity is affected', otherEntites: [], expected: '' },
+  ])('updates a persistent polite live region after initial loading: $outcome', async ({ otherEntites, expected }) => {
+    const { promise, resolve } = Promise.withResolvers<Awaited<ReturnType<typeof fetchRequeteOtherEntitiesAffected>>>();
+    vi.mocked(fetchRequeteOtherEntitiesAffected).mockReturnValueOnce(promise);
+    await renderWithRecipientQuery(null);
+    await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
+
+    const status = screen.getByRole('status');
+    expect(status).toHaveAttribute('aria-live', 'polite');
+    expect(status).toHaveTextContent('Chargement des entités concernées par le partage…');
+    expect(screen.getByRole('button', { name: 'Rouvrir la requête' })).toBeEnabled();
+
+    resolve({ otherEntites, subAdministrativeEntites: [] });
+
+    await waitFor(() => expect(status.textContent).toBe(expected));
+    expect(screen.getByRole('status')).toBe(status);
+    expect(screen.queryByText('Chargement des entités concernées par le partage…')).not.toBeInTheDocument();
+  });
+
   it('updates the recipients on each opening, including when all other entities have been removed', async () => {
     vi.mocked(fetchRequeteOtherEntitiesAffected)
       .mockResolvedValueOnce({
@@ -158,7 +189,7 @@ describe('ReopenRequeteModal', () => {
         subAdministrativeEntites: [],
       })
       .mockResolvedValueOnce({ otherEntites: [], subAdministrativeEntites: [] });
-    await renderWithKnownRecipients();
+    await renderWithRecipientQuery();
 
     await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
     expect(await screen.findByText('Cette étape sera visible par DDETS du Nord.')).toBeInTheDocument();
@@ -180,7 +211,7 @@ describe('ReopenRequeteModal', () => {
       const { promise, resolve } =
         Promise.withResolvers<Awaited<ReturnType<typeof fetchRequeteOtherEntitiesAffected>>>();
       vi.mocked(fetchRequeteOtherEntitiesAffected).mockReturnValueOnce(promise);
-      await renderWithKnownRecipients(initialNames.map((nomComplet) => ({ ...ars, nomComplet })));
+      await renderWithRecipientQuery(initialNames.map((nomComplet) => ({ ...ars, nomComplet })));
 
       await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
 
@@ -203,13 +234,38 @@ describe('ReopenRequeteModal', () => {
     },
   );
 
-  it('shows generic visibility information offline without blocking confirmation', async () => {
+  it('replaces initial loading with sharing information when retrieval fails, without blocking confirmation', async () => {
+    const { promise, reject } = Promise.withResolvers<Awaited<ReturnType<typeof fetchRequeteOtherEntitiesAffected>>>();
+    vi.mocked(fetchRequeteOtherEntitiesAffected).mockReturnValueOnce(promise);
+    await renderWithRecipientQuery(null);
+    await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
+
+    const status = screen.getByRole('status');
+    expect(status).toHaveTextContent('Chargement des entités concernées par le partage…');
+
+    reject(new Error('recipient retrieval failed'));
+
+    await waitFor(() =>
+      expect(status).toHaveTextContent(
+        'Cette étape sera visible par les autres entités administratives affectées à la requête.',
+      ),
+    );
+    expect(screen.queryByText('Chargement des entités concernées par le partage…')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Rouvrir la requête' }));
+    expect(mutateAsync).toHaveBeenCalledExactlyOnceWith();
+  });
+
+  it.each([
+    { situation: 'before names are available', otherEntites: null },
+    { situation: 'after names have been displayed', otherEntites: [ars] },
+  ])('shows sharing information offline without blocking confirmation: $situation', async ({ otherEntites }) => {
     vi.mocked(fetchRequeteOtherEntitiesAffected).mockReturnValueOnce(new Promise(() => {}));
-    const view = await renderWithKnownRecipients();
     const wasOnline = onlineManager.isOnline();
     onlineManager.setOnline(false);
+    let view: Awaited<ReturnType<typeof renderWithRecipientQuery>> | undefined;
 
     try {
+      view = await renderWithRecipientQuery(otherEntites);
       await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
       expect(
         await screen.findByText(
@@ -223,14 +279,14 @@ describe('ReopenRequeteModal', () => {
       await userEvent.click(submit);
       expect(mutateAsync).toHaveBeenCalledExactlyOnceWith();
     } finally {
-      view.unmount();
+      view?.unmount();
       onlineManager.setOnline(wasOnline);
     }
   });
 
   it('shows generic visibility information when updating the recipients fails, without blocking confirmation', async () => {
     vi.mocked(fetchRequeteOtherEntitiesAffected).mockRejectedValueOnce(new Error('refresh failed'));
-    await renderWithKnownRecipients();
+    await renderWithRecipientQuery();
 
     await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
     expect(

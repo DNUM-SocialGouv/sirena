@@ -28,14 +28,13 @@ export const ReopenRequeteModal = forwardRef<ReopenRequeteModalRef, ReopenRequet
     const recipients = new Intl.ListFormat('fr', { style: 'long', type: 'conjunction' }).format(recipientNames);
 
     const visibilityMessage =
-      otherEntitiesQuery.isPaused ||
-      otherEntitiesQuery.isPlaceholderData ||
-      otherEntitiesQuery.isError ||
-      !otherEntitiesQuery.data
+      otherEntitiesQuery.isPaused || otherEntitiesQuery.isError
         ? 'Cette étape sera visible par les autres entités administratives affectées à la requête.'
-        : recipientNames.length > 0
-          ? `Cette étape sera visible par ${recipients}.`
-          : null;
+        : otherEntitiesQuery.isPlaceholderData || !otherEntitiesQuery.data
+          ? 'Chargement des entités concernées par le partage…'
+          : recipientNames.length > 0
+            ? `Cette étape sera visible par ${recipients}.`
+            : null;
 
     const reopenModal = useMemo(
       () =>
@@ -107,7 +106,9 @@ export const ReopenRequeteModal = forwardRef<ReopenRequeteModalRef, ReopenRequet
           Êtes-vous sûr de vouloir rouvrir cette requête ? La requête repassera au statut « En cours » et sera de
           nouveau modifiable.
         </p>
-        {visibilityMessage ? <p>{visibilityMessage}</p> : null}
+        <div role="status" aria-live="polite" aria-atomic="true">
+          {visibilityMessage ? <p>{visibilityMessage}</p> : null}
+        </div>
         {errorMessage ? (
           <p className="fr-text--sm" style={{ color: 'var(--text-default-error)' }}>
             {errorMessage}
