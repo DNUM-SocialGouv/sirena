@@ -30,7 +30,7 @@ validation se retrouverait sur tous les suivants, et le dashboard de production 
 ressemblerait plus au snapshot du dépôt. En repartant à chaque fois de la même source, une
 erreur reste locale à un environnement et le diff avec le snapshot reste lisible.
 
-L'**ordre de promotion** reste néanmoins : validation → formation → preproduction →
+L'**ordre de déploiement** reste néanmoins : validation → formation → preproduction →
 production. On ne touche pas à la production tant que la copie n'a pas été validée sur les
 environnements précédents.
 
