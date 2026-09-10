@@ -1,4 +1,4 @@
-import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { forwardRef, useRef } from 'react';
@@ -296,29 +296,28 @@ describe('ReopenRequeteModal', () => {
     { situation: 'before names are available', otherEntites: null },
     { situation: 'after names have been displayed', otherEntites: [ars] },
   ])('shows sharing information offline without blocking confirmation: $situation', async ({ otherEntites }) => {
-    vi.mocked(fetchRequeteOtherEntitiesAffected).mockReturnValueOnce(new Promise(() => {}));
-    const wasOnline = onlineManager.isOnline();
-    onlineManager.setOnline(false);
-    let view: Awaited<ReturnType<typeof renderWithRecipientQuery>> | undefined;
+    render(
+      <ReopenRequeteModalView
+        requestId="REQ-354"
+        otherEntitiesQuery={{
+          data: { otherEntites: otherEntites ?? [], subAdministrativeEntites: [] },
+          isPlaceholderData: otherEntites === null,
+          isPaused: true,
+          isError: false,
+        }}
+        onRefreshRecipients={vi.fn()}
+      />,
+    );
 
-    try {
-      view = await renderWithRecipientQuery(otherEntites);
-      await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
-      expect(
-        await screen.findByText(
-          'Cette étape sera visible par les autres entités administratives affectées à la requête.',
-        ),
-      ).toBeInTheDocument();
-      expect(screen.queryByText('Cette étape sera visible par ARS Bretagne.')).not.toBeInTheDocument();
-      const submit = screen.getByRole('button', { name: 'Rouvrir la requête' });
-      expect(submit).toBeEnabled();
-      expect(fetchRequeteOtherEntitiesAffected).not.toHaveBeenCalled();
-      await userEvent.click(submit);
-      expect(mutateAsync).toHaveBeenCalledExactlyOnceWith();
-    } finally {
-      view?.unmount();
-      onlineManager.setOnline(wasOnline);
-    }
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Cette étape sera visible par les autres entités administratives affectées à la requête.',
+    );
+    expect(screen.queryByText('Cette étape sera visible par ARS Bretagne.')).not.toBeInTheDocument();
+    expect(screen.queryByText('Chargement des entités concernées par le partage…')).not.toBeInTheDocument();
+    const submit = screen.getByRole('button', { name: 'Rouvrir la requête' });
+    expect(submit).toBeEnabled();
+    await userEvent.click(submit);
+    expect(mutateAsync).toHaveBeenCalledExactlyOnceWith();
   });
 
   it('shows generic visibility information when updating the recipients fails, without blocking confirmation', async () => {
