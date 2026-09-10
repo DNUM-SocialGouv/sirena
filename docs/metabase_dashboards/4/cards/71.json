@@ -1,12 +1,11 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 521.1981981981982,
+  "average_query_time": 733.8453159041394,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
   "can_restore": false,
-  "can_run_adhoc_query": true,
   "can_write": true,
   "card_schema": 23,
   "collection": {
@@ -36,7 +35,7 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "-- Carte : « Répartition des requêtes par mode de réception »\nWITH requetes AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, r.\"receptionTypeId\" AS reception_type_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]]\n),\ntotal AS (SELECT COUNT(*) AS nb_total FROM requetes),\npar_type AS (\n  SELECT COALESCE(rt.label, 'Non précisé') AS mode_reception, COUNT(*) AS nb_requetes\n  FROM requetes q\n  LEFT JOIN \"ReceptionTypeEnum\" rt ON rt.id = q.reception_type_id\n  GROUP BY COALESCE(rt.label, 'Non précisé')\n)\nSELECT\n  pt.mode_reception                                        AS \"Mode de réception\",\n  pt.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * pt.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes (%)\"\nFROM par_type pt\nCROSS JOIN total t\nORDER BY pt.nb_requetes DESC;",
+        "native": "-- Carte : « Répartition des requêtes par mode de réception »\nWITH requetes AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, r.\"receptionTypeId\" AS reception_type_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                         AND {{inclure_eig}} = 'false') ]]\n),\ntotal AS (SELECT COUNT(*) AS nb_total FROM requetes),\npar_type AS (\n  SELECT COALESCE(rt.label, 'Non précisé') AS mode_reception, COUNT(*) AS nb_requetes\n  FROM requetes q\n  LEFT JOIN \"ReceptionTypeEnum\" rt ON rt.id = q.reception_type_id\n  GROUP BY COALESCE(rt.label, 'Non précisé')\n)\nSELECT\n  pt.mode_reception                                        AS \"Mode de réception\",\n  pt.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * pt.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes (%)\"\nFROM par_type pt\nCROSS JOIN total t\nORDER BY pt.nb_requetes DESC;",
         "template-tags": [
           {
             "display-name": "Entity Label",
@@ -92,7 +91,7 @@
   "entity_id": "pfEguIi5DjK77MqToiTG4",
   "id": 71,
   "is_remote_synced": false,
-  "last_query_start": "2026-08-31T15:32:20.738133Z",
+  "last_query_start": "2026-09-10T15:58:49.713672Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.63.1.2 (b067da1)",
@@ -489,6 +488,7 @@
     }
   ],
   "public_uuid": null,
+  "public_uuid_prefix": null,
   "query_type": "native",
   "result_metadata": null,
   "source_card_id": null,
