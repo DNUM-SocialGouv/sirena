@@ -28,7 +28,6 @@ export const ReopenRequeteModal = forwardRef<ReopenRequeteModalRef, ReopenRequet
     const recipients = new Intl.ListFormat('fr', { style: 'long', type: 'conjunction' }).format(recipientNames);
 
     const visibilityMessage =
-      otherEntitiesQuery.isFetching ||
       otherEntitiesQuery.isPaused ||
       otherEntitiesQuery.isPlaceholderData ||
       otherEntitiesQuery.isError ||

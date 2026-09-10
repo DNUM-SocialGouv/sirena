@@ -58,14 +58,14 @@ const ModalWithTrigger = () => {
   );
 };
 
-const renderWithCachedRecipients = async () => {
+const renderWithKnownRecipients = async (otherEntites: NonNullable<Query['data']>['otherEntites'] = [ars]) => {
   const actual = await vi.importActual<typeof import('@/hooks/queries/useRequeteDetails')>(
     '@/hooks/queries/useRequeteDetails',
   );
   vi.mocked(useRequeteOtherEntitiesAffected).mockImplementation(actual.useRequeteOtherEntitiesAffected);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
   queryClient.setQueryData(['requeteOtherEntitiesAffected', 'REQ-354'], {
-    otherEntites: [ars],
+    otherEntites,
     subAdministrativeEntites: [],
   });
   return render(
@@ -124,7 +124,7 @@ describe('ReopenRequeteModal', () => {
   });
 
   it.each([
-    { state: 'loading with placeholder data', isPlaceholderData: true, isError: false, fallback: true },
+    { state: 'recipient names still loading', isPlaceholderData: true, isError: false, fallback: true },
     { state: 'failed retrieval', isPlaceholderData: false, isError: true, fallback: true },
     { state: 'no other affected entity', isPlaceholderData: false, isError: false, fallback: false },
   ])('keeps reopening available with $state', async ({ isPlaceholderData, isError, fallback }) => {
@@ -151,14 +151,14 @@ describe('ReopenRequeteModal', () => {
     expect(mutateAsync).toHaveBeenCalledExactlyOnceWith();
   });
 
-  it('refreshes cached recipients on every opening using the existing query', async () => {
+  it('updates the recipients on each opening, including when all other entities have been removed', async () => {
     vi.mocked(fetchRequeteOtherEntitiesAffected)
       .mockResolvedValueOnce({
         otherEntites: [{ ...ars, id: 'ddets', nomComplet: 'DDETS du Nord' }],
         subAdministrativeEntites: [],
       })
       .mockResolvedValueOnce({ otherEntites: [], subAdministrativeEntites: [] });
-    await renderWithCachedRecipients();
+    await renderWithKnownRecipients();
 
     await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
     expect(await screen.findByText('Cette étape sera visible par DDETS du Nord.')).toBeInTheDocument();
@@ -171,39 +171,66 @@ describe('ReopenRequeteModal', () => {
   });
 
   it.each([
-    { state: 'pending', online: true, expectedFetches: 1 },
-    { state: 'paused offline', online: false, expectedFetches: 0 },
+    { change: 'a recipient is replaced', initialNames: ['ARS Bretagne'], updatedNames: ['DDETS du Nord'] },
+    { change: 'the first recipient is added', initialNames: [], updatedNames: ['ARS Bretagne'] },
+    { change: 'the last recipient is removed', initialNames: ['ARS Bretagne'], updatedNames: [] },
   ])(
-    'hides cached recipients without blocking reopening when refresh is $state',
-    async ({ online, expectedFetches }) => {
-      vi.mocked(fetchRequeteOtherEntitiesAffected).mockReturnValueOnce(new Promise(() => {}));
-      const view = await renderWithCachedRecipients();
-      const wasOnline = onlineManager.isOnline();
-      onlineManager.setOnline(online);
+    'keeps the visibility message stable until updated names arrive: $change',
+    async ({ initialNames, updatedNames }) => {
+      const { promise, resolve } =
+        Promise.withResolvers<Awaited<ReturnType<typeof fetchRequeteOtherEntitiesAffected>>>();
+      vi.mocked(fetchRequeteOtherEntitiesAffected).mockReturnValueOnce(promise);
+      await renderWithKnownRecipients(initialNames.map((nomComplet) => ({ ...ars, nomComplet })));
 
-      try {
-        await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
-        expect(
-          await screen.findByText(
-            'Cette étape sera visible par les autres entités administratives affectées à la requête.',
-          ),
-        ).toBeInTheDocument();
-        expect(screen.queryByText('Cette étape sera visible par ARS Bretagne.')).not.toBeInTheDocument();
-        const submit = screen.getByRole('button', { name: 'Rouvrir la requête' });
-        expect(submit).toBeEnabled();
-        expect(fetchRequeteOtherEntitiesAffected).toHaveBeenCalledTimes(expectedFetches);
-        await userEvent.click(submit);
-        expect(mutateAsync).toHaveBeenCalledExactlyOnceWith();
-      } finally {
-        view.unmount();
-        onlineManager.setOnline(wasOnline);
-      }
+      await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
+
+      expect(fetchRequeteOtherEntitiesAffected).toHaveBeenCalledOnce();
+      expect(screen.queryByText(/Cette étape sera visible/)?.textContent ?? null).toBe(
+        initialNames.length ? `Cette étape sera visible par ${initialNames[0]}.` : null,
+      );
+      expect(screen.getByRole('button', { name: 'Rouvrir la requête' })).toBeEnabled();
+
+      resolve({
+        otherEntites: updatedNames.map((nomComplet) => ({ ...ars, nomComplet })),
+        subAdministrativeEntites: [],
+      });
+
+      await waitFor(() =>
+        expect(screen.queryByText(/Cette étape sera visible/)?.textContent ?? null).toBe(
+          updatedNames.length ? `Cette étape sera visible par ${updatedNames[0]}.` : null,
+        ),
+      );
     },
   );
 
-  it('keeps the fallback after a failed refresh instead of restoring cached names', async () => {
+  it('shows generic visibility information offline without blocking confirmation', async () => {
+    vi.mocked(fetchRequeteOtherEntitiesAffected).mockReturnValueOnce(new Promise(() => {}));
+    const view = await renderWithKnownRecipients();
+    const wasOnline = onlineManager.isOnline();
+    onlineManager.setOnline(false);
+
+    try {
+      await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
+      expect(
+        await screen.findByText(
+          'Cette étape sera visible par les autres entités administratives affectées à la requête.',
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByText('Cette étape sera visible par ARS Bretagne.')).not.toBeInTheDocument();
+      const submit = screen.getByRole('button', { name: 'Rouvrir la requête' });
+      expect(submit).toBeEnabled();
+      expect(fetchRequeteOtherEntitiesAffected).not.toHaveBeenCalled();
+      await userEvent.click(submit);
+      expect(mutateAsync).toHaveBeenCalledExactlyOnceWith();
+    } finally {
+      view.unmount();
+      onlineManager.setOnline(wasOnline);
+    }
+  });
+
+  it('shows generic visibility information when updating the recipients fails, without blocking confirmation', async () => {
     vi.mocked(fetchRequeteOtherEntitiesAffected).mockRejectedValueOnce(new Error('refresh failed'));
-    await renderWithCachedRecipients();
+    await renderWithKnownRecipients();
 
     await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
     expect(
@@ -259,7 +286,6 @@ describe('ReopenRequeteModal', () => {
       screen.getByText(confirmation).compareDocumentPosition(message) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(message.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(useRequeteOtherEntitiesAffected).toHaveBeenCalledWith('REQ-354');
 
     await userEvent.click(submit);
     expect(mutateAsync).toHaveBeenCalledExactlyOnceWith();
