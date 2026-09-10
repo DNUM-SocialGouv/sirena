@@ -1,5 +1,6 @@
 import { ROLES } from '@sirena/common/constants';
 import { createFileRoute } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import { z } from 'zod';
 import { ConflictResolutionDialog } from '@/components/conflictDialog/ConflictResolutionDialog';
 import { DeclarantForm } from '@/components/declarant/DeclarantForm';
@@ -31,38 +32,29 @@ function RouteComponent() {
   const { requestId } = Route.useParams();
   const requestQuery = useRequeteDetails(requestId);
 
-  const { handleSave, handleConflictResolve, handleConflictCancel, conflicts, showConflictDialog, originalDataRef } =
-    useDeclarantSave({
-      requestId,
-      identiteUpdatedAt: requestQuery.data?.requete?.declarant?.identite?.updatedAt,
-      onRefetch: () => requestQuery.refetch(),
-    });
+  const declarant = requestQuery.data?.requete?.declarant;
+  const formattedData = useMemo(() => (declarant ? formatDeclarantFromServer(declarant) : {}), [declarant]);
+
+  const { handleSave, handleConflictResolve, handleConflictCancel, conflicts, showConflictDialog } = useDeclarantSave({
+    requestId,
+    identiteUpdatedAt: declarant?.identite?.updatedAt,
+    // The edit session opens on the first load, not on the empty placeholder rendered before it.
+    loadedData: declarant ? formattedData : undefined,
+    onRefetch: () => requestQuery.refetch(),
+  });
 
   return (
-    <QueryStateHandler query={requestQuery}>
-      {() => {
-        const request = requestQuery.data;
-        const declarant = request?.requete?.declarant;
-
-        const formattedData = declarant ? formatDeclarantFromServer(declarant) : {};
-
-        originalDataRef.current = formattedData;
-
-        return (
-          <>
-            <DeclarantForm mode="edit" requestId={requestId} initialData={formattedData} onSave={handleSave} />
-            {showConflictDialog && conflicts.length > 0 && (
-              <ConflictResolutionDialog
-                conflicts={conflicts}
-                onResolve={handleConflictResolve}
-                onCancel={handleConflictCancel}
-                isOpen={showConflictDialog}
-                fieldMetadata={declarantFieldMetadata}
-              />
-            )}
-          </>
-        );
-      }}
-    </QueryStateHandler>
+    <>
+      <QueryStateHandler query={requestQuery}>
+        {() => <DeclarantForm mode="edit" requestId={requestId} initialData={formattedData} onSave={handleSave} />}
+      </QueryStateHandler>
+      <ConflictResolutionDialog
+        conflicts={conflicts}
+        onResolve={handleConflictResolve}
+        onCancel={handleConflictCancel}
+        isOpen={showConflictDialog}
+        fieldMetadata={declarantFieldMetadata}
+      />
+    </>
   );
 }

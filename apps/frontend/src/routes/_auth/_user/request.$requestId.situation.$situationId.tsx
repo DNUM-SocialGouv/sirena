@@ -1,7 +1,8 @@
 import { type ReceptionType, ROLES } from '@sirena/common/constants';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
+import { ConflictResolutionDialog } from '@/components/conflictDialog/ConflictResolutionDialog';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { CloseRequeteModal, type CloseRequeteModalRef } from '@/components/requestId/processing/CloseRequeteModal';
 import { SituationForm } from '@/components/situation/SituationForm';
@@ -10,6 +11,7 @@ import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
+import { situationFieldMetadata } from '@/lib/fieldMetadata';
 import { formatSituationFromServer } from '@/lib/situation';
 
 export const Route = createFileRoute('/_auth/_user/request/$requestId/situation/$situationId')({
@@ -47,9 +49,20 @@ function RouteComponent() {
   } | null>(null);
   const [formResetKey] = useState(0);
 
-  const { handleSave: performSave } = useSituationSave({
+  const situation = requestQuery.data?.requete?.situations?.find((s) => s.id === situationId);
+  const formattedData = useMemo(() => formatSituationFromServer(situation), [situation]);
+
+  const {
+    handleSave: performSave,
+    handleConflictResolve,
+    handleConflictCancel,
+    conflicts,
+    showConflictDialog,
+  } = useSituationSave({
     requestId,
     situationId,
+    situationUpdatedAt: situation?.updatedAt,
+    loadedData: situation ? formattedData : undefined,
     onRefetch: () => requestQuery.refetch(),
     onSuccess: (result) => {
       if (result.shouldCloseRequeteStatus?.willUserBeUnassignedAfterSave) {
@@ -80,43 +93,47 @@ function RouteComponent() {
   }, []);
 
   return (
-    <QueryStateHandler query={requestQuery}>
-      {({ data }) => {
-        const request = data;
-        const situations = request?.requete?.situations ?? [];
+    <>
+      <QueryStateHandler query={requestQuery}>
+        {({ data }) => {
+          const receptionTypeId = data?.requete.receptionTypeId as ReceptionType | undefined;
 
-        const situation = situations.find((s) => s.id === situationId);
-        const receptionTypeId = data?.requete.receptionTypeId as ReceptionType | undefined;
-
-        const formattedData = formatSituationFromServer(situation);
-
-        return (
-          <>
-            <SituationForm
-              key={formResetKey}
-              mode="edit"
-              requestId={requestId}
-              situationId={situationId}
-              initialData={formattedData}
-              receptionType={receptionTypeId}
-              isFromSirec={data?.requete.sirecId != null}
-              sirecDepartement={situation?.sirecDepartement}
-              onSave={performSave}
-              saveButtonRef={saveButtonRef}
-            />
-            <CloseRequeteModal
-              ref={closeRequeteModalRef}
-              requestId={requestId}
-              otherEntitiesAffected={shouldCloseRequeteStatus?.otherEntitiesAffected ?? []}
-              triggerButtonRef={saveButtonRef}
-              onBeforeClose={handleBeforeClose}
-              onCancel={handleCloseModalCancel}
-              onSuccess={handleCloseModalSuccess}
-              onDismiss={handleModalDismiss}
-            />
-          </>
-        );
-      }}
-    </QueryStateHandler>
+          return (
+            <>
+              <SituationForm
+                key={formResetKey}
+                mode="edit"
+                requestId={requestId}
+                situationId={situationId}
+                initialData={formattedData}
+                receptionType={receptionTypeId}
+                isFromSirec={data?.requete.sirecId != null}
+                sirecDepartement={situation?.sirecDepartement}
+                onSave={performSave}
+                saveButtonRef={saveButtonRef}
+              />
+              <CloseRequeteModal
+                ref={closeRequeteModalRef}
+                requestId={requestId}
+                otherEntitiesAffected={shouldCloseRequeteStatus?.otherEntitiesAffected ?? []}
+                triggerButtonRef={saveButtonRef}
+                onBeforeClose={handleBeforeClose}
+                onCancel={handleCloseModalCancel}
+                onSuccess={handleCloseModalSuccess}
+                onDismiss={handleModalDismiss}
+              />
+            </>
+          );
+        }}
+      </QueryStateHandler>
+      {/* Mounted outside the query gate: an arbitration must survive a refetch that briefly hides the form. */}
+      <ConflictResolutionDialog
+        conflicts={conflicts}
+        onResolve={handleConflictResolve}
+        onCancel={handleConflictCancel}
+        isOpen={showConflictDialog}
+        fieldMetadata={situationFieldMetadata}
+      />
+    </>
   );
 }
