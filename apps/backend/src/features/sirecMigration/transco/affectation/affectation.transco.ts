@@ -4,6 +4,7 @@ import { SirecTranscoError } from '../sirecTransco.error.js';
 import { AFFECTATION_ENTITES_BOURGOGNE_FRANCHE_COMTE } from './entitesBourgogneFrancheComte.js';
 import { AFFECTATION_ENTITES_BRETAGNE } from './entitesBretagne.js';
 import { AFFECTATION_ENTITES_CENTRE_VAL_DE_LOIRE } from './entitesCentreValDeLoire.js';
+import { AFFECTATION_ENTITES_CORSE } from './entitesCorse.js';
 import { AFFECTATION_ENTITES_GRAND_EST } from './entitesGrandEst.js';
 import { AFFECTATION_ENTITES_GUADELOUPE } from './entitesGuadeloupe.js';
 import { AFFECTATION_ENTITES_HAUTS_DE_FRANCE } from './entitesHautsDeFrance.js';
@@ -35,6 +36,7 @@ const ALL_AFFECTATION_ENTITES = {
   ...AFFECTATION_ENTITES_PACA,
   ...AFFECTATION_ENTITES_BRETAGNE,
   ...AFFECTATION_ENTITES_HAUTS_DE_FRANCE,
+  ...AFFECTATION_ENTITES_CORSE,
 };
 
 export function getAffectationLabel(sirecId: number | null): string | null {
