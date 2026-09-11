@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CsvHeaderError, parseCsvLine, resolveColumns } from './csv.js';
+import { CsvHeaderError, parseCsvLine, readCsvRows, resolveColumns } from './csv.js';
 
 describe('parseCsvLine', () => {
   it('should split plain fields on the delimiter', () => {
@@ -57,5 +57,71 @@ describe('resolveColumns', () => {
 
   it('should throw when the payload is not the expected CSV at all', () => {
     expect(() => resolveColumns(['<!DOCTYPE html>'], ['COM_CODE'])).toThrow(CsvHeaderError);
+  });
+});
+
+describe('readCsvRows', () => {
+  const asLines = async function* (lines: string[]) {
+    for (const line of lines) {
+      yield line;
+    }
+  };
+
+  const options = { label: 'Référentiel', delimiter: ';', columns: ['CODE', 'LIB'] as const };
+
+  const readAll = async (
+    lines: string[],
+    onRow: (field: (column: 'CODE' | 'LIB') => string) => boolean = () => true,
+  ) => {
+    const rows: Array<Record<string, string>> = [];
+    const stats = await readCsvRows(asLines(lines), options, (field) => {
+      rows.push({ CODE: field('CODE'), LIB: field('LIB') });
+      return onRow(field);
+    });
+    return { rows, stats };
+  };
+
+  it('should read every data row by column name, whatever the header order', async () => {
+    const { rows, stats } = await readAll(['LIB;DATE;CODE', 'Ain;2026;01', 'Aisne;2026;02']);
+
+    expect(rows).toEqual([
+      { CODE: '01', LIB: 'Ain' },
+      { CODE: '02', LIB: 'Aisne' },
+    ]);
+    expect(stats).toEqual({ totalRows: 2, malformedRows: 0 });
+  });
+
+  it('should trim the fields it hands over', async () => {
+    const { rows } = await readAll(['CODE;LIB', ' 01 ; Ain ']);
+
+    expect(rows).toEqual([{ CODE: '01', LIB: 'Ain' }]);
+  });
+
+  it('should count a row whose column count differs from the header without reading it', async () => {
+    const { rows, stats } = await readAll(['CODE;LIB', '01;Ain', '02']);
+
+    expect(rows).toEqual([{ CODE: '01', LIB: 'Ain' }]);
+    expect(stats).toEqual({ totalRows: 2, malformedRows: 1 });
+  });
+
+  it('should count a row the caller declares unusable', async () => {
+    const { stats } = await readAll(['CODE;LIB', '01;Ain', '02;Aisne'], (field) => field('CODE') !== '02');
+
+    expect(stats).toEqual({ totalRows: 2, malformedRows: 1 });
+  });
+
+  it('should ignore blank lines', async () => {
+    const { rows, stats } = await readAll(['CODE;LIB', '01;Ain', '', '   ']);
+
+    expect(rows).toHaveLength(1);
+    expect(stats.totalRows).toBe(1);
+  });
+
+  it('should throw when an expected column is missing from the header', async () => {
+    await expect(readAll(['CODE;DATE', '01;2026'])).rejects.toThrow(CsvHeaderError);
+  });
+
+  it('should throw a labelled error when the payload holds no header at all', async () => {
+    await expect(readAll([])).rejects.toThrow(/Référentiel vide : aucun en-tête/);
   });
 });

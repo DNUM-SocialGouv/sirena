@@ -67,3 +67,67 @@ export const resolveColumns = <K extends string>(header: string[], names: readon
 
   return indexes;
 };
+
+export type CsvReadStats = {
+  totalRows: number;
+  malformedRows: number;
+};
+
+type ReadCsvRowsOptions<K extends string> = {
+  /** Désigne la source dans les messages d'erreur. */
+  label: string;
+  delimiter: string;
+  columns: readonly K[];
+};
+
+/**
+ * Parcourt un CSV ligne à ligne et confie chaque ligne de données à `onRow`.
+ *
+ * L'en-tête est résolu sur la première ligne, les lignes vides sont ignorées, et une ligne
+ * dont le nombre de champs diffère de l'en-tête est comptée comme illisible sans atteindre
+ * `onRow`. Celui-ci lit les champs par nom de colonne, déjà détourés, et renvoie `false`
+ * pour signaler une ligne qu'il juge à son tour inexploitable — un code de commune vide,
+ * par exemple — qui rejoint alors le même compteur.
+ */
+export const readCsvRows = async <K extends string>(
+  lines: AsyncIterable<string>,
+  options: ReadCsvRowsOptions<K>,
+  onRow: (field: (column: K) => string) => boolean,
+): Promise<CsvReadStats> => {
+  let columns: Record<K, number> | null = null;
+  let headerLength = 0;
+  let totalRows = 0;
+  let malformedRows = 0;
+
+  for await (const line of lines) {
+    const fields = parseCsvLine(line, options.delimiter);
+
+    if (!columns) {
+      columns = resolveColumns(fields, options.columns);
+      headerLength = fields.length;
+      continue;
+    }
+
+    if (line.trim() === '') {
+      continue;
+    }
+
+    totalRows++;
+
+    if (fields.length !== headerLength) {
+      malformedRows++;
+      continue;
+    }
+
+    const indexes = columns;
+    if (!onRow((column) => fields[indexes[column]].trim())) {
+      malformedRows++;
+    }
+  }
+
+  if (!columns) {
+    throw new CsvHeaderError(`${options.label} vide : aucun en-tête trouvé`);
+  }
+
+  return { totalRows, malformedRows };
+};

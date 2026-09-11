@@ -1,4 +1,4 @@
-import { parseCsvLine, resolveColumns } from '../../helpers/csv.js';
+import { readCsvRows } from '../../helpers/csv.js';
 import {
   COMMUNE_COLUMNS,
   COMMUNE_DELIMITER,
@@ -10,10 +10,7 @@ import type { CommuneRow, InseePostalRow, ParsedCommunes, ParsedInseePostal } fr
 /** Clé d'unicité de la table `InseePostal`. */
 export const inseePostalKey = (codeInsee: string, codePostal: string) => `${codeInsee}|${codePostal}`;
 
-const emptyToNull = (value: string | undefined) => {
-  const trimmed = value?.trim() ?? '';
-  return trimmed === '' ? null : trimmed;
-};
+const emptyToNull = (value: string) => (value === '' ? null : value);
 
 /**
  * Construit le référentiel des communes à partir du CSV t_geo_com.
@@ -25,50 +22,33 @@ const emptyToNull = (value: string | undefined) => {
  */
 export const parseCommunes = async (lines: AsyncIterable<string>): Promise<ParsedCommunes> => {
   const rows = new Map<string, CommuneRow>();
-  let columns: Record<(typeof COMMUNE_COLUMNS)[number], number> | null = null;
-  let headerLength = 0;
-  let malformedRows = 0;
-  let totalRows = 0;
 
-  for await (const line of lines) {
-    const fields = parseCsvLine(line, COMMUNE_DELIMITER);
+  const stats = await readCsvRows(
+    lines,
+    { label: 'Référentiel des communes', delimiter: COMMUNE_DELIMITER, columns: COMMUNE_COLUMNS },
+    (field) => {
+      const comCode = field('COM_CODE');
+      if (!comCode) {
+        return false;
+      }
 
-    if (!columns) {
-      columns = resolveColumns(fields, COMMUNE_COLUMNS);
-      headerLength = fields.length;
-      continue;
-    }
+      rows.set(comCode, {
+        comCode,
+        comLib: field('COM_LIB'),
+        metomerLib: field('METOMER_LIB'),
+        ctcdCodeActuel: field('CTCD_CODE_ACTUEL'),
+        ctcdLibActuel: field('CTCD_LIB_ACTUEL'),
+        dptCodeActuel: field('DPT_CODE_ACTUEL'),
+        dptLibActuel: field('DPT_LIB_ACTUEL'),
+        regCodeActuel: field('REG_CODE_ACTUEL'),
+        regLibActuel: field('REG_LIB_ACTUEL'),
+      });
 
-    if (line.trim() === '') {
-      continue;
-    }
+      return true;
+    },
+  );
 
-    totalRows++;
-
-    const comCode = fields[columns.COM_CODE]?.trim();
-    if (fields.length !== headerLength || !comCode) {
-      malformedRows++;
-      continue;
-    }
-
-    rows.set(comCode, {
-      comCode,
-      comLib: fields[columns.COM_LIB].trim(),
-      metomerLib: fields[columns.METOMER_LIB].trim(),
-      ctcdCodeActuel: fields[columns.CTCD_CODE_ACTUEL].trim(),
-      ctcdLibActuel: fields[columns.CTCD_LIB_ACTUEL].trim(),
-      dptCodeActuel: fields[columns.DPT_CODE_ACTUEL].trim(),
-      dptLibActuel: fields[columns.DPT_LIB_ACTUEL].trim(),
-      regCodeActuel: fields[columns.REG_CODE_ACTUEL].trim(),
-      regLibActuel: fields[columns.REG_LIB_ACTUEL].trim(),
-    });
-  }
-
-  if (!columns) {
-    throw new Error('Référentiel des communes vide : aucun en-tête trouvé');
-  }
-
-  return { rows, malformedRows, totalRows };
+  return { rows, ...stats };
 };
 
 /**
@@ -86,59 +66,42 @@ export const parseInseePostal = async (
   knownComCodes: ReadonlySet<string>,
 ): Promise<ParsedInseePostal> => {
   const rows = new Map<string, InseePostalRow>();
-  let columns: Record<(typeof INSEE_POSTAL_COLUMNS)[number], number> | null = null;
-  let headerLength = 0;
-  let malformedRows = 0;
   let duplicateRows = 0;
   let orphanRows = 0;
-  let totalRows = 0;
 
-  for await (const line of lines) {
-    const fields = parseCsvLine(line, INSEE_POSTAL_DELIMITER);
+  const stats = await readCsvRows(
+    lines,
+    { label: 'Référentiel des codes postaux', delimiter: INSEE_POSTAL_DELIMITER, columns: INSEE_POSTAL_COLUMNS },
+    (field) => {
+      const codeInsee = field('#Code_commune_INSEE');
+      const codePostal = field('Code_postal');
 
-    if (!columns) {
-      columns = resolveColumns(fields, INSEE_POSTAL_COLUMNS);
-      headerLength = fields.length;
-      continue;
-    }
+      if (!codeInsee || !codePostal) {
+        return false;
+      }
 
-    if (line.trim() === '') {
-      continue;
-    }
+      if (!knownComCodes.has(codeInsee)) {
+        orphanRows++;
+        return true;
+      }
 
-    totalRows++;
+      const key = inseePostalKey(codeInsee, codePostal);
+      if (rows.has(key)) {
+        duplicateRows++;
+        return true;
+      }
 
-    const codeInsee = fields[columns['#Code_commune_INSEE']]?.trim();
-    const codePostal = fields[columns.Code_postal]?.trim();
+      rows.set(key, {
+        codeInsee,
+        codePostal,
+        nomCommune: field('Nom_de_la_commune'),
+        libelleAcheminement: emptyToNull(field('Libellé_d_acheminement')),
+        ligne5: emptyToNull(field('Ligne_5')),
+      });
 
-    if (fields.length !== headerLength || !codeInsee || !codePostal) {
-      malformedRows++;
-      continue;
-    }
+      return true;
+    },
+  );
 
-    if (!knownComCodes.has(codeInsee)) {
-      orphanRows++;
-      continue;
-    }
-
-    const key = inseePostalKey(codeInsee, codePostal);
-    if (rows.has(key)) {
-      duplicateRows++;
-      continue;
-    }
-
-    rows.set(key, {
-      codeInsee,
-      codePostal,
-      nomCommune: fields[columns.Nom_de_la_commune].trim(),
-      libelleAcheminement: emptyToNull(fields[columns['Libellé_d_acheminement']]),
-      ligne5: emptyToNull(fields[columns.Ligne_5]),
-    });
-  }
-
-  if (!columns) {
-    throw new Error('Référentiel des codes postaux vide : aucun en-tête trouvé');
-  }
-
-  return { rows, malformedRows, duplicateRows, orphanRows, totalRows };
+  return { rows, duplicateRows, orphanRows, ...stats };
 };
