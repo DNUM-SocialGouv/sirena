@@ -1030,6 +1030,83 @@ describe('RequeteEtapes.service.ts', () => {
       );
     });
 
+    it('shows a shared reopening to another affected perimeter with owner attribution and no edit rights', async () => {
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
+        {
+          ...requeteEtapeWithNotesAndFiles,
+          id: 'shared-reopening',
+          type: REQUETE_ETAPE_TYPES.REOPEN,
+          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          estPartagee: true,
+        },
+      ]);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
+      vi.mocked(prisma.requeteEntite.count).mockResolvedValueOnce(2);
+
+      const result = await getRequeteEtapes('requeteId', 'reader-entite', {}, true);
+
+      expect(result.data).toMatchObject([
+        {
+          id: 'shared-reopening',
+          type: REQUETE_ETAPE_TYPES.REOPEN,
+          estPartagee: true,
+          attributedEntiteAdministrative: {
+            id: 'entiteId',
+            nomComplet: 'ARS Normandie',
+            entiteTypeId: 'ARS',
+          },
+          editable: false,
+          canOnlyEditNotes: false,
+        },
+      ]);
+      expect(result.total).toBe(1);
+      // Current affectation is required, regardless of treatment status. No type-based historical fallback.
+      const where = {
+        requeteId: 'requeteId',
+        requete: { requeteEntites: { some: { entiteId: 'reader-entite' } } },
+        OR: [{ entiteId: 'reader-entite' }, { estPartagee: true }],
+      };
+      expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith(expect.objectContaining({ where }));
+    });
+
+    it.each([false, true])(
+      'preserves historical private reopenings in the owner chronology with sharing flag=%s',
+      async (flag) => {
+        vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([
+          {
+            ...requeteEtapeWithNotesAndFiles,
+            id: 'historical-private-reopening',
+            type: REQUETE_ETAPE_TYPES.REOPEN,
+            statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+            estPartagee: false,
+          },
+        ]);
+        vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
+        vi.mocked(prisma.requeteEntite.count).mockResolvedValueOnce(2);
+
+        const result = await getRequeteEtapes('requeteId', 'entiteId', {}, flag);
+
+        expect(result.data).toMatchObject([
+          {
+            id: 'historical-private-reopening',
+            estPartagee: false,
+            editable: false,
+            canOnlyEditNotes: false,
+          },
+        ]);
+        expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: {
+              requeteId: 'requeteId',
+              requete: { requeteEntites: { some: { entiteId: 'entiteId' } } },
+              ...(flag ? { OR: [{ entiteId: 'entiteId' }, { estPartagee: true }] } : { entiteId: 'entiteId' }),
+            },
+          }),
+        );
+        expect(prisma.requeteEtape.update).not.toHaveBeenCalled();
+      },
+    );
+
     it('exposes current multi-entity metadata and each owner Entité administrative identity', async () => {
       const foreignEtapePartagee = {
         ...requeteEtapeWithNotesAndFiles,

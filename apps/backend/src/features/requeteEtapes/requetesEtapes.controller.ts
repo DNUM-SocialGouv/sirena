@@ -425,7 +425,7 @@ const app = factoryWithLogs
       throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
-    if (!requeteEtapeAuthorization.canWrite(topEntiteId, requeteEtape)) {
+    if (!requeteEtapeAuthorization.canAddClotureFiles(topEntiteId, requeteEtape)) {
       throwHTTPException403Forbidden('You are not allowed to add files to this requete etape', {
         res: c.res,
         kind: ERROR_KIND.BUSINESS,
