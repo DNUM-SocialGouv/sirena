@@ -1,4 +1,7 @@
 import { fr } from '@codegouvfr/react-dsfr';
+import { REPONSE_OUI_NON } from '@sirena/common/constants';
+import type { ReponseOuiNonValue } from '@sirena/common/schemas';
+import { REPONSE_NON_RENSEIGNE_LABEL } from '@sirena/common/utils';
 import type { JSX } from 'react/jsx-runtime';
 
 export const capitalizeFirst = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
@@ -53,8 +56,8 @@ export const ContactInfo = ({
   </div>
 );
 
-export const renderConsentIdentite = (veutGarderAnonymat: boolean) => {
-  if (veutGarderAnonymat) {
+export const renderConsentIdentite = (veutGarderAnonymat: ReponseOuiNonValue) => {
+  if (veutGarderAnonymat === REPONSE_OUI_NON.OUI) {
     return (
       <>
         Il/elle <strong>ne</strong> consent <strong>pas</strong> à ce que son identité soit communiquée
@@ -62,7 +65,11 @@ export const renderConsentIdentite = (veutGarderAnonymat: boolean) => {
     );
   }
 
-  return 'Il/elle consent à ce que son identité soit communiquée';
+  if (veutGarderAnonymat === REPONSE_OUI_NON.NON) {
+    return 'Il/elle consent à ce que son identité soit communiquée';
+  }
+
+  return `Consentement à ce que son identité soit communiquée : ${REPONSE_NON_RENSEIGNE_LABEL}`;
 };
 interface SectionTitleProps {
   children: React.ReactNode;
