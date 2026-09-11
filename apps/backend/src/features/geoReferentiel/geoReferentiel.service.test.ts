@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildEntiteCoverageReport } from './geoReferentiel.coverage.js';
 import { parseCommunes, parseInseePostal } from './geoReferentiel.parser.js';
 import {
-  countPendingDeletions,
+  applyGeoReferentiel,
+  diffCommunes,
+  diffInseePostal,
   loadExistingCommunes,
   loadExistingInseePostal,
-  writeCommunes,
-  writeInseePostal,
 } from './geoReferentiel.repository.js';
 import { GeoReferentielGuardError, syncGeoReferentiel } from './geoReferentiel.service.js';
 import type { CommuneRow, InseePostalRow } from './geoReferentiel.type.js';
@@ -27,43 +27,49 @@ vi.mock('./geoReferentiel.parser.js', () => ({ parseCommunes: vi.fn(), parseInse
 vi.mock('./geoReferentiel.repository.js', () => ({
   loadExistingCommunes: vi.fn(),
   loadExistingInseePostal: vi.fn(),
-  writeCommunes: vi.fn(),
-  writeInseePostal: vi.fn(),
-  countPendingDeletions: vi.fn(),
+  diffCommunes: vi.fn(),
+  diffInseePostal: vi.fn(),
+  applyGeoReferentiel: vi.fn(),
 }));
 vi.mock('./geoReferentiel.coverage.js', () => ({ buildEntiteCoverageReport: vi.fn() }));
+
+const communeOf = (comCode: string): CommuneRow => ({
+  comCode,
+  comLib: 'Commune',
+  metomerLib: 'Métropole',
+  ctcdCodeActuel: '01D',
+  ctcdLibActuel: 'CD',
+  dptCodeActuel: '01',
+  dptLibActuel: 'Ain',
+  regCodeActuel: '84',
+  regLibActuel: 'ARA',
+});
+
+const postalOf = (codeInsee: string): InseePostalRow => ({
+  codeInsee,
+  codePostal: '01400',
+  nomCommune: 'COMMUNE',
+  libelleAcheminement: null,
+  ligne5: null,
+});
 
 const communeRows = (count: number) =>
   new Map<string, CommuneRow>(
     Array.from({ length: count }, (_, i) => {
       const comCode = String(i).padStart(5, '0');
-      return [
-        comCode,
-        {
-          comCode,
-          comLib: 'Commune',
-          metomerLib: 'Métropole',
-          ctcdCodeActuel: '01D',
-          ctcdLibActuel: 'CD',
-          dptCodeActuel: '01',
-          dptLibActuel: 'Ain',
-          regCodeActuel: '84',
-          regLibActuel: 'ARA',
-        },
-      ];
+      return [comCode, communeOf(comCode)];
     }),
   );
 
 const postalRows = (count: number) =>
   new Map<string, InseePostalRow>(
     Array.from({ length: count }, (_, i) => {
-      const key = String(i).padStart(5, '0');
-      return [
-        `${key}|01400`,
-        { codeInsee: key, codePostal: '01400', nomCommune: 'COMMUNE', libelleAcheminement: null, ligne5: null },
-      ];
+      const codeInsee = String(i).padStart(5, '0');
+      return [`${codeInsee}|01400`, postalOf(codeInsee)];
     }),
   );
+
+const fill = <T>(count: number, value: T) => Array.from({ length: count }, () => value);
 
 const givenSources = (
   communeCount = 36_000,
@@ -84,14 +90,27 @@ const givenSources = (
   });
 };
 
+const givenCommuneDiff = ({ created = 10, updated = 2, orphans = 0 } = {}) =>
+  vi.mocked(diffCommunes).mockReturnValue({
+    toCreate: fill(created, communeOf('01001')),
+    toUpdate: fill(updated, communeOf('01002')),
+    orphans,
+  });
+
+const givenPostalDiff = ({ created = 5, updated = 1, deletions = 0 } = {}) =>
+  vi.mocked(diffInseePostal).mockReturnValue({
+    toCreate: fill(created, postalOf('01003')),
+    toUpdate: fill(updated, { id: 'a', row: postalOf('01001') }),
+    idsToDelete: fill(deletions, 'b'),
+  });
+
 beforeEach(() => {
   vi.clearAllMocks();
   givenSources();
+  givenCommuneDiff();
+  givenPostalDiff();
   vi.mocked(loadExistingCommunes).mockResolvedValue(new Map());
   vi.mocked(loadExistingInseePostal).mockResolvedValue(new Map());
-  vi.mocked(countPendingDeletions).mockReturnValue(0);
-  vi.mocked(writeCommunes).mockResolvedValue({ created: 10, updated: 2, deleted: 0, orphans: 0 });
-  vi.mocked(writeInseePostal).mockResolvedValue({ created: 5, updated: 1, deleted: 0 });
   vi.mocked(buildEntiteCoverageReport).mockResolvedValue({
     territoiresCount: 111,
     missingCdCount: 0,
@@ -105,8 +124,8 @@ describe('syncGeoReferentiel', () => {
     const result = await syncGeoReferentiel();
 
     expect(result).toMatchObject({
-      communes: { created: 10, updated: 2 },
-      inseePostal: { created: 5, updated: 1 },
+      communes: { created: 10, updated: 2, deleted: 0 },
+      inseePostal: { created: 5, updated: 1, deleted: 0 },
       duplicateRows: 3_681,
       orphanPostalRows: 1,
       deletionsSkipped: false,
@@ -124,29 +143,28 @@ describe('syncGeoReferentiel', () => {
     givenSources(1_000);
 
     await expect(syncGeoReferentiel()).rejects.toThrow(GeoReferentielGuardError);
-    expect(writeCommunes).not.toHaveBeenCalled();
-    expect(writeInseePostal).not.toHaveBeenCalled();
+    expect(applyGeoReferentiel).not.toHaveBeenCalled();
   });
 
   it('should refuse a truncated postal file without writing anything', async () => {
     givenSources(36_000, 100);
 
     await expect(syncGeoReferentiel()).rejects.toThrow(/codes postaux tronqué/);
-    expect(writeCommunes).not.toHaveBeenCalled();
+    expect(applyGeoReferentiel).not.toHaveBeenCalled();
   });
 
   it('should refuse a file whose malformed rows exceed the tolerance', async () => {
     givenSources(36_000, 35_000, { malformedCommunes: 500 });
 
     await expect(syncGeoReferentiel()).rejects.toThrow(/illisibles/);
-    expect(writeCommunes).not.toHaveBeenCalled();
+    expect(applyGeoReferentiel).not.toHaveBeenCalled();
   });
 
   it('should refuse desynchronised sources revealed by orphan postal codes', async () => {
     givenSources(36_000, 35_000, { orphanRows: 5_000 });
 
     await expect(syncGeoReferentiel()).rejects.toThrow(/commune inconnue/);
-    expect(writeCommunes).not.toHaveBeenCalled();
+    expect(applyGeoReferentiel).not.toHaveBeenCalled();
   });
 
   it('should tolerate the single known orphan, Monaco', async () => {
@@ -155,59 +173,69 @@ describe('syncGeoReferentiel', () => {
     await expect(syncGeoReferentiel()).resolves.toMatchObject({ orphanPostalRows: 1 });
   });
 
+  it('should apply both diffs in one go', async () => {
+    await syncGeoReferentiel();
+
+    expect(applyGeoReferentiel).toHaveBeenCalledTimes(1);
+    expect(applyGeoReferentiel).toHaveBeenCalledWith(
+      vi.mocked(diffCommunes).mock.results[0].value,
+      vi.mocked(diffInseePostal).mock.results[0].value,
+      { applyDeletions: true },
+    );
+  });
+
   it('should skip deletions when they are massive, while still applying additions', async () => {
     vi.mocked(loadExistingInseePostal).mockResolvedValue(new Map(postalRows(35_000).entries()) as never);
-    vi.mocked(countPendingDeletions).mockReturnValue(10_000);
+    givenPostalDiff({ deletions: 10_000 });
 
     const result = await syncGeoReferentiel();
 
     expect(result.deletionsSkipped).toBe(true);
-    expect(writeInseePostal).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+    expect(result.inseePostal.deleted).toBe(0);
+    expect(applyGeoReferentiel).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
       applyDeletions: false,
-      dryRun: false,
     });
     expect(logger.error).toHaveBeenCalled();
   });
 
   it('should apply massive deletions when they are explicitly forced', async () => {
     vi.mocked(loadExistingInseePostal).mockResolvedValue(new Map(postalRows(35_000).entries()) as never);
-    vi.mocked(countPendingDeletions).mockReturnValue(10_000);
+    givenPostalDiff({ deletions: 10_000 });
 
     const result = await syncGeoReferentiel({ force: true });
 
     expect(result.deletionsSkipped).toBe(false);
-    expect(writeInseePostal).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+    expect(result.inseePostal.deleted).toBe(10_000);
+    expect(applyGeoReferentiel).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
       applyDeletions: true,
-      dryRun: false,
     });
   });
 
   it('should apply a small number of deletions without complaining', async () => {
     vi.mocked(loadExistingInseePostal).mockResolvedValue(new Map(postalRows(35_000).entries()) as never);
-    vi.mocked(countPendingDeletions).mockReturnValue(12);
+    givenPostalDiff({ deletions: 12 });
 
     const result = await syncGeoReferentiel();
 
     expect(result.deletionsSkipped).toBe(false);
+    expect(result.inseePostal.deleted).toBe(12);
     expect(logger.error).not.toHaveBeenCalled();
   });
 
-  it('should forward the dry-run flag to both writers', async () => {
-    await syncGeoReferentiel({ dryRun: true });
+  it('should report the diff without writing anything on a dry run', async () => {
+    const result = await syncGeoReferentiel({ dryRun: true });
 
-    expect(writeCommunes).toHaveBeenCalledWith(expect.anything(), expect.anything(), { dryRun: true });
-    expect(writeInseePostal).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
-      applyDeletions: true,
-      dryRun: true,
-    });
+    expect(applyGeoReferentiel).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ communes: { created: 10 }, inseePostal: { created: 5 } });
   });
 
   it('should warn about communes missing from the source without deleting them', async () => {
-    vi.mocked(writeCommunes).mockResolvedValue({ created: 0, updated: 0, deleted: 0, orphans: 3 });
+    givenCommuneDiff({ orphans: 3 });
 
     const result = await syncGeoReferentiel();
 
     expect(result.orphanCommunes).toBe(3);
+    expect(result.communes.deleted).toBe(0);
     expect(logger.warn).toHaveBeenCalledWith(
       expect.objectContaining({ orphanCommunes: 3 }),
       expect.stringContaining('absentes de la source'),
@@ -257,6 +285,12 @@ describe('syncGeoReferentiel', () => {
     vi.mocked(parseCommunes).mockRejectedValue(new Error('HTTP 503'));
 
     await expect(syncGeoReferentiel()).rejects.toThrow('HTTP 503');
-    expect(writeCommunes).not.toHaveBeenCalled();
+    expect(applyGeoReferentiel).not.toHaveBeenCalled();
+  });
+
+  it('should propagate a write failure', async () => {
+    vi.mocked(applyGeoReferentiel).mockRejectedValue(new Error('transaction annulée'));
+
+    await expect(syncGeoReferentiel()).rejects.toThrow('transaction annulée');
   });
 });

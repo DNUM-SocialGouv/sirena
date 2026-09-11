@@ -57,6 +57,8 @@ export const GEO_GUARDS = {
   MAX_DELETE_ABSOLUTE: 500,
   /** Échéance d'un téléchargement, corps compris. */
   DOWNLOAD_TIMEOUT_MS: 5 * 60 * 1000,
+  /** Échéance de la transaction d'écriture, large pour couvrir la synchronisation initiale. */
+  WRITE_TIMEOUT_MS: 5 * 60 * 1000,
   /** Taille des lots d'écriture. */
   BATCH_SIZE: 1_000,
   /** Nombre maximum de territoires listés dans le rapport de couverture persisté. */

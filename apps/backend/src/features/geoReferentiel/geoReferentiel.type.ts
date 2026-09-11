@@ -22,6 +22,9 @@ export type InseePostalRow = {
   ligne5: string | null;
 };
 
+/** Un couple (code INSEE, code postal) tel qu'il est stocké, son identifiant compris. */
+export type StoredInseePostal = InseePostalRow & { id: string };
+
 export type ParsedCommunes = {
   rows: Map<string, CommuneRow>;
   malformedRows: number;
@@ -40,6 +43,24 @@ export type WriteResult = {
   created: number;
   updated: number;
   deleted: number;
+};
+
+/**
+ * Écritures à appliquer sur `Commune`, calculées avant l'ouverture de la transaction pour que
+ * celle-ci ne contienne que des écritures.
+ */
+export type CommuneDiff = {
+  toCreate: CommuneRow[];
+  toUpdate: CommuneRow[];
+  /** Communes présentes en base et absentes de la source : comptées, jamais supprimées. */
+  orphans: number;
+};
+
+/** Écritures à appliquer sur `InseePostal`, suppressions comprises. */
+export type InseePostalDiff = {
+  toCreate: InseePostalRow[];
+  toUpdate: Array<{ id: string; row: InseePostalRow }>;
+  idsToDelete: string[];
 };
 
 /** Un territoire du référentiel sans entité racine du type attendu. */

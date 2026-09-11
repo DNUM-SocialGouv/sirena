@@ -11,13 +11,18 @@ import { buildEntiteCoverageReport } from './geoReferentiel.coverage.js';
 import { fetchCsvLines } from './geoReferentiel.download.js';
 import { parseCommunes, parseInseePostal } from './geoReferentiel.parser.js';
 import {
-  countPendingDeletions,
+  applyGeoReferentiel,
+  diffCommunes,
+  diffInseePostal,
   loadExistingCommunes,
   loadExistingInseePostal,
-  writeCommunes,
-  writeInseePostal,
 } from './geoReferentiel.repository.js';
-import type { ParsedCommunes, ParsedInseePostal, SyncGeoReferentielResult } from './geoReferentiel.type.js';
+import type {
+  ParsedCommunes,
+  ParsedInseePostal,
+  SyncGeoReferentielResult,
+  WriteResult,
+} from './geoReferentiel.type.js';
 
 export class GeoReferentielGuardError extends Error {
   constructor(message: string) {
@@ -93,9 +98,10 @@ const canApplyDeletions = (pendingDeletions: number, existingCount: number, forc
  * Rafraîchit les tables `Commune` et `InseePostal` depuis les référentiels publics.
  *
  * Les deux sources sont intégralement lues et contrôlées en mémoire avant la moindre
- * écriture : une source tronquée ou au format modifié échoue sans laisser la base à
- * moitié mise à jour. L'opération est idempotente, seules les lignes réellement
- * différentes sont réécrites.
+ * écriture : une source tronquée ou au format modifié échoue sans rien toucher. Les
+ * écritures elles-mêmes tiennent dans une transaction unique, si bien qu'une interruption
+ * ne laisse jamais la base à moitié mise à jour. L'opération est idempotente, seules les
+ * lignes réellement différentes sont réécrites.
  */
 export const syncGeoReferentiel = async (
   options: SyncGeoReferentielOptions = {},
@@ -142,7 +148,9 @@ export const syncGeoReferentiel = async (
     loadExistingInseePostal(),
   ]);
 
-  const pendingDeletions = countPendingDeletions(inseePostal.rows, existingInseePostal);
+  const communesDiff = diffCommunes(communes.rows, existingCommunes);
+  const inseePostalDiff = diffInseePostal(inseePostal.rows, existingInseePostal);
+  const pendingDeletions = inseePostalDiff.idsToDelete.length;
   const applyDeletions = canApplyDeletions(pendingDeletions, existingInseePostal.size, force);
 
   if (!applyDeletions) {
@@ -152,15 +160,24 @@ export const syncGeoReferentiel = async (
     );
   }
 
-  const communesResult = await writeCommunes(communes.rows, existingCommunes, { dryRun });
-  const inseePostalResult = await writeInseePostal(inseePostal.rows, existingInseePostal, {
-    applyDeletions,
-    dryRun,
-  });
+  if (!dryRun) {
+    await applyGeoReferentiel(communesDiff, inseePostalDiff, { applyDeletions });
+  }
 
-  if (communesResult.orphans > 0) {
+  const communesResult: WriteResult = {
+    created: communesDiff.toCreate.length,
+    updated: communesDiff.toUpdate.length,
+    deleted: 0,
+  };
+  const inseePostalResult: WriteResult = {
+    created: inseePostalDiff.toCreate.length,
+    updated: inseePostalDiff.toUpdate.length,
+    deleted: applyDeletions ? pendingDeletions : 0,
+  };
+
+  if (communesDiff.orphans > 0) {
     logger.warn(
-      { orphanCommunes: communesResult.orphans },
+      { orphanCommunes: communesDiff.orphans },
       'Communes présentes en base et absentes de la source : conservées pour rester résolvables',
     );
   }
@@ -181,7 +198,7 @@ export const syncGeoReferentiel = async (
   const result: SyncGeoReferentielResult = {
     communes: communesResult,
     inseePostal: inseePostalResult,
-    orphanCommunes: communesResult.orphans,
+    orphanCommunes: communesDiff.orphans,
     duplicateRows: inseePostal.duplicateRows,
     orphanPostalRows: inseePostal.orphanRows,
     deletionsSkipped: !applyDeletions,

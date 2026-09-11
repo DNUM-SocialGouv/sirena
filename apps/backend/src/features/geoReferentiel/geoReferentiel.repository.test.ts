@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../libs/prisma.js';
+import { GEO_GUARDS } from './geoReferentiel.constant.js';
 import {
-  countPendingDeletions,
+  applyGeoReferentiel,
+  diffCommunes,
+  diffInseePostal,
   loadExistingCommunes,
   loadExistingInseePostal,
-  writeCommunes,
-  writeInseePostal,
 } from './geoReferentiel.repository.js';
-import type { CommuneRow, InseePostalRow } from './geoReferentiel.type.js';
+import type { CommuneRow, InseePostalRow, StoredInseePostal } from './geoReferentiel.type.js';
 
 vi.mock('../../libs/prisma.js');
 
@@ -35,8 +36,21 @@ const postal = (codeInsee: string, codePostal: string, overrides: Partial<InseeP
 
 const asMap = <T extends { comCode: string }>(rows: T[]) => new Map(rows.map((row) => [row.comCode, row]));
 
+const storedPostal = new Map<string, StoredInseePostal>([
+  ['01001|01400', { id: 'a', ...postal('01001', '01400') }],
+  ['01002|01640', { id: 'b', ...postal('01002', '01640') }],
+]);
+
+const noCommuneWrite = { toCreate: [], toUpdate: [], orphans: 0 };
+const noPostalWrite = { toCreate: [], toUpdate: [], idsToDelete: [] };
+
 beforeEach(() => {
-  vi.mocked(prisma.$transaction).mockResolvedValue([]);
+  // La transaction interactive rejoue le client mocké : les écritures restent observables.
+  vi.mocked(prisma.$transaction).mockImplementation(
+    (async (run: (tx: typeof prisma) => Promise<void>) =>
+      // biome-ignore lint/suspicious/noExplicitAny: signature Prisma simplifiée pour le test
+      await run(prisma)) as any,
+  );
   vi.mocked(prisma.inseePostal.deleteMany).mockImplementation((async (args: { where: { id: { in: string[] } } }) => ({
     count: args.where.id.in.length,
     // biome-ignore lint/suspicious/noExplicitAny: signature Prisma simplifiée pour le test
@@ -70,121 +84,160 @@ describe('loadExistingInseePostal', () => {
   });
 });
 
-describe('writeCommunes', () => {
-  it('should create communes missing from the database', async () => {
-    const result = await writeCommunes(asMap([commune('01001'), commune('01002')]), new Map());
+describe('diffCommunes', () => {
+  it('should create communes missing from the database', () => {
+    const diff = diffCommunes(asMap([commune('01001'), commune('01002')]), new Map());
 
-    expect(result).toMatchObject({ created: 2, updated: 0, deleted: 0, orphans: 0 });
-    expect(prisma.commune.createMany).toHaveBeenCalledWith({
-      data: [commune('01001'), commune('01002')],
-      skipDuplicates: true,
-    });
+    expect(diff.toCreate).toEqual([commune('01001'), commune('01002')]);
+    expect(diff.toUpdate).toEqual([]);
   });
 
-  it('should update only the communes whose data actually changed', async () => {
+  it('should update only the communes whose data actually changed', () => {
     const existing = asMap([commune('01001'), commune('01002')]);
     const source = asMap([commune('01001'), commune('01002', { ctcdCodeActuel: '69M', dptCodeActuel: '69' })]);
 
-    const result = await writeCommunes(source, existing);
+    const diff = diffCommunes(source, existing);
 
-    expect(result).toMatchObject({ created: 0, updated: 1 });
-    expect(prisma.commune.createMany).not.toHaveBeenCalled();
-    expect(prisma.commune.update).toHaveBeenCalledTimes(1);
-    expect(prisma.commune.update).toHaveBeenCalledWith(expect.objectContaining({ where: { comCode: '01002' } }));
+    expect(diff.toCreate).toEqual([]);
+    expect(diff.toUpdate).toEqual([commune('01002', { ctcdCodeActuel: '69M', dptCodeActuel: '69' })]);
   });
 
-  it('should write nothing when the source matches the database', async () => {
-    const rows = asMap([commune('01001')]);
+  it('should write nothing when the source matches the database', () => {
+    const diff = diffCommunes(asMap([commune('01001')]), asMap([commune('01001')]));
 
-    const result = await writeCommunes(rows, asMap([commune('01001')]));
-
-    expect(result).toMatchObject({ created: 0, updated: 0 });
-    expect(prisma.commune.createMany).not.toHaveBeenCalled();
-    expect(prisma.commune.update).not.toHaveBeenCalled();
+    expect(diff).toEqual({ toCreate: [], toUpdate: [], orphans: 0 });
   });
 
-  it('should report communes absent from the source without ever deleting them', async () => {
-    const result = await writeCommunes(asMap([commune('01001')]), asMap([commune('01001'), commune('01999')]));
+  it('should report communes absent from the source without ever deleting them', () => {
+    const diff = diffCommunes(asMap([commune('01001')]), asMap([commune('01001'), commune('01999')]));
 
-    expect(result.orphans).toBe(1);
-    expect(result.deleted).toBe(0);
-    expect(prisma.commune.deleteMany).not.toHaveBeenCalled();
-  });
-
-  it('should split creations into batches', async () => {
-    const rows = asMap(Array.from({ length: 2_500 }, (_, i) => commune(String(i).padStart(5, '0'))));
-
-    await writeCommunes(rows, new Map());
-
-    expect(prisma.commune.createMany).toHaveBeenCalledTimes(3);
+    expect(diff.orphans).toBe(1);
+    expect(diff.toCreate).toEqual([]);
+    expect(diff.toUpdate).toEqual([]);
   });
 });
 
-describe('writeInseePostal', () => {
-  const existing = new Map([
-    ['01001|01400', { id: 'a', ...postal('01001', '01400') }],
-    ['01002|01640', { id: 'b', ...postal('01002', '01640') }],
-  ]);
-
-  it('should create, update and delete according to the diff', async () => {
+describe('diffInseePostal', () => {
+  it('should sort each row into a creation, an update or a deletion', () => {
     const source = new Map([
       ['01001|01400', postal('01001', '01400', { libelleAcheminement: 'ABERGEMENT' })],
       ['01003|01500', postal('01003', '01500')],
     ]);
 
-    const result = await writeInseePostal(source, existing, { applyDeletions: true });
+    const diff = diffInseePostal(source, storedPostal);
 
-    expect(result).toEqual({ created: 1, updated: 1, deleted: 1 });
-    expect(prisma.inseePostal.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ['b'] } } });
+    expect(diff.toCreate).toEqual([postal('01003', '01500')]);
+    expect(diff.toUpdate).toEqual([{ id: 'a', row: postal('01001', '01400', { libelleAcheminement: 'ABERGEMENT' }) }]);
+    expect(diff.idsToDelete).toEqual(['b']);
   });
 
-  it('should keep rows untouched when nothing changed', async () => {
+  it('should leave everything untouched when nothing changed', () => {
     const source = new Map([
       ['01001|01400', postal('01001', '01400')],
       ['01002|01640', postal('01002', '01640')],
     ]);
 
-    const result = await writeInseePostal(source, existing, { applyDeletions: true });
-
-    expect(result).toEqual({ created: 0, updated: 0, deleted: 0 });
-    expect(prisma.inseePostal.createMany).not.toHaveBeenCalled();
-    expect(prisma.inseePostal.update).not.toHaveBeenCalled();
-    expect(prisma.inseePostal.deleteMany).not.toHaveBeenCalled();
+    expect(diffInseePostal(source, storedPostal)).toEqual({ toCreate: [], toUpdate: [], idsToDelete: [] });
   });
 
-  it('should apply upserts but skip deletions when they are inhibited', async () => {
-    const source = new Map([['01003|01500', postal('01003', '01500')]]);
+  it('should list every row missing from the source as a deletion', () => {
+    const diff = diffInseePostal(new Map(), storedPostal);
 
-    const result = await writeInseePostal(source, existing, { applyDeletions: false });
+    expect(diff.idsToDelete).toEqual(['a', 'b']);
+  });
+});
 
-    expect(result).toMatchObject({ created: 1, deleted: 0 });
-    expect(prisma.inseePostal.createMany).toHaveBeenCalled();
-    expect(prisma.inseePostal.deleteMany).not.toHaveBeenCalled();
+describe('applyGeoReferentiel', () => {
+  it('should apply both referentiels inside a single transaction', async () => {
+    await applyGeoReferentiel({ toCreate: [commune('01001')], toUpdate: [], orphans: 0 }, noPostalWrite, {
+      applyDeletions: true,
+    });
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {
+      timeout: GEO_GUARDS.WRITE_TIMEOUT_MS,
+    });
   });
 
-  it('should update a row through its stored id', async () => {
-    const source = new Map([
-      ['01001|01400', postal('01001', '01400', { ligne5: 'LIEU DIT' })],
-      ['01002|01640', postal('01002', '01640')],
-    ]);
+  it('should write the communes before the postal codes that reference them', async () => {
+    await applyGeoReferentiel(
+      { toCreate: [commune('01003')], toUpdate: [], orphans: 0 },
+      { toCreate: [postal('01003', '01500')], toUpdate: [], idsToDelete: [] },
+      { applyDeletions: true },
+    );
 
-    await writeInseePostal(source, existing, { applyDeletions: true });
+    expect(vi.mocked(prisma.commune.createMany).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(prisma.inseePostal.createMany).mock.invocationCallOrder[0],
+    );
+  });
+
+  it('should split creations into batches', async () => {
+    const toCreate = Array.from({ length: 2_500 }, (_, i) => commune(String(i).padStart(5, '0')));
+
+    await applyGeoReferentiel({ toCreate, toUpdate: [], orphans: 0 }, noPostalWrite, { applyDeletions: true });
+
+    const batchSizes = vi
+      .mocked(prisma.commune.createMany)
+      .mock.calls.map(([args]) => (args as { data: CommuneRow[] }).data.length);
+    expect(batchSizes).toEqual([GEO_GUARDS.BATCH_SIZE, GEO_GUARDS.BATCH_SIZE, 500]);
+  });
+
+  it('should update a commune through its INSEE code', async () => {
+    await applyGeoReferentiel(
+      { toCreate: [], toUpdate: [commune('01002', { dptCodeActuel: '69' })], orphans: 0 },
+      noPostalWrite,
+      { applyDeletions: true },
+    );
+
+    expect(prisma.commune.update).toHaveBeenCalledWith({
+      where: { comCode: '01002' },
+      data: expect.objectContaining({ dptCodeActuel: '69' }),
+    });
+  });
+
+  it('should update a postal row through its stored id', async () => {
+    await applyGeoReferentiel(
+      noCommuneWrite,
+      { toCreate: [], toUpdate: [{ id: 'a', row: postal('01001', '01400', { ligne5: 'LIEU DIT' }) }], idsToDelete: [] },
+      { applyDeletions: true },
+    );
 
     expect(prisma.inseePostal.update).toHaveBeenCalledWith({
       where: { id: 'a' },
       data: { nomCommune: 'COMMUNE 01001', libelleAcheminement: null, ligne5: 'LIEU DIT' },
     });
   });
-});
 
-describe('countPendingDeletions', () => {
-  it('should count existing rows missing from the source', () => {
-    const existing = new Map([
-      ['01001|01400', { id: 'a', ...postal('01001', '01400') }],
-      ['01002|01640', { id: 'b', ...postal('01002', '01640') }],
-    ]);
+  it('should delete the postal rows missing from the source', async () => {
+    await applyGeoReferentiel(
+      noCommuneWrite,
+      { toCreate: [], toUpdate: [], idsToDelete: ['b'] },
+      {
+        applyDeletions: true,
+      },
+    );
 
-    expect(countPendingDeletions(new Map([['01001|01400', postal('01001', '01400')]]), existing)).toBe(1);
-    expect(countPendingDeletions(existing, existing)).toBe(0);
+    expect(prisma.inseePostal.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ['b'] } } });
+  });
+
+  it('should apply creations but skip deletions when they are inhibited', async () => {
+    await applyGeoReferentiel(
+      noCommuneWrite,
+      { toCreate: [postal('01003', '01500')], toUpdate: [], idsToDelete: ['b'] },
+      { applyDeletions: false },
+    );
+
+    expect(prisma.inseePostal.createMany).toHaveBeenCalled();
+    expect(prisma.inseePostal.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('should touch nothing when both diffs are empty', async () => {
+    await applyGeoReferentiel(noCommuneWrite, noPostalWrite, { applyDeletions: true });
+
+    expect(prisma.commune.createMany).not.toHaveBeenCalled();
+    expect(prisma.commune.update).not.toHaveBeenCalled();
+    expect(prisma.inseePostal.createMany).not.toHaveBeenCalled();
+    expect(prisma.inseePostal.update).not.toHaveBeenCalled();
+    expect(prisma.inseePostal.deleteMany).not.toHaveBeenCalled();
   });
 });
