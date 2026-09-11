@@ -60,6 +60,7 @@ describe('findGeoByPostalCode', () => {
     expect(mockedPrismaInseePostal.findFirst).toHaveBeenCalledWith({
       where: { codePostal: '75001' },
       include: { commune: true },
+      orderBy: { codeInsee: 'asc' },
     });
   });
 
@@ -72,6 +73,7 @@ describe('findGeoByPostalCode', () => {
     expect(mockedPrismaInseePostal.findFirst).toHaveBeenCalledWith({
       where: { codePostal: '99999' },
       include: { commune: true },
+      orderBy: { codeInsee: 'asc' },
     });
   });
 
