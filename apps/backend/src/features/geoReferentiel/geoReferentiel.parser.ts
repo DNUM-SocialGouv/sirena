@@ -58,8 +58,10 @@ export const parseCommunes = async (lines: AsyncIterable<string>): Promise<Parse
  * violeraient la contrainte d'unicité `(codeInsee, codePostal)` : la première occurrence est
  * retenue, comme le faisait l'import initial avec `skipDuplicates`.
  *
- * Les codes postaux dont la commune est absente du référentiel sont écartés : la clé
- * étrangère les rejetterait. En pratique il s'agit de Monaco (99138).
+ * Les codes postaux dont la commune n'est pas résolvable sont écartés : la clé étrangère les
+ * rejetterait. `knownComCodes` réunit pour cela les communes de la source et celles déjà en
+ * base, que la synchronisation conserve même absentes de la source. En pratique il ne reste
+ * que Monaco (99138).
  */
 export const parseInseePostal = async (
   lines: AsyncIterable<string>,

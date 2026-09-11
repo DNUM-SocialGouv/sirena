@@ -18,6 +18,7 @@ import {
   loadExistingInseePostal,
 } from './geoReferentiel.repository.js';
 import type {
+  CommuneRow,
   ParsedCommunes,
   ParsedInseePostal,
   SyncGeoReferentielResult,
@@ -95,6 +96,24 @@ const canApplyDeletions = (pendingDeletions: number, existingCount: number, forc
 };
 
 /**
+ * Réunit les communes résolvables : celles de la source et celles déjà en base.
+ *
+ * Une commune que la source ne porte plus est conservée en base pour qu'une adresse portant
+ * son code INSEE reste résolvable ; ses codes postaux doivent l'être aussi, sans quoi la
+ * synchronisation les supprimerait et rendrait la commune inatteignable par code postal.
+ */
+const resolvableComCodes = (
+  sourceRows: ReadonlyMap<string, CommuneRow>,
+  existing: ReadonlyMap<string, CommuneRow>,
+): ReadonlySet<string> => {
+  const comCodes = new Set(existing.keys());
+  for (const comCode of sourceRows.keys()) {
+    comCodes.add(comCode);
+  }
+  return comCodes;
+};
+
+/**
  * Rafraîchit les tables `Commune` et `InseePostal` depuis les référentiels publics.
  *
  * Les deux sources sont intégralement lues et contrôlées en mémoire avant la moindre
@@ -119,6 +138,8 @@ export const syncGeoReferentiel = async (
   );
   checkCommunes(communes);
 
+  const existingCommunes = await loadExistingCommunes();
+
   logger.info(
     { communes: communes.rows.size, malformees: communes.malformedRows },
     'Communes lues, téléchargement des codes postaux',
@@ -129,7 +150,7 @@ export const syncGeoReferentiel = async (
       delimiter: INSEE_POSTAL_DELIMITER,
       signal,
     }),
-    new Set(communes.rows.keys()),
+    resolvableComCodes(communes.rows, existingCommunes),
   );
   checkInseePostal(inseePostal);
 
@@ -143,10 +164,7 @@ export const syncGeoReferentiel = async (
     'Codes postaux lus, comparaison avec la base',
   );
 
-  const [existingCommunes, existingInseePostal] = await Promise.all([
-    loadExistingCommunes(),
-    loadExistingInseePostal(),
-  ]);
+  const existingInseePostal = await loadExistingInseePostal();
 
   const communesDiff = diffCommunes(communes.rows, existingCommunes);
   const inseePostalDiff = diffInseePostal(inseePostal.rows, existingInseePostal);

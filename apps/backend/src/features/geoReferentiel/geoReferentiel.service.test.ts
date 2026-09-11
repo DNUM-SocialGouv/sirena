@@ -139,6 +139,18 @@ describe('syncGeoReferentiel', () => {
     expect(knownComCodes.size).toBe(36_000);
   });
 
+  it('should also accept the postal codes of communes kept in database but dropped by the source', async () => {
+    // Ces communes ne sont jamais supprimées : leurs codes postaux ne doivent pas l'être non
+    // plus, sinon la commune devient inatteignable par code postal.
+    vi.mocked(loadExistingCommunes).mockResolvedValue(new Map([['99999', communeOf('99999')]]));
+
+    await syncGeoReferentiel();
+
+    const [, knownComCodes] = vi.mocked(parseInseePostal).mock.calls[0];
+    expect(knownComCodes.size).toBe(36_001);
+    expect(knownComCodes.has('99999')).toBe(true);
+  });
+
   it('should refuse a truncated commune file without writing anything', async () => {
     givenSources(1_000);
 
