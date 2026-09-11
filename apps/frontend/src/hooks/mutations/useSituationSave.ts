@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { uploadFile } from '@/lib/api/fetchUploadedFiles';
 import { client } from '@/lib/api/hc';
+import { notifySaveNetworkFailure } from '@/lib/api/saveError';
 import { HttpError, handleRequestErrors } from '@/lib/api/tanstackQuery';
 import { toastManager } from '@/lib/toastManager';
 
@@ -92,7 +93,7 @@ export const useSituationSave = ({ requestId, situationId, onRefetch, onSuccess 
             },
           });
 
-      await handleRequestErrors(response);
+      await handleRequestErrors(response, { silentToastError: true });
       const result = await response.json();
 
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -107,13 +108,15 @@ export const useSituationSave = ({ requestId, situationId, onRefetch, onSuccess 
       onSuccess?.(data);
     },
     onError: async (error: unknown) => {
-      if (error instanceof HttpError) {
-        toastManager.add({
-          title: 'Erreur',
-          description: error.message || 'Une erreur est survenue lors de la sauvegarde.',
-          data: { icon: 'fr-alert--error' },
-        });
+      if (!(error instanceof HttpError)) {
+        notifySaveNetworkFailure();
+        return;
       }
+      toastManager.add({
+        title: 'Erreur',
+        description: error.message || 'Une erreur est survenue lors de la sauvegarde.',
+        data: { icon: 'fr-alert--error' },
+      });
     },
   });
 

@@ -3,11 +3,16 @@ import { renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { client } from '@/lib/api/hc';
+import { notifySaveNetworkFailure } from '@/lib/api/saveError';
 import { HttpError } from '@/lib/api/tanstackQuery';
 import { useDeclarantSave } from './useDeclarantSave';
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),
+}));
+
+vi.mock('@/lib/api/saveError', () => ({
+  notifySaveNetworkFailure: vi.fn(),
 }));
 
 vi.mock('@/lib/api/hc', () => ({
@@ -64,5 +69,23 @@ describe('useDeclarantSave', () => {
     const { handleSave } = renderSave().current;
 
     await expect(handleSave({ prenom: 'Ada' })).rejects.toBeInstanceOf(HttpError);
+  });
+
+  it('tells the user a network failure lost the save', async () => {
+    patch.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    const { handleSave } = renderSave().current;
+
+    await expect(handleSave({ prenom: 'Ada' })).rejects.toBeInstanceOf(TypeError);
+    expect(notifySaveNetworkFailure).toHaveBeenCalledTimes(1);
+  });
+
+  it('stays quiet about the network when the server did answer', async () => {
+    patch.mockResolvedValue(new Response(null, { status: 500 }) as never);
+
+    const { handleSave } = renderSave().current;
+
+    await expect(handleSave({ prenom: 'Ada' })).rejects.toBeInstanceOf(HttpError);
+    expect(notifySaveNetworkFailure).not.toHaveBeenCalled();
   });
 });
