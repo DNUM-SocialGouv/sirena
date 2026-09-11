@@ -11,10 +11,7 @@ const loggerMock = { info: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn(
 vi.mock('../config/job.utils.js', () => ({ withCronLifecycle: vi.fn() }));
 vi.mock('../../crons/crons.service.js', () => ({ getLastCron: vi.fn() }));
 vi.mock('../../features/geoReferentiel/geoReferentiel.service.js', () => ({ syncGeoReferentiel: vi.fn() }));
-vi.mock('../../libs/asyncLocalStorage.js', () => ({
-  getLoggerStore: () => loggerMock,
-  abortControllerStorage: { run: vi.fn((_controller, fn) => fn()) },
-}));
+vi.mock('../../libs/asyncLocalStorage.js', () => ({ getLoggerStore: () => loggerMock }));
 
 const job = {
   name: 'sync-geo-referentiel',

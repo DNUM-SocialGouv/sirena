@@ -18,7 +18,7 @@
 import * as Sentry from '@sentry/node';
 import { syncGeoReferentiel } from '../features/geoReferentiel/geoReferentiel.service.js';
 import { createScriptLogger } from '../helpers/pino.js';
-import { abortControllerStorage, loggerStorage, sentryStorage } from '../libs/asyncLocalStorage.js';
+import { loggerStorage, sentryStorage } from '../libs/asyncLocalStorage.js';
 import { prisma } from '../libs/prisma.js';
 import '../libs/instrument.js';
 
@@ -33,33 +33,31 @@ async function main() {
   await loggerStorage.run(logger, async () => {
     Sentry.withScope(async (scope) => {
       await sentryStorage.run(scope, async () => {
-        await abortControllerStorage.run(abortController, async () => {
-          try {
-            logger.info({ dryRun, force }, 'Starting op:sync:geodata...');
+        try {
+          logger.info({ dryRun, force }, 'Starting op:sync:geodata...');
 
-            const result = await syncGeoReferentiel({ dryRun, force, signal: abortController.signal });
+          const result = await syncGeoReferentiel({ dryRun, force, signal: abortController.signal });
 
-            if (dryRun) {
-              logger.info('Dry run : aucune écriture effectuée.');
-            }
-            if (result.deletionsSkipped) {
-              logger.info('Suppressions ignorées par le garde-fou. Relancer avec --force pour les appliquer.');
-            }
-            if (result.coverage.missing.length > 0) {
-              logger.info(
-                `${result.coverage.missingCdCount} CD et ${result.coverage.missingDdCount} DDETS manquants pour ${result.coverage.territoiresCount} territoires.`,
-              );
-            }
-
-            logger.info('op:sync:geodata completed successfully.');
-            await prisma.$disconnect();
-            process.exit(0);
-          } catch (error) {
-            logger.error({ err: error }, 'Error during op:sync:geodata');
-            await prisma.$disconnect();
-            process.exit(1);
+          if (dryRun) {
+            logger.info('Dry run : aucune écriture effectuée.');
           }
-        });
+          if (result.deletionsSkipped) {
+            logger.info('Suppressions ignorées par le garde-fou. Relancer avec --force pour les appliquer.');
+          }
+          if (result.coverage.missing.length > 0) {
+            logger.info(
+              `${result.coverage.missingCdCount} CD et ${result.coverage.missingDdCount} DDETS manquants pour ${result.coverage.territoiresCount} territoires.`,
+            );
+          }
+
+          logger.info('op:sync:geodata completed successfully.');
+          await prisma.$disconnect();
+          process.exit(0);
+        } catch (error) {
+          logger.error({ err: error }, 'Error during op:sync:geodata');
+          await prisma.$disconnect();
+          process.exit(1);
+        }
       });
     });
   });

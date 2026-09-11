@@ -1,7 +1,7 @@
 import type { Job } from 'bullmq';
 import { getLastCron } from '../../crons/crons.service.js';
 import { syncGeoReferentiel as runSync } from '../../features/geoReferentiel/geoReferentiel.service.js';
-import { abortControllerStorage, getLoggerStore } from '../../libs/asyncLocalStorage.js';
+import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import type { JobDataMap, JobResult } from '../config/job.types.js';
 import { withCronLifecycle } from '../config/job.utils.js';
 
@@ -34,7 +34,7 @@ export async function syncGeoReferentiel(job: Job<JobDataMap['sync-geo-referenti
       }, j.data.timeoutMs);
 
       try {
-        return await abortControllerStorage.run(controller, async () => await runSync({ signal: controller.signal }));
+        return await runSync({ signal: controller.signal });
       } finally {
         clearTimeout(timeout);
       }
