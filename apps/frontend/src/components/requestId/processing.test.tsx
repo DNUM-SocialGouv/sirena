@@ -207,7 +207,7 @@ describe('Processing', () => {
     } as never;
     const { rerender } = render(<Processing requestId="REQ-1" requestQuery={closedRequestQuery} />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Rouvrir', exact: true }));
+    await userEvent.click(screen.getByRole('button', { name: 'Rouvrir' }));
     expect(refreshOtherEntities).toHaveBeenCalledOnce();
     expect(screen.getByRole('status')).toHaveTextContent('Cette étape sera visible par ARS Île-de-France.');
 
@@ -218,7 +218,7 @@ describe('Processing', () => {
     );
     expect(screen.getByRole('status')).not.toHaveTextContent('ARS Île-de-France');
 
-    await userEvent.click(screen.getByRole('button', { name: 'Rouvrir', exact: true }));
+    await userEvent.click(screen.getByRole('button', { name: 'Rouvrir' }));
     expect(refreshOtherEntities).toHaveBeenCalledTimes(2);
   });
 

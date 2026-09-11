@@ -173,7 +173,7 @@ const fakeUpdatedNomRequeteEtape: RequeteEtape = {
 
 const fakeRequeteEntite = {
   statutId: 'EN_COURS',
-} as unknown as Awaited<ReturnType<typeof getRequeteEntiteById>>;
+} as unknown as NonNullable<Awaited<ReturnType<typeof getRequeteEntiteById>>>;
 
 describe('requeteEtapes.controller.ts', () => {
   const app = appWithLogs.createApp().use(pinoLogger()).route('/', RequeteEtapesController).onError(errorHandler);

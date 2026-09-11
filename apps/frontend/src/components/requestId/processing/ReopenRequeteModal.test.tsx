@@ -9,6 +9,16 @@ import { type ReopenRequeteModalRef, ReopenRequeteModal as ReopenRequeteModalVie
 
 const { mutateAsync, close } = vi.hoisted(() => ({ mutateAsync: vi.fn(), close: vi.fn() }));
 
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
 vi.mock('@codegouvfr/react-dsfr/Modal', () => ({
   createModal: () => ({
     id: 'reopen-requete-modal',
@@ -202,7 +212,7 @@ describe('ReopenRequeteModal', () => {
     { outcome: 'recipients are found', otherEntites: [ars], expected: 'Cette étape sera visible par ARS Bretagne.' },
     { outcome: 'no other entity is affected', otherEntites: [], expected: '' },
   ])('updates a persistent polite live region after initial loading: $outcome', async ({ otherEntites, expected }) => {
-    const { promise, resolve } = Promise.withResolvers<Awaited<ReturnType<typeof fetchRequeteOtherEntitiesAffected>>>();
+    const { promise, resolve } = createDeferred<Awaited<ReturnType<typeof fetchRequeteOtherEntitiesAffected>>>();
     vi.mocked(fetchRequeteOtherEntitiesAffected).mockReturnValueOnce(promise);
     await renderWithRecipientQuery(null);
     await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
@@ -245,8 +255,7 @@ describe('ReopenRequeteModal', () => {
   ])(
     'keeps the visibility message stable until updated names arrive: $change',
     async ({ initialNames, updatedNames }) => {
-      const { promise, resolve } =
-        Promise.withResolvers<Awaited<ReturnType<typeof fetchRequeteOtherEntitiesAffected>>>();
+      const { promise, resolve } = createDeferred<Awaited<ReturnType<typeof fetchRequeteOtherEntitiesAffected>>>();
       vi.mocked(fetchRequeteOtherEntitiesAffected).mockReturnValueOnce(promise);
       await renderWithRecipientQuery(initialNames.map((nomComplet) => ({ ...ars, nomComplet })));
 
@@ -272,7 +281,7 @@ describe('ReopenRequeteModal', () => {
   );
 
   it('replaces initial loading with sharing information when retrieval fails, without blocking confirmation', async () => {
-    const { promise, reject } = Promise.withResolvers<Awaited<ReturnType<typeof fetchRequeteOtherEntitiesAffected>>>();
+    const { promise, reject } = createDeferred<Awaited<ReturnType<typeof fetchRequeteOtherEntitiesAffected>>>();
     vi.mocked(fetchRequeteOtherEntitiesAffected).mockReturnValueOnce(promise);
     await renderWithRecipientQuery(null);
     await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la confirmation' }));
