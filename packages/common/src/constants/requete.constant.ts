@@ -282,13 +282,13 @@ export type LieuType = keyof typeof LIEU_TYPE;
 
 export const lieuTypeLabels: Record<LieuType, string> = {
   DOMICILE: 'Domicile',
-  ETABLISSEMENT_SANTE: 'Etablissements de santé',
-  ETABLISSEMENT_PERSONNES_AGEES: 'Etablissements pour personnes âgées',
-  ETABLISSEMENT_HANDICAP: 'Etablissements pour personnes handicapées',
-  ETABLISSEMENT_SOCIAL: 'Etablissements sociaux',
+  ETABLISSEMENT_SANTE: 'Établissements de santé',
+  ETABLISSEMENT_PERSONNES_AGEES: 'Établissements pour personnes âgées',
+  ETABLISSEMENT_HANDICAP: 'Établissements pour personnes handicapées',
+  ETABLISSEMENT_SOCIAL: 'Établissements sociaux',
   AUTRES_ETABLISSEMENTS: 'Autres établissements',
   TRAJET: 'Trajet',
-  ETABLISSEMENT_FICTIF: 'Etablissement fictif',
+  ETABLISSEMENT_FICTIF: 'Établissement fictif',
 };
 
 // Domicile - Précisions
@@ -308,11 +308,11 @@ export const lieuDomicilePrecisionLabels: Record<LieuDomicilePrecision, string> 
   REQUERANT: 'Du réquérant',
   CHEZ_TIERS: 'Chez un tiers',
   HABITAT_INCLUSIF: 'Habitat inclusif',
-  EQUIPES_MOBILES: 'Equipes mobiles',
+  EQUIPES_MOBILES: 'Équipes mobiles',
   AUTRE: 'Autre',
 };
 
-// Etablissements de santé - Précisions
+// Établissements de santé - Précisions
 export const LIEU_ETABLISSEMENT_SANTE_PRECISION = {
   CH: 'CH',
   CHU: 'CHU',
@@ -345,7 +345,7 @@ export const lieuEtablissementSantePrecisionLabels: Record<LieuEtablissementSant
   AUTRE: 'Autre',
 };
 
-// Etablissements pour personnes âgées - Précisions
+// Établissements pour personnes âgées - Précisions
 export const LIEU_ETABLISSEMENT_PERSONNES_AGEES_PRECISION = {
   EHPAD: 'EHPAD',
   PASA: 'PASA',
@@ -369,7 +369,7 @@ export const lieuEtablissementPersonnesAgeesPrecisionLabels: Record<LieuEtabliss
     AUTRE: 'Autre',
   };
 
-// Etablissements pour personnes handicapées - Précisions
+// Établissements pour personnes handicapées - Précisions
 export const LIEU_ETABLISSEMENT_HANDICAP_PRECISION = {
   MAS: 'MAS',
   EAM: 'EAM',
@@ -395,11 +395,11 @@ export const lieuEtablissementHandicapPrecisionLabels: Record<LieuEtablissementH
   EAM: "EAM (Foyer d'acceuil médicalisés)",
   EANM: 'EANM',
   IEM: "IEM (Instituts d'éducation motrice)",
-  EEAP: 'EEAP (Etablissements pour enfants ou adolescents polyhandicapés)',
+  EEAP: 'EEAP (Établissements pour enfants ou adolescents polyhandicapés)',
   IDA: 'IDA (instituts pour déficients auditifs)',
   IDV: 'IDV (instituts our déficients visuels)',
   CAMSP: "CAMSP (Centre d'action médico-sociale précoce)",
-  ESAT: "ESAT (Etablissement et services d'aide par le travail)",
+  ESAT: "ESAT (Établissement et services d'aide par le travail)",
   CPO: 'CPO (Centres de pré orientation pour handicapés)',
   CERFP: "CERFP (Centre d'éducation de rééducation et de formation professionnel)",
   IME: 'IME (Instituts médicoéducatifs)',
@@ -408,7 +408,7 @@ export const lieuEtablissementHandicapPrecisionLabels: Record<LieuEtablissementH
   AUTRE: 'Autre',
 };
 
-// Etablissements sociaux - Précisions
+// Établissements sociaux - Précisions
 export const LIEU_ETABLISSEMENT_SOCIAL_PRECISION = {
   CAARUD: 'CAARUD',
   CPFSE: 'CPFSE',
@@ -432,7 +432,7 @@ export const lieuEtablissementSocialPrecisionLabels: Record<LieuEtablissementSoc
   CAARUD: 'CAARUD',
   CPFSE: 'CPFSE (centres de placement familial socioéducatif)',
   CADA: "CADA (Centre d'accueil pour demandeurs d'asile)",
-  CENTRE_MATERNEL: "CENTRE MATERNEL (Etablissement d'accueil mère-enfant)",
+  CENTRE_MATERNEL: "CENTRE MATERNEL (Établissement d'accueil mère-enfant)",
   VILLAGES_ENFANTS: "Villages d'enfants",
   FOYERS_ENFANCE: "Foyers de l'enfance",
   MECS: "MECS (Maisons d'enfants à caractère social)",
