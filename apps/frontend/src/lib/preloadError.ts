@@ -1,9 +1,30 @@
 import { useAppUpdateStore } from '@/stores/appUpdateStore';
 
 let isRegistered = false;
+let assetLoadFailed = false;
 
 const ASSET_URL_RE = /(https?:\/\/[^\s'")]+|\/[^\s'")]+\.(?:m?js|css))/;
 const PROBE_TIMEOUT_MS = 5000;
+
+const CHUNK_LOAD_ERROR_PATTERNS = [
+  /Failed to fetch dynamically imported module/i,
+  /error loading dynamically imported module/i,
+  /Importing a module script failed/i,
+  /Unable to preload CSS for/i,
+  /'text\/html' is not a valid JavaScript MIME type/i,
+];
+
+export function isChunkLoadError(error: unknown): boolean {
+  if (!assetLoadFailed) {
+    return false;
+  }
+  const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
+  return CHUNK_LOAD_ERROR_PATTERNS.some((pattern) => pattern.test(message));
+}
+
+export function resetAssetLoadFailedForTests(): void {
+  assetLoadFailed = false;
+}
 
 /** Vite dispatches `vite:preloadError` with the underlying error as `payload`. */
 type PreloadErrorEvent = Event & { payload?: unknown };
@@ -57,6 +78,7 @@ export function registerPreloadErrorHandler(): void {
 
   window.addEventListener('vite:preloadError', (event) => {
     const { payload } = event as PreloadErrorEvent;
+    assetLoadFailed = true;
 
     if (isDepPreloadError(payload)) {
       event.preventDefault();
