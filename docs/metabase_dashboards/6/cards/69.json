@@ -1,12 +1,11 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 234.98726114649682,
+  "average_query_time": 254.11042944785277,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
   "can_restore": false,
-  "can_run_adhoc_query": true,
   "can_write": true,
   "card_schema": 23,
   "collection": {
@@ -36,7 +35,7 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "WITH RECURSIVE\n-- 1. Périmètre entités : l'entité de premier niveau de l'utilisateur (entiteMereId IS NULL)\n--    identifiée par {{entity_label}}, PLUS tous ses services descendants (récursif).\nentites_scope AS (\n  SELECT e.id\n  FROM \"Entite\" e\n  WHERE e.\"entiteMereId\" IS NULL\n    [[ AND e.label = {{entity_label}} ]]\n\n  UNION ALL\n\n  SELECT child.id\n  FROM \"Entite\" child\n  JOIN entites_scope s ON child.\"entiteMereId\" = s.id\n),\n\n-- 2. Requêtes ayant AU MOINS un motif dont le 1er niveau est \"Maltraitance professionnels ou entourage\".\n--    Les id de MotifEnum sont au format \"PARENT/ENFANT\" -> on filtre sur le parent.\nrequetes_maltraitance AS (\n  SELECT DISTINCT s.\"requeteId\" AS requete_id\n  FROM \"Situation\" s\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  WHERE s.\"requeteId\" IS NOT NULL\n    AND fm.\"motifId\" LIKE 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/%'\n)\n\nSELECT COUNT(DISTINCT r.id) AS \"Requêtes maltraitance\"\nFROM \"Requete\" r\nJOIN requetes_maltraitance rm ON rm.requete_id = r.id\nJOIN \"RequeteEntite\" re     ON re.\"requeteId\" = r.id\nJOIN entites_scope es       ON es.id = re.\"entiteId\"\nWHERE 1 = 1\n  [[ AND r.\"createdAt\"::date >= {{start_date}} ]]\n  [[ AND r.\"createdAt\"::date <= {{end_date}} ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                 JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                 WHERE s_lieu.\"requeteId\" = r.id\n                   AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                        OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                       AND {{inclure_eig}} = 'false') ]]",
+        "native": "WITH RECURSIVE\n-- 1. Périmètre entités : l'entité de premier niveau de l'utilisateur (entiteMereId IS NULL)\n--    identifiée par {{entity_label}}, PLUS tous ses services descendants (récursif).\nentites_scope AS (\n  SELECT e.id\n  FROM \"Entite\" e\n  WHERE e.\"entiteMereId\" IS NULL\n    [[ AND e.label = {{entity_label}} ]]\n\n  UNION ALL\n\n  SELECT child.id\n  FROM \"Entite\" child\n  JOIN entites_scope s ON child.\"entiteMereId\" = s.id\n),\n\n-- 2. Requêtes ayant AU MOINS un motif dont le 1er niveau est \"Maltraitance professionnels ou entourage\".\n--    Les id de MotifEnum sont au format \"PARENT/ENFANT\" -> on filtre sur le parent.\nrequetes_maltraitance AS (\n  SELECT DISTINCT s.\"requeteId\" AS requete_id\n  FROM \"Situation\" s\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  WHERE s.\"requeteId\" IS NOT NULL\n    AND fm.\"motifId\" LIKE 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/%'\n)\n\nSELECT COUNT(DISTINCT r.id) AS \"Requêtes maltraitance\"\nFROM \"Requete\" r\nJOIN requetes_maltraitance rm ON rm.requete_id = r.id\nJOIN \"RequeteEntite\" re     ON re.\"requeteId\" = r.id\nJOIN entites_scope es       ON es.id = re.\"entiteId\"\nWHERE 1 = 1\n  [[ AND r.\"createdAt\"::date >= {{start_date}} ]]\n  [[ AND r.\"createdAt\"::date <= {{end_date}} ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                 JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                 WHERE s_lieu.\"requeteId\" = r.id\n                   AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                        OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                       AND {{inclure_eig}} = 'false') ]]",
         "template-tags": [
           {
             "display-name": "Entity Label",
@@ -92,7 +91,7 @@
   "entity_id": "2P4X0t5mBkSBs54R0UTUb",
   "id": 69,
   "is_remote_synced": false,
-  "last_query_start": "2026-08-31T13:07:18.239634Z",
+  "last_query_start": "2026-09-10T16:00:27.912363Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.63.1.2 (b067da1)",
@@ -598,6 +597,7 @@
     }
   ],
   "public_uuid": null,
+  "public_uuid_prefix": null,
   "query_type": "native",
   "result_metadata": [
     {

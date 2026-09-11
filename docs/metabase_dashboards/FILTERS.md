@@ -381,7 +381,7 @@ Sur la page Indicateurs, une case **« Inclure les EIG »**, **cochée par défa
 retirer de **tous** les indicateurs les requêtes de type EIG — celles dont le **déclarant** a
 répondu « Oui » à « *Le déclarant est un professionnel qui signale des dysfonctionnements et
 événements indésirables graves (EIG)* », c'est-à-dire
-`PersonneConcernee."estSignalementProfessionnel" = true` sur la personne rattachée à la requête
+`PersonneConcernee."estSignalementProfessionnel" = 'OUI'` sur la personne rattachée à la requête
 par `declarantDeId`.
 
 ### Un filtre nommé d'après son état par défaut
@@ -409,16 +409,18 @@ les cartes qui en ont une), où `r` est l'alias de `"Requete"` :
 ```sql
 [[ AND NOT EXISTS (SELECT 1 FROM "PersonneConcernee" pc_eig
                    WHERE pc_eig."declarantDeId" = r.id
-                     AND pc_eig."estSignalementProfessionnel" IS TRUE
+                     AND pc_eig."estSignalementProfessionnel" = 'OUI'
                      AND {{inclure_eig}} = 'false') ]]
 ```
 
 Trois points expliquent cette forme :
 
-- **`IS TRUE`, et non `= true`.** La colonne est *nullable* : un déclarant qui n'a pas répondu
-  (`NULL`) ou qui a répondu « Non » (`false`) n'est **pas** un EIG. `IS TRUE` range les deux du
-  même côté, là où `= true` laisserait `NULL` remonter en `UNKNOWN` et vider la ligne du
-  `NOT EXISTS`.
+- **`= 'OUI'`, et non une comparaison booléenne.** La colonne n'est pas un booléen mais un enum
+  `ReponseOuiNon` nullable (`OUI` / `NON` / `NON_RENSEIGNE`). `IS TRUE` et `= true` échouent
+  désormais au typage — et font échouer la carte entière, pas seulement l'indicateur. Seul un
+  déclarant à `'OUI'` est un EIG : `'NON'`, le « Non renseigné » explicite et l'absence de
+  réponse (`NULL`) sont tous les trois exclus, ce que `= 'OUI'` fait naturellement puisqu'à
+  l'intérieur du `WHERE` d'un `NOT EXISTS`, `NULL` et `FALSE` écartent la ligne de la même façon.
 - **La comparaison `{{inclure_eig}} = 'false'` est dans la sous-requête, pas à côté.** Le
   template tag *doit* se trouver dans le bloc `[[ ]]` pour que celui-ci soit optionnel ; le
   placer là rend en prime le filtre inerte si une valeur `'true'` arrivait un jour (la

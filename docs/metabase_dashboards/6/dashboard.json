@@ -42,7 +42,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "SELECT\n    COUNT(DISTINCT r.id) AS nombre_requetes\nFROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\nWHERE\n    TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]];",
+              "native": "SELECT\n    COUNT(DISTINCT r.id) AS nombre_requetes\nFROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\nWHERE\n    TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                         AND {{inclure_eig}} = 'false') ]];",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -603,7 +603,8 @@
           }
         ],
         "public_uuid": null,
-        "query_average_duration": 125,
+        "public_uuid_prefix": null,
+        "query_average_duration": null,
         "query_type": "native",
         "result_metadata": [
           {
@@ -625,13 +626,13 @@
               },
               "type": {
                 "type/Number": {
-                  "avg": 52398,
+                  "avg": 52399,
                   "excess-kurtosis": null,
-                  "max": 52398,
-                  "min": 52398,
+                  "max": 52399,
+                  "min": 52399,
                   "mode-fraction": 1,
-                  "q1": 52398,
-                  "q3": 52398,
+                  "q1": 52399,
+                  "q3": 52399,
                   "sd": 0,
                   "skewness": null,
                   "top-3-fraction": 1,
@@ -758,7 +759,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "WITH RECURSIVE\n-- 1. Périmètre entités : l'entité de premier niveau de l'utilisateur (entiteMereId IS NULL)\n--    identifiée par {{entity_label}}, PLUS tous ses services descendants (récursif).\nentites_scope AS (\n  SELECT e.id\n  FROM \"Entite\" e\n  WHERE e.\"entiteMereId\" IS NULL\n    [[ AND e.label = {{entity_label}} ]]\n\n  UNION ALL\n\n  SELECT child.id\n  FROM \"Entite\" child\n  JOIN entites_scope s ON child.\"entiteMereId\" = s.id\n),\n\n-- 2. Requêtes ayant AU MOINS un motif dont le 1er niveau est \"Maltraitance professionnels ou entourage\".\n--    Les id de MotifEnum sont au format \"PARENT/ENFANT\" -> on filtre sur le parent.\nrequetes_maltraitance AS (\n  SELECT DISTINCT s.\"requeteId\" AS requete_id\n  FROM \"Situation\" s\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  WHERE s.\"requeteId\" IS NOT NULL\n    AND fm.\"motifId\" LIKE 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/%'\n)\n\nSELECT COUNT(DISTINCT r.id) AS \"Requêtes maltraitance\"\nFROM \"Requete\" r\nJOIN requetes_maltraitance rm ON rm.requete_id = r.id\nJOIN \"RequeteEntite\" re     ON re.\"requeteId\" = r.id\nJOIN entites_scope es       ON es.id = re.\"entiteId\"\nWHERE 1 = 1\n  [[ AND r.\"createdAt\"::date >= {{start_date}} ]]\n  [[ AND r.\"createdAt\"::date <= {{end_date}} ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                 JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                 WHERE s_lieu.\"requeteId\" = r.id\n                   AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                        OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                       AND {{inclure_eig}} = 'false') ]]",
+              "native": "WITH RECURSIVE\n-- 1. Périmètre entités : l'entité de premier niveau de l'utilisateur (entiteMereId IS NULL)\n--    identifiée par {{entity_label}}, PLUS tous ses services descendants (récursif).\nentites_scope AS (\n  SELECT e.id\n  FROM \"Entite\" e\n  WHERE e.\"entiteMereId\" IS NULL\n    [[ AND e.label = {{entity_label}} ]]\n\n  UNION ALL\n\n  SELECT child.id\n  FROM \"Entite\" child\n  JOIN entites_scope s ON child.\"entiteMereId\" = s.id\n),\n\n-- 2. Requêtes ayant AU MOINS un motif dont le 1er niveau est \"Maltraitance professionnels ou entourage\".\n--    Les id de MotifEnum sont au format \"PARENT/ENFANT\" -> on filtre sur le parent.\nrequetes_maltraitance AS (\n  SELECT DISTINCT s.\"requeteId\" AS requete_id\n  FROM \"Situation\" s\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  WHERE s.\"requeteId\" IS NOT NULL\n    AND fm.\"motifId\" LIKE 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/%'\n)\n\nSELECT COUNT(DISTINCT r.id) AS \"Requêtes maltraitance\"\nFROM \"Requete\" r\nJOIN requetes_maltraitance rm ON rm.requete_id = r.id\nJOIN \"RequeteEntite\" re     ON re.\"requeteId\" = r.id\nJOIN entites_scope es       ON es.id = re.\"entiteId\"\nWHERE 1 = 1\n  [[ AND r.\"createdAt\"::date >= {{start_date}} ]]\n  [[ AND r.\"createdAt\"::date <= {{end_date}} ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                 JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                 WHERE s_lieu.\"requeteId\" = r.id\n                   AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                        OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                       AND {{inclure_eig}} = 'false') ]]",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -1317,7 +1318,8 @@
           }
         ],
         "public_uuid": null,
-        "query_average_duration": 337,
+        "public_uuid_prefix": null,
+        "query_average_duration": null,
         "query_type": "native",
         "result_metadata": [
           {
@@ -1472,7 +1474,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "SELECT\n    COUNT(DISTINCT r.id) AS nombre_requetes\nFROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\nWHERE\n    re.\"statutId\" = 'CLOTUREE'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]];",
+              "native": "SELECT\n    COUNT(DISTINCT r.id) AS nombre_requetes\nFROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\nWHERE\n    re.\"statutId\" = 'CLOTUREE'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                         AND {{inclure_eig}} = 'false') ]];",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -1922,7 +1924,8 @@
           }
         ],
         "public_uuid": null,
-        "query_average_duration": 165,
+        "public_uuid_prefix": null,
+        "query_average_duration": null,
         "query_type": "native",
         "result_metadata": [
           {
@@ -1944,13 +1947,13 @@
               },
               "type": {
                 "type/Number": {
-                  "avg": 48413,
+                  "avg": 48421,
                   "excess-kurtosis": null,
-                  "max": 48413,
-                  "min": 48413,
+                  "max": 48421,
+                  "min": 48421,
                   "mode-fraction": 1,
-                  "q1": 48413,
-                  "q3": 48413,
+                  "q1": 48421,
+                  "q3": 48421,
                   "sd": 0,
                   "skewness": null,
                   "top-3-fraction": 1,
@@ -2077,7 +2080,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "-- Requêtes « en compétence partagée » au niveau national :\n-- au moins 2 entités affectées, après avoir exclu les entités\n-- clôturées pour motif « Hors compétence ».\nSELECT\n  COUNT(*) AS nombre_requetes_competence_partagee\nFROM (\n  SELECT r.id\n  FROM \"Requete\" r\n  JOIN \"RequeteEntite\" re ON re.\"requeteId\" = r.id\n  JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n  WHERE NOT (\n    re.\"statutId\" = 'CLOTUREE'\n    AND EXISTS (\n      SELECT 1\n      FROM \"RequeteEtape\" et\n      JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n      WHERE et.\"requeteId\" = re.\"requeteId\"\n        AND et.\"entiteId\"  = re.\"entiteId\"\n        AND et.\"statutId\"  = 'CLOTUREE'\n        AND j.\"A\"          = 'HORS_COMPETENCE'\n    )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                 JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                 WHERE s_lieu.\"requeteId\" = r.id\n                   AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                        OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                       AND {{inclure_eig}} = 'false') ]]\n  GROUP BY r.id\n  HAVING COUNT(DISTINCT re.\"entiteId\") >= 2\n     [[ AND bool_or(e.label = {{entity_label}}) ]]\n) t;",
+              "native": "-- Requêtes « en compétence partagée » au niveau national :\n-- au moins 2 entités affectées, après avoir exclu les entités\n-- clôturées pour motif « Hors compétence ».\nSELECT\n  COUNT(*) AS nombre_requetes_competence_partagee\nFROM (\n  SELECT r.id\n  FROM \"Requete\" r\n  JOIN \"RequeteEntite\" re ON re.\"requeteId\" = r.id\n  JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n  WHERE NOT (\n    re.\"statutId\" = 'CLOTUREE'\n    AND EXISTS (\n      SELECT 1\n      FROM \"RequeteEtape\" et\n      JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n      WHERE et.\"requeteId\" = re.\"requeteId\"\n        AND et.\"entiteId\"  = re.\"entiteId\"\n        AND et.\"statutId\"  = 'CLOTUREE'\n        AND j.\"A\"          = 'HORS_COMPETENCE'\n    )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                 JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                 WHERE s_lieu.\"requeteId\" = r.id\n                   AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                        OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                       AND {{inclure_eig}} = 'false') ]]\n  GROUP BY r.id\n  HAVING COUNT(DISTINCT re.\"entiteId\") >= 2\n     [[ AND bool_or(e.label = {{entity_label}}) ]]\n) t;",
               "template-tags": [
                 {
                   "display-name": "Start Date",
@@ -2527,7 +2530,8 @@
           }
         ],
         "public_uuid": null,
-        "query_average_duration": 701,
+        "public_uuid_prefix": null,
+        "query_average_duration": null,
         "query_type": "native",
         "result_metadata": [
           {
@@ -2549,13 +2553,13 @@
               },
               "type": {
                 "type/Number": {
-                  "avg": 5327,
+                  "avg": 5329,
                   "excess-kurtosis": null,
-                  "max": 5327,
-                  "min": 5327,
+                  "max": 5329,
+                  "min": 5329,
                   "mode-fraction": 1,
-                  "q1": 5327,
-                  "q3": 5327,
+                  "q1": 5329,
+                  "q3": 5329,
                   "sd": 0,
                   "skewness": null,
                   "top-3-fraction": 1,
@@ -2678,7 +2682,7 @@
   "id": 6,
   "is_remote_synced": false,
   "last_used_param_values": {},
-  "last_viewed_at": "2026-08-31T13:07:18.238208Z",
+  "last_viewed_at": "2026-09-10T16:00:27.412726Z",
   "made_public_by_id": null,
   "moderation_reviews": [],
   "name": "[integration] Dashboard national",
@@ -3135,6 +3139,7 @@
   "points_of_interest": null,
   "position": null,
   "public_uuid": null,
+  "public_uuid_prefix": null,
   "show_in_getting_started": false,
   "tabs": [],
   "width": "fixed"

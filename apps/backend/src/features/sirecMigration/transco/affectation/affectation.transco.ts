@@ -97,9 +97,13 @@ export async function initAffectationTransco(): Promise<void> {
         select: {
           id: true,
           nomComplet: true,
-          entiteMere: { select: { id: true, nomComplet: true } },
+          entiteMere: { select: { id: true, nomComplet: true }, where: { isActive: true } },
         },
+        where: { isActive: true },
       },
+    },
+    where: {
+      isActive: true,
     },
   });
 
