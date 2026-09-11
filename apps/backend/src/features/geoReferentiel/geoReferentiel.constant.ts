@@ -55,6 +55,7 @@ export const GEO_GUARDS = {
   /** Une suppression massive signale une source corrompue plutôt qu'une vraie évolution. */
   MAX_DELETE_RATIO: 0.02,
   MAX_DELETE_ABSOLUTE: 500,
+  /** Échéance d'un téléchargement, corps compris. */
   DOWNLOAD_TIMEOUT_MS: 5 * 60 * 1000,
   /** Taille des lots d'écriture. */
   BATCH_SIZE: 1_000,

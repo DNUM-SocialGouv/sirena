@@ -1,6 +1,12 @@
 import { envVars } from '../../config/env.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
-import { COMMUNE_ENCODING, GEO_GUARDS, INSEE_POSTAL_ENCODING } from './geoReferentiel.constant.js';
+import {
+  COMMUNE_DELIMITER,
+  COMMUNE_ENCODING,
+  GEO_GUARDS,
+  INSEE_POSTAL_DELIMITER,
+  INSEE_POSTAL_ENCODING,
+} from './geoReferentiel.constant.js';
 import { buildEntiteCoverageReport } from './geoReferentiel.coverage.js';
 import { fetchCsvLines } from './geoReferentiel.download.js';
 import { parseCommunes, parseInseePostal } from './geoReferentiel.parser.js';
@@ -99,7 +105,11 @@ export const syncGeoReferentiel = async (
 
   logger.info({ dryRun, force }, 'Synchronisation du référentiel géographique : téléchargement des communes');
   const communes = await parseCommunes(
-    fetchCsvLines(envVars.GEO_REFERENTIEL_COMMUNES_URL, { encoding: COMMUNE_ENCODING, signal }),
+    fetchCsvLines(envVars.GEO_REFERENTIEL_COMMUNES_URL, {
+      encoding: COMMUNE_ENCODING,
+      delimiter: COMMUNE_DELIMITER,
+      signal,
+    }),
   );
   checkCommunes(communes);
 
@@ -108,7 +118,11 @@ export const syncGeoReferentiel = async (
     'Communes lues, téléchargement des codes postaux',
   );
   const inseePostal = await parseInseePostal(
-    fetchCsvLines(envVars.GEO_REFERENTIEL_POSTAL_URL, { encoding: INSEE_POSTAL_ENCODING, signal }),
+    fetchCsvLines(envVars.GEO_REFERENTIEL_POSTAL_URL, {
+      encoding: INSEE_POSTAL_ENCODING,
+      delimiter: INSEE_POSTAL_DELIMITER,
+      signal,
+    }),
     new Set(communes.rows.keys()),
   );
   checkInseePostal(inseePostal);

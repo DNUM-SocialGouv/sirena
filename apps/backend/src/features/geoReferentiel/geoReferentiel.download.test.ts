@@ -21,9 +21,13 @@ const respondWith = (chunks: Uint8Array[], contentType = 'text/csv') => {
   });
 };
 
-const collect = async (url = 'https://example.test/data.csv', encoding: 'utf-8' | 'latin1' = 'utf-8') => {
+const collect = async (
+  url = 'https://example.test/data.csv',
+  encoding: 'utf-8' | 'latin1' = 'utf-8',
+  delimiter = ';',
+) => {
   const lines: string[] = [];
-  for await (const line of fetchCsvLines(url, { encoding })) {
+  for await (const line of fetchCsvLines(url, { encoding, delimiter })) {
     lines.push(line);
   }
   return lines;
@@ -86,11 +90,53 @@ describe('fetchCsvLines', () => {
 
     expect(fetchMock).toHaveBeenCalledWith('https://example.test/data.csv', {
       redirect: 'follow',
-      signal: undefined,
+      signal: expect.any(AbortSignal),
     });
     // Poser cet en-tête à la main désactive la décompression automatique d'undici.
     const [, init] = fetchMock.mock.calls[0];
     expect(init.headers).toBeUndefined();
+  });
+
+  it('should keep a record whose quoted field holds a line break', async () => {
+    // Un libellé multi-lignes ne doit pas produire deux enregistrements illisibles.
+    respondWith([new TextEncoder().encode('a,b\n"Saint-Georges\nle Haut",01D\n')]);
+
+    expect(await collect('https://example.test/data.csv', 'utf-8', ',')).toEqual([
+      'a,b',
+      '"Saint-Georges\nle Haut",01D',
+    ]);
+  });
+
+  it('should reassemble a quoted field split across two chunks', async () => {
+    const encoder = new TextEncoder();
+    respondWith([encoder.encode('a,b\n"Saint-Georges\n'), encoder.encode('le Haut",01D\n')]);
+
+    expect(await collect('https://example.test/data.csv', 'utf-8', ',')).toEqual([
+      'a,b',
+      '"Saint-Georges\nle Haut",01D',
+    ]);
+  });
+
+  it('should treat a doubled quote as an escape rather than the end of the field', async () => {
+    respondWith([new TextEncoder().encode('a,b\n"L""Abergement\nClémenciat",01D\n')]);
+
+    expect(await collect('https://example.test/data.csv', 'utf-8', ',')).toEqual([
+      'a,b',
+      '"L""Abergement\nClémenciat",01D',
+    ]);
+  });
+
+  it('should treat a lone quote inside an unquoted field as data', async () => {
+    // Sans cette garde, un guillemet isolé avalerait tout le reste du fichier.
+    respondWith([new TextEncoder().encode('a;b\n12";34\n56;78\n')]);
+
+    expect(await collect()).toEqual(['a;b', '12";34', '56;78']);
+  });
+
+  it('should end a record on the line break that follows a closed quoted field', async () => {
+    respondWith([new TextEncoder().encode('"a","b"\r\n"1","2"\r\n')]);
+
+    expect(await collect('https://example.test/data.csv', 'utf-8', ',')).toEqual(['"a","b"', '"1","2"']);
   });
 
   it('should throw when the response status is not ok', async () => {
@@ -111,21 +157,32 @@ describe('fetchCsvLines', () => {
     await expect(collect()).rejects.toThrow(/sans corps/);
   });
 
-  it('should propagate an abort signal to fetch', async () => {
+  it('should abort the download when the caller aborts', async () => {
     const controller = new AbortController();
     respondWith([new TextEncoder().encode('a\n')]);
 
     const lines: string[] = [];
     for await (const line of fetchCsvLines('https://example.test/data.csv', {
       encoding: 'utf-8',
+      delimiter: ';',
       signal: controller.signal,
     })) {
       lines.push(line);
     }
 
-    expect(fetchMock).toHaveBeenCalledWith('https://example.test/data.csv', {
-      redirect: 'follow',
-      signal: controller.signal,
-    });
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.signal.aborted).toBe(false);
+    controller.abort();
+    expect(init.signal.aborted).toBe(true);
+  });
+
+  it('should give the download a deadline even without a caller signal', async () => {
+    respondWith([new TextEncoder().encode('a\n')]);
+
+    await collect();
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+    expect(init.signal.aborted).toBe(false);
   });
 });
