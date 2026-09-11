@@ -1,4 +1,9 @@
-import { formatMesureProtectionPersonneConcernee } from '@sirena/common/utils';
+import { REPONSE_OUI_NON } from '@sirena/common/constants';
+import {
+  formatMesureProtectionPersonneConcernee,
+  formatReponseOuiNon,
+  REPONSE_NON_RENSEIGNE_LABEL,
+} from '@sirena/common/utils';
 import { InfoSection } from '@sirena/ui';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
@@ -143,30 +148,40 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, editHref }: 
           <>
             <SectionTitle level={4}>Informations complémentaires</SectionTitle>
             <ul className="fr-mb-2w">
-              {personne?.estHandicapee === true && <li>Il/elle est en situation d&apos;handicap</li>}
-              {personne?.estHandicapee === false && <li>Il/elle n&apos;est pas en situation d&apos;handicap</li>}
+              {personne?.estHandicapee === REPONSE_OUI_NON.OUI && <li>Il/elle est en situation d&apos;handicap</li>}
+              {personne?.estHandicapee === REPONSE_OUI_NON.NON && (
+                <li>Il/elle n&apos;est pas en situation d&apos;handicap</li>
+              )}
+              {personne?.estHandicapee === REPONSE_OUI_NON.NON_RENSEIGNE && (
+                <li>Situation de handicap : {REPONSE_NON_RENSEIGNE_LABEL}</li>
+              )}
               {personne?.veutGarderAnonymat !== null && personne?.veutGarderAnonymat !== undefined && (
                 <li>{renderConsentIdentite(personne.veutGarderAnonymat)}</li>
               )}
-              {personne?.estVictimeInformee === true && (
+              {personne?.estVictimeInformee === REPONSE_OUI_NON.OUI && (
                 <li>Il/elle a été informé(e) de la démarche par le déclarant</li>
               )}
-              {personne?.estVictimeInformee === false && (
+              {personne?.estVictimeInformee === REPONSE_OUI_NON.NON && (
                 <li>Il/elle n&apos;a pas été informé(e) de la démarche par le déclarant</li>
+              )}
+              {personne?.estVictimeInformee === REPONSE_OUI_NON.NON_RENSEIGNE && (
+                <li>Informé(e) de la démarche par le déclarant : {REPONSE_NON_RENSEIGNE_LABEL}</li>
               )}
               {mesureProtectionLabel && <li>{mesureProtectionLabel}</li>}
             </ul>
-            {personne?.estVictimeInformee === false && personne?.victimeInformeeCommentaire && (
+            {personne?.estVictimeInformee === REPONSE_OUI_NON.NON && personne?.victimeInformeeCommentaire && (
               <p className="fr-mb-2w">
                 Raison pour laquelle il/elle n&apos;est pas informé(e) : {personne.victimeInformeeCommentaire}
               </p>
             )}
-            {personne?.aAutrePersonnes ? (
+            {personne?.aAutrePersonnes != null ? (
               <>
                 <p className="fr-mb-1w">
-                  D'autres personnes sont concernées par la requête : {personne.aAutrePersonnes ? 'Oui' : 'Non'}
+                  D'autres personnes sont concernées par la requête : {formatReponseOuiNon(personne.aAutrePersonnes)}
                 </p>
-                {personne.autrePersonnes ? <p className="fr-mb-1w">{personne.autrePersonnes}</p> : null}
+                {personne.aAutrePersonnes === REPONSE_OUI_NON.OUI && personne.autrePersonnes ? (
+                  <p className="fr-mb-1w">{personne.autrePersonnes}</p>
+                ) : null}
               </>
             ) : null}
             {personne?.commentaire ? (

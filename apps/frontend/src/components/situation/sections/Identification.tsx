@@ -1,8 +1,10 @@
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
-import type { SituationData } from '@sirena/common/schemas';
+import { REPONSE_OUI_NON } from '@sirena/common/constants';
+import type { ReponseOuiNon, SituationData } from '@sirena/common/schemas';
 import { useId } from 'react';
 import { ReadOnlyField } from '@/components/common/ReadOnlyField';
+import { buildOuiNonOptions } from '@/lib/radioOptions';
 
 type IdentificationProps = {
   formData: SituationData;
@@ -22,12 +24,8 @@ export function Identification({
   const departementEnChargeId = useId();
   const estLieAuSignalement = formData.estLieAuSignalement;
 
-  const handleEstLieChange = (value: boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      estLieAuSignalement: value,
-      numerosSignalement: value ? prev.numerosSignalement : undefined,
-    }));
+  const handleEstLieChange = (value: ReponseOuiNon) => {
+    setFormData((prev) => ({ ...prev, estLieAuSignalement: value }));
   };
 
   return (
@@ -45,27 +43,10 @@ export function Identification({
           name="situation-est-lie-au-signalement"
           orientation="horizontal"
           disabled={isSaving}
-          options={[
-            {
-              label: 'Oui',
-              nativeInputProps: {
-                value: 'true',
-                checked: estLieAuSignalement === true,
-                onChange: () => handleEstLieChange(true),
-              },
-            },
-            {
-              label: 'Non',
-              nativeInputProps: {
-                value: 'false',
-                checked: estLieAuSignalement === false,
-                onChange: () => handleEstLieChange(false),
-              },
-            },
-          ]}
+          options={buildOuiNonOptions(estLieAuSignalement, handleEstLieChange)}
         />
 
-        {estLieAuSignalement === true && (
+        {estLieAuSignalement === REPONSE_OUI_NON.OUI && (
           <Input
             label="Numéro de signalement associé"
             hintText="Si plusieurs signalements, séparer les valeurs par des virgules. Exemples : 098655, 446789"

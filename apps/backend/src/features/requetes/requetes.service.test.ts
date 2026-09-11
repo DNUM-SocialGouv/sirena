@@ -15,6 +15,7 @@ import {
   REQUETE_STATUT_TYPES,
   TRANSPORT_TYPE,
 } from '@sirena/common/constants';
+import { booleanToReponseOuiNon } from '@sirena/common/utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sanitizeFilename, urlToStream } from '../../helpers/file.js';
 import { prisma } from '../../libs/__mocks__/prisma.js';
@@ -585,6 +586,7 @@ describe('requetes.service.ts', () => {
         id: '1',
         estNonIdentifiee: null,
         estIdentifie: null,
+        estHandicapee: null,
         isTuteur: null,
         mesureProtection: null,
         estVictimeInformee: null,
@@ -800,7 +802,7 @@ describe('requetes.service.ts', () => {
           estVictime: false,
           declarantDe: { connect: { id: '1' } },
           lienVictime: { connect: { id: fakeRequeteDto.declarant.lienVictimeId } },
-          estHandicapee: fakeRequeteDto.declarant.estHandicapee,
+          estHandicapee: booleanToReponseOuiNon(fakeRequeteDto.declarant.estHandicapee),
           veutGarderAnonymat: null,
           identite: {
             create: {
@@ -819,10 +821,10 @@ describe('requetes.service.ts', () => {
           age: { connect: { id: fakeRequeteDto.participant.ageId } },
           participantDe: { connect: { id: '1' } },
           autrePersonnes: '',
-          aAutrePersonnes: fakeRequeteDto.participant.aAutrePersonnes,
+          aAutrePersonnes: booleanToReponseOuiNon(fakeRequeteDto.participant.aAutrePersonnes),
           commentaire: fakeRequeteDto.participant.commentaire,
-          estHandicapee: fakeRequeteDto.participant.estHandicapee,
-          estVictimeInformee: fakeRequeteDto.participant.estVictimeInformee,
+          estHandicapee: booleanToReponseOuiNon(fakeRequeteDto.participant.estHandicapee),
+          estVictimeInformee: booleanToReponseOuiNon(fakeRequeteDto.participant.estVictimeInformee),
           veutGarderAnonymat: null,
           identite: {
             create: {
@@ -868,6 +870,7 @@ describe('requetes.service.ts', () => {
         id: '1',
         estNonIdentifiee: null,
         estIdentifie: null,
+        estHandicapee: null,
         isTuteur: null,
         mesureProtection: null,
         estVictimeInformee: null,
