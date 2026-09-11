@@ -16,29 +16,18 @@
  */
 
 import * as Sentry from '@sentry/node';
-import pino from 'pino';
-import pretty from 'pino-pretty';
-import { envVars } from '../config/env.js';
 import { syncGeoReferentiel } from '../features/geoReferentiel/geoReferentiel.service.js';
-import { createPinoConfig } from '../helpers/pino.js';
+import { createScriptLogger } from '../helpers/pino.js';
 import { abortControllerStorage, loggerStorage, sentryStorage } from '../libs/asyncLocalStorage.js';
 import { prisma } from '../libs/prisma.js';
 import '../libs/instrument.js';
-
-const createSyncLogger = () => {
-  const destination =
-    envVars.LOG_FORMAT === 'pretty'
-      ? pretty({ ignore: 'pid,hostname', translateTime: 'SYS:standard', messageFormat: '{msg}', sync: true })
-      : pino.destination({ sync: true });
-  return pino(createPinoConfig(), destination);
-};
 
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const force = args.includes('--force');
 
 async function main() {
-  const logger = createSyncLogger();
+  const logger = createScriptLogger();
   const abortController = new AbortController();
 
   await loggerStorage.run(logger, async () => {
