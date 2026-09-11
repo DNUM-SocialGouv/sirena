@@ -231,6 +231,53 @@ describe('affectation.transco.ts', () => {
     });
   });
 
+  describe('isActive filtering', () => {
+    it('should query prisma with an isActive filter on the entity, its parent and its grandparent', async () => {
+      const { prisma } = await import('@sirena/db');
+      await setupTransco(makeAllRequiredEntities());
+
+      expect(prisma.entite.findMany).toHaveBeenCalledWith({
+        select: {
+          id: true,
+          nomComplet: true,
+          entiteMere: {
+            select: {
+              id: true,
+              nomComplet: true,
+              entiteMere: { select: { id: true, nomComplet: true }, where: { isActive: true } },
+            },
+            where: { isActive: true },
+          },
+        },
+        where: { isActive: true },
+      });
+    });
+
+    it('should skip a service entity whose direct parent was filtered out as inactive', async () => {
+      // Prisma nulls out a to-one relation (entiteMere) that fails the nested isActive filter,
+      // rather than removing the row — unlike the root isActive filter which removes it entirely.
+      const entities = makeAllRequiredEntities().map((e) =>
+        (e as { id: string }).id === 'dau-id' ? { ...e, entiteMere: null } : e,
+      );
+      await setupTransco(entities);
+
+      expect(() => transcodeAffectation(1115)).toThrow(SirecTranscoError);
+      expect(mockWarn).toHaveBeenCalledWith(expect.objectContaining({ sirecId: 1115 }), expect.any(String));
+    });
+
+    it('should skip a service entity whose grandparent was filtered out as inactive', async () => {
+      const entities = makeAllRequiredEntities().map((e) => {
+        const entity = e as { id: string; entiteMere: { entiteMere: unknown } | null };
+        if (entity.id !== 'poa-id' || !entity.entiteMere) return e;
+        return { ...entity, entiteMere: { ...entity.entiteMere, entiteMere: null } };
+      });
+      await setupTransco(entities);
+
+      expect(() => transcodeAffectation(1091)).toThrow(SirecTranscoError);
+      expect(mockWarn).toHaveBeenCalledWith(expect.objectContaining({ sirecId: 1091 }), expect.any(String));
+    });
+  });
+
   describe('filterArsEntiteIds', () => {
     beforeEach(async () => {
       await setupTransco(makeAllRequiredEntities());

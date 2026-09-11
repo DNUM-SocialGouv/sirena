@@ -91,6 +91,32 @@ const selectIdentifier = (
   return list.find((i) => i.type?.coding?.some((c) => c.code === typeCode)) ?? list.find((i) => i.system === system);
 };
 
+// The ANS FHIR API can return several near-duplicate resources for the same
+// FINESS/RPPS (same identifier, but only some carry an address). Collapse them
+// to one entry per identifier, keeping the most complete, so the user cannot
+// accidentally pick an address-less duplicate. Entries without an identifier are
+// never merged. Insertion order of the kept entries is preserved. SIRENA-723.
+const dedupeByIdentifier = <T>(
+  items: T[],
+  getKey: (item: T) => string,
+  preferCandidate: (candidate: T, current: T) => boolean,
+): T[] => {
+  const byKey = new Map<string, T>();
+  const withoutKey: T[] = [];
+  for (const item of items) {
+    const key = getKey(item);
+    if (!key) {
+      withoutKey.push(item);
+      continue;
+    }
+    const current = byKey.get(key);
+    if (!current || preferCandidate(item, current)) {
+      byKey.set(key, item);
+    }
+  }
+  return [...byKey.values(), ...withoutKey];
+};
+
 const mapBundleEntries = <TEntry, TResult>(
   data: { entry?: TEntry[] } | undefined,
   mapper: (entry: TEntry) => TResult | undefined,
@@ -113,7 +139,7 @@ export const getPractionners = async (params: GetPractionnersParams) => {
     EsantePractitionerBundleSchema,
   );
 
-  return mapBundleEntries(data, (entry) => {
+  const practitioners = mapBundleEntries(data, (entry) => {
     const resourceName = entry.resource?.name?.[0];
     const identifier = selectIdentifier(entry.resource?.identifier, { typeCode: 'RPPS', system: RPPS_SYSTEM });
 
@@ -129,6 +155,13 @@ export const getPractionners = async (params: GetPractionnersParams) => {
       rpps: identifier.value || '',
     };
   });
+
+  // Same RPPS returned several times means the same practitioner: keep the first.
+  return dedupeByIdentifier(
+    practitioners,
+    (p) => p.rpps,
+    () => false,
+  );
 };
 
 export const getOrganizations = async (params: GetOrganizationsParams) => {
@@ -141,7 +174,7 @@ export const getOrganizations = async (params: GetOrganizationsParams) => {
     EsanteOrganizationBundleSchema,
   );
 
-  return mapBundleEntries(data, (entry) => {
+  const organizations = mapBundleEntries(data, (entry) => {
     const resource = entry.resource;
     const identifier = selectIdentifier(resource?.identifier, { typeCode: 'FINEG', system: FINESS_SYSTEM });
     const address = resource?.address?.[0];
@@ -157,4 +190,12 @@ export const getOrganizations = async (params: GetOrganizationsParams) => {
       addressCity: address?.city || '',
     };
   });
+
+  // Same FINESS returned several times: keep one, preferring the fiche that
+  // carries an address (postal code drives the CD geographic resolution).
+  return dedupeByIdentifier(
+    organizations,
+    (o) => o.identifier,
+    (candidate, current) => !current.addressPostalcode && !!candidate.addressPostalcode,
+  );
 };

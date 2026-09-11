@@ -44,7 +44,8 @@ dialog {
   }
 
   .fr-header .fr-container,
-  .fr-footer .fr-container {
+  .fr-footer .fr-container,
+  .fr-notice .fr-container {
     max-width: none;
     padding-left: 3.5rem;
     padding-right: 3.5rem;
