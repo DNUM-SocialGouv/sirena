@@ -179,7 +179,6 @@ export const syncGeoReferentiel = async (
   }
 
   const result: SyncGeoReferentielResult = {
-    skipped: false,
     communes: communesResult,
     inseePostal: inseePostalResult,
     orphanCommunes: communesResult.orphans,

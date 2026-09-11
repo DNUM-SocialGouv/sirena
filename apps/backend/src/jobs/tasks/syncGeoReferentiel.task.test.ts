@@ -13,13 +13,14 @@ vi.mock('../../crons/crons.service.js', () => ({ getLastCron: vi.fn() }));
 vi.mock('../../features/geoReferentiel/geoReferentiel.service.js', () => ({ syncGeoReferentiel: vi.fn() }));
 vi.mock('../../libs/asyncLocalStorage.js', () => ({ getLoggerStore: () => loggerMock }));
 
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
 const job = {
   name: 'sync-geo-referentiel',
-  data: { timeoutMs: 1_000, minIntervalDays: 25 },
+  data: { timeoutMs: 1_000, minIntervalMs: 24 * DAY_IN_MS },
 } as Job<JobDataMap['sync-geo-referentiel']>;
 
 const syncResult = {
-  skipped: false,
   communes: { created: 1, updated: 0, deleted: 0 },
   inseePostal: { created: 2, updated: 0, deleted: 0 },
   orphanCommunes: 0,
@@ -42,6 +43,11 @@ const runTask = async () => {
   return captured;
 };
 
+const givenLastRun = (endedAt: Date | null) => {
+  // biome-ignore lint/suspicious/noExplicitAny: seul endedAt est lu par la tâche
+  vi.mocked(getLastCron).mockResolvedValue({ endedAt } as any);
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(getLastCron).mockResolvedValue(null);
@@ -61,26 +67,31 @@ describe('syncGeoReferentiel.task', () => {
 
     expect(withCronLifecycle).toHaveBeenCalledWith(
       job,
-      { timeoutMs: 1_000, minIntervalDays: 25 },
+      { timeoutMs: 1_000, minIntervalMs: 24 * DAY_IN_MS },
       expect.any(Function),
     );
   });
 
   it('should skip a run that would repeat a recent synchronisation', async () => {
-    const endedAt = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
-    // biome-ignore lint/suspicious/noExplicitAny: seul endedAt est lu par la tâche
-    vi.mocked(getLastCron).mockResolvedValue({ endedAt } as any);
+    givenLastRun(new Date(Date.now() - 3 * DAY_IN_MS));
 
-    const result = await runTask();
+    await runTask();
 
     expect(runSync).not.toHaveBeenCalled();
-    expect(result).toMatchObject({ skipped: true });
+  });
+
+  it('should not record a skipped run as a synchronisation', async () => {
+    // Sinon la garde repousserait sa propre échéance à chaque redéploiement et le
+    // référentiel ne serait plus jamais synchronisé.
+    givenLastRun(new Date(Date.now() - 3 * DAY_IN_MS));
+
+    await runTask();
+
+    expect(withCronLifecycle).not.toHaveBeenCalled();
   });
 
   it('should run again once the minimum interval has elapsed', async () => {
-    const endedAt = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    // biome-ignore lint/suspicious/noExplicitAny: seul endedAt est lu par la tâche
-    vi.mocked(getLastCron).mockResolvedValue({ endedAt } as any);
+    givenLastRun(new Date(Date.now() - 30 * DAY_IN_MS));
 
     await runTask();
 
@@ -88,12 +99,19 @@ describe('syncGeoReferentiel.task', () => {
   });
 
   it('should run when the last recorded cron never ended', async () => {
-    // biome-ignore lint/suspicious/noExplicitAny: cas d'un cron interrompu avant sa fin
-    vi.mocked(getLastCron).mockResolvedValue({ endedAt: null } as any);
+    givenLastRun(null);
 
     await runTask();
 
     expect(runSync).toHaveBeenCalledTimes(1);
+  });
+
+  it('should read the last run before opening its own cron lifecycle', async () => {
+    await runTask();
+
+    expect(vi.mocked(getLastCron).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(withCronLifecycle).mock.invocationCallOrder[0],
+    );
   });
 
   it('should pass an abort signal to the synchronisation', async () => {

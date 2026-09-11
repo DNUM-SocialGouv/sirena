@@ -7,6 +7,16 @@ import { retryAffectation } from '../tasks/retryAffectation.task.js';
 import { retryImportRequetes } from '../tasks/retryImportRequetes.task.js';
 import { syncGeoReferentiel } from '../tasks/syncGeoReferentiel.task.js';
 
+const SYNC_GEO_REFERENTIEL_INTERVAL_MS = parseInt(envVars.CRON_SYNC_GEO_REFERENTIEL, 10) * 1000;
+
+/**
+ * Le job tourne aussi au démarrage, et sa garde de fraîcheur est dérivée de l'intervalle
+ * configuré : une exécution est acceptée dès que 80 % de celui-ci s'est écoulé. Un
+ * redéploiement ne rejoue donc pas une synchronisation récente, mais abaisser
+ * CRON_SYNC_GEO_REFERENTIEL accélère réellement la suivante au lieu de l'annuler.
+ */
+const SYNC_GEO_REFERENTIEL_MIN_INTERVAL_MS = Math.round(SYNC_GEO_REFERENTIEL_INTERVAL_MS * 0.8);
+
 export const jobHandlers = [
   {
     name: 'fetch-requetes',
@@ -63,10 +73,10 @@ export const jobHandlers = [
   {
     name: 'sync-geo-referentiel',
     task: syncGeoReferentiel,
-    repeatEveryMs: parseInt(envVars.CRON_SYNC_GEO_REFERENTIEL, 10) * 1000,
+    repeatEveryMs: SYNC_GEO_REFERENTIEL_INTERVAL_MS,
     data: {
       timeoutMs: 1000 * 60 * 10,
-      minIntervalDays: 25,
+      minIntervalMs: SYNC_GEO_REFERENTIEL_MIN_INTERVAL_MS,
     },
     // L'intervalle dépasse la durée de vie usuelle d'un déploiement : sans exécution au
     // démarrage, la synchronisation risquerait de ne jamais se déclencher. La garde de

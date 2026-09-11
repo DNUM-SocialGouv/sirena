@@ -55,5 +55,15 @@ describe('job.definitions', () => {
         expect(job.repeatEveryMs).toBeGreaterThan(0);
       }
     });
+
+    it('should derive the geo referentiel freshness guard from its configured interval', async () => {
+      const { jobHandlers } = await import('./job.definitions.js');
+      const syncGeo = jobHandlers.find((job) => job.name === 'sync-geo-referentiel');
+
+      // Une garde constante annulerait tout abaissement de CRON_SYNC_GEO_REFERENTIEL :
+      // chaque exécution serait ignorée pour cause de synchronisation trop récente.
+      expect(syncGeo?.repeatEveryMs).toBe(60_000);
+      expect(syncGeo?.data).toMatchObject({ minIntervalMs: 48_000 });
+    });
   });
 });

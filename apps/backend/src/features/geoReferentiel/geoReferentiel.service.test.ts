@@ -105,7 +105,6 @@ describe('syncGeoReferentiel', () => {
     const result = await syncGeoReferentiel();
 
     expect(result).toMatchObject({
-      skipped: false,
       communes: { created: 10, updated: 2 },
       inseePostal: { created: 5, updated: 1 },
       duplicateRows: 3_681,

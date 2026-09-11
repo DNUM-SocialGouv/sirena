@@ -59,7 +59,6 @@ export type CoverageReport = {
 };
 
 export type SyncGeoReferentielResult = {
-  skipped: boolean;
   communes: WriteResult;
   inseePostal: WriteResult;
   /** Communes présentes en base mais absentes de la source : signalées, jamais supprimées. */

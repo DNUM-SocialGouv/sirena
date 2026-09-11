@@ -19,7 +19,7 @@ export type JobDataMap = {
   };
   'sync-geo-referentiel': {
     timeoutMs: number;
-    minIntervalDays: number;
+    minIntervalMs: number;
   };
 };
 
