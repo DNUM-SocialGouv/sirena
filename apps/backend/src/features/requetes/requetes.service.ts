@@ -1,4 +1,5 @@
-import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { helpers } from '@sirena/backend-utils';
+import { ERROR_KIND, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { booleanToReponseOuiNon } from '@sirena/common/utils';
 import { sanitizeFilename, urlToStream } from '../../helpers/file.js';
 import type { FileProcessingJobData } from '../../jobs/queues/fileProcessing.queue.js';
@@ -501,12 +502,13 @@ export const updateDateAndTypeRequete = async (
     const serverUpdatedAt = requete.updatedAt;
 
     if (serverUpdatedAt.getTime() !== clientUpdatedAt.getTime()) {
-      const error = new Error('CONFLICT: The participant identity has been modified by another user.');
-      (error as Error & { conflictData?: unknown }).conflictData = {
-        serverData: requete,
-        serverUpdatedAt: serverUpdatedAt.toISOString(),
-      };
-      throw error;
+      helpers.throwHTTPException409Conflict('The requete has been modified by another user.', {
+        cause: {
+          serverData: requete,
+          serverUpdatedAt: serverUpdatedAt.toISOString(),
+        },
+        kind: ERROR_KIND.BUSINESS,
+      });
     }
   }
 

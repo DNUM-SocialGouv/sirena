@@ -670,6 +670,7 @@ interface UpdateRequeteInput {
 interface UpdateRequeteControls {
   declarant?: { updatedAt?: string };
   participant?: { updatedAt?: string };
+  situation?: { updatedAt?: string };
 }
 
 const buildPersonneAdresseUpsert = (
@@ -934,12 +935,13 @@ export const updateRequeteParticipant = async (
     const serverUpdatedAt = requete.participant.identite.updatedAt;
 
     if (clientUpdatedAt.getTime() !== serverUpdatedAt.getTime()) {
-      const error = new Error('CONFLICT: The participant identity has been modified by another user.');
-      (error as Error & { conflictData?: unknown }).conflictData = {
-        serverData: requete.participant,
-        serverUpdatedAt: serverUpdatedAt.toISOString(),
-      };
-      throw error;
+      helpers.throwHTTPException409Conflict('The participant identity has been modified by another user.', {
+        cause: {
+          serverData: requete.participant,
+          serverUpdatedAt: serverUpdatedAt.toISOString(),
+        },
+        kind: ERROR_KIND.BUSINESS,
+      });
     }
   }
 
@@ -1670,6 +1672,7 @@ export const updateRequeteSituation = async (
   changedById?: string,
   userEntityIds?: string[],
   topEntiteId?: string,
+  controls?: UpdateRequeteControls,
 ): Promise<{
   requete: Awaited<ReturnType<typeof prisma.requete.findUnique>>;
   newAssignedEntiteIds: string[];
@@ -1682,6 +1685,29 @@ export const updateRequeteSituation = async (
   });
   if (!requete) {
     throw new Error('Requete not found');
+  }
+
+  if (controls?.situation?.updatedAt) {
+    const targetSituation = requete.situations.find((situation) => situation.id === situationId);
+
+    if (targetSituation) {
+      const clientUpdatedAt = new Date(controls.situation.updatedAt);
+      const serverUpdatedAt = targetSituation.updatedAt;
+
+      if (clientUpdatedAt.getTime() !== serverUpdatedAt.getTime()) {
+        const fullSituation = await prisma.situation.findUnique({
+          where: { id: situationId },
+          include: SITUATION_INCLUDE_FULL,
+        });
+        // traitementDesFaits is derived, not stored: without it the client merge would erase it.
+        const serverData = fullSituation ? await enrichSituationWithTraitementDesFaits(fullSituation) : targetSituation;
+
+        helpers.throwHTTPException409Conflict('The situation has been modified by another user.', {
+          cause: { serverData, serverUpdatedAt: serverUpdatedAt.toISOString() },
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+    }
   }
 
   let newAssignedEntiteIds: string[] = [];

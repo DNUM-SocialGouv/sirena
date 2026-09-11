@@ -365,6 +365,8 @@ model Situation {
   requeteId String?
 
   situationEntites SituationEntite[]
+
+  updatedAt DateTime @updatedAt
 }
 
 model DomainesFonctionnelsEnum {
