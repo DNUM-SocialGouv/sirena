@@ -8,6 +8,13 @@ anonymize:
 sirec-restore:
   enabled: true
 
+# Présent mais suspendu : le référentiel d'intégration n'a pas besoin d'être rafraîchi tous
+# les mois, en revanche le CronJob doit exister pour qu'on puisse le déclencher à la demande
+# (kubectl create job --from=cronjob/geo-sync geo-sync-$(date +%s)).
+geo-sync:
+  enabled: true
+  suspend: true
+
 backend:
   SDPSN-devops-charts:
     namespace: org-sdpsn-ws-sirena-integration

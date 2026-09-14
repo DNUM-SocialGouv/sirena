@@ -1,0 +1,73 @@
+{{- if .Values.enabled }}
+# Rafraîchit les tables Commune et InseePostal depuis data.gouv.fr (t_geo_com pour les
+# communes, Base officielle des codes postaux pour les codes postaux).
+#
+# La planification est volontairement hors de l'application : le planificateur interne recrée
+# ses jobs répétables à chaque démarrage, ce qui remettrait à zéro le compte à rebours d'un
+# rythme mensuel et empêcherait la synchronisation de se déclencher entre deux déploiements.
+#
+# Déclenchement à la demande — c'est aussi comme cela qu'on la teste :
+# kubectl create job --from=cronjob/geo-sync geo-sync-$(date +%s)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: geo-sync
+  labels:
+    app: geo-sync
+spec:
+  suspend: {{ .Values.suspend }}
+  schedule: {{ .Values.schedule | quote }}
+  # Une synchronisation dure quelques minutes et réécrit les mêmes tables : jamais deux à la
+  # fois, et on saute l'occurrence plutôt que de l'empiler.
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: geo-sync
+    spec:
+      backoffLimit: {{ .Values.backoffLimit }}
+      activeDeadlineSeconds: {{ .Values.activeDeadlineSeconds }}
+      template:
+        metadata:
+          labels:
+            app: geo-sync
+          annotations:
+            prometheus.io/scrape: "false"
+        spec:
+          {{- if .Values.imagePullSecretsName }}
+          imagePullSecrets:
+            - name: {{ .Values.imagePullSecretsName }}
+          {{- end }}
+          restartPolicy: Never
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          containers:
+            - name: geo-sync
+              image: {{ .Values.image }}
+              imagePullPolicy: {{ .Values.pullPolicy | default "Always" }}
+              securityContext:
+                {{- toYaml .Values.containerSecurityContext | nindent 16 }}
+              # L'ENTRYPOINT de l'image démarre le serveur HTTP : on lui substitue le script.
+              command:
+                - pnpm
+                - --filter
+                - "@sirena/backend"
+                - op:sync:geodata
+              {{- with .Values.args }}
+              args:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              envFrom:
+                {{- range .Values.envFrom.configMaps }}
+                - configMapRef:
+                    name: {{ . }}
+                {{- end }}
+                {{- range .Values.envFrom.secrets }}
+                - secretRef:
+                    name: {{ . }}
+                {{- end }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+{{- end }}

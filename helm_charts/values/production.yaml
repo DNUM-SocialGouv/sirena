@@ -11,6 +11,9 @@ sirec-restore:
     dumpObjectPrefix: "dumps_prod/"
     dumpSourceDb: "sirec_national"
 
+geo-sync:
+  enabled: true
+
 backend:
   SDPSN-devops-charts:
     namespace: org-sdpsn-ws-sirena-production

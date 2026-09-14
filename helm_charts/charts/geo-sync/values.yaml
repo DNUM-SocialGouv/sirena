@@ -1,0 +1,73 @@
+---
+# Sous-chart désactivé par défaut (comme anonymize et sirec-restore) : activé par
+# environnement via `geo-sync.enabled: true` dans values/<env>.yaml. Le gate est porté par le
+# template (`{{- if .Values.enabled }}`).
+enabled: false
+
+# Livré actif : la synchronisation est idempotente et additive, elle ne détruit rien qu'un
+# garde-fou ne protège déjà. Mettre à true dans un environnement où l'on veut seulement
+# pouvoir la déclencher à la demande.
+suspend: false
+
+# Le 1er de chaque mois à 3 h. Le contrôleur Kubernetes interprète l'horaire en UTC, pas dans
+# le fuseau de l'image : l'heure exacte importe peu pour un rafraîchissement mensuel.
+# Les fusions de communes prennent effet au 1er janvier, une synchro mensuelle les rattrape
+# largement à temps.
+schedule: "0 3 1 * *"
+
+# Image du backend : elle embarque le script op:sync:geodata et ses dépendances.
+image: ghcr.io/dnum-socialgouv/sirena:latest-backend
+imagePullSecretsName: registry-secret
+pullPolicy: Always
+
+# Le script valide l'intégralité du schéma d'environnement au démarrage : il lui faut les
+# mêmes sources de configuration qu'au worker (charts/worker/values.yaml), secrets de base de
+# données, Redis et bucket compris, même s'il ne se connecte qu'à Postgres.
+#
+# Ces noms sont ceux produits par external-secrets et par le chart de librairie
+# SDPSN-devops-charts (need_database / need_redis / need_bucket). À confirmer au premier
+# `helm template` : le chart de librairie est externe à ce dépôt.
+envFrom:
+  configMaps:
+    - backend-variables
+  secrets:
+    - backend
+    - db-secret
+    - redis-secret
+    - bucket-secret
+
+# Arguments passés à op:sync:geodata. Vide = synchronisation réelle.
+# --dry-run rapporte le diff sans rien écrire, --force applique les suppressions que le
+# garde-fou a bloquées.
+args: []
+
+# Le pic de mémoire vient de la comparaison en mémoire des deux référentiels avec la base :
+# environ 140 000 lignes, toutes sources confondues.
+resources:
+  limits:
+    cpu: 1
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+# Deux téléchargements plafonnés à 5 minutes chacun, puis une transaction d'écriture plafonnée
+# à 5 minutes : 30 minutes laissent de la marge sans laisser un job pendre indéfiniment.
+activeDeadlineSeconds: 1800
+
+# Une reprise : la synchronisation est idempotente, rejouer après un échec réseau est sûr.
+backoffLimit: 1
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+# readOnlyRootFilesystem est volontairement absent : pnpm et tsx écrivent des caches hors du
+# volume de travail.
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  privileged: false
