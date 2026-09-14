@@ -12,6 +12,11 @@ export type GeoEntite = {
 
 /**
  * Finds geo entity by postal code from database
+ *
+ * Un code postal peut couvrir plusieurs communes, parfois de départements différents : le tri
+ * sur le code INSEE fixe laquelle répond, sinon la synchronisation mensuelle du référentiel —
+ * qui recrée les lignes, donc leurs identifiants — changerait l'affectation d'un mois à l'autre.
+ *
  * @param cp - Postal code (code postal)
  * @returns GeoEntite or null if not found
  */
@@ -22,6 +27,9 @@ export async function findGeoByPostalCode(cp: string): Promise<GeoEntite | null>
     },
     include: {
       commune: true,
+    },
+    orderBy: {
+      codeInsee: 'asc',
     },
   });
 
