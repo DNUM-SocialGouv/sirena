@@ -43,3 +43,18 @@ export const createPinoLogger = (messageFormat: string, reqIdGenerator: (c?: Con
 export const createDefaultLogger = () => {
   return pino(createPinoConfig(), createPrettyConfig('{msg}'));
 };
+
+/**
+ * Logger des scripts d'exploitation.
+ *
+ * Ceux-ci se terminent par `process.exit`, qui n'attend pas le vidage des tampons : la
+ * destination est synchrone pour que les derniers logs survivent à la sortie du processus.
+ */
+export const createScriptLogger = () => {
+  const destination =
+    envVars.LOG_FORMAT === 'pretty'
+      ? pretty({ ignore: 'pid,hostname', translateTime: 'SYS:standard', messageFormat: '{msg}', sync: true })
+      : pino.destination({ sync: true });
+
+  return pino(createPinoConfig(), destination);
+};
