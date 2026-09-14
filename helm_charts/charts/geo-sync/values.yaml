@@ -1,0 +1,86 @@
+---
+# Sous-chart désactivé par défaut (comme anonymize et sirec-restore) : activé par
+# environnement via `geo-sync.enabled: true` dans values/<env>.yaml. Le gate est porté par le
+# template (`{{- if .Values.enabled }}`).
+enabled: false
+
+# Livré actif : la synchronisation est idempotente et additive, elle ne détruit rien qu'un
+# garde-fou ne protège déjà. Mettre à true dans un environnement où l'on veut seulement
+# pouvoir la déclencher à la demande.
+suspend: false
+
+# Le 1er de chaque mois à 3 h. Le contrôleur Kubernetes interprète l'horaire en UTC, pas dans
+# le fuseau de l'image : l'heure exacte importe peu pour un rafraîchissement mensuel.
+# Les fusions de communes prennent effet au 1er janvier, une synchro mensuelle les rattrape
+# largement à temps.
+schedule: "0 3 1 * *"
+
+# Image du backend : elle embarque le script op:sync:geodata et ses dépendances.
+image: ghcr.io/dnum-socialgouv/sirena:latest-backend
+imagePullSecretsName: registry-secret
+pullPolicy: Always
+
+# Le script valide l'intégralité du schéma d'environnement au démarrage : il lui faut les
+# mêmes sources de configuration qu'au worker (charts/worker/values.yaml), secrets de base de
+# données, Redis et bucket compris, même s'il ne se connecte qu'à Postgres.
+#
+# Ces noms sont ceux produits par external-secrets et par le chart de librairie
+# SDPSN-devops-charts (need_database / need_redis / need_bucket). Relevés sur le worker
+# déployé, qui monte exactement les mêmes :
+#   kubectl -n org-sdpsn-ws-sirena-integration get deploy worker \
+#     -o jsonpath='{.spec.template.spec.containers[*].envFrom}'
+#
+# Le worker y ajoute mariadb-sirec-secret et migration-bucket-secret, volontairement omis
+# ici : leurs variables sont toutes optionnelles dans le schéma, la synchronisation ne les
+# lit pas, et un secret de moins est un point de rupture de moins au démarrage du pod.
+envFrom:
+  configMaps:
+    - backend-variables
+  secrets:
+    - backend
+    - db-secret
+    - redis-secret
+    - bucket-secret
+
+# Arguments passés à op:sync:geodata. Vide = synchronisation réelle.
+# --dry-run rapporte le diff sans rien écrire, --force applique les suppressions que le
+# garde-fou a bloquées.
+args: []
+
+# Le pic de mémoire vient de la comparaison en mémoire des deux référentiels avec la base :
+# environ 140 000 lignes, toutes sources confondues.
+resources:
+  limits:
+    cpu: 1
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+# Deux téléchargements plafonnés à 5 minutes chacun, puis une transaction d'écriture plafonnée
+# à 5 minutes : 30 minutes laissent de la marge sans laisser un job pendre indéfiniment.
+activeDeadlineSeconds: 1800
+
+# Une reprise : la synchronisation est idempotente, rejouer après un échec réseau est sûr.
+backoffLimit: 1
+
+# `runAsUser` est indispensable ici, pas décoratif : l'image backend déclare `USER node`, un
+# nom et non un UID. Avec `runAsNonRoot` seul, le kubelet ne peut pas vérifier que cet
+# utilisateur n'est pas root et refuse le container (CreateContainerConfigError). 1000 est
+# l'uid de `node` dans les images node:*-alpine. Même raison que le `runAsUser: 1001` de
+# charts/sirec-restore.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+# readOnlyRootFilesystem est volontairement absent : pnpm et tsx écrivent des caches hors du
+# volume de travail.
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  privileged: false

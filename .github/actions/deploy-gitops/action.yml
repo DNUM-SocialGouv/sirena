@@ -62,6 +62,11 @@ runs:
         # restauration du dump SIREC est activee (sirec-restore.enabled).
         rm -r gitops-repo/deployment-targets/${{ inputs.environment }}/sirec-restore || true
 
+        # Idem geo-sync : present uniquement sur les environnements ou la synchronisation
+        # du referentiel geographique est activee (geo-sync.enabled). Sans cette ligne, un
+        # CronJob desactive continuerait de tourner depuis le depot GitOps.
+        rm -r gitops-repo/deployment-targets/${{ inputs.environment }}/geo-sync || true
+
         mv helm_charts/generated_manifests/sirena/charts/* gitops-repo/deployment-targets/${{ inputs.environment }}/
 
         git config --global user.name "github-actions[bot]"

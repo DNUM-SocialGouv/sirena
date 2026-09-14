@@ -6,6 +6,15 @@ import { queueUnprocessedFiles } from '../tasks/queueUnprocessedFiles.task.js';
 import { retryAffectation } from '../tasks/retryAffectation.task.js';
 import { retryImportRequetes } from '../tasks/retryImportRequetes.task.js';
 
+/**
+ * Jobs répétés par le planificateur interne.
+ *
+ * La synchronisation du référentiel géographique n'en fait volontairement pas partie : son
+ * rythme est mensuel, très au-delà de la durée de vie d'un déploiement, alors que le
+ * planificateur recrée les jobs à chaque démarrage et remettrait le compte à rebours à zéro.
+ * Elle est portée par un CronJob Kubernetes (helm_charts/charts/geo-sync) qui appelle
+ * `op:sync:geodata`.
+ */
 export const jobHandlers = [
   {
     name: 'fetch-requetes',
