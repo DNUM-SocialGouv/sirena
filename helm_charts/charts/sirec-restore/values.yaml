@@ -12,7 +12,9 @@ schedule: "0 2 * * *"
 
 images:
   # Client S3 générique (MinIO Client) pour récupérer le dump depuis le bucket.
-  s3: docker.io/minio/mc:latest
+  # Le dépôt docker.io/minio/mc n'existe plus : l'image est tirée de quay.io,
+  # épinglée par digest pour ne pas dépendre d'un cache de nœud (IfNotPresent).
+  s3: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
   # Client MariaDB, version alignée sur le serveur (services-integration/…/mariadb).
   mariadb: docker.io/mariadb:11.8.7
 
