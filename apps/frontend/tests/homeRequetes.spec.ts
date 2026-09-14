@@ -1,4 +1,5 @@
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
+import { dismissAnnouncements } from './utils/announcements';
 import { AUTH_CONFIGS, ensureAuthenticationFileExists } from './utils/authHelper';
 import { baseUrl } from './utils/constants';
 
@@ -21,12 +22,13 @@ test.describe('Requete Feature', () => {
 
   test.beforeEach(async ({ browser }) => {
     context = await browser.newContext({ storageState: authFile });
+    await dismissAnnouncements(context);
     page = await context.newPage();
 
     await page.goto(`${baseUrl}/home`);
     await page.waitForURL((url) => url.pathname === '/home', { timeout: 15000 });
 
-    await expect(page.getByText(/Bienvenue/)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('heading', { name: 'Liste des requêtes', level: 1 })).toBeVisible({ timeout: 15000 });
   });
 
   test.afterEach(async () => {
@@ -35,14 +37,13 @@ test.describe('Requete Feature', () => {
     }
   });
 
-  test('should display home page with welcome message', async () => {
+  test('should display home page with its heading', async () => {
     const heading = page.getByRole('heading', {
-      name: 'Tableau de bord des requêtes',
+      name: 'Liste des requêtes',
       level: 1,
     });
 
     await expect(heading).toBeVisible();
-    await expect(page.getByText(/Bienvenue/)).toBeVisible();
   });
 
   test('should display requetes table with at least 1 requete', async () => {
