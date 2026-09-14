@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
-import { dismissAnnouncements } from './utils/announcements';
+import { autoCloseAnnouncements } from './utils/announcements';
 import { AUTH_CONFIGS, ensureAuthenticationFileExists } from './utils/authHelper';
 import { baseUrl } from './utils/constants';
 
@@ -24,7 +24,7 @@ test.describe('Request Details Feature', () => {
 
   test.beforeEach(async ({ browser }) => {
     context = await browser.newContext({ storageState: authFile });
-    await dismissAnnouncements(context);
+    await autoCloseAnnouncements(context);
     page = await context.newPage();
 
     // Exclure les requêtes clôturées : elles sont en lecture seule (bouton « Ajouter une étape » masqué).
@@ -70,12 +70,10 @@ test.describe('Request Details Feature', () => {
     await expect(inputEtape).toBeVisible();
     await inputEtape.fill(randomStepName);
 
-    // Multi-entity requests require choosing whether the step is shared with the other
-    // affected entities; the field is absent on single-entity requests, hence the guard.
+    // Required on multi-entity requests, absent otherwise.
     const shareStepGroup = page.getByRole('group', { name: /Afficher l.étape pour les autres entités affectées/ });
     if (await shareStepGroup.count()) {
-      // DSFR hides the native radio input behind its label; click the label rather than
-      // .check() on the input. Scroll it in and let the drawer animation settle first.
+      // DSFR hides the radio behind its label; click the label once the drawer has settled.
       const shareStepNon = shareStepGroup.getByText('Non', { exact: true });
       await shareStepNon.scrollIntoViewIfNeeded();
       await page.waitForTimeout(400);

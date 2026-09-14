@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { dismissAnnouncements } from './utils/announcements';
+import { autoCloseAnnouncements } from './utils/announcements';
 import { baseUrl, ENTITY_ADMIN_USER, loginUrl } from './utils/constants';
 import { loginWithProconnect } from './utils/login';
 
 test('logout', async ({ browser }) => {
   const context = await browser.newContext({ httpCredentials: undefined });
   context.clearCookies();
-  await dismissAnnouncements(context);
+  await autoCloseAnnouncements(context);
   const page = await context.newPage();
 
   await loginWithProconnect(page, {

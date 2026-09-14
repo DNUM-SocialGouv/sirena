@@ -1,5 +1,5 @@
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
-import { dismissAnnouncements } from './utils/announcements';
+import { autoCloseAnnouncements } from './utils/announcements';
 import { AUTH_CONFIGS, ensureAuthenticationFileExists } from './utils/authHelper';
 import { baseUrl } from './utils/constants';
 
@@ -22,7 +22,7 @@ test.describe('Requete Feature', () => {
 
   test.beforeEach(async ({ browser }) => {
     context = await browser.newContext({ storageState: authFile });
-    await dismissAnnouncements(context);
+    await autoCloseAnnouncements(context);
     page = await context.newPage();
 
     await page.goto(`${baseUrl}/home`);
