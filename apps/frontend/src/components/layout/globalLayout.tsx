@@ -9,24 +9,14 @@ type GlobalLayoutProps = {
   children: ReactNode;
 };
 
-// Pages that use the full-width container (cf. ticket sirena-634).
 const WIDE_LAYOUT_PREFIXES = ['/home', '/statistiques', '/admin'];
-
-const isRequestOverview = (pathname: string): boolean => {
-  const segments = pathname.split('/').filter(Boolean);
-  if (segments[0] !== 'request') return false;
-  if (segments.length === 2) return true; // /request/create or /request/<id>
-  return segments.length === 3 && segments[2] === 'processing'; // /request/<id>/processing
-};
 
 export const GlobalLayout = ({ children }: GlobalLayoutProps) => {
   const skipLinkRef = useRef<HTMLAnchorElement>(null);
   const mainId = 'main';
   const { pathname } = useLocation();
 
-  const isWideLayout =
-    WIDE_LAYOUT_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)) ||
-    isRequestOverview(pathname);
+  const isWideLayout = WIDE_LAYOUT_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
   useEffect(() => {
     if (!pathname) return;
