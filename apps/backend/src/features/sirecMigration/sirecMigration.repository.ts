@@ -8,6 +8,8 @@ export const SIREC_GROUP_MODE = {
   ECRITURE: 'ECRITURE',
 } as const;
 
+export const DATE_DEBUT_REPRISE_SIREC = '2020-01-01';
+
 export type SirecGroupMode = (typeof SIREC_GROUP_MODE)[keyof typeof SIREC_GROUP_MODE];
 
 const SIREC_GROUP_MODE_BY_RAW_VALUE: Record<number, SirecGroupMode> = {
@@ -187,8 +189,11 @@ export interface SirecReclamationData {
 export async function fetchExistingSirecIds(sirecIds: number[]): Promise<number[]> {
   if (sirecIds.length === 0) return [];
   const rows = await mariadbPool.query<{ id_data: number }[]>(
-    'SELECT id_data FROM sire_reclamation_data WHERE id_data IN (?)',
-    [sirecIds],
+    `SELECT id_data
+     FROM sire_reclamation_data
+     WHERE id_data IN (?)
+       AND (date_cloture is null OR date_cloture >= ?)`,
+    [sirecIds, DATE_DEBUT_REPRISE_SIREC],
   );
   return rows.map((row) => row.id_data);
 }
@@ -199,8 +204,9 @@ export async function fetchSirecIdsByServiceIds(serviceIds: number[]): Promise<n
     `SELECT DISTINCT r.id_data
      FROM sire_reclamation_data r
      INNER JOIN sire_reclamation_data_group rg ON r.id_data = rg.id_data
-     WHERE rg.id_group IN (?)`,
-    [serviceIds],
+     WHERE rg.id_group IN (?)
+       AND (r.date_cloture is null OR r.date_cloture >= ?)`,
+    [serviceIds, DATE_DEBUT_REPRISE_SIREC],
   );
   return rows.map((row) => row.id_data);
 }

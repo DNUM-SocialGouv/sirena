@@ -44,18 +44,12 @@ dialog {
   }
 
   .fr-header .fr-container,
-  .fr-footer .fr-container {
+  .fr-footer .fr-container,
+  .fr-notice .fr-container {
     max-width: none;
     padding-left: 3.5rem;
     padding-right: 3.5rem;
   }
-}
-
-.bg-cumulus {
-  margin-left: calc(-1 * var(--wide-gutter, 1rem));
-  margin-right: calc(-1 * var(--wide-gutter, 1rem));
-  padding-left: var(--wide-gutter, 1rem);
-  padding-right: var(--wide-gutter, 1rem);
 }
 
 .center-icon-with-sr-only:before {

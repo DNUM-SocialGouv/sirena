@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mariadbPool } from '../../config/mariadb.js';
 import {
+  DATE_DEBUT_REPRISE_SIREC,
+  fetchExistingSirecIds,
   fetchSirecData,
   fetchSirecFiles,
   fetchSirecGroupIds,
@@ -693,6 +695,64 @@ describe('sirecMigration.repository.ts', () => {
     });
   });
 
+  describe('fetchExistingSirecIds', () => {
+    it('should return the ids that exist (and are eligible) among the given sirecIds', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([{ id_data: 10 }, { id_data: 20 }]);
+
+      const result = await fetchExistingSirecIds([10, 20, 30]);
+
+      expect(result).toEqual([10, 20]);
+      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_reclamation_data'), [
+        [10, 20, 30],
+        DATE_DEBUT_REPRISE_SIREC,
+      ]);
+    });
+
+    it('should return an empty array without querying when sirecIds is empty', async () => {
+      const result = await fetchExistingSirecIds([]);
+
+      expect(result).toEqual([]);
+      expect(mariadbPool.query).not.toHaveBeenCalled();
+    });
+
+    it('should only migrate reclamations still open or closed since the reprise cutoff date', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
+
+      await fetchExistingSirecIds([1]);
+
+      expect(mariadbPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('date_cloture is null OR date_cloture >= ?'),
+        [[1], DATE_DEBUT_REPRISE_SIREC],
+      );
+    });
+
+    it('should pass the cutoff date as a bound parameter, never interpolated into the SQL text', async () => {
+      // Regression test: an earlier version interpolated the date directly into
+      // the query (`date_cloture >= 2020-01-01`), which MariaDB parses as the
+      // arithmetic expression `2020 - 01 - 01`, not a date comparison.
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
+
+      await fetchExistingSirecIds([1]);
+
+      const [sql] = vi.mocked(mariadbPool.query).mock.calls[0];
+      expect(sql as string).not.toContain(DATE_DEBUT_REPRISE_SIREC);
+    });
+
+    it('should have balanced parentheses in the query', async () => {
+      // Regression test: an earlier version of a sibling query was missing the
+      // closing parenthesis of the date-cloture condition, causing a SQL syntax
+      // error at runtime.
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
+
+      await fetchExistingSirecIds([1]);
+
+      const [sql] = vi.mocked(mariadbPool.query).mock.calls[0];
+      const opens = ((sql as string).match(/\(/g) ?? []).length;
+      const closes = ((sql as string).match(/\)/g) ?? []).length;
+      expect(opens).toBe(closes);
+    });
+  });
+
   describe('fetchSirecIdsByServiceIds', () => {
     it('should return distinct id_data for the given service ids', async () => {
       vi.mocked(mariadbPool.query).mockResolvedValueOnce([{ id_data: 10 }, { id_data: 20 }, { id_data: 30 }]);
@@ -700,7 +760,10 @@ describe('sirecMigration.repository.ts', () => {
       const result = await fetchSirecIdsByServiceIds([5, 6]);
 
       expect(result).toEqual([10, 20, 30]);
-      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_reclamation_data r'), [[5, 6]]);
+      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_reclamation_data r'), [
+        [5, 6],
+        DATE_DEBUT_REPRISE_SIREC,
+      ]);
     });
 
     it('should return an empty array when no reclamations found', async () => {
@@ -727,6 +790,39 @@ describe('sirecMigration.repository.ts', () => {
         expect.stringContaining('INNER JOIN sire_reclamation_data_group'),
         expect.any(Array),
       );
+    });
+
+    it('should only migrate reclamations still open or closed since the reprise cutoff date', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
+
+      await fetchSirecIdsByServiceIds([1]);
+
+      expect(mariadbPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('date_cloture is null OR r.date_cloture >= ?'),
+        [[1], DATE_DEBUT_REPRISE_SIREC],
+      );
+    });
+
+    it('should pass the cutoff date as a bound parameter, never interpolated into the SQL text', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
+
+      await fetchSirecIdsByServiceIds([1]);
+
+      const [sql] = vi.mocked(mariadbPool.query).mock.calls[0];
+      expect(sql as string).not.toContain(DATE_DEBUT_REPRISE_SIREC);
+    });
+
+    it('should have balanced parentheses in the query', async () => {
+      // Regression test for the missing closing parenthesis around the
+      // date-cloture condition, which caused a SQL syntax error at runtime.
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
+
+      await fetchSirecIdsByServiceIds([1]);
+
+      const [sql] = vi.mocked(mariadbPool.query).mock.calls[0];
+      const opens = ((sql as string).match(/\(/g) ?? []).length;
+      const closes = ((sql as string).match(/\)/g) ?? []).length;
+      expect(opens).toBe(closes);
     });
   });
 

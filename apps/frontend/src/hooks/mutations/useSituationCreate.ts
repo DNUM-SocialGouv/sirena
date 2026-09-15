@@ -3,7 +3,8 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { uploadFile } from '@/lib/api/fetchUploadedFiles';
 import { client } from '@/lib/api/hc';
-import { handleRequestErrors } from '@/lib/api/tanstackQuery';
+import { notifySaveNetworkFailure } from '@/lib/api/saveError';
+import { HttpError, handleRequestErrors } from '@/lib/api/tanstackQuery';
 
 type ErrorWithRequeteId = Error & {
   requeteId?: string;
@@ -83,7 +84,9 @@ export const useSituationCreate = (options?: { onSuccess?: (result: SituationCre
       if (requeteId) {
         navigate({ to: '/request/$requestId', params: { requestId: requeteId } });
       }
-      console.error(error);
+      if (!(error instanceof HttpError)) {
+        notifySaveNetworkFailure();
+      }
     },
   });
 

@@ -9,10 +9,14 @@ type GlobalLayoutProps = {
   children: ReactNode;
 };
 
+const WIDE_LAYOUT_PREFIXES = ['/home', '/statistiques', '/admin'];
+
 export const GlobalLayout = ({ children }: GlobalLayoutProps) => {
   const skipLinkRef = useRef<HTMLAnchorElement>(null);
   const mainId = 'main';
   const { pathname } = useLocation();
+
+  const isWideLayout = WIDE_LAYOUT_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
   useEffect(() => {
     if (!pathname) return;
@@ -53,7 +57,7 @@ export const GlobalLayout = ({ children }: GlobalLayoutProps) => {
       <main id={mainId} role="main" className="main-content">
         <EnvironmentBanner />
         <UpdateBanner />
-        <div className="fr-container app-container--wide">{children}</div>
+        <div className={isWideLayout ? 'fr-container app-container--wide' : 'fr-container'}>{children}</div>
       </main>
       <AppFooter />
     </div>
