@@ -42,10 +42,11 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
+    "@mermaid-js/mermaid-cli": "^11.17.0",
     "@types/node": "catalog:",
     "@types/pg": "^8.23.1",
     "prisma": "catalog:",
-    "prisma-erd-generator": "^2.5.0",
+    "prisma-erd-generator": "^3.2.1",
     "puppeteer": "^25.9.0",
     "typescript": "catalog:"
   }
