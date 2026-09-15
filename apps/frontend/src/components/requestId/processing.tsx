@@ -184,7 +184,13 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
       <StepFormPanel ref={stepFormPanelRef} requestId={requestId} />
       <SendAcknowledgmentDrawer ref={sendAcknowledgmentDrawerRef} />
       <CloseRequeteModal ref={closeRequeteModalRef} requestId={requestId} triggerButtonRef={closeRequeteButtonRef} />
-      <ReopenRequeteModal ref={reopenRequeteModalRef} requestId={requestId} triggerButtonRef={reopenRequeteButtonRef} />
+      <ReopenRequeteModal
+        ref={reopenRequeteModalRef}
+        requestId={requestId}
+        otherEntitiesQuery={otherEntitiesQuery}
+        onRefreshRecipients={otherEntitiesQuery.refetch}
+        triggerButtonRef={reopenRequeteButtonRef}
+      />
     </>
   ) : (
     <p className="fr-text--sm fr-text--grey">
