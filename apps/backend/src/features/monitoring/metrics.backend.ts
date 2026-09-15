@@ -1,4 +1,4 @@
-import { Counter, Gauge, Histogram } from 'prom-client';
+import { Counter, Gauge, Histogram } from '@prometheus-io/client';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import { prisma } from '../../libs/prisma.js';
 import { createMetricsRegistry } from './metrics.common.js';
