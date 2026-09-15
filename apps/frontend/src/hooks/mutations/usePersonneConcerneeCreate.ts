@@ -1,7 +1,8 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { client } from '@/lib/api/hc';
-import { handleRequestErrors } from '@/lib/api/tanstackQuery';
+import { notifySaveNetworkFailure } from '@/lib/api/saveError';
+import { HttpError, handleRequestErrors } from '@/lib/api/tanstackQuery';
 import type { PersonneConcerneeData } from '@/lib/personneConcernee';
 import { formatPersonneConcerneeToServer } from '@/lib/personneConcernee';
 
@@ -22,6 +23,12 @@ export const usePersonneConcerneeCreate = () => {
       if (result?.id) {
         navigate({ to: '/request/$requestId', params: { requestId: result.id } });
       }
+    },
+    onError: (error: unknown) => {
+      if (error instanceof HttpError) {
+        return;
+      }
+      notifySaveNetworkFailure();
     },
   });
 

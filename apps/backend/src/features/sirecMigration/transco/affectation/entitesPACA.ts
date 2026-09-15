@@ -10,6 +10,6 @@ export const AFFECTATION_ENTITES_PACA: Record<number, [EntiteSirenaLabels, ...En
   1039: [{ label: 'DOMS', parentLabel: "ARS Provence-Alpes-Côte d'Azur" }],
   1043: [{ label: 'DOS - Département Pharmacie et Biologie', parentLabel: "ARS Provence-Alpes-Côte d'Azur" }],
   5030: [{ label: 'DSDP', parentLabel: "ARS Provence-Alpes-Côte d'Azur" }],
-  5024: [{ label: 'DSPE - EIGS', parentLabel: "ARS Provence-Alpes-Côte d'Azur" }],
+  5024: [{ label: "ARS Provence-Alpes-Côte d'Azur" }],
   2297: [{ label: 'DAJI - SICR', parentLabel: "ARS Provence-Alpes-Côte d'Azur" }],
 };
