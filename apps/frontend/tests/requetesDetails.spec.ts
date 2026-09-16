@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
+import { autoCloseAnnouncements } from './utils/announcements';
 import { AUTH_CONFIGS, ensureAuthenticationFileExists } from './utils/authHelper';
 import { baseUrl } from './utils/constants';
 
@@ -23,11 +24,12 @@ test.describe('Request Details Feature', () => {
 
   test.beforeEach(async ({ browser }) => {
     context = await browser.newContext({ storageState: authFile });
+    await autoCloseAnnouncements(context);
     page = await context.newPage();
 
     // Exclure les requêtes clôturées : elles sont en lecture seule (bouton « Ajouter une étape » masqué).
     await page.goto(`${baseUrl}/home?statutIds=NOUVEAU,EN_COURS,TRAITEE`);
-    await expect(page.getByText(/Bienvenue/)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Liste des requêtes', level: 1 })).toBeVisible();
 
     const requetesTable = page.getByRole('table');
     await expect(requetesTable).toBeVisible();
@@ -67,6 +69,16 @@ test.describe('Request Details Feature', () => {
     const inputEtape = page.getByRole('textbox', { name: "Nom de l'étape (obligatoire)" });
     await expect(inputEtape).toBeVisible();
     await inputEtape.fill(randomStepName);
+
+    // Required on multi-entity requests, absent otherwise.
+    const shareStepGroup = page.getByRole('group', { name: /Afficher l.étape pour les autres entités affectées/ });
+    if (await shareStepGroup.count()) {
+      // DSFR hides the radio behind its label; click the label once the drawer has settled.
+      const shareStepNon = shareStepGroup.getByText('Non', { exact: true });
+      await shareStepNon.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(400);
+      await shareStepNon.click();
+    }
 
     await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
 

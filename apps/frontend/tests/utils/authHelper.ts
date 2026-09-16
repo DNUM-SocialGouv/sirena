@@ -69,7 +69,7 @@ export async function ensureAuthenticationFileExists(browser: Browser, config: A
       });
 
       await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 30000 });
-      await expect(page.getByText(/Bienvenue/)).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('heading', { name: 'Liste des requêtes', level: 1 })).toBeVisible({ timeout: 10000 });
 
       await context.storageState({ path: authFile });
     } finally {
