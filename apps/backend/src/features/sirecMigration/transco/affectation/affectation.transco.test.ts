@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SirecTranscoError } from '../sirecTransco.error.js';
-import { filterArsEntiteIds, initAffectationTransco, transcodeAffectation } from './affectation.transco.js';
+import {
+  filterArsEntiteIds,
+  initAffectationTransco,
+  SIREC_GROUP_MODE,
+  transcodeAffectation,
+} from './affectation.transco.js';
 
 vi.mock('@sirena/db', () => ({
   prisma: {
@@ -53,6 +58,47 @@ function makeAllRequiredEntities() {
   const childOfDamtn = (id: string, label: string) => makeEntity(id, label, 'DAMTN', damtnId, 'ARS Normandie');
   const childOfDsp = (id: string, label: string) =>
     makeEntity(id, label, 'Direction de la Santé Publique', dspId, 'ARS Normandie');
+
+  const childOfArsAuvergne = (id: string, label: string) =>
+    makeEntity(id, label, 'ARS Auvergne-Rhône-Alpes', ARS_AUVERGNE_ID);
+  const childOfDD = (id: string, label: string, ddId: string, ddLabel: string) =>
+    makeEntity(id, label, ddLabel, ddId, 'ARS Auvergne-Rhône-Alpes');
+
+  const dds = [
+    ['01', 'dd01'],
+    ['03', 'dd03'],
+    ['07', 'dd07'],
+    ['15', 'dd15'],
+    ['26', 'dd26'],
+    ['38', 'dd38'],
+    ['42', 'dd42'],
+    ['43', 'dd43'],
+    ['63', 'dd63'],
+    ['69', 'dd69'],
+    ['73', 'dd73'],
+    ['74', 'dd74'],
+  ] as const;
+
+  const ddEntities = dds.flatMap(([dep, idPrefix]) => {
+    const ddId = `${idPrefix}-id`;
+    const ddLabel = `DD-${dep}`;
+    return [
+      childOfArsAuvergne(ddId, ddLabel),
+      childOfDD(`${idPrefix}-affectee-id`, `${ddLabel} Affectée pour traitement`, ddId, ddLabel),
+      childOfDD(`${idPrefix}-lecture-id`, `${ddLabel} Partagée pour lecture`, ddId, ddLabel),
+    ];
+  });
+
+  const auvergnePoleEntities = [
+    childOfArsAuvergne('pole-01-69-id', 'Pole OSH 01-69'),
+    childOfArsAuvergne('pole-03-15-63-id', 'POLE OSH 03-15-63'),
+    childOfArsAuvergne('pole-07-26-id', 'POLE OSH 07-26'),
+    childOfArsAuvergne('pole-38-id', 'POLE OSH 38'),
+    childOfArsAuvergne('pole-42-43-id', 'POLE 0SH 42-43'),
+    childOfArsAuvergne('pole-73-74-id', 'POLE OSH 73-74'),
+    childOfArsAuvergne('dos-perinatalite-id', 'DOS périnatalité'),
+    childOfArsAuvergne('pole-usagers-reclamations-id', 'Pole Usagers Réclamations'),
+  ];
 
   return [
     // ARS entities
@@ -116,6 +162,8 @@ function makeAllRequiredEntities() {
       "Conseil départemental de L'Orne",
       'cd-orne-id',
     ),
+    ...ddEntities,
+    ...auvergnePoleEntities,
   ];
 }
 
@@ -228,6 +276,46 @@ describe('affectation.transco.ts', () => {
 
         expect(() => transcodeAffectation(693)).toThrow(SirecTranscoError);
       });
+    });
+  });
+
+  describe('group mode filtering (ARS Auvergne-Rhône-Alpes DD) — require initAffectationTransco()', () => {
+    beforeEach(async () => {
+      await setupTransco(makeAllRequiredEntities());
+    });
+
+    it('should include the ECRITURE-only entity and the mode-less pole when mode is ECRITURE', () => {
+      const result = transcodeAffectation(705, SIREC_GROUP_MODE.ECRITURE);
+
+      expect(result.requeteEntiteIds).toEqual([ARS_AUVERGNE_ID]);
+      expect(result.situationEntiteIds).toContain('dd01-affectee-id');
+      expect(result.situationEntiteIds).toContain('pole-01-69-id');
+      expect(result.situationEntiteIds).not.toContain('dd01-lecture-id');
+    });
+
+    it('should include the LECTURE-only entity and the mode-less pole when mode is LECTURE', () => {
+      const result = transcodeAffectation(705, SIREC_GROUP_MODE.LECTURE);
+
+      expect(result.situationEntiteIds).toContain('dd01-lecture-id');
+      expect(result.situationEntiteIds).toContain('pole-01-69-id');
+      expect(result.situationEntiteIds).not.toContain('dd01-affectee-id');
+    });
+
+    it('should only include the mode-less pole when no mode is provided', () => {
+      const result = transcodeAffectation(705);
+
+      expect(result.situationEntiteIds).toEqual(['pole-01-69-id', ARS_AUVERGNE_ID]);
+    });
+
+    it('should share the same pole entity across departments belonging to the same pole', () => {
+      expect(transcodeAffectation(707, SIREC_GROUP_MODE.ECRITURE).situationEntiteIds).toContain('pole-03-15-63-id');
+      expect(transcodeAffectation(711, SIREC_GROUP_MODE.ECRITURE).situationEntiteIds).toContain('pole-03-15-63-id');
+      expect(transcodeAffectation(721, SIREC_GROUP_MODE.ECRITURE).situationEntiteIds).toContain('pole-03-15-63-id');
+    });
+
+    it('should not filter entities that have no groupMode regardless of the SIREC id', () => {
+      expect(transcodeAffectation(4974).situationEntiteIds).toContain('dos-perinatalite-id');
+      expect(transcodeAffectation(703).situationEntiteIds).toContain('pole-usagers-reclamations-id');
     });
   });
 
