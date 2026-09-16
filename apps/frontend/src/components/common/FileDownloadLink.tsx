@@ -8,6 +8,7 @@ import { type FileProcessingStatus, getFileProcessingStatus } from '@/lib/api/fe
 import { HttpError } from '@/lib/api/tanstackQuery';
 import { formatFileSize } from '@/utils/fileHelpers';
 import styles from './FileDownloadLink.module.css';
+import { type FileProcessingRisk, getFileProcessingState } from './fileDownloadState';
 
 // Separate component to isolate checkbox state from parent re-renders
 type FrIconId = React.ComponentProps<ReturnType<typeof createModal>['Component']>['iconId'];
@@ -118,53 +119,8 @@ const isFilePreviewable = (fileName: string): boolean => {
   return previewableExtensions.includes(fileExtension);
 };
 
-const SCAN_FINAL_STATES = ['CLEAN', 'INFECTED', 'ERROR', 'SKIPPED'];
-const SANITIZE_FINAL_STATES = ['COMPLETED', 'ERROR', 'SKIPPED', 'NOT_APPLICABLE'];
-
-const isProcessingComplete = (fileStatus: FileProcessingStatus | null): boolean => {
-  if (!fileStatus) return false;
-
-  const scanComplete = SCAN_FINAL_STATES.includes(fileStatus.scanStatus || '');
-  const sanitizeComplete = SANITIZE_FINAL_STATES.includes(fileStatus.sanitizeStatus || '');
-
-  return scanComplete && sanitizeComplete;
-};
-
-const isSafeFileAvailable = (sanitizeStatus?: string): boolean => {
-  return sanitizeStatus === 'COMPLETED';
-};
-
-const isFileInfected = (scanStatus?: string): boolean => {
-  return scanStatus === 'INFECTED';
-};
-
-const needsWarningBeforeDownload = (status: FileProcessingStatus | null): boolean => {
-  if (!status) return false;
-
-  const scanPending = status.scanStatus === 'PENDING' || status.scanStatus === 'SCANNING';
-  const scanFailed = status.scanStatus === 'ERROR' || status.scanStatus === 'SKIPPED';
-  const sanitizePending = status.sanitizeStatus === 'PENDING' || status.sanitizeStatus === 'SANITIZING';
-  const sanitizeFailed = status.sanitizeStatus === 'ERROR';
-
-  return scanPending || scanFailed || sanitizePending || sanitizeFailed;
-};
-
-type WarningReason = 'scan_pending' | 'scan_failed' | 'sanitize_pending' | 'sanitize_failed' | 'infected' | null;
-
-const getWarningReason = (status: FileProcessingStatus | null): WarningReason => {
-  if (!status) return null;
-
-  if (status.scanStatus === 'INFECTED') return 'infected';
-  if (status.scanStatus === 'PENDING' || status.scanStatus === 'SCANNING') return 'scan_pending';
-  if (status.scanStatus === 'ERROR' || status.scanStatus === 'SKIPPED') return 'scan_failed';
-  if (status.sanitizeStatus === 'PENDING' || status.sanitizeStatus === 'SANITIZING') return 'sanitize_pending';
-  if (status.sanitizeStatus === 'ERROR') return 'sanitize_failed';
-
-  return null;
-};
-
 const getWarningMessage = (
-  reason: WarningReason,
+  reason: FileProcessingRisk['reason'] | null,
 ): { title: string; message: string; severity: 'warning' | 'error' } => {
   switch (reason) {
     case 'infected':
@@ -274,6 +230,8 @@ export const FileDownloadLink = ({
       : null,
   );
 
+  const processingState = useMemo(() => getFileProcessingState(fileStatus), [fileStatus]);
+
   const downloadModal = useMemo(
     () =>
       createModal({
@@ -317,7 +275,7 @@ export const FileDownloadLink = ({
 
   const { isConnected: sseConnected } = useFileStatusSSE({
     fileId: fileId || '',
-    enabled: !!fileId && !pollingDisabledRef.current && !isProcessingComplete(fileStatus),
+    enabled: !!fileId && !pollingDisabledRef.current && !processingState.isComplete,
     onStatusChange: handleSSEStatusChange,
   });
 
@@ -349,7 +307,7 @@ export const FileDownloadLink = ({
 
   // Fallback to polling if SSE is not connected
   useEffect(() => {
-    if (!fileId || pollingDisabledRef.current || isProcessingComplete(fileStatus)) return;
+    if (!fileId || pollingDisabledRef.current || processingState.isComplete) return;
 
     // If SSE is connected, don't poll
     if (sseConnected) return;
@@ -366,27 +324,27 @@ export const FileDownloadLink = ({
 
     const interval = setInterval(pollStatus, POLL_INTERVAL);
     return () => clearInterval(interval);
-  }, [fileId, fileStatus, pollStatus, initialStatus, sseConnected]);
+  }, [fileId, processingState.isComplete, pollStatus, initialStatus, sseConnected]);
 
   const handleClick = (e: React.MouseEvent) => {
     registerTrigger(e.currentTarget as HTMLElement);
     e.preventDefault();
 
     // Case 1: File is infected - show dedicated risk modal
-    if (isFileInfected(fileStatus?.scanStatus)) {
+    if (processingState.risk?.kind === 'infected') {
       resetRiskModalRef.current?.();
       riskModal.open();
       return;
     }
 
     // Case 2: Safe version available - open directly
-    if (isSafeFileAvailable(fileStatus?.sanitizeStatus) && safeHref) {
+    if (processingState.isSafeFileAvailable && safeHref) {
       window.open(safeHref, target);
       return;
     }
 
     // Case 3: File needs warning (scan pending/failed, sanitization pending/failed)
-    if (needsWarningBeforeDownload(fileStatus)) {
+    if (processingState.risk?.kind === 'warning') {
       resetWarningModalRef.current?.();
       warningModal.open();
       return;
@@ -410,77 +368,6 @@ export const FileDownloadLink = ({
     window.open(href, '_blank');
   };
 
-  const renderStatusBadge = () => {
-    if (!fileStatus) return null;
-
-    const { scanStatus, sanitizeStatus } = fileStatus;
-
-    switch (scanStatus) {
-      case 'PENDING':
-        return (
-          <FileStatusTag iconId="fr-icon-time-fill" tone="intermediate">
-            En attente d'analyse antivirus
-          </FileStatusTag>
-        );
-      case 'SCANNING':
-        return (
-          <FileStatusTag iconId="fr-icon-refresh-fill" tone="intermediate">
-            Analyse antivirus en cours
-          </FileStatusTag>
-        );
-      case 'SKIPPED':
-        return (
-          <FileStatusTag iconId="fr-icon-question-fill" tone="intermediate">
-            Non analysé par l'antivirus
-          </FileStatusTag>
-        );
-      case 'ERROR':
-        return (
-          <FileStatusTag iconId="fr-icon-error-warning-fill" tone="error">
-            Analyse antivirus échouée
-          </FileStatusTag>
-        );
-    }
-
-    if (scanStatus === 'CLEAN') {
-      switch (sanitizeStatus) {
-        case 'PENDING':
-          return (
-            <FileStatusTag iconId="fr-icon-time-fill" tone="intermediate">
-              En attente de sécurisation
-            </FileStatusTag>
-          );
-        case 'SANITIZING':
-          return (
-            <FileStatusTag iconId="fr-icon-refresh-fill" tone="intermediate">
-              Sécurisation en cours
-            </FileStatusTag>
-          );
-        case 'ERROR':
-          return (
-            <FileStatusTag iconId="fr-icon-error-warning-fill" tone="error">
-              Sécurisation échouée
-            </FileStatusTag>
-          );
-        case 'COMPLETED':
-          return (
-            <FileStatusTag iconId="fr-icon-checkbox-circle-fill" tone="valid">
-              Analysé et sécurisé
-            </FileStatusTag>
-          );
-        case 'SKIPPED':
-        case 'NOT_APPLICABLE':
-          return (
-            <FileStatusTag iconId="fr-icon-checkbox-circle-fill" tone="valid">
-              Analysé, aucun risque détecté
-            </FileStatusTag>
-          );
-      }
-    }
-
-    return null;
-  };
-
   const displayName = children || (
     <>
       {fileName}
@@ -488,7 +375,7 @@ export const FileDownloadLink = ({
     </>
   );
 
-  const displayHref = isSafeFileAvailable(fileStatus?.sanitizeStatus) && safeHref ? safeHref : href;
+  const displayHref = processingState.isSafeFileAvailable && safeHref ? safeHref : href;
 
   return (
     <>
@@ -505,13 +392,11 @@ export const FileDownloadLink = ({
           <span className="fr-sr-only"> - nouvel onglet</span>
         </a>
         <p id={statusId} className={styles.status} role="status" aria-live="polite" aria-atomic="true">
-          {isFileInfected(fileStatus?.scanStatus) ? (
-            <FileStatusTag iconId="fr-icon-warning-fill" tone="error">
-              Risque détecté par l'antivirus
+          {processingState.status ? (
+            <FileStatusTag iconId={processingState.status.iconId} tone={processingState.status.tone}>
+              {processingState.status.label}
             </FileStatusTag>
-          ) : (
-            renderStatusBadge()
-          )}
+          ) : null}
         </p>
       </div>
 
@@ -527,7 +412,7 @@ export const FileDownloadLink = ({
             doClosesModal: true,
             children: 'Télécharger',
             onClick: () => {
-              const downloadUrl = isSafeFileAvailable(fileStatus?.sanitizeStatus) && safeHref ? safeHref : href;
+              const downloadUrl = processingState.isSafeFileAvailable && safeHref ? safeHref : href;
               window.open(downloadUrl, '_blank');
             },
           },
@@ -553,9 +438,9 @@ export const FileDownloadLink = ({
 
       <ModalWithCheckbox
         modal={warningModal}
-        title={getWarningMessage(getWarningReason(fileStatus)).title}
+        title={getWarningMessage(processingState.risk?.reason ?? null).title}
         iconId="fr-icon-warning-line"
-        message={getWarningMessage(getWarningReason(fileStatus)).message}
+        message={getWarningMessage(processingState.risk?.reason ?? null).message}
         fileName={fileName}
         cancelLabel="Annuler"
         confirmLabel="Télécharger le fichier original"
