@@ -27,6 +27,8 @@ export type TabDescriptor = {
   tabId: string;
   title?: string;
   disabled?: boolean;
+  /** Stable e2e anchor, independent of the tab label. */
+  dataTestId?: string;
 };
 
 export type TabsProps = {
@@ -54,6 +56,7 @@ const TabsListItem = ({ tab, index, selected, onChangeTab }: TabsListItemProps) 
       onTabClick={handleClick}
       title={tab.title}
       disabled={tab.disabled}
+      dataTestId={tab.dataTestId}
     >
       {tab.label}
     </TabsItem>

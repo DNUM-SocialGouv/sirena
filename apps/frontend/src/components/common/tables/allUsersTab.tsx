@@ -178,7 +178,7 @@ export function AllUsersTab() {
       );
     },
     'custom:editionLabel': (row: User) => (
-      <Link to="/admin/user/$userId" className="fr-link" params={{ userId: row.id }}>
+      <Link to="/admin/user/$userId" className="fr-link" params={{ userId: row.id }} data-testid="user-row-link">
         Gérer l'utilisateur
       </Link>
     ),

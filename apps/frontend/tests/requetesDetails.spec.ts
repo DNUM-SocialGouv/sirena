@@ -29,12 +29,12 @@ test.describe('Request Details Feature', () => {
 
     // Exclure les requêtes clôturées : elles sont en lecture seule (bouton « Ajouter une étape » masqué).
     await page.goto(`${baseUrl}/home?statutIds=NOUVEAU,EN_COURS,TRAITEE`);
-    await expect(page.getByRole('heading', { name: 'Liste des requêtes', level: 1 })).toBeVisible();
+    await expect(page.getByTestId('home-title')).toBeVisible();
 
     const requetesTable = page.getByRole('table');
     await expect(requetesTable).toBeVisible();
 
-    const firstRow = requetesTable.locator('tbody tr').first();
+    const firstRow = requetesTable.getByTestId('datatable-row').first();
     await expect(firstRow).toBeVisible();
 
     await expect(firstRow).toHaveAttribute('data-row-key');
@@ -44,7 +44,7 @@ test.describe('Request Details Feature', () => {
 
     requestUuid = uuid as string;
 
-    const viewRequestButton = firstRow.getByRole('link', { name: 'Voir la requête' });
+    const viewRequestButton = firstRow.getByTestId('requete-row-link');
     await viewRequestButton.click();
 
     await expect(page).toHaveURL(`${baseUrl}/request/${requestUuid}`);
@@ -66,12 +66,12 @@ test.describe('Request Details Feature', () => {
 
     await page.getByRole('button', { name: 'Ajouter une étape' }).click();
 
-    const inputEtape = page.getByRole('textbox', { name: "Nom de l'étape (obligatoire)" });
+    const inputEtape = page.getByTestId('step-nom-field').getByRole('textbox');
     await expect(inputEtape).toBeVisible();
     await inputEtape.fill(randomStepName);
 
     // Required on multi-entity requests, absent otherwise.
-    const shareStepGroup = page.getByRole('group', { name: /Afficher l.étape pour les autres entités affectées/ });
+    const shareStepGroup = page.getByTestId('step-partagee-choice');
     if (await shareStepGroup.count()) {
       // DSFR hides the radio behind its label; click the label once the drawer has settled.
       const shareStepNon = shareStepGroup.getByText('Non', { exact: true });

@@ -20,10 +20,10 @@ async function navigateToUserEditPage(page: Page, context: BrowserContext): Prom
 
   // Find a user that is not the current user (can't update our own user)
   const currentUserId = await getCurrentUserId(context);
-  const userRows = allUsersTable.locator('tr[data-row-key]');
+  const userRows = allUsersTable.getByTestId('datatable-row');
   await expect(userRows.first()).toBeVisible();
 
-  const otherUserRows = allUsersTable.locator(`tr[data-row-key]:not([data-row-key="${currentUserId}"])`);
+  const otherUserRows = allUsersTable.locator(`[data-testid="datatable-row"]:not([data-row-key="${currentUserId}"])`);
   const otherUserCount = await otherUserRows.count();
   expect(otherUserCount, 'Should have at least one other user besides current user').toBeGreaterThanOrEqual(1);
 
@@ -35,10 +35,10 @@ async function navigateToUserEditPage(page: Page, context: BrowserContext): Prom
     throw new Error('No target user ID found');
   }
 
-  await firstOtherUserRow.getByRole('link', { name: "Gérer l'utilisateur" }).click();
+  await firstOtherUserRow.getByTestId('user-row-link').click();
 
   await page.waitForURL(`${baseUrl}/admin/user/${targetUserId}`);
-  await expect(page.getByRole('heading', { name: 'Modifier les informations', level: 1 })).toBeVisible();
+  await expect(page.getByTestId('user-role-select')).toBeVisible();
 
   return targetUserId;
 }
@@ -58,7 +58,7 @@ test.describe('Admin Feature', () => {
     page = await context.newPage();
 
     await page.goto(`${baseUrl}/admin/users`);
-    await expect(page.getByRole('heading', { name: "Demande d'habilitation en attente", level: 2 })).toBeVisible();
+    await expect(page.getByTestId('admin-tab-pending')).toBeVisible();
   });
 
   test.afterEach(async () => {
@@ -74,8 +74,8 @@ test.describe('Admin Feature', () => {
     });
     await expect(heading).toBeVisible();
 
-    const pendingTab = page.locator('#tab-pending');
-    const allUsersTab = page.locator('#tab-all');
+    const pendingTab = page.getByTestId('admin-tab-pending');
+    const allUsersTab = page.getByTestId('admin-tab-all');
 
     await expect(pendingTab).toBeVisible();
     await expect(allUsersTab).toBeVisible();
@@ -85,7 +85,7 @@ test.describe('Admin Feature', () => {
   });
 
   test('should show pending users tab by default', async () => {
-    const pendingTab = page.locator('#tab-pending');
+    const pendingTab = page.getByTestId('admin-tab-pending');
     await expect(pendingTab).toHaveAttribute('aria-selected', 'true');
 
     const pendingTable = page.getByRole('table');
@@ -96,7 +96,7 @@ test.describe('Admin Feature', () => {
   });
 
   test('should switch to all users tab', async () => {
-    const allUsersTab = page.locator('#tab-all');
+    const allUsersTab = page.getByTestId('admin-tab-all');
     await allUsersTab.click();
 
     await expect(page).toHaveURL(`${baseUrl}/admin/users/all`);
@@ -124,7 +124,7 @@ test.describe('Admin Feature', () => {
   test('should update user status to opposite value and reflect in table', async () => {
     const targetUserId = await navigateToUserEditPage(page, context);
 
-    const statutSelect = page.locator('select[name="statutId"]');
+    const statutSelect = page.getByTestId('user-statut-select').getByRole('combobox');
     await expect(statutSelect).toBeVisible();
 
     const currentStatus = await statutSelect.inputValue();
@@ -139,7 +139,7 @@ test.describe('Admin Feature', () => {
       page.goto(`${baseUrl}/admin/user/${targetUserId}`),
     ]);
 
-    await expect(page.getByRole('heading', { name: 'Modifier les informations', level: 1 })).toBeVisible();
+    await expect(page.getByTestId('user-statut-select')).toBeVisible();
 
     const { data: userData } = await userResponse.json();
     expect(userData).toBeTruthy();
@@ -150,7 +150,7 @@ test.describe('Admin Feature', () => {
   test('should toggle user role and reset to original after verification', async () => {
     const targetUserId = await navigateToUserEditPage(page, context);
 
-    const roleSelect = page.locator('select[name="roleId"]');
+    const roleSelect = page.getByTestId('user-role-select').getByRole('combobox');
     await expect(roleSelect).toBeVisible();
 
     const originalRole = await roleSelect.inputValue();
@@ -166,7 +166,7 @@ test.describe('Admin Feature', () => {
       page.goto(`${baseUrl}/admin/user/${targetUserId}`),
     ]);
 
-    await expect(page.getByRole('heading', { name: 'Modifier les informations', level: 1 })).toBeVisible();
+    await expect(page.getByTestId('user-role-select')).toBeVisible();
 
     const { data: updatedUser } = await responseAfterChange.json();
     expect(updatedUser).toBeTruthy();
@@ -174,12 +174,12 @@ test.describe('Admin Feature', () => {
     expect(updatedUser.roleId).toBe(oppositeRole);
 
     // PART 2: Revert to original role
-    const resetRoleSelect = page.locator('select[name="roleId"]');
+    const resetRoleSelect = page.getByTestId('user-role-select').getByRole('combobox');
     await expect(resetRoleSelect).toBeVisible();
     await resetRoleSelect.selectOption(originalRole);
 
     if (oppositeRole === 'PENDING') {
-      const statutSelect = page.locator('select[name="statutId"]');
+      const statutSelect = page.getByTestId('user-statut-select').getByRole('combobox');
       await expect(statutSelect).toBeVisible();
       await statutSelect.selectOption('ACTIF');
     }
@@ -192,7 +192,7 @@ test.describe('Admin Feature', () => {
       page.goto(`${baseUrl}/admin/user/${targetUserId}`),
     ]);
 
-    await expect(page.getByRole('heading', { name: 'Modifier les informations', level: 1 })).toBeVisible();
+    await expect(page.getByTestId('user-role-select')).toBeVisible();
 
     const { data: revertedUser } = await responseAfterReset.json();
     expect(revertedUser).toBeTruthy();

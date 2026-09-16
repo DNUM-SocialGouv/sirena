@@ -215,7 +215,7 @@ function RouteComponent() {
                       </div>
                     </fieldset>
                     <EntityHierarchySelector id={user.entiteId} setLevel={handleSetEntite} />
-                    <fieldset className="fr-fieldset">
+                    <fieldset className="fr-fieldset" data-testid="user-role-select">
                       <Select
                         className="fr-fieldset__content"
                         label="Rôle*"
@@ -246,7 +246,7 @@ function RouteComponent() {
                       </Select>
                     </fieldset>
                     {shouldShowStatut && (
-                      <fieldset className="fr-fieldset">
+                      <fieldset className="fr-fieldset" data-testid="user-statut-select">
                         <Select
                           className="fr-fieldset__content"
                           label="Statut*"
