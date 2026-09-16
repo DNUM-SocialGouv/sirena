@@ -106,7 +106,7 @@ export function RequestForm({ requestId, activeTab: activeTabProp = 0 }: Request
 
   return (
     <>
-      <div className="bg-cumulus fr-mb-4w">
+      <div className="bg-cumulus">
         <div className="fr-container fr-py-2w">
           <div className="fr-mb-2w">
             <Link className="fr-link fr-mb-1w" to="/home" search={requetesListSearch ?? {}}>
