@@ -181,7 +181,11 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
           }}
         </QueryStateHandler>
       </div>
-      <StepFormPanel ref={stepFormPanelRef} requestId={requestId} />
+      <StepFormPanel
+        ref={stepFormPanelRef}
+        requestId={requestId}
+        isMultiEntite={queryProcessingSteps.data?.meta.isMultiEntite}
+      />
       <SendAcknowledgmentDrawer ref={sendAcknowledgmentDrawerRef} />
       <CloseRequeteModal ref={closeRequeteModalRef} requestId={requestId} triggerButtonRef={closeRequeteButtonRef} />
       <ReopenRequeteModal ref={reopenRequeteModalRef} requestId={requestId} triggerButtonRef={reopenRequeteButtonRef} />
