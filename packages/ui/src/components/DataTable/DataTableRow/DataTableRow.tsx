@@ -28,7 +28,13 @@ const dataTableRowComponent = <Datum extends RowWithId<RowId>, RowId extends str
   getCell,
 }: DataTableRowProps<Datum, RowId>) => {
   return (
-    <tr key={row[rowId]} id={`${id}-row-key-${rowIndex}`} data-row-key={row[rowId]} aria-selected={selected}>
+    <tr
+      key={row[rowId]}
+      id={`${id}-row-key-${rowIndex}`}
+      data-row-key={row[rowId]}
+      data-testid="datatable-row"
+      aria-selected={selected}
+    >
       {isSelectable ? (
         <CheckboxCell
           id={id}
