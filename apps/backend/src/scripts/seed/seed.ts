@@ -18,6 +18,7 @@ import { runRealDematSocialImport } from './dematSocialImport.js';
 import { resolveArsEntites } from './entites.js';
 import { seedFeatureFlags } from './featureFlags.factory.js';
 import type { GeneratedRequete } from './graph.builder.js';
+import { buildE2eSeedConfig, isE2eProfile } from './profiles.js';
 import { askSeedConfig } from './prompts.js';
 import { printPlan, printResult } from './recap.js';
 import { seedDematSocialRequetes, seedManualRequetes } from './requetes.factory.js';
@@ -25,13 +26,18 @@ import { runReset } from './reset.js';
 import { type SeededUser, seedUsers } from './users.factory.js';
 
 async function main() {
-  const config = await askSeedConfig();
+  const e2e = isE2eProfile();
+
+  const config = e2e ? buildE2eSeedConfig() : await askSeedConfig();
   printPlan(config);
 
-  const confirmed = await confirm({ message: 'Confirmer et lancer le seed ?', default: true });
-  if (!confirmed) {
-    console.log('Annulé.');
-    return;
+  // The e2e profile is non-interactive by design (CI / scripted runs).
+  if (!e2e) {
+    const confirmed = await confirm({ message: 'Confirmer et lancer le seed ?', default: true });
+    if (!confirmed) {
+      console.log('Annulé.');
+      return;
+    }
   }
 
   if (config.reset) {
@@ -42,7 +48,7 @@ async function main() {
   if (config.createUsers) {
     console.log('▶ Création des utilisateurs…');
     const entites = await resolveArsEntites();
-    users = await seedUsers(entites, config.customUsers);
+    users = await seedUsers(entites, config.customUsers, config.fixedUserIds);
   }
 
   const requetes: GeneratedRequete[] = [];

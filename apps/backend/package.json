@@ -16,6 +16,7 @@
     "db:generate": "pnpm --filter @sirena/db generate",
     "db:migrate": "pnpm --filter @sirena/db migrate dev",
     "op:seed": "tsx src/scripts/seed/seed.ts",
+    "op:seed:e2e": "tsx src/scripts/seed/seed.ts --e2e",
     "op:import:dematsocial": "tsx src/scripts/import_dematsocial.ts",
     "op:backfill:requetes-prises-en-charge:dematsocial": "tsx src/scripts/backfill_requetes_prises_en_charge_dematsocial.ts",
     "op:import:geodata": "tsx src/scripts/import_geodata.ts",
