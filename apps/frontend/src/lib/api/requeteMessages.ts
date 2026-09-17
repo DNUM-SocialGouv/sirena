@@ -18,6 +18,19 @@ export async function fetchRequeteMessages(requestId: string, params: FetchReque
   return res.json();
 }
 
+export type PostRequeteMessageData = {
+  contenu: string;
+};
+
+export async function postRequeteMessage(requestId: string, data: PostRequeteMessageData) {
+  const res = await client['requete-messages'][':requeteId'].$post({
+    param: { requeteId: requestId },
+    json: data,
+  });
+  await handleRequestErrors(res, { silentToastError: true });
+  return res.json();
+}
+
 export async function markRequeteDiscussionRead(requestId: string) {
   const res = await client['requete-messages'][':requeteId'].read.$post({
     param: { requeteId: requestId },
