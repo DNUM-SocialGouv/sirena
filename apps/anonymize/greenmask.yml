@@ -227,10 +227,6 @@ dump:
           params:
             column: "commentaire"
             value: ""
-        - name: "Replace"
-          params:
-            column: "lieuPrecision"
-            value: ""
 
     # ── DemarchesEngagees ───────────────────────────────────────────
     - schema: "public"
