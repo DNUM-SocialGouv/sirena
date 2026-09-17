@@ -1,6 +1,7 @@
 import { EventEmitter } from 'node:events';
 import {
   type FileStatusEvent,
+  type RequeteMessageEvent,
   type RequeteUpdatedEvent,
   type RequeteUpdateField,
   SSE_EVENT_TYPES,
@@ -21,7 +22,15 @@ import {
 
 export type SSEContext = Context<AppBindings>;
 
-export type { FileStatusEvent, RequeteUpdatedEvent, RequeteUpdateField, SSEEventType, UserListEvent, UserStatusEvent };
+export type {
+  FileStatusEvent,
+  RequeteMessageEvent,
+  RequeteUpdatedEvent,
+  RequeteUpdateField,
+  SSEEventType,
+  UserListEvent,
+  UserStatusEvent,
+};
 
 const SSE_REDIS_CHANNEL = 'sse:events';
 
@@ -136,6 +145,10 @@ class SSEEventManager extends EventEmitter {
 
   emitRequeteUpdated(event: RequeteUpdatedEvent): void {
     this.publish(SSE_EVENT_TYPES.REQUETE_UPDATED, event);
+  }
+
+  emitRequeteMessage(event: RequeteMessageEvent): void {
+    this.publish(SSE_EVENT_TYPES.REQUETE_MESSAGE, event);
   }
 
   async cleanup(): Promise<void> {

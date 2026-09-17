@@ -1,5 +1,6 @@
 import type { PinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { sseEventManager } from '../../helpers/sse.js';
 import { prisma } from '../../libs/prisma.js';
 import {
   createRequeteMessage,
@@ -18,16 +19,27 @@ vi.mock('../../libs/prisma.js', () => ({
       findFirst: vi.fn(),
       findMany: vi.fn(),
       findUnique: vi.fn(),
+      groupBy: vi.fn(),
     },
     requeteMessageRead: {
       create: vi.fn(),
       createMany: vi.fn(),
     },
+    requeteEntite: {
+      findMany: vi.fn(),
+    },
+  },
+}));
+
+vi.mock('../../helpers/sse.js', () => ({
+  sseEventManager: {
+    emitRequeteMessage: vi.fn(),
   },
 }));
 
 const mockedMessage = vi.mocked(prisma.requeteMessage);
 const mockedMessageRead = vi.mocked(prisma.requeteMessageRead);
+const mockedRequeteEntite = vi.mocked(prisma.requeteEntite);
 
 const logger = { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() } as unknown as PinoLogger;
 
@@ -47,6 +59,7 @@ describe('requeteMessages.service.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(prisma.$transaction).mockImplementation((async (cb: (tx: unknown) => unknown) => cb(prisma)) as never);
+    mockedRequeteEntite.findMany.mockResolvedValue([{ entiteId: 'e1' }, { entiteId: 'e2' }] as never);
     mockedMessage.count.mockResolvedValue(0 as never);
   });
 
@@ -184,7 +197,9 @@ describe('requeteMessages.service.ts', () => {
     beforeEach(() => {
       mockedMessage.create.mockResolvedValue({ id: 'm1' } as never);
       mockedMessage.findUnique.mockResolvedValue(row() as never);
+      // Nothing pending for the author unless a test says otherwise.
       mockedMessage.findMany.mockResolvedValue([] as never);
+      mockedMessage.count.mockResolvedValue(0 as never);
     });
 
     it('creates the message and marks it read for its author', async () => {
@@ -240,6 +255,23 @@ describe('requeteMessages.service.ts', () => {
         data: [{ messageId: 'older', userId: 'user1', entiteId: 'e1' }],
         skipDuplicates: true,
       });
+      expect(sseEventManager.emitRequeteMessage).toHaveBeenCalledWith(expect.objectContaining({ action: 'read' }));
+    });
+
+    it('emits a created event targeting every entity affected to the requete', async () => {
+      await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour' }, logger);
+
+      expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith({
+        where: { requeteId: 'REQ' },
+        select: { entiteId: true },
+      });
+      expect(sseEventManager.emitRequeteMessage).toHaveBeenCalledWith({
+        action: 'created',
+        requeteId: 'REQ',
+        messageId: 'm1',
+        entiteId: 'e1',
+        entiteIds: ['e1', 'e2'],
+      });
     });
   });
 
@@ -265,6 +297,21 @@ describe('requeteMessages.service.ts', () => {
       expect(result).toEqual({ markedIds: ['m1', 'm2'], unreadCount: 0 });
     });
 
+    it('emits a read event with exactly the ids actually marked', async () => {
+      mockedMessage.findMany.mockResolvedValueOnce([{ id: 'm1' }] as never);
+
+      await markAllMessagesAsRead('REQ', 'user1', 'e1');
+
+      expect(sseEventManager.emitRequeteMessage).toHaveBeenCalledWith({
+        action: 'read',
+        requeteId: 'REQ',
+        messageIds: ['m1'],
+        userId: 'user1',
+        entiteId: 'e1',
+        entiteIds: ['e1', 'e2'],
+      });
+    });
+
     it('stays a no-op when everything was already read but still returns the unread count', async () => {
       mockedMessage.findMany.mockResolvedValueOnce([] as never);
       mockedMessage.count.mockResolvedValueOnce(0 as never);
@@ -272,6 +319,7 @@ describe('requeteMessages.service.ts', () => {
       const result = await markAllMessagesAsRead('REQ', 'user1', 'e1');
 
       expect(mockedMessageRead.createMany).not.toHaveBeenCalled();
+      expect(sseEventManager.emitRequeteMessage).not.toHaveBeenCalled();
       expect(result).toEqual({ markedIds: [], unreadCount: 0 });
     });
   });
