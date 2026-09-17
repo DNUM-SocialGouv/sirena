@@ -1,10 +1,17 @@
 import { Readable } from 'node:stream';
-import { type EntiteType, ERROR_KIND, RECEPTION_TYPE, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import {
+  type EntiteType,
+  ERROR_KIND,
+  RECEPTION_TYPE,
+  REQUETE_STATUT_TYPES,
+  REQUETE_UPDATE_FIELDS,
+} from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
+import { sseEventManager } from '../../helpers/sse.js';
 import { getFileStream } from '../../libs/minio.js';
 import type { UploadedFile } from '../../libs/prisma.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
@@ -24,6 +31,7 @@ import {
   getRequetesEntite,
   hasAccessToRequete,
   reopenRequeteForEntite,
+  setStatusRequete,
   updateStatusRequete,
 } from './requetesEntite.service.js';
 
@@ -38,6 +46,7 @@ vi.mock('./requetesEntite.service.js', () => ({
   hasAccessToRequete: vi.fn(),
   getOtherEntitesAffected: vi.fn(),
   reopenRequeteForEntite: vi.fn(),
+  setStatusRequete: vi.fn(),
   updateStatusRequete: vi.fn(),
 }));
 
@@ -691,6 +700,7 @@ describe('RequetesEntite endpoints: /', () => {
         'Test precision',
         ['file1', 'file2'],
       );
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
     });
 
     it('should close requete successfully without precision and files', async () => {
@@ -886,6 +896,7 @@ describe('RequetesEntite endpoints: /', () => {
       expect(res.status).toBe(500);
       const json = await res.json();
       expect(json).toEqual({ error: 'INTERNAL_ERROR', message: 'Internal server error' });
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
     });
   });
 
@@ -932,7 +943,57 @@ describe('RequetesEntite endpoints: /', () => {
         { receptionDate: new Date(newDate), receptionTypeId: RECEPTION_TYPE.COURRIER },
         { updatedAt: baseRequeteEntite.requete.updatedAt.toISOString() },
       );
-      expect(updateStatusRequete).toHaveBeenCalledWith('requeteId', 'entiteId', REQUETE_STATUT_TYPES.EN_COURS);
+      expect(setStatusRequete).toHaveBeenCalledWith('requeteId', 'entiteId', REQUETE_STATUT_TYPES.EN_COURS);
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+    });
+
+    it('emits a single dateType event, after the status has been written', async () => {
+      const events: string[] = [];
+      vi.mocked(updateDateAndTypeRequete).mockResolvedValueOnce(baseRequeteEntite.requete);
+      vi.mocked(setStatusRequete).mockImplementationOnce(async () => {
+        events.push('status:written');
+        return { ...baseRequeteEntite, statutId: REQUETE_STATUT_TYPES.EN_COURS };
+      });
+      vi.mocked(sseEventManager.emitRequeteUpdated).mockImplementation(() => {
+        events.push('sse:emit');
+      });
+
+      const res = await client[':id']['date-type'].$patch({
+        param: { id: 'requeteId' },
+        json: { receptionDate: '2025-05-01', receptionTypeId: RECEPTION_TYPE.COURRIER },
+      });
+
+      expect(res.status).toBe(200);
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledTimes(1);
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledWith({
+        requeteId: 'requeteId',
+        entiteId: 'entiteId',
+        field: REQUETE_UPDATE_FIELDS.DATE_TYPE,
+      });
+      expect(events).toEqual(['status:written', 'sse:emit']);
+    });
+
+    it('emits a single dateType event and leaves the status untouched when already EN_COURS', async () => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce({
+        ...baseRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.EN_COURS,
+      });
+      vi.mocked(updateDateAndTypeRequete).mockResolvedValueOnce(baseRequeteEntite.requete);
+
+      const res = await client[':id']['date-type'].$patch({
+        param: { id: 'requeteId' },
+        json: { receptionDate: '2025-05-01', receptionTypeId: RECEPTION_TYPE.COURRIER },
+      });
+
+      expect(res.status).toBe(200);
+      expect(setStatusRequete).not.toHaveBeenCalled();
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledTimes(1);
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledWith({
+        requeteId: 'requeteId',
+        entiteId: 'entiteId',
+        field: REQUETE_UPDATE_FIELDS.DATE_TYPE,
+      });
     });
 
     it('returns 409 when updateDateAndTypeRequete throws conflict', async () => {
@@ -956,7 +1017,8 @@ describe('RequetesEntite endpoints: /', () => {
         conflictData: { serverData: { id: 'requeteId' } },
       });
 
-      expect(updateStatusRequete).not.toHaveBeenCalled();
+      expect(setStatusRequete).not.toHaveBeenCalled();
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
     });
 
     it('allows removing both date and type by setting them to null', async () => {
@@ -1101,6 +1163,7 @@ describe('RequetesEntite endpoints: /', () => {
       const body = (await res.json()) as { data: { etapeId: string } };
       expect(body.data.etapeId).toBe('etape-reopen-id');
       expect(reopenRequeteForEntite).toHaveBeenCalledWith('requeteId', 'entiteId', 'id1');
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
     });
 
     it('should return 403 if user has no access', async () => {
@@ -1153,6 +1216,7 @@ describe('RequetesEntite endpoints: /', () => {
       expect(res.status).toBe(500);
       const body = (await res.json()) as { error: string };
       expect(body.error).toBe('INTERNAL_ERROR');
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
     });
   });
 });
