@@ -1,3 +1,4 @@
+import { FEATURE_FLAGS, type RequeteMessageEvent } from '@sirena/common/constants';
 import { type TabDescriptor, Tabs } from '@sirena/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -6,7 +7,10 @@ import { Details } from '@/components/requestId/details';
 import { Processing } from '@/components/requestId/processing';
 import { RequestInfos } from '@/components/requestId/requestInfos';
 import { formatFullName } from '@/components/requestId/sections/helpers';
+import { appendNewerMessages } from '@/hooks/queries/requeteMessages.hook';
 import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
+import { useHasFeature } from '@/hooks/useHasFeature';
+import { useRequeteMessagesSSE } from '@/hooks/useRequeteMessagesSSE';
 import { useRequeteStatusSSE } from '@/hooks/useRequeteStatusSSE';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { useListStateStore } from '@/stores/listStateStore';
@@ -43,6 +47,22 @@ export function RequestForm({ requestId, activeTab: activeTabProp = 0 }: Request
     requeteId: requestId || '',
     enabled: !!requestId,
     onUpdate: handleUpdate,
+  });
+
+  const discussionEnabled = useHasFeature(FEATURE_FLAGS.REQUETE_DISCUSSION, false) && !!requestId;
+  const handleDiscussionEvent = useCallback(
+    (event: RequeteMessageEvent) => {
+      if (event.action !== 'created') return;
+
+      void appendNewerMessages(queryClient, requestId || '');
+    },
+    [queryClient, requestId],
+  );
+
+  useRequeteMessagesSSE({
+    requeteId: requestId || '',
+    enabled: discussionEnabled,
+    onMessage: handleDiscussionEvent,
   });
   const declarantIdentite = requestQuery.data?.requete.participant?.identite;
   const fullName = formatFullName(
