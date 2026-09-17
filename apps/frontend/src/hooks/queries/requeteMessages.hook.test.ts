@@ -16,6 +16,7 @@ const makeMessage = (id: string) => ({
   createdAt: '2026-01-01T10:00:00.000Z',
   entite: { id: 'E1', nomComplet: 'ARS', entiteTypeId: 'ARS' },
   author: null,
+  uploadedFiles: [],
   isReadByCurrentUser: true,
 });
 

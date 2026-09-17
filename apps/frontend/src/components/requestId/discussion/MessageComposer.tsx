@@ -53,7 +53,7 @@ export const MessageComposer = ({ requestId, onSent }: MessageComposerProps) => 
     setIsSubmitting(true);
 
     try {
-      await postMessageMutation.mutateAsync({ contenu: trimmedContenu });
+      await postMessageMutation.mutateAsync({ contenu: trimmedContenu, fileIds: [] });
       setContenu('');
       justSentRef.current = true;
       onSent?.();

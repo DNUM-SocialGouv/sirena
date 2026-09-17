@@ -46,7 +46,7 @@ describe('MessageComposer', () => {
     await user.type(screen.getByRole('textbox'), 'Bonjour');
     await user.click(screen.getByRole('button', { name: 'Envoyer' }));
 
-    await waitFor(() => expect(postMessage).toHaveBeenCalledWith({ contenu: 'Bonjour' }));
+    await waitFor(() => expect(postMessage).toHaveBeenCalledWith({ contenu: 'Bonjour', fileIds: [] }));
     await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(''));
   });
 
@@ -91,6 +91,6 @@ describe('MessageComposer', () => {
     await user.type(textarea, 'Bonjour');
     await user.keyboard('{Control>}{Enter}{/Control}');
 
-    await waitFor(() => expect(postMessage).toHaveBeenCalledWith({ contenu: 'Bonjour' }));
+    await waitFor(() => expect(postMessage).toHaveBeenCalledWith({ contenu: 'Bonjour', fileIds: [] }));
   });
 });

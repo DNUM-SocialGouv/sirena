@@ -35,6 +35,10 @@ vi.mock('./MessageComposer', () => ({
   MessageComposer: () => <div data-testid="composer" />,
 }));
 
+vi.mock('@/components/common/FileDownloadLink', () => ({
+  FileDownloadLink: ({ href, fileName }: { href: string; fileName: string }) => <a href={href}>{fileName}</a>,
+}));
+
 const makeMessage = (id: string, overrides: Partial<RequeteMessage> = {}): RequeteMessage => ({
   id,
   requeteId: 'REQ',
@@ -42,6 +46,7 @@ const makeMessage = (id: string, overrides: Partial<RequeteMessage> = {}): Reque
   createdAt: '2026-01-15T10:30:00.000Z',
   entite: { id: 'E1', nomComplet: 'ARS Île-de-France', entiteTypeId: 'ARS' },
   author: { prenom: 'jean', nom: 'dupont' },
+  uploadedFiles: [],
   isReadByCurrentUser: true,
   ...overrides,
 });
@@ -64,15 +69,6 @@ describe('Discussion', () => {
     expect(screen.getByTestId('composer')).toBeInTheDocument();
   });
 
-  it('hides the composer when the user cannot edit the request', () => {
-    canEditRequest = false;
-    messages = [makeMessage('M1')];
-
-    render(<Discussion requestId="REQ" />);
-
-    expect(screen.queryByTestId('composer')).not.toBeInTheDocument();
-  });
-
   it('renders the messages chronologically, oldest first', () => {
     messages = [makeMessage('M2', { contenu: 'Le plus récent' }), makeMessage('M1', { contenu: 'Le plus ancien' })];
 
@@ -82,6 +78,20 @@ describe('Discussion', () => {
     expect(rendered).toHaveLength(2);
     expect(rendered[0]).toContain('Le plus ancien');
     expect(rendered[1]).toContain('Le plus récent');
+  });
+
+  it('hides the composer when the user cannot edit the request', () => {
+    canEditRequest = false;
+
+    render(<Discussion requestId="REQ" />);
+
+    expect(screen.queryByTestId('composer')).not.toBeInTheDocument();
+  });
+
+  it('shows the composer when the user can edit the request', () => {
+    render(<Discussion requestId="REQ" />);
+
+    expect(screen.getByTestId('composer')).toBeInTheDocument();
   });
 
   it('does not offer to load previous messages when there is no next page', () => {

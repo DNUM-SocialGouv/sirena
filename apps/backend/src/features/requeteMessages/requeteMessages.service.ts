@@ -2,6 +2,7 @@ import type { RequeteMessageEvent } from '@sirena/common/constants';
 import type { PinoLogger } from 'hono-pino';
 import { sseEventManager } from '../../helpers/sse.js';
 import { type Prisma, prisma } from '../../libs/prisma.js';
+import { setMessageFiles } from '../uploadedFiles/uploadedFiles.service.js';
 import type { GetRequeteMessagesQuery, PostRequeteMessageDto } from './requeteMessages.type.js';
 
 const messageSelect = (currentUserId: string) =>
@@ -12,6 +13,18 @@ const messageSelect = (currentUserId: string) =>
     createdAt: true,
     entite: { select: { id: true, nomComplet: true, entiteTypeId: true } },
     author: { select: { prenom: true, nom: true } },
+    uploadedFiles: {
+      select: {
+        id: true,
+        fileName: true,
+        size: true,
+        status: true,
+        scanStatus: true,
+        sanitizeStatus: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    },
     reads: { where: { userId: currentUserId }, select: { userId: true }, take: 1 },
   }) satisfies Prisma.RequeteMessageSelect;
 
@@ -119,10 +132,14 @@ export const createRequeteMessage = async (
 
     await tx.requeteMessageRead.create({ data: { messageId: message.id, userId, entiteId } });
 
+    if (dto.fileIds.length > 0) {
+      await setMessageFiles(message.id, dto.fileIds, entiteId, userId, tx);
+    }
+
     return message;
   });
 
-  logger.info({ requeteId, messageId: created.id, userId }, 'Requete message persisted');
+  logger.info({ requeteId, messageId: created.id, userId, fileCount: dto.fileIds.length }, 'Requete message persisted');
 
   await markAllMessagesAsRead(requeteId, userId, entiteId);
 

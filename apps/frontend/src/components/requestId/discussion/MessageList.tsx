@@ -14,6 +14,7 @@ const formatTime = (value: string | Date) =>
 
 type MessageListProps = {
   messages: RequeteMessage[];
+  requestId: string;
   ownEntiteId: string | null;
   hasMore: boolean;
   isFetchingNextPage: boolean;
@@ -23,6 +24,7 @@ type MessageListProps = {
 
 export const MessageList = ({
   messages,
+  requestId,
   ownEntiteId,
   hasMore,
   isFetchingNextPage,
@@ -157,7 +159,7 @@ export const MessageList = ({
                     <span aria-hidden="true">Non lus</span>
                   </li>
                 ) : null}
-                <MessageItem message={message} isOwnEntite={message.entite.id === ownEntiteId} />
+                <MessageItem message={message} requestId={requestId} isOwnEntite={message.entite.id === ownEntiteId} />
               </Fragment>
             ))}
           </ul>
