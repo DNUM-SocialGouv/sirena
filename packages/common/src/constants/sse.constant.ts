@@ -41,6 +41,7 @@ export interface UserStatusEvent {
 export interface UserListEvent {
   action: 'created' | 'updated' | 'deleted';
   userId: string;
+  entiteId: string | null;
 }
 
 export interface RequeteUpdatedEvent {
