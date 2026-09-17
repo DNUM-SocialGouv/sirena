@@ -83,6 +83,7 @@ All SSE endpoints are consolidated under `/api/sse/*`:
 | `/api/sse/requetes` | `event.entiteId === topEntiteId` | Users only see their entity's requetes |
 | `/api/sse/requetes/:id` | `event.requeteId === id && event.entiteId === topEntiteId` | Defense in depth: filter by both ID and entity |
 | `/api/sse/files/:id` | `event.fileId === id && event.entiteId === topEntiteId` | Defense in depth: filter by both ID and entity |
+| `/api/sse/requetes/:id/messages` | `created`: `event.requeteId === id && event.entiteIds.includes(topEntiteId)` — `read`: `event.userId === userId` | Cross-entity thread: a new message reaches every affected root entity, while a read receipt stays private to the reader's own sessions. Access and feature flag both checked at subscription |
 | `/api/sse/profile` | `event.userId === userId` | Users only see their own status changes |
 | `/api/sse/users` | SUPER_ADMIN: none — ENTITY_ADMIN: `event.entiteId !== null && entiteIds.includes(event.entiteId)` | Same scope as `GET /users`: an ENTITY_ADMIN only follows the users of their entity and its descendants, and never a user without entity (PENDING at first login), as the REST `IN` filter never matches NULL. The scope is settled once at subscription: an entity reorganisation during an open stream applies at reconnection, as for the cached descendant ids the REST list relies on |
 
@@ -122,6 +123,25 @@ interface UserListEvent {
   userId: string;
   entiteId: string | null;
 }
+
+interface RequeteMessageEventBase {
+  requeteId: string;
+  entiteId: string;
+  entiteIds: string[];
+}
+
+interface RequeteMessageCreatedEvent extends RequeteMessageEventBase {
+  action: 'created';
+  messageId: string;
+}
+
+interface RequeteMessageReadEvent extends RequeteMessageEventBase {
+  action: 'read';
+  messageIds: string[];
+  userId: string;
+}
+
+type RequeteMessageEvent = RequeteMessageCreatedEvent | RequeteMessageReadEvent;
 ```
 
 The frontend receives the event and must fetch actual data through regular API endpoints, which enforce full authorization.
@@ -139,7 +159,7 @@ The frontend receives the event and must fetch actual data through regular API e
 #### Frontend
 
 - **Base hook**: `useSSE` handles connection, reconnection, and keep-alive
-- **Specialized hooks**: `useFileStatusSSE`, `useUserStatusSSE`, `useUserListSSE`, `useRequetesListSSE`, `useRequeteStatusSSE`
+- **Specialized hooks**: `useFileStatusSSE`, `useUserStatusSSE`, `useUserListSSE`, `useRequetesListSSE`, `useRequeteStatusSSE`, `useRequeteMessagesSSE`
 - **Shared types**: Import event types from `@sirena/common/constants`
 
 #### Event Flow
