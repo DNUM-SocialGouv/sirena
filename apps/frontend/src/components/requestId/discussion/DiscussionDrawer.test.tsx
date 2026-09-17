@@ -6,9 +6,14 @@ import { DiscussionDrawer } from './DiscussionDrawer';
 const markReadMutate = vi.fn();
 
 let discussionFeatureEnabled = true;
+let unreadCount = 0;
 
 vi.mock('@/hooks/useHasFeature', () => ({
   useHasFeature: () => discussionFeatureEnabled,
+}));
+
+vi.mock('@/hooks/queries/requeteMessagesUnread.hook', () => ({
+  useRequeteUnreadCount: () => ({ data: unreadCount }),
 }));
 
 vi.mock('@/hooks/mutations/markRequeteDiscussionRead.hook', () => ({
@@ -22,6 +27,7 @@ vi.mock('./Discussion', () => ({
 describe('DiscussionDrawer', () => {
   beforeEach(() => {
     discussionFeatureEnabled = true;
+    unreadCount = 0;
     markReadMutate.mockReset();
   });
 
@@ -82,9 +88,10 @@ describe('DiscussionDrawer', () => {
       vi.restoreAllMocks();
     });
 
-    const openPanel = () => fireEvent.click(screen.getByRole('button', { name: 'Ouvrir la discussion' }));
+    const openPanel = () => fireEvent.click(screen.getByRole('button', { name: /^Ouvrir la discussion/ }));
 
     it('marks the pending messages as read after a short delay when the window has focus', async () => {
+      unreadCount = 2;
       vi.spyOn(document, 'hasFocus').mockReturnValue(true);
       render(<DiscussionDrawer requestId="REQ" />);
 
@@ -97,6 +104,7 @@ describe('DiscussionDrawer', () => {
     });
 
     it('waits for the window to regain focus before reading', async () => {
+      unreadCount = 2;
       vi.spyOn(document, 'hasFocus').mockReturnValue(false);
       render(<DiscussionDrawer requestId="REQ" />);
 
@@ -109,6 +117,17 @@ describe('DiscussionDrawer', () => {
       act(() => vi.advanceTimersByTime(2000));
 
       expect(markReadMutate).toHaveBeenCalledTimes(1);
+    });
+
+    it('does nothing while there is nothing unread', async () => {
+      unreadCount = 0;
+      vi.spyOn(document, 'hasFocus').mockReturnValue(true);
+      render(<DiscussionDrawer requestId="REQ" />);
+
+      openPanel();
+      act(() => vi.advanceTimersByTime(5000));
+
+      expect(markReadMutate).not.toHaveBeenCalled();
     });
   });
 
@@ -128,5 +147,27 @@ describe('DiscussionDrawer', () => {
     unmount();
 
     expect(markReadMutate).toHaveBeenCalledTimes(1);
+  });
+
+  it('carries the unread count inside the button, spelled out for assistive tech', () => {
+    unreadCount = 3;
+
+    const { container } = render(<DiscussionDrawer requestId="REQ" />);
+
+    const button = screen.getByRole('button', { name: 'Ouvrir la discussion, 3 messages non lus' });
+    expect(button).toHaveTextContent('Ouvrir la discussion3');
+    const liveRegion = container.querySelector('p.fr-sr-only[aria-live="polite"]');
+    expect(liveRegion).toHaveTextContent('3 messages non lus dans la discussion');
+  });
+
+  it('keeps the live region silent while the panel is open', async () => {
+    unreadCount = 3;
+    const user = userEvent.setup();
+
+    const { container } = render(<DiscussionDrawer requestId="REQ" />);
+    await user.click(screen.getByRole('button', { name: /^Ouvrir la discussion/ }));
+
+    const liveRegion = container.querySelector('p.fr-sr-only[aria-live="polite"]');
+    expect(liveRegion).toHaveTextContent('');
   });
 });

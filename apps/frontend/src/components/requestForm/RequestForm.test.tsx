@@ -4,7 +4,9 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RequestForm } from './RequestForm';
 
+const CURRENT_USER_ID = 'ME';
 const REQUEST_ID = 'REQ-1';
+const UNREAD_COUNT_KEY = ['requeteMessagesUnreadCount', REQUEST_ID];
 const MESSAGES_KEY = ['requeteMessages', REQUEST_ID];
 
 const toastAdd = vi.fn();
@@ -57,6 +59,14 @@ vi.mock('@/hooks/useRequeteMessagesSSE', () => ({
 const { fetchRequeteMessages } = vi.hoisted(() => ({ fetchRequeteMessages: vi.fn() }));
 
 vi.mock('@/lib/api/requeteMessages', () => ({ fetchRequeteMessages }));
+
+vi.mock('@/hooks/queries/requeteMessagesUnread.hook', () => ({
+  requeteUnreadCountQueryKey: (requestId: string) => ['requeteMessagesUnreadCount', requestId],
+}));
+
+vi.mock('@/hooks/queries/profile.hook', () => ({
+  useProfile: () => ({ data: { id: CURRENT_USER_ID, topEntiteId: 'E1' } }),
+}));
 
 vi.mock('@/hooks/useHasFeature', () => ({
   useHasFeature: () => discussionFeatureEnabled,
@@ -155,13 +165,13 @@ describe('RequestForm', () => {
   });
 
   describe('on a new message, whoever posted it', () => {
-    it('invalidates the messages when the discussion was never opened', async () => {
+    it('invalidates the messages and the unread counter when the discussion was never opened', async () => {
       const { invalidateQueries } = renderForm();
       invalidateQueries.mockClear();
 
       await act(async () => emitDiscussionEvent?.(createdEvent()));
 
-      expect(invalidatedKeys(invalidateQueries)).toEqual([MESSAGES_KEY]);
+      expect(invalidatedKeys(invalidateQueries)).toEqual([MESSAGES_KEY, UNREAD_COUNT_KEY]);
       expect(fetchRequeteMessages).not.toHaveBeenCalled();
       expect(toastAdd).not.toHaveBeenCalled();
     });
@@ -179,7 +189,7 @@ describe('RequestForm', () => {
 
       expect(fetchRequeteMessages).toHaveBeenCalledWith(REQUEST_ID, { after: 'M3' }, { silentToastError: true });
       await waitFor(() => expect(cachedIds(queryClient)).toEqual([['M5', 'M4', 'M3', 'M2'], ['M1']]));
-      expect(invalidateQueries).not.toHaveBeenCalled();
+      expect(invalidatedKeys(invalidateQueries)).toEqual([UNREAD_COUNT_KEY]);
       expect(queryClient.getQueryState(MESSAGES_KEY)?.isInvalidated).toBe(false);
     });
 
@@ -210,7 +220,7 @@ describe('RequestForm', () => {
       await act(async () => emitDiscussionEvent?.(createdEvent()));
 
       await waitFor(() => expect(cachedIds(queryClient)).toEqual([['M4', 'M3', 'M2'], ['M1']]));
-      expect(invalidateQueries).not.toHaveBeenCalled();
+      expect(invalidatedKeys(invalidateQueries)).toEqual([UNREAD_COUNT_KEY]);
     });
 
     it('falls back to a full invalidation when more than one page of messages arrived', async () => {
@@ -241,13 +251,21 @@ describe('RequestForm', () => {
     });
   });
 
-  it('ignores the read receipts: nothing to refresh in the thread itself', () => {
+  it('resyncs the unread counter when I read the thread from another browser tab', () => {
     const { invalidateQueries } = renderForm();
     invalidateQueries.mockClear();
 
-    act(() => emitDiscussionEvent?.(readEvent('ME')));
+    act(() => emitDiscussionEvent?.(readEvent(CURRENT_USER_ID)));
+
+    expect(invalidatedKeys(invalidateQueries)).toEqual([UNREAD_COUNT_KEY]);
+  });
+
+  it('ignores the reads of the other users', () => {
+    const { invalidateQueries } = renderForm();
+    invalidateQueries.mockClear();
+
+    act(() => emitDiscussionEvent?.(readEvent('SOMEONE-ELSE')));
 
     expect(invalidateQueries).not.toHaveBeenCalled();
-    expect(fetchRequeteMessages).not.toHaveBeenCalled();
   });
 });
