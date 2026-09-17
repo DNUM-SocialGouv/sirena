@@ -8,6 +8,7 @@ import FeatureFlagsController from './features/featureFlags/featureFlags.control
 import HealthController from './features/health/health.controller.js';
 import ProfileController from './features/profile/profile.controller.js';
 import RequeteEtapesController from './features/requeteEtapes/requetesEtapes.controller.js';
+import RequeteMessagesController from './features/requeteMessages/requeteMessages.controller.js';
 import RequetesEntiteController from './features/requetesEntite/requetesEntite.controller.js';
 import RolesController from './features/roles/roles.controller.js';
 import SirecMigrationController from './features/sirecMigration/sirecMigration.controller.js';
@@ -43,6 +44,7 @@ export const app = baseApp
   .route('/uploaded-files', UploadedFilesController)
   .route('/requetes-entite', RequetesEntiteController)
   .route('/requete-etapes', RequeteEtapesController)
+  .route('/requete-messages', RequeteMessagesController)
   .route('/profile', ProfileController)
   .route('/sse', SSEController)
   .route('/sirec-migration', SirecMigrationController)
