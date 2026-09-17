@@ -61,7 +61,7 @@ dotenv -e .env -- podman compose run --build --rm anonymize
 |-------|--------|
 | `Requete` | commentaire, provenancePrecision |
 | `RequeteEtapeNote` | texte |
-| `LieuDeSurvenue` | societeTransport, finess, tutelle, commentaire, lieuPrecision |
+| `LieuDeSurvenue` | societeTransport, finess, tutelle, commentaire |
 | `DemarchesEngagees` | organisme, commentaire |
 | `Fait` | commentaire, autresPrecisions |
 
