@@ -28,8 +28,6 @@ export interface FileStatusEvent {
   status: string;
   scanStatus: string;
   sanitizeStatus: string;
-  processingError: string | null;
-  safeFilePath: string | null;
 }
 
 export interface UserStatusEvent {
