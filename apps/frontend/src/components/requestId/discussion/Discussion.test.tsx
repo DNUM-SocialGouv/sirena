@@ -9,6 +9,7 @@ const fetchNextPage = vi.fn();
 let messages: RequeteMessage[] = [];
 let hasNextPage = false;
 let isFetchingNextPage = false;
+let canEditRequest = true;
 
 vi.mock('@/hooks/queries/requeteMessages.hook', () => ({
   requeteMessagesQueryKey: (requestId: string) => ['requeteMessages', requestId],
@@ -22,8 +23,16 @@ vi.mock('@/hooks/queries/requeteMessages.hook', () => ({
   }),
 }));
 
+vi.mock('@/hooks/useCanEdit', () => ({
+  useCanEdit: () => ({ canEdit: canEditRequest, hasEditRole: canEditRequest }),
+}));
+
 vi.mock('@/hooks/queries/profile.hook', () => ({
   useProfile: () => ({ data: { id: 'ME', topEntiteId: 'E1' } }),
+}));
+
+vi.mock('./MessageComposer', () => ({
+  MessageComposer: () => <div data-testid="composer" />,
 }));
 
 const makeMessage = (id: string, overrides: Partial<RequeteMessage> = {}): RequeteMessage => ({
@@ -44,13 +53,24 @@ describe('Discussion', () => {
     messages = [];
     hasNextPage = false;
     isFetchingNextPage = false;
+    canEditRequest = true;
     fetchNextPage.mockReset();
   });
 
-  it('renders no thread region when there is no message yet', () => {
+  it('shows only the composer when the thread has no message yet', () => {
     render(<Discussion requestId="REQ" />);
 
     expect(screen.queryByRole('region', { name: 'Messages de la discussion' })).not.toBeInTheDocument();
+    expect(screen.getByTestId('composer')).toBeInTheDocument();
+  });
+
+  it('hides the composer when the user cannot edit the request', () => {
+    canEditRequest = false;
+    messages = [makeMessage('M1')];
+
+    render(<Discussion requestId="REQ" />);
+
+    expect(screen.queryByTestId('composer')).not.toBeInTheDocument();
   });
 
   it('renders the messages chronologically, oldest first', () => {

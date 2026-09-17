@@ -18,9 +18,17 @@ type MessageListProps = {
   hasMore: boolean;
   isFetchingNextPage: boolean;
   onLoadMore: () => void;
+  separatorEpoch?: number;
 };
 
-export const MessageList = ({ messages, ownEntiteId, hasMore, isFetchingNextPage, onLoadMore }: MessageListProps) => {
+export const MessageList = ({
+  messages,
+  ownEntiteId,
+  hasMore,
+  isFetchingNextPage,
+  onLoadMore,
+  separatorEpoch = 0,
+}: MessageListProps) => {
   const scrollerRef = useRef<HTMLElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const unreadSeparatorRef = useRef<HTMLLIElement>(null);
@@ -105,22 +113,25 @@ export const MessageList = ({ messages, ownEntiteId, hasMore, isFetchingNextPage
     setHasNewMessagesBelow(true);
   }, [messages, hasMore, scrollToBottom]);
 
-  const [frozenSeparatorId, setFrozenSeparatorId] = useState<string | null>(null);
+  const [frozen, setFrozen] = useState<{ epoch: number; id: string } | null>(null);
   const firstUnreadId = messages.find((message) => !message.isReadByCurrentUser)?.id ?? null;
+  const frozenSeparatorId = frozen?.epoch === separatorEpoch ? frozen.id : null;
 
   useEffect(() => {
     if (firstUnreadId === null) return;
 
-    setFrozenSeparatorId((frozenId) => {
-      if (frozenId === null) return firstUnreadId;
+    setFrozen((current) => {
+      if (current?.epoch !== separatorEpoch) return { epoch: separatorEpoch, id: firstUnreadId };
 
       // A page older than the first one can reveal unread messages above the line: it moves up the thread,
       // never down, so marking the thread read still leaves it where the agent found it.
-      const frozenIndex = messages.findIndex((message) => message.id === frozenId);
+      const frozenIndex = messages.findIndex((message) => message.id === current.id);
       const firstUnreadIndex = messages.findIndex((message) => message.id === firstUnreadId);
-      return frozenIndex === -1 || firstUnreadIndex < frozenIndex ? firstUnreadId : frozenId;
+      return frozenIndex === -1 || firstUnreadIndex < frozenIndex
+        ? { epoch: separatorEpoch, id: firstUnreadId }
+        : current;
     });
-  }, [messages, firstUnreadId]);
+  }, [messages, firstUnreadId, separatorEpoch]);
 
   const separatorId = frozenSeparatorId ?? firstUnreadId;
   const separatorIndex = separatorId === null ? -1 : messages.findIndex((message) => message.id === separatorId);
