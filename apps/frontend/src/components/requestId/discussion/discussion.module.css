@@ -135,6 +135,21 @@
   flex-shrink: 0;
 }
 
+.fileInput {
+  display: none;
+}
+
+.attachRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.attachRow p {
+  margin: 0;
+}
+
 .composerActions {
   display: flex;
   justify-content: flex-start;
