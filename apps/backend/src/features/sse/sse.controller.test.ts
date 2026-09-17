@@ -1,14 +1,21 @@
+import { SSE_EVENT_TYPES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
-import { createSSEStream, type FileStatusEvent, type UserListEvent } from '../../helpers/sse.js';
+import {
+  createSSEStream,
+  type FileStatusEvent,
+  type RequeteMessageEvent,
+  type UserListEvent,
+} from '../../helpers/sse.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
+import { hasFeature } from '../featureFlags/featureFlags.service.js';
 import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service.js';
 import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
-import SSEController, { buildUserListFilter } from './sse.controller.js';
+import SSEController, { buildRequeteMessageFilter, buildUserListFilter } from './sse.controller.js';
 
 vi.mock('../../config/env.js', () => ({
   envVars: {
@@ -34,7 +41,7 @@ vi.mock('../../helpers/sse.js', () => {
         }),
     requireTopEntiteId: (c: Context) => c.get('topEntiteId'),
     requireUserId: (c: Context) => c.get('userId'),
-    sseEventManager: { emitRequeteUpdated: vi.fn() },
+    sseEventManager: { emitRequeteMessage: vi.fn() },
   };
 });
 
@@ -45,6 +52,10 @@ vi.mock('../requetesEntite/requetesEntite.service.js', () => ({
 
 vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
   getUploadedFileById: vi.fn(),
+}));
+
+vi.mock('../featureFlags/featureFlags.service.js', () => ({
+  hasFeature: vi.fn(),
 }));
 
 vi.mock('../../middlewares/auth.middleware.js', () => ({
@@ -89,6 +100,16 @@ vi.mock('../../helpers/errors.js', async () => {
   };
 });
 
+const createdEvent = (overrides: Partial<RequeteMessageEvent> = {}): RequeteMessageEvent =>
+  ({
+    action: 'created',
+    requeteId: 'REQ',
+    messageId: 'm1',
+    entiteId: 'e1',
+    entiteIds: ['e1', 'e2'],
+    ...overrides,
+  }) as RequeteMessageEvent;
+
 describe('sse.controller.ts', () => {
   const app = appWithLogs.createApp().use(pinoLogger()).route('/', SSEController).onError(errorHandler);
   const client = testClient(app);
@@ -96,6 +117,7 @@ describe('sse.controller.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(hasAccessToRequete).mockResolvedValue(true);
+    vi.mocked(hasFeature).mockResolvedValue(true);
   });
 
   const streamOptions = <T>() =>
@@ -161,6 +183,40 @@ describe('sse.controller.ts', () => {
     });
   });
 
+  describe('GET /requetes/:id/messages', () => {
+    it('opens the discussion stream for an affected entity', async () => {
+      const res = await client.requetes[':id'].messages.$get({ param: { id: 'REQ' } });
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('text/event-stream');
+      expect(hasAccessToRequete).toHaveBeenCalledWith({ requeteId: 'REQ', entiteId: 'e1' });
+      expect(createSSEStream).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ eventType: SSE_EVENT_TYPES.REQUETE_MESSAGE }),
+      );
+    });
+
+    it('answers 404 when the discussion feature flag is disabled for the user', async () => {
+      vi.mocked(hasFeature).mockResolvedValue(false);
+
+      const res = await client.requetes[':id'].messages.$get({ param: { id: 'REQ' } });
+
+      expect(res.status).toBe(404);
+      expect(createSSEStream).not.toHaveBeenCalled();
+      // The flag is checked before the access lookup: no requete existence oracle either.
+      expect(hasAccessToRequete).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when the entity is not affected to the requete', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
+
+      const res = await client.requetes[':id'].messages.$get({ param: { id: 'REQ' } });
+
+      expect(res.status).toBe(404);
+      expect(createSSEStream).not.toHaveBeenCalled();
+    });
+  });
+
   describe('GET /requetes/:id', () => {
     it('checks the access with a single lookup instead of loading the requete graph', async () => {
       const res = await client.requetes[':id'].$get({ param: { id: 'REQ' } });
@@ -201,6 +257,42 @@ describe('sse.controller.ts', () => {
       const res = await client.files[':id'].$get({ param: { id: 'F1' } });
 
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe('buildRequeteMessageFilter()', () => {
+    const filter = buildRequeteMessageFilter('REQ', 'e1', 'test-user-id');
+
+    const readEvent = (overrides: Partial<RequeteMessageEvent> = {}): RequeteMessageEvent =>
+      ({
+        action: 'read',
+        requeteId: 'REQ',
+        messageIds: ['m1'],
+        userId: 'test-user-id',
+        entiteId: 'e1',
+        entiteIds: ['e1', 'e2'],
+        ...overrides,
+      }) as RequeteMessageEvent;
+
+    it('accepts an event of the requete targeting the subscriber root entity', () => {
+      expect(filter(createdEvent())).toBe(true);
+    });
+
+    it('rejects an event of another requete', () => {
+      expect(filter(createdEvent({ requeteId: 'OTHER' }))).toBe(false);
+    });
+
+    it('rejects an event that does not target the subscriber root entity', () => {
+      expect(filter(createdEvent({ entiteIds: ['e2', 'e3'] }))).toBe(false);
+    });
+
+    it('delivers a read receipt to the reader own sessions', () => {
+      expect(filter(readEvent())).toBe(true);
+    });
+
+    it('never delivers a read receipt of another user, even inside the same entity', () => {
+      expect(filter(readEvent({ userId: 'someone-else' }))).toBe(false);
+      expect(filter(readEvent({ userId: 'someone-else', entiteId: 'e1', entiteIds: ['e1'] }))).toBe(false);
     });
   });
 });

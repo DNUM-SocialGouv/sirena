@@ -62,16 +62,16 @@ describe('SSEEventManager', () => {
 
   it('re-emits the events of a known type received from Redis', () => {
     const listener = vi.fn();
-    sseEventManager.on('requete:updated', listener);
+    sseEventManager.on('requete:message', listener);
 
-    redisHandlers.message?.('sse:events', JSON.stringify({ type: 'requete:updated', payload: { requeteId: 'R' } }));
+    redisHandlers.message?.('sse:events', JSON.stringify({ type: 'requete:message', payload: { requeteId: 'R' } }));
 
     expect(listener).toHaveBeenCalledWith({ requeteId: 'R' });
   });
 
   it('ignores an event type this build does not know: the bus is shared across versions', () => {
     const listener = vi.fn();
-    sseEventManager.on('requete:updated', listener);
+    sseEventManager.on('requete:message', listener);
 
     expect(() =>
       redisHandlers.message?.('sse:events', JSON.stringify({ type: 'requete:futureThing', payload: {} })),
@@ -93,45 +93,45 @@ describe('createSSEStream', () => {
     process.on('unhandledRejection', onRejection);
 
     const filter = (event: { entiteIds: string[] }) => event.entiteIds.includes('e1');
-    await openStream('requete:updated', { filter });
+    await openStream('requete:message', { filter });
 
-    sseEventManager.emit('requete:updated', { requeteId: 'R' });
+    sseEventManager.emit('requete:message', { requeteId: 'R' });
     await tick();
 
     process.off('unhandledRejection', onRejection);
     expect(rejections).toHaveLength(0);
     expect(logger.warn).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('filter could not read'));
-    expect(sseEventManager.listenerCount('requete:updated')).toBe(1);
+    expect(sseEventManager.listenerCount('requete:message')).toBe(1);
   });
 
   describe('closing on user:status', () => {
     const statusEvent = (userId: string) => ({ userId, statutId: 'INACTIF', roleId: 'READER' });
 
     it('counts one listener per connection: the guard never shows up in the metrics', async () => {
-      await openStream('requete:updated');
+      await openStream('requete:message');
 
-      expect(sseEventManager.getConnectionCounts()).toMatchObject({ 'requete:updated': 1, 'user:status': 0 });
+      expect(sseEventManager.getConnectionCounts()).toMatchObject({ 'requete:message': 1, 'user:status': 0 });
     });
 
     it('closes the stream when the subscriber is deactivated or changes role', async () => {
-      const reader = await openStream('requete:updated');
+      const reader = await openStream('requete:message');
 
       receiveFromRedis('user:status', statusEvent('u1'));
       await tick();
 
-      expect(sseEventManager.listenerCount('requete:updated')).toBe(0);
+      expect(sseEventManager.listenerCount('requete:message')).toBe(0);
       expect(sseEventManager.eventNames()).toEqual([]);
       await expect(reader.read()).resolves.toMatchObject({ done: true });
       expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('status or role changed'));
     });
 
     it('keeps the stream open on a status change of another user', async () => {
-      await openStream('requete:updated');
+      await openStream('requete:message');
 
       receiveFromRedis('user:status', statusEvent('someone-else'));
       await tick();
 
-      expect(sseEventManager.listenerCount('requete:updated')).toBe(1);
+      expect(sseEventManager.listenerCount('requete:message')).toBe(1);
     });
 
     it('keeps the profile stream open so that an inactive account learns about its reactivation', async () => {
