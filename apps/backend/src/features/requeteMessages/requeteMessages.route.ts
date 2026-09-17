@@ -17,6 +17,13 @@ export const getRequeteMessagesRoute = openApiProtectedRoute({
   },
 });
 
+export const postRequeteMessageRoute = openApiProtectedRoute({
+  description: 'Post a discussion message on a requete',
+  responses: {
+    ...openApiResponse(RequeteMessageSchema, 201, 'Message created'),
+  },
+});
+
 export const markMessagesReadRoute = openApiProtectedRoute({
   description: 'Mark every discussion message of the requete as read by the current user',
   responses: {

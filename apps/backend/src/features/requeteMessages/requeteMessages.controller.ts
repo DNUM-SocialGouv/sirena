@@ -1,5 +1,5 @@
-import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
-import { ERROR_KIND, FEATURE_FLAGS, ROLES_READ } from '@sirena/common/constants';
+import { throwHTTPException403Forbidden, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
+import { ERROR_KIND, FEATURE_FLAGS, REQUETE_STATUT_TYPES, ROLES_READ, ROLES_WRITE } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import { type EntiteScopedContext, requireTopEntiteId } from '../../helpers/context.js';
 import factoryWithRole from '../../helpers/factories/appWithRole.js';
@@ -8,10 +8,10 @@ import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { hasFeature } from '../featureFlags/featureFlags.service.js';
-import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service.js';
-import { getRequeteMessagesRoute, markMessagesReadRoute } from './requeteMessages.route.js';
-import { GetRequeteMessagesQuerySchema } from './requeteMessages.schema.js';
-import { getRequeteMessages, markAllMessagesAsRead } from './requeteMessages.service.js';
+import { getRequeteEntiteStatutId, hasAccessToRequete } from '../requetesEntite/requetesEntite.service.js';
+import { getRequeteMessagesRoute, markMessagesReadRoute, postRequeteMessageRoute } from './requeteMessages.route.js';
+import { GetRequeteMessagesQuerySchema, PostRequeteMessageBodySchema } from './requeteMessages.schema.js';
+import { createRequeteMessage, getRequeteMessages, markAllMessagesAsRead } from './requeteMessages.service.js';
 
 type DiscussionContext = EntiteScopedContext;
 
@@ -62,6 +62,28 @@ const app = factoryWithRole
     c.get('logger').info({ requeteId, userId, markedCount: markedIds.length }, 'Requete messages marked as read');
 
     return c.json({ data: { unreadCount } });
+  })
+
+  .use(roleMiddleware([...ROLES_WRITE]))
+
+  .post('/:requeteId', postRequeteMessageRoute, zValidator('json', PostRequeteMessageBodySchema), async (c) => {
+    const { requeteId } = c.req.param();
+    const topEntiteId = await assertDiscussionAccess(c, requeteId);
+    const userId = c.get('userId');
+
+    const statutId = await getRequeteEntiteStatutId({ requeteId, entiteId: topEntiteId });
+    if (statutId === REQUETE_STATUT_TYPES.CLOTUREE) {
+      throwHTTPException403Forbidden('La requête est clôturée pour votre entité.', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
+    }
+
+    const message = await createRequeteMessage(requeteId, topEntiteId, userId, c.req.valid('json'), c.get('logger'));
+
+    c.get('logger').info({ requeteId, messageId: message?.id, userId }, 'Requete message created');
+
+    return c.json({ data: message }, 201);
   });
 
 export default app;

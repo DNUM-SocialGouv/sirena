@@ -467,6 +467,15 @@ export const hasAccessToRequete = async ({ requeteId, entiteId }: RequeteEntiteK
   return !!requete;
 };
 
+export const getRequeteEntiteStatutId = async ({ requeteId, entiteId }: RequeteEntiteKey): Promise<string | null> => {
+  const requeteEntite = await prisma.requeteEntite.findUnique({
+    where: { requeteId_entiteId: { requeteId, entiteId } },
+    select: { statutId: true },
+  });
+
+  return requeteEntite?.statutId ?? null;
+};
+
 export const filterOtherEntitesAffectedForUser = <T extends { id: string }>(
   otherEntites: T[],
   userEntityIds: string[],

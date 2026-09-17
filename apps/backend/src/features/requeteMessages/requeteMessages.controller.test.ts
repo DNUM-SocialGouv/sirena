@@ -1,4 +1,4 @@
-import { ERROR_KIND, ROLES } from '@sirena/common/constants';
+import { ERROR_KIND, REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
@@ -7,9 +7,9 @@ import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import { hasFeature } from '../featureFlags/featureFlags.service.js';
-import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service.js';
+import { getRequeteEntiteStatutId, hasAccessToRequete } from '../requetesEntite/requetesEntite.service.js';
 import RequeteMessagesController from './requeteMessages.controller.js';
-import { getRequeteMessages, markAllMessagesAsRead } from './requeteMessages.service.js';
+import { createRequeteMessage, getRequeteMessages, markAllMessagesAsRead } from './requeteMessages.service.js';
 
 const roleState = vi.hoisted(() => ({ current: 'ENTITY_ADMIN' as string }));
 
@@ -20,6 +20,7 @@ vi.mock('../../config/env.js', () => ({
 }));
 
 vi.mock('./requeteMessages.service.js', () => ({
+  createRequeteMessage: vi.fn(),
   getRequeteMessages: vi.fn(),
   markAllMessagesAsRead: vi.fn(),
 }));
@@ -30,6 +31,7 @@ vi.mock('../featureFlags/featureFlags.service.js', () => ({
 
 vi.mock('../requetesEntite/requetesEntite.service.js', () => ({
   hasAccessToRequete: vi.fn(),
+  getRequeteEntiteStatutId: vi.fn(),
 }));
 
 vi.mock('../../middlewares/auth.middleware.js', () => ({
@@ -111,6 +113,10 @@ describe('requeteMessages.controller.ts', () => {
       meta: { hasMore: false, nextCursor: null },
     } as unknown as Awaited<ReturnType<typeof getRequeteMessages>>);
     vi.mocked(markAllMessagesAsRead).mockResolvedValue({ markedIds: [MESSAGE_ID], unreadCount: 0 });
+    vi.mocked(getRequeteEntiteStatutId).mockResolvedValue(REQUETE_STATUT_TYPES.EN_COURS);
+    vi.mocked(createRequeteMessage).mockResolvedValue(
+      fakeMessage as unknown as Awaited<ReturnType<typeof createRequeteMessage>>,
+    );
   });
 
   describe('GET /:requeteId', () => {
@@ -196,6 +202,65 @@ describe('requeteMessages.controller.ts', () => {
 
       expect(res.status).toBe(404);
       expect(markAllMessagesAsRead).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('POST /:requeteId', () => {
+    it('creates the message', async () => {
+      const res = await client[':requeteId'].$post({
+        param: { requeteId: REQUETE_ID },
+        json: { contenu: 'Bonjour' },
+      });
+      const body = await res.json();
+
+      expect(res.status).toBe(201);
+      expect(body).toEqual({ data: { ...fakeMessage, createdAt: fakeMessage.createdAt.toISOString() } });
+      expect(createRequeteMessage).toHaveBeenCalledWith(
+        REQUETE_ID,
+        'e1',
+        'test-user-id',
+        { contenu: 'Bonjour' },
+        expect.anything(),
+      );
+    });
+
+    it('forbids a reader from posting', async () => {
+      roleState.current = ROLES.READER;
+
+      const res = await client[':requeteId'].$post({
+        param: { requeteId: REQUETE_ID },
+        json: { contenu: 'Bonjour' },
+      });
+
+      expect(res.status).toBe(403);
+      expect(createRequeteMessage).not.toHaveBeenCalled();
+    });
+
+    it('forbids posting on a requete closed for the caller entity', async () => {
+      vi.mocked(getRequeteEntiteStatutId).mockResolvedValueOnce(REQUETE_STATUT_TYPES.CLOTUREE);
+
+      const res = await client[':requeteId'].$post({
+        param: { requeteId: REQUETE_ID },
+        json: { contenu: 'Bonjour' },
+      });
+      const body = await res.json();
+
+      expect(res.status).toBe(403);
+      expect(body).toEqual({
+        message: 'La requête est clôturée pour votre entité.',
+        cause: { kind: ERROR_KIND.BUSINESS },
+      });
+      expect(createRequeteMessage).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['an empty message', { contenu: '   ' }],
+      ['a content above the maximum length', { contenu: 'a'.repeat(10_001) }],
+    ])('rejects %s with a 400', async (_label, json) => {
+      const res = await client[':requeteId'].$post({ param: { requeteId: REQUETE_ID }, json });
+
+      expect(res.status).toBe(400);
+      expect(createRequeteMessage).not.toHaveBeenCalled();
     });
   });
 });
