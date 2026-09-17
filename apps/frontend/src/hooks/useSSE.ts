@@ -20,6 +20,13 @@ export interface SSEState {
   reconnectAttempts: number;
 }
 
+const MAX_RECONNECT_DELAY_MS = 30_000;
+const RECONNECT_JITTER_MS = 1_000;
+
+export const reconnectDelay = (attempt: number, baseInterval: number, random = Math.random) =>
+  Math.min(baseInterval * 2 ** Math.max(0, attempt - 1), MAX_RECONNECT_DELAY_MS) +
+  Math.floor(random() * RECONNECT_JITTER_MS);
+
 export function useSSE<T>(options: SSEOptions<T>) {
   const {
     url,
@@ -107,11 +114,14 @@ export function useSSE<T>(options: SSEOptions<T>) {
           };
         }
 
-        reconnectTimeoutRef.current = setTimeout(() => {
-          if (mountedRef.current) {
-            connect();
-          }
-        }, reconnectInterval);
+        reconnectTimeoutRef.current = setTimeout(
+          () => {
+            if (mountedRef.current) {
+              connect();
+            }
+          },
+          reconnectDelay(newAttempts, reconnectInterval),
+        );
 
         return {
           isConnected: false,
@@ -145,6 +155,28 @@ export function useSSE<T>(options: SSEOptions<T>) {
       cleanup();
     };
   }, [enabled, connect, cleanup]);
+
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const retryIfGivenUp = () => {
+      if (document.visibilityState !== 'visible') return;
+      const { isConnected, isConnecting, reconnectAttempts } = stateRef.current;
+      if (isConnected || isConnecting || reconnectAttempts < maxReconnectAttempts) return;
+      setState((prev) => ({ ...prev, reconnectAttempts: 0 }));
+      connect();
+    };
+
+    document.addEventListener('visibilitychange', retryIfGivenUp);
+    window.addEventListener('online', retryIfGivenUp);
+    return () => {
+      document.removeEventListener('visibilitychange', retryIfGivenUp);
+      window.removeEventListener('online', retryIfGivenUp);
+    };
+  }, [enabled, connect, maxReconnectAttempts]);
 
   return {
     ...state,
