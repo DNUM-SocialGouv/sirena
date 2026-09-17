@@ -3,13 +3,17 @@ import { FEATURE_FLAGS } from '@sirena/common/constants';
 import { Drawer } from '@sirena/ui';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useMarkRequeteDiscussionRead } from '@/hooks/mutations/markRequeteDiscussionRead.hook';
+import { useRequeteUnreadCount } from '@/hooks/queries/requeteMessagesUnread.hook';
 import { useHasFeature } from '@/hooks/useHasFeature';
+import { useUnreadFavicon } from '@/hooks/useUnreadFavicon';
 import { Discussion } from './Discussion';
 import styles from './discussion.module.css';
 
 type DiscussionDrawerProps = {
   requestId: string;
 };
+
+const pluralize = (count: number, singular: string, plural: string) => (count > 1 ? plural : singular);
 
 // Reading time granted before pending messages count as read while the panel is open and focused.
 const READ_AFTER_MS = 2000;
@@ -21,6 +25,8 @@ export const DiscussionDrawer = ({ requestId }: DiscussionDrawerProps) => {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const wasOpenRef = useRef(false);
 
+  const { data: unreadCount = 0 } = useRequeteUnreadCount(requestId, discussionEnabled);
+  useUnreadFavicon(discussionEnabled ? unreadCount : 0);
   const markRead = useMarkRequeteDiscussionRead(requestId);
   const markReadRef = useRef(markRead.mutate);
   markReadRef.current = markRead.mutate;
@@ -35,7 +41,7 @@ export const DiscussionDrawer = ({ requestId }: DiscussionDrawerProps) => {
   const handleClose = useCallback(() => handleOpenChange(false), [handleOpenChange]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || unreadCount === 0) return;
 
     let timer: ReturnType<typeof setTimeout> | null = null;
     const onFocus = () => schedule();
@@ -51,7 +57,7 @@ export const DiscussionDrawer = ({ requestId }: DiscussionDrawerProps) => {
       if (timer) clearTimeout(timer);
       window.removeEventListener('focus', onFocus);
     };
-  }, [isOpen]);
+  }, [isOpen, unreadCount]);
 
   useEffect(
     () => () => {
@@ -66,11 +72,25 @@ export const DiscussionDrawer = ({ requestId }: DiscussionDrawerProps) => {
 
   if (!discussionEnabled) return null;
 
+  const unreadLabel = `${unreadCount} ${pluralize(unreadCount, 'message non lu', 'messages non lus')}`;
+
   return (
     <>
       <Button priority="secondary" onClick={handleOpen} aria-expanded={isOpen}>
         Ouvrir la discussion
+        {unreadCount > 0 ? (
+          <>
+            <span className={styles.buttonCount} aria-hidden="true">
+              {unreadCount > 99 ? '99+' : String(unreadCount)}
+            </span>
+            <span className="fr-sr-only">, {unreadLabel}</span>
+          </>
+        ) : null}
       </Button>
+
+      <p className="fr-sr-only" aria-live="polite">
+        {!isOpen && unreadCount > 0 ? `${unreadLabel} dans la discussion` : ''}
+      </p>
 
       <Drawer.Root variant="nonModal" withCloseButton={false} open={isOpen} onOpenChange={handleOpenChange}>
         <Drawer.Portal>

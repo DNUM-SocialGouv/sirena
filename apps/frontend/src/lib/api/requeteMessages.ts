@@ -45,3 +45,12 @@ export async function markRequeteDiscussionRead(requestId: string) {
   const { data } = await res.json();
   return data;
 }
+
+export async function fetchRequeteUnreadCount(requestId: string) {
+  const res = await client['requete-messages'][':requeteId']['unread-count'].$get({
+    param: { requeteId: requestId },
+  });
+  await handleRequestErrors(res, { silentToastError: true });
+  const { data } = await res.json();
+  return data.unreadCount;
+}
