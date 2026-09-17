@@ -42,6 +42,11 @@ export function useSSE<T>(options: SSEOptions<T>) {
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
 
+  const onMessageRef = useRef(onMessage);
+  const onErrorRef = useRef(onError);
+  onMessageRef.current = onMessage;
+  onErrorRef.current = onError;
+
   const cleanup = useCallback(() => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
@@ -77,7 +82,7 @@ export function useSSE<T>(options: SSEOptions<T>) {
       if (!mountedRef.current) return;
       try {
         const data = JSON.parse(event.data) as T;
-        onMessage(data);
+        onMessageRef.current(data);
       } catch {
         console.error('Failed to parse SSE message:', event.data);
       }
@@ -93,7 +98,7 @@ export function useSSE<T>(options: SSEOptions<T>) {
       setState((prev) => {
         const newAttempts = prev.reconnectAttempts + 1;
         if (newAttempts >= maxReconnectAttempts) {
-          onError?.(error);
+          onErrorRef.current?.(error);
           return {
             isConnected: false,
             isConnecting: false,
@@ -116,7 +121,7 @@ export function useSSE<T>(options: SSEOptions<T>) {
         };
       });
     };
-  }, [enabled, url, eventType, onMessage, onError, reconnectInterval, maxReconnectAttempts, cleanup]);
+  }, [enabled, url, eventType, reconnectInterval, maxReconnectAttempts, cleanup]);
 
   const disconnect = useCallback(() => {
     cleanup();
