@@ -2,13 +2,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../libs/prisma.js';
 import {
   createUploadedFile,
+  deleteFaitFilesRemovedFromSituation,
   deleteUploadedFile,
   FilesNotOwnedError,
   getRequeteEtapeUploadedFile,
+  getRequeteMessageUploadedFile,
   getUploadedFileById,
   isUploadedFileAttachedToImmutableAcknowledgment,
   isUserOwner,
   setEtapeFile,
+  setFaitFiles,
+  setMessageFiles,
+  setRequeteFile,
 } from './uploadedFiles.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
@@ -19,6 +24,7 @@ vi.mock('../../libs/prisma.js', () => ({
       count: vi.fn(),
       create: vi.fn(),
       delete: vi.fn(),
+      deleteMany: vi.fn(),
       findMany: vi.fn(),
       updateMany: vi.fn(),
     },
@@ -53,6 +59,7 @@ const mockUploadedFile = {
   requeteId: '1',
   faitSituationId: '1',
   demarchesEngageesId: null,
+  requeteMessageId: null,
   canDelete: true,
   scanStatus: 'PENDING',
   sanitizeStatus: 'PENDING',
@@ -121,6 +128,28 @@ describe('uploadedFiles.service.ts', () => {
     });
   });
 
+  describe('getRequeteMessageUploadedFile()', () => {
+    it('scopes the file to a message of the requete, whatever the entity that posted it', async () => {
+      mockedUploadedFile.findFirst.mockResolvedValueOnce(mockUploadedFile);
+
+      const result = await getRequeteMessageUploadedFile('requete1', 'file1');
+
+      expect(mockedUploadedFile.findFirst).toHaveBeenCalledWith({
+        where: {
+          id: 'file1',
+          requeteMessage: { requeteId: 'requete1' },
+        },
+      });
+      expect(result).toEqual(mockUploadedFile);
+    });
+
+    it('returns null when the file is not attached to a message of this requete', async () => {
+      mockedUploadedFile.findFirst.mockResolvedValueOnce(null);
+
+      await expect(getRequeteMessageUploadedFile('requete1', 'file1')).resolves.toBeNull();
+    });
+  });
+
   describe('createUploadedFile()', () => {
     it('should call create with correct data', async () => {
       mockedUploadedFile.create.mockResolvedValueOnce(mockUploadedFile);
@@ -139,6 +168,7 @@ describe('uploadedFiles.service.ts', () => {
         requeteId: null,
         faitSituationId: null,
         demarchesEngageesId: null,
+        requeteMessageId: null,
         canDelete: true,
       };
 
@@ -171,6 +201,7 @@ describe('uploadedFiles.service.ts', () => {
         requeteId: null,
         faitSituationId: null,
         demarchesEngageesId: null,
+        requeteMessageId: null,
         canDelete: true,
       };
 
@@ -266,6 +297,7 @@ describe('uploadedFiles.service.ts', () => {
           requeteEtapeId: null,
           faitSituationId: null,
           demarchesEngageesId: null,
+          requeteMessageId: null,
         },
         data: { requeteEtapeId: 'step1', status: 'COMPLETED', entiteId: 'e1' },
       });
@@ -279,6 +311,90 @@ describe('uploadedFiles.service.ts', () => {
       await expect(setEtapeFile('step1', ['file1', 'file2'], 'e1', 'user1')).rejects.toBeInstanceOf(FilesNotOwnedError);
       expect(prisma.$transaction).toHaveBeenCalledOnce();
       expect(mockedUploadedFile.findMany).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('setMessageFiles()', () => {
+    it('only attaches free files owned by the user in the message entity', async () => {
+      mockedUploadedFile.findMany
+        .mockResolvedValueOnce([{ ...mockUploadedFile, requeteId: null, faitSituationId: null }])
+        .mockResolvedValueOnce([
+          {
+            ...mockUploadedFile,
+            requeteId: null,
+            faitSituationId: null,
+            requeteMessageId: 'message1',
+            status: 'COMPLETED',
+          },
+        ]);
+      mockedUploadedFile.updateMany.mockResolvedValueOnce({ count: 1 });
+
+      await setMessageFiles('message1', ['file1'], 'e1', 'user1', prisma);
+
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(mockedUploadedFile.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: { in: ['file1'] },
+          uploadedById: 'user1',
+          entiteId: 'e1',
+          requeteId: null,
+          requeteEtapeId: null,
+          faitSituationId: null,
+          demarchesEngageesId: null,
+          requeteMessageId: null,
+        },
+        data: { requeteMessageId: 'message1', status: 'COMPLETED', entiteId: 'e1' },
+      });
+    });
+
+    it('rejects the whole attachment when at least one file is ineligible', async () => {
+      vi.mocked(prisma.$transaction).mockImplementation((async (cb: (tx: unknown) => unknown) => cb(prisma)) as never);
+      mockedUploadedFile.findMany.mockResolvedValueOnce([]);
+      mockedUploadedFile.updateMany.mockResolvedValueOnce({ count: 1 });
+
+      await expect(setMessageFiles('message1', ['file1', 'file2'], 'e1', 'user1')).rejects.toBeInstanceOf(
+        FilesNotOwnedError,
+      );
+      expect(prisma.$transaction).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('discussion attachment immutability', () => {
+    it('never lets another relation claim a file attached to a discussion message', async () => {
+      mockedUploadedFile.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+      mockedUploadedFile.updateMany.mockResolvedValueOnce({ count: 0 });
+
+      await setFaitFiles('situation1', ['file1'], 'e1', 'user1');
+
+      expect(mockedUploadedFile.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ requeteMessageId: null }) }),
+      );
+    });
+
+    it('raises FilesNotOwnedError when the blocked file is a discussion attachment', async () => {
+      mockedUploadedFile.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+      mockedUploadedFile.updateMany.mockResolvedValueOnce({ count: 0 });
+      mockedUploadedFile.count.mockResolvedValueOnce(1);
+
+      await expect(setRequeteFile('REQ-C', ['file1'], 'e1', 'user1')).rejects.toBeInstanceOf(FilesNotOwnedError);
+    });
+
+    it('still tolerates a missing id when no discussion attachment is involved', async () => {
+      mockedUploadedFile.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+      mockedUploadedFile.updateMany.mockResolvedValueOnce({ count: 0 });
+      mockedUploadedFile.count.mockResolvedValueOnce(0);
+
+      await expect(setRequeteFile('REQ-C', ['unknown'], 'e1', 'user1')).resolves.toEqual([]);
+    });
+
+    it('excludes discussion attachments from the situation file cleanup', async () => {
+      mockedUploadedFile.findMany.mockResolvedValueOnce([]);
+
+      await deleteFaitFilesRemovedFromSituation('situation1', ['keep1'], 'e1', undefined, prisma);
+
+      expect(mockedUploadedFile.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ requeteMessageId: null }) }),
+      );
     });
   });
 
