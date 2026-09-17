@@ -1,16 +1,13 @@
 import { mariadbPool } from '../../config/mariadb.js';
-import { SIREC_NATIONAL_ENTITE_ID } from './transco/affectation/affectation.transco.js';
+import {
+  SIREC_GROUP_MODE,
+  SIREC_NATIONAL_ENTITE_ID,
+  type SirecGroupMode,
+} from './transco/affectation/affectation.transco.js';
 import { MOTIF_IGAS_A_RENSEIGNER, MOTIF_IGAS_HORS_COMPETENCE } from './transco/motifsIgas.transco.js';
 import { SirecDataError } from './transco/sirecTransco.error.js';
 
-export const SIREC_GROUP_MODE = {
-  LECTURE: 'LECTURE',
-  ECRITURE: 'ECRITURE',
-} as const;
-
 export const DATE_DEBUT_REPRISE_SIREC = '2020-01-01';
-
-export type SirecGroupMode = (typeof SIREC_GROUP_MODE)[keyof typeof SIREC_GROUP_MODE];
 
 const SIREC_GROUP_MODE_BY_RAW_VALUE: Record<number, SirecGroupMode> = {
   2: SIREC_GROUP_MODE.ECRITURE,
