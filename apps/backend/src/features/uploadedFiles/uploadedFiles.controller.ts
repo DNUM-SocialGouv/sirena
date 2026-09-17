@@ -21,6 +21,7 @@ import {
   createUploadedFile,
   deleteUploadedFile,
   getUploadedFileById,
+  getUploadedFileByIdForEntite,
   isUploadedFileAttachedToImmutableAcknowledgment,
 } from './uploadedFiles.service.js';
 
@@ -94,6 +95,7 @@ const app = factoryWithLogs
         requeteId: null,
         faitSituationId: null,
         demarchesEngageesId: null,
+        requeteMessageId: null,
         status: 'PENDING',
         canDelete: true,
       }).catch(async (err) => {
@@ -156,6 +158,13 @@ const app = factoryWithLogs
         });
       }
 
+      if (uploadedFile.requeteMessageId) {
+        throwHTTPException400BadRequest('Un fichier joint à un message de discussion ne peut pas être supprimé.', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+
       await deleteUploadedFile(id);
 
       await deleteFileFromMinio(uploadedFile.filePath);
@@ -179,7 +188,7 @@ const app = factoryWithLogs
       });
     }
 
-    const uploadedFile = await getUploadedFileById(id, [topEntiteId]);
+    const uploadedFile = await getUploadedFileByIdForEntite(id, topEntiteId);
     if (!uploadedFile) {
       throwHTTPException404NotFound('Uploaded file not found', {
         res: c.res,

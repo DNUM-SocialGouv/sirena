@@ -45,7 +45,11 @@ import { safeSyncRequetePriseEnChargeToDematSocial } from '../dematSocial/priseE
 import { buildEntitesTraitement, getEntiteAscendanteInfo, getEntiteDescendantIds } from '../entites/entites.service.js';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service.js';
 import { generateRequeteId } from '../requetes/functionalId.service.js';
-import { deleteFaitFilesRemovedFromSituation, setFaitFiles } from '../uploadedFiles/uploadedFiles.service.js';
+import {
+  deleteFaitFilesRemovedFromSituation,
+  setFaitFiles,
+  UNATTACHED_FILE_RELATIONS,
+} from '../uploadedFiles/uploadedFiles.service.js';
 import {
   mapDeclarantToPrismaCreate,
   mapPersonneConcerneeToPrismaCreate,
@@ -1897,10 +1901,7 @@ export const closeRequeteForEntite = async (
           id: { in: fileIds },
           uploadedById: authorId,
           entiteId,
-          requeteId: null,
-          requeteEtapeId: null,
-          faitSituationId: null,
-          demarchesEngageesId: null,
+          ...UNATTACHED_FILE_RELATIONS,
         },
         data: {
           requeteEtapeId: etape.id,
