@@ -2,6 +2,7 @@ import type { RequeteMessageEvent } from '@sirena/common/constants';
 import type { PinoLogger } from 'hono-pino';
 import { sseEventManager } from '../../helpers/sse.js';
 import { type Prisma, prisma } from '../../libs/prisma.js';
+import { setMessageFiles } from '../uploadedFiles/uploadedFiles.service.js';
 import type { GetRequeteMessagesQuery, PostRequeteMessageDto } from './requeteMessages.type.js';
 
 const messageSelect = (currentUserId: string) =>
@@ -12,6 +13,18 @@ const messageSelect = (currentUserId: string) =>
     createdAt: true,
     entite: { select: { id: true, nomComplet: true, entiteTypeId: true } },
     author: { select: { prenom: true, nom: true } },
+    uploadedFiles: {
+      select: {
+        id: true,
+        fileName: true,
+        size: true,
+        status: true,
+        scanStatus: true,
+        sanitizeStatus: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    },
     reads: { where: { userId: currentUserId }, select: { userId: true }, take: 1 },
   }) satisfies Prisma.RequeteMessageSelect;
 
@@ -146,6 +159,10 @@ export const createRequeteMessage = async (
     // here never leaves a posted message behind an unread count that still counts it.
     const { markedIds: read } = await markAllMessagesAsRead(requeteId, userId, entiteId, tx);
 
+    if (dto.fileIds.length > 0) {
+      await setMessageFiles(created.id, dto.fileIds, entiteId, userId, tx);
+    }
+
     // Read back inside the transaction too: an answer that cannot be built is an answer that was never
     // posted, instead of a 500 on a message the requete already carries.
     return {
@@ -155,7 +172,7 @@ export const createRequeteMessage = async (
     };
   });
 
-  logger.info({ requeteId, messageId, userId }, 'Requete message persisted');
+  logger.info({ requeteId, messageId, userId, fileCount: dto.fileIds.length }, 'Requete message persisted');
 
   await emitMessagesRead(requeteId, userId, entiteId, markedIds);
 

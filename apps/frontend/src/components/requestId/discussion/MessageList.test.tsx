@@ -14,6 +14,7 @@ const makeMessage = (id: string): RequeteMessage => ({
   createdAt: '2026-01-15T10:30:00.000Z',
   entite: { id: 'E1', nomComplet: 'ARS Île-de-France', entiteTypeId: 'ARS' },
   author: { prenom: 'jean', nom: 'dupont' },
+  uploadedFiles: [],
   isReadByCurrentUser: true,
 });
 
@@ -21,6 +22,7 @@ const renderList = (messages: RequeteMessage[], onLoadMore = vi.fn(), hasMore = 
   const view = render(
     <MessageList
       messages={messages}
+      requestId="REQ"
       ownEntiteId="E1"
       hasMore={hasMore}
       isFetchingNextPage={false}
@@ -32,6 +34,7 @@ const renderList = (messages: RequeteMessage[], onLoadMore = vi.fn(), hasMore = 
     view.rerender(
       <MessageList
         messages={next}
+        requestId="REQ"
         ownEntiteId="E1"
         hasMore={hasMore}
         isFetchingNextPage={false}
@@ -114,7 +117,13 @@ describe('MessageList', () => {
 
   it("shows the 'Non lus' separator again when a new message arrives", () => {
     const unread = (id: string) => ({ ...makeMessage(id), isReadByCurrentUser: false });
-    const props = { ownEntiteId: 'E1', hasMore: false, isFetchingNextPage: false, onLoadMore: vi.fn() };
+    const props = {
+      requestId: 'REQ',
+      ownEntiteId: 'E1',
+      hasMore: false,
+      isFetchingNextPage: false,
+      onLoadMore: vi.fn(),
+    };
     const { rerender } = render(
       <MessageList {...props} messages={[makeMessage('m1'), unread('m2')]} readStateVersion={0} />,
     );

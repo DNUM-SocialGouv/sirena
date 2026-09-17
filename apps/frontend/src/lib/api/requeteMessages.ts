@@ -26,6 +26,7 @@ export async function fetchRequeteMessages(
 
 export type PostRequeteMessageData = {
   contenu: string;
+  fileIds: string[];
 };
 
 export async function postRequeteMessage(requestId: string, data: PostRequeteMessageData) {

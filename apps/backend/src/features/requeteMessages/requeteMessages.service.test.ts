@@ -2,6 +2,8 @@ import type { PinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sseEventManager } from '../../helpers/sse.js';
 import { prisma } from '../../libs/prisma.js';
+import { createChangeLog } from '../changelog/changelog.service.js';
+import { FilesNotOwnedError, setMessageFiles } from '../uploadedFiles/uploadedFiles.service.js';
 import {
   createRequeteMessage,
   getRequeteMessageById,
@@ -37,6 +39,15 @@ vi.mock('../../helpers/sse.js', () => ({
   },
 }));
 
+vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
+  FilesNotOwnedError: class FilesNotOwnedError extends Error {},
+  setMessageFiles: vi.fn(() => Promise.resolve([])),
+}));
+
+vi.mock('../changelog/changelog.service.js', () => ({
+  createChangeLog: vi.fn(),
+}));
+
 const mockedMessage = vi.mocked(prisma.requeteMessage);
 const mockedMessageRead = vi.mocked(prisma.requeteMessageRead);
 const mockedRequeteEntite = vi.mocked(prisma.requeteEntite);
@@ -50,6 +61,7 @@ const baseRow = {
   createdAt: new Date('2026-01-01T10:00:00.000Z'),
   entite: { id: 'e1', nomComplet: 'ARS Île-de-France', entiteTypeId: 'ARS' },
   author: { prenom: 'Jean', nom: 'Dupont' },
+  uploadedFiles: [],
   reads: [] as { userId: string }[],
 };
 
@@ -249,7 +261,7 @@ describe('requeteMessages.service.ts', () => {
     it('creates the message and marks it read for its author', async () => {
       mockedMessage.findMany.mockResolvedValueOnce([{ id: 'm1' }] as never);
 
-      const result = await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour' }, logger);
+      const result = await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour', fileIds: [] }, logger);
 
       expect(prisma.$transaction).toHaveBeenCalledOnce();
       expect(mockedMessage.create).toHaveBeenCalledWith({
@@ -266,9 +278,9 @@ describe('requeteMessages.service.ts', () => {
       mockedMessage.findMany.mockResolvedValueOnce([{ id: 'm1' }] as never);
       mockedMessageRead.createMany.mockRejectedValueOnce(new Error('DATABASE_FAILURE'));
 
-      await expect(createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour' }, logger)).rejects.toThrow(
-        'DATABASE_FAILURE',
-      );
+      await expect(
+        createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour', fileIds: [] }, logger),
+      ).rejects.toThrow('DATABASE_FAILURE');
 
       // The read rows are written inside the transaction that created the message: nothing is committed.
       expect(mockedMessage.findUnique).not.toHaveBeenCalled();
@@ -278,9 +290,9 @@ describe('requeteMessages.service.ts', () => {
       mockedMessage.findMany.mockResolvedValueOnce([{ id: 'm1' }] as never);
       mockedMessage.findUnique.mockRejectedValueOnce(new Error('DATABASE_FAILURE'));
 
-      await expect(createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour' }, logger)).rejects.toThrow(
-        'DATABASE_FAILURE',
-      );
+      await expect(
+        createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour', fileIds: [] }, logger),
+      ).rejects.toThrow('DATABASE_FAILURE');
 
       // The answer is built inside the transaction: an error means nothing was committed.
       expect(prisma.$transaction).toHaveBeenCalledOnce();
@@ -289,7 +301,7 @@ describe('requeteMessages.service.ts', () => {
     it('marks everything the author had not read yet: replying counts as reading', async () => {
       mockedMessage.findMany.mockResolvedValueOnce([{ id: 'older' }] as never);
 
-      await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour' }, logger);
+      await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour', fileIds: [] }, logger);
 
       expect(mockedMessage.findMany).toHaveBeenCalledWith({
         where: { requeteId: 'REQ', reads: { none: { userId: 'user1' } } },
@@ -302,8 +314,27 @@ describe('requeteMessages.service.ts', () => {
       expect(sseEventManager.emitRequeteMessage).toHaveBeenCalledWith(expect.objectContaining({ action: 'read' }));
     });
 
+    it('does not attach files when none is requested', async () => {
+      await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour', fileIds: [] }, logger);
+
+      expect(setMessageFiles).not.toHaveBeenCalled();
+    });
+
+    it('attaches the files inside the same transaction', async () => {
+      await createRequeteMessage('REQ', 'e1', 'user1', { contenu: '', fileIds: ['f1', 'f2'] }, logger);
+
+      expect(prisma.$transaction).toHaveBeenCalledOnce();
+      expect(setMessageFiles).toHaveBeenCalledWith('m1', ['f1', 'f2'], 'e1', 'user1', prisma);
+    });
+
+    it('does not write a changelog entry: the message row is the trace', async () => {
+      await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour', fileIds: ['f1'] }, logger);
+
+      expect(createChangeLog).not.toHaveBeenCalled();
+    });
+
     it('emits a created event targeting every entity affected to the requete', async () => {
-      await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour' }, logger);
+      await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour', fileIds: [] }, logger);
 
       expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith({
         where: { requeteId: 'REQ' },
@@ -316,6 +347,16 @@ describe('requeteMessages.service.ts', () => {
         entiteId: 'e1',
         entiteIds: ['e1', 'e2'],
       });
+    });
+
+    it('propagates FilesNotOwnedError without emitting any event', async () => {
+      vi.mocked(setMessageFiles).mockRejectedValueOnce(new FilesNotOwnedError('FILES_NOT_OWNED'));
+
+      await expect(
+        createRequeteMessage('REQ', 'e1', 'user1', { contenu: '', fileIds: ['f1'] }, logger),
+      ).rejects.toBeInstanceOf(FilesNotOwnedError);
+
+      expect(sseEventManager.emitRequeteMessage).not.toHaveBeenCalled();
     });
   });
 

@@ -14,7 +14,7 @@ import {
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import { hasFeature } from '../featureFlags/featureFlags.service.js';
 import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service.js';
-import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
+import { getUploadedFileByIdForEntite } from '../uploadedFiles/uploadedFiles.service.js';
 import SSEController, { buildRequeteMessageFilter, buildUserListFilter } from './sse.controller.js';
 
 vi.mock('../../config/env.js', () => ({
@@ -51,7 +51,7 @@ vi.mock('../requetesEntite/requetesEntite.service.js', () => ({
 }));
 
 vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
-  getUploadedFileById: vi.fn(),
+  getUploadedFileByIdForEntite: vi.fn(),
 }));
 
 vi.mock('../featureFlags/featureFlags.service.js', () => ({
@@ -235,24 +235,24 @@ describe('sse.controller.ts', () => {
   });
 
   describe('GET /files/:id', () => {
-    it('opens the stream for a file of the subscriber entity and filters on both ids', async () => {
-      vi.mocked(getUploadedFileById).mockResolvedValueOnce({ id: 'F1', entiteId: 'e1' } as never);
+    it('lets every entity affected to the requete follow a discussion attachment', async () => {
+      vi.mocked(getUploadedFileByIdForEntite).mockResolvedValueOnce({ id: 'F1', entiteId: 'e2' } as never);
 
       const res = await client.files[':id'].$get({ param: { id: 'F1' } });
 
       expect(res.status).toBe(200);
-      expect(getUploadedFileById).toHaveBeenCalledWith('F1', ['e1']);
+      expect(getUploadedFileByIdForEntite).toHaveBeenCalledWith('F1', 'e1');
       const options = vi.mocked(createSSEStream).mock.calls[0]?.[1] as { filter: (event: FileStatusEvent) => boolean };
-      expect(options.filter({ fileId: 'F1', entiteId: 'e1', status: 'x', scanStatus: 'x', sanitizeStatus: 'x' })).toBe(
+      expect(options.filter({ fileId: 'F1', entiteId: 'e2', status: 'x', scanStatus: 'x', sanitizeStatus: 'x' })).toBe(
         true,
       );
-      expect(options.filter({ fileId: 'F1', entiteId: 'e2', status: 'x', scanStatus: 'x', sanitizeStatus: 'x' })).toBe(
+      expect(options.filter({ fileId: 'F2', entiteId: 'e1', status: 'x', scanStatus: 'x', sanitizeStatus: 'x' })).toBe(
         false,
       );
     });
 
     it('returns 404 for a file the entity has no access to', async () => {
-      vi.mocked(getUploadedFileById).mockResolvedValueOnce(null);
+      vi.mocked(getUploadedFileByIdForEntite).mockResolvedValueOnce(null);
 
       const res = await client.files[':id'].$get({ param: { id: 'F1' } });
 
