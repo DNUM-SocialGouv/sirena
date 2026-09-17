@@ -1,5 +1,6 @@
+import type { PinoLogger } from 'hono-pino';
 import { type Prisma, prisma } from '../../libs/prisma.js';
-import type { GetRequeteMessagesQuery } from './requeteMessages.type.js';
+import type { GetRequeteMessagesQuery, PostRequeteMessageDto } from './requeteMessages.type.js';
 
 const messageSelect = (currentUserId: string) =>
   ({
@@ -82,4 +83,28 @@ export const markAllMessagesAsRead = async (requeteId: string, userId: string, e
   }
 
   return { markedIds, unreadCount: await getUnreadCount(requeteId, userId) };
+};
+
+export const createRequeteMessage = async (
+  requeteId: string,
+  entiteId: string,
+  userId: string,
+  dto: PostRequeteMessageDto,
+  logger: PinoLogger,
+): Promise<RequeteMessageDto | null> => {
+  const created = await prisma.$transaction(async (tx) => {
+    const message = await tx.requeteMessage.create({
+      data: { requeteId, entiteId, authorId: userId, contenu: dto.contenu },
+    });
+
+    await tx.requeteMessageRead.create({ data: { messageId: message.id, userId, entiteId } });
+
+    return message;
+  });
+
+  logger.info({ requeteId, messageId: created.id, userId }, 'Requete message persisted');
+
+  await markAllMessagesAsRead(requeteId, userId, entiteId);
+
+  return getRequeteMessageById(created.id, userId);
 };

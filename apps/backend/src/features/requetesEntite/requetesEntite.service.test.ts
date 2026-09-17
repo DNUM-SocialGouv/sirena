@@ -23,6 +23,7 @@ import {
   getOtherEntitesAffected,
   getPrefixedFileName,
   getRequeteEntiteById,
+  getRequeteEntiteStatutId,
   getRequetesEntite,
   hasAccessToRequete,
   reopenRequeteForEntite,
@@ -594,6 +595,28 @@ describe('requetesEntite.service', () => {
         entiteId: mockRequeteEntite.entiteId,
       });
       expect(result).toBe(false);
+    });
+  });
+
+  describe('getRequeteEntiteStatutId', () => {
+    it('reads the status through the composite key of the requete and the entity', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
+        statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+      } as unknown as Awaited<ReturnType<typeof prisma.requeteEntite.findUnique>>);
+
+      const result = await getRequeteEntiteStatutId({ requeteId: 'REQ', entiteId: 'e1' });
+
+      expect(result).toBe(REQUETE_STATUT_TYPES.CLOTUREE);
+      expect(prisma.requeteEntite.findUnique).toHaveBeenCalledWith({
+        where: { requeteId_entiteId: { requeteId: 'REQ', entiteId: 'e1' } },
+        select: { statutId: true },
+      });
+    });
+
+    it('returns null when the entity is not affected to the requete', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(null);
+
+      await expect(getRequeteEntiteStatutId({ requeteId: 'REQ', entiteId: 'other' })).resolves.toBeNull();
     });
   });
 
