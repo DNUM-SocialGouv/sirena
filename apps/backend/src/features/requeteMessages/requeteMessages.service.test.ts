@@ -143,6 +143,50 @@ describe('requeteMessages.service.ts', () => {
 
       expect(mockedMessage.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { requeteId: 'REQ' } }));
     });
+
+    it('selects the messages strictly newer than the after cursor, still newest first', async () => {
+      const cursorDate = new Date('2026-01-01T09:00:00.000Z');
+      mockedMessage.findFirst.mockResolvedValueOnce({ createdAt: cursorDate, id: 'm5' } as never);
+      mockedMessage.findMany.mockResolvedValueOnce([row({ id: 'm7' }), row({ id: 'm6' })] as never);
+
+      const result = await getRequeteMessages('REQ', 'user1', { limit: 50, after: 'm5' });
+
+      expect(mockedMessage.findFirst).toHaveBeenCalledWith({
+        where: { id: 'm5', requeteId: 'REQ' },
+        select: { createdAt: true, id: true },
+      });
+      expect(mockedMessage.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            requeteId: 'REQ',
+            OR: [{ createdAt: { gt: cursorDate } }, { createdAt: cursorDate, id: { gt: 'm5' } }],
+          },
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          take: 51,
+        }),
+      );
+      expect(result.data.map((message) => message.id)).toEqual(['m7', 'm6']);
+      expect(result.meta).toEqual({ hasMore: false, nextCursor: null });
+    });
+
+    it('reports an incomplete catch-up without a next cursor when more than limit messages are newer', async () => {
+      mockedMessage.findFirst.mockResolvedValueOnce({ createdAt: baseRow.createdAt, id: 'm5' } as never);
+      mockedMessage.findMany.mockResolvedValueOnce([row({ id: 'm8' }), row({ id: 'm7' }), row({ id: 'm6' })] as never);
+
+      const result = await getRequeteMessages('REQ', 'user1', { limit: 2, after: 'm5' });
+
+      expect(result.data.map((message) => message.id)).toEqual(['m8', 'm7']);
+      expect(result.meta).toEqual({ hasMore: true, nextCursor: null });
+    });
+
+    it('ignores an unknown after cursor and returns the first page', async () => {
+      mockedMessage.findFirst.mockResolvedValueOnce(null as never);
+      mockedMessage.findMany.mockResolvedValueOnce([] as never);
+
+      await getRequeteMessages('REQ', 'user1', { limit: 50, after: 'unknown' });
+
+      expect(mockedMessage.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { requeteId: 'REQ' } }));
+    });
   });
 
   describe('getRequeteMessageById()', () => {
