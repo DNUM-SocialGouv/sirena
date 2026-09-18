@@ -3,17 +3,22 @@ import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { client } from '@/lib/api/hc';
+import { notifyConflictPersistent, notifyConflictUnusable, notifySaveFailure } from '@/lib/api/saveError';
 import { HttpError } from '@/lib/api/tanstackQuery';
 import { MAX_AUTO_MERGE_REPLAYS } from '@/lib/conflictResolution';
-import { toastManager } from '@/lib/toastManager';
 import { type RequeteDateTypeData, useRequeteDateTypeSave } from './useRequeteDateTypeSave';
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),
 }));
 
-vi.mock('@/lib/toastManager', () => ({
-  toastManager: { add: vi.fn() },
+vi.mock('@/lib/api/saveError', () => ({
+  notifyAutoMerge: vi.fn(),
+  notifyConflictPersistent: vi.fn(),
+  notifyConflictRefreshed: vi.fn(),
+  notifyConflictUnusable: vi.fn(),
+  notifySaveFailure: vi.fn(),
+  notifySaveNetworkFailure: vi.fn(),
 }));
 
 vi.mock('@/lib/api/hc', () => ({
@@ -113,20 +118,13 @@ describe('useRequeteDateTypeSave', () => {
     await expect(handleSave({ receptionDate: '2026-02-02' })).resolves.toBeUndefined();
   });
 
-  it('surfaces the server message on a non-conflict failure', async () => {
-    patch.mockResolvedValue(
-      new Response(JSON.stringify({ message: 'La date de réception est invalide.' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      }) as never,
-    );
+  it('hands a non-conflict failure to the save failure notifier', async () => {
+    patch.mockResolvedValue(new Response(null, { status: 400 }) as never);
 
     const { handleSave } = renderSave().current;
 
     await expect(handleSave({ receptionDate: '2026-02-02' })).rejects.toBeInstanceOf(HttpError);
-    expect(toastManager.add).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Erreur', description: 'La date de réception est invalide.' }),
-    );
+    expect(notifySaveFailure).toHaveBeenCalledWith(expect.any(HttpError));
   });
 
   it('opens the resolution dialog on a field both sides changed', async () => {
@@ -209,9 +207,7 @@ describe('useRequeteDateTypeSave', () => {
 
     await result.current.handleSave({ ...LOADED_DATA, receptionDate: '2026-02-02' });
 
-    await waitFor(() =>
-      expect(toastManager.add).toHaveBeenCalledWith(expect.objectContaining({ title: 'Conflit persistant' })),
-    );
+    await waitFor(() => expect(notifyConflictPersistent).toHaveBeenCalledTimes(1));
     expect(patch).toHaveBeenCalledTimes(1 + MAX_AUTO_MERGE_REPLAYS);
     expect(result.current.showConflictDialog).toBe(false);
   });
@@ -224,11 +220,7 @@ describe('useRequeteDateTypeSave', () => {
 
     await result.current.handleSave({ ...LOADED_DATA, receptionDate: '2026-02-02' });
 
-    await waitFor(() =>
-      expect(toastManager.add).toHaveBeenCalledWith(
-        expect.objectContaining({ title: 'Conflit de données', data: { icon: 'fr-alert--error' } }),
-      ),
-    );
+    await waitFor(() => expect(notifyConflictUnusable).toHaveBeenCalledTimes(1));
     expect(patch).toHaveBeenCalledTimes(1);
   });
 

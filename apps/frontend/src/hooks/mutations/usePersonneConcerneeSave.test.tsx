@@ -3,18 +3,23 @@ import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { client } from '@/lib/api/hc';
+import { notifyConflictPersistent, notifyConflictUnusable } from '@/lib/api/saveError';
 import { HttpError } from '@/lib/api/tanstackQuery';
 import { MAX_AUTO_MERGE_REPLAYS } from '@/lib/conflictResolution';
 import { formatPersonneConcerneeFromServer } from '@/lib/personneConcernee';
-import { toastManager } from '@/lib/toastManager';
 import { usePersonneConcerneeSave } from './usePersonneConcerneeSave';
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),
 }));
 
-vi.mock('@/lib/toastManager', () => ({
-  toastManager: { add: vi.fn() },
+vi.mock('@/lib/api/saveError', () => ({
+  notifyAutoMerge: vi.fn(),
+  notifyConflictPersistent: vi.fn(),
+  notifyConflictRefreshed: vi.fn(),
+  notifyConflictUnusable: vi.fn(),
+  notifySaveFailure: vi.fn(),
+  notifySaveNetworkFailure: vi.fn(),
 }));
 
 vi.mock('@/lib/api/hc', () => ({
@@ -194,9 +199,7 @@ describe('usePersonneConcerneeSave', () => {
 
     await result.current.handleSave({ ...result.current.originalDataRef.current, prenom: 'Ida' });
 
-    await waitFor(() =>
-      expect(toastManager.add).toHaveBeenCalledWith(expect.objectContaining({ title: 'Conflit persistant' })),
-    );
+    await waitFor(() => expect(notifyConflictPersistent).toHaveBeenCalledTimes(1));
     expect(patch).toHaveBeenCalledTimes(1 + MAX_AUTO_MERGE_REPLAYS);
     expect(result.current.showConflictDialog).toBe(false);
   });
@@ -209,11 +212,7 @@ describe('usePersonneConcerneeSave', () => {
 
     await result.current.handleSave({ ...result.current.originalDataRef.current, prenom: 'Ida' });
 
-    await waitFor(() =>
-      expect(toastManager.add).toHaveBeenCalledWith(
-        expect.objectContaining({ title: 'Conflit de données', data: { icon: 'fr-alert--error' } }),
-      ),
-    );
+    await waitFor(() => expect(notifyConflictUnusable).toHaveBeenCalledTimes(1));
     expect(patch).toHaveBeenCalledTimes(1);
   });
 

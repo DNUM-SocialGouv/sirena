@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { uploadFile } from '@/lib/api/fetchUploadedFiles';
 import { client } from '@/lib/api/hc';
-import { notifySaveNetworkFailure } from '@/lib/api/saveError';
+import { notifySaveFailure, notifySaveNetworkFailure } from '@/lib/api/saveError';
 import { HttpError } from '@/lib/api/tanstackQuery';
 import { formatSituationFromServer } from '@/lib/situation';
 import { useSituationSave } from './useSituationSave';
@@ -15,11 +15,12 @@ vi.mock('@/hooks/queries/profile.hook', () => ({
 }));
 
 vi.mock('@/lib/api/saveError', () => ({
+  notifyAutoMerge: vi.fn(),
+  notifyConflictPersistent: vi.fn(),
+  notifyConflictRefreshed: vi.fn(),
+  notifyConflictUnusable: vi.fn(),
+  notifySaveFailure: vi.fn(),
   notifySaveNetworkFailure: vi.fn(),
-}));
-
-vi.mock('@/lib/toastManager', () => ({
-  toastManager: { add: vi.fn() },
 }));
 
 vi.mock('@/lib/api/fetchUploadedFiles', () => ({
@@ -191,21 +192,22 @@ describe('useSituationSave', () => {
     expect(patch).not.toHaveBeenCalled();
   });
 
-  it('tells the user when the save request itself dies on the network', async () => {
+  it('hands a save request that dies on the network to the save failure notifier', async () => {
     patch.mockRejectedValue(new TypeError('Failed to fetch') as never);
 
     const { handleSave } = renderSave(LOADED_UPDATED_AT).current;
 
     await expect(handleSave(loadedSituation(), false, [])).rejects.toBeInstanceOf(TypeError);
-    expect(notifySaveNetworkFailure).toHaveBeenCalledTimes(1);
+    expect(notifySaveFailure).toHaveBeenCalledWith(expect.any(TypeError));
   });
 
-  it('leaves an answered request to the HttpError branch', async () => {
+  it('hands an answered failure to the save failure notifier', async () => {
     patch.mockResolvedValue(new Response(null, { status: 500 }) as never);
 
     const { handleSave } = renderSave(LOADED_UPDATED_AT).current;
 
     await expect(handleSave(loadedSituation(), false, [])).rejects.toBeInstanceOf(HttpError);
+    expect(notifySaveFailure).toHaveBeenCalledWith(expect.any(HttpError));
     expect(notifySaveNetworkFailure).not.toHaveBeenCalled();
   });
 

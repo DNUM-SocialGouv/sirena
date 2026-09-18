@@ -2,8 +2,14 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { client } from '@/lib/api/hc';
-import { notifySaveNetworkFailure } from '@/lib/api/saveError';
-import { HttpError, handleRequestErrors } from '@/lib/api/tanstackQuery';
+import {
+  notifyAutoMerge,
+  notifyConflictPersistent,
+  notifyConflictRefreshed,
+  notifyConflictUnusable,
+  notifySaveFailure,
+} from '@/lib/api/saveError';
+import { handleRequestErrors } from '@/lib/api/tanstackQuery';
 import {
   type ConflictInfo,
   detectAndMergeConflicts,
@@ -15,7 +21,6 @@ import {
   formatPersonneConcerneeToServer,
   type PersonneConcerneeData,
 } from '@/lib/personneConcernee';
-import { toastManager } from '@/lib/toastManager';
 
 interface UsePersonneConcerneeSaveProps {
   requestId: string;
@@ -100,15 +105,7 @@ export const usePersonneConcerneeSave = ({
       const err = error as { status?: number; body?: unknown };
 
       if (err?.status !== 409) {
-        if (error instanceof HttpError) {
-          toastManager.add({
-            title: 'Erreur',
-            description: error.message || 'Une erreur est survenue lors de la sauvegarde.',
-            data: { icon: 'fr-alert--error' },
-          });
-        } else {
-          notifySaveNetworkFailure();
-        }
+        notifySaveFailure(error);
         return;
       }
 
@@ -118,12 +115,7 @@ export const usePersonneConcerneeSave = ({
         serverUpdatedAtRef.current = null;
         autoMergeReplaysRef.current = 0;
         onRefetch();
-        toastManager.add({
-          title: 'Conflit de données',
-          description:
-            'Les données ont été modifiées et la version du serveur est inexploitable. La page a été rafraîchie, vérifiez vos modifications avant de réessayer.',
-          data: { icon: 'fr-alert--error' },
-        });
+        notifyConflictUnusable();
         return;
       }
 
@@ -131,11 +123,7 @@ export const usePersonneConcerneeSave = ({
 
       if (!serverData) {
         onRefetch();
-        toastManager.add({
-          title: 'Conflit de données',
-          description: 'Les données ont été modifiées. La page a été rafraîchie.',
-          data: { icon: 'fr-alert--warning' },
-        });
+        notifyConflictRefreshed();
         return;
       }
 
@@ -155,22 +143,13 @@ export const usePersonneConcerneeSave = ({
 
       if (autoMergeReplaysRef.current >= MAX_AUTO_MERGE_REPLAYS) {
         onRefetch();
-        toastManager.add({
-          title: 'Conflit persistant',
-          description:
-            'Les données continuent d’être modifiées par ailleurs. La page a été rafraîchie, vérifiez vos modifications avant de réessayer.',
-          data: { icon: 'fr-alert--error' },
-        });
+        notifyConflictPersistent();
         return;
       }
 
       autoMergeReplaysRef.current += 1;
 
-      toastManager.add({
-        title: 'Fusion automatique',
-        description: 'Les modifications ont été fusionnées automatiquement.',
-        data: { icon: 'fr-alert--info' },
-      });
+      notifyAutoMerge();
 
       onRefetch();
       pendingDataRef.current = mergeResult.merged;

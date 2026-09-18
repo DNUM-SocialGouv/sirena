@@ -10,7 +10,6 @@ export interface ConflictInfo<T = Record<string, unknown>> {
 export interface MergeResult<T = Record<string, unknown>> {
   merged: T;
   conflicts: ConflictInfo<T>[];
-  hasConflicts: boolean;
   canAutoResolve: boolean;
 }
 
@@ -55,13 +54,10 @@ export function detectAndMergeConflicts<T extends Record<string, unknown>>(
     }
   }
 
-  const canAutoResolve = conflicts.length === 0;
-
   return {
     merged: { ...merged } as T,
     conflicts,
-    hasConflicts: conflicts.length > 0,
-    canAutoResolve,
+    canAutoResolve: conflicts.length === 0,
   };
 }
 

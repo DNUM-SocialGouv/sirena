@@ -3,11 +3,10 @@ import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { client } from '@/lib/api/hc';
-import { notifySaveNetworkFailure } from '@/lib/api/saveError';
+import { notifyConflictPersistent, notifyConflictUnusable, notifySaveFailure } from '@/lib/api/saveError';
 import { HttpError } from '@/lib/api/tanstackQuery';
 import { MAX_AUTO_MERGE_REPLAYS } from '@/lib/conflictResolution';
 import { formatDeclarantFromServer } from '@/lib/declarant';
-import { toastManager } from '@/lib/toastManager';
 import { useDeclarantSave } from './useDeclarantSave';
 
 vi.mock('@tanstack/react-router', () => ({
@@ -15,11 +14,12 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 vi.mock('@/lib/api/saveError', () => ({
+  notifyAutoMerge: vi.fn(),
+  notifyConflictPersistent: vi.fn(),
+  notifyConflictRefreshed: vi.fn(),
+  notifyConflictUnusable: vi.fn(),
+  notifySaveFailure: vi.fn(),
   notifySaveNetworkFailure: vi.fn(),
-}));
-
-vi.mock('@/lib/toastManager', () => ({
-  toastManager: { add: vi.fn() },
 }));
 
 vi.mock('@/lib/api/hc', () => ({
@@ -123,22 +123,22 @@ describe('useDeclarantSave', () => {
     await expect(handleSave({ prenom: 'Ada' })).rejects.toBeInstanceOf(HttpError);
   });
 
-  it('tells the user a network failure lost the save', async () => {
+  it('hands a network failure to the save failure notifier', async () => {
     patch.mockRejectedValue(new TypeError('Failed to fetch'));
 
     const { handleSave } = renderSave().current;
 
     await expect(handleSave({ prenom: 'Ada' })).rejects.toBeInstanceOf(TypeError);
-    expect(notifySaveNetworkFailure).toHaveBeenCalledTimes(1);
+    expect(notifySaveFailure).toHaveBeenCalledWith(expect.any(TypeError));
   });
 
-  it('stays quiet about the network when the server did answer', async () => {
+  it('hands an answered failure to the save failure notifier', async () => {
     patch.mockResolvedValue(new Response(null, { status: 500 }) as never);
 
     const { handleSave } = renderSave().current;
 
     await expect(handleSave({ prenom: 'Ada' })).rejects.toBeInstanceOf(HttpError);
-    expect(notifySaveNetworkFailure).not.toHaveBeenCalled();
+    expect(notifySaveFailure).toHaveBeenCalledWith(expect.any(HttpError));
   });
 
   it('opens the resolution dialog on a field both sides changed', async () => {
@@ -216,9 +216,7 @@ describe('useDeclarantSave', () => {
 
     await result.current.handleSave({ ...result.current.originalDataRef.current, prenom: 'Ida' });
 
-    await waitFor(() =>
-      expect(toastManager.add).toHaveBeenCalledWith(expect.objectContaining({ title: 'Conflit persistant' })),
-    );
+    await waitFor(() => expect(notifyConflictPersistent).toHaveBeenCalledTimes(1));
     expect(patch).toHaveBeenCalledTimes(1 + MAX_AUTO_MERGE_REPLAYS);
     expect(result.current.showConflictDialog).toBe(false);
   });
@@ -245,11 +243,7 @@ describe('useDeclarantSave', () => {
 
     await result.current.handleSave({ ...result.current.originalDataRef.current, prenom: 'Ida' });
 
-    await waitFor(() =>
-      expect(toastManager.add).toHaveBeenCalledWith(
-        expect.objectContaining({ title: 'Conflit de données', data: { icon: 'fr-alert--error' } }),
-      ),
-    );
+    await waitFor(() => expect(notifyConflictUnusable).toHaveBeenCalledTimes(1));
     expect(patch).toHaveBeenCalledTimes(1);
   });
 
