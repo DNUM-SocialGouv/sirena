@@ -11,6 +11,8 @@ export const FEATURE_FLAGS = {
   SHARED_PROCESSING_STEPS: 'SHARED_PROCESSING_STEPS',
   // Temporary FF to enable/disable the reminder configuration on a processing step
   ETAPE_RAPPEL: 'ETAPE_RAPPEL',
+  // Temporary FF for the cross-entity discussion thread on a requete
+  REQUETE_DISCUSSION: 'REQUETE_DISCUSSION',
 } as const;
 
 export type FeatureFlag = (typeof FEATURE_FLAGS)[keyof typeof FEATURE_FLAGS];

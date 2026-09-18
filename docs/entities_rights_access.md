@@ -32,6 +32,7 @@ Autrement dit :
 | Étapes de traitement | Par “entité la plus haute” (ARS/CD) |
 | Notes | Par “entité la plus haute” (ARS/CD) |
 | Fichiers | Par “entité la plus haute” (ARS/CD) |
+| Discussion | Partagée entre toutes les entités affectées à la requête |
 
 Ainsi, le “traitement d’une requête” est mutualisé entre l’ARS/CD et tous ses services/directions.
 
@@ -82,6 +83,8 @@ Les Directions et Services ne sont pas proposés comme options de ce filtre. Un 
 | RequeteEtape | entiteId | Toujours l’ARS/CD |
 | RequeteEtapeNote | hérite de RequeteEtape | Toujours l’ARS/CD |
 | UploadedFile | hérite de RequeteEtape | Toujours l’ARS/CD |
+| RequeteMessage | entiteId | ARS/CD de l’auteur ; lisible par toutes les entités affectées à la requête |
+| RequeteMessageRead | userId, entiteId | Une ligne par lecteur ; jamais exposée aux autres utilisateurs (sert au compteur de non-lus et à l’audit) |
 
 ### Contexte d’authentification
 
