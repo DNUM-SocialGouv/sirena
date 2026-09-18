@@ -7,9 +7,19 @@ export type TabItemProps = {
   title?: string;
   disabled?: boolean;
   tabIndex?: number;
+  dataTestId?: string;
 };
 
-export const TabsItem = ({ panelId, selected, tabId, children, onTabClick, title, disabled }: TabItemProps) => {
+export const TabsItem = ({
+  panelId,
+  selected,
+  tabId,
+  children,
+  onTabClick,
+  title,
+  disabled,
+  dataTestId,
+}: TabItemProps) => {
   return (
     <button
       id={tabId}
@@ -22,6 +32,7 @@ export const TabsItem = ({ panelId, selected, tabId, children, onTabClick, title
       onClick={disabled ? undefined : () => onTabClick(tabId)}
       title={title}
       disabled={disabled}
+      data-testid={dataTestId}
     >
       {children}
     </button>

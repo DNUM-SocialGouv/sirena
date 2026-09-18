@@ -638,23 +638,25 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                         value={nom}
                       />
                     ) : (
-                      <Input
-                        label="Nom de l'étape (obligatoire)"
-                        disabled={isLoading}
-                        state={nomError ? 'error' : 'default'}
-                        stateRelatedMessage={nomError ?? undefined}
-                        nativeInputProps={{
-                          ref: nomInputRef,
-                          value: nom,
-                          onChange: (e) => {
-                            setNom(e.target.value);
-                            if (nomError) setNomError(null);
-                          },
-                        }}
-                      />
+                      <div data-testid="step-nom-field">
+                        <Input
+                          label="Nom de l'étape (obligatoire)"
+                          disabled={isLoading}
+                          state={nomError ? 'error' : 'default'}
+                          stateRelatedMessage={nomError ?? undefined}
+                          nativeInputProps={{
+                            ref: nomInputRef,
+                            value: nom,
+                            onChange: (e) => {
+                              setNom(e.target.value);
+                              if (nomError) setNomError(null);
+                            },
+                          }}
+                        />
+                      </div>
                     )}
 
-                    <div className={styles.fieldBlock}>
+                    <div className={styles.fieldBlock} data-testid="step-statut-choice">
                       <RadioButtons
                         legend="Statut de l'étape"
                         orientation="horizontal"
@@ -706,7 +708,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                     )}
 
                     {isSharingChoiceVisible ? (
-                      <div className={styles.fieldBlock}>
+                      <div className={styles.fieldBlock} data-testid="step-partagee-choice">
                         <RadioButtons
                           legend="Afficher l’étape pour les autres entités affectées (obligatoire)"
                           orientation="horizontal"
