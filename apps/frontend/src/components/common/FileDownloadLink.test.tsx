@@ -11,12 +11,16 @@ const dsfr = vi.fn((_element: HTMLElement | null) => ({
   modal: { disclose: discloseModal, conceal: concealModal },
 }));
 
-vi.mock('@/hooks/useFileStatusSSE', () => ({
-  useFileStatusSSE: ({ onStatusChange }: { onStatusChange?: (status: FileProcessingStatus) => void }) => {
-    pushStatus = onStatusChange ?? null;
-    return { isConnected: true };
-  },
-}));
+vi.mock('@/hooks/useFileProcessingStatus', async () => {
+  const { useState } = await import('react');
+  return {
+    useFileProcessingStatus: ({ initialStatus }: { initialStatus: FileProcessingStatus | null }) => {
+      const [status, setStatus] = useState(initialStatus);
+      pushStatus = setStatus;
+      return status;
+    },
+  };
+});
 
 beforeEach(() => {
   vi.spyOn(window, 'open').mockImplementation(() => null);

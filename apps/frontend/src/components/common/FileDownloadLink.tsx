@@ -1,11 +1,10 @@
 import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { Tag } from '@codegouvfr/react-dsfr/Tag';
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { useFileStatusSSE } from '@/hooks/useFileStatusSSE';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useFileProcessingStatus } from '@/hooks/useFileProcessingStatus';
 import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
-import { type FileProcessingStatus, getFileProcessingStatus } from '@/lib/api/fetchUploadedFiles';
-import { HttpError } from '@/lib/api/tanstackQuery';
+import type { FileProcessingStatus } from '@/lib/api/fetchUploadedFiles';
 import { formatFileSize } from '@/utils/fileHelpers';
 import styles from './FileDownloadLink.module.css';
 import { getFileDownloadState, getFileProcessingState } from './fileDownloadState';
@@ -113,9 +112,6 @@ type FileDownloadLinkProps = {
   sanitizeStatus?: string;
 };
 
-const POLL_INTERVAL = 3000;
-const MAX_POLL_DURATION_MS = 2 * 60 * 1000; // stop polling after 2 minutes
-
 const FILE_TAG_STYLE = {
   valid: {
     backgroundColor: 'var(--background-contrast-info)',
@@ -163,19 +159,21 @@ export const FileDownloadLink = ({
   const modalId = useId();
   const statusId = useId();
 
-  const [fileStatus, setFileStatus] = useState<FileProcessingStatus | null>(() =>
-    initialStatus
-      ? {
-          id: fileId || '',
-          status: initialStatus,
-          scanStatus: initialScanStatus || 'PENDING',
-          sanitizeStatus: initialSanitizeStatus || 'PENDING',
-          processingError: null,
-          safeFilePath: safeHref || null,
-        }
-      : null,
+  const initialFileStatus = useMemo<FileProcessingStatus | null>(
+    () =>
+      initialStatus
+        ? {
+            id: fileId || '',
+            status: initialStatus,
+            scanStatus: initialScanStatus || 'PENDING',
+            sanitizeStatus: initialSanitizeStatus || 'PENDING',
+            processingError: null,
+            safeFilePath: safeHref || null,
+          }
+        : null,
+    [fileId, initialStatus, initialScanStatus, initialSanitizeStatus, safeHref],
   );
-
+  const fileStatus = useFileProcessingStatus({ fileId, initialStatus: initialFileStatus });
   const processingState = useMemo(() => getFileProcessingState(fileStatus), [fileStatus]);
   const downloadState = useMemo(
     () => getFileDownloadState({ processingState, fileName, href, safeHref, target }),
@@ -218,67 +216,6 @@ export const FileDownloadLink = ({
   // Refs to reset checkbox state when modals open (avoids re-render issues)
   const resetRiskModalRef = useRef<(() => void) | null>(null);
   const resetWarningModalRef = useRef<(() => void) | null>(null);
-  const initialPollDoneRef = useRef(false);
-  const pollingDisabledRef = useRef(false);
-  const sseDisconnectedRef = useRef(false);
-  const pollStartedAtRef = useRef<number | null>(null);
-
-  const handleSSEStatusChange = useCallback((status: FileProcessingStatus) => {
-    setFileStatus(status);
-  }, []);
-
-  const { isConnected: sseConnected } = useFileStatusSSE({
-    fileId: fileId || '',
-    enabled: !!fileId && !pollingDisabledRef.current && !processingState.isComplete,
-    onStatusChange: handleSSEStatusChange,
-  });
-
-  // Track SSE disconnection to fallback to polling
-  useEffect(() => {
-    if (!sseConnected && !sseDisconnectedRef.current && fileId) {
-      sseDisconnectedRef.current = true;
-    }
-  }, [sseConnected, fileId]);
-
-  const pollStatus = useCallback(async () => {
-    if (!fileId || pollingDisabledRef.current) return;
-
-    if (pollStartedAtRef.current !== null && Date.now() - pollStartedAtRef.current > MAX_POLL_DURATION_MS) {
-      pollingDisabledRef.current = true;
-      return;
-    }
-
-    try {
-      const status = await getFileProcessingStatus(fileId);
-      setFileStatus(status);
-    } catch (error) {
-      // Stop polling on 404 (file not found)
-      if (error instanceof HttpError && error.status === 404) {
-        pollingDisabledRef.current = true;
-      }
-    }
-  }, [fileId]);
-
-  // Fallback to polling if SSE is not connected
-  useEffect(() => {
-    if (!fileId || pollingDisabledRef.current || processingState.isComplete) return;
-
-    // If SSE is connected, don't poll
-    if (sseConnected) return;
-
-    if (pollStartedAtRef.current === null) {
-      pollStartedAtRef.current = Date.now();
-    }
-
-    // Poll immediately on first run if no initial status was provided
-    if (!initialPollDoneRef.current && !initialStatus) {
-      initialPollDoneRef.current = true;
-      pollStatus();
-    }
-
-    const interval = setInterval(pollStatus, POLL_INTERVAL);
-    return () => clearInterval(interval);
-  }, [fileId, processingState.isComplete, pollStatus, initialStatus, sseConnected]);
 
   const handleClick = (e: React.MouseEvent) => {
     registerTrigger(e.currentTarget as HTMLElement);
