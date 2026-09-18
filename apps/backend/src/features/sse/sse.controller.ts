@@ -18,7 +18,7 @@ import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { hasFeature } from '../featureFlags/featureFlags.service.js';
 import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service.js';
-import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
+import { getUploadedFileByIdForEntite } from '../uploadedFiles/uploadedFiles.service.js';
 
 export const buildRequeteMessageFilter =
   (requeteId: string, topEntiteId: string, userId: string) =>
@@ -116,7 +116,7 @@ const app = factoryWithRole
     const { id } = c.req.param();
     const topEntiteId = requireTopEntiteId(c);
 
-    const uploadedFile = await getUploadedFileById(id, [topEntiteId]);
+    const uploadedFile = await getUploadedFileByIdForEntite(id, topEntiteId);
     if (!uploadedFile) {
       throwHTTPException404NotFound('Uploaded file not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
@@ -126,7 +126,7 @@ const app = factoryWithRole
 
     return createSSEStream<FileStatusEvent>(c, {
       eventType: SSE_EVENT_TYPES.FILE_STATUS,
-      filter: (event) => event.fileId === id && event.entiteId === topEntiteId,
+      filter: (event) => event.fileId === id,
     });
   })
 

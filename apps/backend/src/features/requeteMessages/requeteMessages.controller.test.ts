@@ -1,3 +1,4 @@
+import { Readable } from 'node:stream';
 import { ERROR_KIND, REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
@@ -5,9 +6,16 @@ import { pinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
+import { getFileStream } from '../../libs/minio.js';
+import type { UploadedFile } from '../../libs/prisma.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import { hasFeature } from '../featureFlags/featureFlags.service.js';
 import { getRequeteEntiteStatutId, hasAccessToRequete } from '../requetesEntite/requetesEntite.service.js';
+import {
+  FilesNotOwnedError,
+  getRequeteMessageUploadedFile,
+  getUploadedFileById,
+} from '../uploadedFiles/uploadedFiles.service.js';
 import RequeteMessagesController from './requeteMessages.controller.js';
 import {
   createRequeteMessage,
@@ -38,6 +46,12 @@ vi.mock('../featureFlags/featureFlags.service.js', () => ({
 vi.mock('../requetesEntite/requetesEntite.service.js', () => ({
   hasAccessToRequete: vi.fn(),
   getRequeteEntiteStatutId: vi.fn(),
+}));
+
+vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
+  FilesNotOwnedError: class FilesNotOwnedError extends Error {},
+  getRequeteMessageUploadedFile: vi.fn(),
+  getUploadedFileById: vi.fn(),
 }));
 
 vi.mock('../../middlewares/auth.middleware.js', () => ({
@@ -72,6 +86,10 @@ vi.mock('../../middlewares/entites.middleware.js', () => ({
   }),
 }));
 
+vi.mock('../../libs/minio.js', () => ({
+  getFileStream: vi.fn(),
+}));
+
 vi.mock('../../helpers/errors.js', async () => {
   const actual = await vi.importActual<typeof import('../../helpers/errors.js')>('../../helpers/errors.js');
   return {
@@ -95,7 +113,33 @@ const fakeMessage = {
   createdAt: new Date('2026-01-01T10:00:00.000Z'),
   entite: { id: 'e1', nomComplet: 'ARS', entiteTypeId: 'ARS' },
   author: { prenom: 'Jean', nom: 'Dupont' },
+  uploadedFiles: [],
   isReadByCurrentUser: true,
+};
+
+const fakeFile: UploadedFile = {
+  id: 'file1',
+  fileName: 'report.pdf',
+  filePath: '/uploads/test.pdf',
+  mimeType: 'application/pdf',
+  size: 5,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  metadata: null,
+  entiteId: 'e1',
+  status: 'COMPLETED',
+  requeteEtapeId: null,
+  faitSituationId: null,
+  requeteId: null,
+  requeteMessageId: MESSAGE_ID,
+  uploadedById: 'test-user-id',
+  demarchesEngageesId: null,
+  canDelete: false,
+  scanStatus: 'CLEAN',
+  sanitizeStatus: 'DONE',
+  safeFilePath: '/uploads/safe.pdf',
+  scanResult: null,
+  processingError: null,
 };
 
 const withoutTopEntiteId = () => {
@@ -245,7 +289,7 @@ describe('requeteMessages.controller.ts', () => {
     it('creates the message', async () => {
       const res = await client[':requeteId'].$post({
         param: { requeteId: REQUETE_ID },
-        json: { contenu: 'Bonjour' },
+        json: { contenu: 'Bonjour', fileIds: ['f1'] },
       });
       const body = await res.json();
 
@@ -255,7 +299,7 @@ describe('requeteMessages.controller.ts', () => {
         REQUETE_ID,
         'e1',
         'test-user-id',
-        { contenu: 'Bonjour' },
+        { contenu: 'Bonjour', fileIds: ['f1'] },
         expect.anything(),
       );
     });
@@ -290,13 +334,90 @@ describe('requeteMessages.controller.ts', () => {
     });
 
     it.each([
-      ['an empty message', { contenu: '   ' }],
-      ['a content above the maximum length', { contenu: 'a'.repeat(10_001) }],
+      ['an empty message without attachment', { contenu: '   ', fileIds: [] }],
+      ['a content above the maximum length', { contenu: 'a'.repeat(10_001), fileIds: [] }],
+      ['duplicated attachments', { contenu: '', fileIds: ['f1', 'f1'] }],
     ])('rejects %s with a 400', async (_label, json) => {
       const res = await client[':requeteId'].$post({ param: { requeteId: REQUETE_ID }, json });
 
       expect(res.status).toBe(400);
       expect(createRequeteMessage).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 when the attachments do not belong to the author', async () => {
+      vi.mocked(createRequeteMessage).mockRejectedValueOnce(new FilesNotOwnedError('FILES_NOT_OWNED'));
+
+      const res = await client[':requeteId'].$post({
+        param: { requeteId: REQUETE_ID },
+        json: { contenu: '', fileIds: ['f1'] },
+      });
+      const body = await res.json();
+
+      expect(res.status).toBe(403);
+      expect(body).toEqual({
+        message: 'You are not allowed to add these files',
+        cause: { kind: ERROR_KIND.BUSINESS },
+      });
+    });
+  });
+
+  describe('GET /:requeteId/file/:fileId', () => {
+    it('streams a file attached to a message of the requete', async () => {
+      vi.mocked(getRequeteMessageUploadedFile).mockResolvedValueOnce(fakeFile);
+      vi.mocked(getFileStream).mockResolvedValueOnce({
+        stream: Readable.from(Buffer.from('hello')),
+        metadata: { encrypted: false },
+      });
+
+      const res = await client[':requeteId'].file[':fileId'].$get({
+        param: { requeteId: REQUETE_ID, fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(200);
+      expect(await res.text()).toBe('hello');
+      expect(res.headers.get('content-disposition')).toBe('inline; filename="report.pdf"');
+      expect(getRequeteMessageUploadedFile).toHaveBeenCalledWith(REQUETE_ID, 'file1');
+      expect(getUploadedFileById).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when the file is not attached to a message of this requete', async () => {
+      vi.mocked(getRequeteMessageUploadedFile).mockResolvedValueOnce(null);
+
+      const res = await client[':requeteId'].file[':fileId'].$get({
+        param: { requeteId: REQUETE_ID, fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(404);
+      expect(getFileStream).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('GET /:requeteId/file/:fileId/safe', () => {
+    it('streams the sanitized version of the file', async () => {
+      vi.mocked(getRequeteMessageUploadedFile).mockResolvedValueOnce(fakeFile);
+      vi.mocked(getFileStream).mockResolvedValueOnce({
+        stream: Readable.from(Buffer.from('safe content')),
+        metadata: { encrypted: false },
+      });
+
+      const res = await client[':requeteId'].file[':fileId'].safe.$get({
+        param: { requeteId: REQUETE_ID, fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(200);
+      expect(await res.text()).toBe('safe content');
+      expect(getFileStream).toHaveBeenCalledWith('/uploads/safe.pdf', undefined);
+    });
+
+    it('returns 404 when no sanitized version is available yet', async () => {
+      vi.mocked(getRequeteMessageUploadedFile).mockResolvedValueOnce({ ...fakeFile, safeFilePath: null });
+
+      const res = await client[':requeteId'].file[':fileId'].safe.$get({
+        param: { requeteId: REQUETE_ID, fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(404);
+      expect(getFileStream).not.toHaveBeenCalled();
     });
   });
 });

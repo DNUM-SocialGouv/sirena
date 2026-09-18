@@ -374,6 +374,7 @@ describe('requeteEtapes.controller.ts', () => {
       status: 'PENDING',
       requeteEtapeId: null,
       demarchesEngageesId: null,
+      requeteMessageId: null,
       canDelete: true,
       scanStatus: 'PENDING',
       sanitizeStatus: 'PENDING',

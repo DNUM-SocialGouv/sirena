@@ -18,7 +18,7 @@ export const getRequeteMessagesRoute = openApiProtectedRoute({
 });
 
 export const postRequeteMessageRoute = openApiProtectedRoute({
-  description: 'Post a discussion message on a requete',
+  description: 'Post a discussion message (text and/or attachments) on a requete',
   responses: {
     ...openApiResponse(RequeteMessageSchema, 201, 'Message created'),
   },
