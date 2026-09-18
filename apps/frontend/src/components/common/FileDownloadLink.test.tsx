@@ -55,7 +55,7 @@ describe('FileDownloadLink download decision', () => {
     await userEvent.click(screen.getByRole('link', { name: /rapport\.pdf/ }));
 
     expect(window.open).not.toHaveBeenCalled();
-    expect(dsfr.mock.calls[0][0]?.id).toContain('risk-modal');
+    expect(dsfr.mock.calls[0][0]?.id).toContain('risk-acknowledgement-modal');
     expect(discloseModal).toHaveBeenCalledOnce();
   });
 
@@ -88,7 +88,7 @@ describe('FileDownloadLink download decision', () => {
     await userEvent.click(screen.getByRole('link', { name: /archive\.zip/ }));
 
     expect(window.open).not.toHaveBeenCalled();
-    expect(dsfr.mock.calls[0][0]?.id).toContain('warning-modal');
+    expect(dsfr.mock.calls[0][0]?.id).toContain('risk-acknowledgement-modal');
     expect(discloseModal).toHaveBeenCalledOnce();
   });
 
@@ -119,6 +119,38 @@ describe('FileDownloadLink download decision', () => {
 
     expect(window.open).toHaveBeenCalledWith('/api/files/1', 'preview');
     expect(discloseModal).not.toHaveBeenCalled();
+  });
+
+  it('uses one accessible acknowledgement modal to confirm a risky download', async () => {
+    const user = userEvent.setup();
+    renderLink({ status: 'READY', scanStatus: 'INFECTED', sanitizeStatus: 'ERROR' });
+
+    await user.click(screen.getByRole('link', { name: /rapport\.pdf/ }));
+
+    const dialogs = screen.getAllByRole('dialog', { hidden: true });
+    expect(dialogs).toHaveLength(2);
+    const riskDialog = dialogs.find((dialog) =>
+      within(dialog).queryByRole('heading', { name: 'Attention : fichier potentiellement dangereux', hidden: true }),
+    );
+    expect(riskDialog).toBeDefined();
+
+    const dialog = riskDialog as HTMLElement;
+    expect(
+      within(dialog).getByText(/Une menace potentielle a été détectée dans ce fichier/, { exact: false }),
+    ).toBeInTheDocument();
+    const confirm = within(dialog).getByRole('button', { name: 'Télécharger malgré le risque', hidden: true });
+    expect(confirm).toHaveAttribute('aria-disabled', 'true');
+    expect(confirm).not.toBeDisabled();
+
+    await user.click(confirm);
+    expect(window.open).not.toHaveBeenCalled();
+    expect(concealModal).not.toHaveBeenCalled();
+
+    await user.click(within(dialog).getByRole('checkbox', { hidden: true }));
+    await user.click(confirm);
+
+    expect(window.open).toHaveBeenCalledWith('/api/files/1', '_blank');
+    expect(concealModal).toHaveBeenCalledOnce();
   });
 });
 

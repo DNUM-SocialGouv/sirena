@@ -1,101 +1,13 @@
-import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { Tag } from '@codegouvfr/react-dsfr/Tag';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useId, useMemo, useRef } from 'react';
 import { useFileProcessingStatus } from '@/hooks/useFileProcessingStatus';
 import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
 import type { FileProcessingStatus } from '@/lib/api/fetchUploadedFiles';
 import { formatFileSize } from '@/utils/fileHelpers';
 import styles from './FileDownloadLink.module.css';
 import { getFileDownloadState, getFileProcessingState } from './fileDownloadState';
-
-// Separate component to isolate checkbox state from parent re-renders
-type FrIconId = React.ComponentProps<ReturnType<typeof createModal>['Component']>['iconId'];
-
-const ModalWithCheckbox = ({
-  modal,
-  title,
-  iconId,
-  message,
-  fileName,
-  cancelLabel,
-  confirmLabel,
-  onConfirm,
-  resetRef,
-}: {
-  modal: ReturnType<typeof createModal>;
-  title: string;
-  iconId: FrIconId;
-  message: string;
-  fileName: string;
-  cancelLabel: string;
-  confirmLabel: string;
-  onConfirm: () => void;
-  resetRef?: React.MutableRefObject<(() => void) | null>;
-}) => {
-  const [accepted, setAccepted] = useState(false);
-
-  // Expose reset function to parent via ref (doesn't cause re-render when called)
-  useEffect(() => {
-    if (resetRef) {
-      resetRef.current = () => setAccepted(false);
-    }
-    return () => {
-      if (resetRef) {
-        resetRef.current = null;
-      }
-    };
-  }, [resetRef]);
-
-  const handleConfirm = () => {
-    if (accepted) {
-      onConfirm();
-    }
-    setAccepted(false);
-  };
-
-  const handleCancel = () => {
-    setAccepted(false);
-  };
-
-  return (
-    <modal.Component
-      title={title}
-      iconId={iconId}
-      buttons={[
-        {
-          doClosesModal: true,
-          children: cancelLabel,
-          onClick: handleCancel,
-        },
-        {
-          doClosesModal: true,
-          children: confirmLabel,
-          disabled: !accepted,
-          onClick: handleConfirm,
-        },
-      ]}
-    >
-      <p>{message}</p>
-      <p>
-        Le fichier <strong>{fileName}</strong> sera téléchargé dans sa version originale, sans vérification ni
-        sécurisation complète.
-      </p>
-      <Checkbox
-        className="fr-mt-2w"
-        options={[
-          {
-            label: 'Je comprends les risques et souhaite télécharger le fichier original',
-            nativeInputProps: {
-              checked: accepted,
-              onChange: (e) => setAccepted(e.target.checked),
-            },
-          },
-        ]}
-      />
-    </modal.Component>
-  );
-};
+import { RiskAcknowledgementModal, type RiskAcknowledgementModalHandle } from './RiskAcknowledgementModal';
 
 type FileDownloadLinkProps = {
   href: string;
@@ -179,11 +91,6 @@ export const FileDownloadLink = ({
     () => getFileDownloadState({ processingState, fileName, href, safeHref, target }),
     [processingState, fileName, href, safeHref, target],
   );
-  const riskAcknowledgement = downloadState.action.kind === 'acknowledge-risk' ? downloadState.action : null;
-  const infectedAcknowledgement = riskAcknowledgement?.reason === 'infected' ? riskAcknowledgement : null;
-  const warningAcknowledgement =
-    riskAcknowledgement && riskAcknowledgement.reason !== 'infected' ? riskAcknowledgement : null;
-
   const downloadModal = useMemo(
     () =>
       createModal({
@@ -193,54 +100,41 @@ export const FileDownloadLink = ({
     [modalId],
   );
 
-  const riskModal = useMemo(
-    () =>
-      createModal({
-        id: `risk-modal-${modalId}`,
-        isOpenedByDefault: false,
-      }),
-    [modalId],
-  );
+  const { registerTrigger } = useModalFocusRestore([downloadModal.id]);
+  const riskAcknowledgementModalRef = useRef<RiskAcknowledgementModalHandle>(null);
 
-  const warningModal = useMemo(
-    () =>
-      createModal({
-        id: `warning-modal-${modalId}`,
-        isOpenedByDefault: false,
-      }),
-    [modalId],
-  );
-
-  const { registerTrigger } = useModalFocusRestore([downloadModal.id, riskModal.id, warningModal.id]);
-
-  // Refs to reset checkbox state when modals open (avoids re-render issues)
-  const resetRiskModalRef = useRef<(() => void) | null>(null);
-  const resetWarningModalRef = useRef<(() => void) | null>(null);
-
-  const handleClick = (e: React.MouseEvent) => {
-    registerTrigger(e.currentTarget as HTMLElement);
-    e.preventDefault();
+  const handleClick = (event: React.MouseEvent) => {
+    event.preventDefault();
+    const trigger = event.currentTarget as HTMLElement;
 
     switch (downloadState.action.kind) {
       case 'open':
         window.open(downloadState.action.href, downloadState.action.target);
         return;
       case 'confirm-download':
+        registerTrigger(trigger);
         downloadModal.open();
         return;
-      case 'acknowledge-risk':
-        if (downloadState.action.reason === 'infected') {
-          resetRiskModalRef.current?.();
-          riskModal.open();
-        } else {
-          resetWarningModalRef.current?.();
-          warningModal.open();
-        }
+      case 'acknowledge-risk': {
+        const action = downloadState.action;
+        riskAcknowledgementModalRef.current?.open({
+          trigger,
+          content: {
+            title: action.content.title,
+            message: action.content.message,
+            details: (
+              <p>
+                Le fichier <strong>{fileName}</strong> sera téléchargé dans sa version originale, sans vérification ni
+                sécurisation complète.
+              </p>
+            ),
+            acknowledgementLabel: 'Je comprends les risques et souhaite télécharger le fichier original',
+            confirmLabel: action.content.confirmLabel,
+          },
+          onConfirm: () => window.open(action.href, action.target),
+        });
+      }
     }
-  };
-
-  const handleOriginalDownload = () => {
-    window.open(href, '_blank');
   };
 
   const displayName = children || (
@@ -296,29 +190,7 @@ export const FileDownloadLink = ({
         <p>Voulez-vous télécharger ce fichier ?{fileSize !== undefined && ` (${formatFileSize(fileSize)})`}</p>
       </downloadModal.Component>
 
-      <ModalWithCheckbox
-        modal={riskModal}
-        title={infectedAcknowledgement?.content.title ?? ''}
-        iconId="fr-icon-warning-line"
-        message={infectedAcknowledgement?.content.message ?? ''}
-        fileName={fileName}
-        cancelLabel="Annuler"
-        confirmLabel={infectedAcknowledgement?.content.confirmLabel ?? 'Télécharger malgré le risque'}
-        onConfirm={handleOriginalDownload}
-        resetRef={resetRiskModalRef}
-      />
-
-      <ModalWithCheckbox
-        modal={warningModal}
-        title={warningAcknowledgement?.content.title ?? 'Téléchargement'}
-        iconId="fr-icon-warning-line"
-        message={warningAcknowledgement?.content.message ?? ''}
-        fileName={fileName}
-        cancelLabel="Annuler"
-        confirmLabel={warningAcknowledgement?.content.confirmLabel ?? 'Télécharger le fichier original'}
-        onConfirm={handleOriginalDownload}
-        resetRef={resetWarningModalRef}
-      />
+      <RiskAcknowledgementModal ref={riskAcknowledgementModalRef} />
     </>
   );
 };
