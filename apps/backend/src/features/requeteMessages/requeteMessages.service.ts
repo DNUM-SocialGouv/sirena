@@ -1,4 +1,6 @@
+import type { RequeteMessageEvent } from '@sirena/common/constants';
 import type { PinoLogger } from 'hono-pino';
+import { sseEventManager } from '../../helpers/sse.js';
 import { type Prisma, prisma } from '../../libs/prisma.js';
 import type { GetRequeteMessagesQuery, PostRequeteMessageDto } from './requeteMessages.type.js';
 
@@ -19,6 +21,11 @@ const toMessageDto = ({ reads, ...rest }: MessageRow) => ({ ...rest, isReadByCur
 
 export type RequeteMessageDto = ReturnType<typeof toMessageDto>;
 
+export const getAffectedEntiteIds = async (requeteId: string): Promise<string[]> => {
+  const rows = await prisma.requeteEntite.findMany({ where: { requeteId }, select: { entiteId: true } });
+  return rows.map((row) => row.entiteId);
+};
+
 export const getRequeteMessageById = async (id: string, currentUserId: string): Promise<RequeteMessageDto | null> => {
   const row = await prisma.requeteMessage.findUnique({ where: { id }, select: messageSelect(currentUserId) });
   return row ? toMessageDto(row) : null;
@@ -26,22 +33,24 @@ export const getRequeteMessageById = async (id: string, currentUserId: string): 
 
 type MessageCursor = { createdAt: Date; id: string };
 
-const cursorClause = (cursor: MessageCursor): Prisma.RequeteMessageWhereInput => ({
-  OR: [{ createdAt: { lt: cursor.createdAt } }, { createdAt: cursor.createdAt, id: { lt: cursor.id } }],
-});
+const cursorClause = (cursor: MessageCursor, newer: boolean): Prisma.RequeteMessageWhereInput =>
+  newer
+    ? { OR: [{ createdAt: { gt: cursor.createdAt } }, { createdAt: cursor.createdAt, id: { gt: cursor.id } }] }
+    : { OR: [{ createdAt: { lt: cursor.createdAt } }, { createdAt: cursor.createdAt, id: { lt: cursor.id } }] };
 
 export const getRequeteMessages = async (requeteId: string, currentUserId: string, query: GetRequeteMessagesQuery) => {
-  const { limit, before } = query;
-  const cursor = before
+  const { limit, before, after } = query;
+  const cursorId = after ?? before;
+  const cursor = cursorId
     ? await prisma.requeteMessage.findFirst({
-        where: { id: before, requeteId },
+        where: { id: cursorId, requeteId },
         select: { createdAt: true, id: true },
       })
     : null;
 
   const where: Prisma.RequeteMessageWhereInput = {
     requeteId,
-    ...(cursor ? cursorClause(cursor) : {}),
+    ...(cursor ? cursorClause(cursor, !!after) : {}),
   };
 
   const rows = await prisma.requeteMessage.findMany({
@@ -56,7 +65,7 @@ export const getRequeteMessages = async (requeteId: string, currentUserId: strin
 
   return {
     data: page.map(toMessageDto),
-    meta: { hasMore, nextCursor: hasMore ? (page.at(-1)?.id ?? null) : null },
+    meta: { hasMore, nextCursor: hasMore && !after ? (page.at(-1)?.id ?? null) : null },
   };
 };
 
@@ -80,6 +89,17 @@ export const markAllMessagesAsRead = async (requeteId: string, userId: string, e
       data: markedIds.map((messageId) => ({ messageId, userId, entiteId })),
       skipDuplicates: true,
     });
+
+    const entiteIds = await getAffectedEntiteIds(requeteId);
+    const event: RequeteMessageEvent = {
+      action: 'read',
+      requeteId,
+      messageIds: markedIds,
+      userId,
+      entiteId,
+      entiteIds,
+    };
+    sseEventManager.emitRequeteMessage(event);
   }
 
   return { markedIds, unreadCount: await getUnreadCount(requeteId, userId) };
@@ -105,6 +125,16 @@ export const createRequeteMessage = async (
   logger.info({ requeteId, messageId: created.id, userId }, 'Requete message persisted');
 
   await markAllMessagesAsRead(requeteId, userId, entiteId);
+
+  const entiteIds = await getAffectedEntiteIds(requeteId);
+  const event: RequeteMessageEvent = {
+    action: 'created',
+    requeteId,
+    messageId: created.id,
+    entiteId,
+    entiteIds,
+  };
+  sseEventManager.emitRequeteMessage(event);
 
   return getRequeteMessageById(created.id, userId);
 };

@@ -20,10 +20,16 @@ export const RequeteMessageSchema = z.object({
   isReadByCurrentUser: z.boolean(),
 });
 
-export const GetRequeteMessagesQuerySchema = z.object({
-  limit: z.coerce.number().int().min(1).max(REQUETE_MESSAGE_MAX_PAGE_SIZE).default(REQUETE_MESSAGE_PAGE_SIZE),
-  before: z.uuid().optional(),
-});
+export const GetRequeteMessagesQuerySchema = z
+  .object({
+    limit: z.coerce.number().int().min(1).max(REQUETE_MESSAGE_MAX_PAGE_SIZE).default(REQUETE_MESSAGE_PAGE_SIZE),
+    before: z.uuid().optional(),
+    after: z.uuid().optional(),
+  })
+  .refine((query) => !(query.before && query.after), {
+    path: ['after'],
+    message: 'Les paramètres before et after sont exclusifs.',
+  });
 
 const contenuSchema = z
   .string()
