@@ -94,3 +94,14 @@
   justify-content: center;
   z-index: 1;
 }
+
+.composer {
+  flex-shrink: 0;
+}
+
+.composerActions {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}

@@ -18,9 +18,17 @@ type MessageListProps = {
   hasMore: boolean;
   isFetchingNextPage: boolean;
   onLoadMore: () => void;
+  separatorEpoch?: number;
 };
 
-export const MessageList = ({ messages, ownEntiteId, hasMore, isFetchingNextPage, onLoadMore }: MessageListProps) => {
+export const MessageList = ({
+  messages,
+  ownEntiteId,
+  hasMore,
+  isFetchingNextPage,
+  onLoadMore,
+  separatorEpoch = 0,
+}: MessageListProps) => {
   const scrollerRef = useRef<HTMLElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const unreadSeparatorRef = useRef<HTMLLIElement>(null);
@@ -105,12 +113,15 @@ export const MessageList = ({ messages, ownEntiteId, hasMore, isFetchingNextPage
     setHasNewMessagesBelow(true);
   }, [messages, hasMore, scrollToBottom]);
 
-  const [frozenSeparatorId, setFrozenSeparatorId] = useState<string | null>(null);
+  const [frozen, setFrozen] = useState<{ epoch: number; id: string } | null>(null);
   const firstUnreadId = messages.find((message) => !message.isReadByCurrentUser)?.id ?? null;
+  const frozenSeparatorId = frozen?.epoch === separatorEpoch ? frozen.id : null;
 
   useEffect(() => {
-    if (frozenSeparatorId === null && firstUnreadId !== null) setFrozenSeparatorId(firstUnreadId);
-  }, [frozenSeparatorId, firstUnreadId]);
+    if (frozenSeparatorId === null && firstUnreadId !== null) {
+      setFrozen({ epoch: separatorEpoch, id: firstUnreadId });
+    }
+  }, [frozenSeparatorId, firstUnreadId, separatorEpoch]);
 
   const separatorId = frozenSeparatorId ?? firstUnreadId;
   const firstUnreadIndex = separatorId === null ? -1 : messages.findIndex((message) => message.id === separatorId);

@@ -101,6 +101,33 @@ describe('MessageList', () => {
     expect(screen.getByLabelText('Messages non lus').nextElementSibling?.textContent).toContain('message m2');
   });
 
+  it('recomputes the "unread" line after the agent replied', () => {
+    const unread = (id: string) => ({ ...makeMessage(id), isReadByCurrentUser: false });
+    const props = { ownEntiteId: 'E1', hasMore: false, isFetchingNextPage: false, onLoadMore: vi.fn() };
+    const { rerender } = render(
+      <MessageList {...props} messages={[makeMessage('m1'), unread('m2')]} separatorEpoch={0} />,
+    );
+    expect(screen.getByLabelText('Messages non lus')).toBeInTheDocument();
+
+    rerender(
+      <MessageList
+        {...props}
+        messages={[makeMessage('m1'), makeMessage('m2'), makeMessage('m3')]}
+        separatorEpoch={1}
+      />,
+    );
+    expect(screen.queryByLabelText('Messages non lus')).not.toBeInTheDocument();
+
+    rerender(
+      <MessageList
+        {...props}
+        messages={[makeMessage('m1'), makeMessage('m2'), makeMessage('m3'), unread('m4')]}
+        separatorEpoch={1}
+      />,
+    );
+    expect(screen.getByLabelText('Messages non lus').nextElementSibling?.textContent).toContain('message m4');
+  });
+
   it('re-anchors to the bottom when the thread is emptied and filled again', () => {
     const { rerender } = renderList([makeMessage('m1'), makeMessage('m2')]);
     vi.mocked(Element.prototype.scrollIntoView).mockClear();
