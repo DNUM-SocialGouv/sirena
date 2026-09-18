@@ -1,4 +1,5 @@
 import { Readable } from 'node:stream';
+import { helpers } from '@sirena/backend-utils';
 import { type EntiteType, ERROR_KIND, RECEPTION_TYPE, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
@@ -24,6 +25,8 @@ import {
   getRequetesEntite,
   hasAccessToRequete,
   reopenRequeteForEntite,
+  updateRequeteParticipant,
+  updateRequeteSituation,
   updateStatusRequete,
 } from './requetesEntite.service.js';
 
@@ -38,6 +41,8 @@ vi.mock('./requetesEntite.service.js', () => ({
   hasAccessToRequete: vi.fn(),
   getOtherEntitesAffected: vi.fn(),
   reopenRequeteForEntite: vi.fn(),
+  updateRequeteParticipant: vi.fn(),
+  updateRequeteSituation: vi.fn(),
   updateStatusRequete: vi.fn(),
 }));
 
@@ -98,6 +103,7 @@ vi.mock('../../middlewares/entites.middleware.js', () => ({
 vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
   getUploadedFileById: vi.fn(),
   isFileBelongsToRequete: vi.fn(),
+  isUserOwner: vi.fn().mockResolvedValue(true),
 }));
 
 vi.mock('../users/users.service.js', () => ({
@@ -889,6 +895,164 @@ describe('RequetesEntite endpoints: /', () => {
     });
   });
 
+  describe('PATCH /:id/participant', () => {
+    const baseRequeteEntite = {
+      ...fakeRequeteEntite,
+      statutId: 'OUVERTE',
+    };
+
+    beforeEach(() => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValue(baseRequeteEntite);
+    });
+
+    it('updates the participant and returns the updated requete', async () => {
+      const serverUpdatedAt = new Date('2025-05-01T00:00:00.000Z');
+      const updatedRequete = {
+        ...baseRequeteEntite.requete,
+        participant: {
+          id: 'participant1',
+          adresse: null,
+          identite: { id: 'identite1', nom: 'Nouveau nom', updatedAt: serverUpdatedAt },
+        },
+      };
+
+      vi.mocked(updateRequeteParticipant).mockResolvedValueOnce(
+        updatedRequete as unknown as Awaited<ReturnType<typeof updateRequeteParticipant>>,
+      );
+
+      const res = await client[':id'].participant.$patch({
+        param: { id: 'requeteId' },
+        json: {
+          participant: { nom: 'Nouveau nom' },
+          controls: { participant: { updatedAt: serverUpdatedAt.toISOString() } },
+        },
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toEqual({ data: convertDatesToStrings(updatedRequete) });
+
+      expect(updateRequeteParticipant).toHaveBeenCalledWith(
+        'requeteId',
+        { nom: 'Nouveau nom' },
+        { participant: { updatedAt: serverUpdatedAt.toISOString() } },
+      );
+      expect(updateStatusRequete).toHaveBeenCalledWith('requeteId', 'entiteId', REQUETE_STATUT_TYPES.EN_COURS);
+    });
+
+    // The 409 body is the contract the client reads to build its resolution dialog;
+    // it silently drifted from the frontend once already.
+    it('returns 409 with the server state when updateRequeteParticipant reports a conflict', async () => {
+      const serverUpdatedAt = '2025-05-01T00:00:00.000Z';
+      const serverData = { id: 'participant1', identite: { id: 'identite1', nom: 'Nom serveur' } };
+
+      vi.mocked(updateRequeteParticipant).mockImplementationOnce(() =>
+        helpers.throwHTTPException409Conflict('The participant identity has been modified by another user.', {
+          cause: { serverData, serverUpdatedAt },
+          kind: ERROR_KIND.BUSINESS,
+        }),
+      );
+
+      const res = await client[':id'].participant.$patch({
+        param: { id: 'requeteId' },
+        json: {
+          participant: { nom: 'Nouveau nom' },
+          controls: { participant: { updatedAt: '2025-04-01T00:00:00.000Z' } },
+        },
+      });
+
+      expect(res.status).toBe(409);
+      const body = await res.json();
+      expect(body).toEqual({
+        message: 'The participant identity has been modified by another user.',
+        cause: {
+          serverData,
+          serverUpdatedAt,
+          kind: ERROR_KIND.BUSINESS,
+        },
+      });
+
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('PATCH /:id/situation/:situationId', () => {
+    const baseRequeteEntite = {
+      ...fakeRequeteEntite,
+      statutId: 'OUVERTE',
+    };
+
+    beforeEach(() => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValue(baseRequeteEntite);
+    });
+
+    it('updates the situation and returns the updated requete', async () => {
+      const serverUpdatedAt = new Date('2025-05-01T00:00:00.000Z');
+      const updatedRequete = { ...baseRequeteEntite.requete };
+
+      vi.mocked(updateRequeteSituation).mockResolvedValueOnce({
+        requete: updatedRequete,
+        newAssignedEntiteIds: [],
+        newDirectionServiceIds: [],
+      } as unknown as Awaited<ReturnType<typeof updateRequeteSituation>>);
+
+      const res = await client[':id'].situation[':situationId'].$patch({
+        param: { id: 'requeteId', situationId: 'situationId' },
+        json: {
+          situation: { numerosSignalement: 'S-1' },
+          controls: { situation: { updatedAt: serverUpdatedAt.toISOString() } },
+        },
+      });
+
+      expect(res.status).toBe(200);
+
+      expect(updateRequeteSituation).toHaveBeenCalledWith(
+        'requeteId',
+        'situationId',
+        { numerosSignalement: 'S-1' },
+        'entiteId',
+        'id1',
+        ['entiteId'],
+        'entiteId',
+        { situation: { updatedAt: serverUpdatedAt.toISOString() } },
+      );
+      expect(updateStatusRequete).toHaveBeenCalledWith('requeteId', 'entiteId', REQUETE_STATUT_TYPES.EN_COURS);
+    });
+
+    it('returns 409 with the server state when updateRequeteSituation reports a conflict', async () => {
+      const serverUpdatedAt = '2025-05-01T00:00:00.000Z';
+      const serverData = { id: 'situationId', numerosSignalement: 'S-serveur', traitementDesFaits: { entites: [] } };
+
+      vi.mocked(updateRequeteSituation).mockImplementationOnce(() =>
+        helpers.throwHTTPException409Conflict('The situation has been modified by another user.', {
+          cause: { serverData, serverUpdatedAt },
+          kind: ERROR_KIND.BUSINESS,
+        }),
+      );
+
+      const res = await client[':id'].situation[':situationId'].$patch({
+        param: { id: 'requeteId', situationId: 'situationId' },
+        json: {
+          situation: { numerosSignalement: 'S-1' },
+          controls: { situation: { updatedAt: '2025-04-01T00:00:00.000Z' } },
+        },
+      });
+
+      expect(res.status).toBe(409);
+      const body = await res.json();
+      expect(body).toEqual({
+        message: 'The situation has been modified by another user.',
+        cause: {
+          serverData,
+          serverUpdatedAt,
+          kind: ERROR_KIND.BUSINESS,
+        },
+      });
+
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+    });
+  });
+
   describe('PATCH /:id/date-type', () => {
     const baseRequeteEntite = {
       ...fakeRequeteEntite,
@@ -935,11 +1099,15 @@ describe('RequetesEntite endpoints: /', () => {
       expect(updateStatusRequete).toHaveBeenCalledWith('requeteId', 'entiteId', REQUETE_STATUT_TYPES.EN_COURS);
     });
 
-    it('returns 409 when updateDateAndTypeRequete throws conflict', async () => {
-      const conflictError = new Error('CONFLICT: test');
-      (conflictError as Error & { conflictData?: unknown }).conflictData = { serverData: { id: 'requeteId' } };
+    it('returns 409 with the server state when updateDateAndTypeRequete reports a conflict', async () => {
+      const serverUpdatedAt = '2025-05-01T00:00:00.000Z';
 
-      vi.mocked(updateDateAndTypeRequete).mockRejectedValueOnce(conflictError);
+      vi.mocked(updateDateAndTypeRequete).mockImplementationOnce(() =>
+        helpers.throwHTTPException409Conflict('The requete has been modified by another user.', {
+          cause: { serverData: { id: 'requeteId' }, serverUpdatedAt },
+          kind: ERROR_KIND.BUSINESS,
+        }),
+      );
 
       const res = await client[':id']['date-type'].$patch({
         param: { id: 'requeteId' },
@@ -953,7 +1121,11 @@ describe('RequetesEntite endpoints: /', () => {
       const body = await res.json();
       expect(body).toEqual({
         message: 'The requete has been modified by another user.',
-        conflictData: { serverData: { id: 'requeteId' } },
+        cause: {
+          serverData: { id: 'requeteId' },
+          serverUpdatedAt,
+          kind: ERROR_KIND.BUSINESS,
+        },
       });
 
       expect(updateStatusRequete).not.toHaveBeenCalled();
