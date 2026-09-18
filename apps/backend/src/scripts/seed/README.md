@@ -5,7 +5,29 @@ Interactive CLI to fill a **local** database with test users and varied requests
 ```bash
 pnpm op:seed            # interactive
 pnpm op:seed --seed=42  # deterministic faker run
+pnpm op:seed:e2e        # non-interactive e2e profile (reset + seed)
 ```
+
+## e2e profile (SIRENA-791)
+
+`pnpm op:seed:e2e` runs a **static, non-interactive** profile (`profiles.ts`):
+no prompts, no confirmation. It is the same engine as the interactive seed, just
+with a fixed `SeedConfig`. Equivalent to `pnpm op:seed --e2e`
+(or `SEED_PROFILE=e2e`).
+
+Profile config: `reset: true`, default users, `11` manual requests per ARS,
+`dematSocial: NONE`, feature flags on, **constant faker seed**. The command is
+replayable: each run resets the DB and rebuilds the same state.
+
+**State produced**
+
+- the test user `user19@yopmail.com` — ENTITY_ADMIN, ARS Île-de-France, fixed id;
+- at least one more user on the same ARS (`pilotage@yopmail.com`);
+- the full family set of manual requests on both ARS, **plus 1–2 shared
+  multi-entité requests**, each non-clôturée and with its default steps;
+- feature flags enabled.
+
+So `admin`, `homeRequetes` and `requetesDetails` all have the data they assume.
 
 ## What it asks
 
