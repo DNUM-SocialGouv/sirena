@@ -2,7 +2,8 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useRef, useState } from 'react';
 import { client } from '@/lib/api/hc';
-import { handleRequestErrors } from '@/lib/api/tanstackQuery';
+import { notifySaveNetworkFailure } from '@/lib/api/saveError';
+import { HttpError, handleRequestErrors } from '@/lib/api/tanstackQuery';
 import { type ConflictInfo, detectAndMergeConflicts } from '@/lib/conflictResolution';
 import {
   formatPersonneConcerneeFromServer,
@@ -49,7 +50,7 @@ export const usePersonneConcerneeSave = ({
         throw { status: 409, conflictData };
       }
 
-      await handleRequestErrors(response);
+      await handleRequestErrors(response, { silentToastError: true });
       const result = await response.json();
       return result.data;
     },
@@ -91,12 +92,14 @@ export const usePersonneConcerneeSave = ({
             data: { icon: 'fr-alert--warning' },
           });
         }
-      } else {
+      } else if (error instanceof HttpError) {
         toastManager.add({
           title: 'Erreur',
-          description: 'Une erreur est survenue lors de la sauvegarde.',
+          description: error.message || 'Une erreur est survenue lors de la sauvegarde.',
           data: { icon: 'fr-alert--error' },
         });
+      } else {
+        notifySaveNetworkFailure();
       }
     },
   });

@@ -1,10 +1,12 @@
 import { expect, test } from '@playwright/test';
+import { autoCloseAnnouncements } from './utils/announcements';
 import { baseUrl, ENTITY_ADMIN_USER, loginUrl } from './utils/constants';
 import { loginWithProconnect } from './utils/login';
 
 test('logout', async ({ browser }) => {
   const context = await browser.newContext({ httpCredentials: undefined });
   context.clearCookies();
+  await autoCloseAnnouncements(context);
   const page = await context.newPage();
 
   await loginWithProconnect(page, {
@@ -14,7 +16,7 @@ test('logout', async ({ browser }) => {
   });
 
   await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 30000 });
-  await expect(page.getByText(/Bienvenue/)).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('heading', { name: 'Liste des requêtes', level: 1 })).toBeVisible({ timeout: 10000 });
 
   const monEspaceButton = page.getByRole('button', { name: 'Mon espace' });
   await monEspaceButton.click();

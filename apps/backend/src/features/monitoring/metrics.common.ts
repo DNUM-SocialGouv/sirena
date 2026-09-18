@@ -1,4 +1,4 @@
-import { collectDefaultMetrics, Registry } from 'prom-client';
+import { collectDefaultMetrics, Registry } from '@prometheus-io/client';
 
 export function createMetricsRegistry(): Registry {
   const register = new Registry();

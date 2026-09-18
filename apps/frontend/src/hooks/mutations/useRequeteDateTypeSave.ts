@@ -3,7 +3,8 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useRef, useState } from 'react';
 import { client } from '@/lib/api/hc';
-import { handleRequestErrors } from '@/lib/api/tanstackQuery';
+import { notifySaveNetworkFailure } from '@/lib/api/saveError';
+import { HttpError, handleRequestErrors } from '@/lib/api/tanstackQuery';
 import { type ConflictInfo, detectAndMergeConflicts } from '@/lib/conflictResolution';
 import { toastManager } from '@/lib/toastManager';
 
@@ -90,12 +91,14 @@ export const useRequeteDateTypeSave = ({ requestId, requeteUpdatedAt, onRefetch 
             data: { icon: 'fr-alert--warning' },
           });
         }
-      } else {
+      } else if (error instanceof HttpError) {
         toastManager.add({
           title: 'Erreur',
-          description: 'Une erreur est survenue lors de la sauvegarde.',
+          description: error.message || 'Une erreur est survenue lors de la sauvegarde.',
           data: { icon: 'fr-alert--error' },
         });
+      } else {
+        notifySaveNetworkFailure();
       }
     },
   });

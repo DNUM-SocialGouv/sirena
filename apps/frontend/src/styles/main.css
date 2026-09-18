@@ -52,13 +52,6 @@ dialog {
   }
 }
 
-.bg-cumulus {
-  margin-left: calc(-1 * var(--wide-gutter, 1rem));
-  margin-right: calc(-1 * var(--wide-gutter, 1rem));
-  padding-left: var(--wide-gutter, 1rem);
-  padding-right: var(--wide-gutter, 1rem);
-}
-
 .center-icon-with-sr-only:before {
   margin: auto !important;
 }
@@ -109,8 +102,17 @@ dialog {
   position: relative;
 }
 
+:root {
+  --request-header-overlap: 2.5rem;
+}
+
+.app-container--flush {
+  width: 100%;
+}
+
 .bg-cumulus {
   background-color: var(--background-alt-blue-cumulus);
+  padding-bottom: var(--request-header-overlap);
 }
 
 .one-line {

@@ -9,7 +9,6 @@ type GlobalLayoutProps = {
   children: ReactNode;
 };
 
-// Pages that use the full-width container (cf. ticket sirena-634).
 const WIDE_LAYOUT_PREFIXES = ['/home', '/statistiques', '/admin'];
 
 const isRequestOverview = (pathname: string): boolean => {
@@ -19,14 +18,22 @@ const isRequestOverview = (pathname: string): boolean => {
   return segments.length === 3 && segments[2] === 'processing'; // /request/<id>/processing
 };
 
+const getContainerClassName = (pathname: string): string => {
+  if (WIDE_LAYOUT_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
+    return 'fr-container app-container--wide';
+  }
+  if (isRequestOverview(pathname)) {
+    return 'app-container--flush';
+  }
+  return 'fr-container';
+};
+
 export const GlobalLayout = ({ children }: GlobalLayoutProps) => {
   const skipLinkRef = useRef<HTMLAnchorElement>(null);
   const mainId = 'main';
   const { pathname } = useLocation();
 
-  const isWideLayout =
-    WIDE_LAYOUT_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)) ||
-    isRequestOverview(pathname);
+  const containerClassName = getContainerClassName(pathname);
 
   useEffect(() => {
     if (!pathname) return;
@@ -67,7 +74,7 @@ export const GlobalLayout = ({ children }: GlobalLayoutProps) => {
       <main id={mainId} role="main" className="main-content">
         <EnvironmentBanner />
         <UpdateBanner />
-        <div className={isWideLayout ? 'fr-container app-container--wide' : 'fr-container'}>{children}</div>
+        <div className={containerClassName}>{children}</div>
       </main>
       <AppFooter />
     </div>

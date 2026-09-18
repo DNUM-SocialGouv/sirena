@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useAppUpdateStore } from '@/stores/appUpdateStore';
-import { registerPreloadErrorHandler } from './preloadError';
+import { isChunkLoadError, registerPreloadErrorHandler, resetAssetLoadFailedForTests } from './preloadError';
 
 const CHUNK_URL = 'https://app.test/assets/index-abc123.js';
 const CSS_URL = 'https://app.test/assets/index-abc123.css';
@@ -23,6 +23,7 @@ function depPreloadError(url = CSS_URL): Error {
 describe('registerPreloadErrorHandler', () => {
   afterEach(() => {
     useAppUpdateStore.setState({ isUpdateAvailable: false });
+    resetAssetLoadFailedForTests();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
@@ -112,5 +113,56 @@ describe('registerPreloadErrorHandler', () => {
 
     await vi.waitFor(() => expect(useAppUpdateStore.getState().isUpdateAvailable).toBe(true));
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('isChunkLoadError', () => {
+  afterEach(() => {
+    resetAssetLoadFailedForTests();
+    vi.unstubAllGlobals();
+  });
+
+  it('reports nothing while no asset has failed in this session', () => {
+    expect(isChunkLoadError(preloadError())).toBe(false);
+    expect(isChunkLoadError(depPreloadError())).toBe(false);
+  });
+
+  it.each([
+    ['Chrome', `Failed to fetch dynamically imported module: ${CHUNK_URL}`],
+    ['Firefox', `error loading dynamically imported module: ${CHUNK_URL}`],
+    ['Safari', 'Importing a module script failed.'],
+    ['Vite CSS', `Unable to preload CSS for ${CSS_URL}`],
+    [
+      'SPA fallback',
+      "Failed to load module script: Expected a JavaScript module script but the server responded with a MIME type of 'text/html'. 'text/html' is not a valid JavaScript MIME type",
+    ],
+  ])('matches the %s wording once an asset has failed', (_engine, message) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 404 })));
+    registerPreloadErrorHandler();
+    dispatchPreloadError(preloadError());
+
+    expect(isChunkLoadError(new Error(message))).toBe(true);
+  });
+
+  it('leaves a genuine application error reported, even after an asset failed', () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 404 })));
+    registerPreloadErrorHandler();
+    dispatchPreloadError(preloadError());
+
+    expect(isChunkLoadError(new TypeError("Cannot read properties of undefined (reading 'component')"))).toBe(false);
+    expect(isChunkLoadError(new Error('HTTP 500'))).toBe(false);
+    expect(isChunkLoadError(undefined)).toBe(false);
+  });
+
+  it('flags the failure synchronously, before the stale-deploy probe resolves', () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise(() => {})),
+    );
+    registerPreloadErrorHandler();
+
+    dispatchPreloadError(preloadError());
+
+    expect(isChunkLoadError(preloadError())).toBe(true);
   });
 });
