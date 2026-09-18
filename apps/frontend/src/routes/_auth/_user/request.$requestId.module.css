@@ -123,6 +123,8 @@
 }
 
 .request-tabs {
+  position: relative;
+  margin-top: calc(-1 * var(--request-header-overlap, 2.5rem));
   box-shadow: none;
 }
 
