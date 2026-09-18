@@ -137,3 +137,125 @@ export const getFileProcessingState = (status: FileProcessingStatus | null): Fil
   status: getStatusPresentation(status),
   risk: getRisk(status),
 });
+
+const PREVIEWABLE_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.txt'];
+
+const isFilePreviewable = (fileName: string): boolean => {
+  const fileExtension = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
+  return PREVIEWABLE_EXTENSIONS.includes(fileExtension);
+};
+
+type RiskAcknowledgementContent = {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  severity: 'warning' | 'error';
+};
+
+const RISK_ACKNOWLEDGEMENT_CONTENT: Record<FileProcessingRisk['reason'], RiskAcknowledgementContent> = {
+  infected: {
+    title: 'Attention : fichier potentiellement dangereux',
+    message:
+      'Une menace potentielle a été détectée dans ce fichier. Nous vous recommandons fortement de ne pas télécharger ce fichier. Si vous choisissez de continuer, assurez-vous que votre logiciel antivirus est à jour.',
+    confirmLabel: 'Télécharger malgré le risque',
+    severity: 'error',
+  },
+  scan_pending: {
+    title: 'Analyse en cours',
+    message:
+      "L'analyse antivirus de ce fichier n'est pas encore terminée. Nous vous recommandons d'attendre la fin de l'analyse avant de télécharger ce fichier.",
+    confirmLabel: 'Télécharger le fichier original',
+    severity: 'warning',
+  },
+  scan_failed: {
+    title: 'Analyse non effectuée',
+    message:
+      "L'analyse antivirus de ce fichier a échoué ou n'a pas pu être effectuée. Le fichier n'a pas été vérifié et peut présenter des risques.",
+    confirmLabel: 'Télécharger le fichier original',
+    severity: 'warning',
+  },
+  sanitize_pending: {
+    title: 'Sécurisation en cours',
+    message:
+      "La sécurisation de ce fichier n'est pas encore terminée. Nous vous recommandons d'attendre la fin de la sécurisation pour télécharger une version sûre du fichier.",
+    confirmLabel: 'Télécharger le fichier original',
+    severity: 'warning',
+  },
+  sanitize_failed: {
+    title: 'Sécurisation échouée',
+    message:
+      "La sécurisation de ce fichier a échoué. Le fichier original n'a pas pu être nettoyé et peut contenir des éléments potentiellement dangereux.",
+    confirmLabel: 'Télécharger le fichier original',
+    severity: 'warning',
+  },
+};
+
+type FileDownloadAction =
+  | { kind: 'open'; href: string; target: string }
+  | { kind: 'confirm-download'; href: string; target: '_blank' }
+  | {
+      kind: 'acknowledge-risk';
+      reason: FileProcessingRisk['reason'];
+      href: string;
+      target: '_blank';
+      content: RiskAcknowledgementContent;
+    };
+
+export type FileDownloadState = {
+  linkHref: string;
+  action: FileDownloadAction;
+};
+
+type GetFileDownloadStateOptions = {
+  processingState: FileProcessingState;
+  fileName: string;
+  href: string;
+  safeHref?: string;
+  target: string;
+};
+
+export const getFileDownloadState = ({
+  processingState,
+  fileName,
+  href,
+  safeHref,
+  target,
+}: GetFileDownloadStateOptions): FileDownloadState => {
+  const linkHref = processingState.isSafeFileAvailable && safeHref ? safeHref : href;
+
+  if (processingState.risk?.kind === 'infected') {
+    return {
+      linkHref,
+      action: {
+        kind: 'acknowledge-risk',
+        reason: processingState.risk.reason,
+        href,
+        target: '_blank',
+        content: RISK_ACKNOWLEDGEMENT_CONTENT[processingState.risk.reason],
+      },
+    };
+  }
+
+  if (processingState.isSafeFileAvailable && safeHref) {
+    return { linkHref, action: { kind: 'open', href: safeHref, target } };
+  }
+
+  if (processingState.risk?.kind === 'warning') {
+    return {
+      linkHref,
+      action: {
+        kind: 'acknowledge-risk',
+        reason: processingState.risk.reason,
+        href,
+        target: '_blank',
+        content: RISK_ACKNOWLEDGEMENT_CONTENT[processingState.risk.reason],
+      },
+    };
+  }
+
+  if (!isFilePreviewable(fileName)) {
+    return { linkHref, action: { kind: 'confirm-download', href, target: '_blank' } };
+  }
+
+  return { linkHref, action: { kind: 'open', href, target } };
+};
