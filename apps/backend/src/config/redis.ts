@@ -3,13 +3,15 @@ import { createDefaultLogger } from '../helpers/pino.js';
 import { envVars } from './env.js';
 
 export const sanitizeRedisError = (err: unknown): unknown => {
-  if (err && typeof err === 'object' && 'command' in err) {
-    const e = err as { command?: { name?: string; args?: unknown[] } };
-    if (e.command?.args && Array.isArray(e.command.args)) {
-      e.command = { ...e.command, args: e.command.args.map(() => '****') };
-    }
-  }
-  return err;
+  if (!err || typeof err !== 'object' || !('command' in err)) return err;
+  const e = err as Error & { command?: { name?: string; args?: unknown[] } };
+  if (!Array.isArray(e.command?.args)) return err;
+  return {
+    name: e.name,
+    message: e.message,
+    stack: e.stack,
+    command: { ...e.command, args: e.command.args.map(() => '****') },
+  };
 };
 
 const logger = createDefaultLogger();

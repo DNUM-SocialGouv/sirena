@@ -25,6 +25,8 @@ import {
   getRequeteEntiteById,
   getRequetesEntite,
   hasAccessToRequete,
+  reopenRequeteForEntite,
+  setStatusRequete,
   updatePrioriteRequete,
   updateRequete,
   updateRequeteDeclarant,
@@ -87,7 +89,13 @@ vi.mock('archiver', () => {
 });
 
 import type { Readable } from 'node:stream';
-import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import {
+  REQUETE_ETAPE_STATUT_TYPES,
+  REQUETE_ETAPE_TYPES,
+  REQUETE_STATUT_TYPES,
+  REQUETE_UPDATE_FIELDS,
+} from '@sirena/common/constants';
+import { sseEventManager } from '../../helpers/sse.js';
 import { getFileStream } from '../../libs/minio.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
@@ -2262,6 +2270,172 @@ describe('requetesEntite.service', () => {
         changedById: 'user123',
       });
     });
+
+    it('emits a single closed event, only once the transaction is committed', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
+        { id: 'reason123', label: 'Reason 123' },
+      ]);
+
+      const events: string[] = [];
+      const mockEtape = {
+        id: 'etape123',
+        nom: 'Clôture',
+        estPartagee: true,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
+        requeteId: 'req123',
+        entiteId: 'ent123',
+        createdAt: new Date('2024-01-01T10:00:00Z'),
+      };
+
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        events.push('transaction:start');
+        const mockTx = {
+          ...prismaMock,
+          requeteEtape: { ...prismaMock.requeteEtape, create: vi.fn().mockResolvedValue(mockEtape) },
+          requeteEntite: {
+            ...prismaMock.requeteEntite,
+            findUnique: vi.fn().mockResolvedValue(mockRequeteEntite),
+            update: vi.fn().mockResolvedValue({ ...mockRequeteEntite, statutId: REQUETE_STATUT_TYPES.CLOTUREE }),
+          },
+        } as typeof prismaMock;
+        const result = await cb(mockTx);
+        events.push('transaction:committed');
+        return result;
+      });
+      vi.mocked(sseEventManager.emitRequeteUpdated).mockImplementation(() => {
+        events.push('sse:emit');
+      });
+
+      await closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2024-01-01');
+
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledTimes(1);
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledWith({
+        requeteId: 'req123',
+        entiteId: 'ent123',
+        field: REQUETE_UPDATE_FIELDS.CLOSED,
+      });
+      expect(events).toEqual(['transaction:start', 'transaction:committed', 'sse:emit']);
+    });
+
+    it('emits no event when the transaction is rolled back', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
+        { id: 'reason123', label: 'Reason 123' },
+      ]);
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        const mockTx = {
+          ...prismaMock,
+          requeteEtape: { ...prismaMock.requeteEtape, create: vi.fn().mockResolvedValue({ id: 'etape123' }) },
+          requeteEntite: {
+            ...prismaMock.requeteEntite,
+            update: vi.fn().mockRejectedValue(new Error('DB_FAILURE')),
+          },
+        } as typeof prismaMock;
+        return cb(mockTx);
+      });
+
+      await expect(closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2024-01-01')).rejects.toThrow(
+        'DB_FAILURE',
+      );
+
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
+      expect(createChangeLog).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('reopenRequeteForEntite', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      // Earlier suites may leave unconsumed `mockResolvedValueOnce` values behind.
+      vi.mocked(prisma.requeteEntite.findUnique).mockReset();
+      vi.mocked(prisma.$transaction).mockReset();
+    });
+
+    it('should throw error if requeteEntite is not found', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(null);
+
+      await expect(reopenRequeteForEntite('req123', 'ent123', 'user123')).rejects.toThrow('REQUETE_NOT_FOUND');
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
+    });
+
+    it('should throw error if requete is not closed for entity', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+
+      await expect(reopenRequeteForEntite('req123', 'ent123', 'user123')).rejects.toThrow('REQUETE_NOT_CLOSED');
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
+    });
+
+    it('emits a single reopened event, only once the transaction is committed', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockClosedRequeteEntite);
+
+      const events: string[] = [];
+      const mockEtape = {
+        id: 'etape-reopen',
+        nom: 'Requête rouverte le 01/01/2024',
+        type: REQUETE_ETAPE_TYPES.REOPEN,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        requeteId: 'req123',
+        entiteId: 'ent123',
+        createdAt: new Date('2024-01-01T10:00:00Z'),
+      };
+      const requeteEntiteUpdate = vi
+        .fn()
+        .mockResolvedValue({ ...mockClosedRequeteEntite, statutId: REQUETE_STATUT_TYPES.EN_COURS });
+
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        events.push('transaction:start');
+        const mockTx = {
+          ...prismaMock,
+          requeteEtape: { ...prismaMock.requeteEtape, create: vi.fn().mockResolvedValue(mockEtape) },
+          requeteEntite: { ...prismaMock.requeteEntite, update: requeteEntiteUpdate },
+        } as typeof prismaMock;
+        const result = await cb(mockTx);
+        events.push('transaction:committed');
+        return result;
+      });
+      vi.mocked(sseEventManager.emitRequeteUpdated).mockImplementation(() => {
+        events.push('sse:emit');
+      });
+
+      const result = await reopenRequeteForEntite('req123', 'ent123', 'user123');
+
+      expect(result).toEqual({
+        etapeId: 'etape-reopen',
+        reopenedAt: '2024-01-01T10:00:00.000Z',
+        etape: mockEtape,
+      });
+      expect(requeteEntiteUpdate).toHaveBeenCalledWith({
+        where: { requeteId_entiteId: { requeteId: 'req123', entiteId: 'ent123' } },
+        data: { statutId: REQUETE_STATUT_TYPES.EN_COURS },
+      });
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledTimes(1);
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledWith({
+        requeteId: 'req123',
+        entiteId: 'ent123',
+        field: REQUETE_UPDATE_FIELDS.REOPENED,
+      });
+      expect(events).toEqual(['transaction:start', 'transaction:committed', 'sse:emit']);
+      expect(createChangeLog).toHaveBeenCalledWith({
+        entity: 'RequeteEntite',
+        entityId: 'req123:ent123',
+        action: ChangeLogAction.UPDATED,
+        before: { statutId: REQUETE_STATUT_TYPES.CLOTUREE },
+        after: { statutId: REQUETE_STATUT_TYPES.EN_COURS },
+        changedById: 'user123',
+      });
+    });
+
+    it('emits no event when the transaction is rolled back', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockClosedRequeteEntite);
+      vi.mocked(prisma.$transaction).mockRejectedValueOnce(new Error('DB_FAILURE'));
+
+      await expect(reopenRequeteForEntite('req123', 'ent123', 'user123')).rejects.toThrow('DB_FAILURE');
+
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
+      expect(createChangeLog).not.toHaveBeenCalled();
+    });
   });
 
   describe('updateSituationEntites', () => {
@@ -3892,6 +4066,71 @@ describe('requetesEntite.service', () => {
       await expect(updateStatusRequete('req123', 'ent123', REQUETE_STATUT_TYPES.EN_COURS)).resolves.toMatchObject({
         statutId: REQUETE_STATUT_TYPES.EN_COURS,
       });
+    });
+
+    it('emits a single status event once the status is written', async () => {
+      vi.clearAllMocks();
+      const events: string[] = [];
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteEntite.update).mockImplementationOnce((() => {
+        events.push('db:update');
+        return Promise.resolve({ ...mockRequeteEntite, statutId: REQUETE_STATUT_TYPES.CLOTUREE });
+      }) as unknown as typeof prisma.requeteEntite.update);
+      vi.mocked(sseEventManager.emitRequeteUpdated).mockImplementation(() => {
+        events.push('sse:emit');
+      });
+
+      await updateStatusRequete('req123', 'ent123', REQUETE_STATUT_TYPES.CLOTUREE);
+
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledTimes(1);
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledWith({
+        requeteId: 'req123',
+        entiteId: 'ent123',
+        field: REQUETE_UPDATE_FIELDS.STATUS,
+      });
+      expect(events).toEqual(['db:update', 'sse:emit']);
+    });
+  });
+
+  describe('setStatusRequete', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      vi.mocked(safeSyncRequetePriseEnChargeToDematSocial).mockResolvedValue(undefined);
+    });
+
+    it('writes through the transaction client and never emits an SSE event', async () => {
+      const txUpdate = vi.fn().mockResolvedValue({ ...mockRequeteEntite, statutId: REQUETE_STATUT_TYPES.CLOTUREE });
+      const tx = { requeteEntite: { update: txUpdate, findUnique: vi.fn() } } as unknown as Parameters<
+        typeof setStatusRequete
+      >[3];
+
+      const result = await setStatusRequete('req123', 'ent123', REQUETE_STATUT_TYPES.CLOTUREE, tx);
+
+      expect(txUpdate).toHaveBeenCalledWith({
+        where: { requeteId_entiteId: { requeteId: 'req123', entiteId: 'ent123' } },
+        data: { statutId: REQUETE_STATUT_TYPES.CLOTUREE },
+      });
+      expect(prisma.requeteEntite.update).not.toHaveBeenCalled();
+      expect(prisma.requeteEntite.findUnique).not.toHaveBeenCalled();
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
+      expect(result.statutId).toBe(REQUETE_STATUT_TYPES.CLOTUREE);
+    });
+
+    it('writes the status without emitting an SSE event when no transaction is given', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+      });
+      vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.EN_COURS,
+      });
+
+      await setStatusRequete('req123', 'ent123', REQUETE_STATUT_TYPES.EN_COURS);
+
+      expect(prisma.requeteEntite.update).toHaveBeenCalledOnce();
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
+      expect(safeSyncRequetePriseEnChargeToDematSocial).toHaveBeenCalledWith('req123');
     });
   });
 

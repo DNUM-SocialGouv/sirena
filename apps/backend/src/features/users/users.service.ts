@@ -113,7 +113,7 @@ export const createUser = async (newUser: CreateUserDto) => {
   const adminEmails = envVars.SUPER_ADMIN_LIST_EMAIL.split(';');
   const roleId = adminEmails.find((adminEmail) => adminEmail === newUser.email) ? ROLES.SUPER_ADMIN : ROLES.PENDING;
   const statutId = STATUT_TYPES.NON_RENSEIGNE;
-  return prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       ...newUser,
       statutId,
@@ -121,8 +121,17 @@ export const createUser = async (newUser: CreateUserDto) => {
       pcData: newUser.pcData as Prisma.JsonObject,
     },
   });
+
+  sseEventManager.emitUserList({ action: 'created', userId: user.id, entiteId: user.entiteId });
+
+  return user;
 };
-export const deleteUser = async (id: User['id']) => await prisma.user.delete({ where: { id } });
+
+export const deleteUser = async (id: User['id']) => {
+  const user = await prisma.user.delete({ where: { id } });
+  sseEventManager.emitUserList({ action: 'deleted', userId: user.id, entiteId: user.entiteId });
+  return user;
+};
 
 export const patchUser = async (id: User['id'], data: PatchUserDto) => {
   const user = await prisma.user.update({
@@ -143,6 +152,7 @@ export const patchUser = async (id: User['id'], data: PatchUserDto) => {
   sseEventManager.emitUserList({
     action: 'updated',
     userId: user.id,
+    entiteId: user.entiteId,
   });
 
   return user;
