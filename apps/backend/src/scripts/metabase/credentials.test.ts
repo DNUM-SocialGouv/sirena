@@ -9,10 +9,14 @@ import { UserError } from './user-error.js';
 
 const directories: string[] = [];
 
-const writeKeyFile = async (contents: string, mode = 0o600): Promise<string> => {
+const makeKeyDirectory = async (): Promise<string> => {
   const directory = await mkdtemp(join(tmpdir(), 'metabase-credentials-'));
   directories.push(directory);
-  const path = join(directory, 'api-key');
+  return directory;
+};
+
+const writeKeyFile = async (contents: string, mode = 0o600): Promise<string> => {
+  const path = join(await makeKeyDirectory(), 'api-key');
   await writeFile(path, contents, { mode });
   await chmod(path, mode);
   return path;
@@ -199,7 +203,9 @@ describe('resolveApiKey missing keys', () => {
   it('reports a missing key file rather than falling back to the environment', async () => {
     vi.stubEnv('METABASE_TARGET_API_KEY', 'mb_key_default_target_unused');
 
-    await expect(resolveApiKey({ file: join(tmpdir(), 'metabase-credentials-absent', 'api-key') })).rejects.toThrow();
+    const absent = join(await makeKeyDirectory(), 'api-key');
+
+    await expect(resolveApiKey({ file: absent })).rejects.toThrow();
   });
 });
 

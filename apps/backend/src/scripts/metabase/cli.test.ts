@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_TIMEOUT_MS, parseOptions } from './cli.js';
+import { DEFAULT_TIMEOUT_MS, OPTION_SPEC, parseOptions, USAGE, wantsHelp } from './cli.js';
 import { UserError } from './user-error.js';
 
 const REQUIRED = ['--source', '4', '--target', '12', '--url', 'https://metabase.test'] as const;
@@ -185,5 +185,26 @@ describe('parseOptions url fallback', () => {
 
     expect(() => parseOptions(['--source', '4', '--target', '12'])).toThrow(UserError);
     expect(() => parseOptions(['--source', '4', '--target', '12'])).toThrow(/Missing target URL/);
+  });
+});
+
+describe('wantsHelp', () => {
+  it('detects --help and -h, even without the required options', () => {
+    expect(wantsHelp(['--help'])).toBe(true);
+    expect(wantsHelp(['-h'])).toBe(true);
+    expect(wantsHelp(withArgs('--apply', '--help'))).toBe(true);
+  });
+
+  it('is false for a regular invocation and does not choke on unknown flags', () => {
+    expect(wantsHelp(REQUIRED)).toBe(false);
+    expect(wantsHelp(['--unknown', 'value'])).toBe(false);
+  });
+});
+
+describe('USAGE', () => {
+  it('documents every option', () => {
+    for (const name of Object.keys(OPTION_SPEC)) {
+      expect(USAGE).toContain(`--${name}`);
+    }
   });
 });

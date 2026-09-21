@@ -3,7 +3,7 @@
 import { dirname, resolve } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
-import { loadExplicitMapping, type Options, parseOptions } from './metabase/cli.js';
+import { loadExplicitMapping, type Options, parseOptions, USAGE, wantsHelp } from './metabase/cli.js';
 import { createMetabaseClient, entityPath, isEntityId, type MetabaseClient } from './metabase/client.js';
 import { describeApiKeySource, resolveApiKey } from './metabase/credentials.js';
 import {
@@ -141,7 +141,12 @@ async function verify(
 }
 
 async function main(): Promise<void> {
-  const options = parseOptions(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  if (wantsHelp(argv)) {
+    console.log(USAGE);
+    return;
+  }
+  const options = parseOptions(argv);
   const {
     apiKey,
     source: keySource,

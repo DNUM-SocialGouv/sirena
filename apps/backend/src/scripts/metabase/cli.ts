@@ -43,7 +43,50 @@ export const OPTION_SPEC = {
   'allow-unresolved-values-source': { type: 'boolean' },
   report: { type: 'string' },
   timeout: { type: 'string' },
+  help: { type: 'boolean', short: 'h' },
 } as const satisfies ParseArgsConfig['options'];
+
+export const USAGE = `Restore a Metabase dashboard from a snapshot in docs/metabase_dashboards/<id>/.
+
+Usage: pnpm op:metabase:restore-dashboard --source <id> --target <id> [options]
+
+Dry run by default: prints the plan (cards, layout, filters, dashboard settings) and writes nothing.
+
+Required
+  --source <id>            Snapshot to restore (docs/metabase_dashboards/<id>)
+  --target <id>            Dashboard id to restore onto, on the target Metabase
+
+Target
+  --url <url>              Target Metabase URL (default: METABASE_TARGET_SITE_URL, then METABASE_SITE_URL)
+  --api-key-env <VAR>      Read the API key from this environment variable
+  --api-key-file <path>    Read the API key from a file (chmod 600 recommended)
+  --api-key-stdin          Read the API key from stdin (with --apply, add --yes)
+                           Default: METABASE_TARGET_API_KEY, then METABASE_API_KEY.
+                           An inline --api-key/--token/--secret value is refused.
+  --database-id <id>       Database the cards should query (default: the one the target's cards use)
+  --timeout <ms>           Per-request timeout in milliseconds (default: ${DEFAULT_TIMEOUT_MS})
+
+Writing
+  --apply                  Write the plan to the target (asks to type the target host first)
+  --yes                    Skip the confirmation prompt (needed when stdin is not a TTY)
+  --overwrite-name         Also overwrite the target dashboard name with the snapshot's
+  --archive-orphans        Archive target cards the snapshot no longer references
+
+Matching
+  --mapping <file.json>    Explicit card mapping: { "cards": { "<sourceId>": <targetId> } }
+  --allow-unresolved-values-source
+                           Fall back to free-text filters when a filter's values-source card
+                           was never exported and has no counterpart on the target
+
+Output
+  --report <file.json>     Write a JSON report of the plan and its execution (overwritten in place)
+  -h, --help               Show this help
+`;
+
+export function wantsHelp(argv: readonly string[]): boolean {
+  const { values } = parseArgs({ args: [...argv], options: OPTION_SPEC, strict: false, allowPositionals: true });
+  return values.help === true;
+}
 
 export function parseOptions(argv: readonly string[]): Options {
   assertNoInlineSecret(argv);
