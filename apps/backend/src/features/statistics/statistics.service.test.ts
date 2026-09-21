@@ -91,7 +91,32 @@ describe('statistics.service.ts', () => {
     });
   });
 
-  describe('fetchDashboardCardsData', () => {
+  describe('extractDashboardTabs', () => {
+    it('ignores malformed tabs and fills missing names and positions from the index', async () => {
+      const { extractDashboardTabs } = await import('./statistics.service.js');
+
+      expect(
+        extractDashboardTabs({
+          tabs: [{ id: 3, name: '  ', position: 2 }, { id: 'x', name: 'Bad' }, null, { id: 1, name: 'Premier' }],
+        }),
+      ).toEqual(
+        [
+          { id: 1, name: 'Premier', position: 3 },
+          { id: 3, name: 'Onglet 1', position: 2 },
+        ].sort((a, b) => a.position - b.position),
+      );
+    });
+
+    it('returns an empty list when the payload has no tabs array', async () => {
+      const { extractDashboardTabs } = await import('./statistics.service.js');
+
+      expect(extractDashboardTabs(null)).toEqual([]);
+      expect(extractDashboardTabs({ tabs: null })).toEqual([]);
+      expect(extractDashboardTabs({ dashcards: [] })).toEqual([]);
+    });
+  });
+
+  describe('fetchDashboardData', () => {
     it('aggregates data for every dashcard of the configured dashboard', async () => {
       fetchMock
         .mockResolvedValueOnce({
@@ -131,13 +156,15 @@ describe('statistics.service.ts', () => {
             ),
         });
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      const result = await fetchDashboardCardsData();
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      const { cards: result } = await fetchDashboardData();
 
       expect(result).toEqual([
         {
           id: 42,
           dashcardId: 100,
+          tabId: null,
+          filterSlugs: [],
           name: 'Requêtes par mois',
           description: null,
           display: null,
@@ -153,6 +180,8 @@ describe('statistics.service.ts', () => {
         {
           id: 43,
           dashcardId: 101,
+          tabId: null,
+          filterSlugs: [],
           name: 'Top entités',
           description: null,
           display: null,
@@ -191,13 +220,15 @@ describe('statistics.service.ts', () => {
           json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]),
         });
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      const result = await fetchDashboardCardsData();
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      const { cards: result } = await fetchDashboardData();
 
       expect(result).toEqual([
         {
           id: 50,
           dashcardId: 200,
+          tabId: null,
+          filterSlugs: [],
           name: 'Legacy',
           description: null,
           display: null,
@@ -205,6 +236,113 @@ describe('statistics.service.ts', () => {
           data: cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]).data,
         },
       ]);
+    });
+
+    it('returns the dashboard tabs sorted by position and tags each card with its tab', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            id: 7,
+            tabs: [
+              { id: 12, name: 'Délais', position: 1 },
+              { id: 11, name: 'Volumes', position: 0 },
+            ],
+            dashcards: [
+              { id: 100, card_id: 42, dashboard_tab_id: 11, card: { id: 42, name: 'Total' } },
+              { id: 101, card_id: 43, dashboard_tab_id: 12, card: { id: 43, name: 'Délai moyen' } },
+            ],
+          }),
+        })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => cardResult([{ name: 'k' }], [[1]]) })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => cardResult([{ name: 'k' }], [[2]]) });
+
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      const { tabs, cards } = await fetchDashboardData();
+
+      expect(tabs).toEqual([
+        { id: 11, name: 'Volumes', position: 0 },
+        { id: 12, name: 'Délais', position: 1 },
+      ]);
+      expect(cards.map((card) => [card.id, card.tabId])).toEqual([
+        [42, 11],
+        [43, 12],
+      ]);
+    });
+
+    it('returns no tabs and null tabIds for a dashboard without tabs', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            id: 7,
+            tabs: [],
+            dashcards: [{ id: 100, card_id: 42, dashboard_tab_id: null, card: { id: 42, name: 'Total' } }],
+          }),
+        })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => cardResult([{ name: 'k' }], [[1]]) });
+
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      const { tabs, cards } = await fetchDashboardData();
+
+      expect(tabs).toEqual([]);
+      expect(cards.map((card) => card.tabId)).toEqual([null]);
+    });
+
+    it('still returns the tabs when the dashboard exposes no readable cards', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ id: 7, tabs: [{ id: 11, name: 'Volumes', position: 0 }], dashcards: [] }),
+      });
+
+      const { fetchDashboardData } = await import('./statistics.service.js');
+
+      await expect(fetchDashboardData()).resolves.toEqual({
+        tabs: [{ id: 11, name: 'Volumes', position: 0 }],
+        cards: [],
+      });
+    });
+
+    it('translates dashcard parameter_mappings into the dashboard filter slugs', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            id: 7,
+            parameters: [
+              { id: 'p-start', slug: 'start_date' },
+              { id: 'p-end', slug: 'end_date' },
+              { id: 'p-dom', slug: 'domaine_fonctionnel' },
+            ],
+            dashcards: [
+              {
+                id: 100,
+                card_id: 42,
+                card: { id: 42, name: 'Filtrée' },
+                parameter_mappings: [
+                  { parameter_id: 'p-dom', card_id: 42 },
+                  { parameter_id: 'p-start', card_id: 42 },
+                  { parameter_id: 'p-start', card_id: 42 },
+                  { parameter_id: 'p-unknown', card_id: 42 },
+                ],
+              },
+              { id: 101, card_id: 43, card: { id: 43, name: 'Sans filtre' }, parameter_mappings: [] },
+              { id: 102, card_id: 44, card: { id: 44, name: 'Sans mapping' } },
+            ],
+          }),
+        })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => cardResult([{ name: 'k' }], [[1]]) })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => cardResult([{ name: 'k' }], [[2]]) })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => cardResult([{ name: 'k' }], [[3]]) });
+
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      const { cards } = await fetchDashboardData();
+
+      expect(cards.map((card) => card.filterSlugs)).toEqual([['domaine_fonctionnel', 'start_date'], [], []]);
     });
 
     it('sends a multi-valued optional filter as a repeated query param', async () => {
@@ -223,8 +361,8 @@ describe('statistics.service.ts', () => {
           json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]),
         });
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      await fetchDashboardCardsData({}, { start_date: '2026-01-01', domaine_fonctionnel: ['SOCIAL', 'SANITAIRE'] });
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await fetchDashboardData({}, { start_date: '2026-01-01', domaine_fonctionnel: ['SOCIAL', 'SANITAIRE'] });
 
       const [, cardCall] = fetchMock.mock.calls;
       const { searchParams } = new URL(cardCall[0] as string);
@@ -248,8 +386,8 @@ describe('statistics.service.ts', () => {
           json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]),
         });
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      await fetchDashboardCardsData({}, { domaine_fonctionnel: [] });
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await fetchDashboardData({}, { domaine_fonctionnel: [] });
 
       const [, cardCall] = fetchMock.mock.calls;
       expect(cardCall[0]).not.toContain('domaine_fonctionnel');
@@ -263,8 +401,8 @@ describe('statistics.service.ts', () => {
         json: async () => ({ dashcards: [] }),
       });
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      const result = await fetchDashboardCardsData();
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      const { cards: result } = await fetchDashboardData();
 
       expect(result).toEqual([]);
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -273,8 +411,8 @@ describe('statistics.service.ts', () => {
     it('throws 503 when Metabase dashboard metadata fetch fails', async () => {
       fetchMock.mockResolvedValueOnce({ ok: false, status: 500, statusText: 'Internal Server Error' });
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      await expect(fetchDashboardCardsData()).rejects.toThrow(/^503:/);
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await expect(fetchDashboardData()).rejects.toThrow(/^503:/);
     });
 
     it('signs the token for the national dashboard id when scope is "national"', async () => {
@@ -290,8 +428,8 @@ describe('statistics.service.ts', () => {
           json: async () => cardResult([{ name: 'total', base_type: 'type/Integer' }], [[123]]),
         });
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      await fetchDashboardCardsData({}, {}, 'national');
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await fetchDashboardData({}, {}, 'national');
 
       const [metadataCall] = fetchMock.mock.calls;
       const token = String(metadataCall[0]).split('/api/embed/dashboard/')[1];
@@ -302,8 +440,8 @@ describe('statistics.service.ts', () => {
     it('throws 503 when the national dashboard id is not configured', async () => {
       mockedEnvVars.METABASE_DASHBOARD_ID_ADMIN = '';
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      await expect(fetchDashboardCardsData({}, {}, 'national')).rejects.toThrow(/^503:/);
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await expect(fetchDashboardData({}, {}, 'national')).rejects.toThrow(/^503:/);
       expect(fetchMock).not.toHaveBeenCalled();
     });
 
@@ -331,13 +469,15 @@ describe('statistics.service.ts', () => {
           text: async () => 'boom',
         });
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      const result = await fetchDashboardCardsData();
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      const { cards: result } = await fetchDashboardData();
 
       expect(result).toEqual([
         {
           id: 42,
           dashcardId: 100,
+          tabId: null,
+          filterSlugs: [],
           name: 'OK',
           description: null,
           display: null,
@@ -347,6 +487,8 @@ describe('statistics.service.ts', () => {
         {
           id: 43,
           dashcardId: 101,
+          tabId: null,
+          filterSlugs: [],
           name: 'KO',
           description: null,
           display: null,
@@ -365,13 +507,15 @@ describe('statistics.service.ts', () => {
         })
         .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ unexpected: 'shape' }) });
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      const result = await fetchDashboardCardsData();
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      const { cards: result } = await fetchDashboardData();
 
       expect(result).toEqual([
         {
           id: 42,
           dashcardId: 100,
+          tabId: null,
+          filterSlugs: [],
           name: 'Card',
           description: null,
           display: null,
@@ -394,13 +538,15 @@ describe('statistics.service.ts', () => {
           json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]),
         });
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      const result = await fetchDashboardCardsData();
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      const { cards: result } = await fetchDashboardData();
 
       expect(result).toEqual([
         {
           id: 42,
           dashcardId: 100,
+          tabId: null,
+          filterSlugs: [],
           name: 'Carte 42',
           description: null,
           display: null,
@@ -443,8 +589,8 @@ describe('statistics.service.ts', () => {
           json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[3]]),
         });
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      const result = await fetchDashboardCardsData();
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      const { cards: result } = await fetchDashboardData();
 
       expect(result.map((card) => card.description)).toEqual(['Nombre total de requêtes', null, null]);
     });
@@ -473,8 +619,8 @@ describe('statistics.service.ts', () => {
           json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[2]]),
         });
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      const result = await fetchDashboardCardsData();
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      const { cards: result } = await fetchDashboardData();
 
       expect(result.map((card) => card.layout)).toEqual([{ col: 6, row: 0, sizeX: 12, sizeY: 9 }, null]);
     });
@@ -516,8 +662,8 @@ describe('statistics.service.ts', () => {
           json: async () => cardResult([{ name: 'total', base_type: 'type/Integer' }], [[9]]),
         });
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      const result = await fetchDashboardCardsData();
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      const { cards: result } = await fetchDashboardData();
 
       expect(result.map((card) => card.display)).toEqual(['pie', 'scalar']);
     });
@@ -566,8 +712,10 @@ describe('statistics.service.ts', () => {
             ),
         });
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      const [card] = await fetchDashboardCardsData();
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      const {
+        cards: [card],
+      } = await fetchDashboardData();
 
       expect(card.data.cols.map((col) => col.display_name)).toEqual(['Motif (dashcard)', 'Volume']);
     });
@@ -585,8 +733,10 @@ describe('statistics.service.ts', () => {
           json: async () => cardResult([{ name: 'raison', display_name: 'Raison', source: 'breakout' }], [['A']]),
         });
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      const [card] = await fetchDashboardCardsData();
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      const {
+        cards: [card],
+      } = await fetchDashboardData();
 
       expect(card.data.cols.map((col) => col.display_name)).toEqual(['Raison']);
     });
@@ -604,8 +754,8 @@ describe('statistics.service.ts', () => {
           json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]),
         });
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      await fetchDashboardCardsData({ entity_label: 'UA 27' });
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await fetchDashboardData({ entity_label: 'UA 27' });
 
       const metadataUrl = fetchMock.mock.calls[0][0] as string;
       const token = metadataUrl.split('/').pop();
@@ -632,8 +782,8 @@ describe('statistics.service.ts', () => {
           json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]),
         });
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      await fetchDashboardCardsData({ entity_label: 'UA 27' }, { start_date: '2026-01-01', end_date: '2026-03-31' });
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await fetchDashboardData({ entity_label: 'UA 27' }, { start_date: '2026-01-01', end_date: '2026-03-31' });
 
       const [metadataCall, cardCall] = fetchMock.mock.calls;
       const tokenFromUrl = (url: string) => url.match(/\/dashboard\/([^/?]+)/)?.[1] ?? '';
@@ -665,8 +815,8 @@ describe('statistics.service.ts', () => {
           json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]),
         });
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      await fetchDashboardCardsData({ entity_label: 'UA 27' }, { start_date: '2026-01-01' });
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await fetchDashboardData({ entity_label: 'UA 27' }, { start_date: '2026-01-01' });
 
       const cardUrl = new URL(fetchMock.mock.calls[1][0] as string);
       expect(cardUrl.searchParams.has('start_date')).toBe(false);
@@ -685,8 +835,8 @@ describe('statistics.service.ts', () => {
       vi.resetModules();
       mockedEnvVars.METABASE_DASHBOARD_ID = '';
 
-      const { fetchDashboardCardsData } = await import('./statistics.service.js');
-      await expect(fetchDashboardCardsData()).rejects.toThrow(/^503:Metabase dashboard id is not configured/);
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await expect(fetchDashboardData()).rejects.toThrow(/^503:Metabase dashboard id is not configured/);
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });

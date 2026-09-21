@@ -12,7 +12,7 @@ import { getEntiteById } from '../entites/entites.service.js';
 import { type ExportRequetesCsvWriter, prepareExportRequetesCsv } from './exportRequetes/exportRequetes.service.js';
 import { getExportRequetesRoute, getStatisticsDashboardRoute } from './statistics.route.js';
 import { StatisticsDashboardQuerySchema } from './statistics.schema.js';
-import { fetchDashboardCardsData } from './statistics.service.js';
+import { fetchDashboardData } from './statistics.service.js';
 
 const app = factoryWithLogs
   .createApp()
@@ -105,8 +105,8 @@ const app = factoryWithLogs
     };
 
     if (entiteIds === null) {
-      const cards = await fetchDashboardCardsData({}, optionalParams, 'national');
-      return c.json({ data: { cards } });
+      const dashboard = await fetchDashboardData({}, optionalParams, 'national');
+      return c.json({ data: dashboard });
     }
 
     if (!topEntiteId) {
@@ -129,8 +129,8 @@ const app = factoryWithLogs
     // Les bornes de date sont des filtres optionnels : le service ne les signe que si le dashboard
     // les déclare réellement, donc un dashboard sans filtre de date continue de fonctionner.
     // Voir docs/metabase_dashboards/FILTERS.md.
-    const cards = await fetchDashboardCardsData({ entity_label: topEntite.label }, optionalParams);
-    return c.json({ data: { cards } });
+    const dashboard = await fetchDashboardData({ entity_label: topEntite.label }, optionalParams);
+    return c.json({ data: dashboard });
   });
 
 export default app;
