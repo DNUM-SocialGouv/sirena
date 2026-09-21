@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 import type { Options } from './cli.js';
-import type { CardPlan, ParameterPlan } from './plan.js';
+import type { CardPlan, ParameterPlan, TabPlan } from './plan.js';
 import type { Plan, PlanContext } from './restore-plan.js';
 import { redactSecrets } from './secrets.js';
 import { isObject, type JsonObject } from './snapshot.js';
@@ -31,6 +31,28 @@ export function printPlan(ctx: PlanContext, plan: Plan, orphans: JsonObject[]): 
   }
   console.log(`   → ${created.length} to create, ${updated.length} to update, ${unchanged.length} unchanged`);
   console.log('');
+
+  const TAB_ICON: Record<TabPlan['entries'][number]['action'], string> = {
+    create: '+',
+    update: '~',
+    unchanged: '=',
+    remove: '-',
+  };
+  if (plan.tabPlan.entries.length > 0) {
+    console.log(`▸ Tabs (${plan.tabPlan.tabs.length})`);
+    for (const entry of plan.tabPlan.entries) {
+      const detail =
+        entry.action === 'create'
+          ? ' — missing on the target, will be added'
+          : entry.action === 'remove'
+            ? ' — absent from the snapshot, will be removed with its dashcards'
+            : entry.action === 'update'
+              ? ' — renamed or reordered'
+              : '';
+      console.log(`   ${TAB_ICON[entry.action]} ${entry.name}${detail}`);
+    }
+    console.log('');
+  }
 
   const newDashcards = plan.dashcardPlan.entries.filter((entry) => entry.isNew);
   const movedDashcards = plan.dashcardPlan.entries.filter((entry) => entry.changed && !entry.isNew);

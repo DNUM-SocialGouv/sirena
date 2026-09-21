@@ -278,7 +278,7 @@ Commit the regenerated JSON whenever a dashboard or one of its cards is edited i
 
 ### Restoring a snapshot
 
-The `op:metabase:restore-dashboard` script replays a snapshot onto an existing dashboard of another Metabase (typically integration → validation/production, see [docs/metabase_dashboards/DEPLOYMENT.md](docs/metabase_dashboards/DEPLOYMENT.md)). It matches cards, layout, filters and dashboard settings, and only ever writes with `--apply`.
+The `op:metabase:restore-dashboard` script replays a snapshot onto an existing dashboard of another Metabase (typically integration → validation/production, see [docs/metabase_dashboards/DEPLOYMENT.md](docs/metabase_dashboards/DEPLOYMENT.md)). It matches cards, tabs (by name), layout, filters and dashboard settings, and only ever writes with `--apply`.
 
 ```bash
 # Dry run: prints the plan, writes nothing

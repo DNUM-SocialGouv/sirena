@@ -140,6 +140,49 @@ describe('buildPlan', () => {
     expect(plan.dashboardChangedFields).toEqual([]);
   });
 
+  it('restores the tabs and lands every dashcard on its tab, stray ones on the first tab', () => {
+    const source = card(45, 'Nombre de requêtes');
+    const other = card(46, 'Délai moyen');
+    const dashboard = {
+      name: 'Stats',
+      tabs: [
+        { id: 10, name: 'Volumes', position: 0 },
+        { id: 11, name: 'Délais', position: 1 },
+      ],
+      dashcards: [
+        { ...dashcard(1, 45), dashboard_tab_id: 10 },
+        { ...dashcard(2, 46, 1), dashboard_tab_id: 11 },
+        { ...dashcard(3, 46, 2), dashboard_tab_id: null },
+      ],
+      parameters: [],
+    };
+    const ctx = contextOf({
+      snapshot: snapshotOf(dashboard, [source, other]),
+      targetDashboard: {
+        name: 'Stats (prod)',
+        tabs: [{ id: 50, name: 'Volumes', position: 0 }],
+        dashcards: [{ ...dashcard(900, 90), dashboard_tab_id: 50 }],
+        parameters: [],
+      },
+      plannedCards: [source, other],
+      targetCards: new Map([[90, card(90, 'Nombre de requêtes', { database_id: 1 })]]),
+      idMap: new Map([[45, 90]]),
+    });
+    const plan = buildPlan(ctx);
+
+    expect(plan.tabPlan.tabs).toEqual([
+      { id: 50, name: 'Volumes' },
+      { id: -1, name: 'Délais' },
+    ]);
+    expect(plan.dashcardPlan.entries.map((entry) => [entry.sourceCardId, entry.payload.dashboard_tab_id])).toEqual([
+      [45, 50],
+      [46, -1],
+      [46, 50],
+    ]);
+    expect(plan.dashboardChangedFields).toContain('tabs');
+    expect(plan.errors).toEqual([]);
+  });
+
   it('refuses a snapshot whose embedding_params names a filter no longer declared', () => {
     const dashboard = {
       name: 'Stats',

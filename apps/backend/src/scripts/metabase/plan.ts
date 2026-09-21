@@ -443,6 +443,88 @@ export function planValuesSourceCards(input: {
   return { reuse, create: [...create].sort((a, b) => a - b) };
 }
 
+export type TabAction = 'create' | 'update' | 'unchanged' | 'remove';
+
+export type TabPlanEntry = {
+  name: string;
+  action: TabAction;
+  sourceId: number | null;
+  targetId: number | null;
+};
+
+export type TabPlan = {
+  entries: TabPlanEntry[];
+
+  tabs: { id: number; name: string }[];
+
+  idRemap: Map<number, number>;
+  removedTabIds: Set<number>;
+  hasChanges: boolean;
+};
+
+const tabName = (tab: JsonObject): string => (typeof tab.name === 'string' ? tab.name : '');
+const tabPosition = (tab: JsonObject): number => (typeof tab.position === 'number' ? tab.position : 0);
+
+export function planTabs(input: { sourceTabs: unknown; targetTabs: unknown }): TabPlan {
+  const sourceTabs = (Array.isArray(input.sourceTabs) ? input.sourceTabs : [])
+    .filter(isObject)
+    .filter((tab) => isEntityId(tab.id))
+    .sort((a, b) => tabPosition(a) - tabPosition(b));
+  const targetTabs = (Array.isArray(input.targetTabs) ? input.targetTabs : [])
+    .filter(isObject)
+    .filter((tab) => isEntityId(tab.id))
+    .sort((a, b) => tabPosition(a) - tabPosition(b));
+
+  const claimed = new Set<number>();
+  const claimByName = (source: JsonObject, key: (name: string) => string): JsonObject | undefined => {
+    const wanted = key(tabName(source));
+    const match = targetTabs.find((tab) => !claimed.has(tab.id as number) && key(tabName(tab)) === wanted);
+    if (match) claimed.add(match.id as number);
+    return match;
+  };
+
+  const entries: TabPlanEntry[] = [];
+  const tabs: { id: number; name: string }[] = [];
+  const idRemap = new Map<number, number>();
+  let nextPlaceholderId = -1;
+
+  sourceTabs.forEach((source, index) => {
+    const sourceId = source.id as number;
+    const name = tabName(source);
+    const target = claimByName(source, (n) => n) ?? claimByName(source, normalizeName);
+
+    if (!target) {
+      const placeholderId = nextPlaceholderId--;
+      idRemap.set(sourceId, placeholderId);
+      tabs.push({ id: placeholderId, name });
+      entries.push({ name, action: 'create', sourceId, targetId: null });
+      return;
+    }
+
+    const targetId = target.id as number;
+    idRemap.set(sourceId, targetId);
+    tabs.push({ id: targetId, name });
+    const unchanged = tabName(target) === name && targetTabs.indexOf(target) === index;
+    entries.push({ name, action: unchanged ? 'unchanged' : 'update', sourceId, targetId });
+  });
+
+  const removedTabIds = new Set<number>();
+  for (const orphan of targetTabs) {
+    const targetId = orphan.id as number;
+    if (claimed.has(targetId)) continue;
+    removedTabIds.add(targetId);
+    entries.push({ name: tabName(orphan), action: 'remove', sourceId: null, targetId });
+  }
+
+  return {
+    entries,
+    tabs,
+    idRemap,
+    removedTabIds,
+    hasChanges: entries.some((entry) => entry.action !== 'unchanged'),
+  };
+}
+
 export type CardAction = 'create' | 'update' | 'unchanged';
 
 export type CardPlan = {
@@ -561,6 +643,10 @@ export function planDashcards(input: {
   targetCardName: (cardId: number) => string;
 
   parameterIdRemap?: Map<string, string>;
+
+  resolveTabId?: (sourceTabId: number | null) => number | null;
+
+  removedTabIds?: Set<number>;
 }): DashcardPlan {
   const {
     sourceDashcards,
@@ -569,6 +655,8 @@ export function planDashcards(input: {
     knownParameterIds,
     targetCardName,
     parameterIdRemap = new Map<string, string>(),
+    resolveTabId = () => null,
+    removedTabIds = new Set<number>(),
   } = input;
   const resolveParameterId = (parameterId: string): string => parameterIdRemap.get(parameterId) ?? parameterId;
 
@@ -580,6 +668,8 @@ export function planDashcards(input: {
 
   const availableVirtual: JsonObject[] = [];
   for (const dashcard of sortedTargets) {
+    // Metabase deletes the dashcards of a removed tab along with it: reusing one would resurrect it.
+    if (typeof dashcard.dashboard_tab_id === 'number' && removedTabIds.has(dashcard.dashboard_tab_id)) continue;
     if (typeof dashcard.card_id !== 'number') {
       availableVirtual.push(dashcard);
       continue;
@@ -652,7 +742,12 @@ export function planDashcards(input: {
       visualization_settings: dashcard.visualization_settings ?? {},
     };
     if (targetSupports('action_id')) payload.action_id = dashcard.action_id ?? null;
-    if (targetSupports('dashboard_tab_id')) payload.dashboard_tab_id = null;
+    const tabId = resolveTabId(typeof dashcard.dashboard_tab_id === 'number' ? dashcard.dashboard_tab_id : null);
+    if (targetSupports('dashboard_tab_id')) {
+      payload.dashboard_tab_id = tabId;
+    } else if (tabId !== null) {
+      errors.push('The snapshot uses dashboard tabs but the target Metabase does not support them');
+    }
     if (targetSupports('inline_parameters')) {
       payload.inline_parameters = (Array.isArray(dashcard.inline_parameters) ? dashcard.inline_parameters : []).map(
         (parameterId) => (typeof parameterId === 'string' ? resolveParameterId(parameterId) : parameterId),
@@ -686,5 +781,5 @@ export function planDashcards(input: {
     }));
 
   const hasChanges = removed.length > 0 || entries.some((entry) => entry.changed);
-  return { entries, removed, hasChanges, warnings, errors };
+  return { entries, removed, hasChanges, warnings, errors: [...new Set(errors)] };
 }

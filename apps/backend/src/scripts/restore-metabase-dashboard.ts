@@ -122,6 +122,21 @@ async function verify(
     differences.push({ scope: 'dashboard', field: 'dashcards.length' });
   }
 
+  const liveTabNames = (Array.isArray(dashboard.tabs) ? dashboard.tabs : [])
+    .filter(isObject)
+    .sort(
+      (a, b) => (typeof a.position === 'number' ? a.position : 0) - (typeof b.position === 'number' ? b.position : 0),
+    )
+    .map((tab) => tab.name);
+  if (
+    !isDeepEqual(
+      liveTabNames,
+      plan.tabPlan.tabs.map((tab) => tab.name),
+    )
+  ) {
+    differences.push({ scope: 'dashboard', field: 'tabs' });
+  }
+
   for (const card of cardPlans) {
     if (card.targetId === null) continue;
     const live = await client.get<JsonObject>(entityPath('card', card.targetId));
@@ -134,7 +149,7 @@ async function verify(
 
   const blocking = differences.some((difference) =>
     difference.scope === 'dashboard'
-      ? ['enable_embedding', 'embedding_params', 'parameters', 'dashcards.length'].includes(difference.field)
+      ? ['enable_embedding', 'embedding_params', 'parameters', 'tabs', 'dashcards.length'].includes(difference.field)
       : difference.field === 'dataset_query',
   );
   return { ok: differences.length === 0, blocking, differences };
@@ -168,9 +183,6 @@ async function main(): Promise<void> {
         `from ${snapshot.dir}/cards/. Re-run \`pnpm op:metabase:export-dashboard ${options.source}\`.`,
     );
   }
-  if (Array.isArray(snapshot.dashboard.tabs) && snapshot.dashboard.tabs.length > 0) {
-    throw new UserError('Snapshot uses dashboard tabs, which this script does not support yet');
-  }
 
   const targetDashboard = await client
     .get<JsonObject>(entityPath('dashboard', options.target))
@@ -184,9 +196,6 @@ async function main(): Promise<void> {
   if (targetDashboard.archived === true) throw new UserError(`Target dashboard ${options.target} is archived`);
   if (targetDashboard.can_write === false) {
     throw new UserError(`The API key has no write access to dashboard ${options.target}`);
-  }
-  if (Array.isArray(targetDashboard.tabs) && targetDashboard.tabs.length > 0) {
-    throw new UserError(`Target dashboard ${options.target} uses tabs, which this script does not support yet`);
   }
   if (options.source === options.target) {
     console.log('ℹ Source and target ids are identical: restoring the snapshot onto itself (drift rollback).');
@@ -314,6 +323,7 @@ async function main(): Promise<void> {
       changedFields: card.changedFields,
       databaseId: card.databaseId,
     })),
+    tabs: plan.tabPlan.entries,
     dashcards: {
       total: plan.dashcardPlan.entries.length,
       added: plan.dashcardPlan.entries.filter((entry) => entry.isNew).length,
@@ -383,10 +393,13 @@ async function main(): Promise<void> {
     executed.push(`dashboard #${options.target} already matches the snapshot — not rewritten`);
   } else {
     const dashcards = finalPlan.dashcardPlan.entries.map((entry) => ({ id: entry.id, ...entry.payload }));
-    await client.put(entityPath('dashboard', options.target), { ...finalPlan.dashboardPayload, dashcards });
+    // Tabs travel with the dashcards: Metabase only touches them when `dashcards` is sent, and a tab
+    // missing from `tabs` is deleted together with its dashcards.
+    const { tabs } = finalPlan.tabPlan;
+    await client.put(entityPath('dashboard', options.target), { ...finalPlan.dashboardPayload, tabs, dashcards });
     executed.push(
       `updated dashboard #${options.target} (${finalPlan.dashboardChangedFields.join(', ')}; ` +
-        `${dashcards.length} dashcards)`,
+        `${tabs.length} tabs, ${dashcards.length} dashcards)`,
     );
   }
 

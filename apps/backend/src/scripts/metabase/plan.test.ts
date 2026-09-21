@@ -6,6 +6,7 @@ import {
   planCard,
   planDashcards,
   planParameters,
+  planTabs,
   planValuesSourceCards,
   referencesPhysicalSchema,
   remapValuesSources,
@@ -337,6 +338,140 @@ describe('planDashcards', () => {
     expect(plan.entries[0].payload.parameter_mappings).toEqual([
       { card_id: 301, parameter_id: 'cfaa17bb', target: ['variable', ['template-tag', 'x']] },
     ]);
+  });
+});
+
+describe('planDashcards tabs', () => {
+  const tabbed = (id: number, cardId: number, tabId: number | null): JsonObject => ({
+    id,
+    card_id: cardId,
+    dashboard_tab_id: tabId,
+    row: 0,
+    col: 0,
+    size_x: 6,
+    size_y: 4,
+    series: [],
+    parameter_mappings: [],
+    visualization_settings: {},
+  });
+
+  it('places each dashcard on the tab the plan resolved for it', () => {
+    const plan = planDashcards({
+      sourceDashcards: [tabbed(1, 45, 10), tabbed(2, 46, 11)],
+      targetDashcards: [tabbed(900, 301, 50)],
+      resolveCardId: (id) => (id === 45 ? 301 : 302),
+      knownParameterIds: new Set(),
+      targetCardName: () => 'x',
+      resolveTabId: (tabId) => (tabId === 10 ? 50 : -1),
+    });
+    expect(plan.entries.map((entry) => [entry.cardId, entry.payload.dashboard_tab_id])).toEqual([
+      [301, 50],
+      [302, -1],
+    ]);
+    expect(plan.errors).toEqual([]);
+  });
+
+  it('does not reuse a dashcard sitting on a tab that is being removed', () => {
+    const plan = planDashcards({
+      sourceDashcards: [tabbed(1, 45, 10)],
+      targetDashcards: [tabbed(900, 301, 50)],
+      resolveCardId: () => 301,
+      knownParameterIds: new Set(),
+      targetCardName: () => 'x',
+      resolveTabId: () => -1,
+      removedTabIds: new Set([50]),
+    });
+    expect(plan.entries[0]).toMatchObject({ isNew: true, cardId: 301 });
+    expect(plan.removed).toEqual([{ dashcardId: 900, cardId: 301, name: 'x' }]);
+  });
+
+  it('keeps dashboard_tab_id null when the snapshot has no tabs', () => {
+    const plan = planDashcards({
+      sourceDashcards: [tabbed(1, 45, null)],
+      targetDashcards: [],
+      resolveCardId: () => 301,
+      knownParameterIds: new Set(),
+      targetCardName: () => 'x',
+    });
+    expect(plan.entries[0].payload.dashboard_tab_id).toBeNull();
+  });
+
+  it('refuses a tabbed snapshot when the target Metabase knows nothing about tabs', () => {
+    const plan = planDashcards({
+      sourceDashcards: [tabbed(1, 45, 10)],
+      targetDashcards: [{ id: 900, card_id: 301, row: 0, col: 0, size_x: 6, size_y: 4 }],
+      resolveCardId: () => 301,
+      knownParameterIds: new Set(),
+      targetCardName: () => 'x',
+      resolveTabId: () => -1,
+    });
+    expect(plan.errors).toEqual(['The snapshot uses dashboard tabs but the target Metabase does not support them']);
+    expect(plan.entries[0].payload).not.toHaveProperty('dashboard_tab_id');
+  });
+});
+
+describe('planTabs', () => {
+  const tab = (id: number, name: string, position: number): JsonObject => ({ id, name, position });
+
+  it('returns no tab when neither side has any', () => {
+    const plan = planTabs({ sourceTabs: [], targetTabs: undefined });
+    expect(plan).toMatchObject({ entries: [], tabs: [], hasChanges: false });
+  });
+
+  it('matches the tabs by name, keeping the target ids so their dashcards survive', () => {
+    const plan = planTabs({
+      sourceTabs: [tab(10, 'Volumes', 0), tab(11, 'Délais', 1)],
+      targetTabs: [tab(50, 'Volumes', 0), tab(51, 'Délais', 1)],
+    });
+    expect(plan.tabs).toEqual([
+      { id: 50, name: 'Volumes' },
+      { id: 51, name: 'Délais' },
+    ]);
+    expect([...plan.idRemap]).toEqual([
+      [10, 50],
+      [11, 51],
+    ]);
+    expect(plan.entries.map((entry) => entry.action)).toEqual(['unchanged', 'unchanged']);
+    expect(plan.hasChanges).toBe(false);
+  });
+
+  it('creates a missing tab with a negative placeholder id, in snapshot order', () => {
+    const plan = planTabs({
+      sourceTabs: [tab(11, 'Délais', 1), tab(10, 'Volumes', 0)],
+      targetTabs: [tab(50, 'Volumes', 0)],
+    });
+    expect(plan.tabs).toEqual([
+      { id: 50, name: 'Volumes' },
+      { id: -1, name: 'Délais' },
+    ]);
+    expect(plan.idRemap.get(11)).toBe(-1);
+    expect(plan.entries).toEqual([
+      { name: 'Volumes', action: 'unchanged', sourceId: 10, targetId: 50 },
+      { name: 'Délais', action: 'create', sourceId: 11, targetId: null },
+    ]);
+  });
+
+  it('removes a target tab the snapshot no longer has', () => {
+    const plan = planTabs({
+      sourceTabs: [tab(10, 'Volumes', 0)],
+      targetTabs: [tab(50, 'Volumes', 0), tab(52, 'Brouillon', 1)],
+    });
+    expect(plan.tabs).toEqual([{ id: 50, name: 'Volumes' }]);
+    expect(plan.removedTabIds).toEqual(new Set([52]));
+    expect(plan.entries.at(-1)).toEqual({ name: 'Brouillon', action: 'remove', sourceId: null, targetId: 52 });
+    expect(plan.hasChanges).toBe(true);
+  });
+
+  it('flags a renamed (accent-insensitive match) or reordered tab as an update', () => {
+    const plan = planTabs({
+      sourceTabs: [tab(10, 'Délais', 0), tab(11, 'Volumes', 1)],
+      targetTabs: [tab(50, 'Volumes', 0), tab(51, 'Delais', 1)],
+    });
+    expect(plan.tabs).toEqual([
+      { id: 51, name: 'Délais' },
+      { id: 50, name: 'Volumes' },
+    ]);
+    expect(plan.entries.map((entry) => entry.action)).toEqual(['update', 'update']);
   });
 });
 

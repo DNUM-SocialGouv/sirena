@@ -9,7 +9,9 @@ import {
   planCard,
   planDashcards,
   planParameters,
+  planTabs,
   remapValuesSources,
+  type TabPlan,
 } from './plan.js';
 import { type DashboardSnapshot, getDashcards, isDeepEqual, isObject, type JsonObject } from './snapshot.js';
 import { UserError } from './user-error.js';
@@ -47,6 +49,7 @@ export function resolveDatabaseId(
 export type Plan = {
   cardPlans: CardPlan[];
   dashcardPlan: DashcardPlan;
+  tabPlan: TabPlan;
   dashboardPayload: JsonObject;
   dashboardChangedFields: string[];
   parameterPlan: ParameterPlan;
@@ -143,12 +146,23 @@ export function buildPlan(ctx: PlanContext): Plan {
     if (typeof parameter.slug === 'string') declaredSlugs.add(parameter.slug);
   }
 
+  const tabPlan = planTabs({ sourceTabs: snapshot.dashboard.tabs, targetTabs: targetDashboard.tabs });
+  // Metabase refuses a dashcard without tab on a tabbed dashboard: a stray one lands on the first tab,
+  // which is also where the /statistiques page puts it.
+  const [firstTab] = tabPlan.tabs;
+  const resolveTabId = (sourceTabId: number | null): number | null => {
+    if (!firstTab) return null;
+    return (sourceTabId === null ? undefined : tabPlan.idRemap.get(sourceTabId)) ?? firstTab.id;
+  };
+
   const dashcardPlan = planDashcards({
     sourceDashcards: getDashcards(snapshot.dashboard),
     targetDashcards: getDashcards(targetDashboard),
     resolveCardId,
     knownParameterIds,
     parameterIdRemap: parameterPlan.idRemap,
+    resolveTabId,
+    removedTabIds: tabPlan.removedTabIds,
     targetCardName: (cardId) => {
       const name = targetCards.get(cardId)?.name;
       return typeof name === 'string' ? name : `card ${cardId}`;
@@ -188,11 +202,13 @@ export function buildPlan(ctx: PlanContext): Plan {
   const dashboardChangedFields = Object.keys(dashboardPayload).filter(
     (field) => !isDeepEqual(dashboardPayload[field], targetDashboard[field]),
   );
+  if (tabPlan.hasChanges) dashboardChangedFields.push('tabs');
   if (dashcardPlan.hasChanges) dashboardChangedFields.push('dashcards');
 
   return {
     cardPlans,
     dashcardPlan,
+    tabPlan,
     dashboardPayload,
     dashboardChangedFields,
     parameterPlan,
