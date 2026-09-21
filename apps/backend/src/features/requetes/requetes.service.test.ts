@@ -714,6 +714,7 @@ describe('requetes.service.ts', () => {
           estLieAuSignalement: null,
           numerosSignalement: '',
           sirecDepartement: null,
+          updatedAt: new Date(),
         });
 
         situation.faits.forEach((fait) => {
@@ -963,6 +964,7 @@ describe('requetes.service.ts', () => {
           estLieAuSignalement: null,
           numerosSignalement: '',
           sirecDepartement: null,
+          updatedAt: new Date(),
         });
 
         situation.faits.forEach((fait) => {
@@ -1080,11 +1082,8 @@ describe('requetes.service.ts', () => {
           { updatedAt: new Date('2025-02-01T00:00:00.000Z').toISOString() },
         ),
       ).rejects.toMatchObject({
-        message: 'CONFLICT: The participant identity has been modified by another user.',
-        conflictData: {
-          serverData: existing,
-          serverUpdatedAt: serverUpdatedAt.toISOString(),
-        },
+        message: 'The requete has been modified by another user.',
+        cause: { serverData: existing, serverUpdatedAt: serverUpdatedAt.toISOString() },
       });
 
       expect(prisma.requete.update).not.toHaveBeenCalled();

@@ -115,6 +115,9 @@ vi.mock('../../libs/prisma.js', () => ({
     requeteEtape: {
       findFirst: vi.fn(),
     },
+    situation: {
+      findUnique: vi.fn(),
+    },
     situationEntite: {
       findFirst: vi.fn(),
     },
@@ -1638,6 +1641,29 @@ describe('requetesEntite.service', () => {
           }),
         }),
       );
+    });
+
+    it('reports a conflict with the server state when identite updatedAt does not match', async () => {
+      const serverUpdatedAt = new Date('2024-01-01T12:00:00.000Z');
+      const participant = { id: 'participant123', identite: { id: 'identite123', updatedAt: serverUpdatedAt } };
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        ...mockRequeteEntite.requete,
+        participant,
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+
+      await expect(
+        updateRequeteParticipant(
+          'req123',
+          { nom: 'Updated Name' },
+          { participant: { updatedAt: new Date('2024-01-01T10:00:00.000Z').toISOString() } },
+        ),
+      ).rejects.toMatchObject({
+        message: 'The participant identity has been modified by another user.',
+        cause: { serverData: participant, serverUpdatedAt: serverUpdatedAt.toISOString() },
+      });
+
+      expect(prisma.requete.update).not.toHaveBeenCalled();
     });
   });
 
@@ -3492,6 +3518,136 @@ describe('requetesEntite.service', () => {
 
       // Should not add any new entities
       expect(mockTx.situationEntite.upsert).not.toHaveBeenCalled();
+    });
+
+    describe('optimistic lock on updateRequeteSituation', () => {
+      const requeteId = 'req1';
+      const situationId = 'sit1';
+      const userTopEntiteId = 'root1';
+      const serverUpdatedAt = new Date('2024-01-01T12:00:00.000Z');
+      const staleUpdatedAt = new Date('2024-01-01T10:00:00.000Z').toISOString();
+
+      const buildRequeteWithSituation = () =>
+        ({
+          id: requeteId,
+          situations: [{ id: situationId, faits: [], updatedAt: serverUpdatedAt }],
+        }) as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+
+      const fullSituation = {
+        id: situationId,
+        updatedAt: serverUpdatedAt,
+        numerosSignalement: '',
+        situationEntites: [{ entite: { id: 'ent1' } }],
+      };
+
+      const emptySituationData = {} as Parameters<typeof updateRequeteSituation>[2];
+
+      beforeEach(() => {
+        // clearAllMocks leaves the `*Once` queues seeded by the surrounding tests in place.
+        vi.clearAllMocks();
+        vi.mocked(prisma.requete.findUnique).mockReset();
+        vi.mocked(prisma.requeteEntite.findMany).mockReset();
+        vi.mocked(prisma.situation.findUnique).mockReset();
+        vi.mocked(prisma.$transaction).mockReset();
+        vi.mocked(buildEntitesTraitement).mockReset();
+        vi.mocked(getEntiteAscendanteInfo).mockReset();
+      });
+
+      it('reports a conflict with the enriched server situation when updatedAt does not match', async () => {
+        vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(buildRequeteWithSituation());
+        vi.mocked(prisma.situation.findUnique).mockResolvedValueOnce(
+          fullSituation as unknown as Awaited<ReturnType<typeof prisma.situation.findUnique>>,
+        );
+        vi.mocked(buildEntitesTraitement).mockResolvedValueOnce([{ entiteId: 'ent1' }] as unknown as Awaited<
+          ReturnType<typeof buildEntitesTraitement>
+        >);
+
+        await expect(
+          updateRequeteSituation(
+            requeteId,
+            situationId,
+            emptySituationData,
+            userTopEntiteId,
+            'user1',
+            undefined,
+            undefined,
+            { situation: { updatedAt: staleUpdatedAt } },
+          ),
+        ).rejects.toMatchObject({
+          message: 'The situation has been modified by another user.',
+          cause: {
+            serverData: { ...fullSituation, traitementDesFaits: { entites: [{ entiteId: 'ent1' }] } },
+            serverUpdatedAt: serverUpdatedAt.toISOString(),
+          },
+        });
+      });
+
+      it('does not write anything when the situation was modified by another user', async () => {
+        vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(buildRequeteWithSituation());
+        vi.mocked(prisma.situation.findUnique).mockResolvedValueOnce(
+          fullSituation as unknown as Awaited<ReturnType<typeof prisma.situation.findUnique>>,
+        );
+        vi.mocked(buildEntitesTraitement).mockResolvedValueOnce(
+          [] as unknown as Awaited<ReturnType<typeof buildEntitesTraitement>>,
+        );
+
+        await expect(
+          updateRequeteSituation(
+            requeteId,
+            situationId,
+            emptySituationData,
+            userTopEntiteId,
+            'user1',
+            undefined,
+            undefined,
+            { situation: { updatedAt: staleUpdatedAt } },
+          ),
+        ).rejects.toThrow('The situation has been modified by another user.');
+
+        expect(prisma.$transaction).not.toHaveBeenCalled();
+      });
+
+      it('updates the situation when the controls updatedAt matches the server one', async () => {
+        const mockTx = createMockTx({
+          situation: {
+            findUnique: vi.fn().mockResolvedValue({ id: situationId, requeteId }),
+            update: vi.fn().mockResolvedValue({}),
+          },
+          situationEntite: {
+            findMany: vi.fn().mockResolvedValue([{ entiteId: 'ent1' }]),
+            deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+            upsert: vi.fn().mockResolvedValue({}),
+          },
+          requeteEntite: {
+            findMany: vi.fn().mockResolvedValue([{ entiteId: userTopEntiteId }]),
+            updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+          },
+          requete: {
+            findUnique: vi.fn().mockResolvedValue({ id: requeteId, situations: [] }),
+          },
+        });
+
+        vi.mocked(getEntiteAscendanteInfo).mockResolvedValue({ entiteId: userTopEntiteId, level: 1 });
+        vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(buildRequeteWithSituation());
+        vi.mocked(prisma.requeteEntite.findMany).mockResolvedValueOnce([]);
+        vi.mocked(prisma.$transaction).mockImplementationOnce(async (callback) => {
+          return callback(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+        });
+
+        await updateRequeteSituation(
+          requeteId,
+          situationId,
+          { traitementDesFaits: { entites: [{ entiteId: 'ent1' }] } } as Parameters<typeof updateRequeteSituation>[2],
+          userTopEntiteId,
+          'user1',
+          undefined,
+          undefined,
+          { situation: { updatedAt: serverUpdatedAt.toISOString() } },
+        );
+
+        expect(prisma.situation.findUnique).not.toHaveBeenCalled();
+        expect(mockTx.situation.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: situationId } }));
+      });
     });
   });
 

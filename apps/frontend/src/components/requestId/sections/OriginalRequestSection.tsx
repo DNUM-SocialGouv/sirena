@@ -12,10 +12,16 @@ import {
 } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
 import { clsx } from 'clsx';
-import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ConflictResolutionDialog } from '@/components/conflictDialog/ConflictResolutionDialog';
 import { useCreateRequeteEntite } from '@/hooks/mutations/createRequeteEntite.hook';
-import { useRequeteDateTypeSave } from '@/hooks/mutations/useRequeteDateTypeSave';
+import {
+  type RequeteDateTypeData,
+  type UpdateReceptionType,
+  useRequeteDateTypeSave,
+} from '@/hooks/mutations/useRequeteDateTypeSave';
 import { useCanEdit } from '@/hooks/useCanEdit';
+import { requeteDateTypeFieldMetadata } from '@/lib/fieldMetadata';
 import style from './OriginalRequestSection.module.css';
 
 type OriginalRequestSectionProps = {
@@ -139,6 +145,23 @@ const formatDateForInput = (value?: string | null) => {
   return date.toISOString().split('T')[0];
 };
 
+const normalizeReceptionType = (value?: ReceptionType | string | null): UpdateReceptionType | null =>
+  !value || value === RECEPTION_TYPE.FORMULAIRE ? null : (value as UpdateReceptionType);
+
+/** Same normalisation as the submitted payload, so the merge compares all three versions on identical ground. */
+const toComparableFields = (
+  source: OriginalRequestSectionProps['data'] | undefined,
+  withProvenance: boolean,
+): RequeteDateTypeData => ({
+  receptionDate: formatDateForInput(source?.receptionDate) || null,
+  dateDemandeDeclarant: formatDateForInput(source?.dateDemandeDeclarant) || null,
+  receptionTypeId: normalizeReceptionType(source?.receptionTypeId),
+  ...(withProvenance && {
+    provenanceId: source?.provenanceId || null,
+    provenancePrecision: source?.provenancePrecision?.trim() || null,
+  }),
+});
+
 const provenanceOptions = Object.entries(requeteProvenanceLabels).map(([value, label]) => ({ value, label }));
 
 export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: OriginalRequestSectionProps) => {
@@ -153,6 +176,8 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
   const [provenancePrecisionValue, setProvenancePrecisionValue] = useState<string>(data?.provenancePrecision ?? '');
   const [isSaving, setIsSaving] = useState(false);
   const [isEdit, setIsEdit] = useState<boolean>(false);
+  const editButtonRef = useRef<HTMLButtonElement>(null);
+  const shouldRefocusEditRef = useRef(false);
   const navigate = useNavigate();
 
   const showProvenance = data?.receptionTypeId !== RECEPTION_TYPE.FORMULAIRE;
@@ -178,13 +203,25 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
   const { canEdit } = useCanEdit({ requeteId: requestId });
   const isNotEditable = data?.receptionTypeId === RECEPTION_TYPE.FORMULAIRE;
   const createRequeteMutation = useCreateRequeteEntite();
-  const { handleSave } = useRequeteDateTypeSave({
-    requestId: requestId || '',
-    onRefetch: onEdit || (() => {}),
-    requeteUpdatedAt: updatedAt,
-  });
-  const normalizeReceptionType = (value: ReceptionType | '') =>
-    value === RECEPTION_TYPE.FORMULAIRE ? null : value || null;
+  const { handleSave, handleConflictResolve, handleConflictCancel, conflicts, showConflictDialog, beginEditSession } =
+    useRequeteDateTypeSave({
+      requestId: requestId || '',
+      onRefetch: onEdit || (() => {}),
+      requeteUpdatedAt: updatedAt,
+      formatFromServer: (serverData) =>
+        toComparableFields(serverData as OriginalRequestSectionProps['data'], showProvenance),
+      onSaved: () => {
+        shouldRefocusEditRef.current = true;
+        setIsEdit(false);
+      },
+    });
+
+  // The form that held the focus is unmounted on success: hand it back to the button that opened it.
+  useEffect(() => {
+    if (isEdit || !shouldRefocusEditRef.current) return;
+    shouldRefocusEditRef.current = false;
+    editButtonRef.current?.focus();
+  }, [isEdit]);
 
   const receptionOptions = useMemo(
     () =>
@@ -201,6 +238,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
   );
 
   const handleSubmit = async () => {
+    if (isSaving) return;
     setIsSaving(true);
 
     const payload = {
@@ -224,7 +262,6 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
       }
 
       await handleSave(payload);
-      setIsEdit(false);
     } finally {
       setIsSaving(false);
     }
@@ -235,7 +272,11 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
     handleSubmit();
   };
 
-  const handleEditClick = useCallback(() => setIsEdit(true), []);
+  const handleEditClick = useCallback(() => {
+    // Freeze the version being edited here, so a background refetch cannot move the lock onto someone else's write.
+    beginEditSession(toComparableFields(data, showProvenance));
+    setIsEdit(true);
+  }, [beginEditSession, data, showProvenance]);
 
   const hasRequestData = Boolean(dateValue || typeValue || provenanceValue || dateDemandeDeclarantValue);
 
@@ -330,9 +371,13 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
                 </>
               )}
               <div className={clsx(fr.cx('fr-col-12'), 'display-end')}>
-                <Button disabled={isSaving} type="submit">
+                {/* aria-disabled rather than disabled: a disabled button loses the focus and announces nothing. */}
+                <Button type="submit" nativeButtonProps={{ 'aria-disabled': isSaving }}>
                   Valider
                 </Button>
+                <p role="status" className="fr-sr-only">
+                  {isSaving ? 'Enregistrement en cours' : ''}
+                </p>
               </div>
             </div>
           </form>
@@ -352,6 +397,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
             )}
             {canEdit && !isNotEditable && (
               <Button
+                ref={editButtonRef}
                 className={style.editButton}
                 iconId="fr-icon-pencil-line"
                 priority="tertiary no outline"
@@ -367,6 +413,13 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
           </div>
         )}
       </div>
+      <ConflictResolutionDialog
+        conflicts={conflicts}
+        onResolve={handleConflictResolve}
+        onCancel={handleConflictCancel}
+        isOpen={showConflictDialog}
+        fieldMetadata={requeteDateTypeFieldMetadata}
+      />
     </div>
   );
 };
