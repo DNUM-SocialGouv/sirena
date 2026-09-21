@@ -3,7 +3,6 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
-import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { Route, RouteComponent } from './$entiteId.index';
 
 const { addToastSpy, editEntiteAdminMutateAsyncSpy } = vi.hoisted(() => ({
@@ -31,8 +30,12 @@ vi.mock('@/hooks/queries/entites.hook', () => ({
   }),
 }));
 
+const { guardRoles } = vi.hoisted(() => ({ guardRoles: [] as unknown[] }));
 vi.mock('@/lib/auth-guards', () => ({
-  requireAuthAndRoles: vi.fn(() => 'mocked-super-admin-guard'),
+  requireAuthAndRoles: vi.fn((roles: unknown) => {
+    guardRoles.push(roles);
+    return 'mocked-super-admin-guard';
+  }),
 }));
 
 vi.mock('@sirena/ui', async () => {
@@ -97,7 +100,7 @@ afterEach(() => {
 
 describe('Admin entity edit route', () => {
   it('restricts the route to SUPER_ADMIN users', () => {
-    expect(vi.mocked(requireAuthAndRoles)).toHaveBeenCalledWith([ROLES.SUPER_ADMIN]);
+    expect(guardRoles).toEqual([[ROLES.SUPER_ADMIN]]);
     expect(Route.options.beforeLoad).toBe('mocked-super-admin-guard');
   });
 

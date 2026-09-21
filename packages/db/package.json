@@ -47,7 +47,7 @@
     "@types/pg": "^8.23.1",
     "prisma": "catalog:",
     "prisma-erd-generator": "^3.2.1",
-    "puppeteer": "^25.9.0",
+    "puppeteer": "^25.11.0",
     "typescript": "catalog:"
   }
 }
