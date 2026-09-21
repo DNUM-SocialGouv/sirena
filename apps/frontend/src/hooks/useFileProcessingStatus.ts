@@ -51,7 +51,9 @@ export const useFileProcessingStatus = ({
   }, [fileId]);
 
   useEffect(() => {
-    if (!fileId || pollingStoppedRef.current || isComplete || sseConnected) return;
+    if (!fileId || pollingStoppedRef.current || getFileProcessingState(fileStatus).isComplete || sseConnected) {
+      return;
+    }
 
     if (pollStartedAtRef.current === null) {
       pollStartedAtRef.current = Date.now();
@@ -63,8 +65,9 @@ export const useFileProcessingStatus = ({
     }
 
     const interval = setInterval(pollStatus, POLL_INTERVAL_MS);
+
     return () => clearInterval(interval);
-  }, [fileId, initialStatus, isComplete, pollStatus, sseConnected]);
+  }, [fileId, fileStatus, initialStatus, pollStatus, sseConnected]);
 
   return fileStatus;
 };
