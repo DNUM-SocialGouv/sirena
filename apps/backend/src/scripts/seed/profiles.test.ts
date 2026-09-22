@@ -7,7 +7,7 @@ import { seedUsers } from './users.factory.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
-    user: { upsert: vi.fn().mockResolvedValue({}) },
+    user: { upsert: vi.fn(async ({ create }) => ({ id: create.id ?? 'generated-id' })) },
     entite: { findFirst: vi.fn() },
   },
 }));

@@ -39,8 +39,9 @@ const upsertUser = async (spec: UserSpec): Promise<SeededUser> => {
     usual_name: spec.nom,
   } satisfies Prisma.InputJsonObject;
 
-  await prisma.user.upsert({
+  const user = await prisma.user.upsert({
     where: { email: spec.email },
+    select: { id: true },
     update: {
       prenom: spec.prenom,
       nom: spec.nom,
@@ -61,6 +62,10 @@ const upsertUser = async (spec: UserSpec): Promise<SeededUser> => {
       entiteId: spec.entiteId,
     },
   });
+
+  if (spec.id && user.id !== spec.id) {
+    throw new Error(`Identifiant fixe non respecté pour ${spec.email} : attendu "${spec.id}", trouvé "${user.id}".`);
+  }
 
   return { email: spec.email, role: spec.role, entite: spec.entiteLabel };
 };
