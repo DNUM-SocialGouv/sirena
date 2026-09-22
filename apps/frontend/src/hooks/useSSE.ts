@@ -47,6 +47,7 @@ export function useSSE<T>(options: SSEOptions<T>) {
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectAttemptsRef = useRef(0);
   const mountedRef = useRef(true);
 
   const onMessageRef = useRef(onMessage);
@@ -77,6 +78,7 @@ export function useSSE<T>(options: SSEOptions<T>) {
 
     eventSource.onopen = () => {
       if (!mountedRef.current) return;
+      reconnectAttemptsRef.current = 0;
       setState({
         isConnected: true,
         isConnecting: false,
@@ -102,39 +104,34 @@ export function useSSE<T>(options: SSEOptions<T>) {
 
       eventSource.close();
 
-      setState((prev) => {
-        const newAttempts = prev.reconnectAttempts + 1;
-        if (newAttempts >= maxReconnectAttempts) {
-          onErrorRef.current?.(error);
-          return {
-            isConnected: false,
-            isConnecting: false,
-            error,
-            reconnectAttempts: newAttempts,
-          };
-        }
-
-        reconnectTimeoutRef.current = setTimeout(
-          () => {
-            if (mountedRef.current) {
-              connect();
-            }
-          },
-          reconnectDelay(newAttempts, reconnectInterval),
-        );
-
-        return {
-          isConnected: false,
-          isConnecting: false,
-          error,
-          reconnectAttempts: newAttempts,
-        };
+      const attempts = reconnectAttemptsRef.current + 1;
+      reconnectAttemptsRef.current = attempts;
+      setState({
+        isConnected: false,
+        isConnecting: false,
+        error,
+        reconnectAttempts: attempts,
       });
+
+      if (attempts >= maxReconnectAttempts) {
+        onErrorRef.current?.(error);
+        return;
+      }
+
+      reconnectTimeoutRef.current = setTimeout(
+        () => {
+          if (mountedRef.current) {
+            connect();
+          }
+        },
+        reconnectDelay(attempts, reconnectInterval),
+      );
     };
   }, [enabled, url, eventType, reconnectInterval, maxReconnectAttempts, cleanup]);
 
   const disconnect = useCallback(() => {
     cleanup();
+    reconnectAttemptsRef.current = 0;
     setState({
       isConnected: false,
       isConnecting: false,
@@ -164,8 +161,9 @@ export function useSSE<T>(options: SSEOptions<T>) {
 
     const retryIfGivenUp = () => {
       if (document.visibilityState !== 'visible') return;
-      const { isConnected, isConnecting, reconnectAttempts } = stateRef.current;
-      if (isConnected || isConnecting || reconnectAttempts < maxReconnectAttempts) return;
+      const { isConnected, isConnecting } = stateRef.current;
+      if (isConnected || isConnecting || reconnectAttemptsRef.current < maxReconnectAttempts) return;
+      reconnectAttemptsRef.current = 0;
       setState((prev) => ({ ...prev, reconnectAttempts: 0 }));
       connect();
     };

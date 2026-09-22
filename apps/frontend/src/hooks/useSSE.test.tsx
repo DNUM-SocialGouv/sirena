@@ -95,6 +95,41 @@ describe('useSSE', () => {
     vi.useRealTimers();
   });
 
+  it('tries again when the network comes back after giving up', () => {
+    vi.useFakeTimers();
+    renderHook(() => useSSE<{ id: string }>({ url: '/api/sse/x', eventType: 'requete:updated', onMessage: () => {} }));
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      act(() => FakeEventSource.instances.at(-1)?.onerror?.(new Event('error')));
+      act(() => vi.advanceTimersByTime(60_000));
+    }
+    const givenUpAt = FakeEventSource.instances.length;
+
+    act(() => window.dispatchEvent(new Event('online')));
+
+    expect(FakeEventSource.instances).toHaveLength(givenUpAt + 1);
+    vi.useRealTimers();
+  });
+
+  it('does not open a second connection while the stream is live or a reconnection is pending', () => {
+    vi.useFakeTimers();
+    renderHook(() => useSSE<{ id: string }>({ url: '/api/sse/x', eventType: 'requete:updated', onMessage: () => {} }));
+
+    act(() => FakeEventSource.instances.at(-1)?.onopen?.());
+    act(() => window.dispatchEvent(new Event('online')));
+    act(() => document.dispatchEvent(new Event('visibilitychange')));
+    expect(FakeEventSource.instances).toHaveLength(1);
+
+    act(() => FakeEventSource.instances.at(-1)?.onerror?.(new Event('error')));
+    act(() => window.dispatchEvent(new Event('online')));
+    act(() => document.dispatchEvent(new Event('visibilitychange')));
+    expect(FakeEventSource.instances).toHaveLength(1);
+
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(FakeEventSource.instances).toHaveLength(2);
+    vi.useRealTimers();
+  });
+
   it('reconnects with a fresh attempt budget after every successful open', () => {
     vi.useFakeTimers();
     const { result } = renderHook(() =>
