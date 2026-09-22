@@ -23,7 +23,7 @@ async function navigateToUserEditPage(page: Page, context: BrowserContext): Prom
   const userRows = allUsersTable.getByTestId('datatable-row');
   await expect(userRows.first()).toBeVisible();
 
-  const otherUserRows = allUsersTable.locator(`[data-testid="datatable-row"]:not([data-row-key="${currentUserId}"])`);
+  const otherUserRows = userRows.and(page.locator(`:not([data-row-key="${currentUserId}"])`));
   const otherUserCount = await otherUserRows.count();
   expect(otherUserCount, 'Should have at least one other user besides current user').toBeGreaterThanOrEqual(1);
 
@@ -38,6 +38,7 @@ async function navigateToUserEditPage(page: Page, context: BrowserContext): Prom
   await firstOtherUserRow.getByTestId('user-row-link').click();
 
   await page.waitForURL(`${baseUrl}/admin/user/${targetUserId}`);
+  await expect(page.getByRole('heading', { name: 'Modifier les informations', level: 1 })).toBeVisible();
   await expect(page.getByTestId('user-role-select')).toBeVisible();
 
   return targetUserId;
@@ -124,7 +125,7 @@ test.describe('Admin Feature', () => {
   test('should update user status to opposite value and reflect in table', async () => {
     const targetUserId = await navigateToUserEditPage(page, context);
 
-    const statutSelect = page.getByTestId('user-statut-select').getByRole('combobox');
+    const statutSelect = page.getByTestId('user-statut-select');
     await expect(statutSelect).toBeVisible();
 
     const currentStatus = await statutSelect.inputValue();
@@ -150,7 +151,7 @@ test.describe('Admin Feature', () => {
   test('should toggle user role and reset to original after verification', async () => {
     const targetUserId = await navigateToUserEditPage(page, context);
 
-    const roleSelect = page.getByTestId('user-role-select').getByRole('combobox');
+    const roleSelect = page.getByTestId('user-role-select');
     await expect(roleSelect).toBeVisible();
 
     const originalRole = await roleSelect.inputValue();
@@ -174,12 +175,12 @@ test.describe('Admin Feature', () => {
     expect(updatedUser.roleId).toBe(oppositeRole);
 
     // PART 2: Revert to original role
-    const resetRoleSelect = page.getByTestId('user-role-select').getByRole('combobox');
+    const resetRoleSelect = page.getByTestId('user-role-select');
     await expect(resetRoleSelect).toBeVisible();
     await resetRoleSelect.selectOption(originalRole);
 
     if (oppositeRole === 'PENDING') {
-      const statutSelect = page.getByTestId('user-statut-select').getByRole('combobox');
+      const statutSelect = page.getByTestId('user-statut-select');
       await expect(statutSelect).toBeVisible();
       await statutSelect.selectOption('ACTIF');
     }

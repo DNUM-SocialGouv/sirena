@@ -66,13 +66,18 @@ test.describe('Request Details Feature', () => {
 
     await page.getByRole('button', { name: 'Ajouter une étape' }).click();
 
-    const inputEtape = page.getByTestId('step-nom-field').getByRole('textbox');
+    const inputEtape = page
+      .getByTestId('step-nom-field')
+      .getByRole('textbox', { name: "Nom de l'étape (obligatoire)" });
     await expect(inputEtape).toBeVisible();
     await inputEtape.fill(randomStepName);
 
     // Required on multi-entity requests, absent otherwise.
     const shareStepGroup = page.getByTestId('step-partagee-choice');
     if (await shareStepGroup.count()) {
+      await expect(shareStepGroup).toBeVisible();
+      await expect(shareStepGroup).toHaveRole('group');
+      await expect(shareStepGroup).toHaveAccessibleName(/Afficher l.étape pour les autres entités affectées/);
       // DSFR hides the radio behind its label; click the label once the drawer has settled.
       const shareStepNon = shareStepGroup.getByText('Non', { exact: true });
       await shareStepNon.scrollIntoViewIfNeeded();

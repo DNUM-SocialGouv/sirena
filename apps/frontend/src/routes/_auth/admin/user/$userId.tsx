@@ -215,12 +215,13 @@ function RouteComponent() {
                       </div>
                     </fieldset>
                     <EntityHierarchySelector id={user.entiteId} setLevel={handleSetEntite} />
-                    <fieldset className="fr-fieldset" data-testid="user-role-select">
+                    <fieldset className="fr-fieldset">
                       <Select
                         className="fr-fieldset__content"
                         label="Rôle*"
                         disabled={profile?.id === userId}
                         nativeSelectProps={{
+                          ...{ 'data-testid': 'user-role-select' },
                           name: 'roleId',
                           value: formData.roleId,
                           onChange: (e) => {
@@ -246,13 +247,14 @@ function RouteComponent() {
                       </Select>
                     </fieldset>
                     {shouldShowStatut && (
-                      <fieldset className="fr-fieldset" data-testid="user-statut-select">
+                      <fieldset className="fr-fieldset">
                         <Select
                           className="fr-fieldset__content"
                           label="Statut*"
                           state={validationErrors.statutId ? 'error' : 'default'}
                           stateRelatedMessage={validationErrors.statutId}
                           nativeSelectProps={{
+                            ...{ 'data-testid': 'user-statut-select' },
                             name: 'statutId',
                             value: formData.statutId,
                             onChange: (e) => {

@@ -638,26 +638,26 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                         value={nom}
                       />
                     ) : (
-                      <div data-testid="step-nom-field">
-                        <Input
-                          label="Nom de l'étape (obligatoire)"
-                          disabled={isLoading}
-                          state={nomError ? 'error' : 'default'}
-                          stateRelatedMessage={nomError ?? undefined}
-                          nativeInputProps={{
-                            ref: nomInputRef,
-                            value: nom,
-                            onChange: (e) => {
-                              setNom(e.target.value);
-                              if (nomError) setNomError(null);
-                            },
-                          }}
-                        />
-                      </div>
+                      <Input
+                        data-testid="step-nom-field"
+                        label="Nom de l'étape (obligatoire)"
+                        disabled={isLoading}
+                        state={nomError ? 'error' : 'default'}
+                        stateRelatedMessage={nomError ?? undefined}
+                        nativeInputProps={{
+                          ref: nomInputRef,
+                          value: nom,
+                          onChange: (e) => {
+                            setNom(e.target.value);
+                            if (nomError) setNomError(null);
+                          },
+                        }}
+                      />
                     )}
 
-                    <div className={styles.fieldBlock} data-testid="step-statut-choice">
+                    <div className={styles.fieldBlock}>
                       <RadioButtons
+                        data-testid="step-statut-choice"
                         legend="Statut de l'étape"
                         orientation="horizontal"
                         disabled={isLoading || fieldsLocked}
@@ -708,8 +708,9 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                     )}
 
                     {isSharingChoiceVisible ? (
-                      <div className={styles.fieldBlock} data-testid="step-partagee-choice">
+                      <div className={styles.fieldBlock}>
                         <RadioButtons
+                          data-testid="step-partagee-choice"
                           legend="Afficher l’étape pour les autres entités affectées (obligatoire)"
                           orientation="horizontal"
                           disabled={isLoading}
