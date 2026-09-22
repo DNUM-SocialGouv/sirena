@@ -5,6 +5,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useMarkRequeteDiscussionRead } from '@/hooks/mutations/markRequeteDiscussionRead.hook';
 import { useRequeteUnreadCount } from '@/hooks/queries/requeteMessagesUnread.hook';
 import { useHasFeature } from '@/hooks/useHasFeature';
+import { useUnreadDocumentTitle } from '@/hooks/useUnreadDocumentTitle';
 import { Discussion } from './Discussion';
 import styles from './discussion.module.css';
 
@@ -25,6 +26,9 @@ export const DiscussionDrawer = ({ requestId }: DiscussionDrawerProps) => {
   const wasOpenRef = useRef(false);
 
   const { data: unreadCount = 0 } = useRequeteUnreadCount(requestId, discussionEnabled);
+  useUnreadDocumentTitle(discussionEnabled ? unreadCount : 0);
+  const [announcement, setAnnouncement] = useState('');
+  const knownUnreadCountRef = useRef(unreadCount);
   const markRead = useMarkRequeteDiscussionRead(requestId);
   const markReadRef = useRef(markRead.mutate);
   markReadRef.current = markRead.mutate;
@@ -68,9 +72,21 @@ export const DiscussionDrawer = ({ requestId }: DiscussionDrawerProps) => {
     if (isOpen) headingRef.current?.focus();
   }, [isOpen]);
 
-  if (!discussionEnabled) return null;
+  useEffect(() => {
+    const arrived = unreadCount - knownUnreadCountRef.current;
+    knownUnreadCountRef.current = unreadCount;
 
-  const unreadLabel = `${unreadCount} ${pluralize(unreadCount, 'message non lu', 'messages non lus')}`;
+    if (isOpen || arrived <= 0) {
+      setAnnouncement('');
+      return;
+    }
+
+    setAnnouncement(
+      arrived > 1 ? `${arrived} nouveaux messages dans la discussion` : 'Nouveau message dans la discussion',
+    );
+  }, [isOpen, unreadCount]);
+
+  if (!discussionEnabled) return null;
 
   return (
     <>
@@ -78,16 +94,15 @@ export const DiscussionDrawer = ({ requestId }: DiscussionDrawerProps) => {
         Ouvrir la discussion
         {unreadCount > 0 ? (
           <>
-            <span className={styles.buttonCount} aria-hidden="true">
-              {unreadCount > 99 ? '99+' : String(unreadCount)}
-            </span>
-            <span className="fr-sr-only">, {unreadLabel}</span>
+            {' '}
+            <span className={styles.buttonCount}>{unreadCount > 99 ? '99+' : String(unreadCount)}</span>{' '}
+            <span className="fr-sr-only">{pluralize(unreadCount, 'message non lu', 'messages non lus')}</span>
           </>
         ) : null}
       </Button>
 
       <p className="fr-sr-only" aria-live="polite">
-        {!isOpen && unreadCount > 0 ? `${unreadLabel} dans la discussion` : ''}
+        {announcement}
       </p>
 
       <Drawer.Root variant="nonModal" withCloseButton={false} open={isOpen} onOpenChange={handleOpenChange}>

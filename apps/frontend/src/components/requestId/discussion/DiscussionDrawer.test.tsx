@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useUnreadDocumentTitle } from '@/hooks/useUnreadDocumentTitle';
 import { DiscussionDrawer } from './DiscussionDrawer';
 
 const markReadMutate = vi.fn();
@@ -18,6 +19,10 @@ vi.mock('@/hooks/queries/requeteMessagesUnread.hook', () => ({
 
 vi.mock('@/hooks/mutations/markRequeteDiscussionRead.hook', () => ({
   useMarkRequeteDiscussionRead: () => ({ mutate: markReadMutate, isPending: false }),
+}));
+
+vi.mock('@/hooks/useUnreadDocumentTitle', () => ({
+  useUnreadDocumentTitle: vi.fn(),
 }));
 
 vi.mock('./Discussion', () => ({
@@ -152,12 +157,43 @@ describe('DiscussionDrawer', () => {
   it('carries the unread count inside the button, spelled out for assistive tech', () => {
     unreadCount = 3;
 
-    const { container } = render(<DiscussionDrawer requestId="REQ" />);
+    render(<DiscussionDrawer requestId="REQ" />);
 
-    const button = screen.getByRole('button', { name: 'Ouvrir la discussion, 3 messages non lus' });
-    expect(button).toHaveTextContent('Ouvrir la discussion3');
+    const button = screen.getByRole('button', { name: 'Ouvrir la discussion 3 messages non lus' });
+    expect(button).toHaveTextContent('Ouvrir la discussion 3');
+  });
+
+  it('announces the messages that arrive, not the running total', () => {
+    unreadCount = 0;
+    const { container, rerender } = render(<DiscussionDrawer requestId="REQ" />);
     const liveRegion = container.querySelector('p.fr-sr-only[aria-live="polite"]');
-    expect(liveRegion).toHaveTextContent('3 messages non lus dans la discussion');
+    expect(liveRegion).toHaveTextContent('');
+
+    unreadCount = 1;
+    rerender(<DiscussionDrawer requestId="REQ" />);
+    expect(liveRegion).toHaveTextContent('Nouveau message dans la discussion');
+
+    unreadCount = 3;
+    rerender(<DiscussionDrawer requestId="REQ" />);
+    expect(liveRegion).toHaveTextContent('2 nouveaux messages dans la discussion');
+  });
+
+  it('says nothing when the messages are read', () => {
+    unreadCount = 2;
+    const { container, rerender } = render(<DiscussionDrawer requestId="REQ" />);
+
+    unreadCount = 0;
+    rerender(<DiscussionDrawer requestId="REQ" />);
+
+    expect(container.querySelector('p.fr-sr-only[aria-live="polite"]')).toHaveTextContent('');
+  });
+
+  it('carries the unread count in the tab title', () => {
+    unreadCount = 3;
+
+    render(<DiscussionDrawer requestId="REQ" />);
+
+    expect(useUnreadDocumentTitle).toHaveBeenLastCalledWith(3);
   });
 
   it('keeps the live region silent while the panel is open', async () => {
