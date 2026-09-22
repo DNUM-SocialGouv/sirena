@@ -150,7 +150,7 @@ export function filterArsEntiteIds(entiteIds: string[]): string[] {
   return entiteIds.filter((id) => arsEntiteIdSet.has(id));
 }
 
-export function transcodeAffectation(idSirec: number, mode?: SirecGroupMode): AffectationEntites {
+export function transcodeAffectation(idSirec: number, mode: SirecGroupMode): AffectationEntites {
   if (transco === null) {
     throw new Error('initAffectationTransco() must be called before transcodeAffectation()');
   }
