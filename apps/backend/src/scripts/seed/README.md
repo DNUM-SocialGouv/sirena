@@ -22,9 +22,15 @@ Each run resets the DB and rebuilds reproducible generated business data;
 Prisma-generated ids and automatic database timestamps remain variable.
 Interactive runs keep using the current date.
 
+The seed reads `E2E_ENTITY_ADMIN_USER_1_EMAIL`, just like the E2E suite, falling
+back to `user19@yopmail.com`. Pass the same value to both commands. In CI, the
+test workflow receives it from `vars.TEST_USER_EMAIL`; any seed step must also
+receive this variable. A custom email is created as an ENTITY_ADMIN on ARS
+Île-de-France and receives the fixed test user id. Default users are still seeded.
+
 **State produced**
 
-- the test user `user19@yopmail.com` — ENTITY_ADMIN, ARS Île-de-France, fixed id;
+- the configured test user (`user19@yopmail.com` by default) — ENTITY_ADMIN, ARS Île-de-France, fixed id;
 - at least one more user on the same ARS (`pilotage@yopmail.com`);
 - the full family set of manual requests on both ARS, **plus 1–2 shared
   multi-entité requests**, each non-clôturée and with its default steps;

@@ -4,7 +4,10 @@ import { buildFaker, pastDate } from './faker.helpers.js';
 import { buildE2eSeedConfig } from './profiles.js';
 
 vi.mock('../../libs/prisma.js', () => ({ prisma: { user: { findMany: vi.fn().mockResolvedValue([]) } } }));
-vi.mock('./entites.js', () => ({ resolveArsEntites: vi.fn().mockResolvedValue({}) }));
+vi.mock('./entites.js', () => ({
+  ARS_IDF_REG_LIB: 'Île-de-France',
+  resolveArsEntites: vi.fn().mockResolvedValue({}),
+}));
 vi.mock('./referentials.js', () => ({ loadReferentials: vi.fn().mockResolvedValue({}) }));
 
 afterEach(() => {
