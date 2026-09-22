@@ -94,11 +94,11 @@ describe('MessageList', () => {
     const unread = (id: string) => ({ ...makeMessage(id), isReadByCurrentUser: false });
     const { rerender } = renderList([makeMessage('m1'), unread('m2'), unread('m3')]);
 
-    expect(screen.getByLabelText('Messages non lus').nextElementSibling?.textContent).toContain('message m2');
+    expect(screen.getByText('Non lus').closest('li')?.nextElementSibling?.textContent).toContain('message m2');
 
     rerender([makeMessage('m1'), makeMessage('m2'), makeMessage('m3')]);
 
-    expect(screen.getByLabelText('Messages non lus').nextElementSibling?.textContent).toContain('message m2');
+    expect(screen.getByText('Non lus').closest('li')?.nextElementSibling?.textContent).toContain('message m2');
   });
 
   it('re-anchors to the bottom when the thread is emptied and filled again', () => {

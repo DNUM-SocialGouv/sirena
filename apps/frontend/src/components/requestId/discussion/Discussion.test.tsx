@@ -64,7 +64,7 @@ describe('Discussion', () => {
     expect(rendered[1]).toContain('Le plus récent');
   });
 
-  it('does not offer to load previous messages when there is no next page', () => {
+  it('does not offer to load previous messages when the whole thread is already displayed', () => {
     messages = [makeMessage('M1')];
 
     render(<Discussion requestId="REQ" />);
@@ -94,7 +94,7 @@ describe('Discussion', () => {
     render(<Discussion requestId="REQ" />);
 
     const items = screen.getAllByRole('listitem');
-    const separatorIndex = items.findIndex((item) => item.getAttribute('aria-label') === 'Messages non lus');
+    const separatorIndex = items.findIndex((item) => item.textContent === 'Non lus');
     expect(separatorIndex).toBe(1);
     expect(items[separatorIndex - 1]?.textContent).toContain('Message M1');
     expect(items[separatorIndex + 1]?.textContent).toContain('Message M2');
@@ -105,6 +105,6 @@ describe('Discussion', () => {
 
     render(<Discussion requestId="REQ" />);
 
-    expect(screen.queryByLabelText('Messages non lus')).not.toBeInTheDocument();
+    expect(screen.queryByText('Non lus')).not.toBeInTheDocument();
   });
 });

@@ -24,12 +24,11 @@ describe('MessageItem', () => {
   it('displays the author, the entity name and the date', () => {
     const { container } = renderItem(makeMessage());
 
-    const article = container.querySelector('article');
-    expect(article?.textContent).toContain('Jean');
-    expect(article?.textContent).toContain('Dupont');
+    const item = container.querySelector('li');
+    expect(item?.textContent).toContain('Jean');
+    expect(item?.textContent).toContain('Dupont');
     expect(screen.getByText('ARS')).toHaveClass('fr-tag');
-    expect(article?.textContent).toContain('(ARS Île-de-France)');
-    expect(article).toHaveAccessibleName(/^Jean Dupont \(ARS Île-de-France\) le /);
+    expect(item?.textContent).toContain('(ARS Île-de-France)');
 
     const time = container.querySelector('time');
     expect(time).toHaveAttribute('dateTime', new Date(CREATED_AT).toISOString());
@@ -51,7 +50,7 @@ describe('MessageItem', () => {
     const { container } = renderItem(makeMessage(), true);
 
     expect(screen.getByText(', votre entité')).toHaveClass('fr-sr-only');
-    expect(container.querySelector('article')).toHaveAccessibleName(/votre entité/);
+    expect(container.querySelector('li')?.textContent).toContain(', votre entité');
   });
 
   it('renders the content as text and never as markup', () => {

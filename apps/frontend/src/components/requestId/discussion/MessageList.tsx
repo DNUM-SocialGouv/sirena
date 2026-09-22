@@ -138,12 +138,12 @@ export const MessageList = ({ messages, ownEntiteId, hasMore, isFetchingNextPage
             </div>
           ) : null}
 
-          <ul className={styles.messages} role="list">
+          <ul className={styles.messages}>
             {messages.map((message, index) => (
               <Fragment key={message.id}>
                 {index === firstUnreadIndex ? (
-                  <li ref={unreadSeparatorRef} className={styles.unreadSeparator} aria-label="Messages non lus">
-                    <span aria-hidden="true">Non lus</span>
+                  <li ref={unreadSeparatorRef} className={styles.unreadSeparator}>
+                    <span>Non lus</span>
                   </li>
                 ) : null}
                 <MessageItem message={message} isOwnEntite={message.entite.id === ownEntiteId} />
