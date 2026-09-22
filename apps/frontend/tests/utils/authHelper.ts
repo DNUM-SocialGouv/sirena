@@ -1,6 +1,7 @@
 import { closeSync, existsSync, openSync, unlinkSync } from 'node:fs';
 import { type Browser, type BrowserContext, expect } from '@playwright/test';
-import { baseUrl, ENTITY_ADMIN_USER } from './constants';
+import { baseUrl, E2E_TARGET, ENTITY_ADMIN_USER, isLocalTarget } from './constants';
+import { createLocalAuthFile } from './localAuth';
 import { loginWithProconnect } from './login';
 
 export interface AuthConfig {
@@ -15,7 +16,9 @@ export const AUTH_CONFIGS = {
     user: ENTITY_ADMIN_USER.user,
     password: ENTITY_ADMIN_USER.password,
     organisation: 'Commune de clamart - Mairie',
-    fileName: `${ENTITY_ADMIN_USER.user}.json`,
+    // Namespaced by target: local (forged cookie) and integration (ProConnect)
+    // cookies are domain-bound, so they must not share a cache file.
+    fileName: `${ENTITY_ADMIN_USER.user}.${E2E_TARGET}.json`,
   },
 } as const;
 
@@ -58,22 +61,29 @@ export async function ensureAuthenticationFileExists(browser: Browser, config: A
       return authFile;
     }
 
-    const context = await browser.newContext({ storageState: undefined });
-    const page = await context.newPage();
+    if (isLocalTarget) {
+      // Local target: forge the auth cookie, no ProConnect round-trip.
+      await createLocalAuthFile(browser, config.user, authFile);
+    } else {
+      const context = await browser.newContext({ storageState: undefined });
+      const page = await context.newPage();
 
-    try {
-      await loginWithProconnect(page, {
-        user: config.user,
-        password: config.password,
-        organisation: config.organisation || 'Commune de clamart - Mairie',
-      });
+      try {
+        await loginWithProconnect(page, {
+          user: config.user,
+          password: config.password,
+          organisation: config.organisation || 'Commune de clamart - Mairie',
+        });
 
-      await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 30000 });
-      await expect(page.getByRole('heading', { name: 'Liste des requêtes', level: 1 })).toBeVisible({ timeout: 10000 });
+        await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 30000 });
+        await expect(page.getByRole('heading', { name: 'Liste des requêtes', level: 1 })).toBeVisible({
+          timeout: 10000,
+        });
 
-      await context.storageState({ path: authFile });
-    } finally {
-      await context.close();
+        await context.storageState({ path: authFile });
+      } finally {
+        await context.close();
+      }
     }
   } finally {
     // clean up the lock file
