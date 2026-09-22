@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SirecTranscoError } from '../sirecTransco.error.js';
-import { filterArsEntiteIds, initAffectationTransco, transcodeAffectation } from './affectation.transco.js';
+import {
+  filterArsEntiteIds,
+  initAffectationTransco,
+  SIREC_GROUP_MODE,
+  transcodeAffectation,
+} from './affectation.transco.js';
 
 vi.mock('@sirena/db', () => ({
   prisma: {
@@ -8,9 +13,9 @@ vi.mock('@sirena/db', () => ({
   },
 }));
 
-const mockWarn = vi.hoisted(() => vi.fn());
+const mockError = vi.hoisted(() => vi.fn());
 vi.mock('../../../../helpers/pino.js', () => ({
-  createDefaultLogger: () => ({ warn: mockWarn }),
+  createDefaultLogger: () => ({ error: mockError }),
 }));
 
 const ARS_NORMANDIE_ID = 'ars-normandie-dynamic-id';
@@ -53,6 +58,47 @@ function makeAllRequiredEntities() {
   const childOfDamtn = (id: string, label: string) => makeEntity(id, label, 'DAMTN', damtnId, 'ARS Normandie');
   const childOfDsp = (id: string, label: string) =>
     makeEntity(id, label, 'Direction de la Santé Publique', dspId, 'ARS Normandie');
+
+  const childOfArsAuvergne = (id: string, label: string) =>
+    makeEntity(id, label, 'ARS Auvergne-Rhône-Alpes', ARS_AUVERGNE_ID);
+  const childOfDD = (id: string, label: string, ddId: string, ddLabel: string) =>
+    makeEntity(id, label, ddLabel, ddId, 'ARS Auvergne-Rhône-Alpes');
+
+  const dds = [
+    ['01', 'dd01'],
+    ['03', 'dd03'],
+    ['07', 'dd07'],
+    ['15', 'dd15'],
+    ['26', 'dd26'],
+    ['38', 'dd38'],
+    ['42', 'dd42'],
+    ['43', 'dd43'],
+    ['63', 'dd63'],
+    ['69', 'dd69'],
+    ['73', 'dd73'],
+    ['74', 'dd74'],
+  ] as const;
+
+  const ddEntities = dds.flatMap(([dep, idPrefix]) => {
+    const ddId = `${idPrefix}-id`;
+    const ddLabel = `DD-${dep}`;
+    return [
+      childOfArsAuvergne(ddId, ddLabel),
+      childOfDD(`${idPrefix}-affectee-id`, `${ddLabel} Affectée pour traitement`, ddId, ddLabel),
+      childOfDD(`${idPrefix}-lecture-id`, `${ddLabel} Partagée pour lecture`, ddId, ddLabel),
+    ];
+  });
+
+  const auvergnePoleEntities = [
+    childOfArsAuvergne('pole-01-69-id', 'Pole OSH 01-69'),
+    childOfArsAuvergne('pole-03-15-63-id', 'POLE OSH 03-15-63'),
+    childOfArsAuvergne('pole-07-26-id', 'POLE OSH 07-26'),
+    childOfArsAuvergne('pole-38-id', 'POLE OSH 38'),
+    childOfArsAuvergne('pole-42-43-id', 'POLE 0SH 42-43'),
+    childOfArsAuvergne('pole-73-74-id', 'POLE OSH 73-74'),
+    childOfArsAuvergne('dos-perinatalite-id', 'DOS périnatalité'),
+    childOfArsAuvergne('pole-usagers-reclamations-id', 'Pole Usagers Réclamations'),
+  ];
 
   return [
     // ARS entities
@@ -116,6 +162,8 @@ function makeAllRequiredEntities() {
       "Conseil départemental de L'Orne",
       'cd-orne-id',
     ),
+    ...ddEntities,
+    ...auvergnePoleEntities,
   ];
 }
 
@@ -126,7 +174,7 @@ describe('affectation.transco.ts', () => {
     });
 
     it('should return the ARS entiteId in both requeteEntiteIds and situationEntiteIds', () => {
-      const result = transcodeAffectation(693);
+      const result = transcodeAffectation(693, SIREC_GROUP_MODE.ECRITURE);
 
       expect(result).toEqual({
         requeteEntiteIds: [ARS_NORMANDIE_ID],
@@ -135,9 +183,9 @@ describe('affectation.transco.ts', () => {
     });
 
     it('should map each ARS id to its SIRENA entiteId', () => {
-      expect(transcodeAffectation(667).requeteEntiteIds).toEqual([ARS_AUVERGNE_ID]);
-      expect(transcodeAffectation(677).requeteEntiteIds).toEqual([ARS_GRAND_EST_ID]);
-      expect(transcodeAffectation(701).requeteEntiteIds).toEqual([ARS_PACA_ID]);
+      expect(transcodeAffectation(667, SIREC_GROUP_MODE.ECRITURE).requeteEntiteIds).toEqual([ARS_AUVERGNE_ID]);
+      expect(transcodeAffectation(677, SIREC_GROUP_MODE.ECRITURE).requeteEntiteIds).toEqual([ARS_GRAND_EST_ID]);
+      expect(transcodeAffectation(701, SIREC_GROUP_MODE.ECRITURE).requeteEntiteIds).toEqual([ARS_PACA_ID]);
     });
   });
 
@@ -147,20 +195,20 @@ describe('affectation.transco.ts', () => {
     });
 
     it('should return ARS Normandie in requeteEntiteIds', () => {
-      const result = transcodeAffectation(1115);
+      const result = transcodeAffectation(1115, SIREC_GROUP_MODE.ECRITURE);
 
       expect(result.requeteEntiteIds).toEqual([ARS_NORMANDIE_ID]);
     });
 
     it('should include the service entity and ARS Normandie in situationEntiteIds', () => {
-      const result = transcodeAffectation(1115);
+      const result = transcodeAffectation(1115, SIREC_GROUP_MODE.ECRITURE);
 
       expect(result.situationEntiteIds).toContain('dau-id');
       expect(result.situationEntiteIds).toContain(ARS_NORMANDIE_ID);
     });
 
     it('should include multiple service entities when one SIREC id maps to several', () => {
-      const result = transcodeAffectation(1093);
+      const result = transcodeAffectation(1093, SIREC_GROUP_MODE.ECRITURE);
 
       expect(result.situationEntiteIds).toContain('pnm-id');
       expect(result.situationEntiteIds).toContain('pm-id');
@@ -168,26 +216,26 @@ describe('affectation.transco.ts', () => {
     });
 
     it('should use the top-level entity (not ARS) in requeteEntiteIds when service parent is non-ARS', () => {
-      const result = transcodeAffectation(1119);
+      const result = transcodeAffectation(1119, SIREC_GROUP_MODE.ECRITURE);
 
       expect(result.situationEntiteIds).toContain('das-calvados-id');
       expect(result.requeteEntiteIds).toEqual(['cd-calvados-id']);
     });
 
     it('should find entity by three-level hierarchy (label + parent + grandparent)', () => {
-      const result = transcodeAffectation(1091);
+      const result = transcodeAffectation(1091, SIREC_GROUP_MODE.ECRITURE);
 
       expect(result.situationEntiteIds).toContain('poa-id');
       expect(result.requeteEntiteIds).toEqual([ARS_NORMANDIE_ID]);
     });
 
     it('should resolve to the same entity id for two SIREC ids that map to the same entity', () => {
-      expect(transcodeAffectation(1087).situationEntiteIds).toContain('mic-id');
-      expect(transcodeAffectation(1113).situationEntiteIds).toContain('mic-id');
+      expect(transcodeAffectation(1087, SIREC_GROUP_MODE.ECRITURE).situationEntiteIds).toContain('mic-id');
+      expect(transcodeAffectation(1113, SIREC_GROUP_MODE.ECRITURE).situationEntiteIds).toContain('mic-id');
     });
 
     it('should map five transports sanitaires for SIREC id 1099', () => {
-      const result = transcodeAffectation(1099);
+      const result = transcodeAffectation(1099, SIREC_GROUP_MODE.ECRITURE);
 
       expect(result.situationEntiteIds).toContain('ts14-id');
       expect(result.situationEntiteIds).toContain('ts27-id');
@@ -201,22 +249,22 @@ describe('affectation.transco.ts', () => {
         await vi.resetModules();
         const { transcodeAffectation: freshTranscode } = await import('./affectation.transco.js');
 
-        expect(() => freshTranscode(693)).toThrow('initAffectationTransco()');
-        expect(() => freshTranscode(1115)).toThrow('initAffectationTransco()');
+        expect(() => freshTranscode(693, SIREC_GROUP_MODE.ECRITURE)).toThrow('initAffectationTransco()');
+        expect(() => freshTranscode(1115, SIREC_GROUP_MODE.ECRITURE)).toThrow('initAffectationTransco()');
       });
 
       it('should not throw during init when a service entity is missing, but throw SirecTranscoError on use', async () => {
         const entitiesWithoutDau = makeAllRequiredEntities().filter((e) => e.id !== 'dau-id');
         await setupTransco(entitiesWithoutDau);
 
-        expect(() => transcodeAffectation(1115)).toThrow(SirecTranscoError);
+        expect(() => transcodeAffectation(1115, SIREC_GROUP_MODE.ECRITURE)).toThrow(SirecTranscoError);
       });
 
       it('should log a warning when a service entity is missing during init', async () => {
         const entitiesWithoutDau = makeAllRequiredEntities().filter((e) => e.id !== 'dau-id');
         await setupTransco(entitiesWithoutDau);
 
-        expect(mockWarn).toHaveBeenCalledWith(
+        expect(mockError).toHaveBeenCalledWith(
           expect.objectContaining({ sirecId: expect.any(Number) }),
           expect.any(String),
         );
@@ -226,8 +274,44 @@ describe('affectation.transco.ts', () => {
         const entitiesWithoutArsNormandie = makeAllRequiredEntities().filter((e) => e.nomComplet !== 'ARS Normandie');
         await setupTransco(entitiesWithoutArsNormandie);
 
-        expect(() => transcodeAffectation(693)).toThrow(SirecTranscoError);
+        expect(() => transcodeAffectation(693, SIREC_GROUP_MODE.ECRITURE)).toThrow(SirecTranscoError);
       });
+    });
+  });
+
+  describe('group mode filtering (ARS Auvergne-Rhône-Alpes DD) — require initAffectationTransco()', () => {
+    beforeEach(async () => {
+      await setupTransco(makeAllRequiredEntities());
+    });
+
+    it('should include the ECRITURE-only entity and the mode-less pole when mode is ECRITURE', () => {
+      const result = transcodeAffectation(705, SIREC_GROUP_MODE.ECRITURE);
+
+      expect(result.requeteEntiteIds).toEqual([ARS_AUVERGNE_ID]);
+      expect(result.situationEntiteIds).toContain('dd01-affectee-id');
+      expect(result.situationEntiteIds).toContain('pole-01-69-id');
+      expect(result.situationEntiteIds).not.toContain('dd01-lecture-id');
+    });
+
+    it('should include the LECTURE-only entity and the mode-less pole when mode is LECTURE', () => {
+      const result = transcodeAffectation(705, SIREC_GROUP_MODE.LECTURE);
+
+      expect(result.situationEntiteIds).toContain('dd01-lecture-id');
+      expect(result.situationEntiteIds).toContain('pole-01-69-id');
+      expect(result.situationEntiteIds).not.toContain('dd01-affectee-id');
+    });
+
+    it('should share the same pole entity across departments belonging to the same pole', () => {
+      expect(transcodeAffectation(707, SIREC_GROUP_MODE.ECRITURE).situationEntiteIds).toContain('pole-03-15-63-id');
+      expect(transcodeAffectation(711, SIREC_GROUP_MODE.ECRITURE).situationEntiteIds).toContain('pole-03-15-63-id');
+      expect(transcodeAffectation(721, SIREC_GROUP_MODE.ECRITURE).situationEntiteIds).toContain('pole-03-15-63-id');
+    });
+
+    it('should not filter entities that have no groupMode regardless of the mode passed', () => {
+      expect(transcodeAffectation(4974, SIREC_GROUP_MODE.ECRITURE).situationEntiteIds).toContain('dos-perinatalite-id');
+      expect(transcodeAffectation(703, SIREC_GROUP_MODE.LECTURE).situationEntiteIds).toContain(
+        'pole-usagers-reclamations-id',
+      );
     });
   });
 
@@ -261,8 +345,8 @@ describe('affectation.transco.ts', () => {
       );
       await setupTransco(entities);
 
-      expect(() => transcodeAffectation(1115)).toThrow(SirecTranscoError);
-      expect(mockWarn).toHaveBeenCalledWith(expect.objectContaining({ sirecId: 1115 }), expect.any(String));
+      expect(() => transcodeAffectation(1115, SIREC_GROUP_MODE.ECRITURE)).toThrow(SirecTranscoError);
+      expect(mockError).toHaveBeenCalledWith(expect.objectContaining({ sirecId: 1115 }), expect.any(String));
     });
 
     it('should skip a service entity whose grandparent was filtered out as inactive', async () => {
@@ -273,8 +357,8 @@ describe('affectation.transco.ts', () => {
       });
       await setupTransco(entities);
 
-      expect(() => transcodeAffectation(1091)).toThrow(SirecTranscoError);
-      expect(mockWarn).toHaveBeenCalledWith(expect.objectContaining({ sirecId: 1091 }), expect.any(String));
+      expect(() => transcodeAffectation(1091, SIREC_GROUP_MODE.ECRITURE)).toThrow(SirecTranscoError);
+      expect(mockError).toHaveBeenCalledWith(expect.objectContaining({ sirecId: 1091 }), expect.any(String));
     });
   });
 
@@ -322,12 +406,12 @@ describe('affectation.transco.ts', () => {
     });
 
     it('should throw SirecTranscoError for an unknown id after init', () => {
-      expect(() => transcodeAffectation(9999)).toThrow(SirecTranscoError);
+      expect(() => transcodeAffectation(9999, SIREC_GROUP_MODE.ECRITURE)).toThrow(SirecTranscoError);
     });
 
     it('should include the unknown id and table name in the error', () => {
       try {
-        transcodeAffectation(9999);
+        transcodeAffectation(9999, SIREC_GROUP_MODE.ECRITURE);
       } catch (err) {
         expect(err).toBeInstanceOf(SirecTranscoError);
         expect((err as SirecTranscoError).idDico).toBe(9999);
