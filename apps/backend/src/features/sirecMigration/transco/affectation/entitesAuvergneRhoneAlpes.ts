@@ -1,186 +1,40 @@
 import type { EntiteSirenaLabels } from './affectation.transco.js';
+import { SIREC_GROUP_MODE } from './sirecGroupMode.js';
+
+const ARS_AUVERGNE_RHONE_ALPES = 'ARS Auvergne-Rhône-Alpes';
+
+function dd(numero: string, poleLabel: string): [EntiteSirenaLabels, EntiteSirenaLabels, EntiteSirenaLabels] {
+  const parentLabel = `DD-${numero}`;
+  return [
+    {
+      label: `${parentLabel} Affectée pour traitement`,
+      parentLabel,
+      grandParentLabel: ARS_AUVERGNE_RHONE_ALPES,
+      groupMode: SIREC_GROUP_MODE.ECRITURE,
+    },
+    {
+      label: `${parentLabel} Partagée pour lecture`,
+      parentLabel,
+      grandParentLabel: ARS_AUVERGNE_RHONE_ALPES,
+      groupMode: SIREC_GROUP_MODE.LECTURE,
+    },
+    { label: poleLabel, parentLabel: ARS_AUVERGNE_RHONE_ALPES },
+  ];
+}
 
 export const AFFECTATION_ENTITES_AUVERGNE_RHONE_ALPES: Record<number, [EntiteSirenaLabels, ...EntiteSirenaLabels[]]> = {
-  705: [
-    {
-      label: 'DD-01 Affectée pour traitement',
-      parentLabel: 'DD-01',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'ECRITURE',
-    },
-    {
-      label: 'DD-01 Partagée pour lecture',
-      parentLabel: 'DD-01',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'LECTURE',
-    },
-    { label: 'Pole OSH 01-69', parentLabel: 'ARS Auvergne-Rhône-Alpes' },
-  ],
-  707: [
-    {
-      label: 'DD-03 Affectée pour traitement',
-      parentLabel: 'DD-03',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'ECRITURE',
-    },
-    {
-      label: 'DD-03 Partagée pour lecture',
-      parentLabel: 'DD-03',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'LECTURE',
-    },
-    { label: 'POLE OSH 03-15-63', parentLabel: 'ARS Auvergne-Rhône-Alpes' },
-  ],
-  709: [
-    {
-      label: 'DD-07 Affectée pour traitement',
-      parentLabel: 'DD-07',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'ECRITURE',
-    },
-    {
-      label: 'DD-07 Partagée pour lecture',
-      parentLabel: 'DD-07',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'LECTURE',
-    },
-    { label: 'POLE OSH 07-26', parentLabel: 'ARS Auvergne-Rhône-Alpes' },
-  ],
-  711: [
-    {
-      label: 'DD-15 Affectée pour traitement',
-      parentLabel: 'DD-15',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'ECRITURE',
-    },
-    {
-      label: 'DD-15 Partagée pour lecture',
-      parentLabel: 'DD-15',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'LECTURE',
-    },
-    { label: 'POLE OSH 03-15-63', parentLabel: 'ARS Auvergne-Rhône-Alpes' },
-  ],
-  713: [
-    {
-      label: 'DD-26 Affectée pour traitement',
-      parentLabel: 'DD-26',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'ECRITURE',
-    },
-    {
-      label: 'DD-26 Partagée pour lecture',
-      parentLabel: 'DD-26',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'LECTURE',
-    },
-    { label: 'POLE OSH 07-26', parentLabel: 'ARS Auvergne-Rhône-Alpes' },
-  ],
-  715: [
-    {
-      label: 'DD-38 Affectée pour traitement',
-      parentLabel: 'DD-38',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'ECRITURE',
-    },
-    {
-      label: 'DD-38 Partagée pour lecture',
-      parentLabel: 'DD-38',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'LECTURE',
-    },
-    { label: 'POLE OSH 38', parentLabel: 'ARS Auvergne-Rhône-Alpes' },
-  ],
-  717: [
-    {
-      label: 'DD-42 Affectée pour traitement',
-      parentLabel: 'DD-42',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'ECRITURE',
-    },
-    {
-      label: 'DD-42 Partagée pour lecture',
-      parentLabel: 'DD-42',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'LECTURE',
-    },
-    { label: 'POLE 0SH 42-43', parentLabel: 'ARS Auvergne-Rhône-Alpes' },
-  ],
-  719: [
-    {
-      label: 'DD-43 Affectée pour traitement',
-      parentLabel: 'DD-43',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'ECRITURE',
-    },
-    {
-      label: 'DD-43 Partagée pour lecture',
-      parentLabel: 'DD-43',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'LECTURE',
-    },
-    { label: 'POLE 0SH 42-43', parentLabel: 'ARS Auvergne-Rhône-Alpes' },
-  ],
-  721: [
-    {
-      label: 'DD-63 Affectée pour traitement',
-      parentLabel: 'DD-63',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'ECRITURE',
-    },
-    {
-      label: 'DD-63 Partagée pour lecture',
-      parentLabel: 'DD-63',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'LECTURE',
-    },
-    { label: 'POLE OSH 03-15-63', parentLabel: 'ARS Auvergne-Rhône-Alpes' },
-  ],
-  723: [
-    {
-      label: 'DD-69 Affectée pour traitement',
-      parentLabel: 'DD-69',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'ECRITURE',
-    },
-    {
-      label: 'DD-69 Partagée pour lecture',
-      parentLabel: 'DD-69',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'LECTURE',
-    },
-    { label: 'Pole OSH 01-69', parentLabel: 'ARS Auvergne-Rhône-Alpes' },
-  ],
-  725: [
-    {
-      label: 'DD-73 Affectée pour traitement',
-      parentLabel: 'DD-73',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'ECRITURE',
-    },
-    {
-      label: 'DD-73 Partagée pour lecture',
-      parentLabel: 'DD-73',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'LECTURE',
-    },
-    { label: 'POLE OSH 73-74', parentLabel: 'ARS Auvergne-Rhône-Alpes' },
-  ],
-  727: [
-    {
-      label: 'DD-74 Affectée pour traitement',
-      parentLabel: 'DD-74',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'ECRITURE',
-    },
-    {
-      label: 'DD-74 Partagée pour lecture',
-      parentLabel: 'DD-74',
-      grandParentLabel: 'ARS Auvergne-Rhône-Alpes',
-      groupMode: 'LECTURE',
-    },
-    { label: 'POLE OSH 73-74', parentLabel: 'ARS Auvergne-Rhône-Alpes' },
-  ],
-  4974: [{ label: 'DOS périnatalité', parentLabel: 'ARS Auvergne-Rhône-Alpes' }],
-  703: [{ label: 'Pole Usagers Réclamations', parentLabel: 'ARS Auvergne-Rhône-Alpes' }],
+  705: dd('01', 'Pole OSH 01-69'),
+  707: dd('03', 'POLE OSH 03-15-63'),
+  709: dd('07', 'POLE OSH 07-26'),
+  711: dd('15', 'POLE OSH 03-15-63'),
+  713: dd('26', 'POLE OSH 07-26'),
+  715: dd('38', 'POLE OSH 38'),
+  717: dd('42', 'POLE 0SH 42-43'),
+  719: dd('43', 'POLE 0SH 42-43'),
+  721: dd('63', 'POLE OSH 03-15-63'),
+  723: dd('69', 'Pole OSH 01-69'),
+  725: dd('73', 'POLE OSH 73-74'),
+  727: dd('74', 'POLE OSH 73-74'),
+  4974: [{ label: 'DOS périnatalité', parentLabel: ARS_AUVERGNE_RHONE_ALPES }],
+  703: [{ label: 'Pole Usagers Réclamations', parentLabel: ARS_AUVERGNE_RHONE_ALPES }],
 };

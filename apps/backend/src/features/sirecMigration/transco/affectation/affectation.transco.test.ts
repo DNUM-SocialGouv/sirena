@@ -13,9 +13,9 @@ vi.mock('@sirena/db', () => ({
   },
 }));
 
-const mockWarn = vi.hoisted(() => vi.fn());
+const mockError = vi.hoisted(() => vi.fn());
 vi.mock('../../../../helpers/pino.js', () => ({
-  createDefaultLogger: () => ({ warn: mockWarn }),
+  createDefaultLogger: () => ({ error: mockError }),
 }));
 
 const ARS_NORMANDIE_ID = 'ars-normandie-dynamic-id';
@@ -264,7 +264,7 @@ describe('affectation.transco.ts', () => {
         const entitiesWithoutDau = makeAllRequiredEntities().filter((e) => e.id !== 'dau-id');
         await setupTransco(entitiesWithoutDau);
 
-        expect(mockWarn).toHaveBeenCalledWith(
+        expect(mockError).toHaveBeenCalledWith(
           expect.objectContaining({ sirecId: expect.any(Number) }),
           expect.any(String),
         );
@@ -350,7 +350,7 @@ describe('affectation.transco.ts', () => {
       await setupTransco(entities);
 
       expect(() => transcodeAffectation(1115)).toThrow(SirecTranscoError);
-      expect(mockWarn).toHaveBeenCalledWith(expect.objectContaining({ sirecId: 1115 }), expect.any(String));
+      expect(mockError).toHaveBeenCalledWith(expect.objectContaining({ sirecId: 1115 }), expect.any(String));
     });
 
     it('should skip a service entity whose grandparent was filtered out as inactive', async () => {
@@ -362,7 +362,7 @@ describe('affectation.transco.ts', () => {
       await setupTransco(entities);
 
       expect(() => transcodeAffectation(1091)).toThrow(SirecTranscoError);
-      expect(mockWarn).toHaveBeenCalledWith(expect.objectContaining({ sirecId: 1091 }), expect.any(String));
+      expect(mockError).toHaveBeenCalledWith(expect.objectContaining({ sirecId: 1091 }), expect.any(String));
     });
   });
 

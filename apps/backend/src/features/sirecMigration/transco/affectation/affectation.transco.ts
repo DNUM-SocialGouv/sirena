@@ -18,17 +18,13 @@ import { AFFECTATION_ENTITES_OCCITANIE } from './entitesOccitanie.js';
 import { AFFECTATION_ENTITES_PACA } from './entitesPACA.js';
 import { AFFECTATION_ENTITES_PAYS_DE_LA_LOIRE } from './entitesPaysDeLaLoire.js';
 import { AFFECTATION_ENTITES_TOP_LEVEL } from './entitesTopLevel.js';
+import type { SirecGroupMode } from './sirecGroupMode.js';
+
+export { SIREC_GROUP_MODE, type SirecGroupMode } from './sirecGroupMode.js';
 
 const logger = createDefaultLogger();
 
 export const SIREC_NATIONAL_ENTITE_ID = 1;
-
-export const SIREC_GROUP_MODE = {
-  LECTURE: 'LECTURE',
-  ECRITURE: 'ECRITURE',
-} as const;
-
-export type SirecGroupMode = (typeof SIREC_GROUP_MODE)[keyof typeof SIREC_GROUP_MODE];
 
 export const ARS_NORMANDIE_ENTITE_ID = '4af829ff-07c1-425d-85d6-83b5f97e4422';
 
@@ -137,7 +133,7 @@ export async function initAffectationTransco(): Promise<void> {
         .map((s) => ({ entiteId: findEntityId(entities, s), groupMode: s.groupMode }));
       newTransco.set(sirecId, { topLevelEntiteId: topLevelEntity.id, services });
     } catch (err) {
-      logger.warn({ err, sirecId }, 'SIREC Entity not found in SIRENA, ignored during initialization');
+      logger.error({ err, sirecId }, 'SIREC Entity not found in SIRENA, ignored during initialization');
     }
   }
 
