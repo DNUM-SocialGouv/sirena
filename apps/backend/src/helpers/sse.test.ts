@@ -105,7 +105,12 @@ describe('createSSEStream', () => {
   });
 
   describe('closing on user:status', () => {
-    const statusEvent = (userId: string) => ({ userId, statutId: 'INACTIF', roleId: 'READER' });
+    const statusEvent = (userId: string, overrides: { statutId?: string; roleId?: string } = {}) => ({
+      userId,
+      statutId: 'INACTIF',
+      roleId: 'READER',
+      ...overrides,
+    });
 
     it('counts one listener per connection: the guard never shows up in the metrics', async () => {
       await openStream('requete:updated');
@@ -113,10 +118,22 @@ describe('createSSEStream', () => {
       expect(sseEventManager.getConnectionCounts()).toMatchObject({ 'requete:updated': 1, 'user:status': 0 });
     });
 
-    it('closes the stream when the subscriber is deactivated or changes role', async () => {
+    it('closes the stream when the subscriber is deactivated', async () => {
       const reader = await openStream('requete:updated');
 
-      receiveFromRedis('user:status', statusEvent('u1'));
+      receiveFromRedis('user:status', statusEvent('u1', { statutId: 'INACTIF' }));
+      await tick();
+
+      expect(sseEventManager.listenerCount('requete:updated')).toBe(0);
+      expect(sseEventManager.eventNames()).toEqual([]);
+      await expect(reader.read()).resolves.toMatchObject({ done: true });
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('status or role changed'));
+    });
+
+    it('closes the stream when the subscriber keeps its account but changes role', async () => {
+      const reader = await openStream('requete:updated');
+
+      receiveFromRedis('user:status', statusEvent('u1', { statutId: 'ACTIF', roleId: 'ENTITY_ADMIN' }));
       await tick();
 
       expect(sseEventManager.listenerCount('requete:updated')).toBe(0);
