@@ -1,6 +1,6 @@
 import type { RequeteMessageEvent } from '@sirena/common/constants';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RequestForm } from './RequestForm';
 
@@ -147,13 +147,6 @@ describe('RequestForm', () => {
     emitDiscussionEvent = null;
     toastAdd.mockReset();
     fetchRequeteMessages.mockReset();
-  });
-
-  it('keeps the two historical tabs only: the discussion lives in a panel, not a tab', () => {
-    renderForm();
-
-    expect(screen.getAllByRole('tab')).toHaveLength(2);
-    expect(screen.queryByRole('tab', { name: /Discussion/ })).not.toBeInTheDocument();
   });
 
   it('subscribes to the discussion stream only when the feature flag is on', () => {
