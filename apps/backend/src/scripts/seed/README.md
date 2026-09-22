@@ -16,8 +16,11 @@ with a fixed `SeedConfig`. Equivalent to `pnpm op:seed --e2e`
 (or `SEED_PROFILE=e2e`).
 
 Profile config: `reset: true`, default users, `11` manual requests per ARS,
-`dematSocial: NONE`, feature flags on, **constant faker seed**. The command is
-replayable: each run resets the DB and rebuilds the same state.
+`dematSocial: NONE`, feature flags on, **constant faker seed** and a fixed reference
+date (`2026-09-16T12:00:00.000Z`) for request ids and relative Faker dates.
+Each run resets the DB and rebuilds reproducible generated business data;
+Prisma-generated ids and automatic database timestamps remain variable.
+Interactive runs keep using the current date.
 
 **State produced**
 

@@ -53,7 +53,7 @@ async function main() {
 
   const requetes: GeneratedRequete[] = [];
   const needContext = config.manualRequetesCount > 0 || config.dematSocial === 'FAKE';
-  const ctx = needContext ? await buildSeedContext(config.fakerSeed) : null;
+  const ctx = needContext ? await buildSeedContext(config.fakerSeed, config.referenceDate) : null;
 
   if (ctx && config.manualRequetesCount > 0) {
     console.log(`▶ Génération de ${config.manualRequetesCount} requête(s) manuelle(s)…`);

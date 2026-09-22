@@ -33,5 +33,6 @@ export const buildE2eSeedConfig = (): SeedConfig => ({
   dematSocialFakeCount: 0,
   enableFeatureFlags: true,
   fakerSeed: E2E_FAKER_SEED,
+  referenceDate: new Date('2026-09-16T12:00:00.000Z'),
   fixedUserIds: { [E2E_ENTITY_ADMIN_EMAIL]: E2E_ENTITY_ADMIN_ID },
 });
