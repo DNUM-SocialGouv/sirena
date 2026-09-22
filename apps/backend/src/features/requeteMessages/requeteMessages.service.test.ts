@@ -114,6 +114,36 @@ describe('requeteMessages.service.ts', () => {
       );
     });
 
+    it('breaks a createdAt tie on the id so no message is skipped or served twice', async () => {
+      const sharedDate = new Date('2026-01-01T09:00:00.000Z');
+      const table = [
+        row({ id: 'm3', createdAt: sharedDate }),
+        row({ id: 'm2', createdAt: sharedDate }),
+        row({ id: 'm1', createdAt: sharedDate }),
+      ];
+      type CursorClause = { createdAt: { lt: Date } } | { createdAt: Date; id: { lt: string } };
+      type FindManyArgs = { where: { OR?: CursorClause[] }; take: number };
+      const matches = (message: (typeof table)[number], clause: CursorClause) =>
+        'id' in clause
+          ? message.createdAt.getTime() === clause.createdAt.getTime() && message.id < clause.id.lt
+          : message.createdAt < clause.createdAt.lt;
+      mockedMessage.findMany.mockImplementation((({ where, take }: FindManyArgs) =>
+        Promise.resolve(
+          table.filter((message) => !where.OR || where.OR.some((clause) => matches(message, clause))).slice(0, take),
+        )) as never);
+
+      const firstPage = await getRequeteMessages('REQ', 'user1', { limit: 2 });
+
+      expect(firstPage.data.map((message) => message.id)).toEqual(['m3', 'm2']);
+      expect(firstPage.meta).toEqual({ hasMore: true, nextCursor: 'm2' });
+
+      mockedMessage.findFirst.mockResolvedValueOnce({ createdAt: sharedDate, id: 'm2' } as never);
+      const secondPage = await getRequeteMessages('REQ', 'user1', { limit: 2, before: 'm2' });
+
+      expect(secondPage.data.map((message) => message.id)).toEqual(['m1']);
+      expect(secondPage.meta).toEqual({ hasMore: false, nextCursor: null });
+    });
+
     it('ignores an unknown cursor instead of filtering on it', async () => {
       mockedMessage.findFirst.mockResolvedValueOnce(null as never);
       mockedMessage.findMany.mockResolvedValueOnce([] as never);
