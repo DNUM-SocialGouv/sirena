@@ -32,7 +32,7 @@ const contenuSchema = z
     z
       .string()
       .min(1, { message: 'Le message ne peut pas être vide.' })
-      .max(REQUETE_MESSAGE_MAX_LENGTH, { message: 'Maximum 10 000 caractères.' }),
+      .max(REQUETE_MESSAGE_MAX_LENGTH, { message: `Maximum ${REQUETE_MESSAGE_MAX_LENGTH} caractères.` }),
   );
 
 export const PostRequeteMessageBodySchema = z.object({

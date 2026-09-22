@@ -1,3 +1,4 @@
+import { REQUETE_MESSAGE_MAX_LENGTH } from '@sirena/common/constants';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -20,19 +21,23 @@ describe('MessageComposer', () => {
     postMessage.mockReset().mockResolvedValue({ id: 'M1' });
   });
 
-  it('disables the submit button while the message is empty', () => {
+  it('asks for a message instead of sending an empty one', async () => {
+    const user = userEvent.setup();
     render(<MessageComposer requestId="REQ" />);
 
-    expect(screen.getByRole('button', { name: 'Envoyer' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Envoyer' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Veuillez saisir un message');
+    expect(screen.getByRole('textbox')).toHaveFocus();
+    expect(postMessage).not.toHaveBeenCalled();
   });
 
   it('rejects a message longer than the maximum length', () => {
     const { container } = render(<MessageComposer requestId="REQ" />);
 
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'a'.repeat(10_001) } });
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'a'.repeat(REQUETE_MESSAGE_MAX_LENGTH + 1) } });
 
     expect(screen.getByText(/ne doit pas dépasser/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Envoyer' })).toBeDisabled();
 
     fireEvent.submit(getForm(container));
 
@@ -71,7 +76,7 @@ describe('MessageComposer', () => {
     await waitFor(() => expect(onSent).toHaveBeenCalledTimes(1));
   });
 
-  it('displays an inline alert when the message cannot be posted', async () => {
+  it('names the failure as an error and keeps the message when it cannot be posted', async () => {
     postMessage.mockRejectedValue(new Error("Le message n'a pas pu être envoyé."));
     const user = userEvent.setup();
     render(<MessageComposer requestId="REQ" />);
@@ -79,18 +84,7 @@ describe('MessageComposer', () => {
     await user.type(screen.getByRole('textbox'), 'Bonjour');
     await user.click(screen.getByRole('button', { name: 'Envoyer' }));
 
-    expect(await screen.findByText("Le message n'a pas pu être envoyé.")).toBeInTheDocument();
+    expect(await screen.findByText(/^Erreur : /)).toHaveTextContent("Le message n'a pas pu être envoyé.");
     expect(screen.getByRole('textbox')).toHaveValue('Bonjour');
-  });
-
-  it('submits the message with Ctrl + Enter', async () => {
-    const user = userEvent.setup();
-    render(<MessageComposer requestId="REQ" />);
-
-    const textarea = screen.getByRole('textbox');
-    await user.type(textarea, 'Bonjour');
-    await user.keyboard('{Control>}{Enter}{/Control}');
-
-    await waitFor(() => expect(postMessage).toHaveBeenCalledWith({ contenu: 'Bonjour' }));
   });
 });

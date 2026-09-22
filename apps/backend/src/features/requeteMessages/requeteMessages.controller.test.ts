@@ -1,4 +1,4 @@
-import { ERROR_KIND, REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
+import { ERROR_KIND, REQUETE_MESSAGE_MAX_LENGTH, REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
@@ -255,7 +255,7 @@ describe('requeteMessages.controller.ts', () => {
 
     it.each([
       ['an empty message', { contenu: '   ' }],
-      ['a content above the maximum length', { contenu: 'a'.repeat(10_001) }],
+      ['a content above the maximum length', { contenu: 'a'.repeat(REQUETE_MESSAGE_MAX_LENGTH + 1) }],
     ])('rejects %s with a 400', async (_label, json) => {
       const res = await client[':requeteId'].$post({ param: { requeteId: REQUETE_ID }, json });
 

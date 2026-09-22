@@ -25,8 +25,8 @@ export const Discussion = ({ requestId }: DiscussionProps) => {
     void fetchNextPage();
   }, [fetchNextPage]);
 
-  const [separatorEpoch, setSeparatorEpoch] = useState(0);
-  const handleSent = useCallback(() => setSeparatorEpoch((epoch) => epoch + 1), []);
+  const [readStateVersion, setReadStateVersion] = useState(0);
+  const handleSent = useCallback(() => setReadStateVersion((version) => version + 1), []);
 
   if (messagesQuery.isPending) {
     return <Loader />;
@@ -44,7 +44,7 @@ export const Discussion = ({ requestId }: DiscussionProps) => {
         hasMore={!!hasNextPage}
         isFetchingNextPage={isFetchingNextPage}
         onLoadMore={handleLoadMore}
-        separatorEpoch={separatorEpoch}
+        readStateVersion={readStateVersion}
       />
 
       {canEdit ? <MessageComposer requestId={requestId} onSent={handleSent} /> : null}

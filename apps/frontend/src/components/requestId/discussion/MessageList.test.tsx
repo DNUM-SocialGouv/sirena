@@ -112,11 +112,11 @@ describe('MessageList', () => {
     expect(screen.getByText('Non lus').closest('li')?.nextElementSibling?.textContent).toContain('message m2');
   });
 
-  it('recomputes the "unread" line after the agent replied', () => {
+  it("shows the 'Non lus' separator again when a new message arrives", () => {
     const unread = (id: string) => ({ ...makeMessage(id), isReadByCurrentUser: false });
     const props = { ownEntiteId: 'E1', hasMore: false, isFetchingNextPage: false, onLoadMore: vi.fn() };
     const { rerender } = render(
-      <MessageList {...props} messages={[makeMessage('m1'), unread('m2')]} separatorEpoch={0} />,
+      <MessageList {...props} messages={[makeMessage('m1'), unread('m2')]} readStateVersion={0} />,
     );
     expect(screen.getByText('Non lus')).toBeInTheDocument();
 
@@ -124,7 +124,7 @@ describe('MessageList', () => {
       <MessageList
         {...props}
         messages={[makeMessage('m1'), makeMessage('m2'), makeMessage('m3')]}
-        separatorEpoch={1}
+        readStateVersion={1}
       />,
     );
     expect(screen.queryByText('Non lus')).not.toBeInTheDocument();
@@ -133,7 +133,7 @@ describe('MessageList', () => {
       <MessageList
         {...props}
         messages={[makeMessage('m1'), makeMessage('m2'), makeMessage('m3'), unread('m4')]}
-        separatorEpoch={1}
+        readStateVersion={1}
       />,
     );
     expect(screen.getByText('Non lus').closest('li')?.nextElementSibling?.textContent).toContain('message m4');

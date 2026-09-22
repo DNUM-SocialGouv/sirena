@@ -1,23 +1,14 @@
 import Alert from '@codegouvfr/react-dsfr/Alert';
 import Button from '@codegouvfr/react-dsfr/Button';
 import { REQUETE_MESSAGE_MAX_LENGTH } from '@sirena/common/constants';
-import {
-  type ChangeEvent,
-  type FormEvent,
-  type KeyboardEvent,
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from 'react';
+import { type ChangeEvent, type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { usePostRequeteMessage } from '@/hooks/mutations/postRequeteMessage.hook';
 import styles from './discussion.module.css';
 
 const MAX_LENGTH_LABEL = REQUETE_MESSAGE_MAX_LENGTH.toLocaleString('fr-FR');
-const LENGTH_ERROR = `Le message ne doit pas dépasser ${MAX_LENGTH_LABEL} caractères.`;
-// The counter only speaks up near the limit, so it informs without narrating every keystroke.
-const COUNTER_VISIBLE_FROM = REQUETE_MESSAGE_MAX_LENGTH - 200;
+const LENGTH_ERROR = `Le message ne doit pas dépasser ${MAX_LENGTH_LABEL} caractères. Supprimer les caractères excédentaires.`;
+const EMPTY_ERROR = 'Veuillez saisir un message pour l’envoyer.';
+const SUBMIT_ERROR = "Erreur : le message n'a pas pu être envoyé.";
 
 type MessageComposerProps = {
   requestId: string;
@@ -26,6 +17,7 @@ type MessageComposerProps = {
 
 export const MessageComposer = ({ requestId, onSent }: MessageComposerProps) => {
   const [contenu, setContenu] = useState('');
+  const [emptyError, setEmptyError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -33,7 +25,6 @@ export const MessageComposer = ({ requestId, onSent }: MessageComposerProps) => 
 
   const textAreaId = useId();
   const hintId = useId();
-  const counterId = useId();
   const errorId = useId();
 
   const postMessageMutation = usePostRequeteMessage(requestId);
@@ -41,13 +32,21 @@ export const MessageComposer = ({ requestId, onSent }: MessageComposerProps) => 
   const trimmedContenu = contenu.trim();
   const isTooLong = trimmedContenu.length > REQUETE_MESSAGE_MAX_LENGTH;
   const isEmpty = trimmedContenu.length === 0;
+  const fieldError = isTooLong ? LENGTH_ERROR : emptyError;
 
   const handleContenuChange = useCallback((event: ChangeEvent<HTMLTextAreaElement>) => {
     setContenu(event.target.value);
+    setEmptyError(null);
   }, []);
 
   const handleSubmit = useCallback(async () => {
-    if (isEmpty || isTooLong || isSubmitting) return;
+    if (isSubmitting) return;
+
+    if (isEmpty || isTooLong) {
+      setEmptyError(isEmpty ? EMPTY_ERROR : null);
+      textAreaRef.current?.focus();
+      return;
+    }
 
     setSubmitError(null);
     setIsSubmitting(true);
@@ -58,7 +57,7 @@ export const MessageComposer = ({ requestId, onSent }: MessageComposerProps) => 
       justSentRef.current = true;
       onSent?.();
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Le message n'a pas pu être envoyé.");
+      setSubmitError(error instanceof Error ? `Erreur : ${error.message}` : SUBMIT_ERROR);
     } finally {
       setIsSubmitting(false);
     }
@@ -79,45 +78,30 @@ export const MessageComposer = ({ requestId, onSent }: MessageComposerProps) => 
     [handleSubmit],
   );
 
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        void handleSubmit();
-      }
-    },
-    [handleSubmit],
-  );
-
-  const describedBy = [hintId, counterId, isTooLong ? errorId : null].filter(Boolean).join(' ');
+  const describedBy = [hintId, fieldError ? errorId : null].filter(Boolean).join(' ');
 
   return (
     <form className={styles.composer} onSubmit={handleFormSubmit}>
-      <div className={`fr-input-group ${isTooLong ? 'fr-input-group--error' : ''}`.trim()}>
+      <div className={`fr-input-group ${fieldError ? 'fr-input-group--error' : ''}`.trim()}>
         <label className="fr-label" htmlFor={textAreaId}>
           Nouveau message
           <span className="fr-hint-text" id={hintId}>
-            Maximum {MAX_LENGTH_LABEL} caractères<span className="fr-sr-only">. Ctrl + Entrée pour envoyer.</span>
+            Maximum {MAX_LENGTH_LABEL} caractères
           </span>
         </label>
         <textarea
           ref={textAreaRef}
           id={textAreaId}
-          className={`fr-input ${isTooLong ? 'fr-input--error' : ''}`.trim()}
+          className={`fr-input ${fieldError ? 'fr-input--error' : ''}`.trim()}
           rows={4}
           value={contenu}
           onChange={handleContenuChange}
-          onKeyDown={handleKeyDown}
-          disabled={isSubmitting}
           aria-describedby={describedBy}
-          aria-invalid={isTooLong || undefined}
+          aria-invalid={fieldError ? true : undefined}
         />
-        <p id={counterId} className="fr-hint-text fr-mt-1v fr-mb-0" aria-live="polite" aria-atomic="true">
-          {contenu.length >= COUNTER_VISIBLE_FROM ? `${contenu.length} / ${REQUETE_MESSAGE_MAX_LENGTH} caractères` : ''}
-        </p>
-        {isTooLong ? (
-          <p id={errorId} className="fr-error-text">
-            {LENGTH_ERROR}
+        {fieldError ? (
+          <p id={errorId} className="fr-error-text" role="alert">
+            {fieldError}
           </p>
         ) : null}
       </div>
@@ -125,9 +109,7 @@ export const MessageComposer = ({ requestId, onSent }: MessageComposerProps) => 
       {submitError ? <Alert severity="error" small description={submitError} className="fr-mt-2w" /> : null}
 
       <div className={styles.composerActions}>
-        <Button type="submit" disabled={isEmpty || isTooLong || isSubmitting}>
-          {isSubmitting ? 'Envoi…' : 'Envoyer'}
-        </Button>
+        <Button type="submit">{isSubmitting ? 'Envoi…' : 'Envoyer'}</Button>
       </div>
     </form>
   );

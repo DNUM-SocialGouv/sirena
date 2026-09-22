@@ -18,7 +18,7 @@ type MessageListProps = {
   hasMore: boolean;
   isFetchingNextPage: boolean;
   onLoadMore: () => void;
-  separatorEpoch?: number;
+  readStateVersion?: number;
 };
 
 export const MessageList = ({
@@ -27,7 +27,7 @@ export const MessageList = ({
   hasMore,
   isFetchingNextPage,
   onLoadMore,
-  separatorEpoch = 0,
+  readStateVersion = 0,
 }: MessageListProps) => {
   const scrollerRef = useRef<HTMLElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -113,28 +113,29 @@ export const MessageList = ({
     setHasNewMessagesBelow(true);
   }, [messages, hasMore, scrollToBottom]);
 
-  const [frozen, setFrozen] = useState<{ epoch: number; id: string } | null>(null);
-  const firstUnreadId = messages.find((message) => !message.isReadByCurrentUser)?.id ?? null;
-  const frozenSeparatorId = frozen?.epoch === separatorEpoch ? frozen.id : null;
+  const [unreadMarker, setUnreadMarker] = useState<{ epoch: number; id: string } | null>(null);
+  const firstUnreadMessageId = messages.find((message) => !message.isReadByCurrentUser)?.id ?? null;
+  const unreadMarkerMessageId = unreadMarker?.epoch === readStateVersion ? unreadMarker.id : null;
 
   useEffect(() => {
-    if (firstUnreadId === null) return;
+    if (firstUnreadMessageId === null) return;
 
-    setFrozen((current) => {
-      if (current?.epoch !== separatorEpoch) return { epoch: separatorEpoch, id: firstUnreadId };
+    setUnreadMarker((current) => {
+      if (current?.epoch !== readStateVersion) return { epoch: readStateVersion, id: firstUnreadMessageId };
 
       // A page older than the first one can reveal unread messages above the line: it moves up the thread,
       // never down, so marking the thread read still leaves it where the agent found it.
-      const frozenIndex = messages.findIndex((message) => message.id === current.id);
-      const firstUnreadIndex = messages.findIndex((message) => message.id === firstUnreadId);
-      return frozenIndex === -1 || firstUnreadIndex < frozenIndex
-        ? { epoch: separatorEpoch, id: firstUnreadId }
+      const markerIndex = messages.findIndex((message) => message.id === current.id);
+      const firstUnreadIndex = messages.findIndex((message) => message.id === firstUnreadMessageId);
+      return markerIndex === -1 || firstUnreadIndex < markerIndex
+        ? { epoch: readStateVersion, id: firstUnreadMessageId }
         : current;
     });
-  }, [messages, firstUnreadId, separatorEpoch]);
+  }, [messages, firstUnreadMessageId, readStateVersion]);
 
-  const separatorId = frozenSeparatorId ?? firstUnreadId;
-  const separatorIndex = separatorId === null ? -1 : messages.findIndex((message) => message.id === separatorId);
+  const separatorMessageId = unreadMarkerMessageId ?? firstUnreadMessageId;
+  const separatorIndex =
+    separatorMessageId === null ? -1 : messages.findIndex((message) => message.id === separatorMessageId);
 
   return (
     <>
