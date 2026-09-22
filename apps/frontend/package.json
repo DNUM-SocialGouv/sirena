@@ -38,6 +38,7 @@
     "@biomejs/biome": "catalog:",
     "@playwright/test": "^1.62.0",
     "@sentry/vite-plugin": "^5.4.0",
+    "@sirena/db": "workspace:*",
     "@tanstack/react-router-devtools": "^1.167.2",
     "@tanstack/router-plugin": "^1.168.38",
     "@testing-library/dom": "catalog:",

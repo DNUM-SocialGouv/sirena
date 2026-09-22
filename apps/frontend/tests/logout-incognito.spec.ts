@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
 import { autoCloseAnnouncements } from './utils/announcements';
-import { baseUrl, ENTITY_ADMIN_USER, loginUrl } from './utils/constants';
+import { baseUrl, ENTITY_ADMIN_USER, isLocalTarget, loginUrl } from './utils/constants';
 import { loginWithProconnect } from './utils/login';
 
 test('logout', async ({ browser }) => {
+  test.skip(isLocalTarget, 'ProConnect flow is not exercised in local target.');
   const context = await browser.newContext({ httpCredentials: undefined });
   context.clearCookies();
   await autoCloseAnnouncements(context);
