@@ -173,7 +173,7 @@ const fakeUpdatedNomRequeteEtape: RequeteEtape = {
 
 const fakeRequeteEntite = {
   statutId: 'EN_COURS',
-} as unknown as Awaited<ReturnType<typeof getRequeteEntiteById>>;
+} as unknown as NonNullable<Awaited<ReturnType<typeof getRequeteEntiteById>>>;
 
 describe('requeteEtapes.controller.ts', () => {
   const app = appWithLogs.createApp().use(pinoLogger()).route('/', RequeteEtapesController).onError(errorHandler);
@@ -234,8 +234,20 @@ describe('requeteEtapes.controller.ts', () => {
   });
 
   describe('POST /:id/cloture-files', () => {
-    it('should attach files to the closure step', async () => {
-      vi.mocked(addClotureEtapeFiles).mockResolvedValueOnce(fakeRequeteEtape);
+    const closureStep = { ...fakeRequeteEtape, statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE };
+
+    beforeEach(() => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValue(closureStep);
+    });
+
+    it.each([false, true])('allows the owner to attach files to a closure with estPartagee=%s', async (estPartagee) => {
+      const closureStep = { ...fakeRequeteEtape, statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE, estPartagee };
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(closureStep);
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce({
+        ...fakeRequeteEntite,
+        statutId: 'CLOTUREE',
+      });
+      vi.mocked(addClotureEtapeFiles).mockResolvedValueOnce(closureStep);
 
       const res = await client[':id']['cloture-files'].$post({
         param: { id: 'step1' },
@@ -245,7 +257,7 @@ describe('requeteEtapes.controller.ts', () => {
       const body = await res.json();
 
       expect(res.status).toBe(200);
-      expect(body).toEqual({ data: convertDatesToStrings(fakeRequeteEtape) });
+      expect(body).toEqual({ data: convertDatesToStrings(closureStep) });
       expect(addClotureEtapeFiles).toHaveBeenCalledWith('step1', 'test-user-id', 'e1', ['file1', 'file2']);
     });
 
@@ -296,9 +308,9 @@ describe('requeteEtapes.controller.ts', () => {
       expect(addClotureEtapeFiles).not.toHaveBeenCalled();
     });
 
-    it('forbids attaching files to a foreign Étape partagée', async () => {
+    it('forbids attaching files to a foreign shared closure', async () => {
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
-        ...fakeRequeteEtape,
+        ...closureStep,
         entiteId: 'e2',
         estPartagee: true,
       });
@@ -333,10 +345,11 @@ describe('requeteEtapes.controller.ts', () => {
       });
 
       expect(res.status).toBe(403);
+      expect(addClotureEtapeFiles).toHaveBeenCalledWith('step1', 'test-user-id', 'e1', ['file1']);
     });
 
-    it('should return 403 if the step does not accept files (not a closure step)', async () => {
-      vi.mocked(addClotureEtapeFiles).mockRejectedValueOnce(new EtapeNotEditableError('ETAPE_NOT_EDITABLE'));
+    it('rejects attaching closure files to a manual step that is not closed', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(fakeRequeteEtape);
 
       const res = await client[':id']['cloture-files'].$post({
         param: { id: 'step1' },
@@ -344,6 +357,7 @@ describe('requeteEtapes.controller.ts', () => {
       });
 
       expect(res.status).toBe(403);
+      expect(addClotureEtapeFiles).not.toHaveBeenCalled();
     });
 
     it('should validate that at least one file is provided', async () => {
@@ -1353,6 +1367,22 @@ describe('requeteEtapes.controller.ts', () => {
       const res = await client[':id'].$patch({
         param: { id: 'step1' },
         json: { ...validBody, notes: [{ texte: 'Forbidden note' }], fileIds: ['forbidden-file'] },
+      });
+
+      expect(res.status).toBe(403);
+      expect(updateProcessingEtape).not.toHaveBeenCalled();
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+    });
+
+    it('keeps the closure itself immutable for its owner', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({
+        ...fakeRequeteEtape,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
+      });
+
+      const res = await client[':id'].$patch({
+        param: { id: 'step1' },
+        json: validBody,
       });
 
       expect(res.status).toBe(403);
