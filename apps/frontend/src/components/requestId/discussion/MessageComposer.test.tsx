@@ -48,15 +48,32 @@ describe('MessageComposer', () => {
     toastAdd.mockReset();
   });
 
-  it('asks for a message instead of sending an empty one', async () => {
+  it('asks for a message or an attachment instead of sending an empty one', async () => {
     const user = userEvent.setup();
     render(<MessageComposer requestId="REQ" />);
 
     await user.click(screen.getByRole('button', { name: 'Envoyer' }));
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Veuillez saisir un message');
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Veuillez saisir un message ou ajouter une pièce jointe pour envoyer votre message.',
+    );
     expect(screen.getByRole('textbox')).toHaveFocus();
     expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it('takes an attachment as enough to send, and clears the error', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<MessageComposer requestId="REQ" />);
+
+    await user.click(screen.getByRole('button', { name: 'Envoyer' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Veuillez saisir un message');
+
+    await attachFiles(container, [makeFile('premier.pdf')]);
+    expect(screen.queryByText(/Veuillez saisir un message/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Envoyer' }));
+
+    await waitFor(() => expect(postMessage).toHaveBeenCalledWith({ contenu: '', fileIds: ['id-premier.pdf'] }));
   });
 
   it('rejects a message longer than the maximum length', () => {
@@ -118,7 +135,7 @@ describe('MessageComposer', () => {
     await attachFiles(container, [makeFile('premier.pdf')]);
     await user.click(screen.getByRole('button', { name: 'Envoyer' }));
 
-    expect(await screen.findByText("Le message n'a pas pu être envoyé.")).toBeInTheDocument();
+    expect(await screen.findByText(/^Erreur : /)).toHaveTextContent("Le message n'a pas pu être envoyé.");
     expect(uploadFile).toHaveBeenCalledTimes(1);
 
     await user.click(screen.getByRole('button', { name: 'Envoyer' }));
@@ -151,7 +168,6 @@ describe('MessageComposer', () => {
     expect(alert).toHaveTextContent('virus.exe');
     expect(alert).toHaveTextContent(/format du fichier n'est pas supporté/);
     expect(screen.queryByText('virus.exe', { selector: 'li' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Envoyer' })).toBeDisabled();
   });
 
   it('refuses a file above the size limit at selection and states why', async () => {
