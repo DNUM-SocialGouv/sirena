@@ -262,10 +262,25 @@ export const importSingleDossier = async (
       : null;
 
     step = 'createRequeteFromDematSocial';
-    const createdRequete = await retryWithBackoff(() => createRequeteFromDematSocial({ ...requete, pdf }), {
-      shouldRetry: (err) => isPrismaUniqueConstraintError(err, 'id'),
-      context: { dossierNumber },
-    });
+    let createdRequete: Awaited<ReturnType<typeof createRequeteFromDematSocial>>;
+    try {
+      createdRequete = await retryWithBackoff(() => createRequeteFromDematSocial({ ...requete, pdf }), {
+        shouldRetry: (err) => isPrismaUniqueConstraintError(err, 'id'),
+        context: { dossierNumber },
+      });
+    } catch (err) {
+      if (!isPrismaUniqueConstraintError(err, 'dematSocialId')) throw err;
+
+      const concurrentRequete = await getRequeteByDematSocialId(dossierNumber);
+      if (!concurrentRequete) throw err;
+
+      await markFailureAsResolved(dossierNumber, concurrentRequete.id);
+      logger.info(
+        { dossierNumber, requeteId: concurrentRequete.id },
+        `Dossier ${dossierNumber} already imported by a concurrent job`,
+      );
+      return { success: true, requeteId: concurrentRequete.id, alreadyImported: true };
+    }
 
     // Mark the failure as resolved
     await markFailureAsResolved(dossierNumber, createdRequete.id);
