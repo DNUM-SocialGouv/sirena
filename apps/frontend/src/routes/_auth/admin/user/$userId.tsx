@@ -221,6 +221,7 @@ function RouteComponent() {
                         label="Rôle*"
                         disabled={profile?.id === userId}
                         nativeSelectProps={{
+                          ...{ 'data-testid': 'user-role-select' },
                           name: 'roleId',
                           value: formData.roleId,
                           onChange: (e) => {
@@ -253,6 +254,7 @@ function RouteComponent() {
                           state={validationErrors.statutId ? 'error' : 'default'}
                           stateRelatedMessage={validationErrors.statutId}
                           nativeSelectProps={{
+                            ...{ 'data-testid': 'user-statut-select' },
                             name: 'statutId',
                             value: formData.statutId,
                             onChange: (e) => {

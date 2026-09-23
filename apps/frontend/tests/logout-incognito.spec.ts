@@ -16,7 +16,7 @@ test('logout', async ({ browser }) => {
   });
 
   await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 30000 });
-  await expect(page.getByRole('heading', { name: 'Liste des requêtes', level: 1 })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByTestId('home-title')).toBeVisible({ timeout: 10000 });
 
   const monEspaceButton = page.getByRole('button', { name: 'Mon espace' });
   await monEspaceButton.click();
