@@ -1,4 +1,4 @@
-import { ERROR_KIND, ROLES, STATUT_TYPES } from '@sirena/common/constants';
+import { ERROR_KIND, PAGINATION_DEFAULT_LIMIT, ROLES, STATUT_TYPES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -124,11 +124,13 @@ describe('Users endpoints: /users', () => {
       const json = await res.json();
       expect(json).toEqual({
         data: convertDatesToStrings(fakeData),
-        meta: { total: 2 },
+        meta: { offset: 0, limit: PAGINATION_DEFAULT_LIMIT, total: 2 },
       });
       expect(getUsers).toHaveBeenCalledWith(['e1', 'e2', 'e3'], {
         roleId: [ROLES.NATIONAL_STEERING],
         statutId: ['ACTIF'],
+        offset: 0,
+        limit: PAGINATION_DEFAULT_LIMIT,
       });
     });
 

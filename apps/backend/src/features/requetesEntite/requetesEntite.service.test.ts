@@ -10,7 +10,6 @@ import {
   type RequeteEtape,
   type UploadedFile,
 } from '../../libs/prisma.js';
-import { DEFAULT_REQUETES_LIMIT } from './requetesEntite.constants.js';
 import {
   closeRequeteForEntite,
   collectRequeteFiles,
@@ -96,6 +95,7 @@ vi.mock('archiver', () => {
 
 import { Readable } from 'node:stream';
 import {
+  PAGINATION_DEFAULT_LIMIT,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_ETAPE_TYPES,
   REQUETE_STATUT_TYPES,
@@ -227,7 +227,7 @@ describe('requetesEntite.service', () => {
 
       expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith({
         skip: 0,
-        take: DEFAULT_REQUETES_LIMIT,
+        take: PAGINATION_DEFAULT_LIMIT,
         orderBy: {
           requete: {
             createdAt: 'desc',

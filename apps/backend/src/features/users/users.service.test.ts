@@ -1,3 +1,4 @@
+import { PAGINATION_DEFAULT_LIMIT } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sseEventManager } from '../../helpers/sse.js';
 import { prisma } from '../../libs/prisma.js';
@@ -83,6 +84,7 @@ describe('user.service.ts', () => {
           statutId: { in: ['ACTIF'] },
         },
         skip: 0,
+        take: PAGINATION_DEFAULT_LIMIT,
         orderBy: { nom: 'asc' },
         include: {
           role: true,
@@ -112,6 +114,7 @@ describe('user.service.ts', () => {
       expect(mockedUser.findMany).toHaveBeenCalledWith({
         where: { roleId: { in: ['PENDING', 'SUPER_ADMIN'] }, statutId: { in: ['ACTIF'] }, entiteId: { in: ['e1'] } },
         skip: 0,
+        take: PAGINATION_DEFAULT_LIMIT,
         orderBy: { nom: 'asc' },
         include: {
           role: true,
@@ -141,6 +144,7 @@ describe('user.service.ts', () => {
       expect(mockedUser.findMany).toHaveBeenCalledWith({
         where: { entiteId: { in: ['e1'] } },
         skip: 0,
+        take: PAGINATION_DEFAULT_LIMIT,
         orderBy: { nom: 'asc' },
         include: {
           role: true,
