@@ -1,0 +1,233 @@
+import { envVars } from '../../config/env.js';
+import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
+import {
+  COMMUNE_DELIMITER,
+  COMMUNE_ENCODING,
+  GEO_GUARDS,
+  INSEE_POSTAL_DELIMITER,
+  INSEE_POSTAL_ENCODING,
+} from './geoReferentiel.constant.js';
+import { buildEntiteCoverageReport } from './geoReferentiel.coverage.js';
+import { fetchCsvLines } from './geoReferentiel.download.js';
+import { parseCommunes, parseInseePostal } from './geoReferentiel.parser.js';
+import {
+  applyGeoReferentiel,
+  diffCommunes,
+  diffInseePostal,
+  loadExistingCommunes,
+  loadExistingInseePostal,
+} from './geoReferentiel.repository.js';
+import type {
+  CommuneRow,
+  ParsedCommunes,
+  ParsedInseePostal,
+  SyncGeoReferentielResult,
+  WriteResult,
+} from './geoReferentiel.type.js';
+
+export class GeoReferentielGuardError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'GeoReferentielGuardError';
+  }
+}
+
+export type SyncGeoReferentielOptions = {
+  /** Parse et contrôle la source, rapporte le diff, n'écrit rien. */
+  dryRun?: boolean;
+  /** Applique les suppressions même quand leur volume déclenche le garde-fou. */
+  force?: boolean;
+  signal?: AbortSignal;
+};
+
+const assertMalformedRatio = (label: string, malformedRows: number, totalRows: number) => {
+  if (totalRows === 0) {
+    return;
+  }
+
+  const ratio = malformedRows / totalRows;
+  if (ratio > GEO_GUARDS.MAX_MALFORMED_RATIO) {
+    throw new GeoReferentielGuardError(
+      `${label} : ${malformedRows} lignes illisibles sur ${totalRows} (${(ratio * 100).toFixed(2)} %), le format a probablement changé`,
+    );
+  }
+};
+
+const checkCommunes = (parsed: ParsedCommunes) => {
+  if (parsed.rows.size < GEO_GUARDS.MIN_COMMUNE_ROWS) {
+    throw new GeoReferentielGuardError(
+      `Référentiel des communes tronqué : ${parsed.rows.size} communes lues, ${GEO_GUARDS.MIN_COMMUNE_ROWS} attendues au minimum`,
+    );
+  }
+
+  assertMalformedRatio('Référentiel des communes', parsed.malformedRows, parsed.totalRows);
+};
+
+const checkInseePostal = (parsed: ParsedInseePostal) => {
+  if (parsed.rows.size < GEO_GUARDS.MIN_INSEE_POSTAL_ROWS) {
+    throw new GeoReferentielGuardError(
+      `Référentiel des codes postaux tronqué : ${parsed.rows.size} couples lus, ${GEO_GUARDS.MIN_INSEE_POSTAL_ROWS} attendus au minimum`,
+    );
+  }
+
+  if (parsed.orphanRows > GEO_GUARDS.MAX_ORPHAN_POSTAL_ROWS) {
+    throw new GeoReferentielGuardError(
+      `${parsed.orphanRows} codes postaux rattachés à une commune inconnue : les deux sources semblent désynchronisées`,
+    );
+  }
+
+  assertMalformedRatio('Référentiel des codes postaux', parsed.malformedRows, parsed.totalRows);
+};
+
+/**
+ * Décide si les suppressions peuvent être appliquées.
+ *
+ * Un fichier amont amputé se traduirait par une suppression massive de codes postaux, donc
+ * par des requêtes qui ne trouvent plus leur territoire. Les deux seuils sont cumulatifs :
+ * il faut dépasser le ratio *et* le volume absolu pour que les suppressions soient écartées,
+ * auquel cas seules les créations et mises à jour — additives, sans perte — sont appliquées.
+ */
+const canApplyDeletions = (pendingDeletions: number, existingCount: number, force: boolean) => {
+  if (force || pendingDeletions === 0 || existingCount === 0) {
+    return true;
+  }
+
+  const ratio = pendingDeletions / existingCount;
+  return ratio <= GEO_GUARDS.MAX_DELETE_RATIO || pendingDeletions <= GEO_GUARDS.MAX_DELETE_ABSOLUTE;
+};
+
+/**
+ * Réunit les communes résolvables : celles de la source et celles déjà en base.
+ *
+ * Une commune que la source ne porte plus est conservée en base pour qu'une adresse portant
+ * son code INSEE reste résolvable ; ses codes postaux doivent l'être aussi, sans quoi la
+ * synchronisation les supprimerait et rendrait la commune inatteignable par code postal.
+ */
+const resolvableComCodes = (
+  sourceRows: ReadonlyMap<string, CommuneRow>,
+  existing: ReadonlyMap<string, CommuneRow>,
+): ReadonlySet<string> => {
+  const comCodes = new Set(existing.keys());
+  for (const comCode of sourceRows.keys()) {
+    comCodes.add(comCode);
+  }
+  return comCodes;
+};
+
+/**
+ * Rafraîchit les tables `Commune` et `InseePostal` depuis les référentiels publics.
+ *
+ * Les deux sources sont intégralement lues et contrôlées en mémoire avant la moindre
+ * écriture : une source tronquée ou au format modifié échoue sans rien toucher. Les
+ * écritures elles-mêmes tiennent dans une transaction unique, si bien qu'une interruption
+ * ne laisse jamais la base à moitié mise à jour. L'opération est idempotente, seules les
+ * lignes réellement différentes sont réécrites.
+ */
+export const syncGeoReferentiel = async (
+  options: SyncGeoReferentielOptions = {},
+): Promise<SyncGeoReferentielResult> => {
+  const logger = getLoggerStore();
+  const { dryRun = false, force = false, signal } = options;
+
+  logger.info({ dryRun, force }, 'Synchronisation du référentiel géographique : téléchargement des communes');
+  const communes = await parseCommunes(
+    fetchCsvLines(envVars.GEO_REFERENTIEL_COMMUNES_URL, {
+      encoding: COMMUNE_ENCODING,
+      delimiter: COMMUNE_DELIMITER,
+      signal,
+    }),
+  );
+  checkCommunes(communes);
+
+  const existingCommunes = await loadExistingCommunes();
+
+  logger.info(
+    { communes: communes.rows.size, malformees: communes.malformedRows },
+    'Communes lues, téléchargement des codes postaux',
+  );
+  const inseePostal = await parseInseePostal(
+    fetchCsvLines(envVars.GEO_REFERENTIEL_POSTAL_URL, {
+      encoding: INSEE_POSTAL_ENCODING,
+      delimiter: INSEE_POSTAL_DELIMITER,
+      signal,
+    }),
+    resolvableComCodes(communes.rows, existingCommunes),
+  );
+  checkInseePostal(inseePostal);
+
+  logger.info(
+    {
+      codesPostaux: inseePostal.rows.size,
+      doublons: inseePostal.duplicateRows,
+      orphelins: inseePostal.orphanRows,
+      malformees: inseePostal.malformedRows,
+    },
+    'Codes postaux lus, comparaison avec la base',
+  );
+
+  const existingInseePostal = await loadExistingInseePostal();
+
+  const communesDiff = diffCommunes(communes.rows, existingCommunes);
+  const inseePostalDiff = diffInseePostal(inseePostal.rows, existingInseePostal);
+  const pendingDeletions = inseePostalDiff.idsToDelete.length;
+  const applyDeletions = canApplyDeletions(pendingDeletions, existingInseePostal.size, force);
+
+  if (!applyDeletions) {
+    logger.error(
+      { pendingDeletions, existing: existingInseePostal.size },
+      'Suppressions inhabituellement nombreuses : elles sont ignorées, seuls les ajouts et mises à jour sont appliqués',
+    );
+  }
+
+  if (!dryRun) {
+    await applyGeoReferentiel(communesDiff, inseePostalDiff, { applyDeletions });
+  }
+
+  const communesResult: WriteResult = {
+    created: communesDiff.toCreate.length,
+    updated: communesDiff.toUpdate.length,
+    deleted: 0,
+  };
+  const inseePostalResult: WriteResult = {
+    created: inseePostalDiff.toCreate.length,
+    updated: inseePostalDiff.toUpdate.length,
+    deleted: applyDeletions ? pendingDeletions : 0,
+  };
+
+  if (communesDiff.orphans > 0) {
+    logger.warn(
+      { orphanCommunes: communesDiff.orphans },
+      'Communes présentes en base et absentes de la source : conservées pour rester résolvables',
+    );
+  }
+
+  const coverage = await buildEntiteCoverageReport();
+
+  if (coverage.missing.length > 0) {
+    logger.warn(
+      {
+        missingCdCount: coverage.missingCdCount,
+        missingDdCount: coverage.missingDdCount,
+        missing: coverage.missing.slice(0, GEO_GUARDS.COVERAGE_REPORT_MAX_ITEMS),
+      },
+      'Territoires sans entité CD ou DDETS correspondante',
+    );
+  }
+
+  const result: SyncGeoReferentielResult = {
+    communes: communesResult,
+    inseePostal: inseePostalResult,
+    orphanCommunes: communesDiff.orphans,
+    duplicateRows: inseePostal.duplicateRows,
+    orphanPostalRows: inseePostal.orphanRows,
+    deletionsSkipped: !applyDeletions,
+    coverage: {
+      ...coverage,
+      missing: coverage.missing.slice(0, GEO_GUARDS.COVERAGE_REPORT_MAX_ITEMS),
+    },
+  };
+
+  logger.info({ ...result, coverage: undefined }, 'Synchronisation du référentiel géographique terminée');
+
+  return result;
+};

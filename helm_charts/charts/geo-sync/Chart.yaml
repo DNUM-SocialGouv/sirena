@@ -1,0 +1,7 @@
+apiVersion: v2
+name: geo-sync
+version: 0.1.0
+type: application
+description: >-
+  CronJob de synchronisation du référentiel géographique (communes et codes postaux)
+  depuis data.gouv.fr, via le script op:sync:geodata du backend.

@@ -32,6 +32,8 @@ const processEnv = {
   ANNUAIRE_SANTE_API_URL: process.env.ANNUAIRE_SANTE_API_URL,
   // BAN (Base Adresse Nationale)
   ADDRESS_API_URL: process.env.ADDRESS_API_URL,
+  GEO_REFERENTIEL_COMMUNES_URL: process.env.GEO_REFERENTIEL_COMMUNES_URL,
+  GEO_REFERENTIEL_POSTAL_URL: process.env.GEO_REFERENTIEL_POSTAL_URL,
   // Internal
   LOG_FORMAT: process.env.LOG_FORMAT,
   LOG_LEVEL: process.env.LOG_LEVEL,

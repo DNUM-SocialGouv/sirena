@@ -114,6 +114,18 @@ export const AppEnvSchema = z.object({
     .optional()
     .default('https://api-adresse.data.gouv.fr')
     .describe("URL de base de l'API BAN (Base Adresse Nationale) utilisée pour l'autocomplétion d'adresses"),
+  GEO_REFERENTIEL_COMMUNES_URL: z
+    .string()
+    .optional()
+    .default('https://www.data.gouv.fr/fr/datasets/r/2648d606-504d-4e91-ac1f-d70c92adc039')
+    .describe(
+      "CSV du référentiel géographique t_geo_com (Atlasanté) : communes et collectivités actuelles. Configurable car data.gouv.fr peut changer l'identifiant de la ressource",
+    ),
+  GEO_REFERENTIEL_POSTAL_URL: z
+    .string()
+    .optional()
+    .default('https://www.data.gouv.fr/fr/datasets/r/008a2dda-2c60-4b63-b910-998f6f818089')
+    .describe('CSV de la Base officielle des codes postaux (La Poste), encodé en latin-1'),
   DEMAT_SOCIAL_API_URL: z.string({
     error: (issue) =>
       issue.input === undefined ? "La variable d'environnement DEMAT_SOCIAL_API_URL est requise" : 'Not a string',

@@ -41,5 +41,26 @@ describe('job.definitions', () => {
         expect(handlerMap[job.name]).toBe(job.task);
       }
     });
+
+    it('should derive a usable interval for every job', async () => {
+      const { jobHandlers } = await import('./job.definitions.js');
+
+      // Une variable d'environnement déclarée dans le schéma mais oubliée dans env.ts
+      // remonterait ici sous la forme d'un NaN, et le job ne serait jamais planifié.
+      for (const job of jobHandlers) {
+        expect(job.repeatEveryMs).toBeGreaterThan(0);
+      }
+    });
+
+    it('should leave the geo referentiel synchronisation out of the internal scheduler', async () => {
+      const { jobHandlers } = await import('./job.definitions.js');
+
+      // Son rythme est mensuel, très au-delà de la durée de vie d'un déploiement, alors que
+      // le planificateur recrée ses jobs répétables à chaque démarrage : le compte à rebours
+      // repartirait de zéro à chaque mise en production et la synchronisation ne se
+      // déclencherait jamais. Elle est portée par un CronJob Kubernetes, et ce test est là
+      // pour que personne ne la ramène ici par inadvertance.
+      expect(jobHandlers.map((job) => job.name)).not.toContain('sync-geo-referentiel');
+    });
   });
 });
