@@ -134,6 +134,11 @@ export const deleteUser = async (id: User['id']) => {
 };
 
 export const patchUser = async (id: User['id'], data: PatchUserDto) => {
+  const previousEntiteId =
+    data.entiteId === undefined
+      ? undefined
+      : ((await prisma.user.findUnique({ where: { id }, select: { entiteId: true } }))?.entiteId ?? null);
+
   const user = await prisma.user.update({
     where: { id },
     data: {
@@ -141,7 +146,9 @@ export const patchUser = async (id: User['id'], data: PatchUserDto) => {
     },
   });
 
-  if (data.statutId || data.roleId) {
+  // A new entite changes the scope every open stream was filtered with, so it closes them like a status
+  // or a role change does: the client reconnects and gets filters that match its new perimeter.
+  if (data.statutId !== undefined || data.roleId !== undefined || data.entiteId !== undefined) {
     sseEventManager.emitUserStatus({
       userId: user.id,
       statutId: user.statutId,
@@ -154,6 +161,16 @@ export const patchUser = async (id: User['id'], data: PatchUserDto) => {
     userId: user.id,
     entiteId: user.entiteId,
   });
+
+  // The admins of the entite the user just left filter the stream on it: without a second event their
+  // list keeps a row for someone who is no longer in their perimeter.
+  if (previousEntiteId !== undefined && previousEntiteId !== null && previousEntiteId !== user.entiteId) {
+    sseEventManager.emitUserList({
+      action: 'updated',
+      userId: user.id,
+      entiteId: previousEntiteId,
+    });
+  }
 
   return user;
 };

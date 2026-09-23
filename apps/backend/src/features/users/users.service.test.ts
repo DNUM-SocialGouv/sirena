@@ -374,10 +374,10 @@ describe('user.service.ts', () => {
       });
     });
 
-    it('does not emit a status event when neither the status nor the role changes', async () => {
+    it('does not emit a status event when nothing about the access perimeter changes', async () => {
       mockedUser.update = vi.fn().mockResolvedValueOnce({ ...mockUser, entiteId: 'e1' });
 
-      await patchUser('user1', { entiteId: 'e1' });
+      await patchUser('user1', { prenom: 'Jean' });
 
       expect(sseEventManager.emitUserStatus).not.toHaveBeenCalled();
       expect(sseEventManager.emitUserList).toHaveBeenCalledWith({
@@ -385,6 +385,47 @@ describe('user.service.ts', () => {
         userId: mockUser.id,
         entiteId: 'e1',
       });
+    });
+
+    it('closes the streams of a user moved to another entite', async () => {
+      mockedUser.findUnique = vi.fn().mockResolvedValueOnce({ entiteId: 'e1' });
+      mockedUser.update = vi.fn().mockResolvedValueOnce({ ...mockUser, entiteId: 'e2' });
+
+      await patchUser('user1', { entiteId: 'e2' });
+
+      expect(sseEventManager.emitUserStatus).toHaveBeenCalledWith({
+        userId: mockUser.id,
+        statutId: mockUser.statutId,
+        roleId: mockUser.roleId,
+      });
+    });
+
+    it('tells the entite the user left, not only the one it joined', async () => {
+      mockedUser.findUnique = vi.fn().mockResolvedValueOnce({ entiteId: 'e1' });
+      mockedUser.update = vi.fn().mockResolvedValueOnce({ ...mockUser, entiteId: 'e2' });
+
+      await patchUser('user1', { entiteId: 'e2' });
+
+      expect(sseEventManager.emitUserList).toHaveBeenCalledWith({
+        action: 'updated',
+        userId: mockUser.id,
+        entiteId: 'e2',
+      });
+      expect(sseEventManager.emitUserList).toHaveBeenCalledWith({
+        action: 'updated',
+        userId: mockUser.id,
+        entiteId: 'e1',
+      });
+    });
+
+    it('does not read the previous entite when the patch does not touch it', async () => {
+      mockedUser.findUnique = vi.fn().mockResolvedValueOnce(null);
+      mockedUser.update = vi.fn().mockResolvedValueOnce({ ...mockUser, entiteId: 'e1' });
+
+      await patchUser('user1', { roleId: 'SUPER_ADMIN' });
+
+      expect(mockedUser.findUnique).not.toHaveBeenCalled();
+      expect(sseEventManager.emitUserList).toHaveBeenCalledTimes(1);
     });
   });
 
