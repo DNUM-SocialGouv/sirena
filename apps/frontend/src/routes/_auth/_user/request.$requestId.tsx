@@ -1,6 +1,7 @@
 import { ROLES } from '@sirena/common/constants';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { z } from 'zod';
+import { AppError } from '@/components/layout/AppError';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/_user/request/$requestId')({
@@ -18,4 +19,11 @@ export const Route = createFileRoute('/_auth/_user/request/$requestId')({
     ],
   }),
   component: Outlet,
+  errorComponent: (props) => (
+    <AppError
+      {...props}
+      title="Cette requête n’a pas pu être affichée"
+      description="Le détail de la requête n’a pas pu être chargé. Réessayez ; si le problème persiste, revenez à la liste des requêtes."
+    />
+  ),
 });
