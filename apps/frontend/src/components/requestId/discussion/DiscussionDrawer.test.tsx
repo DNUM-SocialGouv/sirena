@@ -14,7 +14,7 @@ vi.mock('@/hooks/useHasFeature', () => ({
 }));
 
 vi.mock('@/hooks/queries/requeteMessagesUnread.hook', () => ({
-  useRequeteUnreadCount: () => ({ data: unreadCount }),
+  useRequeteUnreadCount: () => ({ data: unreadCount, isSuccess: true }),
 }));
 
 vi.mock('@/hooks/mutations/markRequeteDiscussionRead.hook', () => ({
@@ -163,7 +163,7 @@ describe('DiscussionDrawer', () => {
     expect(button).toHaveTextContent('Ouvrir la discussion 3');
   });
 
-  it('announces the messages that arrive, not the running total', () => {
+  it('announces the new total, so that two messages in a row are both read out', () => {
     unreadCount = 0;
     const { container, rerender } = render(<DiscussionDrawer requestId="REQ" />);
     const liveRegion = container.querySelector('p.fr-sr-only[aria-live="polite"]');
@@ -171,11 +171,19 @@ describe('DiscussionDrawer', () => {
 
     unreadCount = 1;
     rerender(<DiscussionDrawer requestId="REQ" />);
-    expect(liveRegion).toHaveTextContent('Nouveau message dans la discussion');
+    expect(liveRegion).toHaveTextContent('1 message non lu dans la discussion');
 
-    unreadCount = 3;
+    unreadCount = 2;
     rerender(<DiscussionDrawer requestId="REQ" />);
-    expect(liveRegion).toHaveTextContent('2 nouveaux messages dans la discussion');
+    expect(liveRegion).toHaveTextContent('2 messages non lus dans la discussion');
+  });
+
+  it('stays silent about the messages that were already unread when the page opened', () => {
+    unreadCount = 3;
+
+    const { container } = render(<DiscussionDrawer requestId="REQ" />);
+
+    expect(container.querySelector('p.fr-sr-only[aria-live="polite"]')).toHaveTextContent('');
   });
 
   it('says nothing when the messages are read', () => {

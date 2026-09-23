@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useUnreadDocumentTitle } from './useUnreadDocumentTitle';
 
@@ -35,6 +35,26 @@ describe('useUnreadDocumentTitle', () => {
     unmount();
 
     expect(document.title).toBe(BASE_TITLE);
+  });
+
+  it('puts the prefix back on the title the router just wrote', async () => {
+    renderHook(() => useUnreadDocumentTitle(2));
+    expect(document.title).toBe(`2 messages non lus - ${BASE_TITLE}`);
+
+    document.title = 'Traitement - Requête 2026-09-RF8 - SIRENA';
+
+    await waitFor(() => expect(document.title).toBe('2 messages non lus - Traitement - Requête 2026-09-RF8 - SIRENA'));
+  });
+
+  it('gives back the last title written by the router, not the one it started from', async () => {
+    const { unmount } = renderHook(() => useUnreadDocumentTitle(2));
+
+    document.title = 'Traitement - Requête 2026-09-RF8 - SIRENA';
+    await waitFor(() => expect(document.title).toMatch(/^2 messages non lus - Traitement/));
+
+    unmount();
+
+    expect(document.title).toBe('Traitement - Requête 2026-09-RF8 - SIRENA');
   });
 
   it('leaves the title alone when there is nothing unread', () => {

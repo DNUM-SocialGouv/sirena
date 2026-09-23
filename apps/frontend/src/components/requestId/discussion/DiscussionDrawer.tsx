@@ -25,10 +25,10 @@ export const DiscussionDrawer = ({ requestId }: DiscussionDrawerProps) => {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const wasOpenRef = useRef(false);
 
-  const { data: unreadCount = 0 } = useRequeteUnreadCount(requestId, discussionEnabled);
+  const { data: unreadCount = 0, isSuccess: isUnreadCountLoaded } = useRequeteUnreadCount(requestId, discussionEnabled);
   useUnreadDocumentTitle(discussionEnabled ? unreadCount : 0);
   const [announcement, setAnnouncement] = useState('');
-  const knownUnreadCountRef = useRef(unreadCount);
+  const knownUnreadCountRef = useRef<number | null>(null);
   const markRead = useMarkRequeteDiscussionRead(requestId);
   const markReadRef = useRef(markRead.mutate);
   markReadRef.current = markRead.mutate;
@@ -73,18 +73,22 @@ export const DiscussionDrawer = ({ requestId }: DiscussionDrawerProps) => {
   }, [isOpen]);
 
   useEffect(() => {
-    const arrived = unreadCount - knownUnreadCountRef.current;
+    if (!isUnreadCountLoaded) return;
+
+    const known = knownUnreadCountRef.current;
     knownUnreadCountRef.current = unreadCount;
 
-    if (isOpen || arrived <= 0) {
+    // The count the page opens on is not news: only what arrives afterwards is announced, and as a total,
+    // so that two messages in a row do not leave the live region with the same text to read out.
+    if (known === null || isOpen || unreadCount <= known) {
       setAnnouncement('');
       return;
     }
 
     setAnnouncement(
-      arrived > 1 ? `${arrived} nouveaux messages dans la discussion` : 'Nouveau message dans la discussion',
+      `${unreadCount} ${pluralize(unreadCount, 'message non lu', 'messages non lus')} dans la discussion`,
     );
-  }, [isOpen, unreadCount]);
+  }, [isOpen, isUnreadCountLoaded, unreadCount]);
 
   if (!discussionEnabled) return null;
 
