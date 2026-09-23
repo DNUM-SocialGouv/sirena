@@ -28,4 +28,12 @@ export type SeedConfig = {
   enableFeatureFlags: boolean;
   /** Faker seed for reproducible runs (--seed=<n> option), otherwise null. */
   fakerSeed: number | null;
+  /** Fixed reference for request ids and relative dates; defaults to the current date. */
+  referenceDate?: Date;
+  /**
+   * Pins some users to a fixed DB id (email → id). Used by the e2e profile so
+   * the test user id stays stable across runs
+   * Empty for interactive runs.
+   */
+  fixedUserIds?: Record<string, string>;
 };

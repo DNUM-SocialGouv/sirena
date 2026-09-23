@@ -24,6 +24,10 @@ export const printPlan = (config: SeedConfig): void => {
   console.log(`  Requêtes DematSocial : ${dematSocialLabel(config)}`);
   console.log(`  Feature flags        : ${config.enableFeatureFlags ? 'activés' : 'non'}`);
   console.log(`  Graine faker         : ${config.fakerSeed ?? 'aléatoire'}`);
+  const fixedIds = Object.entries(config.fixedUserIds ?? {});
+  if (fixedIds.length > 0) {
+    console.log(`  Ids utilisateurs fixes : ${fixedIds.map(([email, id]) => `${email}=${id}`).join(', ')}`);
+  }
   console.log('───────────────────────────────────────────────\n');
 };
 
