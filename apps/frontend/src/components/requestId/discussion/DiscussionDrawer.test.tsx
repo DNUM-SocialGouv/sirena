@@ -163,7 +163,7 @@ describe('DiscussionDrawer', () => {
     expect(button).toHaveTextContent('Ouvrir la discussion 3');
   });
 
-  it('announces the new total, so that two messages in a row are both read out', () => {
+  it('announces new unread messages, with the total so that two in a row are both read out', () => {
     unreadCount = 0;
     const { container, rerender } = render(<DiscussionDrawer requestId="REQ" />);
     const liveRegion = container.querySelector('p.fr-sr-only[aria-live="polite"]');
@@ -178,7 +178,7 @@ describe('DiscussionDrawer', () => {
     expect(liveRegion).toHaveTextContent('2 messages non lus dans la discussion');
   });
 
-  it('stays silent about the messages that were already unread when the page opened', () => {
+  it('does not announce the initial unread count', () => {
     unreadCount = 3;
 
     const { container } = render(<DiscussionDrawer requestId="REQ" />);

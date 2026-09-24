@@ -29,7 +29,7 @@ describe('useUnreadDocumentTitle', () => {
     expect(document.title).toBe(BASE_TITLE);
   });
 
-  it('gives the title back when leaving the page', () => {
+  it('restores the original document title when the hook unmounts', () => {
     const { unmount } = renderHook(() => useUnreadDocumentTitle(2));
 
     unmount();
@@ -46,7 +46,7 @@ describe('useUnreadDocumentTitle', () => {
     await waitFor(() => expect(document.title).toBe('2 messages non lus - Traitement - Requête 2026-09-RF8 - SIRENA'));
   });
 
-  it('gives back the last title written by the router, not the one it started from', async () => {
+  it('restores the last title written by the router, not the one it started from', async () => {
     const { unmount } = renderHook(() => useUnreadDocumentTitle(2));
 
     document.title = 'Traitement - Requête 2026-09-RF8 - SIRENA';
@@ -65,6 +65,17 @@ describe('useUnreadDocumentTitle', () => {
     document.title = 'Traitement - Requête 2026-09-RF8 - SIRENA';
 
     await waitFor(() => expect(document.title).toBe('2 messages non lus - Traitement - Requête 2026-09-RF8 - SIRENA'));
+  });
+
+  it('leaves the title of the page being opened alone when the drawer unmounts with it', () => {
+    const { unmount } = renderHook(() => useUnreadDocumentTitle(2));
+    expect(document.title).toBe(`2 messages non lus - ${BASE_TITLE}`);
+
+    // On a navigation the router writes the new title first, then the drawer of the old page unmounts.
+    document.title = 'Traitement - Requête 2026-09-RF8 - SIRENA';
+    unmount();
+
+    expect(document.title).toBe('Traitement - Requête 2026-09-RF8 - SIRENA');
   });
 
   it('leaves the title alone when there is nothing unread', () => {

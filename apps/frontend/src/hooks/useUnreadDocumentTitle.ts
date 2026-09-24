@@ -30,7 +30,9 @@ export function useUnreadDocumentTitle(count: number) {
 
     return () => {
       observer.disconnect();
-      document.title = baseTitle;
+      // Navigating unmounts the drawer after the router has written the title of the page being opened:
+      // putting the previous one back here would undo that, and nothing would rewrite it afterwards.
+      if (document.title === unreadTitle(count, baseTitle)) document.title = baseTitle;
     };
   }, [count]);
 }
