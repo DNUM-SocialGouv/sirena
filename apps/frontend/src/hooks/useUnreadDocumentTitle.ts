@@ -1,25 +1,32 @@
 import { useEffect } from 'react';
 
-export const unreadTitle = (count: number, title: string) =>
-  count > 0 ? `${count} ${count > 1 ? 'messages non lus' : 'message non lu'} - ${title}` : title;
+const UNREAD_PREFIX = /^\d+ messages? non lus?\s*-?\s*/;
+
+export const unreadTitle = (count: number, title: string) => {
+  if (count <= 0) return title;
+  const label = `${count} ${count > 1 ? 'messages non lus' : 'message non lu'}`;
+  return title ? `${label} - ${title}` : label;
+};
+
+// The title read back is not always the string that was written (browsers trim it), and the prefix must
+// never be applied twice.
+const baseOf = (title: string) => title.replace(UNREAD_PREFIX, '');
 
 export function useUnreadDocumentTitle(count: number) {
   useEffect(() => {
     if (count <= 0) return;
 
-    let baseTitle = document.title;
+    let baseTitle = baseOf(document.title);
     document.title = unreadTitle(count, baseTitle);
 
-    const titleElement = document.querySelector('title');
-    if (!titleElement) return;
-
-    // The router rewrites the title on every navigation: the prefix has to be put back on the new one.
+    // The router owns the title element: it can be mounted after this effect, replaced by another one, or
+    // rewritten on the next navigation. Watching the head covers the three, wherever the element is.
     const observer = new MutationObserver(() => {
       if (document.title === unreadTitle(count, baseTitle)) return;
-      baseTitle = document.title;
+      baseTitle = baseOf(document.title);
       document.title = unreadTitle(count, baseTitle);
     });
-    observer.observe(titleElement, { childList: true, characterData: true, subtree: true });
+    observer.observe(document.head, { childList: true, characterData: true, subtree: true });
 
     return () => {
       observer.disconnect();

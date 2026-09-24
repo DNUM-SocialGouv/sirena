@@ -57,6 +57,16 @@ describe('useUnreadDocumentTitle', () => {
     expect(document.title).toBe('Traitement - Requête 2026-09-RF8 - SIRENA');
   });
 
+  it('waits for the title the router has not mounted yet', async () => {
+    document.head.querySelector('title')?.remove();
+    renderHook(() => useUnreadDocumentTitle(2));
+    expect(document.title).toBe('2 messages non lus');
+
+    document.title = 'Traitement - Requête 2026-09-RF8 - SIRENA';
+
+    await waitFor(() => expect(document.title).toBe('2 messages non lus - Traitement - Requête 2026-09-RF8 - SIRENA'));
+  });
+
   it('leaves the title alone when there is nothing unread', () => {
     renderHook(() => useUnreadDocumentTitle(0));
 
