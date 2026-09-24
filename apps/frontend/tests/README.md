@@ -1,5 +1,26 @@
 # E2E Tests Documentation
 
+## Targets
+
+Tests run against one of two targets, selected with `E2E_TARGET`:
+
+- **`integration`** (default): tests hit the deployed environment and authenticate through the real ProConnect flow. This is what CI runs.
+- **`local`**: tests hit a local stack (`FRONTEND_URI=http://localhost:5173`) and authenticate by forging the `auth_token` cookie, without calling ProConnect. Useful to iterate quickly on component/selector changes.
+
+The backend is never modified: the auth middleware already accepts any `auth_token` signed with `AUTH_TOKEN_SECRET_KEY` for an existing user, so local mode only signs that cookie from the test side.
+
+### Running locally (no ProConnect)
+
+1. Start the local stack (`pnpm dev`) with a seeded database (`pnpm op:seed`).
+2. Clear any cached auth state tied to another target: `rm -rf apps/frontend/playwright/.auth/`.
+3. Run:
+   ```bash
+   E2E_TARGET=local FRONTEND_URI=http://localhost:5173 PW_TEST_HTML_REPORT_OPEN=never \
+     pnpm --filter @sirena/frontend exec playwright test --reporter=line
+   ```
+
+The seeded user id is resolved by email through Prisma (`PG_URL`), so it stays valid across reseeds. The `login-incognito` / `logout-incognito` specs are ProConnect-specific and are skipped in local target.
+
 ## E2E Authentication
 
 ### Overview
@@ -43,9 +64,12 @@ const authFile = await ensureAuthenticated(browser, AUTH_CONFIGS.ENTITY_ADMIN_US
 const context = await browser.newContext({ storageState: authFile });
 ```
 
-### Environment Variables  
-- `E2E_ENTITY_ADMIN_USER_1_EMAIL` / `E2E_ENTITY_ADMIN_USER_1_PASSWORD`
+### Environment Variables
+- `E2E_TARGET` (`integration` default, or `local`)
 - `FRONTEND_URI`
+- `E2E_ENTITY_ADMIN_USER_1_EMAIL`
+- `E2E_ENTITY_ADMIN_USER_1_PASSWORD` (integration target only)
+- `AUTH_TOKEN_SECRET_KEY` + `PG_URL` (local target only)
 
 ### Troubleshooting
 ```bash
