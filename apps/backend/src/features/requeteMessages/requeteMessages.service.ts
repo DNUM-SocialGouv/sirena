@@ -65,24 +65,33 @@ const unreadWhere = (userId: string, extra: Prisma.RequeteMessageWhereInput): Pr
   reads: { none: { userId } },
 });
 
-export const getUnreadCount = (requeteId: string, userId: string): Promise<number> =>
-  prisma.requeteMessage.count({ where: unreadWhere(userId, { requeteId }) });
+export const getUnreadCount = (
+  requeteId: string,
+  userId: string,
+  client: Prisma.TransactionClient | typeof prisma = prisma,
+): Promise<number> => client.requeteMessage.count({ where: unreadWhere(userId, { requeteId }) });
 
-export const markAllMessagesAsRead = async (requeteId: string, userId: string, entiteId: string) => {
-  const unread = await prisma.requeteMessage.findMany({
+export const markAllMessagesAsRead = async (
+  requeteId: string,
+  userId: string,
+  entiteId: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx ?? prisma;
+  const unread = await client.requeteMessage.findMany({
     where: unreadWhere(userId, { requeteId }),
     select: { id: true },
   });
   const markedIds = unread.map((message) => message.id);
 
   if (markedIds.length > 0) {
-    await prisma.requeteMessageRead.createMany({
+    await client.requeteMessageRead.createMany({
       data: markedIds.map((messageId) => ({ messageId, userId, entiteId })),
       skipDuplicates: true,
     });
   }
 
-  return { markedIds, unreadCount: await getUnreadCount(requeteId, userId) };
+  return { markedIds, unreadCount: await getUnreadCount(requeteId, userId, client) };
 };
 
 export const createRequeteMessage = async (
@@ -97,14 +106,14 @@ export const createRequeteMessage = async (
       data: { requeteId, entiteId, authorId: userId, contenu: dto.contenu },
     });
 
-    await tx.requeteMessageRead.create({ data: { messageId: message.id, userId, entiteId } });
+    // Replying is reading: the thread is marked read in the same transaction as the message, so a failure
+    // here never leaves a posted message behind an unread count that still counts it.
+    await markAllMessagesAsRead(requeteId, userId, entiteId, tx);
 
     return message;
   });
 
   logger.info({ requeteId, messageId: created.id, userId }, 'Requete message persisted');
-
-  await markAllMessagesAsRead(requeteId, userId, entiteId);
 
   return getRequeteMessageById(created.id, userId);
 };

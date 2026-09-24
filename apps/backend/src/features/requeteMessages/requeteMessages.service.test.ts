@@ -187,17 +187,32 @@ describe('requeteMessages.service.ts', () => {
       mockedMessage.findMany.mockResolvedValue([] as never);
     });
 
-    it('creates the message and inserts its author as a reader', async () => {
+    it('creates the message and marks it read for its author', async () => {
+      mockedMessage.findMany.mockResolvedValueOnce([{ id: 'm1' }] as never);
+
       const result = await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour' }, logger);
 
       expect(prisma.$transaction).toHaveBeenCalledOnce();
       expect(mockedMessage.create).toHaveBeenCalledWith({
         data: { requeteId: 'REQ', entiteId: 'e1', authorId: 'user1', contenu: 'Bonjour' },
       });
-      expect(mockedMessageRead.create).toHaveBeenCalledWith({
-        data: { messageId: 'm1', userId: 'user1', entiteId: 'e1' },
+      expect(mockedMessageRead.createMany).toHaveBeenCalledWith({
+        data: [{ messageId: 'm1', userId: 'user1', entiteId: 'e1' }],
+        skipDuplicates: true,
       });
       expect(result).toMatchObject({ id: 'm1' });
+    });
+
+    it('takes the message down with it when the thread cannot be marked read', async () => {
+      mockedMessage.findMany.mockResolvedValueOnce([{ id: 'm1' }] as never);
+      mockedMessageRead.createMany.mockRejectedValueOnce(new Error('DATABASE_FAILURE'));
+
+      await expect(createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour' }, logger)).rejects.toThrow(
+        'DATABASE_FAILURE',
+      );
+
+      // The read rows are written inside the transaction that created the message: nothing is committed.
+      expect(mockedMessage.findUnique).not.toHaveBeenCalled();
     });
 
     it('marks everything the author had not read yet: replying counts as reading', async () => {
