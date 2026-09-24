@@ -1,101 +1,13 @@
-import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { Tag } from '@codegouvfr/react-dsfr/Tag';
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { useFileStatusSSE } from '@/hooks/useFileStatusSSE';
+import { useId, useMemo, useRef } from 'react';
+import { useFileProcessingStatus } from '@/hooks/useFileProcessingStatus';
 import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
-import { type FileProcessingStatus, getFileProcessingStatus } from '@/lib/api/fetchUploadedFiles';
-import { HttpError } from '@/lib/api/tanstackQuery';
+import type { FileProcessingStatus } from '@/lib/api/fetchUploadedFiles';
 import { formatFileSize } from '@/utils/fileHelpers';
 import styles from './FileDownloadLink.module.css';
-
-// Separate component to isolate checkbox state from parent re-renders
-type FrIconId = React.ComponentProps<ReturnType<typeof createModal>['Component']>['iconId'];
-
-const ModalWithCheckbox = ({
-  modal,
-  title,
-  iconId,
-  message,
-  fileName,
-  cancelLabel,
-  confirmLabel,
-  onConfirm,
-  resetRef,
-}: {
-  modal: ReturnType<typeof createModal>;
-  title: string;
-  iconId: FrIconId;
-  message: string;
-  fileName: string;
-  cancelLabel: string;
-  confirmLabel: string;
-  onConfirm: () => void;
-  resetRef?: React.MutableRefObject<(() => void) | null>;
-}) => {
-  const [accepted, setAccepted] = useState(false);
-
-  // Expose reset function to parent via ref (doesn't cause re-render when called)
-  useEffect(() => {
-    if (resetRef) {
-      resetRef.current = () => setAccepted(false);
-    }
-    return () => {
-      if (resetRef) {
-        resetRef.current = null;
-      }
-    };
-  }, [resetRef]);
-
-  const handleConfirm = () => {
-    if (accepted) {
-      onConfirm();
-    }
-    setAccepted(false);
-  };
-
-  const handleCancel = () => {
-    setAccepted(false);
-  };
-
-  return (
-    <modal.Component
-      title={title}
-      iconId={iconId}
-      buttons={[
-        {
-          doClosesModal: true,
-          children: cancelLabel,
-          onClick: handleCancel,
-        },
-        {
-          doClosesModal: true,
-          children: confirmLabel,
-          disabled: !accepted,
-          onClick: handleConfirm,
-        },
-      ]}
-    >
-      <p>{message}</p>
-      <p>
-        Le fichier <strong>{fileName}</strong> sera téléchargé dans sa version originale, sans vérification ni
-        sécurisation complète.
-      </p>
-      <Checkbox
-        className="fr-mt-2w"
-        options={[
-          {
-            label: 'Je comprends les risques et souhaite télécharger le fichier original',
-            nativeInputProps: {
-              checked: accepted,
-              onChange: (e) => setAccepted(e.target.checked),
-            },
-          },
-        ]}
-      />
-    </modal.Component>
-  );
-};
+import { getFileDownloadState, getFileProcessingState } from './fileDownloadState';
+import { RiskAcknowledgementModal, type RiskAcknowledgementModalHandle } from './RiskAcknowledgementModal';
 
 type FileDownloadLinkProps = {
   href: string;
@@ -111,108 +23,6 @@ type FileDownloadLinkProps = {
   scanStatus?: string;
   sanitizeStatus?: string;
 };
-
-const isFilePreviewable = (fileName: string): boolean => {
-  const previewableExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.txt'];
-  const fileExtension = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
-  return previewableExtensions.includes(fileExtension);
-};
-
-const SCAN_FINAL_STATES = ['CLEAN', 'INFECTED', 'ERROR', 'SKIPPED'];
-const SANITIZE_FINAL_STATES = ['COMPLETED', 'ERROR', 'SKIPPED', 'NOT_APPLICABLE'];
-
-const isProcessingComplete = (fileStatus: FileProcessingStatus | null): boolean => {
-  if (!fileStatus) return false;
-
-  const scanComplete = SCAN_FINAL_STATES.includes(fileStatus.scanStatus || '');
-  const sanitizeComplete = SANITIZE_FINAL_STATES.includes(fileStatus.sanitizeStatus || '');
-
-  return scanComplete && sanitizeComplete;
-};
-
-const isSafeFileAvailable = (sanitizeStatus?: string): boolean => {
-  return sanitizeStatus === 'COMPLETED';
-};
-
-const isFileInfected = (scanStatus?: string): boolean => {
-  return scanStatus === 'INFECTED';
-};
-
-const needsWarningBeforeDownload = (status: FileProcessingStatus | null): boolean => {
-  if (!status) return false;
-
-  const scanPending = status.scanStatus === 'PENDING' || status.scanStatus === 'SCANNING';
-  const scanFailed = status.scanStatus === 'ERROR' || status.scanStatus === 'SKIPPED';
-  const sanitizePending = status.sanitizeStatus === 'PENDING' || status.sanitizeStatus === 'SANITIZING';
-  const sanitizeFailed = status.sanitizeStatus === 'ERROR';
-
-  return scanPending || scanFailed || sanitizePending || sanitizeFailed;
-};
-
-type WarningReason = 'scan_pending' | 'scan_failed' | 'sanitize_pending' | 'sanitize_failed' | 'infected' | null;
-
-const getWarningReason = (status: FileProcessingStatus | null): WarningReason => {
-  if (!status) return null;
-
-  if (status.scanStatus === 'INFECTED') return 'infected';
-  if (status.scanStatus === 'PENDING' || status.scanStatus === 'SCANNING') return 'scan_pending';
-  if (status.scanStatus === 'ERROR' || status.scanStatus === 'SKIPPED') return 'scan_failed';
-  if (status.sanitizeStatus === 'PENDING' || status.sanitizeStatus === 'SANITIZING') return 'sanitize_pending';
-  if (status.sanitizeStatus === 'ERROR') return 'sanitize_failed';
-
-  return null;
-};
-
-const getWarningMessage = (
-  reason: WarningReason,
-): { title: string; message: string; severity: 'warning' | 'error' } => {
-  switch (reason) {
-    case 'infected':
-      return {
-        title: 'Fichier potentiellement dangereux',
-        message:
-          'Une menace potentielle a été détectée dans ce fichier. Nous vous recommandons fortement de ne pas télécharger ce fichier.',
-        severity: 'error',
-      };
-    case 'scan_pending':
-      return {
-        title: 'Analyse en cours',
-        message:
-          "L'analyse antivirus de ce fichier n'est pas encore terminée. Nous vous recommandons d'attendre la fin de l'analyse avant de télécharger ce fichier.",
-        severity: 'warning',
-      };
-    case 'scan_failed':
-      return {
-        title: 'Analyse non effectuée',
-        message:
-          "L'analyse antivirus de ce fichier a échoué ou n'a pas pu être effectuée. Le fichier n'a pas été vérifié et peut présenter des risques.",
-        severity: 'warning',
-      };
-    case 'sanitize_pending':
-      return {
-        title: 'Sécurisation en cours',
-        message:
-          "La sécurisation de ce fichier n'est pas encore terminée. Nous vous recommandons d'attendre la fin de la sécurisation pour télécharger une version sûre du fichier.",
-        severity: 'warning',
-      };
-    case 'sanitize_failed':
-      return {
-        title: 'Sécurisation échouée',
-        message:
-          "La sécurisation de ce fichier a échoué. Le fichier original n'a pas pu être nettoyé et peut contenir des éléments potentiellement dangereux.",
-        severity: 'warning',
-      };
-    default:
-      return {
-        title: 'Téléchargement',
-        message: '',
-        severity: 'warning',
-      };
-  }
-};
-
-const POLL_INTERVAL = 3000;
-const MAX_POLL_DURATION_MS = 2 * 60 * 1000; // stop polling after 2 minutes
 
 const FILE_TAG_STYLE = {
   valid: {
@@ -261,19 +71,26 @@ export const FileDownloadLink = ({
   const modalId = useId();
   const statusId = useId();
 
-  const [fileStatus, setFileStatus] = useState<FileProcessingStatus | null>(() =>
-    initialStatus
-      ? {
-          id: fileId || '',
-          status: initialStatus,
-          scanStatus: initialScanStatus || 'PENDING',
-          sanitizeStatus: initialSanitizeStatus || 'PENDING',
-          processingError: null,
-          safeFilePath: safeHref || null,
-        }
-      : null,
+  const initialFileStatus = useMemo<FileProcessingStatus | null>(
+    () =>
+      initialStatus
+        ? {
+            id: fileId || '',
+            status: initialStatus,
+            scanStatus: initialScanStatus || 'PENDING',
+            sanitizeStatus: initialSanitizeStatus || 'PENDING',
+            processingError: null,
+            safeFilePath: safeHref || null,
+          }
+        : null,
+    [fileId, initialStatus, initialScanStatus, initialSanitizeStatus, safeHref],
   );
-
+  const fileStatus = useFileProcessingStatus({ fileId, initialStatus: initialFileStatus });
+  const processingState = useMemo(() => getFileProcessingState(fileStatus), [fileStatus]);
+  const downloadState = useMemo(
+    () => getFileDownloadState({ processingState, fileName, href, safeHref, target }),
+    [processingState, fileName, href, safeHref, target],
+  );
   const downloadModal = useMemo(
     () =>
       createModal({
@@ -283,202 +100,41 @@ export const FileDownloadLink = ({
     [modalId],
   );
 
-  const riskModal = useMemo(
-    () =>
-      createModal({
-        id: `risk-modal-${modalId}`,
-        isOpenedByDefault: false,
-      }),
-    [modalId],
-  );
+  const { registerTrigger } = useModalFocusRestore([downloadModal.id]);
+  const riskAcknowledgementModalRef = useRef<RiskAcknowledgementModalHandle>(null);
 
-  const warningModal = useMemo(
-    () =>
-      createModal({
-        id: `warning-modal-${modalId}`,
-        isOpenedByDefault: false,
-      }),
-    [modalId],
-  );
+  const handleClick = (event: React.MouseEvent) => {
+    event.preventDefault();
+    const trigger = event.currentTarget as HTMLElement;
 
-  const { registerTrigger } = useModalFocusRestore([downloadModal.id, riskModal.id, warningModal.id]);
-
-  // Refs to reset checkbox state when modals open (avoids re-render issues)
-  const resetRiskModalRef = useRef<(() => void) | null>(null);
-  const resetWarningModalRef = useRef<(() => void) | null>(null);
-  const initialPollDoneRef = useRef(false);
-  const pollingDisabledRef = useRef(false);
-  const sseDisconnectedRef = useRef(false);
-  const pollStartedAtRef = useRef<number | null>(null);
-
-  const handleSSEStatusChange = useCallback((status: FileProcessingStatus) => {
-    setFileStatus(status);
-  }, []);
-
-  const { isConnected: sseConnected } = useFileStatusSSE({
-    fileId: fileId || '',
-    enabled: !!fileId && !pollingDisabledRef.current && !isProcessingComplete(fileStatus),
-    onStatusChange: handleSSEStatusChange,
-  });
-
-  // Track SSE disconnection to fallback to polling
-  useEffect(() => {
-    if (!sseConnected && !sseDisconnectedRef.current && fileId) {
-      sseDisconnectedRef.current = true;
-    }
-  }, [sseConnected, fileId]);
-
-  const pollStatus = useCallback(async () => {
-    if (!fileId || pollingDisabledRef.current) return;
-
-    if (pollStartedAtRef.current !== null && Date.now() - pollStartedAtRef.current > MAX_POLL_DURATION_MS) {
-      pollingDisabledRef.current = true;
-      return;
-    }
-
-    try {
-      const status = await getFileProcessingStatus(fileId);
-      setFileStatus(status);
-    } catch (error) {
-      // Stop polling on 404 (file not found)
-      if (error instanceof HttpError && error.status === 404) {
-        pollingDisabledRef.current = true;
+    switch (downloadState.action.kind) {
+      case 'open':
+        window.open(downloadState.action.href, downloadState.action.target);
+        return;
+      case 'confirm-download':
+        registerTrigger(trigger);
+        downloadModal.open();
+        return;
+      case 'acknowledge-risk': {
+        const action = downloadState.action;
+        riskAcknowledgementModalRef.current?.open({
+          trigger,
+          content: {
+            title: action.content.title,
+            message: action.content.message,
+            details: (
+              <p>
+                Le fichier <strong>{fileName}</strong> sera téléchargé dans sa version originale, sans vérification ni
+                sécurisation complète.
+              </p>
+            ),
+            acknowledgementLabel: 'Je comprends les risques et souhaite télécharger le fichier original',
+            confirmLabel: action.content.confirmLabel,
+          },
+          onConfirm: () => window.open(action.href, action.target),
+        });
       }
     }
-  }, [fileId]);
-
-  // Fallback to polling if SSE is not connected
-  useEffect(() => {
-    if (!fileId || pollingDisabledRef.current || isProcessingComplete(fileStatus)) return;
-
-    // If SSE is connected, don't poll
-    if (sseConnected) return;
-
-    if (pollStartedAtRef.current === null) {
-      pollStartedAtRef.current = Date.now();
-    }
-
-    // Poll immediately on first run if no initial status was provided
-    if (!initialPollDoneRef.current && !initialStatus) {
-      initialPollDoneRef.current = true;
-      pollStatus();
-    }
-
-    const interval = setInterval(pollStatus, POLL_INTERVAL);
-    return () => clearInterval(interval);
-  }, [fileId, fileStatus, pollStatus, initialStatus, sseConnected]);
-
-  const handleClick = (e: React.MouseEvent) => {
-    registerTrigger(e.currentTarget as HTMLElement);
-    e.preventDefault();
-
-    // Case 1: File is infected - show dedicated risk modal
-    if (isFileInfected(fileStatus?.scanStatus)) {
-      resetRiskModalRef.current?.();
-      riskModal.open();
-      return;
-    }
-
-    // Case 2: Safe version available - open directly
-    if (isSafeFileAvailable(fileStatus?.sanitizeStatus) && safeHref) {
-      window.open(safeHref, target);
-      return;
-    }
-
-    // Case 3: File needs warning (scan pending/failed, sanitization pending/failed)
-    if (needsWarningBeforeDownload(fileStatus)) {
-      resetWarningModalRef.current?.();
-      warningModal.open();
-      return;
-    }
-
-    // Case 4: Non-previewable file without issues - show download modal
-    if (!isFilePreviewable(fileName)) {
-      downloadModal.open();
-      return;
-    }
-
-    // Case 5: Normal file - open directly
-    window.open(href, target);
-  };
-
-  const handleWarningDownload = () => {
-    window.open(href, '_blank');
-  };
-
-  const handleRiskDownload = () => {
-    window.open(href, '_blank');
-  };
-
-  const renderStatusBadge = () => {
-    if (!fileStatus) return null;
-
-    const { scanStatus, sanitizeStatus } = fileStatus;
-
-    switch (scanStatus) {
-      case 'PENDING':
-        return (
-          <FileStatusTag iconId="fr-icon-time-fill" tone="intermediate">
-            En attente d'analyse antivirus
-          </FileStatusTag>
-        );
-      case 'SCANNING':
-        return (
-          <FileStatusTag iconId="fr-icon-refresh-fill" tone="intermediate">
-            Analyse antivirus en cours
-          </FileStatusTag>
-        );
-      case 'SKIPPED':
-        return (
-          <FileStatusTag iconId="fr-icon-question-fill" tone="intermediate">
-            Non analysé par l'antivirus
-          </FileStatusTag>
-        );
-      case 'ERROR':
-        return (
-          <FileStatusTag iconId="fr-icon-error-warning-fill" tone="error">
-            Analyse antivirus échouée
-          </FileStatusTag>
-        );
-    }
-
-    if (scanStatus === 'CLEAN') {
-      switch (sanitizeStatus) {
-        case 'PENDING':
-          return (
-            <FileStatusTag iconId="fr-icon-time-fill" tone="intermediate">
-              En attente de sécurisation
-            </FileStatusTag>
-          );
-        case 'SANITIZING':
-          return (
-            <FileStatusTag iconId="fr-icon-refresh-fill" tone="intermediate">
-              Sécurisation en cours
-            </FileStatusTag>
-          );
-        case 'ERROR':
-          return (
-            <FileStatusTag iconId="fr-icon-error-warning-fill" tone="error">
-              Sécurisation échouée
-            </FileStatusTag>
-          );
-        case 'COMPLETED':
-          return (
-            <FileStatusTag iconId="fr-icon-checkbox-circle-fill" tone="valid">
-              Analysé et sécurisé
-            </FileStatusTag>
-          );
-        case 'SKIPPED':
-        case 'NOT_APPLICABLE':
-          return (
-            <FileStatusTag iconId="fr-icon-checkbox-circle-fill" tone="valid">
-              Analysé, aucun risque détecté
-            </FileStatusTag>
-          );
-      }
-    }
-
-    return null;
   };
 
   const displayName = children || (
@@ -488,13 +144,11 @@ export const FileDownloadLink = ({
     </>
   );
 
-  const displayHref = isSafeFileAvailable(fileStatus?.sanitizeStatus) && safeHref ? safeHref : href;
-
   return (
     <>
       <div className={styles['file-row']}>
         <a
-          href={displayHref}
+          href={downloadState.linkHref}
           target={target}
           rel={rel}
           className={className}
@@ -505,13 +159,11 @@ export const FileDownloadLink = ({
           <span className="fr-sr-only"> - nouvel onglet</span>
         </a>
         <p id={statusId} className={styles.status} role="status" aria-live="polite" aria-atomic="true">
-          {isFileInfected(fileStatus?.scanStatus) ? (
-            <FileStatusTag iconId="fr-icon-warning-fill" tone="error">
-              Risque détecté par l'antivirus
+          {processingState.status ? (
+            <FileStatusTag iconId={processingState.status.iconId} tone={processingState.status.tone}>
+              {processingState.status.label}
             </FileStatusTag>
-          ) : (
-            renderStatusBadge()
-          )}
+          ) : null}
         </p>
       </div>
 
@@ -527,8 +179,7 @@ export const FileDownloadLink = ({
             doClosesModal: true,
             children: 'Télécharger',
             onClick: () => {
-              const downloadUrl = isSafeFileAvailable(fileStatus?.sanitizeStatus) && safeHref ? safeHref : href;
-              window.open(downloadUrl, '_blank');
+              window.open(downloadState.linkHref, '_blank');
             },
           },
         ]}
@@ -539,29 +190,7 @@ export const FileDownloadLink = ({
         <p>Voulez-vous télécharger ce fichier ?{fileSize !== undefined && ` (${formatFileSize(fileSize)})`}</p>
       </downloadModal.Component>
 
-      <ModalWithCheckbox
-        modal={riskModal}
-        title="Attention : fichier potentiellement dangereux"
-        iconId="fr-icon-warning-line"
-        message="Une menace potentielle a été détectée dans ce fichier. Nous vous recommandons fortement de ne pas télécharger ce fichier. Si vous choisissez de continuer, assurez-vous que votre logiciel antivirus est à jour."
-        fileName={fileName}
-        cancelLabel="Annuler"
-        confirmLabel="Télécharger malgré le risque"
-        onConfirm={handleRiskDownload}
-        resetRef={resetRiskModalRef}
-      />
-
-      <ModalWithCheckbox
-        modal={warningModal}
-        title={getWarningMessage(getWarningReason(fileStatus)).title}
-        iconId="fr-icon-warning-line"
-        message={getWarningMessage(getWarningReason(fileStatus)).message}
-        fileName={fileName}
-        cancelLabel="Annuler"
-        confirmLabel="Télécharger le fichier original"
-        onConfirm={handleWarningDownload}
-        resetRef={resetWarningModalRef}
-      />
+      <RiskAcknowledgementModal ref={riskAcknowledgementModalRef} />
     </>
   );
 };

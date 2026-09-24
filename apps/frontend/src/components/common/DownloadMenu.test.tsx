@@ -6,6 +6,8 @@ import { DownloadMenu } from './DownloadMenu';
 const TRIGGER_NAME = 'Télécharger les documents';
 const BROWSER_TIME_ZONE = 'Indian/Reunion';
 const DOWNLOAD_URL = `/api/requetes-entite/req-1/files/download-all?timeZone=${encodeURIComponent(BROWSER_TIME_ZONE)}`;
+const discloseModal = vi.fn();
+const concealModal = vi.fn();
 
 const mockBrowserTimeZone = (timeZone: string) => {
   const ActualDateTimeFormat = Intl.DateTimeFormat;
@@ -26,13 +28,29 @@ afterEach(() => {
 });
 
 beforeEach(() => {
+  discloseModal.mockClear();
+  concealModal.mockClear();
   vi.spyOn(window, 'open').mockImplementation(() => null);
   mockBrowserTimeZone(BROWSER_TIME_ZONE);
 
   Object.defineProperty(window, 'dsfr', {
     configurable: true,
     writable: true,
-    value: () => ({ modal: { disclose: () => {}, conceal: () => {} } }),
+    value: (element: HTMLElement | null) => ({
+      modal: {
+        disclose: () => {
+          element?.classList.add('fr-modal--opened');
+          element?.setAttribute('open', '');
+          discloseModal();
+        },
+        conceal: () => {
+          element?.classList.remove('fr-modal--opened');
+          element?.removeAttribute('open');
+          concealModal();
+          element?.dispatchEvent(new CustomEvent('dsfr.conceal'));
+        },
+      },
+    }),
   });
 });
 
@@ -103,31 +121,97 @@ describe('DownloadMenu', () => {
     expect(screen.queryByRole('button', { name: /Télécharger le PDF de la requête/ })).not.toBeInTheDocument();
   });
 
-  it('opens a warning dialog with named buttons instead of downloading unsafe attachments', async () => {
+  it('opens the shared accessible acknowledgement for unsafe attachments', async () => {
+    const user = userEvent.setup();
     render(<DownloadMenu requestId="req-1" hasUnsafeFiles />);
 
-    await userEvent.click(screen.getByRole('button', { name: TRIGGER_NAME }));
-    await userEvent.click(screen.getByRole('button', { name: /Télécharger les pièces jointes/ }));
+    await user.click(screen.getByRole('button', { name: TRIGGER_NAME }));
+    await user.click(screen.getByRole('button', { name: /Télécharger les pièces jointes/ }));
 
     expect(window.open).not.toHaveBeenCalled();
 
-    const dialog = screen.getByRole('dialog', { hidden: true });
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.id).toContain('risk-acknowledgement-modal');
     expect(
-      within(dialog).getByRole('heading', { name: /pièces jointes potentiellement dangereuses/, hidden: true }),
+      within(dialog).getByRole('heading', { name: 'Attention : pièces jointes potentiellement dangereuses' }),
     ).toHaveAttribute('id', dialog.getAttribute('aria-labelledby'));
+    expect(
+      within(dialog).getByText(
+        "Certaines pièces jointes de cette requête n'ont pas pu être vérifiées ou sécurisées, ou présentent un risque détecté. Nous vous recommandons de ne pas télécharger cette archive sans précaution.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(
+        'Si vous choisissez de continuer, assurez-vous que votre logiciel antivirus est à jour.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(
+        "Le bouton « Télécharger malgré le risque » ne devient actif qu'une fois la case ci-dessous cochée.",
+      ),
+    ).toBeInTheDocument();
 
-    for (const name of ['Fermer', 'Annuler', 'Télécharger malgré le risque']) {
-      expect(within(dialog).getByRole('button', { name, hidden: true })).toBeInTheDocument();
-    }
+    const checkbox = within(dialog).getByRole('checkbox', {
+      name: 'Je comprends les risques et souhaite télécharger l’archive',
+    });
+    const confirm = within(dialog).getByRole('button', { name: 'Télécharger malgré le risque' });
+    expect(confirm).toHaveAttribute('aria-disabled', 'true');
+    expect(confirm).not.toBeDisabled();
+    expect(confirm).not.toHaveAttribute('aria-controls');
 
-    const confirm = within(dialog).getByRole('button', { name: 'Télécharger malgré le risque', hidden: true });
-    expect(confirm).toBeDisabled();
+    checkbox.focus();
+    await user.tab();
+    expect(confirm).toHaveFocus();
 
-    await userEvent.click(within(dialog).getByRole('checkbox', { hidden: true }));
-    expect(confirm).toBeEnabled();
+    await user.click(confirm);
+    expect(window.open).not.toHaveBeenCalled();
+    expect(concealModal).not.toHaveBeenCalled();
+  });
 
-    await userEvent.click(confirm);
+  it('downloads an unsafe archive once after acknowledgement', async () => {
+    const user = userEvent.setup();
+    render(<DownloadMenu requestId="req-1" hasUnsafeFiles />);
+
+    await user.click(screen.getByRole('button', { name: TRIGGER_NAME }));
+    await user.click(screen.getByRole('button', { name: /Télécharger les pièces jointes/ }));
+
+    const dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('checkbox'));
+    const confirm = within(dialog).getByRole('button', { name: 'Télécharger malgré le risque' });
+    expect(confirm).not.toHaveAttribute('aria-disabled');
+
+    await user.dblClick(confirm);
+
+    expect(window.open).toHaveBeenCalledOnce();
     expect(window.open).toHaveBeenCalledWith(DOWNLOAD_URL, '_blank');
+    expect(concealModal).toHaveBeenCalledOnce();
+    expect(confirm).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('resets acknowledgement and restores menu focus after cancellation', async () => {
+    const user = userEvent.setup();
+    render(<DownloadMenu requestId="req-1" hasUnsafeFiles />);
+
+    const trigger = screen.getByRole('button', { name: TRIGGER_NAME });
+    await user.click(trigger);
+    await user.click(screen.getByRole('button', { name: /Télécharger les pièces jointes/ }));
+
+    const dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('checkbox'));
+    const cancel = within(dialog).getByRole('button', { name: 'Annuler' });
+    expect(cancel).toHaveAttribute('aria-controls', dialog.id);
+    await user.click(cancel);
+    dialog.dispatchEvent(new CustomEvent('dsfr.conceal'));
+
+    await vi.waitFor(() => expect(trigger).toHaveFocus());
+
+    await user.click(trigger);
+    await user.click(screen.getByRole('button', { name: /Télécharger les pièces jointes/ }));
+    expect(within(dialog).getByRole('button', { name: 'Télécharger malgré le risque' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+    expect(window.open).not.toHaveBeenCalled();
   });
 
   it('lets the keyboard reach every action then closes when the focus leaves', async () => {
