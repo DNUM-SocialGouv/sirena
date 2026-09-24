@@ -1,5 +1,6 @@
+import type { PinoLogger } from 'hono-pino';
 import { type Prisma, prisma } from '../../libs/prisma.js';
-import type { GetRequeteMessagesQuery } from './requeteMessages.type.js';
+import type { GetRequeteMessagesQuery, PostRequeteMessageDto } from './requeteMessages.type.js';
 
 const messageSelect = (currentUserId: string) =>
   ({
@@ -18,8 +19,12 @@ const toMessageDto = ({ reads, ...rest }: MessageRow) => ({ ...rest, isReadByCur
 
 export type RequeteMessageDto = ReturnType<typeof toMessageDto>;
 
-export const getRequeteMessageById = async (id: string, currentUserId: string): Promise<RequeteMessageDto | null> => {
-  const row = await prisma.requeteMessage.findUnique({ where: { id }, select: messageSelect(currentUserId) });
+export const getRequeteMessageById = async (
+  id: string,
+  currentUserId: string,
+  client: Prisma.TransactionClient | typeof prisma = prisma,
+): Promise<RequeteMessageDto | null> => {
+  const row = await client.requeteMessage.findUnique({ where: { id }, select: messageSelect(currentUserId) });
   return row ? toMessageDto(row) : null;
 };
 
@@ -64,22 +69,57 @@ const unreadWhere = (userId: string, extra: Prisma.RequeteMessageWhereInput): Pr
   reads: { none: { userId } },
 });
 
-export const getUnreadCount = (requeteId: string, userId: string): Promise<number> =>
-  prisma.requeteMessage.count({ where: unreadWhere(userId, { requeteId }) });
+export const getUnreadCount = (
+  requeteId: string,
+  userId: string,
+  client: Prisma.TransactionClient | typeof prisma = prisma,
+): Promise<number> => client.requeteMessage.count({ where: unreadWhere(userId, { requeteId }) });
 
-export const markAllMessagesAsRead = async (requeteId: string, userId: string, entiteId: string) => {
-  const unread = await prisma.requeteMessage.findMany({
+export const markAllMessagesAsRead = async (
+  requeteId: string,
+  userId: string,
+  entiteId: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = tx ?? prisma;
+  const unread = await client.requeteMessage.findMany({
     where: unreadWhere(userId, { requeteId }),
     select: { id: true },
   });
   const markedIds = unread.map((message) => message.id);
 
   if (markedIds.length > 0) {
-    await prisma.requeteMessageRead.createMany({
+    await client.requeteMessageRead.createMany({
       data: markedIds.map((messageId) => ({ messageId, userId, entiteId })),
       skipDuplicates: true,
     });
   }
 
-  return { markedIds, unreadCount: await getUnreadCount(requeteId, userId) };
+  return { markedIds, unreadCount: await getUnreadCount(requeteId, userId, client) };
+};
+
+export const createRequeteMessage = async (
+  requeteId: string,
+  entiteId: string,
+  userId: string,
+  dto: PostRequeteMessageDto,
+  logger: PinoLogger,
+): Promise<RequeteMessageDto | null> => {
+  const { messageId, message } = await prisma.$transaction(async (tx) => {
+    const created = await tx.requeteMessage.create({
+      data: { requeteId, entiteId, authorId: userId, contenu: dto.contenu },
+    });
+
+    // Replying is reading: the thread is marked read in the same transaction as the message, so a failure
+    // here never leaves a posted message behind an unread count that still counts it.
+    await markAllMessagesAsRead(requeteId, userId, entiteId, tx);
+
+    // Read back inside the transaction too: an answer that cannot be built is an answer that was never
+    // posted, instead of a 500 on a message the requete already carries.
+    return { messageId: created.id, message: await getRequeteMessageById(created.id, userId, tx) };
+  });
+
+  logger.info({ requeteId, messageId, userId }, 'Requete message persisted');
+
+  return message;
 };

@@ -1,9 +1,11 @@
 import { Loader } from '@sirena/ui';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useRequeteMessages } from '@/hooks/queries/requeteMessages.hook';
+import { useCanEdit } from '@/hooks/useCanEdit';
 import styles from './discussion.module.css';
+import { MessageComposer } from './MessageComposer';
 import { MessageList } from './MessageList';
 
 type DiscussionProps = {
@@ -12,6 +14,7 @@ type DiscussionProps = {
 
 export const Discussion = ({ requestId }: DiscussionProps) => {
   const messagesQuery = useRequeteMessages(requestId);
+  const { canEdit } = useCanEdit({ requeteId: requestId });
   const profile = useProfile();
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = messagesQuery;
@@ -21,6 +24,9 @@ export const Discussion = ({ requestId }: DiscussionProps) => {
   const handleLoadMore = useCallback(() => {
     void fetchNextPage();
   }, [fetchNextPage]);
+
+  const [readStateVersion, setReadStateVersion] = useState(0);
+  const handleSent = useCallback(() => setReadStateVersion((version) => version + 1), []);
 
   if (messagesQuery.isPending) {
     return <Loader />;
@@ -38,7 +44,10 @@ export const Discussion = ({ requestId }: DiscussionProps) => {
         hasMore={!!hasNextPage}
         isFetchingNextPage={isFetchingNextPage}
         onLoadMore={handleLoadMore}
+        readStateVersion={readStateVersion}
       />
+
+      {canEdit ? <MessageComposer requestId={requestId} onSent={handleSent} /> : null}
     </div>
   );
 };

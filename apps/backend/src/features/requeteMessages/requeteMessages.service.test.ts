@@ -1,6 +1,8 @@
+import type { PinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../libs/prisma.js';
 import {
+  createRequeteMessage,
   getRequeteMessageById,
   getRequeteMessages,
   getUnreadCount,
@@ -9,13 +11,16 @@ import {
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
+    $transaction: vi.fn(),
     requeteMessage: {
+      create: vi.fn(),
       count: vi.fn(),
       findFirst: vi.fn(),
       findMany: vi.fn(),
       findUnique: vi.fn(),
     },
     requeteMessageRead: {
+      create: vi.fn(),
       createMany: vi.fn(),
     },
   },
@@ -23,6 +28,8 @@ vi.mock('../../libs/prisma.js', () => ({
 
 const mockedMessage = vi.mocked(prisma.requeteMessage);
 const mockedMessageRead = vi.mocked(prisma.requeteMessageRead);
+
+const logger = { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() } as unknown as PinoLogger;
 
 const baseRow = {
   id: 'm1',
@@ -39,6 +46,7 @@ const row = (overrides: Partial<typeof baseRow> = {}) => ({ ...baseRow, ...overr
 describe('requeteMessages.service.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(prisma.$transaction).mockImplementation((async (cb: (tx: unknown) => unknown) => cb(prisma)) as never);
     mockedMessage.count.mockResolvedValue(0 as never);
   });
 
@@ -169,6 +177,69 @@ describe('requeteMessages.service.ts', () => {
       mockedMessage.findUnique.mockResolvedValueOnce(null as never);
 
       await expect(getRequeteMessageById('m1', 'user1')).resolves.toBeNull();
+    });
+  });
+
+  describe('createRequeteMessage()', () => {
+    beforeEach(() => {
+      mockedMessage.create.mockResolvedValue({ id: 'm1' } as never);
+      mockedMessage.findUnique.mockResolvedValue(row() as never);
+      mockedMessage.findMany.mockResolvedValue([] as never);
+    });
+
+    it('creates the message and marks it read for its author', async () => {
+      mockedMessage.findMany.mockResolvedValueOnce([{ id: 'm1' }] as never);
+
+      const result = await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour' }, logger);
+
+      expect(prisma.$transaction).toHaveBeenCalledOnce();
+      expect(mockedMessage.create).toHaveBeenCalledWith({
+        data: { requeteId: 'REQ', entiteId: 'e1', authorId: 'user1', contenu: 'Bonjour' },
+      });
+      expect(mockedMessageRead.createMany).toHaveBeenCalledWith({
+        data: [{ messageId: 'm1', userId: 'user1', entiteId: 'e1' }],
+        skipDuplicates: true,
+      });
+      expect(result).toMatchObject({ id: 'm1' });
+    });
+
+    it('takes the message down with it when the thread cannot be marked read', async () => {
+      mockedMessage.findMany.mockResolvedValueOnce([{ id: 'm1' }] as never);
+      mockedMessageRead.createMany.mockRejectedValueOnce(new Error('DATABASE_FAILURE'));
+
+      await expect(createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour' }, logger)).rejects.toThrow(
+        'DATABASE_FAILURE',
+      );
+
+      // The read rows are written inside the transaction that created the message: nothing is committed.
+      expect(mockedMessage.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('takes the message down with it when it cannot be read back', async () => {
+      mockedMessage.findMany.mockResolvedValueOnce([{ id: 'm1' }] as never);
+      mockedMessage.findUnique.mockRejectedValueOnce(new Error('DATABASE_FAILURE'));
+
+      await expect(createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour' }, logger)).rejects.toThrow(
+        'DATABASE_FAILURE',
+      );
+
+      // The answer is built inside the transaction: an error means nothing was committed.
+      expect(prisma.$transaction).toHaveBeenCalledOnce();
+    });
+
+    it('marks everything the author had not read yet: replying counts as reading', async () => {
+      mockedMessage.findMany.mockResolvedValueOnce([{ id: 'older' }] as never);
+
+      await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour' }, logger);
+
+      expect(mockedMessage.findMany).toHaveBeenCalledWith({
+        where: { requeteId: 'REQ', reads: { none: { userId: 'user1' } } },
+        select: { id: true },
+      });
+      expect(mockedMessageRead.createMany).toHaveBeenCalledWith({
+        data: [{ messageId: 'older', userId: 'user1', entiteId: 'e1' }],
+        skipDuplicates: true,
+      });
     });
   });
 

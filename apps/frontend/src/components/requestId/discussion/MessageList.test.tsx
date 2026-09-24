@@ -112,6 +112,33 @@ describe('MessageList', () => {
     expect(screen.getByText('Non lus').closest('li')?.nextElementSibling?.textContent).toContain('message m2');
   });
 
+  it("shows the 'Non lus' separator again when a new message arrives", () => {
+    const unread = (id: string) => ({ ...makeMessage(id), isReadByCurrentUser: false });
+    const props = { ownEntiteId: 'E1', hasMore: false, isFetchingNextPage: false, onLoadMore: vi.fn() };
+    const { rerender } = render(
+      <MessageList {...props} messages={[makeMessage('m1'), unread('m2')]} readStateVersion={0} />,
+    );
+    expect(screen.getByText('Non lus')).toBeInTheDocument();
+
+    rerender(
+      <MessageList
+        {...props}
+        messages={[makeMessage('m1'), makeMessage('m2'), makeMessage('m3')]}
+        readStateVersion={1}
+      />,
+    );
+    expect(screen.queryByText('Non lus')).not.toBeInTheDocument();
+
+    rerender(
+      <MessageList
+        {...props}
+        messages={[makeMessage('m1'), makeMessage('m2'), makeMessage('m3'), unread('m4')]}
+        readStateVersion={1}
+      />,
+    );
+    expect(screen.getByText('Non lus').closest('li')?.nextElementSibling?.textContent).toContain('message m4');
+  });
+
   it('re-anchors to the bottom when the thread is emptied and filled again', () => {
     const { rerender } = renderList([makeMessage('m1'), makeMessage('m2')]);
     vi.mocked(Element.prototype.scrollIntoView).mockClear();
