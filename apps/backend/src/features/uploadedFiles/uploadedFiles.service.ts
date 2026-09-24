@@ -177,7 +177,8 @@ const updateFilesWithRelation = async (
   });
 
   if (updatedFiles.count !== uploadedFileIds.length) {
-    if (relationWhere) {
+    // Attaching to a message is all or nothing: a message must never be sent with part of its attachments.
+    if (relationWhere || isAttachingToMessage) {
       throw new FilesNotOwnedError('FILES_NOT_OWNED');
     }
 

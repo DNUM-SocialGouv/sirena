@@ -349,7 +349,8 @@ describe('uploadedFiles.service.ts', () => {
 
     it('rejects the whole attachment when at least one file is ineligible', async () => {
       vi.mocked(prisma.$transaction).mockImplementation((async (cb: (tx: unknown) => unknown) => cb(prisma)) as never);
-      mockedUploadedFile.findMany.mockResolvedValueOnce([]);
+      // The first findMany is the changelog snapshot taken before the update, not the attachment itself.
+      mockedUploadedFile.findMany.mockResolvedValueOnce([{ id: 'file1' }] as never);
       mockedUploadedFile.updateMany.mockResolvedValueOnce({ count: 1 });
 
       await expect(setMessageFiles('message1', ['file1', 'file2'], 'e1', 'user1')).rejects.toBeInstanceOf(
