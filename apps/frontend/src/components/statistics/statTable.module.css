@@ -1,0 +1,12 @@
+.table :global(.fr-table__wrapper),
+.table :global(.fr-table__container),
+.table :global(.fr-table__content),
+.table :global(.fr-table__content table) {
+  width: 100%;
+}
+
+.pagination {
+  padding: 1rem 1rem 0;
+  border: 1px solid var(--border-contrast-grey);
+  border-top: 0;
+}
