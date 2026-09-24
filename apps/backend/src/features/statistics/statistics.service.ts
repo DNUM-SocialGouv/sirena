@@ -25,6 +25,21 @@ const DASHBOARD_ID_ENV: Record<DashboardScope, 'METABASE_DASHBOARD_ID' | 'METABA
   national: 'METABASE_DASHBOARD_ID_ADMIN',
 };
 
+// Slugs des filtres câblés dans Sirena : le contrôleur les utilise comme clés des paramètres optionnels
+// et le front décide à partir d'eux quels filtres proposer. Ils sont fixés côté Metabase, donc un
+// renommage là-bas ferait disparaître le filtre sans erreur : d'où le warn sur les slugs inconnus.
+export const KNOWN_DASHBOARD_FILTER_SLUGS = [
+  'start_date',
+  'end_date',
+  'domaine_fonctionnel',
+  'lieu_de_survenue',
+  'inclure_eig',
+] as const;
+
+export type DashboardFilterSlug = (typeof KNOWN_DASHBOARD_FILTER_SLUGS)[number];
+
+const KNOWN_DASHBOARD_FILTER_SLUG_SET: ReadonlySet<string> = new Set(KNOWN_DASHBOARD_FILTER_SLUGS);
+
 export type CardLayout = {
   col: number;
   row: number;
@@ -233,9 +248,6 @@ export const extractDashboardTabs = (payload: unknown): DashboardTab[] => {
     .sort((a, b) => a.position - b.position);
 };
 
-export const extractDashboardParameterSlugs = (payload: unknown): Set<string> =>
-  new Set(extractDashboardParameters(payload).map((p) => p.slug));
-
 type DashcardDescriptor = {
   dashcardId: number;
   cardId: number;
@@ -385,6 +397,15 @@ export const fetchDashboardData = async (
 
   const parameters = extractDashboardParameters(metadata);
   const declaredSlugs = new Set(parameters.map((p) => p.slug));
+
+  const unknownSlugs = [...declaredSlugs].filter((slug) => !KNOWN_DASHBOARD_FILTER_SLUG_SET.has(slug));
+  if (unknownSlugs.length > 0) {
+    logger.warn(
+      { dashboardId, unknownSlugs, knownSlugs: [...KNOWN_DASHBOARD_FILTER_SLUGS] },
+      '[statistics] Metabase dashboard declares filters unknown to Sirena, they are neither offered nor applied',
+    );
+  }
+
   const slugByParameterId = new Map(
     parameters.flatMap((p): Array<[string, string]> => (p.id === null ? [] : [[p.id, p.slug]])),
   );

@@ -12,7 +12,7 @@ import { getEntiteById } from '../entites/entites.service.js';
 import { type ExportRequetesCsvWriter, prepareExportRequetesCsv } from './exportRequetes/exportRequetes.service.js';
 import { getExportRequetesRoute, getStatisticsDashboardRoute } from './statistics.route.js';
 import { StatisticsDashboardQuerySchema } from './statistics.schema.js';
-import { fetchDashboardData } from './statistics.service.js';
+import { type DashboardFilterSlug, fetchDashboardData } from './statistics.service.js';
 
 const app = factoryWithLogs
   .createApp()
@@ -96,7 +96,7 @@ const app = factoryWithLogs
     const topEntiteId = c.get('topEntiteId');
     const { startDate, endDate, domaineIds, includeEIG, lieuTypes } = c.req.valid('query');
 
-    const optionalParams = {
+    const optionalParams: Record<DashboardFilterSlug, string | string[] | undefined> = {
       start_date: startDate,
       end_date: endDate,
       domaine_fonctionnel: splitCsv(domaineIds),

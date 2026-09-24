@@ -3,6 +3,10 @@ import type { StatisticsCard } from './statistics.types';
 export const DASHBOARD_FILTER_KEYS = ['period', 'domaine', 'lieu', 'eig'] as const;
 export type DashboardFilterKey = (typeof DASHBOARD_FILTER_KEYS)[number];
 
+// Slugs des paramètres Metabase câblés sur chaque filtre de la page. Le contrat est fixé côté
+// Metabase : un renommage de slug ferait disparaître le filtre correspondant. Le backend compare les
+// slugs déclarés par le dashboard à cette même liste (KNOWN_DASHBOARD_FILTER_SLUGS) et loggue un warn
+// quand il en découvre un inconnu, pour que la dérive soit visible et non silencieuse.
 const FILTER_SLUGS: Record<DashboardFilterKey, readonly string[]> = {
   period: ['start_date', 'end_date'],
   domaine: ['domaine_fonctionnel'],

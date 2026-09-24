@@ -370,6 +370,53 @@ describe('statistics.service.ts', () => {
       expect(searchParams.get('start_date')).toBe('2026-01-01');
     });
 
+    it('warns when the dashboard declares a filter slug Sirena does not know', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            parameters: [{ slug: 'start_date' }, { slug: 'domaine_fonctionnel_v2' }],
+            dashcards: [{ id: 100, card_id: 42, card: { id: 42, name: 'KPI' } }],
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]),
+        });
+
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await fetchDashboardData();
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({ dashboardId: 7, unknownSlugs: ['domaine_fonctionnel_v2'] }),
+        expect.stringContaining('unknown to Sirena'),
+      );
+    });
+
+    it('does not warn when every declared filter slug is known', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            parameters: [{ slug: 'start_date' }, { slug: 'end_date' }, { slug: 'inclure_eig' }],
+            dashcards: [{ id: 100, card_id: 42, card: { id: 42, name: 'KPI' } }],
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => cardResult([{ name: 'k', base_type: 'type/Integer' }], [[1]]),
+        });
+
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await fetchDashboardData();
+
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
     it('omits an empty multi-valued filter instead of filtering on nothing', async () => {
       fetchMock
         .mockResolvedValueOnce({
@@ -820,15 +867,6 @@ describe('statistics.service.ts', () => {
 
       const cardUrl = new URL(fetchMock.mock.calls[1][0] as string);
       expect(cardUrl.searchParams.has('start_date')).toBe(false);
-    });
-
-    it('extractDashboardParameterSlugs reads slugs and tolerates missing parameters', async () => {
-      const { extractDashboardParameterSlugs } = await import('./statistics.service.js');
-      expect(extractDashboardParameterSlugs({ parameters: [{ slug: 'a' }, { name: 'b' }, {}] })).toEqual(
-        new Set(['a', 'b']),
-      );
-      expect(extractDashboardParameterSlugs({})).toEqual(new Set());
-      expect(extractDashboardParameterSlugs(null)).toEqual(new Set());
     });
 
     it('throws 503 when the dashboard id is missing', async () => {
