@@ -1,30 +1,24 @@
 import { fr } from '@codegouvfr/react-dsfr';
-import { Tag } from '@codegouvfr/react-dsfr/Tag';
+import { Tabs } from '@codegouvfr/react-dsfr/Tabs';
 import { ROLES, ROLES_STATISTICS } from '@sirena/common/constants';
 import { createFileRoute, Navigate, useNavigate, useSearch } from '@tanstack/react-router';
-import { type CSSProperties, useCallback, useMemo } from 'react';
+import { type CSSProperties, type ReactNode, useCallback, useMemo } from 'react';
 import { z } from 'zod';
-import { CheckboxFilter } from '@/components/common/filters/CheckboxFilter';
-import { DomaineFilter } from '@/components/common/filters/DomaineFilter';
-import { LieuTypeFilter } from '@/components/common/filters/LieuTypeFilter';
 import { AuthLayout } from '@/components/layout/auth/layout';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { CardHelp } from '@/components/statistics/CardHelp';
 import { parseCard } from '@/components/statistics/chartData';
+import { DashboardFilters } from '@/components/statistics/DashboardFilters';
 import { DownloadCsvButton } from '@/components/statistics/DownloadCsvButton';
+import { groupCardsByTab, resolveSelectedTab } from '@/components/statistics/dashboardTabs';
 import { ExportRequetesButton } from '@/components/statistics/ExportRequetesButton';
-import { PeriodFilter } from '@/components/statistics/PeriodFilter';
-import {
-  describeCreatedPeriod,
-  PERIOD_PRESETS,
-  type PeriodSelection,
-  resolveDateRange,
-} from '@/components/statistics/period';
+import { type DashboardFilterKey, resolveAvailableFilters } from '@/components/statistics/filterAvailability';
+import { PERIOD_PRESETS, type PeriodSelection, resolveDateRange } from '@/components/statistics/period';
 import { StatChart } from '@/components/statistics/StatChart';
 import { StatTable } from '@/components/statistics/StatTable';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useStatisticsDashboard } from '@/hooks/queries/statistics.hook';
-import type { StatisticsCard } from '@/lib/api/fetchStatistics';
+import type { StatisticsCard, StatisticsDashboard } from '@/lib/api/fetchStatistics';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { splitCsv } from '@/utils/filters';
 import styles from './statistiques.module.css';
@@ -45,6 +39,7 @@ const StatisticsSearchSchema = z.object({
   domaineIds: z.string().optional().catch(undefined),
   includeEIG: z.boolean().optional().catch(undefined),
   lieuTypes: z.string().optional().catch(undefined),
+  tab: z.number().int().positive().optional().catch(undefined),
 });
 
 export const Route = createFileRoute('/_auth/statistiques')({
@@ -111,6 +106,61 @@ function cellStyle(card: StatisticsCard): CSSProperties {
 
 function CardContent({ card }: { card: StatisticsCard }) {
   return isKpiCard(card) ? <KpiCard card={card} /> : <ChartCard card={card} />;
+}
+
+function CardsGrid({ cards }: { cards: StatisticsCard[] }) {
+  const sortedCards = [...cards].sort(byGridPosition);
+  return (
+    <div className={styles['mb-grid']}>
+      {sortedCards.map((card) => (
+        <section key={`${card.dashcardId}-${card.id}`} className={styles['mb-cell']} style={cellStyle(card)}>
+          <CardContent card={card} />
+        </section>
+      ))}
+    </div>
+  );
+}
+
+type DashboardContentProps = {
+  dashboard: StatisticsDashboard;
+  requestedTabId: number | undefined;
+  onTabChange: (tabId: string) => void;
+  renderFilters: (available: ReadonlySet<DashboardFilterKey>) => ReactNode;
+};
+
+function DashboardContent({ dashboard, requestedTabId, onTabChange, renderFilters }: DashboardContentProps) {
+  const cards = Array.isArray(dashboard.cards) ? dashboard.cards : [];
+  const tabs = Array.isArray(dashboard.tabs) ? dashboard.tabs : [];
+  if (cards.length === 0) {
+    return <p>Aucune carte configurée dans le dashboard Metabase.</p>;
+  }
+
+  const selectedTab = tabs.length > 1 ? resolveSelectedTab(tabs, requestedTabId) : null;
+  if (!selectedTab) {
+    return (
+      <>
+        {renderFilters(resolveAvailableFilters(cards, cards))}
+        <CardsGrid cards={cards} />
+      </>
+    );
+  }
+
+  const sections = groupCardsByTab(tabs, cards);
+  const selectedSection = sections.find((section) => section.tab.id === selectedTab.id);
+  const selectedCards = selectedSection?.cards ?? [];
+
+  return (
+    <Tabs
+      label="Onglets des indicateurs"
+      tabs={sections.map(({ tab }) => ({ tabId: String(tab.id), label: tab.name }))}
+      selectedTabId={String(selectedTab.id)}
+      onTabChange={onTabChange}
+      className={styles['dashboard-tabs']}
+    >
+      {renderFilters(resolveAvailableFilters(selectedCards, cards))}
+      {selectedCards.length > 0 ? <CardsGrid cards={selectedCards} /> : <p>Aucune carte dans cet onglet.</p>}
+    </Tabs>
+  );
 }
 
 function ChartCard({ card }: { card: StatisticsCard }) {
@@ -205,12 +255,26 @@ export function RouteComponent() {
     [navigate],
   );
 
-  const clearPeriod = useCallback(
-    () => handlePeriodChange({ period: undefined, startDate: undefined, endDate: undefined }),
-    [handlePeriodChange],
+  const handleTabChange = useCallback(
+    (tabId: string) => {
+      navigate({ search: (prev) => ({ ...prev, tab: Number(tabId) }) });
+    },
+    [navigate],
   );
 
-  const activePeriodLabel = describeCreatedPeriod(selection);
+  const renderFilters = (available: ReadonlySet<DashboardFilterKey>) => (
+    <DashboardFilters
+      available={available}
+      period={selection}
+      onPeriodChange={handlePeriodChange}
+      selectedDomaines={selectedDomaines}
+      onDomaineChange={handleDomaineChange}
+      selectedLieuTypes={selectedLieuTypes}
+      onLieuTypeChange={handleLieuTypeChange}
+      includeEIG={search.includeEIG !== false}
+      onIncludeEIGChange={handleIncludeEIGChange}
+    />
+  );
 
   if (isProfilePending) {
     return null;
@@ -228,61 +292,18 @@ export function RouteComponent() {
           <h1 className="fr-mb-0">Indicateurs</h1>
           {!isSuperAdmin && <ExportRequetesButton />}
         </div>
-        <fieldset className={styles.filters}>
-          <legend className={fr.cx('fr-label', 'fr-mb-1v')}>Filtrer les indicateurs</legend>
-          <div className={styles['filters__controls']}>
-            <PeriodFilter value={selection} onChange={handlePeriodChange} />
-            <DomaineFilter
-              selectedIds={selectedDomaines}
-              legend="Filtrer les indicateurs par domaine fonctionnel"
-              onChange={handleDomaineChange}
-            />
-            <LieuTypeFilter
-              selectedTokens={selectedLieuTypes}
-              legend="Filtrer les indicateurs par type de lieu de survenue"
-              onChange={handleLieuTypeChange}
-            />
-            <CheckboxFilter
-              label="Inclure les EIG"
-              checked={search.includeEIG !== false}
-              onChange={handleIncludeEIGChange}
-            />
-          </div>
-          {activePeriodLabel ? (
-            <div className={styles['filters__active']}>
-              <Tag
-                as="button"
-                dismissible
-                onClick={clearPeriod}
-                nativeButtonProps={{ 'aria-label': `${activePeriodLabel}, retirer le filtre` }}
-              >
-                {activePeriodLabel}
-              </Tag>
-            </div>
-          ) : null}
-        </fieldset>
         <p role="status" className="fr-sr-only" aria-live="polite">
           {statusMessage}
         </p>
         <QueryStateHandler query={query} noDataComponent={<p>Aucune carte configurée dans le dashboard Metabase.</p>}>
-          {({ data }) => {
-            const cards = Array.isArray(data.cards) ? data.cards : [];
-            if (cards.length === 0) {
-              return <p>Aucune carte configurée dans le dashboard Metabase.</p>;
-            }
-
-            const sortedCards = [...cards].sort(byGridPosition);
-
-            return (
-              <div className={styles['mb-grid']}>
-                {sortedCards.map((card) => (
-                  <section key={`${card.dashcardId}-${card.id}`} className={styles['mb-cell']} style={cellStyle(card)}>
-                    <CardContent card={card} />
-                  </section>
-                ))}
-              </div>
-            );
-          }}
+          {({ data }) => (
+            <DashboardContent
+              dashboard={data}
+              requestedTabId={search.tab}
+              onTabChange={handleTabChange}
+              renderFilters={renderFilters}
+            />
+          )}
         </QueryStateHandler>
         <p className={`${fr.cx('fr-text--sm', 'fr-mt-6w', 'fr-mb-0')} ${styles['data-note']}`}>
           <span className={fr.cx('fr-icon-time-line')} aria-hidden="true" />
