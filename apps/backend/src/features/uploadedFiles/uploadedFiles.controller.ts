@@ -158,6 +158,7 @@ const app = factoryWithLogs
         });
       }
 
+      // A sent message cannot be edited: removing its attachment would leave a message pointing at nothing.
       if (uploadedFile.requeteMessageId) {
         throwHTTPException400BadRequest('Un fichier joint à un message de discussion ne peut pas être supprimé.', {
           res: c.res,
