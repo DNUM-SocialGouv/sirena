@@ -99,6 +99,7 @@ packages/
 | `pnpm op:import:dematsocial`           | Import requests from DematSocial (`@sirena/backend`) with `.env`                       |
 | `pnpm op:manage-api-keys`              | Manage third-party API keys (see [Third-Party API](#-third-party-api) section)       |
 | `pnpm op:metabase:export-dashboard`    | Export a Metabase dashboard + its cards as JSON for repo-tracked backup (see [Metabase Dashboard Backup](#-metabase-dashboard-backup) section) |
+| `pnpm op:metabase:restore-dashboard`   | Restore a snapshot from `docs/metabase_dashboards/` onto a target Metabase dashboard, dry run by default (see [Restoring a snapshot](#restoring-a-snapshot)) |
 | `pnpm db:deploy`                       | Deploy pending migrations to DB (`@sirena/backend`) with `.env`                      |
 | `pnpm db:studio`                       | Open Prisma Studio (`@sirena/backend`) with `.env`                                   |
 | `pnpm db:reset`                        | Reset the database (`@sirena/backend`) with `.env`                                   |
@@ -274,6 +275,26 @@ docs/metabase_dashboards/
 ### When to run
 
 Commit the regenerated JSON whenever a dashboard or one of its cards is edited in the Metabase UI. The diff shows exactly what changed in the dashboard's definition.
+
+### Restoring a snapshot
+
+The `op:metabase:restore-dashboard` script replays a snapshot onto an existing dashboard of another Metabase (typically integration → validation/production, see [docs/metabase_dashboards/DEPLOYMENT.md](docs/metabase_dashboards/DEPLOYMENT.md)). It matches cards, tabs (by name), layout, filters and dashboard settings, and only ever writes with `--apply`.
+
+```bash
+# Dry run: prints the plan, writes nothing
+pnpm op:metabase:restore-dashboard --source 4 --target 12 --url https://metabase.example.gouv.fr
+
+# Apply, with the API key read from a file and a JSON report of what was done
+pnpm op:metabase:restore-dashboard --source 4 --target 12 --url https://metabase.example.gouv.fr \
+  --api-key-file ~/.metabase-prod-key --apply --report restore-12.json
+
+# Every option, with defaults
+pnpm op:metabase:restore-dashboard --help
+```
+
+- `--source` is the snapshot folder id, `--target` the dashboard id on the target instance; the target's database is preserved.
+- The API key comes from `METABASE_TARGET_API_KEY` / `METABASE_API_KEY`, or `--api-key-env`, `--api-key-file`, `--api-key-stdin`. Passing it inline (`--api-key …`) is refused.
+- `--apply` asks you to type the target host before writing; add `--yes` for non-interactive runs.
 
 > **Note:** This is an export-only tool. Restoring a dashboard from these JSON is out of scope
 
