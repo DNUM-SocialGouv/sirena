@@ -123,23 +123,20 @@
 }
 
 .request-tabs {
-  position: relative;
-  margin-top: calc(-1 * var(--request-header-overlap, 2.5rem));
   box-shadow: none;
-  overflow: visible;
 }
 
 .request-tabs::before {
   box-shadow: none;
 }
+
 .request-tabs :global(.fr-tabs__panel) {
   padding: 2rem 0;
+  background-color: var(--background-default-grey);
 }
 .request-tabs :global(.fr-tabs__list) {
-  position: relative;
-  left: calc((100vw - 100%) / -2 + 3.5rem);
-  padding-left: 0;
-  padding-right: 0;
+  padding-left: 3.5rem;
+  padding-right: 1.5rem;
 }
 
 .request-tabs :global(.fr-tabs__list > button:first-child) {

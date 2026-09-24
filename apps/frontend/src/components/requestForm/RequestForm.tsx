@@ -123,11 +123,11 @@ export function RequestForm({ requestId, activeTab: activeTabProp = 0 }: Request
             hasUnsafeFiles={hasUnsafeFiles}
           />{' '}
         </div>
-      </div>
-      <div className="fr-container">
         <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange} className={styles['request-tabs']}>
-          {activeTab === 0 && <Details requestId={requestId} requestQuery={requestQuery} />}
-          {activeTab === 1 && <Processing requestId={requestId} requestQuery={requestQuery} />}
+          <div className="fr-container">
+            {activeTab === 0 && <Details requestId={requestId} requestQuery={requestQuery} />}
+            {activeTab === 1 && <Processing requestId={requestId} requestQuery={requestQuery} />}
+          </div>
         </Tabs>
       </div>
     </>
