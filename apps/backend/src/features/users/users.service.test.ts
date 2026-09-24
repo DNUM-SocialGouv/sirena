@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { sseEventManager } from '../../helpers/sse.js';
 import { prisma } from '../../libs/prisma.js';
 import { entitesDescendantIdsCache } from '../entites/entites.cache.js';
 import {
@@ -297,6 +298,11 @@ describe('user.service.ts', () => {
         },
       });
       expect(result).toEqual(mockUser);
+      expect(sseEventManager.emitUserList).toHaveBeenCalledWith({
+        action: 'created',
+        userId: mockUser.id,
+        entiteId: null,
+      });
     });
 
     it('should call create with SUPER_ADMIN role if email is in SUPER_ADMIN_LIST_EMAIL', async () => {
@@ -329,6 +335,11 @@ describe('user.service.ts', () => {
       const result = await deleteUser('user1');
       expect(mockedUser.delete).toHaveBeenCalledWith({ where: { id: 'user1' } });
       expect(result).toEqual(mockUser);
+      expect(sseEventManager.emitUserList).toHaveBeenCalledWith({
+        action: 'deleted',
+        userId: mockUser.id,
+        entiteId: null,
+      });
     });
   });
 
@@ -344,6 +355,77 @@ describe('user.service.ts', () => {
       });
 
       expect(result).toEqual({ ...mockUser, roleId: 'SUPER_ADMIN' });
+    });
+
+    it('emits the status change and the scoped list event with the entity of the user', async () => {
+      mockedUser.update = vi.fn().mockResolvedValueOnce({ ...mockUser, statutId: 'INACTIF', entiteId: 'e1' });
+
+      await patchUser('user1', { statutId: 'INACTIF' });
+
+      expect(sseEventManager.emitUserStatus).toHaveBeenCalledWith({
+        userId: mockUser.id,
+        statutId: 'INACTIF',
+        roleId: mockUser.roleId,
+      });
+      expect(sseEventManager.emitUserList).toHaveBeenCalledWith({
+        action: 'updated',
+        userId: mockUser.id,
+        entiteId: 'e1',
+      });
+    });
+
+    it('does not emit a status event when nothing about the access perimeter changes', async () => {
+      mockedUser.update = vi.fn().mockResolvedValueOnce({ ...mockUser, entiteId: 'e1' });
+
+      await patchUser('user1', { prenom: 'Jean' });
+
+      expect(sseEventManager.emitUserStatus).not.toHaveBeenCalled();
+      expect(sseEventManager.emitUserList).toHaveBeenCalledWith({
+        action: 'updated',
+        userId: mockUser.id,
+        entiteId: 'e1',
+      });
+    });
+
+    it('closes the streams of a user moved to another entite', async () => {
+      mockedUser.findUnique = vi.fn().mockResolvedValueOnce({ entiteId: 'e1' });
+      mockedUser.update = vi.fn().mockResolvedValueOnce({ ...mockUser, entiteId: 'e2' });
+
+      await patchUser('user1', { entiteId: 'e2' });
+
+      expect(sseEventManager.emitUserStatus).toHaveBeenCalledWith({
+        userId: mockUser.id,
+        statutId: mockUser.statutId,
+        roleId: mockUser.roleId,
+      });
+    });
+
+    it('tells the entite the user left, not only the one it joined', async () => {
+      mockedUser.findUnique = vi.fn().mockResolvedValueOnce({ entiteId: 'e1' });
+      mockedUser.update = vi.fn().mockResolvedValueOnce({ ...mockUser, entiteId: 'e2' });
+
+      await patchUser('user1', { entiteId: 'e2' });
+
+      expect(sseEventManager.emitUserList).toHaveBeenCalledWith({
+        action: 'updated',
+        userId: mockUser.id,
+        entiteId: 'e2',
+      });
+      expect(sseEventManager.emitUserList).toHaveBeenCalledWith({
+        action: 'updated',
+        userId: mockUser.id,
+        entiteId: 'e1',
+      });
+    });
+
+    it('does not read the previous entite when the patch does not touch it', async () => {
+      mockedUser.findUnique = vi.fn().mockResolvedValueOnce(null);
+      mockedUser.update = vi.fn().mockResolvedValueOnce({ ...mockUser, entiteId: 'e1' });
+
+      await patchUser('user1', { roleId: 'SUPER_ADMIN' });
+
+      expect(mockedUser.findUnique).not.toHaveBeenCalled();
+      expect(sseEventManager.emitUserList).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -1,7 +1,5 @@
 import { EventEmitter } from 'node:events';
-import { throwHTTPException400BadRequest } from '@sirena/backend-utils/helpers';
 import {
-  ERROR_KIND,
   type FileStatusEvent,
   type RequeteUpdatedEvent,
   type RequeteUpdateField,
@@ -16,12 +14,22 @@ import type { Redis } from 'ioredis';
 import { connection, sanitizeRedisError } from '../config/redis.js';
 import type { AppBindings } from '../helpers/factories/appWithRole.js';
 import { createDefaultLogger } from '../helpers/pino.js';
+import {
+  requireTopEntiteId as requireTopEntiteIdFromContext,
+  requireUserId as requireUserIdFromContext,
+} from './context.js';
 
 export type SSEContext = Context<AppBindings>;
 
 export type { FileStatusEvent, RequeteUpdatedEvent, RequeteUpdateField, SSEEventType, UserListEvent, UserStatusEvent };
 
 const SSE_REDIS_CHANNEL = 'sse:events';
+
+const USER_STATUS_GUARD_EVENT = 'internal:user-status-guard';
+
+const KNOWN_EVENT_TYPES = new Set<string>(Object.values(SSE_EVENT_TYPES));
+const isKnownEventType = (type: unknown): type is SSEEventType =>
+  typeof type === 'string' && KNOWN_EVENT_TYPES.has(type);
 
 interface RedisSSEMessage {
   type: SSEEventType;
@@ -36,7 +44,16 @@ class SSEEventManager extends EventEmitter {
 
   private constructor() {
     super();
-    this.setMaxListeners(1000);
+    this.setMaxListeners(0);
+  }
+
+  /** Open connections per event type, for the metrics endpoint. */
+  getConnectionCounts(): Record<SSEEventType, number> {
+    const counts = {} as Record<SSEEventType, number>;
+    for (const type of Object.values(SSE_EVENT_TYPES)) {
+      counts[type] = this.listenerCount(type);
+    }
+    return counts;
   }
 
   static getInstance(): SSEEventManager {
@@ -60,11 +77,15 @@ class SSEEventManager extends EventEmitter {
       // Set up message handler BEFORE subscribing to not miss any messages
       this.subscriber.on('message', (_channel, message) => {
         try {
-          const parsed = JSON.parse(message) as RedisSSEMessage;
+          const parsed = JSON.parse(message) as Partial<RedisSSEMessage>;
+          if (!isKnownEventType(parsed.type)) {
+            this.logger.warn({ type: parsed.type }, 'SSE event of unknown type ignored');
+            return;
+          }
           this.logger.debug({ type: parsed.type }, 'SSE event received from Redis');
-          this.emit(parsed.type, parsed.payload);
+          this.dispatch(parsed.type, parsed.payload);
         } catch (err) {
-          this.logger.error({ err, message }, 'Failed to parse SSE Redis message');
+          this.logger.error({ err }, 'Failed to parse SSE Redis message');
         }
       });
 
@@ -79,12 +100,26 @@ class SSEEventManager extends EventEmitter {
 
   private publish(type: SSEEventType, payload: unknown): void {
     const message: RedisSSEMessage = { type, payload };
-    connection.publish(SSE_REDIS_CHANNEL, JSON.stringify(message)).catch((err) => {
-      this.logger.error({ err: sanitizeRedisError(err), type }, 'Failed to publish SSE event to Redis');
-      // Fallback to local emit for single-instance deployments
-      this.emit(type, payload);
-    });
-    this.logger.debug({ type, payload }, 'SSE event published to Redis');
+    connection
+      .publish(SSE_REDIS_CHANNEL, JSON.stringify(message))
+      .then(() => this.logger.debug({ type }, 'SSE event published to Redis'))
+      .catch((err) => {
+        this.logger.error({ err: sanitizeRedisError(err), type }, 'Failed to publish SSE event to Redis');
+        this.dispatch(type, payload);
+      });
+  }
+
+  private dispatch(type: SSEEventType, payload: unknown): void {
+    this.emit(type, payload);
+    if (type === SSE_EVENT_TYPES.USER_STATUS) this.emit(USER_STATUS_GUARD_EVENT, payload);
+  }
+
+  onUserStatusGuard(handler: (event: Partial<UserStatusEvent> | null) => void): void {
+    this.on(USER_STATUS_GUARD_EVENT, handler);
+  }
+
+  offUserStatusGuard(handler: (event: Partial<UserStatusEvent> | null) => void): void {
+    this.removeListener(USER_STATUS_GUARD_EVENT, handler);
   }
 
   emitFileStatus(event: FileStatusEvent): void {
@@ -120,28 +155,57 @@ interface SSEStreamOptions<T> {
   filter?: (event: T) => boolean;
   keepAliveInterval?: number;
   timeout?: number;
+  closeOnUserStatusChange?: boolean;
 }
 
+const DEFAULT_STREAM_TIMEOUT_MS = 30 * 60 * 1000;
+
 export const createSSEStream = <T>(c: SSEContext, options: SSEStreamOptions<T>) => {
-  const { eventType, filter, keepAliveInterval = 30000, timeout = 300000 } = options;
+  const {
+    eventType,
+    filter,
+    keepAliveInterval = 30000,
+    timeout = DEFAULT_STREAM_TIMEOUT_MS,
+    closeOnUserStatusChange = true,
+  } = options;
   const logger = c.get('logger');
+  const userId = c.get('userId');
 
   return streamSSE(c, async (stream) => {
     let eventId = 0;
     let running = true;
     let keepAliveTimer: ReturnType<typeof setInterval> | undefined;
     let timeoutTimer: ReturnType<typeof setTimeout> | undefined;
+    let release: () => void = () => {};
+    const released = new Promise<void>((resolve) => {
+      release = resolve;
+    });
 
     const cleanup = () => {
       running = false;
       if (keepAliveTimer) clearInterval(keepAliveTimer);
       if (timeoutTimer) clearTimeout(timeoutTimer);
       sseEventManager.removeListener(eventType, eventHandler);
+      if (closeOnUserStatusChange) sseEventManager.offUserStatusGuard(userStatusGuard);
+      release();
+    };
+
+    const userStatusGuard = (event: Partial<UserStatusEvent> | null) => {
+      if (!running || event?.userId !== userId) return;
+      logger.info('SSE stream closed: subscriber status or role changed');
+      cleanup();
+      stream.close();
     };
 
     const eventHandler = async (event: T) => {
       if (!running) return;
-      if (filter && !filter(event)) return;
+
+      try {
+        if (filter && !filter(event)) return;
+      } catch (error) {
+        logger.warn({ error, eventType }, 'SSE event ignored: filter could not read the payload');
+        return;
+      }
 
       try {
         await stream.writeSSE({
@@ -162,6 +226,7 @@ export const createSSEStream = <T>(c: SSEContext, options: SSEStreamOptions<T>) 
     });
 
     sseEventManager.on(eventType, eventHandler);
+    if (closeOnUserStatusChange) sseEventManager.onUserStatusGuard(userStatusGuard);
 
     keepAliveTimer = setInterval(async () => {
       if (!running) return;
@@ -183,36 +248,22 @@ export const createSSEStream = <T>(c: SSEContext, options: SSEStreamOptions<T>) 
       stream.close();
     }, timeout);
 
-    while (running) {
-      await stream.sleep(1000);
-    }
+    await released;
   });
 };
 
-export const requireTopEntiteId = (c: SSEContext): string => {
-  const topEntiteId = c.get('topEntiteId');
-  if (!topEntiteId) {
-    throwHTTPException400BadRequest('topEntiteId required for SSE subscription', {
-      res: c.res,
-      kind: ERROR_KIND.BUSINESS,
-    });
-  }
-  return topEntiteId;
-};
+export const requireTopEntiteId = (c: SSEContext): string =>
+  requireTopEntiteIdFromContext(c, 'topEntiteId required for SSE subscription');
 
-export const requireUserId = (c: SSEContext): string => {
-  const userId = c.get('userId');
-  if (!userId) {
-    throwHTTPException400BadRequest('userId required for SSE subscription', { res: c.res, kind: ERROR_KIND.BUSINESS });
-  }
-  return userId;
-};
+export const requireUserId = (c: SSEContext): string =>
+  requireUserIdFromContext(c, 'userId required for SSE subscription');
 
 interface SSERouteConfig<T> {
   eventType: SSEEventType;
   getFilter: (c: SSEContext) => ((event: T) => boolean) | undefined;
   validateAccess?: (c: SSEContext) => Promise<void>;
   logContext: Record<string, unknown>;
+  closeOnUserStatusChange?: boolean;
 }
 
 export const createSSEHandler = <T>(config: SSERouteConfig<T>) => {
@@ -228,6 +279,7 @@ export const createSSEHandler = <T>(config: SSERouteConfig<T>) => {
     return createSSEStream<T>(c, {
       eventType: config.eventType,
       filter: config.getFilter(c),
+      closeOnUserStatusChange: config.closeOnUserStatusChange,
     });
   };
 };

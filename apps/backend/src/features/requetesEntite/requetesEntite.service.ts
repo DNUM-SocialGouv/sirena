@@ -1903,7 +1903,7 @@ export const closeRequeteForEntite = async (
       }
     }
 
-    await updateStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.CLOTUREE, tx);
+    await setStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.CLOTUREE, tx);
 
     if (requeteEntite.prioriteId) {
       await tx.requeteEntite.update({
@@ -1921,6 +1921,8 @@ export const closeRequeteForEntite = async (
       note,
     };
   });
+
+  sseEventManager.emitRequeteUpdated({ requeteId, entiteId, field: REQUETE_UPDATE_FIELDS.CLOSED });
 
   if (shouldTriggerDematSocialPriseEnChargeSync(requeteEntite.statutId, REQUETE_STATUT_TYPES.CLOTUREE)) {
     await safeSyncRequetePriseEnChargeToDematSocial(requeteId);
@@ -2024,7 +2026,7 @@ export const reopenRequeteForEntite = async (requeteId: string, entiteId: string
       },
     });
 
-    await updateStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.EN_COURS, tx);
+    await setStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.EN_COURS, tx);
 
     return {
       etapeId: etape.id,
@@ -2032,6 +2034,8 @@ export const reopenRequeteForEntite = async (requeteId: string, entiteId: string
       etape,
     };
   });
+
+  sseEventManager.emitRequeteUpdated({ requeteId, entiteId, field: REQUETE_UPDATE_FIELDS.REOPENED });
 
   await createChangeLogForRequeteEntite({
     requeteId,
@@ -2045,7 +2049,7 @@ export const reopenRequeteForEntite = async (requeteId: string, entiteId: string
   return result;
 };
 
-export const updateStatusRequete = async (
+export const setStatusRequete = async (
   requeteId: string,
   entiteId: string,
   statut: RequeteStatutType,
@@ -2064,15 +2068,21 @@ export const updateStatusRequete = async (
     data: { statutId: statut },
   });
 
+  if (shouldTriggerDematSocialPriseEnChargeSync(previousRequeteEntite?.statutId, statut)) {
+    await safeSyncRequetePriseEnChargeToDematSocial(requeteId);
+  }
+
+  return requeteEntite;
+};
+
+export const updateStatusRequete = async (requeteId: string, entiteId: string, statut: RequeteStatutType) => {
+  const requeteEntite = await setStatusRequete(requeteId, entiteId, statut);
+
   sseEventManager.emitRequeteUpdated({
     requeteId,
     entiteId,
     field: REQUETE_UPDATE_FIELDS.STATUS,
   });
-
-  if (shouldTriggerDematSocialPriseEnChargeSync(previousRequeteEntite?.statutId, statut)) {
-    await safeSyncRequetePriseEnChargeToDematSocial(requeteId);
-  }
 
   return requeteEntite;
 };

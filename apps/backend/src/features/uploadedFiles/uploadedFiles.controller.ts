@@ -193,8 +193,6 @@ const app = factoryWithLogs
         status: uploadedFile.status,
         scanStatus: uploadedFile.scanStatus,
         sanitizeStatus: uploadedFile.sanitizeStatus,
-        processingError: uploadedFile.processingError,
-        safeFilePath: uploadedFile.safeFilePath,
       },
     });
   });

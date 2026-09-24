@@ -15,8 +15,14 @@ import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
-import { getRequeteEntiteById } from '../requetesEntite/requetesEntite.service.js';
+import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service.js';
 import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
+
+export const buildUserListFilter = (entiteIds: string[] | null) => {
+  if (entiteIds === null) return undefined;
+  const scope = new Set(entiteIds);
+  return (event: UserListEvent): boolean => event.entiteId !== null && scope.has(event.entiteId);
+};
 
 const app = factoryWithRole
   .createApp()
@@ -31,6 +37,7 @@ const app = factoryWithRole
         const userId = requireUserId(c);
         return (event) => event.userId === userId;
       },
+      closeOnUserStatusChange: false,
       logContext: { endpoint: 'profile' },
     }),
   )
@@ -54,8 +61,8 @@ const app = factoryWithRole
     const { id } = c.req.param();
     const topEntiteId = requireTopEntiteId(c);
 
-    const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
-    if (!requeteEntite) {
+    const hasAccess = await hasAccessToRequete({ requeteId: id, entiteId: topEntiteId });
+    if (!hasAccess) {
       throwHTTPException404NotFound('Requete not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
@@ -92,7 +99,7 @@ const app = factoryWithRole
     '/users',
     createSSEHandler<UserListEvent>({
       eventType: SSE_EVENT_TYPES.USER_LIST,
-      getFilter: () => undefined,
+      getFilter: (c) => buildUserListFilter(c.get('entiteIds')),
       logContext: { endpoint: 'users' },
     }),
   );

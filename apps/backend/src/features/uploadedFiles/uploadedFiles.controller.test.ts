@@ -352,10 +352,10 @@ describe('uploadedFiles.controller.ts', () => {
           status: fakeFile.status,
           scanStatus: fakeFile.scanStatus,
           sanitizeStatus: fakeFile.sanitizeStatus,
-          processingError: fakeFile.processingError,
-          safeFilePath: fakeFile.safeFilePath,
         },
       });
+      expect(body.data).not.toHaveProperty('safeFilePath');
+      expect(body.data).not.toHaveProperty('processingError');
     });
 
     it('should return 400 if topEntiteId is not set', async () => {
