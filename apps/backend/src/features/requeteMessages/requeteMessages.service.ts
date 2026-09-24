@@ -19,8 +19,12 @@ const toMessageDto = ({ reads, ...rest }: MessageRow) => ({ ...rest, isReadByCur
 
 export type RequeteMessageDto = ReturnType<typeof toMessageDto>;
 
-export const getRequeteMessageById = async (id: string, currentUserId: string): Promise<RequeteMessageDto | null> => {
-  const row = await prisma.requeteMessage.findUnique({ where: { id }, select: messageSelect(currentUserId) });
+export const getRequeteMessageById = async (
+  id: string,
+  currentUserId: string,
+  client: Prisma.TransactionClient | typeof prisma = prisma,
+): Promise<RequeteMessageDto | null> => {
+  const row = await client.requeteMessage.findUnique({ where: { id }, select: messageSelect(currentUserId) });
   return row ? toMessageDto(row) : null;
 };
 
@@ -101,8 +105,8 @@ export const createRequeteMessage = async (
   dto: PostRequeteMessageDto,
   logger: PinoLogger,
 ): Promise<RequeteMessageDto | null> => {
-  const created = await prisma.$transaction(async (tx) => {
-    const message = await tx.requeteMessage.create({
+  const { messageId, message } = await prisma.$transaction(async (tx) => {
+    const created = await tx.requeteMessage.create({
       data: { requeteId, entiteId, authorId: userId, contenu: dto.contenu },
     });
 
@@ -110,10 +114,12 @@ export const createRequeteMessage = async (
     // here never leaves a posted message behind an unread count that still counts it.
     await markAllMessagesAsRead(requeteId, userId, entiteId, tx);
 
-    return message;
+    // Read back inside the transaction too: an answer that cannot be built is an answer that was never
+    // posted, instead of a 500 on a message the requete already carries.
+    return { messageId: created.id, message: await getRequeteMessageById(created.id, userId, tx) };
   });
 
-  logger.info({ requeteId, messageId: created.id, userId }, 'Requete message persisted');
+  logger.info({ requeteId, messageId, userId }, 'Requete message persisted');
 
-  return getRequeteMessageById(created.id, userId);
+  return message;
 };

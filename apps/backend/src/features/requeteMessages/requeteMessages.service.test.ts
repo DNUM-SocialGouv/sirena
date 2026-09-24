@@ -215,6 +215,18 @@ describe('requeteMessages.service.ts', () => {
       expect(mockedMessage.findUnique).not.toHaveBeenCalled();
     });
 
+    it('takes the message down with it when it cannot be read back', async () => {
+      mockedMessage.findMany.mockResolvedValueOnce([{ id: 'm1' }] as never);
+      mockedMessage.findUnique.mockRejectedValueOnce(new Error('DATABASE_FAILURE'));
+
+      await expect(createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour' }, logger)).rejects.toThrow(
+        'DATABASE_FAILURE',
+      );
+
+      // The answer is built inside the transaction: an error means nothing was committed.
+      expect(prisma.$transaction).toHaveBeenCalledOnce();
+    });
+
     it('marks everything the author had not read yet: replying counts as reading', async () => {
       mockedMessage.findMany.mockResolvedValueOnce([{ id: 'older' }] as never);
 
