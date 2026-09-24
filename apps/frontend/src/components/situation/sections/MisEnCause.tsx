@@ -296,6 +296,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
             <Select
               label="Type de mis en cause"
               nativeSelectProps={{
+                ...{ 'data-testid': 'situation-mis-en-cause-type' },
                 value: misEnCauseType || '',
                 onChange: (e) => {
                   const nextMisEnCauseType = e.target.value || undefined;

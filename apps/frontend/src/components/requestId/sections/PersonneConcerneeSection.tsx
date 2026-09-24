@@ -197,6 +197,7 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, editHref }: 
     <InfoSection
       id={id}
       title="Personne concernée"
+      dataTestId="personne-concernee-section"
       editHref={editHref}
       canEdit={canEdit}
       renderSummary={renderSummary}

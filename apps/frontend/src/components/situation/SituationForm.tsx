@@ -121,7 +121,9 @@ export function SituationForm({
           </Link>
         </div>
 
-        <h1 className="fr-mb-2w">Description de la situation</h1>
+        <h1 className="fr-mb-2w" data-testid="situation-form-title">
+          Description de la situation
+        </h1>
         <p className="fr-text--sm fr-mb-5w">Tous les champs sont facultatifs</p>
 
         <LieuSurvenu formData={formData} isSaving={isSaving} receptionType={receptionType} setFormData={setFormData} />
@@ -174,7 +176,12 @@ export function SituationForm({
           <Button priority="secondary" onClick={handleCancel} disabled={isSaving}>
             Annuler
           </Button>
-          <Button ref={saveButtonRef} onClick={handleSave} disabled={isSaving}>
+          <Button
+            ref={saveButtonRef}
+            onClick={handleSave}
+            disabled={isSaving}
+            nativeButtonProps={{ ...{ 'data-testid': 'situation-save' } }}
+          >
             Enregistrer
           </Button>
         </div>
