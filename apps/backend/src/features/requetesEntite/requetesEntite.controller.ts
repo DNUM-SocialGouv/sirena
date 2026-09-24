@@ -87,6 +87,7 @@ import {
   getRequetesEntite,
   hasAccessToRequete,
   reopenRequeteForEntite,
+  setStatusRequete,
   updatePrioriteRequete,
   updateRequeteDeclarant,
   updateRequeteParticipant,
@@ -652,15 +653,15 @@ const app = factoryWithLogs
         c.set('changelogId', updatedRequete.declarant.id);
       }
 
+      if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
+        await setStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+      }
+
       sseEventManager.emitRequeteUpdated({
         requeteId: id,
         entiteId: topEntiteId,
         field: REQUETE_UPDATE_FIELDS.DECLARANT,
       });
-
-      if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
-        await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
-      }
 
       logger.info({ requeteId: id, userId }, 'Declarant data updated successfully');
 
@@ -700,15 +701,15 @@ const app = factoryWithLogs
         c.set('changelogId', updatedRequete.participant.id);
       }
 
+      if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
+        await setStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+      }
+
       sseEventManager.emitRequeteUpdated({
         requeteId: id,
         entiteId: topEntiteId,
         field: REQUETE_UPDATE_FIELDS.PARTICIPANT,
       });
-
-      if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
-        await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
-      }
 
       logger.info({ requeteId: id, userId }, 'Participant data updated successfully');
 
@@ -783,15 +784,15 @@ const app = factoryWithLogs
 
       c.set('changelogId', id);
 
+      if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
+        await setStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+      }
+
       sseEventManager.emitRequeteUpdated({
         requeteId: id,
         entiteId: topEntiteId,
         field: REQUETE_UPDATE_FIELDS.DATE_TYPE,
       });
-
-      if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
-        await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
-      }
 
       logger.info({ requeteId: id, userId }, 'Reception date and type updated successfully');
 
@@ -832,15 +833,15 @@ const app = factoryWithLogs
 
     await setRequeteFile(id, fileIds, topEntiteId, userId);
 
+    if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
+      await setStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+    }
+
     sseEventManager.emitRequeteUpdated({
       requeteId: id,
       entiteId: topEntiteId,
       field: REQUETE_UPDATE_FIELDS.FILES,
     });
-
-    if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
-      await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
-    }
 
     logger.info({ requeteId: id, userId, fileIds }, 'Files linked to requete successfully');
 
@@ -927,15 +928,15 @@ const app = factoryWithLogs
       await sendSituationEntiteNotification(id, newDirectionServiceIds);
     }
 
+    if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
+      await setStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+    }
+
     sseEventManager.emitRequeteUpdated({
       requeteId: id,
       entiteId: topEntiteId,
       field: REQUETE_UPDATE_FIELDS.SITUATION,
     });
-
-    if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
-      await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
-    }
 
     logger.info({ requeteId: id, userId, fileCount: fileIds.length }, 'Situation created successfully');
 
@@ -1012,15 +1013,15 @@ const app = factoryWithLogs
       await sendSituationEntiteNotification(id, newDirectionServiceIds);
     }
 
+    if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
+      await setStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+    }
+
     sseEventManager.emitRequeteUpdated({
       requeteId: id,
       entiteId: topEntiteId,
       field: REQUETE_UPDATE_FIELDS.SITUATION,
     });
-
-    if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
-      await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
-    }
 
     logger.info({ requeteId: id, situationId, userId, fileCount: fileIds.length }, 'Situation updated successfully');
 
@@ -1065,12 +1066,6 @@ const app = factoryWithLogs
         );
 
         c.set('changelogId', result.etapeId);
-
-        sseEventManager.emitRequeteUpdated({
-          requeteId: id,
-          entiteId: topEntiteId,
-          field: REQUETE_UPDATE_FIELDS.CLOSED,
-        });
 
         logger.info(
           {
@@ -1150,12 +1145,6 @@ const app = factoryWithLogs
         const result = await reopenRequeteForEntite(id, topEntiteId, userId);
 
         c.set('changelogId', result.etapeId);
-
-        sseEventManager.emitRequeteUpdated({
-          requeteId: id,
-          entiteId: topEntiteId,
-          field: REQUETE_UPDATE_FIELDS.REOPENED,
-        });
 
         logger.info(
           {

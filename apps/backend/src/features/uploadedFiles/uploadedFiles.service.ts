@@ -362,8 +362,6 @@ export const updateFileProcessingStatus = async (
     status: file.status,
     scanStatus: file.scanStatus,
     sanitizeStatus: file.sanitizeStatus,
-    processingError: file.processingError,
-    safeFilePath: file.safeFilePath,
   });
 
   return file;

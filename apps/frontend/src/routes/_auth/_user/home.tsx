@@ -45,7 +45,9 @@ export function RouteComponent() {
           <HomeAnnouncementModal />
           <div className={fr.cx('fr-my-8w')}>
             <div className={styles.header}>
-              <h1 className={styles.title}>Liste des requêtes</h1>
+              <h1 className={styles.title} data-testid="home-title">
+                Liste des requêtes
+              </h1>
               {canEdit ? (
                 <Link to="/request/create" className={fr.cx('fr-btn', 'fr-btn--icon-left', 'fr-icon-add-line')}>
                   Créer une requête

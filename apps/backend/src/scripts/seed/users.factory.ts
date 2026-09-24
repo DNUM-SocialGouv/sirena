@@ -18,6 +18,8 @@ type UserSpec = {
   statut: string;
   entiteId: string | null;
   entiteLabel: string | null;
+  /** Fixed DB id (e2e profile). When absent, Prisma generates a cuid. */
+  id?: string;
 };
 
 /**
@@ -37,8 +39,9 @@ const upsertUser = async (spec: UserSpec): Promise<SeededUser> => {
     usual_name: spec.nom,
   } satisfies Prisma.InputJsonObject;
 
-  await prisma.user.upsert({
+  const user = await prisma.user.upsert({
     where: { email: spec.email },
+    select: { id: true },
     update: {
       prenom: spec.prenom,
       nom: spec.nom,
@@ -47,6 +50,7 @@ const upsertUser = async (spec: UserSpec): Promise<SeededUser> => {
       entiteId: spec.entiteId,
     },
     create: {
+      ...(spec.id ? { id: spec.id } : {}),
       email: spec.email,
       prenom: spec.prenom,
       nom: spec.nom,
@@ -58,6 +62,10 @@ const upsertUser = async (spec: UserSpec): Promise<SeededUser> => {
       entiteId: spec.entiteId,
     },
   });
+
+  if (spec.id && user.id !== spec.id) {
+    throw new Error(`Identifiant fixe non respecté pour ${spec.email} : attendu "${spec.id}", trouvé "${user.id}".`);
+  }
 
   return { email: spec.email, role: spec.role, entite: spec.entiteLabel };
 };
@@ -150,8 +158,14 @@ const customUserToSpec = async (custom: CustomUserInput): Promise<UserSpec> => {
 
 /**
  * Creates the default users then the custom users. Returns the list for the recap.
+ * `fixedUserIds` pins a fixed DB id per email (e2e profile), so the test user id
+ * stays stable across runs; other users keep their generated cuid.
  */
-export const seedUsers = async (entites: ArsEntites, customUsers: CustomUserInput[]): Promise<SeededUser[]> => {
+export const seedUsers = async (
+  entites: ArsEntites,
+  customUsers: CustomUserInput[],
+  fixedUserIds: Record<string, string> = {},
+): Promise<SeededUser[]> => {
   const specs = defaultUserSpecs(entites);
   for (const custom of customUsers) {
     specs.push(await customUserToSpec(custom));
@@ -159,7 +173,8 @@ export const seedUsers = async (entites: ArsEntites, customUsers: CustomUserInpu
 
   const created: SeededUser[] = [];
   for (const spec of specs) {
-    created.push(await upsertUser(spec));
+    const fixedId = fixedUserIds[spec.email];
+    created.push(await upsertUser(fixedId ? { ...spec, id: fixedId } : spec));
   }
   return created;
 };

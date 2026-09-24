@@ -1,4 +1,5 @@
 import { Counter, Gauge, Histogram } from '@prometheus-io/client';
+import { sseEventManager } from '../../helpers/sse.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import { prisma } from '../../libs/prisma.js';
 import { createMetricsRegistry } from './metrics.common.js';
@@ -7,6 +8,18 @@ export const register = createMetricsRegistry();
 
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 let lastUpdateTime = 0;
+
+export const sseConnectionsGauge = new Gauge({
+  name: 'sirena_sse_connections',
+  help: 'Open SSE connections on this instance, per event type',
+  labelNames: ['type'],
+  registers: [register],
+  collect() {
+    for (const [type, count] of Object.entries(sseEventManager.getConnectionCounts())) {
+      this.set({ type }, count);
+    }
+  },
+});
 
 export const unassignedRequestsGauge = new Gauge({
   name: 'sirena_unassigned_requests_total',

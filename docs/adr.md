@@ -67,8 +67,12 @@ We replaced polling with Server-Sent Events (SSE) for real-time updates across t
 
 All SSE endpoints require:
 1. **Authentication**: `authMiddleware` validates JWT tokens
-2. **Role-based access**: `roleMiddleware` restricts access to appropriate roles
+2. **Role-based access**: `roleMiddleware` restricts access to appropriate roles, except `/api/sse/profile`, deliberately mounted before the status and role gates so that an inactive or pending account learns about its own (re)activation
 3. **Entity context**: `entitesMiddleware` provides `topEntiteId` and `entiteIds` for scoping
+
+Access is checked at subscription time, then enforced by the `user:status` event: every stream of a user whose status or role changes is closed by the server on the spot (`closeOnUserStatusChange`, on by default in `createSSEStream`). The client reconnects and goes through the middlewares again, which accept or refuse the new situation. `/api/sse/profile` is the one stream that stays open, precisely so that an inactive account learns about its reactivation. The streams listen for that closing signal on a private mirror of `user:status`, so the connection metric (`sirena_sse_connections`, one listener per stream) is not inflated by it.
+
+Events travel through Redis between API versions during a rolling deploy: the subscriber only re-emits the event types the running build knows, and a payload the connection filter cannot read is dropped with a warning rather than turned into an unhandled rejection.
 
 #### Event Filtering Strategy
 
@@ -80,7 +84,7 @@ All SSE endpoints are consolidated under `/api/sse/*`:
 | `/api/sse/requetes/:id` | `event.requeteId === id && event.entiteId === topEntiteId` | Defense in depth: filter by both ID and entity |
 | `/api/sse/files/:id` | `event.fileId === id && event.entiteId === topEntiteId` | Defense in depth: filter by both ID and entity |
 | `/api/sse/profile` | `event.userId === userId` | Users only see their own status changes |
-| `/api/sse/users` | Admin-only access | Only SUPER_ADMIN and ENTITY_ADMIN can subscribe |
+| `/api/sse/users` | SUPER_ADMIN: none — ENTITY_ADMIN: `event.entiteId !== null && entiteIds.includes(event.entiteId)` | Same scope as `GET /users`: an ENTITY_ADMIN only follows the users of their entity and its descendants, and never a user without entity (PENDING at first login), as the REST `IN` filter never matches NULL. The scope is settled once at subscription: an entity reorganisation during an open stream applies at reconnection, as for the cached descendant ids the REST list relies on |
 
 #### Minimal Payload Design
 
@@ -96,15 +100,13 @@ interface RequeteUpdatedEvent {
   field: RequeteUpdateField;  // Which field changed, not the value
 }
 
-// File events - processing status with entity for filtering
+// File events - processing status only. Storage paths and raw error messages stay server-side.
 interface FileStatusEvent {
   fileId: string;
   entiteId: string | null;
   status: string;
   scanStatus: string;
   sanitizeStatus: string;
-  processingError: string | null;
-  safeFilePath: string | null;
 }
 
 // User status events
@@ -118,6 +120,7 @@ interface UserStatusEvent {
 interface UserListEvent {
   action: 'created' | 'updated' | 'deleted';
   userId: string;
+  entiteId: string | null;
 }
 ```
 
@@ -160,4 +163,4 @@ We implement **server-side event filtering** where:
 - **Pro**: Horizontal scaling works naturally with Redis Pub/Sub
 - **Pro**: Defense in depth prevents data leaks even if filtering fails
 - **Con**: All events go through Redis even if no clients need them
-- **Con**: Filter logic must be maintained for each event type  
+- **Con**: Filter logic must be maintained for each event type

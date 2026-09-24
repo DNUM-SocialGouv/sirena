@@ -34,8 +34,6 @@ export const FileProcessingStatusSchema = z.object({
   status: z.string(),
   scanStatus: z.string(),
   sanitizeStatus: z.string(),
-  processingError: z.string().nullable(),
-  safeFilePath: z.string().nullable(),
 });
 
 export const GetFileProcessingStatusResponseSchema = z.object({
