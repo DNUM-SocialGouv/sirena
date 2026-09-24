@@ -165,6 +165,7 @@ describe('MessageComposer', () => {
     await attachFiles(container, [new File(['x'], 'virus.exe', { type: 'application/x-msdownload' })]);
 
     const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/^Erreur : /);
     expect(alert).toHaveTextContent('virus.exe');
     expect(alert).toHaveTextContent(/format du fichier n'est pas supporté/);
     expect(screen.queryByText('virus.exe', { selector: 'li' })).not.toBeInTheDocument();
@@ -201,6 +202,12 @@ describe('MessageComposer', () => {
     await attachFiles(container, [makeFile('rapport.pdf')]);
 
     expect(screen.getAllByRole('button', { name: 'Supprimer rapport.pdf' })).toHaveLength(1);
+  });
+
+  it('names the attachment button for assistive tech beyond its tooltip', () => {
+    render(<MessageComposer requestId="REQ" />);
+
+    expect(screen.getByRole('button', { name: 'Ajouter un fichier' })).toHaveTextContent('Ajouter un fichier');
   });
 
   it('opens the file picker from the attachment button', async () => {

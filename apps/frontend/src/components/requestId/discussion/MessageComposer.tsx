@@ -195,7 +195,9 @@ export const MessageComposer = ({ requestId, onSent }: MessageComposerProps) => 
           onClick={handleOpenFilePicker}
           disabled={isSubmitting}
           nativeButtonProps={{ 'aria-describedby': fileHintId }}
-        />
+        >
+          <span className="fr-sr-only">Ajouter un fichier</span>
+        </Button>
         <input
           ref={fileInputRef}
           type="file"
@@ -218,7 +220,7 @@ export const MessageComposer = ({ requestId, onSent }: MessageComposerProps) => 
           severity="error"
           small
           className="fr-mt-2w"
-          title="Pièce jointe refusée"
+          title="Erreur : pièce jointe refusée"
           description={
             <ul className="fr-mb-0">
               {rejectedFiles.map(({ fileName, reason }) => (
