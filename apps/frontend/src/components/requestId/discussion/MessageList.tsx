@@ -109,11 +109,21 @@ export const MessageList = ({ messages, ownEntiteId, hasMore, isFetchingNextPage
   const firstUnreadId = messages.find((message) => !message.isReadByCurrentUser)?.id ?? null;
 
   useEffect(() => {
-    if (frozenSeparatorId === null && firstUnreadId !== null) setFrozenSeparatorId(firstUnreadId);
-  }, [frozenSeparatorId, firstUnreadId]);
+    if (firstUnreadId === null) return;
+
+    setFrozenSeparatorId((frozenId) => {
+      if (frozenId === null) return firstUnreadId;
+
+      // A page older than the first one can reveal unread messages above the line: it moves up the thread,
+      // never down, so marking the thread read still leaves it where the agent found it.
+      const frozenIndex = messages.findIndex((message) => message.id === frozenId);
+      const firstUnreadIndex = messages.findIndex((message) => message.id === firstUnreadId);
+      return frozenIndex === -1 || firstUnreadIndex < frozenIndex ? firstUnreadId : frozenId;
+    });
+  }, [messages, firstUnreadId]);
 
   const separatorId = frozenSeparatorId ?? firstUnreadId;
-  const firstUnreadIndex = separatorId === null ? -1 : messages.findIndex((message) => message.id === separatorId);
+  const separatorIndex = separatorId === null ? -1 : messages.findIndex((message) => message.id === separatorId);
 
   return (
     <>
@@ -141,7 +151,7 @@ export const MessageList = ({ messages, ownEntiteId, hasMore, isFetchingNextPage
           <ul className={styles.messages}>
             {messages.map((message, index) => (
               <Fragment key={message.id}>
-                {index === firstUnreadIndex ? (
+                {index === separatorIndex ? (
                   <li ref={unreadSeparatorRef} className={styles.unreadSeparator}>
                     <span>Non lus</span>
                   </li>

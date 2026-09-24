@@ -101,6 +101,17 @@ describe('MessageList', () => {
     expect(screen.getByText('Non lus').closest('li')?.nextElementSibling?.textContent).toContain('message m2');
   });
 
+  it('moves the "unread" line up when an older page reveals unread messages above it', () => {
+    const unread = (id: string) => ({ ...makeMessage(id), isReadByCurrentUser: false });
+    const { rerender } = renderList([unread('m3'), unread('m4')]);
+
+    expect(screen.getByText('Non lus').closest('li')?.nextElementSibling?.textContent).toContain('message m3');
+
+    rerender([makeMessage('m1'), unread('m2'), unread('m3'), unread('m4')]);
+
+    expect(screen.getByText('Non lus').closest('li')?.nextElementSibling?.textContent).toContain('message m2');
+  });
+
   it('re-anchors to the bottom when the thread is emptied and filled again', () => {
     const { rerender } = renderList([makeMessage('m1'), makeMessage('m2')]);
     vi.mocked(Element.prototype.scrollIntoView).mockClear();
