@@ -198,6 +198,7 @@ export const DescriptionFaits = forwardRef<DescriptionFaitsRef, DescriptionFaits
               state={dateErrors.dateDebut ? 'error' : 'default'}
               stateRelatedMessage={dateErrors.dateDebut}
               nativeInputProps={{
+                ...{ 'data-testid': 'situation-date-debut' },
                 ref: dateDebutRef,
                 type: 'date',
                 value: formData.fait?.dateDebut || '',
@@ -213,6 +214,7 @@ export const DescriptionFaits = forwardRef<DescriptionFaitsRef, DescriptionFaits
               state={dateErrors.dateFin ? 'error' : 'default'}
               stateRelatedMessage={dateErrors.dateFin}
               nativeInputProps={{
+                ...{ 'data-testid': 'situation-date-fin' },
                 ref: dateFinRef,
                 type: 'date',
                 value: formData.fait?.dateFin || '',
@@ -226,6 +228,7 @@ export const DescriptionFaits = forwardRef<DescriptionFaitsRef, DescriptionFaits
               label="Explication des faits par le déclarant"
               textArea
               nativeTextAreaProps={{
+                ...{ 'data-testid': 'situation-explication-faits' },
                 value: formData.fait?.commentaire || '',
                 onChange: handleFaitInputChange('commentaire'),
                 rows: 4,

@@ -157,7 +157,9 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
           </Link>
         </div>
 
-        <h1 className="fr-mb-2w">Personne concernée</h1>
+        <h1 className="fr-mb-2w" data-testid="personne-concernee-form-title">
+          Personne concernée
+        </h1>
         <p className="fr-text--sm fr-mb-5w">Tous les champs sont facultatifs</p>
 
         <div
@@ -174,6 +176,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                 <Select
                   label={personneConcerneeFieldMetadata.civilite.label}
                   nativeSelectProps={{
+                    ...{ 'data-testid': 'personne-concernee-civilite' },
                     value: formData.civilite ?? '',
                     onChange: (e) => {
                       const value = e.target.value;
@@ -193,6 +196,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                 <Input
                   label={personneConcerneeFieldMetadata.nom.label}
                   nativeInputProps={{
+                    ...{ 'data-testid': 'personne-concernee-nom' },
                     value: formData.nom || '',
                     onChange: handleInputChange('nom'),
                   }}
@@ -202,6 +206,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                 <Input
                   label={personneConcerneeFieldMetadata.prenom.label}
                   nativeInputProps={{
+                    ...{ 'data-testid': 'personne-concernee-prenom' },
                     value: formData.prenom || '',
                     onChange: handleInputChange('prenom'),
                   }}
@@ -215,6 +220,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                   label={personneConcerneeFieldMetadata.age.label}
                   hint={<span aria-hidden="true">&nbsp;</span>}
                   nativeSelectProps={{
+                    ...{ 'data-testid': 'personne-concernee-age' },
                     value: formData.age ?? '',
                     onChange: (e) => {
                       const value = e.target.value;
@@ -237,6 +243,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                   state={dateNaissanceError ? 'error' : 'default'}
                   stateRelatedMessage={dateNaissanceError}
                   nativeInputProps={{
+                    ...{ 'data-testid': 'personne-concernee-date-naissance' },
                     ref: dateNaissanceInputRef,
                     type: 'date',
                     max: new Date().toISOString().split('T')[0],
@@ -285,6 +292,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                   state={phoneError ? 'error' : undefined}
                   stateRelatedMessage={phoneError}
                   nativeInputProps={{
+                    ...{ 'data-testid': 'personne-concernee-telephone' },
                     ref: phoneInputRef,
                     value: formData.numeroTelephone || '',
                     onChange: handleInputChange('numeroTelephone'),
@@ -300,6 +308,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                   state={emailError ? 'error' : undefined}
                   stateRelatedMessage={emailError}
                   nativeInputProps={{
+                    ...{ 'data-testid': 'personne-concernee-email' },
                     ref: emailInputRef,
                     value: formData.courrierElectronique || '',
                     onChange: handleInputChange('courrierElectronique'),
@@ -319,7 +328,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
             <legend>
               <h2 className="fr-h6 fr-mb-3w">Informations complémentaires</h2>
             </legend>
-            <div className="fr-mb-3w">
+            <div className="fr-mb-3w" data-testid="personne-concernee-consent-identite">
               <RadioButtons
                 legend={personneConcerneeFieldMetadata.consentCommuniquerIdentite.label}
                 name="personne-concernee-consent-identite"
@@ -330,7 +339,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
               />
             </div>
 
-            <div className="fr-mb-3w">
+            <div className="fr-mb-3w" data-testid="personne-concernee-victime-informee">
               <RadioButtons
                 legend={personneConcerneeFieldMetadata.estVictimeInformee.label}
                 name="personne-concernee-est-victime-informee"
@@ -345,6 +354,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                 <Input
                   label={personneConcerneeFieldMetadata.victimeInformeeCommentaire.label}
                   nativeInputProps={{
+                    ...{ 'data-testid': 'personne-concernee-victime-informee-commentaire' },
                     value: formData.victimeInformeeCommentaire || '',
                     onChange: handleInputChange('victimeInformeeCommentaire'),
                   }}
@@ -352,7 +362,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
               </div>
             )}
 
-            <div className="fr-mb-3w">
+            <div className="fr-mb-3w" data-testid="personne-concernee-mesure-protection">
               <RadioButtons
                 legend={personneConcerneeFieldMetadata.mesureProtection.label}
                 name="personne-concernee-mesure-protection"
@@ -389,7 +399,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
               />
             </div>
 
-            <div className="fr-mb-3w">
+            <div className="fr-mb-3w" data-testid="personne-concernee-est-handicapee">
               <RadioButtons
                 legend={personneConcerneeFieldMetadata.estHandicapee.label}
                 name="personne-concernee-est-handicapee"
@@ -400,7 +410,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
               />
             </div>
 
-            <div className="fr-mb-3w">
+            <div className="fr-mb-3w" data-testid="personne-concernee-autres-personnes">
               <RadioButtons
                 legend={personneConcerneeFieldMetadata.aAutrePersonnes.label}
                 name="personne-concernee-a-autre-personnes"
@@ -417,6 +427,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                 hintText="Nom, prénom, lien avec la personne concernée, etc."
                 textArea
                 nativeTextAreaProps={{
+                  ...{ 'data-testid': 'personne-concernee-autres-personnes-precisions' },
                   value: formData.autrePersonnes || '',
                   onChange: handleInputChange('autrePersonnes'),
                   rows: 3,
@@ -440,7 +451,11 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
           <Button priority="secondary" onClick={handleCancel}>
             Annuler
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+            nativeButtonProps={{ ...{ 'data-testid': 'personne-concernee-save' } }}
+          >
             {isSaving ? 'Enregistrement...' : 'Enregistrer'}
           </Button>
         </div>
