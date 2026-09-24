@@ -79,7 +79,7 @@ function KpiCard({ card }: { card: StatisticsCard }) {
   return (
     <p className={styles['kpi-card']}>
       <span className={styles['kpi-value']}>{display}</span>{' '}
-      <span className={styles['kpi-label']}>
+      <span className={`${fr.cx('fr-text--md', 'fr-text--bold', 'fr-mb-0')} ${styles['kpi-label']}`}>
         {card.name} <CardHelp description={card.description} />
       </span>
     </p>
@@ -169,7 +169,7 @@ function ChartCard({ card }: { card: StatisticsCard }) {
     return (
       <>
         <div className={styles['card-title']}>
-          <h2 className={fr.cx('fr-h5', 'fr-mb-0')}>{card.name}</h2>
+          <h2 className={fr.cx('fr-text--md', 'fr-text--bold', 'fr-mb-0')}>{card.name}</h2>
           <CardHelp description={card.description} />
         </div>
         <p>Données non disponibles.</p>
@@ -191,7 +191,7 @@ function ChartCard({ card }: { card: StatisticsCard }) {
   return (
     <>
       <div className={styles['card-title']}>
-        <h2 className={fr.cx('fr-h5', 'fr-mb-0')}>{card.name}</h2>
+        <h2 className={fr.cx('fr-text--md', 'fr-text--bold', 'fr-mb-0')}>{card.name}</h2>
         <CardHelp description={card.description} />
         <DownloadCsvButton card={card} />
       </div>

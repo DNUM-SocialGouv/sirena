@@ -23,7 +23,7 @@ interface StatChartProps {
 export function StatChart({ name, description, parsed, action }: StatChartProps) {
   const titleId = useId();
   const legendId = useId();
-  const [view, setView] = useState<View>('table');
+  const [view, setView] = useState<View>('chart');
   const { items, total } = parsed;
 
   const slices = useMemo(() => {
@@ -43,7 +43,7 @@ export function StatChart({ name, description, parsed, action }: StatChartProps)
     return (
       <figure className={styles.figure} aria-labelledby={titleId}>
         <div className={styles.titleGroup}>
-          <h2 id={titleId} className={fr.cx('fr-h5', 'fr-mb-0')}>
+          <h2 id={titleId} className={fr.cx('fr-text--md', 'fr-text--bold', 'fr-mb-0')}>
             {name}
           </h2>
           <CardHelp description={description} />
@@ -60,7 +60,7 @@ export function StatChart({ name, description, parsed, action }: StatChartProps)
     <figure className={styles.figure} aria-labelledby={titleId}>
       <div className={styles.header}>
         <div className={styles.titleGroup}>
-          <h2 id={titleId} className={fr.cx('fr-h5', 'fr-mb-0')}>
+          <h2 id={titleId} className={fr.cx('fr-text--md', 'fr-text--bold', 'fr-mb-0')}>
             {name}
           </h2>
           <CardHelp description={description} />

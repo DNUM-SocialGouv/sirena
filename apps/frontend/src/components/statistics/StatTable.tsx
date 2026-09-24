@@ -4,6 +4,7 @@ import { Table } from '@codegouvfr/react-dsfr/Table';
 import type { MouseEvent, ReactNode } from 'react';
 import { useCallback, useState } from 'react';
 import { type ChartItem, numberFormatter, type ParsedCard, percentFormatter, percentPointFormatter } from './chartData';
+import styles from './statTable.module.css';
 
 const PAGE_SIZE = 10;
 
@@ -76,9 +77,10 @@ export function StatTable({ caption, parsed, hideCaption }: StatTableProps) {
         noCaption={hideCaption}
         headers={[dimensionLabel, metricLabel, percentLabel]}
         data={data}
+        className={`${fr.cx('fr-mb-0')} ${styles.table}`}
       />
       {showPagination && (
-        <div className={fr.cx('fr-mt-2w', 'fr-grid-row', 'fr-grid-row--center')}>
+        <div className={`${fr.cx('fr-grid-row', 'fr-grid-row--center')} ${styles.pagination}`}>
           <Pagination
             ref={paginationRef}
             count={pageCount}
