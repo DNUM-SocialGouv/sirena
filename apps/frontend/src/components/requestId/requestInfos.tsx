@@ -9,6 +9,7 @@ import { useCanEdit } from '@/hooks/useCanEdit';
 import { DownloadMenu } from '../common/DownloadMenu';
 import { PrioriteMenu } from '../common/PrioriteMenu';
 import { RequeteStatutTag } from '../common/RequeteStatutTag';
+import { DiscussionDrawer } from './discussion/DiscussionDrawer';
 import style from './requestInfos.module.css';
 import { ContactInfo } from './sections/helpers';
 
@@ -96,6 +97,7 @@ export const RequestInfos = ({
               {requestId ? (
                 <div className={style['download-menu-wrapper']}>
                   <DownloadMenu requestId={requestId} disabled={!hasAttachments} hasUnsafeFiles={hasUnsafeFiles} />
+                  <DiscussionDrawer requestId={requestId} />
                 </div>
               ) : null}
             </div>
