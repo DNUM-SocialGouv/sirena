@@ -32,7 +32,7 @@ describe('discussion mutations and the unread count', () => {
     queryClient.setQueryData(requeteUnreadCountQueryKey('REQ'), 1);
     const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
 
-    await result.current.mutateAsync({ contenu: 'Bonjour' });
+    await result.current.mutateAsync({ contenu: 'Bonjour', fileIds: [] });
 
     await waitFor(() =>
       expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: requeteUnreadCountQueryKey('REQ') }),

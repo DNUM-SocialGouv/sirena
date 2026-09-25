@@ -88,6 +88,26 @@
   overflow-wrap: anywhere;
 }
 
+.messageFiles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.messageBody + .messageFiles {
+  margin-top: 1rem;
+}
+
+.messageFile {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-default-grey);
+  border-radius: 0.25rem;
+  background-color: var(--background-default-grey);
+}
+
 .unreadSeparator {
   display: flex;
   align-items: center;
@@ -113,6 +133,21 @@
 
 .composer {
   flex-shrink: 0;
+}
+
+.fileInput {
+  display: none;
+}
+
+.attachRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.attachRow p {
+  margin: 0;
 }
 
 .composerActions {

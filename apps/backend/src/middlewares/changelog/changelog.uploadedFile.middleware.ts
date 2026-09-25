@@ -18,6 +18,7 @@ const uploadedFileTrackedFields: (keyof UploadedFile)[] = [
   'requeteId',
   'faitSituationId',
   'demarchesEngageesId',
+  'requeteMessageId',
 ];
 
 type UploadedFileChangelogMiddleware = {

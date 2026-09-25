@@ -40,6 +40,31 @@ export const getRequeteEtapeUploadedFile = async (
     },
   });
 
+export const getUploadedFileByIdForEntite = async (
+  id: UploadedFile['id'],
+  topEntiteId: string,
+): Promise<UploadedFileByIdResult> =>
+  prisma.uploadedFile.findFirst({
+    where: {
+      id,
+      OR: [
+        { entiteId: topEntiteId },
+        { requeteMessage: { requete: { requeteEntites: { some: { entiteId: topEntiteId } } } } },
+      ],
+    },
+  });
+
+export const getRequeteMessageUploadedFile = async (
+  requeteId: string,
+  fileId: UploadedFile['id'],
+): Promise<UploadedFileByIdResult> =>
+  prisma.uploadedFile.findFirst({
+    where: {
+      id: fileId,
+      requeteMessage: { requeteId },
+    },
+  });
+
 export const deleteUploadedFile = async (id: UploadedFile['id']): Promise<UploadedFileDeleteResult> => {
   return prisma.uploadedFile.delete({ where: { id } });
 };
@@ -110,6 +135,9 @@ export const isUserOwner = async (
     where: {
       id: { in: uploadedFileIds },
       uploadedById: userId,
+      // A file attached to a discussion message can no longer be moved: the caller is refused before
+      // anything is written, rather than halfway through the attachment.
+      requeteMessageId: null,
     },
   });
 
@@ -134,19 +162,37 @@ const updateFilesWithRelation = async (
           requeteEtapeId: true,
           faitSituationId: true,
           demarchesEngageesId: true,
+          requeteMessageId: true,
           status: true,
           entiteId: true,
         },
       })
     : [];
 
+  const isAttachingToMessage = 'requeteMessageId' in relationData;
+  const messageImmutabilityGuard: Prisma.UploadedFileWhereInput = isAttachingToMessage
+    ? {}
+    : { requeteMessageId: null };
+
   const updatedFiles = await client.uploadedFile.updateMany({
-    where: { id: { in: uploadedFileIds }, ...relationWhere },
+    where: { id: { in: uploadedFileIds }, ...messageImmutabilityGuard, ...relationWhere },
     data: { ...relationData, status: 'COMPLETED', entiteId } as Prisma.UploadedFileUpdateManyMutationInput,
   });
 
-  if (relationWhere && updatedFiles.count !== uploadedFileIds.length) {
-    throw new FilesNotOwnedError('FILES_NOT_OWNED');
+  if (updatedFiles.count !== uploadedFileIds.length) {
+    // Attaching to a message is all or nothing: a message must never be sent with part of its attachments.
+    if (relationWhere || isAttachingToMessage) {
+      throw new FilesNotOwnedError('FILES_NOT_OWNED');
+    }
+
+    if (!isAttachingToMessage) {
+      const blockedByMessage = await client.uploadedFile.count({
+        where: { id: { in: uploadedFileIds }, requeteMessageId: { not: null } },
+      });
+      if (blockedByMessage > 0) {
+        throw new FilesNotOwnedError('FILES_NOT_OWNED');
+      }
+    }
   }
 
   const filesAfter = await client.uploadedFile.findMany({ where: { id: { in: uploadedFileIds } } });
@@ -155,34 +201,48 @@ const updateFilesWithRelation = async (
     for (const fileAfter of filesAfter) {
       const fileBefore = filesBefore.find((f) => f.id === fileAfter.id);
       if (fileBefore) {
-        await createChangeLog({
-          entity: 'UploadedFile',
-          entityId: fileAfter.id,
-          action: ChangeLogAction.UPDATED,
-          before: {
-            requeteId: fileBefore.requeteId,
-            requeteEtapeId: fileBefore.requeteEtapeId,
-            faitSituationId: fileBefore.faitSituationId,
-            demarchesEngageesId: fileBefore.demarchesEngageesId,
-            status: fileBefore.status,
-            entiteId: fileBefore.entiteId,
-          } as Prisma.JsonObject,
-          after: {
-            requeteId: fileAfter.requeteId,
-            requeteEtapeId: fileAfter.requeteEtapeId,
-            faitSituationId: fileAfter.faitSituationId,
-            demarchesEngageesId: fileAfter.demarchesEngageesId,
-            status: fileAfter.status,
-            entiteId: fileAfter.entiteId,
-          } as Prisma.JsonObject,
-          changedById,
-        });
+        await createChangeLog(
+          {
+            entity: 'UploadedFile',
+            entityId: fileAfter.id,
+            action: ChangeLogAction.UPDATED,
+            before: {
+              requeteId: fileBefore.requeteId,
+              requeteEtapeId: fileBefore.requeteEtapeId,
+              faitSituationId: fileBefore.faitSituationId,
+              demarchesEngageesId: fileBefore.demarchesEngageesId,
+              requeteMessageId: fileBefore.requeteMessageId,
+              status: fileBefore.status,
+              entiteId: fileBefore.entiteId,
+            } as Prisma.JsonObject,
+            after: {
+              requeteId: fileAfter.requeteId,
+              requeteEtapeId: fileAfter.requeteEtapeId,
+              faitSituationId: fileAfter.faitSituationId,
+              demarchesEngageesId: fileAfter.demarchesEngageesId,
+              requeteMessageId: fileAfter.requeteMessageId,
+              status: fileAfter.status,
+              entiteId: fileAfter.entiteId,
+            } as Prisma.JsonObject,
+            changedById,
+          },
+          // The changelog belongs to the same transaction as the attachment it describes.
+          tx,
+        );
       }
     }
   }
 
   return filesAfter;
 };
+
+export const UNATTACHED_FILE_RELATIONS = {
+  requeteId: null,
+  requeteEtapeId: null,
+  faitSituationId: null,
+  demarchesEngageesId: null,
+  requeteMessageId: null,
+} as const satisfies Prisma.UploadedFileWhereInput;
 
 export const setEtapeFile = async (
   requeteEtapeId: string,
@@ -195,10 +255,24 @@ export const setEtapeFile = async (
     updateFilesWithRelation(uploadedFileId, { requeteEtapeId }, entiteId, changedById, client, {
       uploadedById: changedById,
       entiteId,
-      requeteId: null,
-      requeteEtapeId: null,
-      faitSituationId: null,
-      demarchesEngageesId: null,
+      ...UNATTACHED_FILE_RELATIONS,
+    });
+
+  return tx ? attachFiles(tx) : prisma.$transaction(attachFiles);
+};
+
+export const setMessageFiles = async (
+  requeteMessageId: string,
+  uploadedFileIds: UploadedFile['id'][],
+  entiteId: string,
+  changedById: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  const attachFiles = (client: Prisma.TransactionClient) =>
+    updateFilesWithRelation(uploadedFileIds, { requeteMessageId }, entiteId, changedById, client, {
+      uploadedById: changedById,
+      entiteId,
+      ...UNATTACHED_FILE_RELATIONS,
     });
 
   return tx ? attachFiles(tx) : prisma.$transaction(attachFiles);
@@ -209,8 +283,14 @@ export const setRequeteFile = async (
   uploadedFileId: UploadedFile['id'][],
   entiteId: string | null = null,
   changedById?: string,
+  tx?: Prisma.TransactionClient,
 ) => {
-  return updateFilesWithRelation(uploadedFileId, { requeteId }, entiteId, changedById);
+  const attachFiles = (client: Prisma.TransactionClient) =>
+    updateFilesWithRelation(uploadedFileId, { requeteId }, entiteId, changedById, client);
+
+  // Without a transaction, a batch holding one file already attached to a message kept the rows the
+  // update did manage to move before the refusal.
+  return tx ? attachFiles(tx) : prisma.$transaction(attachFiles);
 };
 
 export const setFaitFiles = async (
@@ -237,6 +317,7 @@ const uploadedFileChangelogTrackedFields: (keyof UploadedFile)[] = [
   'requeteId',
   'faitSituationId',
   'demarchesEngageesId',
+  'requeteMessageId',
 ];
 
 /**
@@ -256,9 +337,10 @@ export const deleteFaitFilesRemovedFromSituation = async (
             faitSituationId: situationId,
             entiteId: userTopEntiteId,
             canDelete: true,
+            requeteMessageId: null,
             id: { notIn: keepFileIds },
           }
-        : { faitSituationId: situationId, entiteId: userTopEntiteId, canDelete: true },
+        : { faitSituationId: situationId, entiteId: userTopEntiteId, canDelete: true, requeteMessageId: null },
     select: {
       id: true,
       filePath: true,
@@ -273,6 +355,7 @@ export const deleteFaitFilesRemovedFromSituation = async (
       requeteId: true,
       faitSituationId: true,
       demarchesEngageesId: true,
+      requeteMessageId: true,
     },
   });
 
@@ -312,6 +395,7 @@ export const isFileBelongsToRequete = async (fileId: UploadedFile['id'], requete
         { requeteId },
         { fait: { situation: { requeteId } } },
         { requeteEtape: { requeteId } },
+        { requeteMessage: { requeteId } },
         { demarchesEngagees: { Situation: { some: { requeteId } } } },
       ],
     },

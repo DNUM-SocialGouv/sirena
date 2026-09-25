@@ -3,12 +3,14 @@ import { ERROR_KIND, FEATURE_FLAGS, REQUETE_STATUT_TYPES, ROLES_READ, ROLES_WRIT
 import { validator as zValidator } from 'hono-openapi';
 import { type EntiteScopedContext, requireTopEntiteId } from '../../helpers/context.js';
 import factoryWithRole from '../../helpers/factories/appWithRole.js';
+import { streamFileResponse, streamSafeFileResponse } from '../../helpers/file.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { hasFeature } from '../featureFlags/featureFlags.service.js';
 import { getRequeteEntiteStatutId, hasAccessToRequete } from '../requetesEntite/requetesEntite.service.js';
+import { FilesNotOwnedError, getRequeteMessageUploadedFile } from '../uploadedFiles/uploadedFiles.service.js';
 import {
   getRequeteMessagesRoute,
   getUnreadCountRoute,
@@ -83,6 +85,38 @@ const app = factoryWithRole
     return c.json({ data: { unreadCount } });
   })
 
+  .get('/:requeteId/file/:fileId', async (c) => {
+    const { requeteId, fileId } = c.req.param();
+    await assertDiscussionAccess(c, requeteId);
+
+    const file = await getRequeteMessageUploadedFile(requeteId, fileId);
+    if (!file) {
+      throwHTTPException404NotFound('File not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+    }
+
+    c.get('logger').info({ requeteId, fileId }, 'Retrieving file for requete message');
+
+    return streamFileResponse(c, file);
+  })
+
+  .get('/:requeteId/file/:fileId/safe', async (c) => {
+    const { requeteId, fileId } = c.req.param();
+    await assertDiscussionAccess(c, requeteId);
+
+    const file = await getRequeteMessageUploadedFile(requeteId, fileId);
+    if (!file) {
+      throwHTTPException404NotFound('File not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+    }
+
+    if (!file.safeFilePath) {
+      throwHTTPException404NotFound('Safe file not available', { res: c.res, kind: ERROR_KIND.BUSINESS });
+    }
+
+    c.get('logger').info({ requeteId, fileId }, 'Retrieving safe file for requete message');
+
+    return streamSafeFileResponse(c, file);
+  })
+
   .use(roleMiddleware([...ROLES_WRITE]))
 
   .post('/:requeteId', postRequeteMessageRoute, zValidator('json', PostRequeteMessageBodySchema), async (c) => {
@@ -98,11 +132,21 @@ const app = factoryWithRole
       });
     }
 
-    const message = await createRequeteMessage(requeteId, topEntiteId, userId, c.req.valid('json'), c.get('logger'));
+    try {
+      const message = await createRequeteMessage(requeteId, topEntiteId, userId, c.req.valid('json'), c.get('logger'));
 
-    c.get('logger').info({ requeteId, messageId: message?.id, userId }, 'Requete message created');
+      c.get('logger').info({ requeteId, messageId: message?.id, userId }, 'Requete message created');
 
-    return c.json({ data: message }, 201);
+      return c.json({ data: message }, 201);
+    } catch (error) {
+      if (error instanceof FilesNotOwnedError) {
+        throwHTTPException403Forbidden('You are not allowed to add these files', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+      throw error;
+    }
   });
 
 export default app;
