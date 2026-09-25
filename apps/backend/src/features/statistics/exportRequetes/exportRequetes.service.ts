@@ -268,10 +268,11 @@ async function getDepartmentReferences({
     return { ...empty, departmentCodesByPostalCode };
   }
 
-  const communeRows = await prisma.commune.findMany({
+  // GROUP BY so Postgres returns one row per department: Commune holds ~36 000 rows for 101 of
+  // them, and `distinct` would read them all before deduplicating client-side.
+  const communeRows = await prisma.commune.groupBy({
+    by: ['dptCodeActuel', 'dptLibActuel'],
     where: { OR: communeFilters },
-    select: { dptCodeActuel: true, dptLibActuel: true },
-    distinct: ['dptCodeActuel'],
   });
 
   return {
