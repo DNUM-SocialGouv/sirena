@@ -9,8 +9,12 @@ export const usePostRequeteMessage = (requestId: string) => {
   return useMutation({
     mutationFn: (data: PostRequeteMessageData) => postRequeteMessage(requestId, data),
     onSuccess: async () => {
-      queryClient.setQueryData(requeteUnreadCountQueryKey(requestId), 0);
-      await queryClient.invalidateQueries({ queryKey: requeteMessagesQueryKey(requestId) });
+      // Not setQueryData(0): a message can land between the server marking the thread read and this
+      // answer, and forcing zero would hide it until the next refresh.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: requeteUnreadCountQueryKey(requestId) }),
+        queryClient.invalidateQueries({ queryKey: requeteMessagesQueryKey(requestId) }),
+      ]);
     },
   });
 };

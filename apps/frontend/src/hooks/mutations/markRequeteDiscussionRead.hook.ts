@@ -8,8 +8,10 @@ export const useMarkRequeteDiscussionRead = (requestId: string) => {
 
   return useMutation({
     mutationFn: () => markRequeteDiscussionRead(requestId),
-    onSuccess: ({ unreadCount }) => {
-      queryClient.setQueryData(requeteUnreadCountQueryKey(requestId), unreadCount);
+    onSuccess: () => {
+      // The count that comes back is the one computed by the transaction: a message posted right after it
+      // would be lost if it were written to the cache, so the query is refetched instead.
+      queryClient.invalidateQueries({ queryKey: requeteUnreadCountQueryKey(requestId) });
       queryClient.invalidateQueries({ queryKey: requeteMessagesQueryKey(requestId) });
     },
   });
