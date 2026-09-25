@@ -1,10 +1,11 @@
 import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
-import { ERROR_KIND, ROLES, ROLES_READ, SSE_EVENT_TYPES } from '@sirena/common/constants';
+import { ERROR_KIND, FEATURE_FLAGS, ROLES, ROLES_READ, SSE_EVENT_TYPES } from '@sirena/common/constants';
 import factoryWithRole from '../../helpers/factories/appWithRole.js';
 import {
   createSSEHandler,
   createSSEStream,
   type FileStatusEvent,
+  type RequeteMessageEvent,
   type RequeteUpdatedEvent,
   requireTopEntiteId,
   requireUserId,
@@ -15,8 +16,19 @@ import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
+import { hasFeature } from '../featureFlags/featureFlags.service.js';
 import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service.js';
 import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
+
+export const buildRequeteMessageFilter =
+  (requeteId: string, topEntiteId: string, userId: string) =>
+  (event: RequeteMessageEvent): boolean => {
+    if (event.requeteId !== requeteId) return false;
+
+    if (event.action === 'read') return event.userId === userId;
+
+    return event.entiteIds.includes(topEntiteId);
+  };
 
 export const buildUserListFilter = (entiteIds: string[] | null) => {
   if (entiteIds === null) return undefined;
@@ -72,6 +84,31 @@ const app = factoryWithRole
     return createSSEStream<RequeteUpdatedEvent>(c, {
       eventType: SSE_EVENT_TYPES.REQUETE_UPDATED,
       filter: (event) => event.requeteId === id && event.entiteId === topEntiteId,
+    });
+  })
+
+  .get('/requetes/:id/messages', async (c) => {
+    const { id } = c.req.param();
+    const topEntiteId = requireTopEntiteId(c);
+    const userId = requireUserId(c);
+
+    const user = c.get('user');
+    const discussionEnabled = await hasFeature(FEATURE_FLAGS.REQUETE_DISCUSSION, false, user.email, user.entiteId);
+    if (!discussionEnabled) {
+      throwHTTPException404NotFound('Requete not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+    }
+
+    const hasAccess = await hasAccessToRequete({ requeteId: id, entiteId: topEntiteId });
+    if (!hasAccess) {
+      throwHTTPException404NotFound('Requete not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+    }
+
+    const logger = c.get('logger');
+    logger.info({ endpoint: 'requetes/:id/messages', requeteId: id }, 'SSE: Client subscribed');
+
+    return createSSEStream<RequeteMessageEvent>(c, {
+      eventType: SSE_EVENT_TYPES.REQUETE_MESSAGE,
+      filter: buildRequeteMessageFilter(id, topEntiteId, userId),
     });
   })
 

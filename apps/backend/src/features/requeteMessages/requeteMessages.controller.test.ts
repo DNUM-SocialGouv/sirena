@@ -9,7 +9,12 @@ import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import { hasFeature } from '../featureFlags/featureFlags.service.js';
 import { getRequeteEntiteStatutId, hasAccessToRequete } from '../requetesEntite/requetesEntite.service.js';
 import RequeteMessagesController from './requeteMessages.controller.js';
-import { createRequeteMessage, getRequeteMessages, markAllMessagesAsRead } from './requeteMessages.service.js';
+import {
+  createRequeteMessage,
+  getRequeteMessages,
+  getUnreadCount,
+  markAllMessagesAsRead,
+} from './requeteMessages.service.js';
 
 const roleState = vi.hoisted(() => ({ current: 'ENTITY_ADMIN' as string }));
 
@@ -22,6 +27,7 @@ vi.mock('../../config/env.js', () => ({
 vi.mock('./requeteMessages.service.js', () => ({
   createRequeteMessage: vi.fn(),
   getRequeteMessages: vi.fn(),
+  getUnreadCount: vi.fn(),
   markAllMessagesAsRead: vi.fn(),
 }));
 
@@ -108,12 +114,13 @@ describe('requeteMessages.controller.ts', () => {
     roleState.current = ROLES.ENTITY_ADMIN;
     vi.mocked(hasFeature).mockResolvedValue(true);
     vi.mocked(hasAccessToRequete).mockResolvedValue(true);
+    vi.mocked(getRequeteEntiteStatutId).mockResolvedValue(REQUETE_STATUT_TYPES.EN_COURS);
     vi.mocked(getRequeteMessages).mockResolvedValue({
       data: [fakeMessage],
       meta: { hasMore: false, nextCursor: null },
     } as unknown as Awaited<ReturnType<typeof getRequeteMessages>>);
+    vi.mocked(getUnreadCount).mockResolvedValue(2);
     vi.mocked(markAllMessagesAsRead).mockResolvedValue({ markedIds: [MESSAGE_ID], unreadCount: 0 });
-    vi.mocked(getRequeteEntiteStatutId).mockResolvedValue(REQUETE_STATUT_TYPES.EN_COURS);
     vi.mocked(createRequeteMessage).mockResolvedValue(
       fakeMessage as unknown as Awaited<ReturnType<typeof createRequeteMessage>>,
     );
@@ -130,6 +137,13 @@ describe('requeteMessages.controller.ts', () => {
         data: [{ ...fakeMessage, createdAt: fakeMessage.createdAt.toISOString() }],
         meta: { hasMore: false, nextCursor: null },
       });
+    });
+
+    it('forwards the after cursor to catch up on newer messages', async () => {
+      const res = await client[':requeteId'].$get({ param: { requeteId: REQUETE_ID }, query: { after: MESSAGE_ID } });
+
+      expect(res.status).toBe(200);
+      expect(getRequeteMessages).toHaveBeenCalledWith(REQUETE_ID, 'test-user-id', { limit: 50, after: MESSAGE_ID });
     });
 
     it('returns 400 when the user has no root entity', async () => {
@@ -168,11 +182,33 @@ describe('requeteMessages.controller.ts', () => {
       ['a limit below the minimum', { limit: '0' }],
       ['a limit above the maximum', { limit: '101' }],
       ['a cursor that is not a uuid', { before: 'not-a-uuid' }],
+      ['an after cursor that is not a uuid', { after: 'not-a-uuid' }],
+      ['both cursors at once', { before: MESSAGE_ID, after: MESSAGE_ID }],
     ])('rejects %s with a 400', async (_label, query) => {
       const res = await client[':requeteId'].$get({ param: { requeteId: REQUETE_ID }, query });
 
       expect(res.status).toBe(400);
       expect(getRequeteMessages).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('GET /:requeteId/unread-count', () => {
+    it('returns the unread count of the current user', async () => {
+      const res = await client[':requeteId']['unread-count'].$get({ param: { requeteId: REQUETE_ID } });
+      const body = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(body).toEqual({ data: { unreadCount: 2 } });
+      expect(getUnreadCount).toHaveBeenCalledWith(REQUETE_ID, 'test-user-id');
+    });
+
+    it('returns 404 when the entity is not affected to the requete', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
+
+      const res = await client[':requeteId']['unread-count'].$get({ param: { requeteId: REQUETE_ID } });
+
+      expect(res.status).toBe(404);
+      expect(getUnreadCount).not.toHaveBeenCalled();
     });
   });
 
