@@ -24,6 +24,7 @@ import {
   getPrefixedFileName,
   getRequeteEntiteById,
   getRequeteEntiteStatutId,
+  getRequetesCountsByDepartement,
   getRequetesEntite,
   hasAccessToRequete,
   reopenRequeteForEntite,
@@ -584,6 +585,99 @@ describe('requetesEntite.service', () => {
       const { data } = await getRequetesEntite(null, {});
 
       expect(data[0].hasRappel).toBe(true);
+    });
+  });
+
+  describe('departement filter', () => {
+    const postalBranch = (code: string) => ({
+      lieuDeSurvenue: {
+        OR: [{ OR: [{ codePostal: { startsWith: code } }, { adresse: { codePostal: { startsWith: code } } }] }],
+      },
+    });
+
+    const sirecBranch = (libs: string[]) => ({
+      sirecDepartement: { in: libs },
+      lieuDeSurvenue: {
+        codePostal: '',
+        OR: [{ adresse: { is: null } }, { adresse: { codePostal: '' } }],
+      },
+    });
+
+    const situationFiltersOf = (call = 0) => {
+      const { where } = vi.mocked(prisma.requeteEntite.findMany).mock.calls[call]?.[0] ?? {};
+      return (where as { AND: { requete: { situations: { some: { OR: unknown[] } } } }[] }).AND[0].requete.situations
+        .some.OR;
+    };
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      mockedRequeteEntite.count.mockResolvedValue(0);
+      mockedRequeteEntite.findMany.mockResolvedValue([]);
+      vi.mocked(prisma.commune.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.inseePostal.findMany).mockResolvedValue([]);
+    });
+
+    it('matches a situation either on its postal code or on its SIREC department', async () => {
+      vi.mocked(prisma.commune.findMany).mockResolvedValue([{ dptLibActuel: 'Seine-Maritime' }] as never);
+
+      await getRequetesEntite(null, { departementCodes: '76' });
+
+      expect(situationFiltersOf()).toEqual([postalBranch('76'), sirecBranch(['Seine-Maritime'])]);
+      expect(prisma.commune.findMany).toHaveBeenCalledWith({
+        where: { dptCodeActuel: { in: ['76'] } },
+        select: { dptLibActuel: true },
+        distinct: ['dptCodeActuel'],
+      });
+    });
+
+    it('never matches on the SIREC department a situation that has a postal code', async () => {
+      vi.mocked(prisma.commune.findMany).mockResolvedValue([{ dptLibActuel: 'Seine-Maritime' }] as never);
+
+      await getRequetesEntite(null, { departementCodes: '76' });
+
+      // Guard against over-matching: a situation whose lieu points to another department must
+      // not come up under its SIREC department.
+      const [, sirec] = situationFiltersOf() as [unknown, { lieuDeSurvenue: unknown }];
+      expect(sirec.lieuDeSurvenue).toEqual({
+        codePostal: '',
+        OR: [{ adresse: { is: null } }, { adresse: { codePostal: '' } }],
+      });
+    });
+
+    it('keeps resolving alphanumeric department codes through InseePostal', async () => {
+      vi.mocked(prisma.inseePostal.findMany).mockResolvedValue([{ codePostal: '20000' }] as never);
+      vi.mocked(prisma.commune.findMany).mockResolvedValue([{ dptLibActuel: 'Corse-du-Sud' }] as never);
+
+      await getRequetesEntite(null, { departementCodes: '2A' });
+
+      expect(situationFiltersOf()).toEqual([
+        {
+          lieuDeSurvenue: {
+            OR: [{ OR: [{ codePostal: { in: ['20000'] } }, { adresse: { codePostal: { in: ['20000'] } } }] }],
+          },
+        },
+        sirecBranch(['Corse-du-Sud']),
+      ]);
+    });
+
+    it('falls back to the postal branch alone when the geo referential is not seeded', async () => {
+      await getRequetesEntite(null, { departementCodes: '76' });
+
+      expect(situationFiltersOf()).toEqual([postalBranch('76')]);
+    });
+
+    it('applies the same filter when counting requests per department', async () => {
+      vi.mocked(prisma.commune.findMany).mockResolvedValue([{ dptLibActuel: 'Seine-Maritime' }] as never);
+      mockedRequeteEntite.count.mockResolvedValue(7);
+
+      const counts = await getRequetesCountsByDepartement(null, ['76'], {});
+
+      expect(counts).toEqual([{ code: '76', count: 7 }]);
+      expect(mockedRequeteEntite.count).toHaveBeenCalledWith({
+        where: {
+          AND: [{ requete: { situations: { some: { OR: [postalBranch('76'), sirecBranch(['Seine-Maritime'])] } } } }],
+        },
+      });
     });
   });
 
