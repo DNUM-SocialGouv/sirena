@@ -2,7 +2,7 @@ import { fr } from '@codegouvfr/react-dsfr';
 import { Tabs } from '@codegouvfr/react-dsfr/Tabs';
 import { ROLES, ROLES_STATISTICS } from '@sirena/common/constants';
 import { createFileRoute, Navigate, useNavigate, useSearch } from '@tanstack/react-router';
-import { type CSSProperties, type ReactNode, useCallback, useMemo } from 'react';
+import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { z } from 'zod';
 import { AuthLayout } from '@/components/layout/auth/layout';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
@@ -26,6 +26,8 @@ import styles from './statistiques.module.css';
 const numberFormatter = new Intl.NumberFormat('fr-FR');
 const dataDateFormatter = new Intl.DateTimeFormat('fr-FR');
 
+const PAGE_TITLE = 'Indicateurs - SIRENA';
+
 function formatDataDate(reference: Date): string {
   const previousDay = new Date(reference);
   previousDay.setDate(previousDay.getDate() - 1);
@@ -46,7 +48,7 @@ export const Route = createFileRoute('/_auth/statistiques')({
   beforeLoad: requireAuthAndRoles([...ROLES_STATISTICS]),
   validateSearch: StatisticsSearchSchema,
   head: () => ({
-    meta: [{ title: 'Indicateurs - SIRENA' }],
+    meta: [{ title: PAGE_TITLE }],
   }),
   component: RouteComponent,
 });
@@ -131,11 +133,17 @@ type DashboardContentProps = {
 function DashboardContent({ dashboard, requestedTabId, onTabChange, renderFilters }: DashboardContentProps) {
   const cards = Array.isArray(dashboard.cards) ? dashboard.cards : [];
   const tabs = Array.isArray(dashboard.tabs) ? dashboard.tabs : [];
+  const selectedTab = tabs.length > 1 ? resolveSelectedTab(tabs, requestedTabId) : null;
+
+  const pageTitle = selectedTab ? `${selectedTab.name} - ${PAGE_TITLE}` : PAGE_TITLE;
+  useEffect(() => {
+    document.title = pageTitle;
+  }, [pageTitle]);
+
   if (cards.length === 0) {
     return <p>Aucune carte configurée dans le dashboard Metabase.</p>;
   }
 
-  const selectedTab = tabs.length > 1 ? resolveSelectedTab(tabs, requestedTabId) : null;
   if (!selectedTab) {
     return (
       <>

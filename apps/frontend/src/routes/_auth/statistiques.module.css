@@ -41,6 +41,11 @@
   margin-bottom: 0;
 }
 
+.dashboard-tabs,
+.dashboard-tabs :global(.fr-tabs__panel) {
+  overflow: visible;
+}
+
 .dashboard-tabs .mb-grid {
   padding: 0.5rem 0;
 }
