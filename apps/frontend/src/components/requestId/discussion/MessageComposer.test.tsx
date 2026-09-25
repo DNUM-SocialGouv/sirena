@@ -146,6 +146,33 @@ describe('MessageComposer', () => {
     expect(postMessage).toHaveBeenLastCalledWith({ contenu: 'Bonjour', fileIds: ['id-premier.pdf'] });
   });
 
+  it('keeps the attachments that reached the server when one upload fails', async () => {
+    uploadFile.mockImplementation((file: File) =>
+      file.name === 'second.pdf'
+        ? Promise.reject(new Error('upload failed'))
+        : Promise.resolve({ id: `id-${file.name}` }),
+    );
+    const user = userEvent.setup();
+    const { container } = render(<MessageComposer requestId="REQ" />);
+
+    await user.type(screen.getByRole('textbox'), 'Bonjour');
+    await attachFiles(container, [makeFile('premier.pdf'), makeFile('second.pdf')]);
+    await user.click(screen.getByRole('button', { name: 'Envoyer' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/erreur technique/i);
+    expect(uploadFile).toHaveBeenCalledTimes(2);
+
+    uploadFile.mockImplementation((file: File) => Promise.resolve({ id: `id-${file.name}` }));
+    await user.click(screen.getByRole('button', { name: 'Envoyer' }));
+
+    // Only the one that failed is sent again: the first is already on the server.
+    await waitFor(() => expect(uploadFile).toHaveBeenCalledTimes(3));
+    expect(postMessage).toHaveBeenCalledWith({
+      contenu: 'Bonjour',
+      fileIds: ['id-premier.pdf', 'id-second.pdf'],
+    });
+  });
+
   it('shows an inline error and skips the post when an upload fails', async () => {
     uploadFile.mockRejectedValue(new Error('upload failed'));
     const user = userEvent.setup();

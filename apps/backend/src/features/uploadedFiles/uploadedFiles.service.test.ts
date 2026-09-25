@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../libs/prisma.js';
+import { createChangeLog } from '../changelog/changelog.service.js';
 import {
   createUploadedFile,
   deleteFaitFilesRemovedFromSituation,
@@ -71,6 +72,7 @@ const mockUploadedFile = {
 describe('uploadedFiles.service.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(prisma.$transaction).mockImplementation((async (cb: (tx: unknown) => unknown) => cb(prisma)) as never);
   });
 
   describe('getUploadedFileById()', () => {
@@ -388,6 +390,19 @@ describe('uploadedFiles.service.ts', () => {
       await expect(setRequeteFile('REQ-C', ['unknown'], 'e1', 'user1')).resolves.toEqual([]);
     });
 
+    it('rolls the whole batch back when one file of a requete is already attached to a message', async () => {
+      mockedUploadedFile.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+      mockedUploadedFile.updateMany.mockResolvedValueOnce({ count: 1 });
+      mockedUploadedFile.count.mockResolvedValueOnce(1);
+
+      await expect(setRequeteFile('REQ-C', ['free', 'attached'], 'e1', 'user1')).rejects.toBeInstanceOf(
+        FilesNotOwnedError,
+      );
+
+      // The free file was moved before the refusal: without a transaction that row would have stayed.
+      expect(prisma.$transaction).toHaveBeenCalledOnce();
+    });
+
     it('excludes discussion attachments from the situation file cleanup', async () => {
       mockedUploadedFile.findMany.mockResolvedValueOnce([]);
 
@@ -396,6 +411,19 @@ describe('uploadedFiles.service.ts', () => {
       expect(mockedUploadedFile.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: expect.objectContaining({ requeteMessageId: null }) }),
       );
+    });
+  });
+
+  describe('changelog of an attachment', () => {
+    it('writes the changelog with the transaction that moved the file', async () => {
+      // mockReset: the once-queues of the previous tests survive vi.clearAllMocks().
+      mockedUploadedFile.findMany.mockReset().mockResolvedValue([{ id: 'file1' }] as never);
+      mockedUploadedFile.updateMany.mockReset().mockResolvedValue({ count: 1 } as never);
+
+      await setMessageFiles('message1', ['file1'], 'e1', 'user1', prisma);
+
+      // Second argument: without it the changelog row would be written outside the transaction.
+      expect(createChangeLog).toHaveBeenCalledWith(expect.objectContaining({ entity: 'UploadedFile' }), prisma);
     });
   });
 
@@ -409,9 +437,25 @@ describe('uploadedFiles.service.ts', () => {
         where: {
           id: { in: ['f1', 'f2'] },
           uploadedById: 'user1',
+          requeteMessageId: null,
         },
       });
       expect(res).toBe(true);
+    });
+
+    it('refuses a file already attached to a discussion message, before anything is written', async () => {
+      mockedUploadedFile.count.mockResolvedValueOnce(1);
+
+      const res = await isUserOwner('user1', ['f1', 'attached-to-a-message']);
+
+      expect(mockedUploadedFile.count).toHaveBeenCalledWith({
+        where: {
+          id: { in: ['f1', 'attached-to-a-message'] },
+          uploadedById: 'user1',
+          requeteMessageId: null,
+        },
+      });
+      expect(res).toBe(false);
     });
 
     it('returns false when at least one file is not owned by the user', async () => {
@@ -423,6 +467,7 @@ describe('uploadedFiles.service.ts', () => {
         where: {
           id: { in: ['f1', 'f2'] },
           uploadedById: 'user1',
+          requeteMessageId: null,
         },
       });
       expect(res).toBe(false);

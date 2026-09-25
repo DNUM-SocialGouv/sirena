@@ -1,5 +1,6 @@
 import type { RequeteMessageEvent } from '@sirena/common/constants';
 import type { PinoLogger } from 'hono-pino';
+import { getOriginalFileName } from '../../helpers/file.js';
 import { sseEventManager } from '../../helpers/sse.js';
 import { type Prisma, prisma } from '../../libs/prisma.js';
 import { setMessageFiles } from '../uploadedFiles/uploadedFiles.service.js';
@@ -17,6 +18,7 @@ const messageSelect = (currentUserId: string) =>
       select: {
         id: true,
         fileName: true,
+        metadata: true,
         size: true,
         status: true,
         scanStatus: true,
@@ -30,7 +32,16 @@ const messageSelect = (currentUserId: string) =>
 
 type MessageRow = Prisma.RequeteMessageGetPayload<{ select: ReturnType<typeof messageSelect> }>;
 
-const toMessageDto = ({ reads, ...rest }: MessageRow) => ({ ...rest, isReadByCurrentUser: reads.length > 0 });
+const toMessageDto = ({ reads, uploadedFiles, ...rest }: MessageRow) => ({
+  ...rest,
+  // The stored name is the one minio was given; what the agent uploaded lives in the metadata, like
+  // everywhere else the app shows a file name.
+  uploadedFiles: uploadedFiles.map(({ metadata, ...file }) => ({
+    ...file,
+    fileName: getOriginalFileName({ fileName: file.fileName, metadata }),
+  })),
+  isReadByCurrentUser: reads.length > 0,
+});
 
 export type RequeteMessageDto = ReturnType<typeof toMessageDto>;
 

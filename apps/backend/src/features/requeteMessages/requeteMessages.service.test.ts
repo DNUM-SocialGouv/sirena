@@ -12,6 +12,10 @@ import {
   markAllMessagesAsRead,
 } from './requeteMessages.service.js';
 
+vi.mock('../../libs/minio.js', () => ({
+  getFileStream: vi.fn(),
+}));
+
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     $transaction: vi.fn(),
@@ -240,6 +244,41 @@ describe('requeteMessages.service.ts', () => {
       expect(mockedMessage.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'm1' } }));
       expect(result).toMatchObject({ id: 'm1', isReadByCurrentUser: true });
       expect(Object.hasOwn(result ?? {}, 'reads')).toBe(false);
+    });
+
+    it('shows the file name the agent uploaded, not the one minio stores', async () => {
+      const uploadedFiles = [
+        {
+          id: 'f1',
+          fileName: 'a1b2c3.pdf',
+          metadata: { originalName: 'Rapport d’inspection.pdf' },
+          size: 10,
+          status: 'COMPLETED',
+          scanStatus: 'CLEAN',
+          sanitizeStatus: 'DONE',
+          createdAt: new Date('2026-01-01T10:00:00.000Z'),
+        },
+        {
+          id: 'f2',
+          fileName: 'sans-metadata.pdf',
+          metadata: null,
+          size: 10,
+          status: 'COMPLETED',
+          scanStatus: 'CLEAN',
+          sanitizeStatus: 'DONE',
+          createdAt: new Date('2026-01-01T10:00:00.000Z'),
+        },
+      ];
+      mockedMessage.findUnique.mockResolvedValueOnce(row({ uploadedFiles } as never) as never);
+
+      const result = await getRequeteMessageById('m1', 'user1');
+
+      expect(result?.uploadedFiles.map((file) => file.fileName)).toEqual([
+        'Rapport d’inspection.pdf',
+        'sans-metadata.pdf',
+      ]);
+      // The raw metadata stays on the server side.
+      expect(Object.hasOwn(result?.uploadedFiles[0] ?? {}, 'metadata')).toBe(false);
     });
 
     it('returns null when the message does not exist', async () => {
