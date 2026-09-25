@@ -1,6 +1,6 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { type CSSProperties, Fragment, type ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { useDisclosureMenu } from '@/hooks/useDisclosureMenu';
+import { hasFocusLeftMenu, useDisclosureMenu } from '@/hooks/useDisclosureMenu';
 import styles from './DropdownTree.module.css';
 
 export type TreeNode = {
@@ -278,10 +278,9 @@ export function DropdownTree({
     const panel = panelRef.current;
 
     const onFocusOut = (e: FocusEvent) => {
-      const next = e.relatedTarget as Node | null;
-      if (!next) return;
-      if (panel?.contains(next) || triggerRef.current?.contains(next)) return;
-      close({ restoreFocus: false });
+      if (hasFocusLeftMenu(e.relatedTarget as Node | null, panel, triggerRef.current)) {
+        close({ restoreFocus: false });
+      }
     };
     panel?.addEventListener('focusout', onFocusOut);
 
