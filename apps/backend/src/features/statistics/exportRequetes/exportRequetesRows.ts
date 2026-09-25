@@ -129,6 +129,7 @@ type ExportEntiteRecord = {
 };
 
 type ExportSituationRecord = {
+  sirecDepartement?: string | null;
   lieuDeSurvenue?: ExportLieuDeSurvenueRecord | null;
   misEnCause?: ExportMisEnCauseRecord | null;
   faits?: ExportFaitRecord[];
@@ -142,12 +143,14 @@ type ExportRequeteKeyedRow = Partial<Record<ExportRequetesColumnKey, ExportReque
 type DepartmentReferences = {
   codesByPostalCode?: Map<string, string>;
   namesByCode?: Map<string, string>;
+  codesByName?: Map<string, string>;
 };
 
 export type BuildExportRequetesRowsOptions = {
   topEntiteId?: string;
   departmentCodesByPostalCode?: Map<string, string>;
   departementNamesByCode?: Map<string, string>;
+  departementCodesByName?: Map<string, string>;
 };
 
 export function buildExportRequetesRows(
@@ -175,6 +178,7 @@ function buildExportRequeteRow(
   const departmentReferences = {
     codesByPostalCode: options.departmentCodesByPostalCode,
     namesByCode: options.departementNamesByCode,
+    codesByName: options.departementCodesByName,
   };
 
   return toExportRequetesCsvRow({
@@ -262,9 +266,11 @@ function buildSituationFields(
   const codePostalLieuSurvenueQualifie = lieuDeSurvenue?.adresse?.codePostal;
   const codePostalLieuSurvenue = codePostalLieuSurvenueQualifie || lieuDeSurvenue?.codePostal || '';
   const villeLieuSurvenue = codePostalLieuSurvenueQualifie ? (lieuDeSurvenue?.adresse?.ville ?? '') : '';
-  const departementLieuSurvenue =
-    departmentReferences.codesByPostalCode?.get(codePostalLieuSurvenue) ??
-    deriveDepartmentCodeFromPostalCode(codePostalLieuSurvenue);
+  // No postal code: fall back to the department SIREC was handling the request with.
+  const departementLieuSurvenue = codePostalLieuSurvenue
+    ? (departmentReferences.codesByPostalCode?.get(codePostalLieuSurvenue) ??
+      deriveDepartmentCodeFromPostalCode(codePostalLieuSurvenue))
+    : (departmentReferences.codesByName?.get(situation?.sirecDepartement ?? '') ?? '');
   const codePostalMisEnCause = misEnCause?.codePostal ?? '';
   const departementMisEnCause =
     departmentReferences.codesByPostalCode?.get(codePostalMisEnCause) ??
