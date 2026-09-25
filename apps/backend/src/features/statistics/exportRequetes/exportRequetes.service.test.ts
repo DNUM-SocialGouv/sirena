@@ -264,7 +264,7 @@ describe('prepareExportRequetesCsv', () => {
       distinct: ['codePostal'],
     });
     expect(prisma.commune.findMany).toHaveBeenCalledWith({
-      where: { dptCodeActuel: { in: ['75', '69', '63', '980'] } },
+      where: { OR: [{ dptCodeActuel: { in: ['75', '69', '63', '980'] } }] },
       select: { dptCodeActuel: true, dptLibActuel: true },
       distinct: ['dptCodeActuel'],
     });
@@ -308,6 +308,40 @@ describe('prepareExportRequetesCsv', () => {
     const csv = await generateExportRequetesCsv('root-entite');
 
     expect(csv).toContain('Corse-du-Sud (2A)');
+  });
+
+  it('exports the SIREC department of a situation that has no postal code', async () => {
+    vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
+    vi.mocked(prisma.requete.findMany).mockResolvedValue([
+      {
+        id: 'REQ-2026-0036',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        requeteEntites: [
+          {
+            entiteId: 'root-entite',
+            entite: { label: 'Agence régionale', entiteTypeId: 'ARS' },
+            statut: { label: 'En cours' },
+          },
+        ],
+        etapes: [],
+        // A SIREC request whose mis en cause is an RPPS: its lieu de survenue is empty.
+        situations: [{ sirecDepartement: 'Seine-Maritime', lieuDeSurvenue: { codePostal: '' }, misEnCause: {} }],
+      },
+    ] as unknown as Awaited<ReturnType<typeof prisma.requete.findMany>>);
+    vi.mocked(prisma.commune.findMany).mockResolvedValueOnce([
+      { dptCodeActuel: '76', dptLibActuel: 'Seine-Maritime' },
+    ] as unknown as Awaited<ReturnType<typeof prisma.commune.findMany>>);
+
+    const csv = await generateExportRequetesCsv('root-entite');
+
+    // No postal code to resolve, so the referential is queried on the SIREC label alone.
+    expect(prisma.inseePostal.findMany).not.toHaveBeenCalled();
+    expect(prisma.commune.findMany).toHaveBeenCalledWith({
+      where: { OR: [{ dptLibActuel: { in: ['Seine-Maritime'] } }] },
+      select: { dptCodeActuel: true, dptLibActuel: true },
+      distinct: ['dptCodeActuel'],
+    });
+    expect(csv).toContain('Seine-Maritime (76)');
   });
 
   it('passes the root entity scope to row building for root-scoped fields', async () => {
