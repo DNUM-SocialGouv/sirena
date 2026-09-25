@@ -139,6 +139,12 @@ vi.mock('../../libs/prisma.js', () => ({
       deleteMany: vi.fn(),
       update: vi.fn(),
     },
+    inseePostal: {
+      findMany: vi.fn(),
+    },
+    commune: {
+      findMany: vi.fn(),
+    },
   },
 }));
 
@@ -578,6 +584,97 @@ describe('requetesEntite.service', () => {
       const { data } = await getRequetesEntite(null, {});
 
       expect(data[0].hasRappel).toBe(true);
+    });
+  });
+
+  describe('departementsLieuSurvenue', () => {
+    const rowWithSituations = (situations: Record<string, unknown>[]) =>
+      ({
+        ...mockRequeteEntite,
+        requete: {
+          ...mockRequeteEntite.requete,
+          situations: situations.map((situation) => ({ situationEntites: [], ...situation })),
+        },
+      }) as unknown as typeof mockRequeteEntite;
+
+    const noLieu = { lieuDeSurvenue: { codePostal: '', adresse: null } };
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      mockedRequeteEntite.count.mockResolvedValue(1);
+      vi.mocked(prisma.inseePostal.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.commune.findMany).mockResolvedValue([]);
+    });
+
+    it('falls back to the SIREC department when the situation has no postal code', async () => {
+      mockedRequeteEntite.findMany.mockResolvedValueOnce([
+        rowWithSituations([{ ...noLieu, sirecDepartement: 'Seine-Maritime' }]),
+      ]);
+      vi.mocked(prisma.commune.findMany).mockResolvedValue([
+        { dptCodeActuel: '76', dptLibActuel: 'Seine-Maritime' },
+      ] as never);
+
+      const { data } = await getRequetesEntite(null, {});
+
+      expect(data[0].departementsLieuSurvenue).toEqual([{ code: '76', lib: 'Seine-Maritime' }]);
+      expect(prisma.commune.findMany).toHaveBeenCalledWith({
+        where: { OR: [{ dptLibActuel: { in: ['Seine-Maritime'] } }] },
+        select: { dptCodeActuel: true, dptLibActuel: true },
+      });
+    });
+
+    it('prefers the postal code over the SIREC department when both are known', async () => {
+      mockedRequeteEntite.findMany.mockResolvedValueOnce([
+        rowWithSituations([
+          { lieuDeSurvenue: { codePostal: '29200', adresse: null }, sirecDepartement: 'Seine-Maritime' },
+        ]),
+      ]);
+      vi.mocked(prisma.commune.findMany).mockResolvedValue([
+        { dptCodeActuel: '29', dptLibActuel: 'Finistère' },
+      ] as never);
+
+      const { data } = await getRequetesEntite(null, {});
+
+      expect(data[0].departementsLieuSurvenue).toEqual([{ code: '29', lib: 'Finistère' }]);
+    });
+
+    it('stays empty when the situation has neither a postal code nor a SIREC department', async () => {
+      mockedRequeteEntite.findMany.mockResolvedValueOnce([rowWithSituations([{ ...noLieu, sirecDepartement: null }])]);
+
+      const { data } = await getRequetesEntite(null, {});
+
+      expect(data[0].departementsLieuSurvenue).toEqual([]);
+      expect(prisma.commune.findMany).not.toHaveBeenCalled();
+    });
+
+    it('stays empty when the SIREC department has no counterpart in the geo referential', async () => {
+      // SIREC carries "Autre" and "Saint-Martin et Saint-Barthélemy", which no department matches.
+      mockedRequeteEntite.findMany.mockResolvedValueOnce([
+        rowWithSituations([{ ...noLieu, sirecDepartement: 'Autre' }]),
+      ]);
+
+      const { data } = await getRequetesEntite(null, {});
+
+      expect(data[0].departementsLieuSurvenue).toEqual([]);
+    });
+
+    it('deduplicates a department found once by postal code and once through SIREC', async () => {
+      mockedRequeteEntite.findMany.mockResolvedValueOnce([
+        rowWithSituations([
+          { lieuDeSurvenue: { codePostal: '76000', adresse: null } },
+          { ...noLieu, sirecDepartement: 'Seine-Maritime' },
+        ]),
+      ]);
+      vi.mocked(prisma.inseePostal.findMany).mockResolvedValue([
+        { codePostal: '76000', commune: { dptCodeActuel: '76' } },
+      ] as never);
+      vi.mocked(prisma.commune.findMany).mockResolvedValue([
+        { dptCodeActuel: '76', dptLibActuel: 'Seine-Maritime' },
+      ] as never);
+
+      const { data } = await getRequetesEntite(null, {});
+
+      expect(data[0].departementsLieuSurvenue).toEqual([{ code: '76', lib: 'Seine-Maritime' }]);
     });
   });
 
