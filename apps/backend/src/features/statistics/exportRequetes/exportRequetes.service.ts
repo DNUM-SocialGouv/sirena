@@ -63,6 +63,7 @@ const exportRequetesSelect = {
   },
   situations: {
     select: {
+      sirecDepartement: true,
       lieuDeSurvenue: {
         select: {
           lieuTypeId: true,
@@ -129,12 +130,13 @@ const EXPORT_PAGE_SIZE = 500;
 
 export type ExportRequetesCsvWriter = (write: ChunkWriter) => Promise<void>;
 
-const postalCodeSelect = {
+const departementSourceSelect = {
   id: true,
   declarant: { select: { adresse: { select: { codePostal: true } } } },
   participant: { select: { adresse: { select: { codePostal: true } } } },
   situations: {
     select: {
+      sirecDepartement: true,
       lieuDeSurvenue: { select: { codePostal: true, adresse: { select: { codePostal: true } } } },
       misEnCause: { select: { codePostal: true } },
     },
@@ -166,10 +168,15 @@ async function forEachRequetePage<S extends Prisma.RequeteSelect & { id: true }>
   } while (cursor);
 }
 
-async function collectPostalCodes(where: Prisma.RequeteWhereInput): Promise<string[]> {
+async function collectDepartementSources(
+  where: Prisma.RequeteWhereInput,
+): Promise<{ codePostaux: string[]; sirecDepartementLibs: string[] }> {
   const codePostaux = new Set<string>();
+  // Situations migrated from SIREC often have no postal code at all (RPPS or "autre" mis en
+  // cause): their only geographic clue is the "département en charge" label SIREC carried.
+  const sirecDepartementLibs = new Set<string>();
 
-  await forEachRequetePage(where, postalCodeSelect, (page) => {
+  await forEachRequetePage(where, departementSourceSelect, (page) => {
     for (const requete of page) {
       const candidates = [
         requete.declarant?.adresse?.codePostal,
@@ -182,17 +189,21 @@ async function collectPostalCodes(where: Prisma.RequeteWhereInput): Promise<stri
       for (const codePostal of candidates) {
         if (codePostal) codePostaux.add(codePostal);
       }
+      for (const situation of requete.situations) {
+        const codePostalLieu = situation.lieuDeSurvenue?.adresse?.codePostal || situation.lieuDeSurvenue?.codePostal;
+        if (!codePostalLieu && situation.sirecDepartement) sirecDepartementLibs.add(situation.sirecDepartement);
+      }
     }
   });
 
-  return Array.from(codePostaux);
+  return { codePostaux: Array.from(codePostaux), sirecDepartementLibs: Array.from(sirecDepartementLibs) };
 }
 
 export async function prepareExportRequetesCsv(topEntiteId: string): Promise<ExportRequetesCsvWriter> {
   const entiteIds = (await getEntiteDescendantIds(topEntiteId)) ?? [];
   const where: Prisma.RequeteWhereInput = { requeteEntites: { some: { entiteId: { in: entiteIds } } } };
 
-  const departmentReferences = await getDepartmentReferences(await collectPostalCodes(where));
+  const departmentReferences = await getDepartmentReferences(await collectDepartementSources(where));
   const options = { topEntiteId, ...departmentReferences };
 
   return async (write) => {
@@ -205,19 +216,35 @@ export async function prepareExportRequetesCsv(topEntiteId: string): Promise<Exp
   };
 }
 
-async function getDepartmentReferences(codePostaux: string[]): Promise<{
+async function getDepartmentReferences({
+  codePostaux,
+  sirecDepartementLibs,
+}: {
+  codePostaux: string[];
+  sirecDepartementLibs: string[];
+}): Promise<{
   departmentCodesByPostalCode: Map<string, string>;
   departementNamesByCode: Map<string, string>;
+  departementCodesByName: Map<string, string>;
 }> {
-  if (codePostaux.length === 0) {
-    return { departmentCodesByPostalCode: new Map(), departementNamesByCode: new Map() };
+  const empty = {
+    departmentCodesByPostalCode: new Map<string, string>(),
+    departementNamesByCode: new Map<string, string>(),
+    departementCodesByName: new Map<string, string>(),
+  };
+
+  if (codePostaux.length === 0 && sirecDepartementLibs.length === 0) {
+    return empty;
   }
 
-  const inseePostalRows = await prisma.inseePostal.findMany({
-    where: { codePostal: { in: codePostaux } },
-    select: { codePostal: true, commune: { select: { dptCodeActuel: true } } },
-    distinct: ['codePostal'],
-  });
+  const inseePostalRows =
+    codePostaux.length > 0
+      ? await prisma.inseePostal.findMany({
+          where: { codePostal: { in: codePostaux } },
+          select: { codePostal: true, commune: { select: { dptCodeActuel: true } } },
+          distinct: ['codePostal'],
+        })
+      : [];
   const departmentCodesByPostalCode = new Map(
     inseePostalRows
       .filter((row): row is { codePostal: string; commune: { dptCodeActuel: string } } => row.commune != null)
@@ -231,12 +258,18 @@ async function getDepartmentReferences(codePostaux: string[]): Promise<{
     ),
   ).filter((departmentCode) => departmentCode !== '');
 
-  if (departmentCodes.length === 0) {
-    return { departmentCodesByPostalCode, departementNamesByCode: new Map() };
+  // SIREC department labels are the INSEE ones, so Commune resolves them to a code.
+  const communeFilters = [
+    ...(departmentCodes.length > 0 ? [{ dptCodeActuel: { in: departmentCodes } }] : []),
+    ...(sirecDepartementLibs.length > 0 ? [{ dptLibActuel: { in: sirecDepartementLibs } }] : []),
+  ];
+
+  if (communeFilters.length === 0) {
+    return { ...empty, departmentCodesByPostalCode };
   }
 
   const communeRows = await prisma.commune.findMany({
-    where: { dptCodeActuel: { in: departmentCodes } },
+    where: { OR: communeFilters },
     select: { dptCodeActuel: true, dptLibActuel: true },
     distinct: ['dptCodeActuel'],
   });
@@ -244,6 +277,7 @@ async function getDepartmentReferences(codePostaux: string[]): Promise<{
   return {
     departmentCodesByPostalCode,
     departementNamesByCode: new Map(communeRows.map((row) => [row.dptCodeActuel, row.dptLibActuel])),
+    departementCodesByName: new Map(communeRows.map((row) => [row.dptLibActuel, row.dptCodeActuel])),
   };
 }
 
@@ -260,6 +294,7 @@ function toExportRequeteRecord(requete: ExportRequetePrismaPayload): ExportReque
     requeteEntites: requete.requeteEntites,
     etapes: requete.etapes,
     situations: requete.situations.map((situation) => ({
+      sirecDepartement: situation.sirecDepartement,
       lieuDeSurvenue: situation.lieuDeSurvenue,
       misEnCause: situation.misEnCause,
       faits: situation.faits,

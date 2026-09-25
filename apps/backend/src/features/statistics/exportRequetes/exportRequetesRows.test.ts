@@ -478,6 +478,83 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'departementMisEnCause')).toBe('980');
   });
 
+  it('falls back to the SIREC department when the situation has no postal code', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0015',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'Agence régionale', entiteTypeId: 'ARS' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          // A SIREC request whose mis en cause is an RPPS: its lieu de survenue is empty.
+          situations: [{ sirecDepartement: 'Seine-Maritime', lieuDeSurvenue: { codePostal: '' } }],
+        },
+      ],
+      {
+        topEntiteId: 'root-entite',
+        departementCodesByName: new Map([['Seine-Maritime', '76']]),
+        departementNamesByCode: new Map([['76', 'Seine-Maritime']]),
+      },
+    );
+
+    expect(cell(rows[0], 'codePostalLieuSurvenue')).toBe('');
+    expect(cell(rows[0], 'departementLieuSurvenue')).toBe('Seine-Maritime (76)');
+  });
+
+  it('prefers the postal code over the SIREC department when both are known', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0016',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'Agence régionale', entiteTypeId: 'ARS' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          situations: [{ sirecDepartement: 'Seine-Maritime', lieuDeSurvenue: { codePostal: '29200' } }],
+        },
+      ],
+      {
+        topEntiteId: 'root-entite',
+        departmentCodesByPostalCode: new Map([['29200', '29']]),
+        departementCodesByName: new Map([['Seine-Maritime', '76']]),
+      },
+    );
+
+    expect(cell(rows[0], 'departementLieuSurvenue')).toBe('29');
+  });
+
+  it('leaves the department blank when the SIREC label has no counterpart in the referential', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0017',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'Agence régionale', entiteTypeId: 'ARS' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          // SIREC also carries "Autre" and "Saint-Martin et Saint-Barthélemy".
+          situations: [{ sirecDepartement: 'Autre', lieuDeSurvenue: { codePostal: '' } }],
+        },
+      ],
+      { topEntiteId: 'root-entite', departementCodesByName: new Map([['Seine-Maritime', '76']]) },
+    );
+
+    expect(cell(rows[0], 'departementLieuSurvenue')).toBe('');
+  });
+
   it('leaves department columns blank for non-ARS exports', () => {
     const rows = buildExportRequetesRows(
       [
