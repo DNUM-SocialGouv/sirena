@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+export function hasFocusLeftMenu(next: Node | null, panel: HTMLElement | null, trigger: HTMLElement | null): boolean {
+  if (!next) return false;
+  if (panel?.contains(next) || trigger?.contains(next)) return false;
+  return !panel || !next.contains(panel);
+}
+
 type useDisclosureMenuOptions = {
   onOpen?: () => void;
   onClose?: () => void;
@@ -80,11 +86,9 @@ export function useDisclosureMenu({ onOpen, onClose }: useDisclosureMenuOptions 
     (e: React.FocusEvent<HTMLElement>) => {
       const next = e.relatedTarget as Node | null;
 
-      if (next && triggerRef.current?.contains(next)) return;
+      if (next && !hasFocusLeftMenu(next, panelRef.current, triggerRef.current)) return;
 
-      if (!next || !panelRef.current?.contains(next)) {
-        close({ restoreFocus: false });
-      }
+      close({ restoreFocus: false });
     },
     [close],
   );

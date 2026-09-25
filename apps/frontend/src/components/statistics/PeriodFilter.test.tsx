@@ -173,6 +173,24 @@ describe('PeriodFilter', () => {
     await waitFor(() => expect(screen.queryByRole('radio', { name: 'Semaine courante' })).not.toBeInTheDocument());
   });
 
+  it('stays open when a click beside a field focuses a focusable ancestor (panneau d’onglet DSFR)', async () => {
+    render(
+      // biome-ignore lint/a11y/noNoninteractiveTabindex: reproduit le tabpanel de react-dsfr, qui porte tabindex="0"
+      <div role="tabpanel" tabIndex={0} data-testid="tabpanel">
+        <PeriodFilter value={{}} onChange={vi.fn()} />
+      </div>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+    const firstRadio = screen.getByRole('radio', { name: 'Semaine courante' });
+    const ancestor = screen.getByTestId('tabpanel');
+
+    ancestor.focus();
+    fireEvent.focusOut(firstRadio, { relatedTarget: ancestor });
+
+    await waitFor(() => expect(screen.getByRole('radio', { name: 'Semaine courante' })).toBeInTheDocument());
+  });
+
   it('does not close via focusout when focus moves to the trigger', async () => {
     render(<PeriodFilter value={{}} onChange={vi.fn()} />);
 
