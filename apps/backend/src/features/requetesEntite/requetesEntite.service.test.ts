@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma as prismaMock } from '../../libs/__mocks__/prisma.js';
 import {
   type Identite,
@@ -25,6 +25,7 @@ import {
   getPrefixedFileName,
   getRequeteEntiteById,
   getRequeteEntiteStatutId,
+  getRequetesCountsByDepartement,
   getRequetesEntite,
   hasAccessToRequete,
   reopenRequeteForEntite,
@@ -146,7 +147,7 @@ vi.mock('../../libs/prisma.js', () => ({
       findMany: vi.fn(),
     },
     commune: {
-      findMany: vi.fn(),
+      groupBy: vi.fn(),
     },
   },
 }));
@@ -591,6 +592,166 @@ describe('requetesEntite.service', () => {
     });
   });
 
+  describe('departement filter', () => {
+    // Every code is listed once under the lieu and once, as a whole, behind a single `adresse`:
+    // Prisma emits one LEFT JOIN on Adresse per place the relation appears, so they share one.
+    const postalBranch = (...codePostalFilters: Record<string, unknown>[]) => ({
+      lieuDeSurvenue: {
+        OR: [
+          { OR: codePostalFilters.map((codePostal) => ({ codePostal })) },
+          { adresse: { OR: codePostalFilters.map((codePostal) => ({ codePostal })) } },
+        ],
+      },
+    });
+
+    const sirecBranch = (libs: string[]) => ({
+      sirecDepartement: { in: libs },
+      lieuDeSurvenue: {
+        codePostal: '',
+        OR: [{ adresse: { is: null } }, { adresse: { codePostal: '' } }],
+      },
+    });
+
+    const situationFiltersOf = (call = 0) => {
+      const { where } = vi.mocked(prisma.requeteEntite.findMany).mock.calls[call]?.[0] ?? {};
+      return (where as { AND: { requete: { situations: { some: { OR: unknown[] } } } }[] }).AND[0].requete.situations
+        .some.OR;
+    };
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      mockedRequeteEntite.count.mockResolvedValue(0);
+      mockedRequeteEntite.findMany.mockResolvedValue([]);
+      vi.mocked(prisma.commune.groupBy).mockResolvedValue([]);
+      vi.mocked(prisma.inseePostal.findMany).mockResolvedValue([]);
+    });
+
+    // These mocks are shared with the rest of the file, and `vi.clearAllMocks()` keeps both the
+    // implementations and the `*Once` values a test left unconsumed. Without this, one of them
+    // would be served to whichever test reads the mock next — here or in a later block.
+    afterEach(() => {
+      mockedRequeteEntite.count.mockReset();
+      mockedRequeteEntite.findMany.mockReset();
+      vi.mocked(prisma.commune.groupBy).mockReset();
+      vi.mocked(prisma.inseePostal.findMany).mockReset();
+    });
+
+    it('matches a situation either on its postal code or on its SIREC department', async () => {
+      vi.mocked(prisma.commune.groupBy).mockResolvedValue([
+        { dptCodeActuel: '76', dptLibActuel: 'Seine-Maritime' },
+      ] as never);
+
+      await getRequetesEntite(null, { departementCodes: '76' });
+
+      expect(situationFiltersOf()).toEqual([postalBranch({ startsWith: '76' }), sirecBranch(['Seine-Maritime'])]);
+      expect(prisma.commune.groupBy).toHaveBeenCalledWith({
+        by: ['dptCodeActuel', 'dptLibActuel'],
+        where: { dptCodeActuel: { in: ['76'] } },
+      });
+    });
+
+    it('lists several department codes behind a single adresse branch', async () => {
+      await getRequetesEntite(null, { departementCodes: '29,76' });
+
+      // Guard against the shape that emits one LEFT JOIN on Adresse per code: the codes belong
+      // inside one `adresse` branch, not one branch each.
+      expect(situationFiltersOf()).toEqual([postalBranch({ startsWith: '29' }, { startsWith: '76' })]);
+    });
+
+    it('never matches on the SIREC department a situation that has a postal code', async () => {
+      vi.mocked(prisma.commune.groupBy).mockResolvedValue([
+        { dptCodeActuel: '76', dptLibActuel: 'Seine-Maritime' },
+      ] as never);
+
+      await getRequetesEntite(null, { departementCodes: '76' });
+
+      // Guard against over-matching: a situation whose lieu points to another department must
+      // not come up under its SIREC department.
+      const [, sirec] = situationFiltersOf() as [unknown, { lieuDeSurvenue: unknown }];
+      expect(sirec.lieuDeSurvenue).toEqual({
+        codePostal: '',
+        OR: [{ adresse: { is: null } }, { adresse: { codePostal: '' } }],
+      });
+    });
+
+    it('keeps resolving alphanumeric department codes through InseePostal', async () => {
+      vi.mocked(prisma.inseePostal.findMany).mockResolvedValue([{ codePostal: '20000' }] as never);
+      vi.mocked(prisma.commune.groupBy).mockResolvedValue([
+        { dptCodeActuel: '2A', dptLibActuel: 'Corse-du-Sud' },
+      ] as never);
+
+      await getRequetesEntite(null, { departementCodes: '2A' });
+
+      expect(situationFiltersOf()).toEqual([postalBranch({ in: ['20000'] }), sirecBranch(['Corse-du-Sud'])]);
+    });
+
+    it('falls back to the postal branch alone when the geo referential is not seeded', async () => {
+      await getRequetesEntite(null, { departementCodes: '76' });
+
+      expect(situationFiltersOf()).toEqual([postalBranch({ startsWith: '76' })]);
+    });
+
+    it('applies the same filter when counting requests per department', async () => {
+      vi.mocked(prisma.commune.groupBy).mockResolvedValue([
+        { dptCodeActuel: '76', dptLibActuel: 'Seine-Maritime' },
+      ] as never);
+      mockedRequeteEntite.count.mockResolvedValue(7);
+
+      const counts = await getRequetesCountsByDepartement(null, ['76'], {});
+
+      expect(counts).toEqual([{ code: '76', count: 7 }]);
+      expect(mockedRequeteEntite.count).toHaveBeenCalledWith({
+        where: {
+          AND: [
+            {
+              requete: {
+                situations: { some: { OR: [postalBranch({ startsWith: '76' }), sirecBranch(['Seine-Maritime'])] } },
+              },
+            },
+          ],
+        },
+      });
+    });
+
+    it('resolves the department labels once for the whole set of counted codes', async () => {
+      vi.mocked(prisma.commune.groupBy).mockResolvedValue([
+        { dptCodeActuel: '29', dptLibActuel: 'Finistère' },
+        { dptCodeActuel: '76', dptLibActuel: 'Seine-Maritime' },
+      ] as never);
+      mockedRequeteEntite.count.mockResolvedValue(0);
+
+      await getRequetesCountsByDepartement(null, ['29', '76'], {});
+
+      // One lookup for the whole set, not one per code: the counters build a where clause per
+      // department and each of them used to re-read the labels.
+      expect(prisma.commune.groupBy).toHaveBeenCalledTimes(1);
+      expect(prisma.commune.groupBy).toHaveBeenCalledWith({
+        by: ['dptCodeActuel', 'dptLibActuel'],
+        where: { dptCodeActuel: { in: ['29', '76'] } },
+      });
+    });
+
+    it('gives each counted code only its own department label', async () => {
+      vi.mocked(prisma.commune.groupBy).mockResolvedValue([
+        { dptCodeActuel: '29', dptLibActuel: 'Finistère' },
+        { dptCodeActuel: '76', dptLibActuel: 'Seine-Maritime' },
+      ] as never);
+      mockedRequeteEntite.count.mockResolvedValue(0);
+
+      await getRequetesCountsByDepartement(null, ['29', '76'], {});
+
+      const sirecBranchOf = (call: number) => {
+        const { where } = vi.mocked(prisma.requeteEntite.count).mock.calls[call]?.[0] ?? {};
+        const branches = (where as { AND: { requete: { situations: { some: { OR: unknown[] } } } }[] }).AND[0].requete
+          .situations.some.OR;
+        return branches[1];
+      };
+
+      expect(sirecBranchOf(0)).toEqual(sirecBranch(['Finistère']));
+      expect(sirecBranchOf(1)).toEqual(sirecBranch(['Seine-Maritime']));
+    });
+  });
+
   describe('departementsLieuSurvenue', () => {
     const rowWithSituations = (situations: Record<string, unknown>[]) =>
       ({
@@ -607,23 +768,33 @@ describe('requetesEntite.service', () => {
       vi.clearAllMocks();
       mockedRequeteEntite.count.mockResolvedValue(1);
       vi.mocked(prisma.inseePostal.findMany).mockResolvedValue([]);
-      vi.mocked(prisma.commune.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.commune.groupBy).mockResolvedValue([]);
+    });
+
+    // Same reason as the department filter block above: `vi.clearAllMocks()` clears the calls
+    // but keeps the implementations, so these would otherwise be served to whichever test
+    // reads the mock next.
+    afterEach(() => {
+      mockedRequeteEntite.count.mockReset();
+      mockedRequeteEntite.findMany.mockReset();
+      vi.mocked(prisma.inseePostal.findMany).mockReset();
+      vi.mocked(prisma.commune.groupBy).mockReset();
     });
 
     it('falls back to the SIREC department when the situation has no postal code', async () => {
       mockedRequeteEntite.findMany.mockResolvedValueOnce([
         rowWithSituations([{ ...noLieu, sirecDepartement: 'Seine-Maritime' }]),
       ]);
-      vi.mocked(prisma.commune.findMany).mockResolvedValue([
+      vi.mocked(prisma.commune.groupBy).mockResolvedValue([
         { dptCodeActuel: '76', dptLibActuel: 'Seine-Maritime' },
       ] as never);
 
       const { data } = await getRequetesEntite(null, {});
 
       expect(data[0].departementsLieuSurvenue).toEqual([{ code: '76', lib: 'Seine-Maritime' }]);
-      expect(prisma.commune.findMany).toHaveBeenCalledWith({
+      expect(prisma.commune.groupBy).toHaveBeenCalledWith({
+        by: ['dptCodeActuel', 'dptLibActuel'],
         where: { OR: [{ dptLibActuel: { in: ['Seine-Maritime'] } }] },
-        select: { dptCodeActuel: true, dptLibActuel: true },
       });
     });
 
@@ -633,7 +804,7 @@ describe('requetesEntite.service', () => {
           { lieuDeSurvenue: { codePostal: '29200', adresse: null }, sirecDepartement: 'Seine-Maritime' },
         ]),
       ]);
-      vi.mocked(prisma.commune.findMany).mockResolvedValue([
+      vi.mocked(prisma.commune.groupBy).mockResolvedValue([
         { dptCodeActuel: '29', dptLibActuel: 'Finistère' },
       ] as never);
 
@@ -648,7 +819,7 @@ describe('requetesEntite.service', () => {
       const { data } = await getRequetesEntite(null, {});
 
       expect(data[0].departementsLieuSurvenue).toEqual([]);
-      expect(prisma.commune.findMany).not.toHaveBeenCalled();
+      expect(prisma.commune.groupBy).not.toHaveBeenCalled();
     });
 
     it('stays empty when the SIREC department has no counterpart in the geo referential', async () => {
@@ -672,7 +843,7 @@ describe('requetesEntite.service', () => {
       vi.mocked(prisma.inseePostal.findMany).mockResolvedValue([
         { codePostal: '76000', commune: { dptCodeActuel: '76' } },
       ] as never);
-      vi.mocked(prisma.commune.findMany).mockResolvedValue([
+      vi.mocked(prisma.commune.groupBy).mockResolvedValue([
         { dptCodeActuel: '76', dptLibActuel: 'Seine-Maritime' },
       ] as never);
 

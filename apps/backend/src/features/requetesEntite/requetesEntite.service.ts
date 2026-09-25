@@ -175,8 +175,8 @@ const buildDeptPostalFilter = async (deptCodes: string[]): Promise<Prisma.LieuDe
   const lookupCodes = deptCodes.filter(needsLookup);
   const prefixCodes = deptCodes.filter((c) => !needsLookup(c));
 
-  const orConditions: Prisma.LieuDeSurvenueWhereInput[] = prefixCodes.map((code) => ({
-    OR: [{ codePostal: { startsWith: code } }, { adresse: { codePostal: { startsWith: code } } }],
+  const codePostalFilters: ({ startsWith: string } | { in: string[] })[] = prefixCodes.map((code) => ({
+    startsWith: code,
   }));
 
   if (lookupCodes.length > 0) {
@@ -187,13 +187,51 @@ const buildDeptPostalFilter = async (deptCodes: string[]): Promise<Prisma.LieuDe
     });
     const cps = rows.map((r) => r.codePostal);
     if (cps.length > 0) {
-      orConditions.push({
-        OR: [{ codePostal: { in: cps } }, { adresse: { codePostal: { in: cps } } }],
-      });
+      codePostalFilters.push({ in: cps });
     }
   }
 
-  return orConditions.length === 0 ? null : { OR: orConditions };
+  if (codePostalFilters.length === 0) {
+    return null;
+  }
+
+  // Prisma emits one LEFT JOIN on Adresse for every place `adresse` appears in the filter, so
+  // the codes are listed once under the lieu and once under a single `adresse`, rather than a
+  // pair per code: "some code matches the lieu or its adresse" is the same thing as
+  // "some code matches the lieu, or some code matches its adresse".
+  const matchesAnyCode = codePostalFilters.map((codePostal) => ({ codePostal }));
+
+  return { OR: [{ OR: matchesAnyCode }, { adresse: { OR: matchesAnyCode } }] };
+};
+
+// Commune holds one row per commune, ~36 000 of them for 101 departments, so the lookup goes
+// through GROUP BY: Postgres returns one row per department instead of several hundred that
+// would then have to be deduplicated client-side.
+const resolveDepartementLibsByCode = async (deptCodes: string[]): Promise<Map<string, string>> => {
+  const rows = await prisma.commune.groupBy({
+    by: ['dptCodeActuel', 'dptLibActuel'],
+    where: { dptCodeActuel: { in: deptCodes } },
+  });
+
+  return new Map(rows.map((row) => [row.dptCodeActuel, row.dptLibActuel]));
+};
+
+// Situations migrated from SIREC often have no postal code at all: their only geographic clue
+// is the "département en charge" label SIREC carried, whose wording is the INSEE one.
+const buildSirecDepartementFilter = (departementLibs: string[]): Prisma.SituationWhereInput | null => {
+  if (departementLibs.length === 0) {
+    return null;
+  }
+
+  return {
+    sirecDepartement: { in: departementLibs },
+    // Only when no postal code is available, so that a situation whose lieu points elsewhere
+    // is never matched on its SIREC department. Mirrors what the list displays.
+    lieuDeSurvenue: {
+      codePostal: '',
+      OR: [{ adresse: { is: null } }, { adresse: { codePostal: '' } }],
+    },
+  };
 };
 
 const buildRequetesEntiteWhere = async (
@@ -208,6 +246,9 @@ const buildRequetesEntiteWhere = async (
     over90Days?: string;
     rappel?: string;
   },
+  // The filter counters build one where clause per department code: they resolve the labels
+  // once for the whole set and pass them in, so the lookup stays out of their loop.
+  departementLibsByCode?: Map<string, string>,
 ): Promise<Prisma.RequeteEntiteWhereInput> => {
   const { search, entiteId, departementCodes, domaineIds, statutIds, prioriteId, over90Days, rappel } = query;
   const searchConditions: Prisma.RequeteEntiteWhereInput = search ? createSearchConditionsForRequeteEntite(search) : {};
@@ -233,11 +274,21 @@ const buildRequetesEntiteWhere = async (
   }
   if (departementCodes) {
     const codes = splitCsv(departementCodes);
-    const lieuFilter = codes.length > 0 ? await buildDeptPostalFilter(codes) : null;
-    if (lieuFilter) {
-      andFilters.push({
-        requete: { situations: { some: { lieuDeSurvenue: lieuFilter } } },
-      });
+    if (codes.length > 0) {
+      const [lieuFilter, libsByCode] = await Promise.all([
+        buildDeptPostalFilter(codes),
+        departementLibsByCode ?? resolveDepartementLibsByCode(codes),
+      ]);
+      const sirecFilter = buildSirecDepartementFilter(codes.flatMap((code) => libsByCode.get(code) ?? []));
+      const situationFilters: Prisma.SituationWhereInput[] = [
+        ...(lieuFilter ? [{ lieuDeSurvenue: lieuFilter }] : []),
+        ...(sirecFilter ? [sirecFilter] : []),
+      ];
+      if (situationFilters.length > 0) {
+        andFilters.push({
+          requete: { situations: { some: { OR: situationFilters } } },
+        });
+      }
     }
   }
   if (domaineIds) {
@@ -366,9 +417,9 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
 
   const communesQuery =
     communeFilters.length > 0
-      ? prisma.commune.findMany({
+      ? prisma.commune.groupBy({
+          by: ['dptCodeActuel', 'dptLibActuel'],
           where: { OR: communeFilters },
-          select: { dptCodeActuel: true, dptLibActuel: true },
         })
       : Promise.resolve([]);
 
@@ -443,9 +494,18 @@ export const getRequetesCountsByDepartement = async (
   departementCodes: string[],
   baseQuery: { search?: string; entiteId?: string },
 ) => {
+  // One lookup for every code, instead of one per iteration of the loop below. Nothing to look
+  // up when the filter is empty: the loop does not run either.
+  const departementLibsByCode =
+    departementCodes.length > 0 ? await resolveDepartementLibsByCode(departementCodes) : new Map<string, string>();
+
   const results = await Promise.all(
     departementCodes.map(async (code) => {
-      const where = await buildRequetesEntiteWhere(entiteIds, { ...baseQuery, departementCodes: code });
+      const where = await buildRequetesEntiteWhere(
+        entiteIds,
+        { ...baseQuery, departementCodes: code },
+        departementLibsByCode,
+      );
       const count = await prisma.requeteEntite.count({ where });
       return { code, count };
     }),
