@@ -135,6 +135,9 @@ export const isUserOwner = async (
     where: {
       id: { in: uploadedFileIds },
       uploadedById: userId,
+      // A file attached to a discussion message can no longer be moved: the caller is refused before
+      // anything is written, rather than halfway through the attachment.
+      requeteMessageId: null,
     },
   });
 
@@ -198,30 +201,34 @@ const updateFilesWithRelation = async (
     for (const fileAfter of filesAfter) {
       const fileBefore = filesBefore.find((f) => f.id === fileAfter.id);
       if (fileBefore) {
-        await createChangeLog({
-          entity: 'UploadedFile',
-          entityId: fileAfter.id,
-          action: ChangeLogAction.UPDATED,
-          before: {
-            requeteId: fileBefore.requeteId,
-            requeteEtapeId: fileBefore.requeteEtapeId,
-            faitSituationId: fileBefore.faitSituationId,
-            demarchesEngageesId: fileBefore.demarchesEngageesId,
-            requeteMessageId: fileBefore.requeteMessageId,
-            status: fileBefore.status,
-            entiteId: fileBefore.entiteId,
-          } as Prisma.JsonObject,
-          after: {
-            requeteId: fileAfter.requeteId,
-            requeteEtapeId: fileAfter.requeteEtapeId,
-            faitSituationId: fileAfter.faitSituationId,
-            demarchesEngageesId: fileAfter.demarchesEngageesId,
-            requeteMessageId: fileAfter.requeteMessageId,
-            status: fileAfter.status,
-            entiteId: fileAfter.entiteId,
-          } as Prisma.JsonObject,
-          changedById,
-        });
+        await createChangeLog(
+          {
+            entity: 'UploadedFile',
+            entityId: fileAfter.id,
+            action: ChangeLogAction.UPDATED,
+            before: {
+              requeteId: fileBefore.requeteId,
+              requeteEtapeId: fileBefore.requeteEtapeId,
+              faitSituationId: fileBefore.faitSituationId,
+              demarchesEngageesId: fileBefore.demarchesEngageesId,
+              requeteMessageId: fileBefore.requeteMessageId,
+              status: fileBefore.status,
+              entiteId: fileBefore.entiteId,
+            } as Prisma.JsonObject,
+            after: {
+              requeteId: fileAfter.requeteId,
+              requeteEtapeId: fileAfter.requeteEtapeId,
+              faitSituationId: fileAfter.faitSituationId,
+              demarchesEngageesId: fileAfter.demarchesEngageesId,
+              requeteMessageId: fileAfter.requeteMessageId,
+              status: fileAfter.status,
+              entiteId: fileAfter.entiteId,
+            } as Prisma.JsonObject,
+            changedById,
+          },
+          // The changelog belongs to the same transaction as the attachment it describes.
+          tx,
+        );
       }
     }
   }
@@ -276,8 +283,14 @@ export const setRequeteFile = async (
   uploadedFileId: UploadedFile['id'][],
   entiteId: string | null = null,
   changedById?: string,
+  tx?: Prisma.TransactionClient,
 ) => {
-  return updateFilesWithRelation(uploadedFileId, { requeteId }, entiteId, changedById);
+  const attachFiles = (client: Prisma.TransactionClient) =>
+    updateFilesWithRelation(uploadedFileId, { requeteId }, entiteId, changedById, client);
+
+  // Without a transaction, a batch holding one file already attached to a message kept the rows the
+  // update did manage to move before the refusal.
+  return tx ? attachFiles(tx) : prisma.$transaction(attachFiles);
 };
 
 export const setFaitFiles = async (

@@ -102,13 +102,16 @@ export const MessageComposer = ({ requestId, onSent }: MessageComposerProps) => 
 
     const notYetUploaded = filesToUpload.filter((file) => !uploadedIdsRef.current.has(file));
     if (notYetUploaded.length > 0) {
-      try {
-        const uploaded = await Promise.all(notYetUploaded.map((file) => uploadFileMutation.mutateAsync(file)));
-        uploaded.forEach((result, index) => {
-          const file = notYetUploaded[index];
-          if (file) uploadedIdsRef.current.set(file, result.id);
-        });
-      } catch {
+      // Each upload records its own id: a failure in the batch must not throw away the files that did
+      // reach the server, otherwise retrying uploads them a second time and orphans the first copies.
+      const results = await Promise.allSettled(
+        notYetUploaded.map(async (file) => {
+          const { id } = await uploadFileMutation.mutateAsync(file);
+          uploadedIdsRef.current.set(file, id);
+        }),
+      );
+
+      if (results.some((result) => result.status === 'rejected')) {
         setIsSubmitting(false);
         setSubmitError(UPLOAD_ERROR);
         return;
