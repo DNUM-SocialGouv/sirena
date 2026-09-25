@@ -186,6 +186,31 @@ const buildDeptPostalFilter = async (deptCodes: string[]): Promise<Prisma.LieuDe
   return orConditions.length === 0 ? null : { OR: orConditions };
 };
 
+// Situations migrated from SIREC often have no postal code at all: their only geographic clue
+// is the "département en charge" label SIREC carried, whose wording is the INSEE one.
+const buildSirecDepartementFilter = async (deptCodes: string[]): Promise<Prisma.SituationWhereInput | null> => {
+  const rows = await prisma.commune.findMany({
+    where: { dptCodeActuel: { in: deptCodes } },
+    select: { dptLibActuel: true },
+    distinct: ['dptCodeActuel'],
+  });
+  const libs = rows.map((r) => r.dptLibActuel);
+
+  if (libs.length === 0) {
+    return null;
+  }
+
+  return {
+    sirecDepartement: { in: libs },
+    // Only when no postal code is available, so that a situation whose lieu points elsewhere
+    // is never matched on its SIREC department. Mirrors what the list displays.
+    lieuDeSurvenue: {
+      codePostal: '',
+      OR: [{ adresse: { is: null } }, { adresse: { codePostal: '' } }],
+    },
+  };
+};
+
 const buildRequetesEntiteWhere = async (
   entiteIds: string[] | null,
   query: {
@@ -223,11 +248,20 @@ const buildRequetesEntiteWhere = async (
   }
   if (departementCodes) {
     const codes = splitCsv(departementCodes);
-    const lieuFilter = codes.length > 0 ? await buildDeptPostalFilter(codes) : null;
-    if (lieuFilter) {
-      andFilters.push({
-        requete: { situations: { some: { lieuDeSurvenue: lieuFilter } } },
-      });
+    if (codes.length > 0) {
+      const [lieuFilter, sirecFilter] = await Promise.all([
+        buildDeptPostalFilter(codes),
+        buildSirecDepartementFilter(codes),
+      ]);
+      const situationFilters: Prisma.SituationWhereInput[] = [
+        ...(lieuFilter ? [{ lieuDeSurvenue: lieuFilter }] : []),
+        ...(sirecFilter ? [sirecFilter] : []),
+      ];
+      if (situationFilters.length > 0) {
+        andFilters.push({
+          requete: { situations: { some: { OR: situationFilters } } },
+        });
+      }
     }
   }
   if (domaineIds) {
@@ -318,10 +352,14 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
   const extractDptCode = (cp: string): string => (cp.startsWith('97') ? cp.slice(0, 3) : cp.slice(0, 2));
 
   const allCps = new Set<string>();
+  // Situations migrated from SIREC often have no postal code at all (RPPS or "autre" mis en
+  // cause): their only geographic clue is the "département en charge" label SIREC carried.
+  const sirecDepartementLibs = new Set<string>();
   for (const re of rawData) {
     for (const s of re.requete?.situations ?? []) {
       const cp = getCpFromSituation(s);
       if (cp) allCps.add(cp);
+      else if (s.sirecDepartement) sirecDepartementLibs.add(s.sirecDepartement);
     }
   }
 
@@ -344,10 +382,16 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
   }
   const uniqueDptCodes = [...allDptCodes];
 
+  // SIREC department labels are the INSEE ones, so Commune resolves them to a code.
+  const communeFilters = [
+    ...(uniqueDptCodes.length > 0 ? [{ dptCodeActuel: { in: uniqueDptCodes } }] : []),
+    ...(sirecDepartementLibs.size > 0 ? [{ dptLibActuel: { in: [...sirecDepartementLibs] } }] : []),
+  ];
+
   const communesQuery =
-    uniqueDptCodes.length > 0
+    communeFilters.length > 0
       ? prisma.commune.findMany({
-          where: { dptCodeActuel: { in: uniqueDptCodes } },
+          where: { OR: communeFilters },
           select: { dptCodeActuel: true, dptLibActuel: true },
         })
       : Promise.resolve([]);
@@ -365,8 +409,10 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
   ]);
 
   const dptToDept: Record<string, { code: string; lib: string }> = {};
+  const libToDept: Record<string, { code: string; lib: string }> = {};
   for (const c of communes) {
     dptToDept[c.dptCodeActuel] = { code: c.dptCodeActuel, lib: c.dptLibActuel };
+    libToDept[c.dptLibActuel] = { code: c.dptCodeActuel, lib: c.dptLibActuel };
   }
 
   const data = enrichedRows.map(({ requeteEntite, enrichedSituations }) => {
@@ -376,7 +422,13 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
     const seenDptCodes = new Set<string>();
     const departementsLieuSurvenue = (requeteEntite.requete?.situations ?? []).flatMap((s) => {
       const cp = getCpFromSituation(s);
-      if (!cp) return [];
+      if (!cp) {
+        // No postal code: fall back to the department SIREC was handling the request with.
+        const fromSirec = s.sirecDepartement ? libToDept[s.sirecDepartement] : undefined;
+        if (!fromSirec || seenDptCodes.has(fromSirec.code)) return [];
+        seenDptCodes.add(fromSirec.code);
+        return [fromSirec];
+      }
       const dptCode = cpToDptCode.get(cp) ?? extractDptCode(cp);
       if (seenDptCodes.has(dptCode)) return [];
       seenDptCodes.add(dptCode);
