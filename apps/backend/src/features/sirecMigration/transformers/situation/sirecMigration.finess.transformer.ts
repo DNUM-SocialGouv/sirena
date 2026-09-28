@@ -34,8 +34,18 @@ export interface SirenaFinessResult {
   lieuDeSurvenueData: SirenaLieuDeSurvenueData | null;
 }
 
+// Lignes SIREC dont le nofinesset est absent ou mal renseigné en base : correction manuelle par id_data.
+const FINESS_CORRECTIONS_BY_ID_DATA: Record<number, string> = {
+  185334: '590034740',
+  245214: '450000286',
+  170084: '390780146',
+  141822: '060780608',
+  206675: '790000392',
+};
+
 export function transformSirecFiness(finessData: SirecFinessData): SirenaFinessResult {
-  if (!finessData.nofinesset) {
+  const nofinesset = finessData.nofinesset ?? FINESS_CORRECTIONS_BY_ID_DATA[finessData.id_data];
+  if (!nofinesset) {
     throw new SirecDataError(`Mis en cause FINESS (id_data=${finessData.id_data}) : nofinesset est null`);
   }
 
@@ -46,7 +56,7 @@ export function transformSirecFiness(finessData: SirecFinessData): SirenaFinessR
     misEnCauseTypeId: entry.misEnCause.misEnCauseTypeId,
     misEnCauseTypePrecisionId: entry.misEnCause.misEnCauseTypePrecisionId,
     ...(entry.lieuSurvenue === undefined && {
-      finess: finessData.nofinesset,
+      finess: nofinesset,
       nomService: finessData.rs ?? '',
       codePostal: finessData.codepostal,
       ville: finessData.libcommune,
@@ -60,7 +70,7 @@ export function transformSirecFiness(finessData: SirecFinessData): SirenaFinessR
   return {
     misEnCauseData,
     lieuDeSurvenueData: {
-      finess: finessData.nofinesset,
+      finess: nofinesset,
       codePostal: finessData.codepostal ?? '',
       categCode: String(finessData.categetab ?? ''),
       categLib: finessData.libcategetab ?? '',
