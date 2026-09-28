@@ -1,20 +1,26 @@
 import { client } from '@/lib/api/hc.ts';
-import { handleRequestErrors } from '@/lib/api/tanstackQuery.ts';
+import { handleRequestErrors, type RequestErrorOptions } from '@/lib/api/tanstackQuery.ts';
 
 export type FetchRequeteMessagesParams = {
   limit?: number;
   before?: string;
+  after?: string;
 };
 
-export async function fetchRequeteMessages(requestId: string, params: FetchRequeteMessagesParams = {}) {
+export async function fetchRequeteMessages(
+  requestId: string,
+  params: FetchRequeteMessagesParams = {},
+  options: RequestErrorOptions = {},
+) {
   const res = await client['requete-messages'][':requeteId'].$get({
     param: { requeteId: requestId },
     query: {
       ...(params.limit ? { limit: String(params.limit) } : {}),
       ...(params.before ? { before: params.before } : {}),
+      ...(params.after ? { after: params.after } : {}),
     },
   });
-  await handleRequestErrors(res);
+  await handleRequestErrors(res, options);
   return res.json();
 }
 
@@ -38,4 +44,13 @@ export async function markRequeteDiscussionRead(requestId: string) {
   await handleRequestErrors(res, { silentToastError: true });
   const { data } = await res.json();
   return data;
+}
+
+export async function fetchRequeteUnreadCount(requestId: string) {
+  const res = await client['requete-messages'][':requeteId']['unread-count'].$get({
+    param: { requeteId: requestId },
+  });
+  await handleRequestErrors(res, { silentToastError: true });
+  const { data } = await res.json();
+  return data.unreadCount;
 }

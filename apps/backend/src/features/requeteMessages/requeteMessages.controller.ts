@@ -9,9 +9,19 @@ import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { hasFeature } from '../featureFlags/featureFlags.service.js';
 import { getRequeteEntiteStatutId, hasAccessToRequete } from '../requetesEntite/requetesEntite.service.js';
-import { getRequeteMessagesRoute, markMessagesReadRoute, postRequeteMessageRoute } from './requeteMessages.route.js';
+import {
+  getRequeteMessagesRoute,
+  getUnreadCountRoute,
+  markMessagesReadRoute,
+  postRequeteMessageRoute,
+} from './requeteMessages.route.js';
 import { GetRequeteMessagesQuerySchema, PostRequeteMessageBodySchema } from './requeteMessages.schema.js';
-import { createRequeteMessage, getRequeteMessages, markAllMessagesAsRead } from './requeteMessages.service.js';
+import {
+  createRequeteMessage,
+  getRequeteMessages,
+  getUnreadCount,
+  markAllMessagesAsRead,
+} from './requeteMessages.service.js';
 
 type DiscussionContext = EntiteScopedContext;
 
@@ -50,6 +60,15 @@ const app = factoryWithRole
     c.get('logger').info({ requeteId, count: data.length }, 'Requete messages retrieved');
 
     return c.json({ data, meta });
+  })
+
+  .get('/:requeteId/unread-count', getUnreadCountRoute, async (c) => {
+    const { requeteId } = c.req.param();
+    await assertDiscussionAccess(c, requeteId);
+
+    const unreadCount = await getUnreadCount(requeteId, c.get('userId'));
+
+    return c.json({ data: { unreadCount } });
   })
 
   .post('/:requeteId/read', markMessagesReadRoute, async (c) => {

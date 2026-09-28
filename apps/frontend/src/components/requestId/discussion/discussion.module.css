@@ -1,3 +1,19 @@
+.buttonCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  margin-left: 0.5rem;
+  padding: 0 0.375rem;
+  border-radius: 0.75rem;
+  background-color: var(--background-flat-error);
+  color: var(--text-inverted-error);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .panel {
   height: 100vh;
   display: flex;

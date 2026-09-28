@@ -30,3 +30,10 @@ export const markMessagesReadRoute = openApiProtectedRoute({
     ...openApiResponse(UnreadCountSchema),
   },
 });
+
+export const getUnreadCountRoute = openApiProtectedRoute({
+  description: 'Unread discussion messages count for the current user on a requete',
+  responses: {
+    ...openApiResponse(UnreadCountSchema),
+  },
+});
