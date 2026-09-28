@@ -33,16 +33,18 @@ spec:
           annotations:
             prometheus.io/scrape: "false"
         spec:
+          {{- if .Values.imagePullSecretsName }}
+          imagePullSecrets:
+            - name: {{ .Values.imagePullSecretsName }}
+          {{- end }}
           restartPolicy: Never
           securityContext:
             {{- toYaml .Values.podSecurityContext | nindent 12 }}
           initContainers:
-            # Récupère le dump depuis le bucket S3 OVH vers un volume partagé.
-            # rclone est un client S3-compatible générique : l'endpoint et la
-            # région du fournisseur sont des paramètres de premier ordre, pas des
-            # surcharges.
+            # Récupère le dump depuis le bucket S3 OVH vers un volume partagé,
+            # avec rclone (cf. apps/sirec-restore/Dockerfile).
             - name: s3-download
-              image: {{ .Values.images.s3 }}
+              image: {{ .Values.image }}
               imagePullPolicy: IfNotPresent
               securityContext:
                 {{- toYaml .Values.containerSecurityContext | nindent 16 }}
@@ -128,10 +130,10 @@ spec:
               resources:
                 {{- toYaml .Values.resources.download | nindent 16 }}
           containers:
-            # Importe le dump dans MariaDB. Version du client alignée sur celle
-            # du serveur (services-integration/services/charts/mariadb).
+            # Importe le dump dans MariaDB, avec le client embarqué dans la même
+            # image que celle du téléchargement.
             - name: mariadb-import
-              image: {{ .Values.images.mariadb }}
+              image: {{ .Values.image }}
               imagePullPolicy: IfNotPresent
               securityContext:
                 {{- toYaml .Values.containerSecurityContext | nindent 16 }}
