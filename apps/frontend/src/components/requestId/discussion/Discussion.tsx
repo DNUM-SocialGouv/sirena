@@ -40,6 +40,7 @@ export const Discussion = ({ requestId }: DiscussionProps) => {
     <div className={styles.thread}>
       <MessageList
         messages={messages}
+        requestId={requestId}
         ownEntiteId={profile.data?.topEntiteId ?? null}
         hasMore={!!hasNextPage}
         isFetchingNextPage={isFetchingNextPage}

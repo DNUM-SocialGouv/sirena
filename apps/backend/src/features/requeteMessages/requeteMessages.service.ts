@@ -1,7 +1,9 @@
 import type { RequeteMessageEvent } from '@sirena/common/constants';
 import type { PinoLogger } from 'hono-pino';
+import { getOriginalFileName } from '../../helpers/file.js';
 import { sseEventManager } from '../../helpers/sse.js';
 import { type Prisma, prisma } from '../../libs/prisma.js';
+import { setMessageFiles } from '../uploadedFiles/uploadedFiles.service.js';
 import type { GetRequeteMessagesQuery, PostRequeteMessageDto } from './requeteMessages.type.js';
 
 const messageSelect = (currentUserId: string) =>
@@ -12,12 +14,34 @@ const messageSelect = (currentUserId: string) =>
     createdAt: true,
     entite: { select: { id: true, nomComplet: true, entiteTypeId: true } },
     author: { select: { prenom: true, nom: true } },
+    uploadedFiles: {
+      select: {
+        id: true,
+        fileName: true,
+        metadata: true,
+        size: true,
+        status: true,
+        scanStatus: true,
+        sanitizeStatus: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    },
     reads: { where: { userId: currentUserId }, select: { userId: true }, take: 1 },
   }) satisfies Prisma.RequeteMessageSelect;
 
 type MessageRow = Prisma.RequeteMessageGetPayload<{ select: ReturnType<typeof messageSelect> }>;
 
-const toMessageDto = ({ reads, ...rest }: MessageRow) => ({ ...rest, isReadByCurrentUser: reads.length > 0 });
+const toMessageDto = ({ reads, uploadedFiles, ...rest }: MessageRow) => ({
+  ...rest,
+  // The stored name is the one minio was given; what the agent uploaded lives in the metadata, like
+  // everywhere else the app shows a file name.
+  uploadedFiles: uploadedFiles.map(({ metadata, ...file }) => ({
+    ...file,
+    fileName: getOriginalFileName({ fileName: file.fileName, metadata }),
+  })),
+  isReadByCurrentUser: reads.length > 0,
+});
 
 export type RequeteMessageDto = ReturnType<typeof toMessageDto>;
 
@@ -146,6 +170,10 @@ export const createRequeteMessage = async (
     // here never leaves a posted message behind an unread count that still counts it.
     const { markedIds: read } = await markAllMessagesAsRead(requeteId, userId, entiteId, tx);
 
+    if (dto.fileIds.length > 0) {
+      await setMessageFiles(created.id, dto.fileIds, entiteId, userId, tx);
+    }
+
     // Read back inside the transaction too: an answer that cannot be built is an answer that was never
     // posted, instead of a 500 on a message the requete already carries.
     return {
@@ -155,7 +183,7 @@ export const createRequeteMessage = async (
     };
   });
 
-  logger.info({ requeteId, messageId, userId }, 'Requete message persisted');
+  logger.info({ requeteId, messageId, userId, fileCount: dto.fileIds.length }, 'Requete message persisted');
 
   await emitMessagesRead(requeteId, userId, entiteId, markedIds);
 
