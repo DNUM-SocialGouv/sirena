@@ -11,6 +11,8 @@ metadata:
 data:
   # Endpoint S3 OVH du bucket sirena-migration-s3 (resources/s3_migration.yaml).
   S3_ENDPOINT_URL: {{ .Values.config.s3EndpointUrl | quote }}
+  # Région du bucket, exigée par la signature SigV4 de l'endpoint ci-dessus.
+  S3_REGION: {{ .Values.config.s3Region | quote }}
   # Nom de la base à réécrire vers MARIADB_SIREC_DB pendant l'import.
   #
   # Vide, aucune réécriture n'est faite. C'est le cas des dumps de

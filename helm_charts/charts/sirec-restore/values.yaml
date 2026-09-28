@@ -11,10 +11,12 @@ suspend: true
 schedule: "0 2 * * *"
 
 images:
-  # Client S3 générique (MinIO Client) pour récupérer le dump depuis le bucket.
-  # Le dépôt docker.io/minio/mc n'existe plus : l'image est tirée de quay.io,
-  # épinglée par digest pour ne pas dépendre d'un cache de nœud (IfNotPresent).
-  s3: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
+  # Client S3 générique (rclone) pour récupérer le dump depuis le bucket.
+  # Remplace MinIO Client, dont plus aucune image publique n'est tirable
+  # anonymement : docker.io/minio/mc comme quay.io/minio/mc répondent 401 sur
+  # n'importe quel tag ou digest. Épinglée par digest (index multi-arch) pour ne
+  # pas dépendre d'un cache de nœud (IfNotPresent).
+  s3: docker.io/rclone/rclone:1.75.1@sha256:45401ad7410db1d67ffdb58e19059ad20b0d8e0285a60e38bbec55cc1019c7a5
   # Client MariaDB, version alignée sur le serveur (services-integration/…/mariadb).
   mariadb: docker.io/mariadb:11.8.7
 
@@ -28,6 +30,10 @@ mariadbSirecSecretName: mariadb-sirec-secret
 config:
   # Endpoint S3 OVH du bucket sirena-migration-s3 (resources/s3_migration.yaml).
   s3EndpointUrl: "https://s3.gra.io.cloud.ovh.net"
+  # Région du bucket, portée par la signature SigV4 : OVH rejette la requête
+  # (SignatureDoesNotMatch) dès que le périmètre signé ne correspond pas à
+  # l'endpoint. rclone ne la découvre pas, il faut donc la donner.
+  s3Region: "gra"
   # Nom de base à réécrire vers MARIADB_SIREC_DB pendant l'import (vide = aucune
   # réécriture ; "sirec_voo4" si l'on repasse sur dumps_preprod/).
   dumpSourceDb: ""
@@ -79,6 +85,7 @@ volumes:
   # Stockage du dump compressé (les dumps pèsent ~500 MiB).
   dump:
     sizeLimit: 5Gi
-  # Config mc + fichiers temporaires.
+  # Fichiers temporaires des deux containers (HOME de l'import, temp-dir rclone),
+  # la racine étant en lecture seule.
   tmp:
     sizeLimit: 128Mi
