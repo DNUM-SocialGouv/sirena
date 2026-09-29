@@ -46,7 +46,7 @@ const REQUETE_STATUT_IDS = Object.values(REQUETE_STATUT_TYPES) as string[];
 
 export const GetRequetesEntiteQuerySchema = paginationQueryParamsSchema(columns).extend({
   limit: z.coerce.number().int().min(1).max(100).default(10),
-  offset: z.coerce.number().int().min(0).optional(),
+  offset: z.string().trim().min(1).pipe(z.coerce.number<string>().int().min(0)).optional(),
   entiteId: z.string().optional(),
   departementCodes: z.string().max(CSV_FILTER_MAX).optional(),
   domaineIds: z.string().max(CSV_FILTER_MAX).optional(),

@@ -329,7 +329,7 @@ describe('RequetesEntite endpoints: /', () => {
       expect(getRequetesEntite).not.toHaveBeenCalled();
     });
 
-    it.each(['-1', '0.5', 'NaN', 'Infinity'])('rejects an invalid offset of %s', async (offset) => {
+    it.each(['', ' ', '-1', '0.5', 'NaN', 'Infinity'])('rejects an invalid offset of %s', async (offset) => {
       const res = await client.index.$get({ query: { offset } });
 
       expect(res.status).toBe(400);
