@@ -1,0 +1,108 @@
+{
+  "archived": false,
+  "archived_directly": false,
+  "cache_ttl": null,
+  "can_delete": false,
+  "can_manage_db": true,
+  "can_restore": false,
+  "can_write": true,
+  "card_schema": 23,
+  "collection": {
+    "authority_level": null,
+    "can_write": true,
+    "id": "root",
+    "is_personal": false,
+    "is_remote_synced": false,
+    "metabase.collections.models.collection.root/is-root?": true,
+    "name": "Our analytics"
+  },
+  "collection_id": null,
+  "collection_position": null,
+  "collection_preview": true,
+  "creator_id": 3,
+  "dashboard": {
+    "id": 6,
+    "moderation_status": null,
+    "name": "[integration] Dashboard national"
+  },
+  "dashboard_count": 1,
+  "dashboard_id": 6,
+  "database_id": 4,
+  "dataset_query": {
+    "database": 4,
+    "lib/type": "mbql/query",
+    "stages": [
+      {
+        "lib/type": "mbql.stage/native",
+        "native": "-- Carte : « Nombre de comptes actifs par entité »\n-- Comptes utilisateurs au statut ACTIF, regroupés par entité de rattachement.\nSELECT\n  COALESCE(NULLIF(e.\"nomComplet\", ''), e.label, 'Non rattaché à une entité') AS \"Entité\",\n  COUNT(*)                                                                   AS \"Nombre de comptes actifs\"\nFROM \"User\" u\nLEFT JOIN \"Entite\" e ON e.id = u.\"entiteId\"\nWHERE u.\"statutId\" = 'ACTIF'\n  [[ AND u.\"createdAt\" >= {{start_date}} ]]\n  [[ AND u.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\nGROUP BY COALESCE(NULLIF(e.\"nomComplet\", ''), e.label, 'Non rattaché à une entité')\nORDER BY COUNT(*) DESC, 1 ASC;",
+        "template-tags": [
+          {
+            "display-name": "Start Date",
+            "id": "ddd1e7ca-b3fd-49f6-9cd7-88e79c7bb569",
+            "name": "start_date",
+            "type": "date"
+          },
+          {
+            "display-name": "End Date",
+            "id": "0a0af0c2-6c89-4c61-b233-fbd26a0d6234",
+            "name": "end_date",
+            "type": "date"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "Nombre de comptes ouverts avec un statut actif répartis par entité",
+  "dimension_mappings": null,
+  "dimensions": null,
+  "display": "table",
+  "document_id": null,
+  "embedding_params": null,
+  "embedding_type": null,
+  "enable_embedding": false,
+  "entity_id": "UCbPKJ1kak_DZqeWXLAN1",
+  "id": 106,
+  "is_remote_synced": false,
+  "legacy_query": null,
+  "moderation_reviews": [],
+  "name": "Nombre de comptes actifs par entité",
+  "param_fields": {},
+  "parameter_mappings": [],
+  "parameter_usage_count": 0,
+  "parameters": [
+    {
+      "id": "ddd1e7ca-b3fd-49f6-9cd7-88e79c7bb569",
+      "isMultiSelect": false,
+      "name": "Start Date",
+      "slug": "start_date",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "start_date"
+        ]
+      ],
+      "type": "date/single"
+    },
+    {
+      "id": "0a0af0c2-6c89-4c61-b233-fbd26a0d6234",
+      "isMultiSelect": false,
+      "name": "End Date",
+      "slug": "end_date",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "end_date"
+        ]
+      ],
+      "type": "date/single"
+    }
+  ],
+  "public_uuid_prefix": null,
+  "query_type": "native",
+  "source_card_id": null,
+  "table_id": null,
+  "type": "question",
+  "visualization_settings": {}
+}

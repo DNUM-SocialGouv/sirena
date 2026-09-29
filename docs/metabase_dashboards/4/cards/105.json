@@ -34,31 +34,36 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'CLOTUREE'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                         AND {{inclure_eig}} = 'false') ]];",
+        "native": "-- Carte : « Délai moyen de traitement (en jours) »\n-- Délai = nombre de jours entre la création de la requête et la PREMIÈRE clôture prononcée\n-- par l'entité. Les requêtes clôturées « Hors compétence » par cette entité sont exclues.\nWITH requetes AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, re.\"entiteId\" AS entite_id, r.\"createdAt\" AS date_creation\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE 1 = 1\n    [[ AND e.label = {{entity_label}} ]]\n    -- exclusion du motif « Hors compétence » (id d'enum : 'HORS_COMPETENCE')\n    AND NOT EXISTS (\n      SELECT 1\n      FROM \"RequeteEtape\" et_hc\n      JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j_hc ON j_hc.\"B\" = et_hc.id\n      WHERE et_hc.\"requeteId\" = re.\"requeteId\"\n        AND et_hc.\"entiteId\"  = re.\"entiteId\"\n        AND et_hc.\"statutId\"  = 'CLOTUREE'\n        AND j_hc.\"A\"          = 'HORS_COMPETENCE'\n    )\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                         AND {{inclure_eig}} = 'false') ]]\n),\npremiere_cloture AS (\n  -- clotureEffectiveDate est la date métier saisie par l'agent ; createdAt sert de repli\n  -- pour les étapes anciennes où elle n'est pas renseignée\n  SELECT\n    q.requete_id,\n    q.date_creation::date AS date_creation,\n    MIN(COALESCE(et.\"clotureEffectiveDate\", et.\"createdAt\"::date)) AS date_premiere_cloture\n  FROM requetes q\n  JOIN \"RequeteEtape\" et\n    ON et.\"requeteId\" = q.requete_id\n   AND et.\"entiteId\"  = q.entite_id\n   AND et.\"statutId\"  = 'CLOTUREE'\n  GROUP BY q.requete_id, q.date_creation::date\n)\nSELECT\n  ROUND(AVG(date_premiere_cloture - date_creation), 1) AS \"Délai moyen de traitement (en jours)\"\nFROM premiere_cloture\n-- garde-fou : dates de clôture antérieures (saisie SIREC)\nWHERE date_premiere_cloture >= date_creation;",
         "template-tags": [
           {
             "display-name": "Entity Label",
-            "id": "cc23122a-24e6-4299-91ae-a3d6e6e3e71c",
+            "id": "e9d21ae6-98b6-4133-8a5d-2f4cea506e1e",
             "name": "entity_label",
-            "required": true,
             "type": "text"
           },
           {
             "display-name": "Start Date",
-            "id": "1b5c1e68-6b21-4d5c-8d50-9af1862a4303",
+            "id": "e8d31466-0bd1-40d6-b444-01cb553dfeac",
             "name": "start_date",
             "type": "date"
           },
           {
             "display-name": "End Date",
-            "id": "f4098765-99bf-4fa5-a062-f5784b68228d",
+            "id": "1a9bfd42-9fdd-4da5-b619-a5a133e692bb",
             "name": "end_date",
             "type": "date"
           },
           {
             "display-name": "Domaine Fonctionnel",
-            "id": "d9c60aec-e4e0-42da-a7c8-810d9021669d",
+            "id": "7de461e2-6a66-4a28-b8cd-9a599930eadc",
             "name": "domaine_fonctionnel",
+            "type": "text"
+          },
+          {
+            "display-name": "Lieu De Survenue",
+            "id": "3afd34ba-558f-46e7-a89b-5a964a1f4bde",
+            "name": "lieu_de_survenue",
             "type": "text"
           },
           {
@@ -66,21 +71,15 @@
               true
             ],
             "display-name": "Inclure Eig",
-            "id": "3d576d88-8c7b-4211-a258-6d21c51e3637",
+            "id": "e3af8b67-058c-4fd4-a8ea-2f98165e7f76",
             "name": "inclure_eig",
             "type": "boolean"
-          },
-          {
-            "display-name": "Lieu De Survenue",
-            "id": "00a432f8-6b3d-4828-8951-52a04878b5d4",
-            "name": "lieu_de_survenue",
-            "type": "text"
           }
         ]
       }
     ]
   },
-  "description": "Nombre de requêtes affectées à mon entité administrative et au statut “clôturée”",
+  "description": "Le délai moyen de traitement correspond au nombre moyen de jours calendaires entre la date de création et la première date de clôture des requêtes clôturées. Les requêtes clôturées avec le motif « Hors compétence » sont exclues du calcul.",
   "dimension_mappings": null,
   "dimensions": null,
   "display": "scalar",
@@ -88,21 +87,20 @@
   "embedding_params": null,
   "embedding_type": null,
   "enable_embedding": false,
-  "entity_id": "_9ybydYPyhKzf76tn1pu5",
-  "id": 45,
+  "entity_id": "Ke-5RwadPEoHzu_gav_Sv",
+  "id": 105,
   "is_remote_synced": false,
   "legacy_query": null,
   "moderation_reviews": [],
-  "name": "Requêtes clôturées",
+  "name": "Délai moyen de traitement (en jours)",
   "param_fields": {},
   "parameter_mappings": [],
   "parameter_usage_count": 0,
   "parameters": [
     {
-      "id": "cc23122a-24e6-4299-91ae-a3d6e6e3e71c",
+      "id": "e9d21ae6-98b6-4133-8a5d-2f4cea506e1e",
       "isMultiSelect": false,
       "name": "Entity Label",
-      "required": true,
       "slug": "entity_label",
       "target": [
         "variable",
@@ -115,6 +113,13 @@
       "values_query_type": "list",
       "values_source_config": {
         "card_id": 46,
+        "label_field": [
+          "field",
+          "nomComplet",
+          {
+            "base-type": "type/Text"
+          }
+        ],
         "value_field": [
           "field",
           "label",
@@ -126,7 +131,7 @@
       "values_source_type": "card"
     },
     {
-      "id": "1b5c1e68-6b21-4d5c-8d50-9af1862a4303",
+      "id": "e8d31466-0bd1-40d6-b444-01cb553dfeac",
       "isMultiSelect": false,
       "name": "Start Date",
       "slug": "start_date",
@@ -140,7 +145,7 @@
       "type": "date/single"
     },
     {
-      "id": "f4098765-99bf-4fa5-a062-f5784b68228d",
+      "id": "1a9bfd42-9fdd-4da5-b619-a5a133e692bb",
       "isMultiSelect": false,
       "name": "End Date",
       "slug": "end_date",
@@ -154,7 +159,7 @@
       "type": "date/single"
     },
     {
-      "id": "d9c60aec-e4e0-42da-a7c8-810d9021669d",
+      "id": "7de461e2-6a66-4a28-b8cd-9a599930eadc",
       "isMultiSelect": true,
       "name": "Domaine Fonctionnel",
       "slug": "domaine_fonctionnel",
@@ -258,24 +263,7 @@
       "values_source_type": "static-list"
     },
     {
-      "default": [
-        true
-      ],
-      "id": "3d576d88-8c7b-4211-a258-6d21c51e3637",
-      "isMultiSelect": false,
-      "name": "Inclure Eig",
-      "slug": "inclure_eig",
-      "target": [
-        "variable",
-        [
-          "template-tag",
-          "inclure_eig"
-        ]
-      ],
-      "type": "boolean/="
-    },
-    {
-      "id": "00a432f8-6b3d-4828-8951-52a04878b5d4",
+      "id": "3afd34ba-558f-46e7-a89b-5a964a1f4bde",
       "isMultiSelect": true,
       "name": "Lieu De Survenue",
       "slug": "lieu_de_survenue",
@@ -585,6 +573,23 @@
         ]
       },
       "values_source_type": "static-list"
+    },
+    {
+      "default": [
+        true
+      ],
+      "id": "e3af8b67-058c-4fd4-a8ea-2f98165e7f76",
+      "isMultiSelect": false,
+      "name": "Inclure Eig",
+      "slug": "inclure_eig",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "inclure_eig"
+        ]
+      ],
+      "type": "boolean/="
     }
   ],
   "public_uuid_prefix": null,
