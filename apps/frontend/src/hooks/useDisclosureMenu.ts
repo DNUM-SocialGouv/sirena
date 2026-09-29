@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 export function hasFocusLeftMenu(next: Node | null, panel: HTMLElement | null, trigger: HTMLElement | null): boolean {
   if (!next) return false;
   if (panel?.contains(next) || trigger?.contains(next)) return false;
-  return !panel || !next.contains(panel);
+  return true;
 }
 
 type useDisclosureMenuOptions = {
