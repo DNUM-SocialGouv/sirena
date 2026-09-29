@@ -40,18 +40,22 @@ async function resolveSeedUser(email: string): Promise<{ id: string; roleId: str
   }
   const { prisma } = db;
 
-  const user = await prisma.user.findUnique({
-    where: { email },
-    select: { id: true, roleId: true },
-  });
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, roleId: true },
+    });
 
-  if (!user) {
-    throw new Error(
-      `Local auth: no user found for email "${email}". Seed the local database first (e.g. \`pnpm op:seed\`).`,
-    );
+    if (!user) {
+      throw new Error(
+        `Local auth: no user found for email "${email}". Seed the local database first (\`pnpm op:seed:e2e\`).`,
+      );
+    }
+
+    return user;
+  } finally {
+    await prisma.$disconnect();
   }
-
-  return user;
 }
 
 /**
@@ -60,8 +64,10 @@ async function resolveSeedUser(email: string): Promise<{ id: string; roleId: str
  * `auth_token` signed with AUTH_TOKEN_SECRET_KEY for an existing user.
  */
 export async function createLocalAuthFile(browser: Browser, email: string, authFile: string): Promise<void> {
-  if (!authTokenSecret) {
-    throw new Error('Local auth: AUTH_TOKEN_SECRET_KEY is required when E2E_TARGET=local.');
+  if (!authTokenSecret || !authTokenName || !isLoggedTokenName) {
+    throw new Error(
+      'Local auth: AUTH_TOKEN_SECRET_KEY, AUTH_TOKEN_NAME and IS_LOGGED_TOKEN_NAME are required when E2E_TARGET=local.',
+    );
   }
 
   const { id, roleId } = await resolveSeedUser(email);
@@ -100,8 +106,19 @@ export async function createLocalAuthFile(browser: Browser, email: string, authF
     // Sanity check: the forged cookie must reach an authenticated /home.
     const page = await context.newPage();
     await page.goto(`${baseUrl}/home`);
-    await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 15000 });
-    await expect(page.getByRole('heading', { name: 'Liste des requêtes', level: 1 })).toBeVisible({ timeout: 15000 });
+    try {
+      await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 15000 });
+      await expect(page.getByRole('heading', { name: 'Liste des requêtes', level: 1 })).toBeVisible({
+        timeout: 15000,
+      });
+    } catch (error) {
+      throw new Error(
+        `Local auth: the forged auth token was rejected (${baseUrl}/home did not load as an authenticated page). ` +
+          'Check that AUTH_TOKEN_SECRET_KEY matches the local backend and that the JWT format in localAuth.ts ' +
+          'still matches what the backend signs (algorithm, claims).',
+        { cause: error },
+      );
+    }
 
     await context.storageState({ path: authFile });
   } finally {

@@ -1,12 +1,12 @@
-import { closeSync, existsSync, openSync, unlinkSync } from 'node:fs';
+import { closeSync, existsSync, openSync, readFileSync, unlinkSync } from 'node:fs';
 import { type Browser, type BrowserContext, expect } from '@playwright/test';
-import { baseUrl, E2E_TARGET, ENTITY_ADMIN_USER, isLocalTarget } from './constants';
+import { authTokenName, baseUrl, E2E_TARGET, ENTITY_ADMIN_USER, isLocalTarget } from './constants';
 import { createLocalAuthFile } from './localAuth';
 import { loginWithProconnect } from './login';
 
 export interface AuthConfig {
   user: string;
-  password: string;
+  password?: string;
   organisation: string;
   fileName: string;
 }
@@ -22,12 +22,37 @@ export const AUTH_CONFIGS = {
   },
 } as const;
 
+const LOCAL_AUTH_MIN_REMAINING_SECONDS = 5 * 60;
+
+type StoredCookie = { name: string; expires: number };
+
+function hasValidLocalAuthCookie(authFile: string): boolean {
+  try {
+    const { cookies } = JSON.parse(readFileSync(authFile, 'utf8')) as { cookies?: StoredCookie[] };
+    const authCookie = cookies?.find((cookie) => cookie.name === authTokenName);
+    return authCookie !== undefined && authCookie.expires > Date.now() / 1000 + LOCAL_AUTH_MIN_REMAINING_SECONDS;
+  } catch {
+    return false;
+  }
+}
+
+function isAuthFileUsable(authFile: string): boolean {
+  if (!existsSync(authFile)) {
+    return false;
+  }
+  return !isLocalTarget || hasValidLocalAuthCookie(authFile);
+}
+
 export async function ensureAuthenticationFileExists(browser: Browser, config: AuthConfig): Promise<string> {
   const authFile = `playwright/.auth/${config.fileName}`;
   const lockFile = `${authFile}.lock`;
 
-  if (existsSync(authFile)) {
+  if (isAuthFileUsable(authFile)) {
     return authFile;
+  }
+
+  if (existsSync(authFile)) {
+    unlinkSync(authFile);
   }
 
   let hasLock = false;
@@ -42,11 +67,11 @@ export async function ensureAuthenticationFileExists(browser: Browser, config: A
       const startTime = Date.now();
 
       // Poll until auth file appears or timeout
-      while (!existsSync(authFile) && Date.now() - startTime < maxWaitMs) {
+      while (!isAuthFileUsable(authFile) && Date.now() - startTime < maxWaitMs) {
         await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
       }
 
-      if (existsSync(authFile)) {
+      if (isAuthFileUsable(authFile)) {
         return authFile;
       } else {
         throw new Error(`Timeout waiting for authentication file: ${authFile}`);
@@ -57,7 +82,7 @@ export async function ensureAuthenticationFileExists(browser: Browser, config: A
 
   try {
     // Double-check in case file appeared between lock acquisition and this check
-    if (existsSync(authFile)) {
+    if (isAuthFileUsable(authFile)) {
       return authFile;
     }
 
