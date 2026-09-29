@@ -643,7 +643,8 @@ model RequeteMessage {
   authorId String?
   author   User?   @relation(fields: [authorId], references: [id])
 
-  reads RequeteMessageRead[]
+  uploadedFiles UploadedFile[]
+  reads         RequeteMessageRead[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -705,11 +706,15 @@ model UploadedFile {
   demarchesEngagees   DemarchesEngagees? @relation(fields: [demarchesEngageesId], references: [id])
   demarchesEngageesId String?
 
+  requeteMessageId String?
+  requeteMessage   RequeteMessage? @relation(fields: [requeteMessageId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([entiteId])
   @@index([requeteEtapeId])
+  @@index([requeteMessageId])
 }
 
 model ChangeLog {

@@ -354,6 +354,7 @@ describe('RequetesEntite endpoints: /', () => {
       uploadedById: 'user1',
       status: 'PENDING',
       demarchesEngageesId: null,
+      requeteMessageId: null,
       canDelete: true,
       scanStatus: '',
       scanResult: '',

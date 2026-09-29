@@ -16,6 +16,7 @@ import {
   createUploadedFile,
   deleteUploadedFile,
   getUploadedFileById,
+  getUploadedFileByIdForEntite,
   isUploadedFileAttachedToImmutableAcknowledgment,
 } from './uploadedFiles.service.js';
 
@@ -41,6 +42,7 @@ const fakeFile: UploadedFile = {
   requeteId: 'requeteId',
   uploadedById: 'user1',
   demarchesEngageesId: null,
+  requeteMessageId: null,
   canDelete: true,
   scanStatus: 'PENDING',
   sanitizeStatus: 'PENDING',
@@ -67,6 +69,7 @@ vi.mock('../../libs/minio.js', () => ({
 vi.mock('./uploadedFiles.service.js', () => ({
   createUploadedFile: vi.fn(() => Promise.resolve(fakeFile)),
   getUploadedFileById: vi.fn(() => Promise.resolve(fakeFile)),
+  getUploadedFileByIdForEntite: vi.fn(() => Promise.resolve(fakeFile)),
   deleteUploadedFile: vi.fn(() => Promise.resolve()),
   isUploadedFileAttachedToImmutableAcknowledgment: vi.fn(() => Promise.resolve(false)),
 }));
@@ -270,6 +273,23 @@ describe('uploadedFiles.controller.ts', () => {
       expect(deleteFileFromMinio).not.toHaveBeenCalled();
     });
 
+    it('rejects deleting a file attached to a discussion message', async () => {
+      vi.mocked(getUploadedFileById).mockResolvedValueOnce({ ...fakeFile, requeteMessageId: 'message1' });
+
+      const res = await client[':id'].$delete({
+        param: { id: 'ffffffff-ffff-ffff-ffff-ffffffffffff' },
+      });
+      const body = await res.json();
+
+      expect(res.status).toBe(400);
+      expect(body).toEqual({
+        message: 'Un fichier joint à un message de discussion ne peut pas être supprimé.',
+        cause: { kind: ERROR_KIND.BUSINESS },
+      });
+      expect(deleteUploadedFile).not.toHaveBeenCalled();
+      expect(deleteFileFromMinio).not.toHaveBeenCalled();
+    });
+
     it('should return 400 if topEntiteId is not set', async () => {
       vi.mocked(entitesMiddleware).mockImplementationOnce((c: Context, next: Next) => {
         c.set('topEntiteId', null);
@@ -356,6 +376,7 @@ describe('uploadedFiles.controller.ts', () => {
       });
       expect(body.data).not.toHaveProperty('safeFilePath');
       expect(body.data).not.toHaveProperty('processingError');
+      expect(getUploadedFileByIdForEntite).toHaveBeenCalledWith('ffffffff-ffff-ffff-ffff-ffffffffffff', 'e1');
     });
 
     it('should return 400 if topEntiteId is not set', async () => {
@@ -378,7 +399,7 @@ describe('uploadedFiles.controller.ts', () => {
     });
 
     it('should return 404 if file not found', async () => {
-      vi.mocked(getUploadedFileById).mockImplementationOnce(() => Promise.resolve(null));
+      vi.mocked(getUploadedFileByIdForEntite).mockImplementationOnce(() => Promise.resolve(null));
 
       const res = await client[':id'].status.$get({
         param: { id: 'ffffffff-ffff-ffff-ffff-ffffffffffff' },
