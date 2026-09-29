@@ -3,7 +3,7 @@ import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { Table } from '@codegouvfr/react-dsfr/Table';
 import type { MouseEvent, ReactNode } from 'react';
 import { useCallback, useState } from 'react';
-import { type ChartItem, numberFormatter, type ParsedCard, percentFormatter, percentPointFormatter } from './chartData';
+import { type ChartItem, formatShare, numberFormatter, type ParsedCard, percentPointFormatter } from './chartData';
 import styles from './statTable.module.css';
 
 const PAGE_SIZE = 10;
@@ -27,7 +27,7 @@ function formatPercent(item: ChartItem, total: number, hasPrecomputedPercent: bo
   if (hasPrecomputedPercent) {
     return item.percent == null ? <EmptyCell /> : `${percentPointFormatter.format(item.percent)} %`;
   }
-  return total > 0 ? percentFormatter.format(item.value / total) : <EmptyCell />;
+  return total > 0 ? formatShare(item.value / total) : <EmptyCell />;
 }
 
 export function StatTable({ caption, parsed, hideCaption }: StatTableProps) {

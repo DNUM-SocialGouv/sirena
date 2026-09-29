@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { annularSectorPath, type CardData, type MetabaseColumn, parseCard } from './chartData';
+import {
+  annularSectorPath,
+  type CardData,
+  formatShare,
+  type MetabaseColumn,
+  parseCard,
+  sliceSweeps,
+} from './chartData';
 
 type TestCol = Partial<MetabaseColumn> & { name: string };
 const card = (cols: TestCol[], rows: CardData['rows']): CardData => ({
@@ -16,6 +23,8 @@ const card = (cols: TestCol[], rows: CardData['rows']): CardData => ({
 const dim = (name: string): TestCol => ({ name, source: 'breakout' });
 const metric = (name: string): TestCol => ({ name, base_type: 'type/Integer', source: 'aggregation' });
 const percent = (name: string): TestCol => ({ name, base_type: 'type/Float', semantic_type: 'type/Percentage' });
+
+const percentOf = (digits: string) => `${digits}\u00a0%`;
 
 describe('chartData', () => {
   describe('parseCard', () => {
@@ -208,6 +217,46 @@ describe('chartData', () => {
     it('sets the large-arc flag for sweeps greater than 180°', () => {
       expect(annularSectorPath(120, 120, 112, 68, 0, 270)).toContain('A 112 112 0 1 1');
       expect(annularSectorPath(120, 120, 112, 68, 0, 90)).toContain('A 112 112 0 0 1');
+    });
+  });
+
+  describe('formatShare', () => {
+    it('formats regular shares with one decimal', () => {
+      expect(formatShare(0.072)).toBe(percentOf('7,2'));
+      expect(formatShare(0)).toBe(percentOf('0'));
+    });
+
+    it('does not round a non-zero share down to 0 %', () => {
+      expect(formatShare(10 / 26169)).toBe(`< ${percentOf('0,1')}`);
+    });
+  });
+
+  describe('sliceSweeps', () => {
+    const sum = (values: number[]) => values.reduce((acc, value) => acc + value, 0);
+
+    it('is proportional when every slice is above the minimum', () => {
+      expect(sliceSweeps([1, 3], 5)).toEqual([90, 270]);
+    });
+
+    it('enlarges tiny slices to the minimum and still sums to 360°', () => {
+      const sweeps = sliceSweeps([10, 12, 1891, 24256], 5);
+
+      expect(sweeps[0]).toBe(5);
+      expect(sweeps[1]).toBe(5);
+      expect(sweeps[2]).toBeGreaterThan(5);
+      expect(sweeps[3]).toBeGreaterThan(sweeps[2]);
+      expect(sum(sweeps)).toBeCloseTo(360);
+    });
+
+    it('clamps slices that fall below the minimum once others are enlarged', () => {
+      const sweeps = sliceSweeps([1, 1, 1, 50, 1000], 30);
+
+      expect(sweeps.slice(0, 4)).toEqual([30, 30, 30, 30]);
+      expect(sum(sweeps)).toBeCloseTo(360);
+    });
+
+    it('splits evenly when the minimum cannot be honoured', () => {
+      expect(sliceSweeps([1, 2, 3], 150)).toEqual([120, 120, 120]);
     });
   });
 });

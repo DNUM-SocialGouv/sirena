@@ -15,6 +15,30 @@ export type ParsedCard = {
 
 export const numberFormatter = new Intl.NumberFormat('fr-FR');
 export const percentFormatter = new Intl.NumberFormat('fr-FR', { style: 'percent', maximumFractionDigits: 1 });
+
+const SMALLEST_DISPLAYED_SHARE = 0.001;
+
+export const formatShare = (fraction: number): string =>
+  fraction > 0 && fraction < SMALLEST_DISPLAYED_SHARE
+    ? `< ${percentFormatter.format(SMALLEST_DISPLAYED_SHARE)}`
+    : percentFormatter.format(fraction);
+
+export const sliceSweeps = (values: number[], minSweep: number): number[] => {
+  const total = values.reduce((sum, value) => sum + value, 0);
+  if (total <= 0 || values.length === 0) return values.map(() => 0);
+  if (minSweep * values.length >= 360) return values.map(() => 360 / values.length);
+
+  const clamped = new Set<number>();
+  let sweeps: number[] = [];
+  for (;;) {
+    const freeTotal = values.reduce((sum, value, index) => (clamped.has(index) ? sum : sum + value), 0);
+    const freeSweep = 360 - clamped.size * minSweep;
+    sweeps = values.map((value, index) => (clamped.has(index) ? minSweep : (value / freeTotal) * freeSweep));
+    const newlyClamped = sweeps.findIndex((sweep, index) => !clamped.has(index) && sweep < minSweep);
+    if (newlyClamped === -1) return sweeps;
+    clamped.add(newlyClamped);
+  }
+};
 export const percentPointFormatter = new Intl.NumberFormat('fr-FR', {
   minimumFractionDigits: 1,
   maximumFractionDigits: 1,
