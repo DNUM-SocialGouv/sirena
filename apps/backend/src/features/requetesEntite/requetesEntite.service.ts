@@ -271,7 +271,7 @@ const buildRequetesEntiteWhere = async (
 
 // TODO handle entiteIds
 export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRequetesEntiteQuery = {}) => {
-  const { offset = 0, limit, sort = 'requete.createdAt', order = 'desc' } = query;
+  const { offset = 0, limit = 10, sort = 'requete.createdAt', order = 'desc' } = query;
 
   const where = await buildRequetesEntiteWhere(entiteIds, query);
 
@@ -279,7 +279,7 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
     prisma.requeteEntite.findMany({
       where,
       skip: offset,
-      ...(typeof limit === 'number' ? { take: limit } : {}),
+      take: limit,
       orderBy: sortObject(sort, order),
       include: {
         requete: {

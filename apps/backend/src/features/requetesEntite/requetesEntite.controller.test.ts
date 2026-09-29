@@ -278,7 +278,7 @@ describe('RequetesEntite endpoints: /', () => {
   ] satisfies Awaited<ReturnType<typeof getRequetesEntite>>['data'];
 
   describe('GET /', () => {
-    it('should return requetesEntite with basic query', async () => {
+    it('uses a page of 10 when the limit is omitted', async () => {
       vi.mocked(getRequetesEntite).mockResolvedValueOnce({ data: fakeData, total: 1 });
 
       const res = await client.index.$get({
@@ -289,10 +289,10 @@ describe('RequetesEntite endpoints: /', () => {
       const json = await res.json();
       expect(json).toEqual({
         data: convertDatesToStrings(fakeData),
-        meta: { total: 1 },
+        meta: { limit: 10, total: 1 },
       });
 
-      expect(getRequetesEntite).toHaveBeenCalledWith(['entiteId'], {});
+      expect(getRequetesEntite).toHaveBeenCalledWith(['entiteId'], { limit: 10 });
     });
 
     it('should return meta with offset and limit', async () => {
@@ -310,6 +310,30 @@ describe('RequetesEntite endpoints: /', () => {
       });
 
       expect(getRequetesEntite).toHaveBeenCalledWith(['entiteId'], { offset: 5, limit: 10 });
+    });
+
+    it.each(['1', '100'])('accepts a limit of %s', async (limit) => {
+      vi.mocked(getRequetesEntite).mockResolvedValueOnce({ data: [], total: 0 });
+
+      const res = await client.index.$get({ query: { limit, offset: '0' } });
+
+      expect(res.status).toBe(200);
+      expect((await res.json()).meta).toEqual({ limit: Number(limit), offset: 0, total: 0 });
+      expect(getRequetesEntite).toHaveBeenCalledWith(['entiteId'], { limit: Number(limit), offset: 0 });
+    });
+
+    it.each(['0', '-1', '1.5', '101', 'NaN', 'Infinity'])('rejects an invalid limit of %s', async (limit) => {
+      const res = await client.index.$get({ query: { limit } });
+
+      expect(res.status).toBe(400);
+      expect(getRequetesEntite).not.toHaveBeenCalled();
+    });
+
+    it.each(['-1', '0.5', 'NaN', 'Infinity'])('rejects an invalid offset of %s', async (offset) => {
+      const res = await client.index.$get({ query: { offset } });
+
+      expect(res.status).toBe(400);
+      expect(getRequetesEntite).not.toHaveBeenCalled();
     });
   });
 
