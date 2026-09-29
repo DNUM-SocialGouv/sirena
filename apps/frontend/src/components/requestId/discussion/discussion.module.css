@@ -1,3 +1,19 @@
+.buttonCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  margin-left: 0.5rem;
+  padding: 0 0.375rem;
+  border-radius: 0.75rem;
+  background-color: var(--background-flat-error);
+  color: var(--text-inverted-error);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .panel {
   height: 100vh;
   display: flex;
@@ -72,6 +88,26 @@
   overflow-wrap: anywhere;
 }
 
+.messageFiles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.messageBody + .messageFiles {
+  margin-top: 1rem;
+}
+
+.messageFile {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-default-grey);
+  border-radius: 0.25rem;
+  background-color: var(--background-default-grey);
+}
+
 .unreadSeparator {
   display: flex;
   align-items: center;
@@ -97,6 +133,21 @@
 
 .composer {
   flex-shrink: 0;
+}
+
+.fileInput {
+  display: none;
+}
+
+.attachRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.attachRow p {
+  margin: 0;
 }
 
 .composerActions {

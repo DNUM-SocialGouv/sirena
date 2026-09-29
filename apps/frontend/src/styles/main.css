@@ -102,17 +102,12 @@ dialog {
   position: relative;
 }
 
-:root {
-  --request-header-overlap: 2.5rem;
-}
-
 .app-container--flush {
   width: 100%;
 }
 
 .bg-cumulus {
   background-color: var(--background-alt-blue-cumulus);
-  padding-bottom: var(--request-header-overlap);
 }
 
 .one-line {
