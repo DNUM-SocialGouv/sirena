@@ -146,6 +146,12 @@
   margin-top: 0.5rem;
 }
 
+.attachButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .attachRow p {
   margin: 0;
 }
