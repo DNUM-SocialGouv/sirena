@@ -191,6 +191,7 @@ export const MessageComposer = ({ requestId, onSent }: MessageComposerProps) => 
 
       <div className={styles.attachRow}>
         <Button
+          className={styles.attachButton}
           type="button"
           priority="secondary"
           iconId="fr-icon-attachment-line"
