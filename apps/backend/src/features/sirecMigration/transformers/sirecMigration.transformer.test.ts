@@ -4,6 +4,7 @@ import { transformSirecReclamation } from './sirecMigration.transformer.js';
 
 vi.mock('../transco/affectation/affectation.transco.js', () => ({
   SIREC_NATIONAL_ENTITE_ID: 1,
+  SIREC_GROUP_MODE: { LECTURE: 'LECTURE', ECRITURE: 'ECRITURE' },
   transcodeAffectation: vi.fn((id: number) => {
     const ARS: Record<number, string> = {
       667: '4988789e-9775-4958-861f-52f03cbc9257',

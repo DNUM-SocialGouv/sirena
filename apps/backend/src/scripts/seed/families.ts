@@ -8,6 +8,7 @@ import {
   REQUETE_PRIORITE_TYPES,
   REQUETE_STATUT_TYPES,
 } from '@sirena/common/constants';
+import { lieuPrecisionLabelsByType } from '@sirena/common/utils';
 import type {
   DemarchesBlueprint,
   EtapeBlueprint,
@@ -44,8 +45,15 @@ const makeIdentifiedPersonne = (ctx: SeedContext, estVictime: boolean): Personne
   adresse: address(ctx.faker),
 });
 
+const pickLieuPrecision = (ctx: SeedContext, lieuTypeId: string): string => {
+  const precisions = Object.keys(lieuPrecisionLabelsByType[lieuTypeId] ?? {});
+  if (precisions.length === 0) return '';
+  return ctx.faker.helpers.arrayElement([...precisions, '']);
+};
+
 const makeLieu = (ctx: SeedContext, lieuTypeId: string): LieuBlueprint => ({
   lieuTypeId,
+  lieuPrecision: pickLieuPrecision(ctx, lieuTypeId),
   transportTypeId: null,
   societeTransport: '',
   finess: '',

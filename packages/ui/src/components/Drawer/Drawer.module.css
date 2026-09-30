@@ -46,7 +46,8 @@
   transform: translateX(-100%);
 }
 .panel[data-state="open"] {
-  transform: translateX(0);
+  transform: none;
+  will-change: auto;
 }
 .panel[data-state="entering"][data-side="right"] {
   transform: translateX(100%);

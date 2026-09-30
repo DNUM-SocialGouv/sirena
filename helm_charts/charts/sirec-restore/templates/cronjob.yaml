@@ -33,15 +33,18 @@ spec:
           annotations:
             prometheus.io/scrape: "false"
         spec:
+          {{- if .Values.imagePullSecretsName }}
+          imagePullSecrets:
+            - name: {{ .Values.imagePullSecretsName }}
+          {{- end }}
           restartPolicy: Never
           securityContext:
             {{- toYaml .Values.podSecurityContext | nindent 12 }}
           initContainers:
-            # Récupère le dump depuis le bucket S3 OVH vers un volume partagé.
-            # mc (MinIO Client) est un client S3-compatible générique : l'endpoint
-            # du fournisseur est un paramètre de premier ordre, pas une surcharge.
+            # Récupère le dump depuis le bucket S3 OVH vers un volume partagé,
+            # avec rclone (cf. apps/sirec-restore/Dockerfile).
             - name: s3-download
-              image: {{ .Values.images.s3 }}
+              image: {{ .Values.image }}
               imagePullPolicy: IfNotPresent
               securityContext:
                 {{- toYaml .Values.containerSecurityContext | nindent 16 }}
@@ -52,58 +55,64 @@ spec:
                   # par le shell, on ne veut pas qu'un caractère joker s'y
                   # applique.
                   set -euf
-                  mc alias set migration "${S3_ENDPOINT_URL}" "${S3_ACCESS_KEY}" "${S3_SECRET_KEY}"
+                  # Complète la définition du remote portée par les variables
+                  # RCLONE_CONFIG_MIGRATION_* : les valeurs injectées par envFrom
+                  # ne sont pas substituables depuis la liste env du manifeste.
+                  export RCLONE_CONFIG_MIGRATION_ENDPOINT="${S3_ENDPOINT_URL}"
+                  export RCLONE_CONFIG_MIGRATION_REGION="${S3_REGION}"
                   if [ -n "${DUMP_OBJECT_KEY:-}" ]; then
                     # Choix explicite : court-circuite la sélection automatique.
-                    # Si l'objet n'existe pas, le mc cp plus bas échoue et le job
-                    # s'arrête avant tout import.
+                    # Si l'objet n'existe pas, le rclone copyto plus bas échoue et
+                    # le job s'arrête avant tout import.
                     KEY="${DUMP_OBJECT_KEY}"
                     echo "Dump imposé par DUMP_OBJECT_KEY : ${KEY}"
                   else
                     echo "Recherche du dump le plus récent sous ${S3_MIGRATION_BUCKET_NAME}/${DUMP_OBJECT_PREFIX}"
-                    mc ls "migration/${S3_MIGRATION_BUCKET_NAME}/${DUMP_OBJECT_PREFIX}" > /tmp/listing
-                    # L'image mc ne fournit ni awk, ni grep, ni sort, ni tail : la
-                    # sélection n'utilise que des primitives du shell. S3 renvoie
-                    # les clés triées par ordre binaire et les dumps sont horodatés
-                    # en YYYYMMDD, donc la dernière entrée listée est la plus
-                    # récente. Le nom de l'objet est le dernier champ de la ligne.
-                    KEY=""
-                    while read -r line; do
-                      field=""
-                      for f in ${line}; do field="${f}"; done
-                      # Écarte les lignes vides et les sous-préfixes (suffixe /).
-                      case "${field}" in
-                        ""|*/) continue ;;
-                      esac
-                      KEY="${field}"
-                    done < /tmp/listing
-                    # Préfixe vide ou mal orthographié : on échoue plutôt que
-                    # d'importer un fichier inattendu dans la base sirec.
+                    # Les dumps sont horodatés en YYYYMMDD, donc l'ordre
+                    # lexicographique vaut l'ordre chronologique : la dernière clé
+                    # triée est la plus récente. lsf ne descend pas dans
+                    # l'arborescence et --files-only écarte les sous-préfixes.
+                    KEY=$(rclone lsf --files-only "migration:${S3_MIGRATION_BUCKET_NAME}/${DUMP_OBJECT_PREFIX}" | sort | tail -n 1)
+                    # Préfixe vide ou mal orthographié, listing en échec : on
+                    # échoue plutôt que d'importer un fichier inattendu dans la
+                    # base sirec. Le code de retour du pipeline étant celui de
+                    # tail, c'est bien ce test qui rattrape un listing raté.
                     test -n "${KEY}"
                     echo "Dump retenu automatiquement (le plus récent) : ${KEY}"
                   fi
                   # Transmis au container d'import, qui en déduit s'il doit
                   # décompresser.
                   echo "${KEY}" > /dump/key
-                  mc cp "migration/${S3_MIGRATION_BUCKET_NAME}/${DUMP_OBJECT_PREFIX}${KEY}" /dump/dump
+                  rclone copyto "migration:${S3_MIGRATION_BUCKET_NAME}/${DUMP_OBJECT_PREFIX}${KEY}" /dump/dump
                   echo "Dump récupéré :"
                   # Informatif uniquement : ne doit pas faire échouer un
                   # téléchargement par ailleurs réussi.
-                  mc ls /dump/dump || true
+                  ls -l /dump/dump || true
               envFrom:
                 - configMapRef:
                     name: sirec-restore-variables
               env:
-                # mc écrit sa configuration d'alias ici : le volume tmp la rend
-                # inscriptible malgré readOnlyRootFilesystem.
-                - name: MC_CONFIG_DIR
-                  value: /tmp/mc
-                - name: S3_ACCESS_KEY
+                # Le remote « migration » est défini entièrement par variables
+                # d'environnement : rien à écrire sur disque, et les credentials
+                # n'apparaissent sur aucune ligne de commande.
+                #
+                # Chemin vide = rclone ne cherche aucun fichier de configuration.
+                # Sans cela il en journalise l'absence à chaque commande, la
+                # racine étant en lecture seule.
+                - name: RCLONE_CONFIG
+                  value: ""
+                - name: RCLONE_CONFIG_MIGRATION_TYPE
+                  value: s3
+                # S3 générique : aucune des particularités que rclone applique
+                # aux fournisseurs qu'il reconnaît nommément.
+                - name: RCLONE_CONFIG_MIGRATION_PROVIDER
+                  value: Other
+                - name: RCLONE_CONFIG_MIGRATION_ACCESS_KEY_ID
                   valueFrom:
                     secretKeyRef:
                       name: {{ .Values.migrationBucketSecretName }}
                       key: S3_MIGRATION_BUCKET_ACCESS_KEY
-                - name: S3_SECRET_KEY
+                - name: RCLONE_CONFIG_MIGRATION_SECRET_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
                       name: {{ .Values.migrationBucketSecretName }}
@@ -121,10 +130,10 @@ spec:
               resources:
                 {{- toYaml .Values.resources.download | nindent 16 }}
           containers:
-            # Importe le dump dans MariaDB. Version du client alignée sur celle
-            # du serveur (services-integration/services/charts/mariadb).
+            # Importe le dump dans MariaDB, avec le client embarqué dans la même
+            # image que celle du téléchargement.
             - name: mariadb-import
-              image: {{ .Values.images.mariadb }}
+              image: {{ .Values.image }}
               imagePullPolicy: IfNotPresent
               securityContext:
                 {{- toYaml .Values.containerSecurityContext | nindent 16 }}

@@ -32,6 +32,7 @@ export type PersonneBlueprint = {
 
 export type LieuBlueprint = {
   lieuTypeId: string | null;
+  lieuPrecision: string;
   transportTypeId: string | null;
   societeTransport: string;
   finess: string;

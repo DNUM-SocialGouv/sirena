@@ -18,7 +18,7 @@ export const getRequeteMessagesRoute = openApiProtectedRoute({
 });
 
 export const postRequeteMessageRoute = openApiProtectedRoute({
-  description: 'Post a discussion message on a requete',
+  description: 'Post a discussion message (text and/or attachments) on a requete',
   responses: {
     ...openApiResponse(RequeteMessageSchema, 201, 'Message created'),
   },
@@ -26,6 +26,13 @@ export const postRequeteMessageRoute = openApiProtectedRoute({
 
 export const markMessagesReadRoute = openApiProtectedRoute({
   description: 'Mark every discussion message of the requete as read by the current user',
+  responses: {
+    ...openApiResponse(UnreadCountSchema),
+  },
+});
+
+export const getUnreadCountRoute = openApiProtectedRoute({
+  description: 'Unread discussion messages count for the current user on a requete',
   responses: {
     ...openApiResponse(UnreadCountSchema),
   },

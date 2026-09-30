@@ -1,7 +1,11 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { RequeteMessage } from '@/hooks/queries/requeteMessages.hook';
 import { MessageItem } from './MessageItem';
+
+vi.mock('@/components/common/FileDownloadLink', () => ({
+  FileDownloadLink: ({ href, fileName }: { href: string; fileName: string }) => <a href={href}>{fileName}</a>,
+}));
 
 const CREATED_AT = '2026-01-15T10:30:00.000Z';
 
@@ -12,13 +16,14 @@ const baseMessage: RequeteMessage = {
   createdAt: CREATED_AT,
   entite: { id: 'E1', nomComplet: 'ARS Île-de-France', entiteTypeId: 'ARS' },
   author: { prenom: 'jean', nom: 'dupont' },
+  uploadedFiles: [],
   isReadByCurrentUser: false,
 };
 
 const makeMessage = (overrides: Partial<RequeteMessage> = {}): RequeteMessage => ({ ...baseMessage, ...overrides });
 
 const renderItem = (message: RequeteMessage, isOwnEntite = false) =>
-  render(<MessageItem message={message} isOwnEntite={isOwnEntite} />);
+  render(<MessageItem message={message} requestId="REQ" isOwnEntite={isOwnEntite} />);
 
 describe('MessageItem', () => {
   it('displays the author, the entity name and the date', () => {
@@ -44,6 +49,29 @@ describe('MessageItem', () => {
     renderItem(makeMessage({ author: null }));
 
     expect(screen.getByText(/Auteur inconnu/)).toBeInTheDocument();
+  });
+
+  it('builds the attachment download link from the request and file ids', () => {
+    renderItem(
+      makeMessage({
+        uploadedFiles: [
+          {
+            id: 'F1',
+            fileName: 'rapport.pdf',
+            size: 1024,
+            status: 'COMPLETED',
+            scanStatus: 'CLEAN',
+            sanitizeStatus: 'COMPLETED',
+            createdAt: CREATED_AT,
+          },
+        ],
+      }),
+    );
+
+    expect(screen.getByRole('link', { name: 'rapport.pdf' })).toHaveAttribute(
+      'href',
+      '/api/requete-messages/REQ/file/F1',
+    );
   });
 
   it('tells assistive technology, and only it, when the message comes from the current entity', () => {

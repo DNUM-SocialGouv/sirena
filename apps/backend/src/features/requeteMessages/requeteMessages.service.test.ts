@@ -1,6 +1,9 @@
 import type { PinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { sseEventManager } from '../../helpers/sse.js';
 import { prisma } from '../../libs/prisma.js';
+import { createChangeLog } from '../changelog/changelog.service.js';
+import { FilesNotOwnedError, setMessageFiles } from '../uploadedFiles/uploadedFiles.service.js';
 import {
   createRequeteMessage,
   getRequeteMessageById,
@@ -8,6 +11,10 @@ import {
   getUnreadCount,
   markAllMessagesAsRead,
 } from './requeteMessages.service.js';
+
+vi.mock('../../libs/minio.js', () => ({
+  getFileStream: vi.fn(),
+}));
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
@@ -18,16 +25,36 @@ vi.mock('../../libs/prisma.js', () => ({
       findFirst: vi.fn(),
       findMany: vi.fn(),
       findUnique: vi.fn(),
+      groupBy: vi.fn(),
     },
     requeteMessageRead: {
       create: vi.fn(),
       createMany: vi.fn(),
     },
+    requeteEntite: {
+      findMany: vi.fn(),
+    },
   },
+}));
+
+vi.mock('../../helpers/sse.js', () => ({
+  sseEventManager: {
+    emitRequeteMessage: vi.fn(),
+  },
+}));
+
+vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
+  FilesNotOwnedError: class FilesNotOwnedError extends Error {},
+  setMessageFiles: vi.fn(() => Promise.resolve([])),
+}));
+
+vi.mock('../changelog/changelog.service.js', () => ({
+  createChangeLog: vi.fn(),
 }));
 
 const mockedMessage = vi.mocked(prisma.requeteMessage);
 const mockedMessageRead = vi.mocked(prisma.requeteMessageRead);
+const mockedRequeteEntite = vi.mocked(prisma.requeteEntite);
 
 const logger = { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() } as unknown as PinoLogger;
 
@@ -38,6 +65,7 @@ const baseRow = {
   createdAt: new Date('2026-01-01T10:00:00.000Z'),
   entite: { id: 'e1', nomComplet: 'ARS Île-de-France', entiteTypeId: 'ARS' },
   author: { prenom: 'Jean', nom: 'Dupont' },
+  uploadedFiles: [],
   reads: [] as { userId: string }[],
 };
 
@@ -47,6 +75,7 @@ describe('requeteMessages.service.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(prisma.$transaction).mockImplementation((async (cb: (tx: unknown) => unknown) => cb(prisma)) as never);
+    mockedRequeteEntite.findMany.mockResolvedValue([{ entiteId: 'e1' }, { entiteId: 'e2' }] as never);
     mockedMessage.count.mockResolvedValue(0 as never);
   });
 
@@ -160,6 +189,50 @@ describe('requeteMessages.service.ts', () => {
 
       expect(mockedMessage.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { requeteId: 'REQ' } }));
     });
+
+    it('selects the messages strictly newer than the after cursor, still newest first', async () => {
+      const cursorDate = new Date('2026-01-01T09:00:00.000Z');
+      mockedMessage.findFirst.mockResolvedValueOnce({ createdAt: cursorDate, id: 'm5' } as never);
+      mockedMessage.findMany.mockResolvedValueOnce([row({ id: 'm7' }), row({ id: 'm6' })] as never);
+
+      const result = await getRequeteMessages('REQ', 'user1', { limit: 50, after: 'm5' });
+
+      expect(mockedMessage.findFirst).toHaveBeenCalledWith({
+        where: { id: 'm5', requeteId: 'REQ' },
+        select: { createdAt: true, id: true },
+      });
+      expect(mockedMessage.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            requeteId: 'REQ',
+            OR: [{ createdAt: { gt: cursorDate } }, { createdAt: cursorDate, id: { gt: 'm5' } }],
+          },
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          take: 51,
+        }),
+      );
+      expect(result.data.map((message) => message.id)).toEqual(['m7', 'm6']);
+      expect(result.meta).toEqual({ hasMore: false, nextCursor: null });
+    });
+
+    it('reports an incomplete catch-up without a next cursor when more than limit messages are newer', async () => {
+      mockedMessage.findFirst.mockResolvedValueOnce({ createdAt: baseRow.createdAt, id: 'm5' } as never);
+      mockedMessage.findMany.mockResolvedValueOnce([row({ id: 'm8' }), row({ id: 'm7' }), row({ id: 'm6' })] as never);
+
+      const result = await getRequeteMessages('REQ', 'user1', { limit: 2, after: 'm5' });
+
+      expect(result.data.map((message) => message.id)).toEqual(['m8', 'm7']);
+      expect(result.meta).toEqual({ hasMore: true, nextCursor: null });
+    });
+
+    it('ignores an unknown after cursor and returns the first page', async () => {
+      mockedMessage.findFirst.mockResolvedValueOnce(null as never);
+      mockedMessage.findMany.mockResolvedValueOnce([] as never);
+
+      await getRequeteMessages('REQ', 'user1', { limit: 50, after: 'unknown' });
+
+      expect(mockedMessage.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { requeteId: 'REQ' } }));
+    });
   });
 
   describe('getRequeteMessageById()', () => {
@@ -173,6 +246,41 @@ describe('requeteMessages.service.ts', () => {
       expect(Object.hasOwn(result ?? {}, 'reads')).toBe(false);
     });
 
+    it('shows the file name the agent uploaded, not the one minio stores', async () => {
+      const uploadedFiles = [
+        {
+          id: 'f1',
+          fileName: 'a1b2c3.pdf',
+          metadata: { originalName: 'Rapport d’inspection.pdf' },
+          size: 10,
+          status: 'COMPLETED',
+          scanStatus: 'CLEAN',
+          sanitizeStatus: 'DONE',
+          createdAt: new Date('2026-01-01T10:00:00.000Z'),
+        },
+        {
+          id: 'f2',
+          fileName: 'sans-metadata.pdf',
+          metadata: null,
+          size: 10,
+          status: 'COMPLETED',
+          scanStatus: 'CLEAN',
+          sanitizeStatus: 'DONE',
+          createdAt: new Date('2026-01-01T10:00:00.000Z'),
+        },
+      ];
+      mockedMessage.findUnique.mockResolvedValueOnce(row({ uploadedFiles } as never) as never);
+
+      const result = await getRequeteMessageById('m1', 'user1');
+
+      expect(result?.uploadedFiles.map((file) => file.fileName)).toEqual([
+        'Rapport d’inspection.pdf',
+        'sans-metadata.pdf',
+      ]);
+      // The raw metadata stays on the server side.
+      expect(Object.hasOwn(result?.uploadedFiles[0] ?? {}, 'metadata')).toBe(false);
+    });
+
     it('returns null when the message does not exist', async () => {
       mockedMessage.findUnique.mockResolvedValueOnce(null as never);
 
@@ -184,13 +292,15 @@ describe('requeteMessages.service.ts', () => {
     beforeEach(() => {
       mockedMessage.create.mockResolvedValue({ id: 'm1' } as never);
       mockedMessage.findUnique.mockResolvedValue(row() as never);
+      // Nothing pending for the author unless a test says otherwise.
       mockedMessage.findMany.mockResolvedValue([] as never);
+      mockedMessage.count.mockResolvedValue(0 as never);
     });
 
     it('creates the message and marks it read for its author', async () => {
       mockedMessage.findMany.mockResolvedValueOnce([{ id: 'm1' }] as never);
 
-      const result = await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour' }, logger);
+      const result = await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour', fileIds: [] }, logger);
 
       expect(prisma.$transaction).toHaveBeenCalledOnce();
       expect(mockedMessage.create).toHaveBeenCalledWith({
@@ -207,9 +317,9 @@ describe('requeteMessages.service.ts', () => {
       mockedMessage.findMany.mockResolvedValueOnce([{ id: 'm1' }] as never);
       mockedMessageRead.createMany.mockRejectedValueOnce(new Error('DATABASE_FAILURE'));
 
-      await expect(createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour' }, logger)).rejects.toThrow(
-        'DATABASE_FAILURE',
-      );
+      await expect(
+        createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour', fileIds: [] }, logger),
+      ).rejects.toThrow('DATABASE_FAILURE');
 
       // The read rows are written inside the transaction that created the message: nothing is committed.
       expect(mockedMessage.findUnique).not.toHaveBeenCalled();
@@ -219,9 +329,9 @@ describe('requeteMessages.service.ts', () => {
       mockedMessage.findMany.mockResolvedValueOnce([{ id: 'm1' }] as never);
       mockedMessage.findUnique.mockRejectedValueOnce(new Error('DATABASE_FAILURE'));
 
-      await expect(createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour' }, logger)).rejects.toThrow(
-        'DATABASE_FAILURE',
-      );
+      await expect(
+        createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour', fileIds: [] }, logger),
+      ).rejects.toThrow('DATABASE_FAILURE');
 
       // The answer is built inside the transaction: an error means nothing was committed.
       expect(prisma.$transaction).toHaveBeenCalledOnce();
@@ -230,7 +340,7 @@ describe('requeteMessages.service.ts', () => {
     it('marks everything the author had not read yet: replying counts as reading', async () => {
       mockedMessage.findMany.mockResolvedValueOnce([{ id: 'older' }] as never);
 
-      await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour' }, logger);
+      await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour', fileIds: [] }, logger);
 
       expect(mockedMessage.findMany).toHaveBeenCalledWith({
         where: { requeteId: 'REQ', reads: { none: { userId: 'user1' } } },
@@ -240,6 +350,52 @@ describe('requeteMessages.service.ts', () => {
         data: [{ messageId: 'older', userId: 'user1', entiteId: 'e1' }],
         skipDuplicates: true,
       });
+      expect(sseEventManager.emitRequeteMessage).toHaveBeenCalledWith(expect.objectContaining({ action: 'read' }));
+    });
+
+    it('does not attach files when none is requested', async () => {
+      await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour', fileIds: [] }, logger);
+
+      expect(setMessageFiles).not.toHaveBeenCalled();
+    });
+
+    it('attaches the files inside the same transaction', async () => {
+      await createRequeteMessage('REQ', 'e1', 'user1', { contenu: '', fileIds: ['f1', 'f2'] }, logger);
+
+      expect(prisma.$transaction).toHaveBeenCalledOnce();
+      expect(setMessageFiles).toHaveBeenCalledWith('m1', ['f1', 'f2'], 'e1', 'user1', prisma);
+    });
+
+    it('does not write a changelog entry: the message row is the trace', async () => {
+      await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour', fileIds: ['f1'] }, logger);
+
+      expect(createChangeLog).not.toHaveBeenCalled();
+    });
+
+    it('emits a created event targeting every entity affected to the requete', async () => {
+      await createRequeteMessage('REQ', 'e1', 'user1', { contenu: 'Bonjour', fileIds: [] }, logger);
+
+      expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith({
+        where: { requeteId: 'REQ' },
+        select: { entiteId: true },
+      });
+      expect(sseEventManager.emitRequeteMessage).toHaveBeenCalledWith({
+        action: 'created',
+        requeteId: 'REQ',
+        messageId: 'm1',
+        entiteId: 'e1',
+        entiteIds: ['e1', 'e2'],
+      });
+    });
+
+    it('propagates FilesNotOwnedError without emitting any event', async () => {
+      vi.mocked(setMessageFiles).mockRejectedValueOnce(new FilesNotOwnedError('FILES_NOT_OWNED'));
+
+      await expect(
+        createRequeteMessage('REQ', 'e1', 'user1', { contenu: '', fileIds: ['f1'] }, logger),
+      ).rejects.toBeInstanceOf(FilesNotOwnedError);
+
+      expect(sseEventManager.emitRequeteMessage).not.toHaveBeenCalled();
     });
   });
 
@@ -265,6 +421,21 @@ describe('requeteMessages.service.ts', () => {
       expect(result).toEqual({ markedIds: ['m1', 'm2'], unreadCount: 0 });
     });
 
+    it('emits a read event with exactly the ids actually marked', async () => {
+      mockedMessage.findMany.mockResolvedValueOnce([{ id: 'm1' }] as never);
+
+      await markAllMessagesAsRead('REQ', 'user1', 'e1');
+
+      expect(sseEventManager.emitRequeteMessage).toHaveBeenCalledWith({
+        action: 'read',
+        requeteId: 'REQ',
+        messageIds: ['m1'],
+        userId: 'user1',
+        entiteId: 'e1',
+        entiteIds: ['e1', 'e2'],
+      });
+    });
+
     it('stays a no-op when everything was already read but still returns the unread count', async () => {
       mockedMessage.findMany.mockResolvedValueOnce([] as never);
       mockedMessage.count.mockResolvedValueOnce(0 as never);
@@ -272,6 +443,7 @@ describe('requeteMessages.service.ts', () => {
       const result = await markAllMessagesAsRead('REQ', 'user1', 'e1');
 
       expect(mockedMessageRead.createMany).not.toHaveBeenCalled();
+      expect(sseEventManager.emitRequeteMessage).not.toHaveBeenCalled();
       expect(result).toEqual({ markedIds: [], unreadCount: 0 });
     });
   });

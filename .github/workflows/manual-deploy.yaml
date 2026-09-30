@@ -44,7 +44,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [anonymize, worker, backend, frontend]
+        image: [anonymize, worker, backend, frontend, sirec-restore]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
@@ -68,7 +68,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [anonymize, worker, backend, frontend]
+        image: [anonymize, worker, backend, frontend, sirec-restore]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:

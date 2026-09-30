@@ -5,6 +5,7 @@ import { transformSirecAffectation } from './sirecMigration.affectation.transfor
 
 vi.mock('../../transco/affectation/affectation.transco.js', () => ({
   SIREC_NATIONAL_ENTITE_ID: 1,
+  SIREC_GROUP_MODE: { LECTURE: 'LECTURE', ECRITURE: 'ECRITURE' },
   transcodeAffectation: vi.fn((id: number) => {
     if (id === 693) return { requeteEntiteIds: ['ars-normandie'], situationEntiteIds: [] };
     if (id === 677) return { requeteEntiteIds: ['ars-grand-est'], situationEntiteIds: [] };
@@ -156,6 +157,26 @@ describe('sirecMigration.affectation.transformer.ts', () => {
 
     it('should propagate SirecTranscoError for an unknown groupId', () => {
       expect(() => transformSirecAffectation(makeData(null, [9999]))).toThrow(SirecTranscoError);
+    });
+  });
+
+  describe('group mode', () => {
+    it('should pass ECRITURE as the mode for service_gestionnaire', async () => {
+      const { transcodeAffectation } = await import('../../transco/affectation/affectation.transco.js');
+
+      transformSirecAffectation(makeData(693));
+
+      expect(transcodeAffectation).toHaveBeenCalledWith(693, 'ECRITURE');
+    });
+
+    it('should pass through the mode carried by each groupId', async () => {
+      const { transcodeAffectation } = await import('../../transco/affectation/affectation.transco.js');
+      const data = makeData(null);
+      data.groupIds = [{ id_group: 677, mode: 'LECTURE' }] as SirecReclamationData['groupIds'];
+
+      transformSirecAffectation(data);
+
+      expect(transcodeAffectation).toHaveBeenCalledWith(677, 'LECTURE');
     });
   });
 });
