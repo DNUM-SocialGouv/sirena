@@ -18,5 +18,6 @@ helm template . -f values/${ENVIRONNEMENT}.yaml \
    --set backend.SDPSN-devops-charts.deployment.initContainer.image="ghcr.io/dnum-socialgouv/sirena:${IMAGE_TAG}-backend"\
    --set frontend.SDPSN-devops-charts.deployment.image="ghcr.io/dnum-socialgouv/sirena:${IMAGE_TAG}-frontend"\
    --set worker.SDPSN-devops-charts.deployment.image="ghcr.io/dnum-socialgouv/sirena:${IMAGE_TAG}-worker"\
+   --set sirec-restore.image="ghcr.io/dnum-socialgouv/sirena:${IMAGE_TAG}-sirec-restore"\
    --set anonymize.image="ghcr.io/dnum-socialgouv/sirena:${IMAGE_TAG}-anonymize"\
    --output-dir ./generated_manifests

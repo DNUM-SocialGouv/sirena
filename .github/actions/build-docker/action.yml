@@ -1,9 +1,9 @@
 name: 'Build and Push a Docker Image'
-description: 'Build and push a single Sirena Docker image (anonymize, worker, backend or frontend) to GHCR with shared BuildKit cache.'
+description: 'Build and push a single Sirena Docker image (anonymize, worker, backend, frontend or sirec-restore) to GHCR with shared BuildKit cache.'
 
 inputs:
   image:
-    description: "Image to build: one of anonymize, worker, backend, frontend"
+    description: "Image to build: one of anonymize, worker, backend, frontend, sirec-restore"
     required: true
   registry:
     description: 'Container registry URL'
@@ -79,6 +79,12 @@ runs:
           anonymize)
             echo "context=apps/anonymize" >> "$GITHUB_OUTPUT"
             echo "dockerfile=apps/anonymize/Dockerfile" >> "$GITHUB_OUTPUT"
+            echo "needs_sentry=false" >> "$GITHUB_OUTPUT"
+            echo "build_args=" >> "$GITHUB_OUTPUT"
+            ;;
+          sirec-restore)
+            echo "context=apps/sirec-restore" >> "$GITHUB_OUTPUT"
+            echo "dockerfile=apps/sirec-restore/Dockerfile" >> "$GITHUB_OUTPUT"
             echo "needs_sentry=false" >> "$GITHUB_OUTPUT"
             echo "build_args=" >> "$GITHUB_OUTPUT"
             ;;
