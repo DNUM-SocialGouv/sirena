@@ -22,6 +22,25 @@ export const AUTH_CONFIGS = {
   },
 } as const;
 
+/**
+ * Other seeded users (`pnpm op:seed:e2e`). They have no ProConnect account, so
+ * they are only available on the local target, where the auth cookie is forged.
+ */
+export const LOCAL_AUTH_CONFIGS = {
+  /** ENTITY_ADMIN of ARS Normandie: the other entity of multi-entity requests. */
+  OTHER_ENTITY_ADMIN: {
+    user: 'user18@yopmail.com',
+    organisation: '',
+    fileName: 'user18@yopmail.com.local.json',
+  },
+  /** READER of ARS Normandie. */
+  READER: {
+    user: 'reader@yopmail.com',
+    organisation: '',
+    fileName: 'reader@yopmail.com.local.json',
+  },
+} as const satisfies Record<string, AuthConfig>;
+
 const LOCAL_AUTH_MIN_REMAINING_SECONDS = 5 * 60;
 
 type StoredCookie = { name: string; expires: number };
