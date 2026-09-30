@@ -14,6 +14,7 @@ type InfoSectionProps = {
   badges?: React.ReactNode[];
   replaceSummaryWithDetails?: boolean;
   canEdit?: boolean;
+  dataTestId?: string;
 };
 
 export function InfoSection({
@@ -26,6 +27,7 @@ export function InfoSection({
   badges,
   replaceSummaryWithDetails = false,
   canEdit = false,
+  dataTestId,
 }: InfoSectionProps) {
   const [isDetailsExpanded, setIsDetailsExpanded] = React.useState(false);
 
@@ -57,7 +59,7 @@ export function InfoSection({
   );
 
   return (
-    <section aria-labelledby={titleId} className={styles.section}>
+    <section aria-labelledby={titleId} className={styles.section} data-testid={dataTestId}>
       <div className={isEmpty ? styles.headerContentEmpty : styles.headerContent}>
         <div className={styles.titleGroup}>
           <h2 id={titleId} className={fr.cx('fr-text--lg', 'fr-mb-0', 'fr-text--bold')}>
@@ -71,7 +73,11 @@ export function InfoSection({
           ))}
         </div>
         {canEdit && editHref ? (
-          <Link to={editHref} className="fr-btn fr-btn--tertiary-no-outline fr-btn--icon-right fr-icon-pencil-line">
+          <Link
+            to={editHref}
+            className="fr-btn fr-btn--tertiary-no-outline fr-btn--icon-right fr-icon-pencil-line"
+            data-testid={dataTestId ? `${dataTestId}-edit` : undefined}
+          >
             {editLabel}
             <span className="fr-sr-only">{title}</span>
           </Link>
@@ -84,7 +90,7 @@ export function InfoSection({
         <>
           {shouldShowSummary ? summaryContent : null}
           {hasDetails && (
-            <div className={fr.cx('fr-mt-2w')}>
+            <div className={fr.cx('fr-mt-2w')} data-testid={dataTestId ? `${dataTestId}-details` : undefined}>
               <Accordion
                 label={detailsLabel}
                 expanded={isDetailsExpanded}

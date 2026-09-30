@@ -62,7 +62,7 @@ export const RequestInfos = ({
           <div className="fr-col">
             <div className={style['request-header']}>
               <div className={style['request-left']}>
-                <h1>{requestId ? `Requête ${requestId}` : 'Nouvelle requête'}</h1>
+                <h1 data-testid="request-title">{requestId ? `Requête ${requestId}` : 'Nouvelle requête'}</h1>
 
                 {requestId ? (
                   <>
@@ -104,7 +104,7 @@ export const RequestInfos = ({
           </div>
         </div>
         {fullName ? (
-          <div className={style['legend-display']}>
+          <div className={style['legend-display']} data-testid="request-personne-concernee">
             <ContactInfo icon="fr-icon-user-line" ariaLabel="Identité - personne concernée">
               {fullName}
             </ContactInfo>

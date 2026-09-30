@@ -4868,7 +4868,7 @@
         "description": "Répartition des requêtes affectées à mon entité administrative selon leur mode de réception. Mode non renseigné = « Non précisé ».",
         "dimension_mappings": null,
         "dimensions": null,
-        "display": "pie",
+        "display": "table",
         "document_id": null,
         "download_perms": "full",
         "embedding_params": null,
@@ -5357,7 +5357,7 @@
       ],
       "row": 15,
       "series": [],
-      "size_x": 24,
+      "size_x": 12,
       "size_y": 9,
       "visualization_settings": {}
     },
@@ -6418,7 +6418,7 @@
         "visualization_settings": {}
       },
       "card_id": 80,
-      "col": 0,
+      "col": 12,
       "collection_authority_level": null,
       "dashboard_id": 4,
       "dashboard_tab_id": null,
@@ -6493,7 +6493,7 @@
           ]
         }
       ],
-      "row": 24,
+      "row": 15,
       "series": [],
       "size_x": 12,
       "size_y": 9,

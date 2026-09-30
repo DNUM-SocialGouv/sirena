@@ -182,6 +182,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
             <Select
               label="Type de lieu"
               nativeSelectProps={{
+                ...{ 'data-testid': 'situation-lieu-type' },
                 value: lieuType || '',
                 onChange: (e) =>
                   setFormData((prev) => ({
@@ -207,6 +208,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                 <Select
                   label="Précision du lieu"
                   nativeSelectProps={{
+                    ...{ 'data-testid': 'situation-lieu-domicile-precision' },
                     value: formData.lieuDeSurvenue?.lieuPrecision || '',
                     onChange: (e) =>
                       setFormData((prev) => ({
