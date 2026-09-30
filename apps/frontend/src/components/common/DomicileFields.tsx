@@ -19,9 +19,11 @@ interface DomicileFieldsProps {
     codePostal: string;
     ville: string;
   };
+  searchLabel?: string;
+  manualSearchHint?: string;
 }
 
-const MANUAL_TOGGLE_LABEL = "Remplir l'adresse manuellement";
+export const MANUAL_TOGGLE_LABEL = "Remplir l'adresse manuellement";
 
 // Combines the stored fields into the single line displayed in the search input.
 const toDisplayValue = ({ adresseDomicile, codePostal, ville }: DomicileValues): string => {
@@ -39,7 +41,13 @@ export const addressToDomicileValues = (address: Address): DomicileValues => ({
   ville: address.city,
 });
 
-export function DomicileFields({ values, onChange, labels }: DomicileFieldsProps) {
+export function DomicileFields({
+  values,
+  onChange,
+  labels,
+  searchLabel = 'Domicile',
+  manualSearchHint = `Pour rechercher le domicile, décochez la case « ${MANUAL_TOGGLE_LABEL} »`,
+}: DomicileFieldsProps) {
   const [isManual, setIsManual] = useState(false);
   const manualFieldsId = useId();
   const domicileReadOnlyId = useId();
@@ -73,14 +81,14 @@ export function DomicileFields({ values, onChange, labels }: DomicileFieldsProps
       <div className="fr-grid-row fr-grid-row--gutters fr-mb-3w">
         <div className="fr-col-12 fr-col-md-6">
           {isManual ? (
-            <ReadOnlyField id={domicileReadOnlyId} label="Domicile" value={toDisplayValue(values)} />
+            <ReadOnlyField id={domicileReadOnlyId} label={searchLabel} value={toDisplayValue(values)} />
           ) : (
             <AddressSearchField
               value={toDisplayValue(values)}
               onSelect={handleSelect}
               onClear={handleClear}
               onTextCommit={handleTextCommit}
-              label="Domicile"
+              label={searchLabel}
             />
           )}
         </div>
@@ -112,7 +120,7 @@ export function DomicileFields({ values, onChange, labels }: DomicileFieldsProps
             aria-hidden="true"
             style={{ color: 'var(--text-default-info)', flexShrink: 0 }}
           />
-          <span>Pour rechercher le domicile, décochez la case « {MANUAL_TOGGLE_LABEL} »</span>
+          <span>{manualSearchHint}</span>
         </p>
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-6">

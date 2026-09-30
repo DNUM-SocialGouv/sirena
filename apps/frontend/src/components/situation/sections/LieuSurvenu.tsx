@@ -24,7 +24,8 @@ import {
   // transportTypeLabels,
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
-import { useCallback, useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { DomicileFields, type DomicileValues, MANUAL_TOGGLE_LABEL } from '@/components/common/DomicileFields';
 import { OrganizationSearchField } from '@/components/common/OrganizationSearchField';
 import { ReadOnlyField } from '@/components/common/ReadOnlyField';
 import type { Organization } from '@/lib/api/fetchOrganizations';
@@ -36,6 +37,9 @@ type LieuSurvenuProps = {
   isSaving: boolean;
   receptionType?: ReceptionType;
 };
+
+const DOMICILE_ADDRESS_LABELS = { adresseDomicile: 'Adresse', codePostal: 'Code postal', ville: 'Ville' };
+const ETABLISSEMENT_ADDRESS_LABELS = { adresseDomicile: 'Rue', codePostal: 'Code postal', ville: 'Ville' };
 
 const finessEtablissementTypes = [
   LIEU_TYPE.ETABLISSEMENT_SANTE,
@@ -102,6 +106,24 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
         }));
       }
     },
+    [setFormData],
+  );
+
+  const adresse = formData.lieuDeSurvenue?.adresse;
+  const addressValues = useMemo<DomicileValues>(
+    () => ({ adresseDomicile: adresse?.rue || '', codePostal: adresse?.codePostal || '', ville: adresse?.ville || '' }),
+    [adresse?.rue, adresse?.codePostal, adresse?.ville],
+  );
+
+  const handleAddressChange = useCallback(
+    ({ adresseDomicile, codePostal, ville }: DomicileValues) =>
+      setFormData((prev) => ({
+        ...prev,
+        lieuDeSurvenue: {
+          ...prev.lieuDeSurvenue,
+          adresse: { ...prev.lieuDeSurvenue?.adresse, rue: adresseDomicile, codePostal, ville },
+        },
+      })),
     [setFormData],
   );
 
@@ -202,56 +224,13 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                 </Select>
               </div>
               {shouldShowDomicileAddressFields ? (
-                <>
-                  <div className="fr-col-12">
-                    <Input
-                      label="Adresse"
-                      nativeInputProps={{
-                        value: formData.lieuDeSurvenue?.adresse?.rue || '',
-                        onChange: (e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            lieuDeSurvenue: {
-                              ...prev.lieuDeSurvenue,
-                              adresse: { ...prev.lieuDeSurvenue?.adresse, rue: e.target.value },
-                            },
-                          })),
-                      }}
-                    />
-                  </div>
-                  <div className="fr-col-12 fr-col-md-6">
-                    <Input
-                      label="Code postal"
-                      nativeInputProps={{
-                        value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
-                        onChange: (e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            lieuDeSurvenue: {
-                              ...prev.lieuDeSurvenue,
-                              adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
-                            },
-                          })),
-                      }}
-                    />
-                  </div>
-                  <div className="fr-col-12 fr-col-md-6">
-                    <Input
-                      label="Ville"
-                      nativeInputProps={{
-                        value: formData.lieuDeSurvenue?.adresse?.ville || '',
-                        onChange: (e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            lieuDeSurvenue: {
-                              ...prev.lieuDeSurvenue,
-                              adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
-                            },
-                          })),
-                      }}
-                    />
-                  </div>
-                </>
+                <div className="fr-col-12">
+                  <DomicileFields
+                    values={addressValues}
+                    onChange={handleAddressChange}
+                    labels={DOMICILE_ADDRESS_LABELS}
+                  />
+                </div>
               ) : null}
             </>
           )}
@@ -660,52 +639,13 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                   }}
                 />
               </div>
-              <div className="fr-col-12 fr-col-md-6">
-                <Input
-                  label="Rue"
-                  nativeInputProps={{
-                    value: formData.lieuDeSurvenue?.adresse?.rue || '',
-                    onChange: (e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        lieuDeSurvenue: {
-                          ...prev.lieuDeSurvenue,
-                          adresse: { ...prev.lieuDeSurvenue?.adresse, rue: e.target.value },
-                        },
-                      })),
-                  }}
-                />
-              </div>
-              <div className="fr-col-12 fr-col-md-3">
-                <Input
-                  label="Code postal"
-                  nativeInputProps={{
-                    value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
-                    onChange: (e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        lieuDeSurvenue: {
-                          ...prev.lieuDeSurvenue,
-                          adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
-                        },
-                      })),
-                  }}
-                />
-              </div>
-              <div className="fr-col-12 fr-col-md-3">
-                <Input
-                  label="Ville"
-                  nativeInputProps={{
-                    value: formData.lieuDeSurvenue?.adresse?.ville || '',
-                    onChange: (e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        lieuDeSurvenue: {
-                          ...prev.lieuDeSurvenue,
-                          adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
-                        },
-                      })),
-                  }}
+              <div className="fr-col-12">
+                <DomicileFields
+                  values={addressValues}
+                  onChange={handleAddressChange}
+                  labels={ETABLISSEMENT_ADDRESS_LABELS}
+                  searchLabel="Adresse de l'établissement"
+                  manualSearchHint={`Pour rechercher l'adresse de l'établissement, décochez la case « ${MANUAL_TOGGLE_LABEL} »`}
                 />
               </div>
             </>

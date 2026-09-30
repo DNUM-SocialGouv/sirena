@@ -45,6 +45,7 @@ afterEach(() => {
 });
 
 beforeEach(() => {
+  document.title = '';
   searchState.current = {};
   vi.mocked(useProfile).mockReturnValue({
     data: { role: { id: 'ENTITY_ADMIN' }, entiteId: 'ent-1' },
@@ -267,6 +268,37 @@ describe('Statistiques route — onglets Metabase', () => {
     renderDashboard({ tabs, cards });
 
     expect(screen.getByRole('tab', { name: 'Volumes' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('names the page after the tab being shown', () => {
+    renderDashboard({ tabs, cards });
+
+    expect(document.title).toBe('Volumes - Indicateurs - SIRENA');
+  });
+
+  it('names the page after the tab requested in the URL', () => {
+    searchState.current = { tab: 12 };
+    renderDashboard({ tabs, cards });
+
+    expect(document.title).toBe('Délais - Indicateurs - SIRENA');
+  });
+
+  it('renames the page when another tab is selected', async () => {
+    const user = userEvent.setup();
+    renderDashboard({ tabs, cards });
+
+    await user.click(screen.getByRole('tab', { name: 'Délais' }));
+    // La sélection passe par l'URL : on rejoue le rendu avec la recherche mise à jour.
+    cleanup();
+    renderDashboard({ tabs, cards });
+
+    expect(document.title).toBe('Délais - Indicateurs - SIRENA');
+  });
+
+  it('keeps the plain page title when the dashboard has no tabs', () => {
+    renderDashboard({ tabs: [], cards: [card(1, null, 'Total requêtes')] });
+
+    expect(document.title).toBe('Indicateurs - SIRENA');
   });
 
   it('pushes the selected tab to the URL, keeping the other filters', async () => {
