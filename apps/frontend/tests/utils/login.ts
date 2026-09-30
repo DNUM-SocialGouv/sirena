@@ -2,7 +2,7 @@ import { expect, type Page } from '@playwright/test';
 import { baseUrl, loginUrl } from './constants';
 
 type LoginWithProconnectParams = {
-  password: string;
+  password?: string;
   user: string;
   organisation?: string;
 };
@@ -27,6 +27,10 @@ export const loginWithProconnect = async (
   page: Page,
   { password, user, organisation = 'Commune de clamart - Mairie' }: LoginWithProconnectParams,
 ) => {
+  if (!password) {
+    throw new Error('ProConnect login: E2E_ENTITY_ADMIN_USER_1_PASSWORD is required when E2E_TARGET=integration.');
+  }
+
   await waitForRateLimit();
 
   await page.goto(loginUrl);

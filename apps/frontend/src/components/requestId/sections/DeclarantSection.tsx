@@ -172,6 +172,7 @@ export const DeclarantSection = ({ requestId, id, declarant, editHref }: Declara
     <InfoSection
       id={id}
       title="Déclarant"
+      dataTestId="declarant-section"
       editHref={editHref}
       canEdit={canEdit}
       renderSummary={renderSummary}
