@@ -47,6 +47,7 @@ que le code consomme, et pas seulement sur le SQL :
 | Type de visualisation (`display`), y compris la surcharge posée sur la dashcard | Choix du composant (KPI, tableau, graphique) | Un KPI rendu en tableau, ou l'inverse |
 | Alias des colonnes SQL et renommages (`column_settings`) | En-têtes des tableaux, détection de la colonne « % » | Pourcentages recalculés à tort, en-têtes techniques |
 | Grille (`row`, `col`, `size_x`, `size_y`) | Ordre et disposition des cartes | Page réorganisée |
+| Onglets (`tabs` : nom, `position`) et rattachement des cartes (`dashboard_tab_id`) | Onglets DSFR sur `/statistiques`, dans l'ordre Metabase ; avec zéro ou un seul onglet, grille seule | Onglet manquant ou renommé ; une carte hors onglet est rattachée au premier onglet |
 | Paramètres du dashboard (`slug`, type, multi-sélection) | Découverte dynamique des filtres transmis | Filtre silencieusement ignoré |
 | Mapping paramètre → carte | Application du filtre à chaque carte | Chiffres incohérents entre cartes, **sans erreur** |
 | Visibilité d'embedding (Locked / Enabled / Disabled) | Token JWT vs query string | Périmètre de sécurité cassé, ou dashboard en 503 |

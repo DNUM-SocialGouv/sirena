@@ -7,7 +7,7 @@ import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import { getEntiteById } from '../entites/entites.service.js';
 import { prepareExportRequetesCsv } from './exportRequetes/exportRequetes.service.js';
 import StatisticsController from './statistics.controller.js';
-import { fetchDashboardCardsData } from './statistics.service.js';
+import { fetchDashboardData } from './statistics.service.js';
 
 const entitesMiddlewareState = vi.hoisted(() => ({
   entiteIds: ['root-entite'] as string[] | null,
@@ -40,7 +40,7 @@ vi.mock('../entites/entites.service.js', () => ({
 }));
 
 vi.mock('./statistics.service.js', () => ({
-  fetchDashboardCardsData: vi.fn(),
+  fetchDashboardData: vi.fn(),
 }));
 
 vi.mock('../../middlewares/userStatus.middleware.js', () => ({
@@ -205,12 +205,12 @@ describe('statistics.controller.ts', () => {
       authMiddlewareState.roleId = 'SUPER_ADMIN';
       entitesMiddlewareState.entiteIds = null;
       entitesMiddlewareState.topEntiteId = null;
-      vi.mocked(fetchDashboardCardsData).mockResolvedValueOnce([]);
+      vi.mocked(fetchDashboardData).mockResolvedValueOnce({ tabs: [], cards: [] });
 
       const response = await client.dashboard.$get({ query: {} });
 
       expect(response.status).toBe(200);
-      expect(fetchDashboardCardsData).toHaveBeenCalledWith(
+      expect(fetchDashboardData).toHaveBeenCalledWith(
         {},
         {
           start_date: undefined,
@@ -228,12 +228,14 @@ describe('statistics.controller.ts', () => {
       entitesMiddlewareState.entiteIds = ['root-entite'];
       entitesMiddlewareState.topEntiteId = 'root-entite';
       vi.mocked(getEntiteById).mockResolvedValueOnce({ label: 'ARS Île-de-France' } as never);
-      vi.mocked(fetchDashboardCardsData).mockResolvedValueOnce([]);
+      const dashboard = { tabs: [{ id: 11, name: 'Volumes', position: 0 }], cards: [] };
+      vi.mocked(fetchDashboardData).mockResolvedValueOnce(dashboard);
 
       const response = await client.dashboard.$get({ query: {} });
 
       expect(response.status).toBe(200);
-      expect(fetchDashboardCardsData).toHaveBeenCalledWith(
+      await expect(response.json()).resolves.toEqual({ data: dashboard });
+      expect(fetchDashboardData).toHaveBeenCalledWith(
         { entity_label: 'ARS Île-de-France' },
         {
           start_date: undefined,
@@ -252,20 +254,20 @@ describe('statistics.controller.ts', () => {
       const response = await client.dashboard.$get({ query: {} });
 
       expect(response.status).toBe(403);
-      expect(fetchDashboardCardsData).not.toHaveBeenCalled();
+      expect(fetchDashboardData).not.toHaveBeenCalled();
     });
 
     it('forwards the selected domaines to Metabase as a repeatable array param, alongside the period', async () => {
       entitesMiddlewareState.topEntiteId = 'root-entite';
       vi.mocked(getEntiteById).mockResolvedValueOnce({ label: 'ARS Île-de-France' } as never);
-      vi.mocked(fetchDashboardCardsData).mockResolvedValueOnce([]);
+      vi.mocked(fetchDashboardData).mockResolvedValueOnce({ tabs: [], cards: [] });
 
       const response = await client.dashboard.$get({
         query: { startDate: '2026-01-01', endDate: '2026-03-31', domaineIds: 'SOCIAL,SANITAIRE' },
       });
 
       expect(response.status).toBe(200);
-      expect(fetchDashboardCardsData).toHaveBeenCalledWith(
+      expect(fetchDashboardData).toHaveBeenCalledWith(
         { entity_label: 'ARS Île-de-France' },
         {
           start_date: '2026-01-01',
@@ -280,12 +282,12 @@ describe('statistics.controller.ts', () => {
     it('forwards the EIG exclusion to Metabase when the box is unchecked', async () => {
       entitesMiddlewareState.topEntiteId = 'root-entite';
       vi.mocked(getEntiteById).mockResolvedValueOnce({ label: 'ARS Île-de-France' } as never);
-      vi.mocked(fetchDashboardCardsData).mockResolvedValueOnce([]);
+      vi.mocked(fetchDashboardData).mockResolvedValueOnce({ tabs: [], cards: [] });
 
       const response = await client.dashboard.$get({ query: { includeEIG: 'false' } });
 
       expect(response.status).toBe(200);
-      expect(fetchDashboardCardsData).toHaveBeenCalledWith(
+      expect(fetchDashboardData).toHaveBeenCalledWith(
         { entity_label: 'ARS Île-de-France' },
         {
           start_date: undefined,
@@ -301,12 +303,12 @@ describe('statistics.controller.ts', () => {
       authMiddlewareState.roleId = 'SUPER_ADMIN';
       entitesMiddlewareState.entiteIds = null;
       entitesMiddlewareState.topEntiteId = null;
-      vi.mocked(fetchDashboardCardsData).mockResolvedValueOnce([]);
+      vi.mocked(fetchDashboardData).mockResolvedValueOnce({ tabs: [], cards: [] });
 
       const response = await client.dashboard.$get({ query: { includeEIG: 'false' } });
 
       expect(response.status).toBe(200);
-      expect(fetchDashboardCardsData).toHaveBeenCalledWith(
+      expect(fetchDashboardData).toHaveBeenCalledWith(
         {},
         {
           start_date: undefined,
@@ -325,20 +327,20 @@ describe('statistics.controller.ts', () => {
       const response = await client.dashboard.$get({ query: { domaineIds: 'SOCIAL,NOT_A_DOMAINE' } });
 
       expect(response.status).toBe(400);
-      expect(fetchDashboardCardsData).not.toHaveBeenCalled();
+      expect(fetchDashboardData).not.toHaveBeenCalled();
     });
 
     it('forwards the selected lieux de survenue (types et précisions) to Metabase as a repeatable array param', async () => {
       entitesMiddlewareState.topEntiteId = 'root-entite';
       vi.mocked(getEntiteById).mockResolvedValueOnce({ label: 'ARS Île-de-France' } as never);
-      vi.mocked(fetchDashboardCardsData).mockResolvedValueOnce([]);
+      vi.mocked(fetchDashboardData).mockResolvedValueOnce({ tabs: [], cards: [] });
 
       const response = await client.dashboard.$get({
         query: { lieuTypes: 'ETABLISSEMENT_SANTE,DOMICILE:CHEZ_TIERS' },
       });
 
       expect(response.status).toBe(200);
-      expect(fetchDashboardCardsData).toHaveBeenCalledWith(
+      expect(fetchDashboardData).toHaveBeenCalledWith(
         { entity_label: 'ARS Île-de-France' },
         {
           start_date: undefined,
@@ -355,7 +357,7 @@ describe('statistics.controller.ts', () => {
       const response = await client.dashboard.$get({ query: { lieuTypes: 'NOT_A_LIEU' } });
 
       expect(response.status).toBe(400);
-      expect(fetchDashboardCardsData).not.toHaveBeenCalled();
+      expect(fetchDashboardData).not.toHaveBeenCalled();
     });
   });
 });

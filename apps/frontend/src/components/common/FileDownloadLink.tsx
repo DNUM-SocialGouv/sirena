@@ -268,8 +268,6 @@ export const FileDownloadLink = ({
           status: initialStatus,
           scanStatus: initialScanStatus || 'PENDING',
           sanitizeStatus: initialSanitizeStatus || 'PENDING',
-          processingError: null,
-          safeFilePath: safeHref || null,
         }
       : null,
   );

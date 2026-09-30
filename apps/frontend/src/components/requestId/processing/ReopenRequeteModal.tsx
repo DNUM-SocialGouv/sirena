@@ -1,6 +1,7 @@
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useReopenRequete } from '@/hooks/mutations/reopenRequete.hook';
+import type { useRequeteOtherEntitiesAffected } from '@/hooks/queries/useRequeteDetails';
 import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
 
 export type ReopenRequeteModalRef = {
@@ -9,15 +10,35 @@ export type ReopenRequeteModalRef = {
 
 export type ReopenRequeteModalProps = {
   requestId: string;
+  otherEntitiesQuery: Pick<
+    ReturnType<typeof useRequeteOtherEntitiesAffected>,
+    'data' | 'isPaused' | 'isError' | 'isPlaceholderData'
+  >;
+  onRefreshRecipients: () => void;
   triggerButtonRef?: React.RefObject<HTMLButtonElement | null>;
 };
 
 export const ReopenRequeteModal = forwardRef<ReopenRequeteModalRef, ReopenRequeteModalProps>(
-  ({ requestId, triggerButtonRef }, ref) => {
+  ({ requestId, otherEntitiesQuery, onRefreshRecipients, triggerButtonRef }, ref) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const wasActionTakenRef = useRef(false);
     const reopenMutation = useReopenRequete(requestId);
+
+    const recipientNames = (otherEntitiesQuery.data?.otherEntites.map((entite) => entite.nomComplet) ?? []).sort(
+      (a, b) => a.localeCompare(b, 'fr'),
+    );
+
+    const recipients = new Intl.ListFormat('fr', { style: 'long', type: 'conjunction' }).format(recipientNames);
+
+    const visibilityMessage =
+      otherEntitiesQuery.isPaused || otherEntitiesQuery.isError
+        ? 'Cette étape sera visible par les autres entités administratives affectées à la requête.'
+        : otherEntitiesQuery.isPlaceholderData || !otherEntitiesQuery.data
+          ? 'Chargement des entités concernées par le partage…'
+          : recipientNames.length > 0
+            ? `Cette étape sera visible par ${recipients}.`
+            : null;
 
     const reopenModal = useMemo(
       () =>
@@ -38,6 +59,8 @@ export const ReopenRequeteModal = forwardRef<ReopenRequeteModalRef, ReopenRequet
       if (triggerButtonRef?.current) {
         registerTrigger(triggerButtonRef.current);
       }
+
+      onRefreshRecipients();
 
       reopenModal.open();
     };
@@ -87,6 +110,9 @@ export const ReopenRequeteModal = forwardRef<ReopenRequeteModalRef, ReopenRequet
           Êtes-vous sûr de vouloir rouvrir cette requête ? La requête repassera au statut « En cours » et sera de
           nouveau modifiable.
         </p>
+        <div role="status" aria-live="polite" aria-atomic="true">
+          {visibilityMessage ? <p>{visibilityMessage}</p> : null}
+        </div>
         {errorMessage ? (
           <p className="fr-text--sm" style={{ color: 'var(--text-default-error)' }}>
             {errorMessage}

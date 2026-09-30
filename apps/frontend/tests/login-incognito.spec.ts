@@ -12,8 +12,7 @@ test('login', async ({ browser }) => {
   });
 
   await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 30000 });
-  const heading = page.getByRole('heading', { level: 1 });
-  await expect(heading).toHaveText(/Tableau de bord des requêtes/, { timeout: 10000 });
+  await expect(page.getByTestId('home-title')).toBeVisible({ timeout: 10000 });
   await page.goto(loginUrl);
   await expect(page).toHaveURL(`${baseUrl}/home`);
   await context.close();

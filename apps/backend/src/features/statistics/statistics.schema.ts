@@ -73,9 +73,17 @@ export const MetabaseCardDataSchema = z.object({
   rows: z.array(z.array(z.unknown())),
 });
 
+export const StatisticsDashboardTabSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  position: z.number().int(),
+});
+
 export const StatisticsDashboardCardSchema = z.object({
   id: z.number().int(),
   dashcardId: z.number().int(),
+  tabId: z.number().int().nullable(),
+  filterSlugs: z.array(z.string()),
   name: z.string(),
   description: z.string().nullable(),
   display: z.string().nullable(),
@@ -84,5 +92,6 @@ export const StatisticsDashboardCardSchema = z.object({
 });
 
 export const StatisticsDashboardPayloadSchema = z.object({
+  tabs: z.array(StatisticsDashboardTabSchema),
   cards: z.array(StatisticsDashboardCardSchema),
 });

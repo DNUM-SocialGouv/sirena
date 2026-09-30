@@ -8,6 +8,7 @@ export * from './mesureProtection.constant.js';
 export * from './motifs.constant.js';
 export * from './reponseOuiNon.constant.js';
 export * from './requete.constant.js';
+export * from './requeteMessage.constant.js';
 export * from './requeteStatut.constant.js';
 export * from './role.constant.js';
 export * from './sse.constant.js';

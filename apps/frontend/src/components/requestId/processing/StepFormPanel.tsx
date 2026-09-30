@@ -45,6 +45,7 @@ export type StepFormPanelRef = {
 
 type StepFormPanelProps = {
   requestId: string;
+  isMultiEntite?: boolean;
 };
 
 type EditableNote = {
@@ -224,7 +225,7 @@ const ExistingFileItem = ({ file, editStepId, isLoading, onRemove }: ExistingFil
   );
 };
 
-export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({ requestId }, ref) => {
+export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({ requestId, isMultiEntite }, ref) => {
   const generatedId = useId();
   const titleId = `${generatedId}-step-form`;
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -272,6 +273,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   const uploadFileMutation = useUploadFile({ silentToastError: true });
   const toastManager = Toast.useToastManager();
   const estPartageeEnabled = useHasFeature(FEATURE_FLAGS.SHARED_PROCESSING_STEPS, false);
+  const isSharingChoiceVisible = estPartageeEnabled && isManualStep && isMultiEntite !== false;
 
   const resetForm = () => {
     setNom('');
@@ -437,7 +439,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
       }
     }
 
-    if (estPartageeEnabled && isManualStep && estPartagee === null) {
+    if (isSharingChoiceVisible && estPartagee === null) {
       setEstPartageeError(EST_PARTAGEE_REQUIRED_ERROR);
       firstErrorField = firstErrorField ?? estPartageeInputRef.current;
       valid = false;
@@ -492,6 +494,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
 
     try {
       if (mode === 'create') {
+        const submittedEstPartagee = isMultiEntite === false ? false : estPartagee;
         await addStepMutation.mutateAsync({
           nom: nom.trim(),
           ...(statutId ? { statutId } : {}),
@@ -499,7 +502,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
           ...rappelPayload,
           notes: cleanedNotes.map((note) => ({ texte: note.texte })),
           fileIds: uploadedIds,
-          ...(estPartageeEnabled && estPartagee !== null ? { estPartagee } : {}),
+          ...(estPartageeEnabled && submittedEstPartagee !== null ? { estPartagee: submittedEstPartagee } : {}),
         });
         toastManager.add({
           title: 'Étape ajoutée',
@@ -636,6 +639,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                       />
                     ) : (
                       <Input
+                        data-testid="step-nom-field"
                         label="Nom de l'étape (obligatoire)"
                         disabled={isLoading}
                         state={nomError ? 'error' : 'default'}
@@ -653,6 +657,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
 
                     <div className={styles.fieldBlock}>
                       <RadioButtons
+                        data-testid="step-statut-choice"
                         legend="Statut de l'étape"
                         orientation="horizontal"
                         disabled={isLoading || fieldsLocked}
@@ -702,9 +707,10 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                       </div>
                     )}
 
-                    {estPartageeEnabled && isManualStep ? (
+                    {isSharingChoiceVisible ? (
                       <div className={styles.fieldBlock}>
                         <RadioButtons
+                          data-testid="step-partagee-choice"
                           legend="Afficher l’étape pour les autres entités affectées (obligatoire)"
                           orientation="horizontal"
                           disabled={isLoading}

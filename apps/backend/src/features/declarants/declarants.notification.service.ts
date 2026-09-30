@@ -161,6 +161,7 @@ async function attachEmailPdfToStep(
         requeteId: null,
         faitSituationId: null,
         demarchesEngageesId: null,
+        requeteMessageId: null,
         uploadedById: authorId ?? null,
         entiteId,
       });

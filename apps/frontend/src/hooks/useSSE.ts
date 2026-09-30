@@ -20,6 +20,13 @@ export interface SSEState {
   reconnectAttempts: number;
 }
 
+const MAX_RECONNECT_DELAY_MS = 30_000;
+const RECONNECT_JITTER_MS = 1_000;
+
+export const reconnectDelay = (attempt: number, baseInterval: number, random = Math.random) =>
+  Math.min(baseInterval * 2 ** Math.max(0, attempt - 1), MAX_RECONNECT_DELAY_MS) +
+  Math.floor(random() * RECONNECT_JITTER_MS);
+
 export function useSSE<T>(options: SSEOptions<T>) {
   const {
     url,
@@ -40,7 +47,13 @@ export function useSSE<T>(options: SSEOptions<T>) {
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectAttemptsRef = useRef(0);
   const mountedRef = useRef(true);
+
+  const onMessageRef = useRef(onMessage);
+  const onErrorRef = useRef(onError);
+  onMessageRef.current = onMessage;
+  onErrorRef.current = onError;
 
   const cleanup = useCallback(() => {
     if (reconnectTimeoutRef.current) {
@@ -65,6 +78,7 @@ export function useSSE<T>(options: SSEOptions<T>) {
 
     eventSource.onopen = () => {
       if (!mountedRef.current) return;
+      reconnectAttemptsRef.current = 0;
       setState({
         isConnected: true,
         isConnecting: false,
@@ -77,7 +91,7 @@ export function useSSE<T>(options: SSEOptions<T>) {
       if (!mountedRef.current) return;
       try {
         const data = JSON.parse(event.data) as T;
-        onMessage(data);
+        onMessageRef.current(data);
       } catch {
         console.error('Failed to parse SSE message:', event.data);
       }
@@ -90,36 +104,34 @@ export function useSSE<T>(options: SSEOptions<T>) {
 
       eventSource.close();
 
-      setState((prev) => {
-        const newAttempts = prev.reconnectAttempts + 1;
-        if (newAttempts >= maxReconnectAttempts) {
-          onError?.(error);
-          return {
-            isConnected: false,
-            isConnecting: false,
-            error,
-            reconnectAttempts: newAttempts,
-          };
-        }
+      const attempts = reconnectAttemptsRef.current + 1;
+      reconnectAttemptsRef.current = attempts;
+      setState({
+        isConnected: false,
+        isConnecting: false,
+        error,
+        reconnectAttempts: attempts,
+      });
 
-        reconnectTimeoutRef.current = setTimeout(() => {
+      if (attempts >= maxReconnectAttempts) {
+        onErrorRef.current?.(error);
+        return;
+      }
+
+      reconnectTimeoutRef.current = setTimeout(
+        () => {
           if (mountedRef.current) {
             connect();
           }
-        }, reconnectInterval);
-
-        return {
-          isConnected: false,
-          isConnecting: false,
-          error,
-          reconnectAttempts: newAttempts,
-        };
-      });
+        },
+        reconnectDelay(attempts, reconnectInterval),
+      );
     };
-  }, [enabled, url, eventType, onMessage, onError, reconnectInterval, maxReconnectAttempts, cleanup]);
+  }, [enabled, url, eventType, reconnectInterval, maxReconnectAttempts, cleanup]);
 
   const disconnect = useCallback(() => {
     cleanup();
+    reconnectAttemptsRef.current = 0;
     setState({
       isConnected: false,
       isConnecting: false,
@@ -140,6 +152,29 @@ export function useSSE<T>(options: SSEOptions<T>) {
       cleanup();
     };
   }, [enabled, connect, cleanup]);
+
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const retryIfGivenUp = () => {
+      if (document.visibilityState !== 'visible') return;
+      const { isConnected, isConnecting } = stateRef.current;
+      if (isConnected || isConnecting || reconnectAttemptsRef.current < maxReconnectAttempts) return;
+      reconnectAttemptsRef.current = 0;
+      setState((prev) => ({ ...prev, reconnectAttempts: 0 }));
+      connect();
+    };
+
+    document.addEventListener('visibilitychange', retryIfGivenUp);
+    window.addEventListener('online', retryIfGivenUp);
+    return () => {
+      document.removeEventListener('visibilitychange', retryIfGivenUp);
+      window.removeEventListener('online', retryIfGivenUp);
+    };
+  }, [enabled, connect, maxReconnectAttempts]);
 
   return {
     ...state,

@@ -1,8 +1,8 @@
-import type { StatisticsCard } from '@/components/statistics/statistics.types';
+import type { StatisticsCard, StatisticsDashboard } from '@/components/statistics/statistics.types';
 import { client } from '@/lib/api/hc';
 import { handleRequestErrors } from '@/lib/api/tanstackQuery';
 
-export type { StatisticsCard };
+export type { StatisticsCard, StatisticsDashboard };
 
 export type StatisticsDashboardFilters = {
   startDate?: string;
@@ -12,9 +12,7 @@ export type StatisticsDashboardFilters = {
   lieuTypes?: string;
 };
 
-export async function fetchStatisticsDashboard(
-  filters: StatisticsDashboardFilters = {},
-): Promise<{ cards: StatisticsCard[] }> {
+export async function fetchStatisticsDashboard(filters: StatisticsDashboardFilters = {}): Promise<StatisticsDashboard> {
   const query: Record<string, string> = {};
   if (filters.startDate) query.startDate = filters.startDate;
   if (filters.endDate) query.endDate = filters.endDate;

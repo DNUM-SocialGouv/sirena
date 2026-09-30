@@ -102,6 +102,10 @@ dialog {
   position: relative;
 }
 
+.app-container--flush {
+  width: 100%;
+}
+
 .bg-cumulus {
   background-color: var(--background-alt-blue-cumulus);
 }

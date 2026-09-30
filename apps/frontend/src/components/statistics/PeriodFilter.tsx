@@ -4,7 +4,7 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import { FEATURE_FLAGS } from '@sirena/common/constants';
 import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
-import { useDisclosureMenu } from '@/hooks/useDisclosureMenu';
+import { hasFocusLeftMenu, useDisclosureMenu } from '@/hooks/useDisclosureMenu';
 import { useHasFeature } from '@/hooks/useHasFeature';
 import styles from './PeriodFilter.module.css';
 import { PERIOD_PRESET_LABELS, PERIOD_PRESETS, type PeriodPreset, type PeriodSelection } from './period';
@@ -44,10 +44,7 @@ export function PeriodFilter({ value, onChange }: Props) {
     const panel = panelRef.current;
 
     const onFocusOut = (e: FocusEvent) => {
-      const next = e.relatedTarget as Node | null;
-      if (!next) return;
-      if (panel?.contains(next) || triggerRef.current?.contains(next)) return;
-      close();
+      if (hasFocusLeftMenu(e.relatedTarget as Node | null, panel, triggerRef.current)) close();
     };
     panel?.addEventListener('focusout', onFocusOut);
 

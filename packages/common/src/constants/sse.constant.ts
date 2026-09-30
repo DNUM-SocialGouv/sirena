@@ -3,6 +3,7 @@ export const SSE_EVENT_TYPES = {
   USER_LIST: 'user:list',
   FILE_STATUS: 'file:status',
   REQUETE_UPDATED: 'requete:updated',
+  REQUETE_MESSAGE: 'requete:message',
 } as const;
 
 export type SSEEventType = (typeof SSE_EVENT_TYPES)[keyof typeof SSE_EVENT_TYPES];
@@ -28,8 +29,6 @@ export interface FileStatusEvent {
   status: string;
   scanStatus: string;
   sanitizeStatus: string;
-  processingError: string | null;
-  safeFilePath: string | null;
 }
 
 export interface UserStatusEvent {
@@ -41,6 +40,7 @@ export interface UserStatusEvent {
 export interface UserListEvent {
   action: 'created' | 'updated' | 'deleted';
   userId: string;
+  entiteId: string | null;
 }
 
 export interface RequeteUpdatedEvent {
@@ -48,3 +48,22 @@ export interface RequeteUpdatedEvent {
   entiteId: string;
   field: RequeteUpdateField;
 }
+
+interface RequeteMessageEventBase {
+  requeteId: string;
+  entiteId: string;
+  entiteIds: string[];
+}
+
+export interface RequeteMessageCreatedEvent extends RequeteMessageEventBase {
+  action: 'created';
+  messageId: string;
+}
+
+export interface RequeteMessageReadEvent extends RequeteMessageEventBase {
+  action: 'read';
+  messageIds: string[];
+  userId: string;
+}
+
+export type RequeteMessageEvent = RequeteMessageCreatedEvent | RequeteMessageReadEvent;

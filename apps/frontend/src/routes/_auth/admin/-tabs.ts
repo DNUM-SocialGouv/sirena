@@ -6,11 +6,13 @@ const baseTabs: TabDescriptor[] = [
     label: "Demandes d'habilitation",
     tabPanelId: 'panel-pending',
     tabId: 'tab-pending',
+    dataTestId: 'admin-tab-pending',
   },
   {
     label: 'Utilisateurs',
     tabPanelId: 'panel-all',
     tabId: 'tab-all',
+    dataTestId: 'admin-tab-all',
   },
 ];
 
@@ -18,24 +20,28 @@ const entitesTab: TabDescriptor = {
   label: 'Entités',
   tabPanelId: 'panel-entites',
   tabId: 'tab-entites',
+  dataTestId: 'admin-tab-entites',
 };
 
 const localEntitesTab: TabDescriptor = {
   label: 'Entités',
   tabPanelId: 'panel-local-entites',
   tabId: 'tab-local-entites',
+  dataTestId: 'admin-tab-local-entites',
 };
 
 const localDirectionsServicesTab: TabDescriptor = {
   label: 'Directions et services',
   tabPanelId: 'panel-local-directions-services',
   tabId: 'tab-local-directions-services',
+  dataTestId: 'admin-tab-local-directions-services',
 };
 
 const sirecMigrationTab: TabDescriptor = {
   label: 'Migration SIREC',
   tabPanelId: 'panel-sirec-migration',
   tabId: 'tab-sirec-migration',
+  dataTestId: 'admin-tab-sirec-migration',
 };
 
 export function getTabs(

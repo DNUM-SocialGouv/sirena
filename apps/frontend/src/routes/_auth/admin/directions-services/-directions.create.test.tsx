@@ -3,7 +3,6 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCreateDirectionAdminLocal } from '@/hooks/queries/entites.hook';
-import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { requireAdminLocalDirectionCreation } from './-create-route-guard';
 import { Route, RouteComponent } from './directions.create';
 
@@ -24,7 +23,13 @@ vi.mock('@/lib/api/fetchEntites', () => ({ fetchDirectionsServicesList: vi.fn() 
 vi.mock('@/lib/api/fetchFeatureFlags', () => ({ fetchResolvedFeatureFlags: vi.fn() }));
 vi.mock('@/hooks/queries/profile.hook', () => ({ profileQueryOptions: vi.fn() }));
 vi.mock('@/lib/queryClient', () => ({ queryClient: { ensureQueryData: vi.fn(), fetchQuery: vi.fn() } }));
-vi.mock('@/lib/auth-guards', () => ({ requireAuthAndRoles: vi.fn(() => authGuardSpy) }));
+const { guardRoles } = vi.hoisted(() => ({ guardRoles: [] as unknown[] }));
+vi.mock('@/lib/auth-guards', () => ({
+  requireAuthAndRoles: vi.fn((roles: unknown) => {
+    guardRoles.push(roles);
+    return authGuardSpy;
+  }),
+}));
 vi.mock('@sirena/ui', async () => {
   const actual = await vi.importActual<typeof import('@sirena/ui')>('@sirena/ui');
   return { ...actual, Toast: { useToastManager: () => ({ add: addToastSpy }) } };
@@ -50,7 +55,7 @@ afterEach(() => {
 
 describe('Admin local Direction create route', () => {
   it('uses the entity-admin Direction creation guard', () => {
-    expect(vi.mocked(requireAuthAndRoles)).toHaveBeenCalledWith([ROLES.ENTITY_ADMIN]);
+    expect(guardRoles).toEqual([[ROLES.ENTITY_ADMIN]]);
     expect((Route as unknown as { beforeLoad: unknown }).beforeLoad).toBe(requireAdminLocalDirectionCreation);
   });
 

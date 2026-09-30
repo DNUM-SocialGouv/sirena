@@ -46,10 +46,11 @@ export async function startScheduler() {
             logger.info(`[Scheduler] Removed ${staleJobs.length} stale ${name} jobs from queue`);
           }
 
-          await cronQueue.add(name, data, {
-            repeat: { every: repeatEveryMs },
-            removeOnComplete: true,
-          });
+          await cronQueue.upsertJobScheduler(
+            name,
+            { every: repeatEveryMs },
+            { name, data, opts: { removeOnComplete: true } },
+          );
           logger.info(`[Scheduler] Scheduled ${name}`);
 
           if (runOnStart) {
