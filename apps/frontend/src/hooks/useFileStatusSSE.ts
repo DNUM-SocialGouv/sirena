@@ -19,8 +19,6 @@ export function useFileStatusSSE(options: UseFileStatusSSEOptions) {
         status: data.status,
         scanStatus: data.scanStatus,
         sanitizeStatus: data.sanitizeStatus,
-        processingError: data.processingError,
-        safeFilePath: data.safeFilePath,
       };
       onStatusChange?.(status);
     },

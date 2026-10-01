@@ -212,6 +212,13 @@ export const UpdateRequeteFilesBodySchema = z.object({
 });
 export const UpdateSituationBodySchema = z.object({
   situation: SituationDataSchema,
+  controls: z
+    .object({
+      situation: z.object({
+        updatedAt: z.iso.datetime(),
+      }),
+    })
+    .optional(),
 });
 export const UpdateTypeAndDateRequeteBodySchema = z.object({
   receptionDate,

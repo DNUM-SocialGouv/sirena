@@ -639,6 +639,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                       />
                     ) : (
                       <Input
+                        data-testid="step-nom-field"
                         label="Nom de l'étape (obligatoire)"
                         disabled={isLoading}
                         state={nomError ? 'error' : 'default'}
@@ -656,6 +657,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
 
                     <div className={styles.fieldBlock}>
                       <RadioButtons
+                        data-testid="step-statut-choice"
                         legend="Statut de l'étape"
                         orientation="horizontal"
                         disabled={isLoading || fieldsLocked}
@@ -708,6 +710,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                     {isSharingChoiceVisible ? (
                       <div className={styles.fieldBlock}>
                         <RadioButtons
+                          data-testid="step-partagee-choice"
                           legend="Afficher l’étape pour les autres entités affectées (obligatoire)"
                           orientation="horizontal"
                           disabled={isLoading}

@@ -179,8 +179,6 @@ describe('FileDownloadLink status badge', () => {
         status: 'READY',
         scanStatus: 'INFECTED',
         sanitizeStatus: 'ERROR',
-        processingError: null,
-        safeFilePath: null,
       });
     });
 

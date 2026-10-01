@@ -1,5 +1,6 @@
 import { ROLES } from '@sirena/common/constants';
 import { createFileRoute } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import { z } from 'zod';
 import { ConflictResolutionDialog } from '@/components/conflictDialog/ConflictResolutionDialog';
 import { PersonneConcerneeForm } from '@/components/personneConcernee/PersonneConcerneeForm';
@@ -31,38 +32,34 @@ function RouteComponent() {
   const { requestId } = Route.useParams();
   const requestQuery = useRequeteDetails(requestId);
 
-  const { handleSave, handleConflictResolve, handleConflictCancel, conflicts, showConflictDialog, originalDataRef } =
+  const participant = requestQuery.data?.requete?.participant;
+  const formattedData = useMemo(
+    () => (participant ? formatPersonneConcerneeFromServer(participant) : {}),
+    [participant],
+  );
+
+  const { handleSave, handleConflictResolve, handleConflictCancel, conflicts, showConflictDialog } =
     usePersonneConcerneeSave({
       requestId,
-      participantUpdatedAt: requestQuery.data?.requete?.participant?.identite?.updatedAt,
+      participantUpdatedAt: participant?.identite?.updatedAt,
+      loadedData: participant ? formattedData : undefined,
       onRefetch: () => requestQuery.refetch(),
     });
 
   return (
-    <QueryStateHandler query={requestQuery}>
-      {() => {
-        const request = requestQuery.data;
-        const participant = request?.requete?.participant;
-
-        const formattedData = participant ? formatPersonneConcerneeFromServer(participant) : {};
-
-        originalDataRef.current = formattedData;
-
-        return (
-          <>
-            <PersonneConcerneeForm mode="edit" requestId={requestId} initialData={formattedData} onSave={handleSave} />
-            {showConflictDialog && conflicts.length > 0 && (
-              <ConflictResolutionDialog
-                conflicts={conflicts}
-                onResolve={handleConflictResolve}
-                onCancel={handleConflictCancel}
-                isOpen={showConflictDialog}
-                fieldMetadata={personneConcerneeFieldMetadata}
-              />
-            )}
-          </>
-        );
-      }}
-    </QueryStateHandler>
+    <>
+      <QueryStateHandler query={requestQuery}>
+        {() => (
+          <PersonneConcerneeForm mode="edit" requestId={requestId} initialData={formattedData} onSave={handleSave} />
+        )}
+      </QueryStateHandler>
+      <ConflictResolutionDialog
+        conflicts={conflicts}
+        onResolve={handleConflictResolve}
+        onCancel={handleConflictCancel}
+        isOpen={showConflictDialog}
+        fieldMetadata={personneConcerneeFieldMetadata}
+      />
+    </>
   );
 }

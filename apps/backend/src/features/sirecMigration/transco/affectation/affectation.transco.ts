@@ -1,6 +1,7 @@
 import { prisma } from '@sirena/db';
 import { createDefaultLogger } from '../../../../helpers/pino.js';
 import { SirecTranscoError } from '../sirecTransco.error.js';
+import { AFFECTATION_ENTITES_AUVERGNE_RHONE_ALPES } from './entitesAuvergneRhoneAlpes.js';
 import { AFFECTATION_ENTITES_BOURGOGNE_FRANCHE_COMTE } from './entitesBourgogneFrancheComte.js';
 import { AFFECTATION_ENTITES_BRETAGNE } from './entitesBretagne.js';
 import { AFFECTATION_ENTITES_CENTRE_VAL_DE_LOIRE } from './entitesCentreValDeLoire.js';
@@ -17,6 +18,9 @@ import { AFFECTATION_ENTITES_OCCITANIE } from './entitesOccitanie.js';
 import { AFFECTATION_ENTITES_PACA } from './entitesPACA.js';
 import { AFFECTATION_ENTITES_PAYS_DE_LA_LOIRE } from './entitesPaysDeLaLoire.js';
 import { AFFECTATION_ENTITES_TOP_LEVEL } from './entitesTopLevel.js';
+import type { SirecGroupMode } from './sirecGroupMode.js';
+
+export { SIREC_GROUP_MODE, type SirecGroupMode } from './sirecGroupMode.js';
 
 const logger = createDefaultLogger();
 
@@ -41,6 +45,7 @@ const ALL_AFFECTATION_ENTITES = {
   ...AFFECTATION_ENTITES_CORSE,
   ...AFFECTATION_ENTITES_LA_REUNION,
   ...AFFECTATION_ENTITES_MARTINIQUE,
+  ...AFFECTATION_ENTITES_AUVERGNE_RHONE_ALPES,
 };
 
 export function getAffectationLabel(sirecId: number | null): string | null {
@@ -55,10 +60,16 @@ export interface EntiteSirenaLabels {
   label: string;
   parentLabel?: string;
   grandParentLabel?: string;
+  /** Si précisé, cette entité n'est incluse que lorsque le mode de groupe SIREC transmis correspond. */
+  groupMode?: SirecGroupMode;
+}
+interface AffectationService {
+  entiteId: string;
+  groupMode?: SirecGroupMode;
 }
 interface AffectationEntry {
   topLevelEntiteId: string;
-  serviceEntiteIds: string[];
+  services: AffectationService[];
 }
 
 let transco: Map<number, AffectationEntry> | null = null;
@@ -117,12 +128,12 @@ export async function initAffectationTransco(): Promise<void> {
         (e) => normalize(e.nomComplet) === normalize(topLevelLabel) && !e.entiteMere,
       );
       if (!topLevelEntity) continue;
-      const serviceEntiteIds = entitesSirenaLabels
+      const services = entitesSirenaLabels
         .filter((s): s is EntiteSirenaLabels & { parentLabel: string } => s.parentLabel !== undefined)
-        .map((s) => findEntityId(entities, s));
-      newTransco.set(sirecId, { topLevelEntiteId: topLevelEntity.id, serviceEntiteIds });
+        .map((s) => ({ entiteId: findEntityId(entities, s), groupMode: s.groupMode }));
+      newTransco.set(sirecId, { topLevelEntiteId: topLevelEntity.id, services });
     } catch (err) {
-      logger.warn({ err, sirecId }, 'SIREC Entity not found in SIRENA, ignored during initialization');
+      logger.error({ err, sirecId }, 'SIREC Entity not found in SIRENA, ignored during initialization');
     }
   }
 
@@ -139,15 +150,18 @@ export function filterArsEntiteIds(entiteIds: string[]): string[] {
   return entiteIds.filter((id) => arsEntiteIdSet.has(id));
 }
 
-export function transcodeAffectation(idSirec: number): AffectationEntites {
+export function transcodeAffectation(idSirec: number, mode: SirecGroupMode): AffectationEntites {
   if (transco === null) {
     throw new Error('initAffectationTransco() must be called before transcodeAffectation()');
   }
   const entry = transco.get(idSirec);
   if (entry !== undefined) {
+    const serviceEntiteIds = entry.services
+      .filter((s) => s.groupMode === undefined || s.groupMode === mode)
+      .map((s) => s.entiteId);
     return {
       requeteEntiteIds: [entry.topLevelEntiteId],
-      situationEntiteIds: [...entry.serviceEntiteIds, entry.topLevelEntiteId],
+      situationEntiteIds: [...serviceEntiteIds, entry.topLevelEntiteId],
     };
   }
   throw new SirecTranscoError(idSirec, 'affectation');

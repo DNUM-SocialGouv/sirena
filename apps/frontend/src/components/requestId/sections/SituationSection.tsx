@@ -622,6 +622,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
     <InfoSection
       id={id}
       title="Description de la situation"
+      dataTestId="situation-section"
       editHref={canEdit ? editHref : undefined}
       canEdit={canEdit}
       badges={

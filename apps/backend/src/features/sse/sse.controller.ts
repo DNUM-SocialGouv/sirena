@@ -1,10 +1,11 @@
 import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
-import { ERROR_KIND, ROLES, ROLES_READ, SSE_EVENT_TYPES } from '@sirena/common/constants';
+import { ERROR_KIND, FEATURE_FLAGS, ROLES, ROLES_READ, SSE_EVENT_TYPES } from '@sirena/common/constants';
 import factoryWithRole from '../../helpers/factories/appWithRole.js';
 import {
   createSSEHandler,
   createSSEStream,
   type FileStatusEvent,
+  type RequeteMessageEvent,
   type RequeteUpdatedEvent,
   requireTopEntiteId,
   requireUserId,
@@ -15,8 +16,25 @@ import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
-import { getRequeteEntiteById } from '../requetesEntite/requetesEntite.service.js';
-import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
+import { hasFeature } from '../featureFlags/featureFlags.service.js';
+import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service.js';
+import { getUploadedFileByIdForEntite } from '../uploadedFiles/uploadedFiles.service.js';
+
+export const buildRequeteMessageFilter =
+  (requeteId: string, topEntiteId: string, userId: string) =>
+  (event: RequeteMessageEvent): boolean => {
+    if (event.requeteId !== requeteId) return false;
+
+    if (event.action === 'read') return event.userId === userId;
+
+    return event.entiteIds.includes(topEntiteId);
+  };
+
+export const buildUserListFilter = (entiteIds: string[] | null) => {
+  if (entiteIds === null) return undefined;
+  const scope = new Set(entiteIds);
+  return (event: UserListEvent): boolean => event.entiteId !== null && scope.has(event.entiteId);
+};
 
 const app = factoryWithRole
   .createApp()
@@ -31,6 +49,7 @@ const app = factoryWithRole
         const userId = requireUserId(c);
         return (event) => event.userId === userId;
       },
+      closeOnUserStatusChange: false,
       logContext: { endpoint: 'profile' },
     }),
   )
@@ -54,8 +73,8 @@ const app = factoryWithRole
     const { id } = c.req.param();
     const topEntiteId = requireTopEntiteId(c);
 
-    const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
-    if (!requeteEntite) {
+    const hasAccess = await hasAccessToRequete({ requeteId: id, entiteId: topEntiteId });
+    if (!hasAccess) {
       throwHTTPException404NotFound('Requete not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
@@ -68,11 +87,36 @@ const app = factoryWithRole
     });
   })
 
+  .get('/requetes/:id/messages', async (c) => {
+    const { id } = c.req.param();
+    const topEntiteId = requireTopEntiteId(c);
+    const userId = requireUserId(c);
+
+    const user = c.get('user');
+    const discussionEnabled = await hasFeature(FEATURE_FLAGS.REQUETE_DISCUSSION, false, user.email, user.entiteId);
+    if (!discussionEnabled) {
+      throwHTTPException404NotFound('Requete not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+    }
+
+    const hasAccess = await hasAccessToRequete({ requeteId: id, entiteId: topEntiteId });
+    if (!hasAccess) {
+      throwHTTPException404NotFound('Requete not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+    }
+
+    const logger = c.get('logger');
+    logger.info({ endpoint: 'requetes/:id/messages', requeteId: id }, 'SSE: Client subscribed');
+
+    return createSSEStream<RequeteMessageEvent>(c, {
+      eventType: SSE_EVENT_TYPES.REQUETE_MESSAGE,
+      filter: buildRequeteMessageFilter(id, topEntiteId, userId),
+    });
+  })
+
   .get('/files/:id', async (c) => {
     const { id } = c.req.param();
     const topEntiteId = requireTopEntiteId(c);
 
-    const uploadedFile = await getUploadedFileById(id, [topEntiteId]);
+    const uploadedFile = await getUploadedFileByIdForEntite(id, topEntiteId);
     if (!uploadedFile) {
       throwHTTPException404NotFound('Uploaded file not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
@@ -82,7 +126,7 @@ const app = factoryWithRole
 
     return createSSEStream<FileStatusEvent>(c, {
       eventType: SSE_EVENT_TYPES.FILE_STATUS,
-      filter: (event) => event.fileId === id && event.entiteId === topEntiteId,
+      filter: (event) => event.fileId === id,
     });
   })
 
@@ -92,7 +136,7 @@ const app = factoryWithRole
     '/users',
     createSSEHandler<UserListEvent>({
       eventType: SSE_EVENT_TYPES.USER_LIST,
-      getFilter: () => undefined,
+      getFilter: (c) => buildUserListFilter(c.get('entiteIds')),
       logContext: { endpoint: 'users' },
     }),
   );

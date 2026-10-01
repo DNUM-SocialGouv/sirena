@@ -72,6 +72,7 @@ const writeSituation = async (
     data: {
       codePostal: situation.lieu.codePostal,
       commentaire: situation.lieu.commentaire,
+      lieuPrecision: situation.lieu.lieuPrecision,
       societeTransport: situation.lieu.societeTransport,
       finess: situation.lieu.finess,
       lieuType: situation.lieu.lieuTypeId ? { connect: { id: situation.lieu.lieuTypeId } } : undefined,

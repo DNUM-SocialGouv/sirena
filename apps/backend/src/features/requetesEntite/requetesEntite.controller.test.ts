@@ -1,12 +1,22 @@
 import { Readable } from 'node:stream';
-import { type EntiteType, ERROR_KIND, RECEPTION_TYPE, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { helpers } from '@sirena/backend-utils';
+import {
+  type EntiteType,
+  ERROR_KIND,
+  RECEPTION_TYPE,
+  REQUETE_STATUT_TYPES,
+  REQUETE_UPDATE_FIELDS,
+} from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { mockDeep } from 'vitest-mock-extended';
 import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
+import { sseEventManager } from '../../helpers/sse.js';
+import { prisma as prismaMock } from '../../libs/__mocks__/prisma.js';
 import { getFileStream } from '../../libs/minio.js';
-import type { UploadedFile } from '../../libs/prisma.js';
+import type { Prisma, UploadedFile } from '../../libs/prisma.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import { convertDatesToStrings } from '../../tests/formatter.js';
@@ -24,6 +34,9 @@ import {
   getRequetesEntite,
   hasAccessToRequete,
   reopenRequeteForEntite,
+  setStatusRequete,
+  updateRequeteParticipant,
+  updateRequeteSituation,
   updateStatusRequete,
 } from './requetesEntite.service.js';
 
@@ -38,7 +51,14 @@ vi.mock('./requetesEntite.service.js', () => ({
   hasAccessToRequete: vi.fn(),
   getOtherEntitesAffected: vi.fn(),
   reopenRequeteForEntite: vi.fn(),
+  setStatusRequete: vi.fn(),
+  updateRequeteParticipant: vi.fn(),
+  updateRequeteSituation: vi.fn(),
   updateStatusRequete: vi.fn(),
+}));
+
+vi.mock('../changelog/changelog.service.js', () => ({
+  createChangeLog: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('../accessLog/accessLog.service.js', () => ({
@@ -98,6 +118,7 @@ vi.mock('../../middlewares/entites.middleware.js', () => ({
 vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
   getUploadedFileById: vi.fn(),
   isFileBelongsToRequete: vi.fn(),
+  isUserOwner: vi.fn().mockResolvedValue(true),
 }));
 
 vi.mock('../users/users.service.js', () => ({
@@ -106,13 +127,10 @@ vi.mock('../users/users.service.js', () => ({
 
 vi.mock('../../libs/prisma.js', async () => {
   const generated = await vi.importActual<typeof import('@sirena/db/generated-client')>('@sirena/db/generated-client');
+  const { prisma } = await import('../../libs/__mocks__/prisma.js');
   return {
     ...generated,
-    prisma: {
-      entite: {
-        findUnique: vi.fn(),
-      },
-    },
+    prisma,
     createPrismaAdapter: vi.fn(),
   };
 });
@@ -312,6 +330,7 @@ describe('RequetesEntite endpoints: /', () => {
       uploadedById: 'user1',
       status: 'PENDING',
       demarchesEngageesId: null,
+      requeteMessageId: null,
       canDelete: true,
       scanStatus: '',
       scanResult: '',
@@ -691,6 +710,7 @@ describe('RequetesEntite endpoints: /', () => {
         'Test precision',
         ['file1', 'file2'],
       );
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
     });
 
     it('should close requete successfully without precision and files', async () => {
@@ -886,6 +906,165 @@ describe('RequetesEntite endpoints: /', () => {
       expect(res.status).toBe(500);
       const json = await res.json();
       expect(json).toEqual({ error: 'INTERNAL_ERROR', message: 'Internal server error' });
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('PATCH /:id/participant', () => {
+    const baseRequeteEntite = {
+      ...fakeRequeteEntite,
+      statutId: 'OUVERTE',
+    };
+
+    beforeEach(() => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValue(baseRequeteEntite);
+    });
+
+    it('updates the participant and returns the updated requete', async () => {
+      const serverUpdatedAt = new Date('2025-05-01T00:00:00.000Z');
+      const updatedRequete = {
+        ...baseRequeteEntite.requete,
+        participant: {
+          id: 'participant1',
+          adresse: null,
+          identite: { id: 'identite1', nom: 'Nouveau nom', updatedAt: serverUpdatedAt },
+        },
+      };
+
+      vi.mocked(updateRequeteParticipant).mockResolvedValueOnce(
+        updatedRequete as unknown as Awaited<ReturnType<typeof updateRequeteParticipant>>,
+      );
+
+      const res = await client[':id'].participant.$patch({
+        param: { id: 'requeteId' },
+        json: {
+          participant: { nom: 'Nouveau nom' },
+          controls: { participant: { updatedAt: serverUpdatedAt.toISOString() } },
+        },
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toEqual({ data: convertDatesToStrings(updatedRequete) });
+
+      expect(updateRequeteParticipant).toHaveBeenCalledWith(
+        'requeteId',
+        { nom: 'Nouveau nom' },
+        { participant: { updatedAt: serverUpdatedAt.toISOString() } },
+      );
+      expect(setStatusRequete).toHaveBeenCalledWith('requeteId', 'entiteId', REQUETE_STATUT_TYPES.EN_COURS);
+    });
+
+    // The 409 body is the contract the client reads to build its resolution dialog;
+    // it silently drifted from the frontend once already.
+    it('returns 409 with the server state when updateRequeteParticipant reports a conflict', async () => {
+      const serverUpdatedAt = '2025-05-01T00:00:00.000Z';
+      const serverData = { id: 'participant1', identite: { id: 'identite1', nom: 'Nom serveur' } };
+
+      vi.mocked(updateRequeteParticipant).mockImplementationOnce(() =>
+        helpers.throwHTTPException409Conflict('The participant identity has been modified by another user.', {
+          cause: { serverData, serverUpdatedAt },
+          kind: ERROR_KIND.BUSINESS,
+        }),
+      );
+
+      const res = await client[':id'].participant.$patch({
+        param: { id: 'requeteId' },
+        json: {
+          participant: { nom: 'Nouveau nom' },
+          controls: { participant: { updatedAt: '2025-04-01T00:00:00.000Z' } },
+        },
+      });
+
+      expect(res.status).toBe(409);
+      const body = await res.json();
+      expect(body).toEqual({
+        message: 'The participant identity has been modified by another user.',
+        cause: {
+          serverData,
+          serverUpdatedAt,
+          kind: ERROR_KIND.BUSINESS,
+        },
+      });
+
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('PATCH /:id/situation/:situationId', () => {
+    const baseRequeteEntite = {
+      ...fakeRequeteEntite,
+      statutId: 'OUVERTE',
+    };
+
+    beforeEach(() => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValue(baseRequeteEntite);
+    });
+
+    it('updates the situation and returns the updated requete', async () => {
+      const serverUpdatedAt = new Date('2025-05-01T00:00:00.000Z');
+      const updatedRequete = { ...baseRequeteEntite.requete };
+
+      vi.mocked(updateRequeteSituation).mockResolvedValueOnce({
+        requete: updatedRequete,
+        newAssignedEntiteIds: [],
+        newDirectionServiceIds: [],
+      } as unknown as Awaited<ReturnType<typeof updateRequeteSituation>>);
+
+      const res = await client[':id'].situation[':situationId'].$patch({
+        param: { id: 'requeteId', situationId: 'situationId' },
+        json: {
+          situation: { numerosSignalement: 'S-1' },
+          controls: { situation: { updatedAt: serverUpdatedAt.toISOString() } },
+        },
+      });
+
+      expect(res.status).toBe(200);
+
+      expect(updateRequeteSituation).toHaveBeenCalledWith(
+        'requeteId',
+        'situationId',
+        { numerosSignalement: 'S-1' },
+        'entiteId',
+        'id1',
+        ['entiteId'],
+        'entiteId',
+        { situation: { updatedAt: serverUpdatedAt.toISOString() } },
+      );
+      expect(setStatusRequete).toHaveBeenCalledWith('requeteId', 'entiteId', REQUETE_STATUT_TYPES.EN_COURS);
+    });
+
+    it('returns 409 with the server state when updateRequeteSituation reports a conflict', async () => {
+      const serverUpdatedAt = '2025-05-01T00:00:00.000Z';
+      const serverData = { id: 'situationId', numerosSignalement: 'S-serveur', traitementDesFaits: { entites: [] } };
+
+      vi.mocked(updateRequeteSituation).mockImplementationOnce(() =>
+        helpers.throwHTTPException409Conflict('The situation has been modified by another user.', {
+          cause: { serverData, serverUpdatedAt },
+          kind: ERROR_KIND.BUSINESS,
+        }),
+      );
+
+      const res = await client[':id'].situation[':situationId'].$patch({
+        param: { id: 'requeteId', situationId: 'situationId' },
+        json: {
+          situation: { numerosSignalement: 'S-1' },
+          controls: { situation: { updatedAt: '2025-04-01T00:00:00.000Z' } },
+        },
+      });
+
+      expect(res.status).toBe(409);
+      const body = await res.json();
+      expect(body).toEqual({
+        message: 'The situation has been modified by another user.',
+        cause: {
+          serverData,
+          serverUpdatedAt,
+          kind: ERROR_KIND.BUSINESS,
+        },
+      });
+
+      expect(updateStatusRequete).not.toHaveBeenCalled();
     });
   });
 
@@ -932,14 +1111,68 @@ describe('RequetesEntite endpoints: /', () => {
         { receptionDate: new Date(newDate), receptionTypeId: RECEPTION_TYPE.COURRIER },
         { updatedAt: baseRequeteEntite.requete.updatedAt.toISOString() },
       );
-      expect(updateStatusRequete).toHaveBeenCalledWith('requeteId', 'entiteId', REQUETE_STATUT_TYPES.EN_COURS);
+      expect(setStatusRequete).toHaveBeenCalledWith('requeteId', 'entiteId', REQUETE_STATUT_TYPES.EN_COURS);
+      expect(updateStatusRequete).not.toHaveBeenCalled();
     });
 
-    it('returns 409 when updateDateAndTypeRequete throws conflict', async () => {
-      const conflictError = new Error('CONFLICT: test');
-      (conflictError as Error & { conflictData?: unknown }).conflictData = { serverData: { id: 'requeteId' } };
+    it('emits a single dateType event, after the status has been written', async () => {
+      const events: string[] = [];
+      vi.mocked(updateDateAndTypeRequete).mockResolvedValueOnce(baseRequeteEntite.requete);
+      vi.mocked(setStatusRequete).mockImplementationOnce(async () => {
+        events.push('status:written');
+        return { ...baseRequeteEntite, statutId: REQUETE_STATUT_TYPES.EN_COURS };
+      });
+      vi.mocked(sseEventManager.emitRequeteUpdated).mockImplementation(() => {
+        events.push('sse:emit');
+      });
 
-      vi.mocked(updateDateAndTypeRequete).mockRejectedValueOnce(conflictError);
+      const res = await client[':id']['date-type'].$patch({
+        param: { id: 'requeteId' },
+        json: { receptionDate: '2025-05-01', receptionTypeId: RECEPTION_TYPE.COURRIER },
+      });
+
+      expect(res.status).toBe(200);
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledTimes(1);
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledWith({
+        requeteId: 'requeteId',
+        entiteId: 'entiteId',
+        field: REQUETE_UPDATE_FIELDS.DATE_TYPE,
+      });
+      expect(events).toEqual(['status:written', 'sse:emit']);
+    });
+
+    it('emits a single dateType event and leaves the status untouched when already EN_COURS', async () => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce({
+        ...baseRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.EN_COURS,
+      });
+      vi.mocked(updateDateAndTypeRequete).mockResolvedValueOnce(baseRequeteEntite.requete);
+
+      const res = await client[':id']['date-type'].$patch({
+        param: { id: 'requeteId' },
+        json: { receptionDate: '2025-05-01', receptionTypeId: RECEPTION_TYPE.COURRIER },
+      });
+
+      expect(res.status).toBe(200);
+      expect(setStatusRequete).not.toHaveBeenCalled();
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledTimes(1);
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledWith({
+        requeteId: 'requeteId',
+        entiteId: 'entiteId',
+        field: REQUETE_UPDATE_FIELDS.DATE_TYPE,
+      });
+    });
+
+    it('returns 409 with the server state when updateDateAndTypeRequete reports a conflict', async () => {
+      const serverUpdatedAt = '2025-05-01T00:00:00.000Z';
+
+      vi.mocked(updateDateAndTypeRequete).mockImplementationOnce(() =>
+        helpers.throwHTTPException409Conflict('The requete has been modified by another user.', {
+          cause: { serverData: { id: 'requeteId' }, serverUpdatedAt },
+          kind: ERROR_KIND.BUSINESS,
+        }),
+      );
 
       const res = await client[':id']['date-type'].$patch({
         param: { id: 'requeteId' },
@@ -953,10 +1186,15 @@ describe('RequetesEntite endpoints: /', () => {
       const body = await res.json();
       expect(body).toEqual({
         message: 'The requete has been modified by another user.',
-        conflictData: { serverData: { id: 'requeteId' } },
+        cause: {
+          serverData: { id: 'requeteId' },
+          serverUpdatedAt,
+          kind: ERROR_KIND.BUSINESS,
+        },
       });
 
-      expect(updateStatusRequete).not.toHaveBeenCalled();
+      expect(setStatusRequete).not.toHaveBeenCalled();
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
     });
 
     it('allows removing both date and type by setting them to null', async () => {
@@ -1065,7 +1303,7 @@ describe('RequetesEntite endpoints: /', () => {
   });
 
   describe('POST /:id/reopen', () => {
-    it('should reopen a closed requete successfully', async () => {
+    it('returns a shared reopening created by the real service', async () => {
       const fakeResult = {
         etapeId: 'etape-reopen-id',
         reopenedAt: '2026-03-30T00:00:00.000Z',
@@ -1091,16 +1329,50 @@ describe('RequetesEntite endpoints: /', () => {
       };
 
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
-      vi.mocked(reopenRequeteForEntite).mockResolvedValueOnce(fakeResult);
+      const { reopenRequeteForEntite: reopen } =
+        await vi.importActual<typeof import('./requetesEntite.service.js')>('./requetesEntite.service.js');
+      vi.mocked(reopenRequeteForEntite).mockImplementationOnce(reopen);
+      prismaMock.requeteEntite.findUnique.mockResolvedValueOnce({
+        ...fakeRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+      });
+      const tx = mockDeep<Prisma.TransactionClient>();
+      prismaMock.$transaction.mockImplementation(async (callback) => callback(tx));
+      tx.requeteEtape.create.mockResolvedValueOnce({
+        ...fakeResult.etape,
+        estPartagee: true,
+      });
 
       const res = await client[':id'].reopen.$post({
         param: { id: 'requeteId' },
       });
 
       expect(res.status).toBe(200);
-      const body = (await res.json()) as { data: { etapeId: string } };
+      const body = (await res.json()) as { data: { etapeId: string; etape: { estPartagee: boolean } } };
       expect(body.data.etapeId).toBe('etape-reopen-id');
-      expect(reopenRequeteForEntite).toHaveBeenCalledWith('requeteId', 'entiteId', 'id1');
+      expect(body.data.etape.estPartagee).toBe(true);
+      expect(tx.requeteEtape.create).toHaveBeenCalledExactlyOnceWith({
+        data: {
+          requeteId: 'requeteId',
+          entiteId: 'entiteId',
+          type: 'REOPEN',
+          statutId: 'FAIT',
+          estPartagee: true,
+          createdById: 'id1',
+          nom: expect.any(String),
+        },
+      });
+      expect(tx.requeteEntite.update).toHaveBeenCalledExactlyOnceWith({
+        where: { requeteId_entiteId: { requeteId: 'requeteId', entiteId: 'entiteId' } },
+        data: { statutId: REQUETE_STATUT_TYPES.EN_COURS },
+      });
+      expect(prismaMock.requeteEntite.update).not.toHaveBeenCalled();
+      expect(prismaMock.requeteEtape.create).not.toHaveBeenCalled();
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledExactlyOnceWith({
+        requeteId: 'requeteId',
+        entiteId: 'entiteId',
+        field: REQUETE_UPDATE_FIELDS.REOPENED,
+      });
     });
 
     it('should return 403 if user has no access', async () => {
@@ -1118,7 +1390,10 @@ describe('RequetesEntite endpoints: /', () => {
 
     it('should return 404 if requete not found', async () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
-      vi.mocked(reopenRequeteForEntite).mockRejectedValueOnce(new Error('REQUETE_NOT_FOUND'));
+      const { reopenRequeteForEntite: reopen } =
+        await vi.importActual<typeof import('./requetesEntite.service.js')>('./requetesEntite.service.js');
+      vi.mocked(reopenRequeteForEntite).mockImplementationOnce(reopen);
+      prismaMock.requeteEntite.findUnique.mockResolvedValueOnce(null);
 
       const res = await client[':id'].reopen.$post({
         param: { id: 'nonexistent' },
@@ -1127,24 +1402,45 @@ describe('RequetesEntite endpoints: /', () => {
       expect(res.status).toBe(404);
       const body = (await res.json()) as { message: string };
       expect(body.message).toBe('Requête not found');
+      expect(prismaMock.$transaction).not.toHaveBeenCalled();
+      expect(prismaMock.requeteEtape.create).not.toHaveBeenCalled();
+      expect(prismaMock.requeteEntite.update).not.toHaveBeenCalled();
     });
 
-    it('should return 400 if requete is not closed', async () => {
-      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
-      vi.mocked(reopenRequeteForEntite).mockRejectedValueOnce(new Error('REQUETE_NOT_CLOSED'));
+    it.each([REQUETE_STATUT_TYPES.NOUVEAU, REQUETE_STATUT_TYPES.EN_COURS, REQUETE_STATUT_TYPES.TRAITEE])(
+      'returns 400 without writing when the real service receives status %s',
+      async (statutId) => {
+        vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+        const { reopenRequeteForEntite: reopen } =
+          await vi.importActual<typeof import('./requetesEntite.service.js')>('./requetesEntite.service.js');
+        vi.mocked(reopenRequeteForEntite).mockImplementationOnce(reopen);
+        prismaMock.requeteEntite.findUnique.mockResolvedValueOnce({ ...fakeRequeteEntite, statutId });
 
-      const res = await client[':id'].reopen.$post({
-        param: { id: 'requeteId' },
+        const res = await client[':id'].reopen.$post({
+          param: { id: 'requeteId' },
+        });
+
+        expect(res.status).toBe(400);
+        const body = (await res.json()) as { error: string };
+        expect(body.error).toBe('REQUETE_NOT_CLOSED');
+        expect(prismaMock.$transaction).not.toHaveBeenCalled();
+        expect(prismaMock.requeteEtape.create).not.toHaveBeenCalled();
+        expect(prismaMock.requeteEntite.update).not.toHaveBeenCalled();
+      },
+    );
+
+    it('returns 500 without updating the status when reopening step creation fails', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+      const { reopenRequeteForEntite: reopen } =
+        await vi.importActual<typeof import('./requetesEntite.service.js')>('./requetesEntite.service.js');
+      vi.mocked(reopenRequeteForEntite).mockImplementationOnce(reopen);
+      prismaMock.requeteEntite.findUnique.mockResolvedValueOnce({
+        ...fakeRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.CLOTUREE,
       });
-
-      expect(res.status).toBe(400);
-      const body = (await res.json()) as { error: string };
-      expect(body.error).toBe('REQUETE_NOT_CLOSED');
-    });
-
-    it('should return 500 on unexpected error', async () => {
-      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
-      vi.mocked(reopenRequeteForEntite).mockRejectedValueOnce(new Error('DATABASE_FAILURE'));
+      const tx = mockDeep<Prisma.TransactionClient>();
+      prismaMock.$transaction.mockImplementation(async (callback) => callback(tx));
+      tx.requeteEtape.create.mockRejectedValueOnce(new Error('DATABASE_FAILURE'));
 
       const res = await client[':id'].reopen.$post({
         param: { id: 'requeteId' },
@@ -1153,6 +1449,10 @@ describe('RequetesEntite endpoints: /', () => {
       expect(res.status).toBe(500);
       const body = (await res.json()) as { error: string };
       expect(body.error).toBe('INTERNAL_ERROR');
+      expect(tx.requeteEtape.create).toHaveBeenCalledOnce();
+      expect(tx.requeteEntite.update).not.toHaveBeenCalled();
+      expect(prismaMock.requeteEntite.update).not.toHaveBeenCalled();
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
     });
   });
 });

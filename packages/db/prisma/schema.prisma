@@ -61,6 +61,9 @@ model User {
   createdEtapes   RequeteEtape[]
   createdRequetes Requete[]
 
+  requeteMessages     RequeteMessage[]
+  requeteMessageReads RequeteMessageRead[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -106,6 +109,8 @@ model Entite {
   requeteEntite             RequeteEntite[]
   situationEntites          SituationEntite[]
   assignmentStepsReceived RequeteEtape[]  @relation("AssignedEntite")
+  requeteMessages       RequeteMessage[]
+  requeteMessageReads   RequeteMessageRead[]
 }
 
 model EntiteTypeEnum {
@@ -146,6 +151,7 @@ model Requete {
   etapes         RequeteEtape[]
   situations     Situation[]
   requeteEntites RequeteEntite[]
+  messages       RequeteMessage[]
 
   createdById String?
   createdBy   User?   @relation(fields: [createdById], references: [id])
@@ -365,6 +371,8 @@ model Situation {
   requeteId String?
 
   situationEntites SituationEntite[]
+
+  updatedAt DateTime @updatedAt
 }
 
 model DomainesFonctionnelsEnum {
@@ -622,6 +630,46 @@ model RequeteEtapeNote {
   @@index([requeteEtapeId])
 }
 
+model RequeteMessage {
+  id      String @id @default(uuid())
+  contenu String
+
+  requeteId String
+  requete   Requete @relation(fields: [requeteId], references: [id], onDelete: Cascade)
+
+  entiteId String
+  entite   Entite @relation(fields: [entiteId], references: [id])
+
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id])
+
+  uploadedFiles UploadedFile[]
+  reads         RequeteMessageRead[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([requeteId, createdAt, id])
+  @@index([entiteId])
+}
+
+model RequeteMessageRead {
+  messageId String
+  message   RequeteMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  entiteId String
+  entite   Entite @relation(fields: [entiteId], references: [id])
+
+  readAt DateTime @default(now())
+
+  @@id([messageId, userId])
+  @@index([userId])
+  @@index([messageId, entiteId])
+}
+
 model UploadedFile {
   id        String  @id @default(uuid())
   fileName  String
@@ -658,11 +706,15 @@ model UploadedFile {
   demarchesEngagees   DemarchesEngagees? @relation(fields: [demarchesEngageesId], references: [id])
   demarchesEngageesId String?
 
+  requeteMessageId String?
+  requeteMessage   RequeteMessage? @relation(fields: [requeteMessageId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([entiteId])
   @@index([requeteEtapeId])
+  @@index([requeteMessageId])
 }
 
 model ChangeLog {

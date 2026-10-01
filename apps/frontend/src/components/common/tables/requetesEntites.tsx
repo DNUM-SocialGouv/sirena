@@ -272,7 +272,12 @@ export function RequetesEntite() {
   const cells: Cells<RequeteEntiteRow> = {
     'requete.id': (row) => {
       const link = (
-        <Link to="/request/$requestId" className="fr-link" params={{ requestId: row.requeteId }}>
+        <Link
+          to="/request/$requestId"
+          className="fr-link"
+          params={{ requestId: row.requeteId }}
+          data-testid="requete-row-link"
+        >
           Voir <span className="fr-sr-only">la requête</span> {row.requete.id}
         </Link>
       );

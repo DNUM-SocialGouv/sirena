@@ -7,26 +7,6 @@
   margin-bottom: 2rem;
 }
 
-.filters {
-  padding: 0;
-  border: 0;
-  margin: 0 0 2rem;
-}
-
-.filters__controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.filters__active {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}
-
 /* Reproduction de la grille Metabase (24 colonnes) : chaque carte occupe col → col + size_x.
    En dessous de 48em, on empile en une seule colonne pour la lisibilité mobile. */
 .mb-grid {
@@ -36,6 +16,10 @@
 
 .mb-cell {
   min-width: 0;
+}
+
+.mb-cell:has(> .kpi-card) {
+  align-self: stretch;
 }
 
 .card-title {
@@ -57,6 +41,19 @@
   }
 }
 
+.dashboard-tabs {
+  margin-bottom: 0;
+}
+
+.dashboard-tabs,
+.dashboard-tabs :global(.fr-tabs__panel) {
+  overflow: visible;
+}
+
+.dashboard-tabs .mb-grid {
+  padding: 0.5rem 0;
+}
+
 .data-note {
   display: flex;
   align-items: center;
@@ -70,10 +67,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   text-align: center;
   gap: 0.5rem;
-  padding: 0;
+  block-size: 100%;
+  padding: 1.5rem;
   margin: 0;
+  border: 1px solid var(--border-default-grey);
 }
 
 .kpi-value {
@@ -85,8 +85,5 @@
 }
 
 .kpi-label {
-  font-size: 0.95rem;
-  color: var(--text-mention-grey);
   margin: 0;
-  line-height: 1.4;
 }

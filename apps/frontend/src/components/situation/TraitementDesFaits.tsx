@@ -146,7 +146,13 @@ function TraitementDesFaitsRowComponent({
 
       {onRemove ? (
         <div className="fr-col-12">
-          <Button iconId="fr-icon-delete-line" priority="tertiary" onClick={handleRemove} disabled={disabled}>
+          <Button
+            iconId="fr-icon-delete-line"
+            priority="tertiary"
+            onClick={handleRemove}
+            disabled={disabled}
+            nativeButtonProps={{ ...{ 'data-testid': 'traitement-des-faits-remove-entite' } }}
+          >
             Supprimer cette entité
           </Button>
         </div>
@@ -356,7 +362,7 @@ const TraitementDesFaitsSection = forwardRef<TraitementDesFaitsSectionRef, Trait
     );
 
     return (
-      <div ref={containerRef} className={`fr-p-4w fr-mb-4w ${styles.container}`}>
+      <div ref={containerRef} className={`fr-p-4w fr-mb-4w ${styles.container}`} data-testid="traitement-des-faits">
         <fieldset
           aria-describedby={hasGlobalError ? globalErrorId : undefined}
           style={{ border: 'none', padding: 0, margin: 0 }}
@@ -427,6 +433,7 @@ const TraitementDesFaitsSection = forwardRef<TraitementDesFaitsSectionRef, Trait
               priority="secondary"
               onClick={handleAddRow}
               disabled={disabled}
+              nativeButtonProps={{ ...{ 'data-testid': 'traitement-des-faits-add-entite' } }}
             >
               Ajouter une autre entité
             </Button>

@@ -45,7 +45,11 @@ import { safeSyncRequetePriseEnChargeToDematSocial } from '../dematSocial/priseE
 import { buildEntitesTraitement, getEntiteAscendanteInfo, getEntiteDescendantIds } from '../entites/entites.service.js';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service.js';
 import { generateRequeteId } from '../requetes/functionalId.service.js';
-import { deleteFaitFilesRemovedFromSituation, setFaitFiles } from '../uploadedFiles/uploadedFiles.service.js';
+import {
+  deleteFaitFilesRemovedFromSituation,
+  setFaitFiles,
+  UNATTACHED_FILE_RELATIONS,
+} from '../uploadedFiles/uploadedFiles.service.js';
 import {
   mapDeclarantToPrismaCreate,
   mapPersonneConcerneeToPrismaCreate,
@@ -467,6 +471,15 @@ export const hasAccessToRequete = async ({ requeteId, entiteId }: RequeteEntiteK
   return !!requete;
 };
 
+export const getRequeteEntiteStatutId = async ({ requeteId, entiteId }: RequeteEntiteKey): Promise<string | null> => {
+  const requeteEntite = await prisma.requeteEntite.findUnique({
+    where: { requeteId_entiteId: { requeteId, entiteId } },
+    select: { statutId: true },
+  });
+
+  return requeteEntite?.statutId ?? null;
+};
+
 export const filterOtherEntitesAffectedForUser = <T extends { id: string }>(
   otherEntites: T[],
   userEntityIds: string[],
@@ -670,6 +683,7 @@ interface UpdateRequeteInput {
 interface UpdateRequeteControls {
   declarant?: { updatedAt?: string };
   participant?: { updatedAt?: string };
+  situation?: { updatedAt?: string };
 }
 
 const buildPersonneAdresseUpsert = (
@@ -934,12 +948,13 @@ export const updateRequeteParticipant = async (
     const serverUpdatedAt = requete.participant.identite.updatedAt;
 
     if (clientUpdatedAt.getTime() !== serverUpdatedAt.getTime()) {
-      const error = new Error('CONFLICT: The participant identity has been modified by another user.');
-      (error as Error & { conflictData?: unknown }).conflictData = {
-        serverData: requete.participant,
-        serverUpdatedAt: serverUpdatedAt.toISOString(),
-      };
-      throw error;
+      helpers.throwHTTPException409Conflict('The participant identity has been modified by another user.', {
+        cause: {
+          serverData: requete.participant,
+          serverUpdatedAt: serverUpdatedAt.toISOString(),
+        },
+        kind: ERROR_KIND.BUSINESS,
+      });
     }
   }
 
@@ -1670,6 +1685,7 @@ export const updateRequeteSituation = async (
   changedById?: string,
   userEntityIds?: string[],
   topEntiteId?: string,
+  controls?: UpdateRequeteControls,
 ): Promise<{
   requete: Awaited<ReturnType<typeof prisma.requete.findUnique>>;
   newAssignedEntiteIds: string[];
@@ -1682,6 +1698,29 @@ export const updateRequeteSituation = async (
   });
   if (!requete) {
     throw new Error('Requete not found');
+  }
+
+  if (controls?.situation?.updatedAt) {
+    const targetSituation = requete.situations.find((situation) => situation.id === situationId);
+
+    if (targetSituation) {
+      const clientUpdatedAt = new Date(controls.situation.updatedAt);
+      const serverUpdatedAt = targetSituation.updatedAt;
+
+      if (clientUpdatedAt.getTime() !== serverUpdatedAt.getTime()) {
+        const fullSituation = await prisma.situation.findUnique({
+          where: { id: situationId },
+          include: SITUATION_INCLUDE_FULL,
+        });
+        // traitementDesFaits is derived, not stored: without it the client merge would erase it.
+        const serverData = fullSituation ? await enrichSituationWithTraitementDesFaits(fullSituation) : targetSituation;
+
+        helpers.throwHTTPException409Conflict('The situation has been modified by another user.', {
+          cause: { serverData, serverUpdatedAt: serverUpdatedAt.toISOString() },
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+    }
   }
 
   let newAssignedEntiteIds: string[] = [];
@@ -1862,10 +1901,7 @@ export const closeRequeteForEntite = async (
           id: { in: fileIds },
           uploadedById: authorId,
           entiteId,
-          requeteId: null,
-          requeteEtapeId: null,
-          faitSituationId: null,
-          demarchesEngageesId: null,
+          ...UNATTACHED_FILE_RELATIONS,
         },
         data: {
           requeteEtapeId: etape.id,
@@ -1877,7 +1913,7 @@ export const closeRequeteForEntite = async (
       }
     }
 
-    await updateStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.CLOTUREE, tx);
+    await setStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.CLOTUREE, tx);
 
     if (requeteEntite.prioriteId) {
       await tx.requeteEntite.update({
@@ -1895,6 +1931,8 @@ export const closeRequeteForEntite = async (
       note,
     };
   });
+
+  sseEventManager.emitRequeteUpdated({ requeteId, entiteId, field: REQUETE_UPDATE_FIELDS.CLOSED });
 
   if (shouldTriggerDematSocialPriseEnChargeSync(requeteEntite.statutId, REQUETE_STATUT_TYPES.CLOTUREE)) {
     await safeSyncRequetePriseEnChargeToDematSocial(requeteId);
@@ -1988,6 +2026,7 @@ export const reopenRequeteForEntite = async (requeteId: string, entiteId: string
         entiteId,
         statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
         type: REQUETE_ETAPE_TYPES.REOPEN,
+        estPartagee: true,
         createdById: authorId,
         nom: `Requête rouverte le ${new Date().toLocaleDateString('fr-FR', {
           day: '2-digit',
@@ -1997,7 +2036,7 @@ export const reopenRequeteForEntite = async (requeteId: string, entiteId: string
       },
     });
 
-    await updateStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.EN_COURS, tx);
+    await setStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.EN_COURS, tx);
 
     return {
       etapeId: etape.id,
@@ -2005,6 +2044,8 @@ export const reopenRequeteForEntite = async (requeteId: string, entiteId: string
       etape,
     };
   });
+
+  sseEventManager.emitRequeteUpdated({ requeteId, entiteId, field: REQUETE_UPDATE_FIELDS.REOPENED });
 
   await createChangeLogForRequeteEntite({
     requeteId,
@@ -2018,7 +2059,7 @@ export const reopenRequeteForEntite = async (requeteId: string, entiteId: string
   return result;
 };
 
-export const updateStatusRequete = async (
+export const setStatusRequete = async (
   requeteId: string,
   entiteId: string,
   statut: RequeteStatutType,
@@ -2037,15 +2078,21 @@ export const updateStatusRequete = async (
     data: { statutId: statut },
   });
 
+  if (shouldTriggerDematSocialPriseEnChargeSync(previousRequeteEntite?.statutId, statut)) {
+    await safeSyncRequetePriseEnChargeToDematSocial(requeteId);
+  }
+
+  return requeteEntite;
+};
+
+export const updateStatusRequete = async (requeteId: string, entiteId: string, statut: RequeteStatutType) => {
+  const requeteEntite = await setStatusRequete(requeteId, entiteId, statut);
+
   sseEventManager.emitRequeteUpdated({
     requeteId,
     entiteId,
     field: REQUETE_UPDATE_FIELDS.STATUS,
   });
-
-  if (shouldTriggerDematSocialPriseEnChargeSync(previousRequeteEntite?.statutId, statut)) {
-    await safeSyncRequetePriseEnChargeToDematSocial(requeteId);
-  }
 
   return requeteEntite;
 };

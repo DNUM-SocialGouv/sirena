@@ -79,11 +79,9 @@ export const FileDownloadLink = ({
             status: initialStatus,
             scanStatus: initialScanStatus || 'PENDING',
             sanitizeStatus: initialSanitizeStatus || 'PENDING',
-            processingError: null,
-            safeFilePath: safeHref || null,
           }
         : null,
-    [fileId, initialStatus, initialScanStatus, initialSanitizeStatus, safeHref],
+    [fileId, initialStatus, initialScanStatus, initialSanitizeStatus],
   );
   const fileStatus = useFileProcessingStatus({ fileId, initialStatus: initialFileStatus });
   const processingState = useMemo(() => getFileProcessingState(fileStatus), [fileStatus]);

@@ -6,8 +6,6 @@ export interface FileProcessingStatus {
   status: string;
   scanStatus: string;
   sanitizeStatus: string;
-  processingError: string | null;
-  safeFilePath: string | null;
 }
 
 export async function uploadFile(file: File, options: RequestErrorOptions = {}) {

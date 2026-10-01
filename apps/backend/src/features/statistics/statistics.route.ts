@@ -3,7 +3,9 @@ import { StatisticsDashboardPayloadSchema } from './statistics.schema.js';
 
 export const getStatisticsDashboardRoute = openApiProtectedRoute({
   description:
-    'Récupère les données de toutes les cartes du dashboard Metabase configuré (sans iframe). ' +
+    'Récupère les données de toutes les cartes du dashboard Metabase configuré (sans iframe), ' +
+    'ainsi que ses onglets : chaque carte porte le tabId de son onglet (null si le dashboard n’en a pas) ' +
+    'et filterSlugs, les slugs des filtres du dashboard câblés sur elle. ' +
     'Filtres optionnels en query string : startDate / endDate (dates ISO YYYY-MM-DD) pour borner la période, ' +
     'domaineIds (liste CSV de domaines fonctionnels) pour restreindre le périmètre métier, ' +
     "includeEIG=false pour retirer les requêtes signalées par un professionnel au titre d'un EIG.",

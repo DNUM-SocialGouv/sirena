@@ -4,10 +4,12 @@ import { type Faker, fakerFR } from '@faker-js/faker';
  * Returns the shared faker instance, seeded when a deterministic run is asked
  * for (--seed=<n>) so screenshots / e2e stay stable.
  */
-export const buildFaker = (seed: number | null): Faker => {
+export const buildFaker = (seed: number | null, referenceDate?: Date): Faker => {
   if (seed !== null) {
     fakerFR.seed(seed);
   }
+  // Passing undefined restores the current-date default for interactive runs.
+  fakerFR.setDefaultRefDate(referenceDate);
   return fakerFR;
 };
 

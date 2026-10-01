@@ -161,4 +161,24 @@ describe('sirecMigration.finess.transformer.ts', () => {
       expect(lieuDeSurvenueData).toBeNull();
     });
   });
+
+  describe('corrections manuelles par id_data', () => {
+    it.each([
+      [185334, '590034740'],
+      [245214, '450000286'],
+      [170084, '390780146'],
+      [141822, '060780608'],
+      [206675, '790000392'],
+    ])('should use the corrected nofinesset for id_data=%i when nofinesset is null', (id_data, expectedFiness) => {
+      const { misEnCauseData } = transformSirecFiness(makeFinessData({ id_data, nofinesset: null, categetab: '354' }));
+      expect(misEnCauseData.finess).toBe(expectedFiness);
+    });
+
+    it('should not override a non-null nofinesset even for a known id_data', () => {
+      const { misEnCauseData } = transformSirecFiness(
+        makeFinessData({ id_data: 185334, nofinesset: '750000001', categetab: '354' }),
+      );
+      expect(misEnCauseData.finess).toBe('750000001');
+    });
+  });
 });

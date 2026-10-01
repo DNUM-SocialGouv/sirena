@@ -1,142 +1,43 @@
 #!/usr/bin/env node
 
-/**
- * Export a Metabase dashboard (and all its referenced cards) as JSON files
- * under `docs/metabase_dashboards/<dashboard-id>/`. Intended for repo-tracked
- * backups so dashboard changes are diffable.
- *
- * Usage:
- *   pnpm op:metabase:export-dashboard               # exports METABASE_DASHBOARD_ID + METABASE_DASHBOARD_ID_ADMIN
- *   pnpm op:metabase:export-dashboard 4             # explicit dashboard id
- *
- * Requires env vars:
- *   METABASE_SITE_URL   - public URL of the Metabase instance
- *   METABASE_API_KEY    - API key (Admin -> Authentication -> API keys, Metabase >= 0.49)
- *
- * Output layout:
- *   docs/metabase_dashboards/<dashboard-id>/dashboard.json
- *   docs/metabase_dashboards/<dashboard-id>/cards/<card-id>.json
- */
-
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createMetabaseClient, entityPath, type MetabaseClient } from './metabase/client.js';
+import { redactSecrets, registerSecret } from './metabase/secrets.js';
+import { extractCardIds, extractValuesSourceCardIds, normalize } from './metabase/snapshot.js';
+import { UserError } from './metabase/user-error.js';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-// apps/backend/src/scripts -> repo root
+
 const REPO_ROOT = resolve(SCRIPT_DIR, '..', '..', '..', '..');
 const OUTPUT_ROOT = resolve(REPO_ROOT, 'docs/metabase_dashboards');
-
-// Fields that change on every save / view and would otherwise pollute diffs,
-// plus fields that embed personal data (email, names) — never commit those.
-const VOLATILE_KEYS = new Set([
-  'created_at',
-  'updated_at',
-  'last_used_at',
-  'last_query_started_at',
-  'last_edit_info',
-  'last-edit-info',
-  'creator',
-  'view_count',
-  'cache_invalidated_at',
-  'initially_published_at',
-]);
-
-const siteUrl = process.env.METABASE_SITE_URL;
-const apiKey = process.env.METABASE_API_KEY;
-const [, , dashboardIdArg] = process.argv;
-
-if (!siteUrl) {
-  console.error('Missing METABASE_SITE_URL');
-  process.exit(1);
-}
-if (!apiKey) {
-  console.error('Missing METABASE_API_KEY (Metabase Admin -> Authentication -> API keys)');
-  process.exit(1);
-}
-
-// An explicit CLI arg exports a single dashboard; otherwise export every
-// configured dashboard (main + admin).
-const rawDashboardIds = dashboardIdArg
-  ? [dashboardIdArg]
-  : [process.env.METABASE_DASHBOARD_ID, process.env.METABASE_DASHBOARD_ID_ADMIN].filter((id): id is string =>
-      Boolean(id),
-    );
-
-if (rawDashboardIds.length === 0) {
-  console.error('Missing dashboard id (pass as CLI arg or set METABASE_DASHBOARD_ID / METABASE_DASHBOARD_ID_ADMIN)');
-  process.exit(1);
-}
-
-const dashboardIds = rawDashboardIds.map((raw) => {
-  const id = Number.parseInt(raw, 10);
-  if (!Number.isFinite(id) || id <= 0) {
-    console.error(`Invalid dashboard id: ${raw}`);
-    process.exit(1);
-  }
-  return id;
-});
-
-const apiBase = siteUrl.replace(/\/$/, '');
-
-async function apiGet<T>(path: string): Promise<T> {
-  const url = `${apiBase}${path}`;
-  const res = await fetch(url, { headers: { 'X-API-Key': apiKey as string, Accept: 'application/json' } });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '<unreadable>');
-    throw new Error(`GET ${path} -> ${res.status} ${res.statusText}: ${body}`);
-  }
-  return res.json() as Promise<T>;
-}
-
-// Recursively strip volatile fields and sort keys for stable diffs.
-function normalize(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(normalize);
-  if (value && typeof value === 'object') {
-    const out: Record<string, unknown> = {};
-    for (const key of Object.keys(value as Record<string, unknown>).sort()) {
-      if (VOLATILE_KEYS.has(key)) continue;
-      out[key] = normalize((value as Record<string, unknown>)[key]);
-    }
-    return out;
-  }
-  return value;
-}
-
-function extractCardIds(dashboard: unknown): number[] {
-  if (!dashboard || typeof dashboard !== 'object') return [];
-  const dashcards =
-    (dashboard as { dashcards?: unknown; ordered_cards?: unknown }).dashcards ??
-    (dashboard as { ordered_cards?: unknown }).ordered_cards;
-  if (!Array.isArray(dashcards)) return [];
-  const ids = new Set<number>();
-  for (const dc of dashcards) {
-    const candidate = (dc as { card_id?: unknown })?.card_id;
-    if (typeof candidate === 'number') ids.add(candidate);
-    const seriesCards = (dc as { series?: unknown }).series;
-    if (Array.isArray(seriesCards)) {
-      for (const s of seriesCards) {
-        const sid = (s as { id?: unknown }).id;
-        if (typeof sid === 'number') ids.add(sid);
-      }
-    }
-  }
-  return [...ids].sort((a, b) => a - b);
-}
 
 async function writeJson(path: string, payload: unknown): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
   await writeFile(path, `${JSON.stringify(payload, null, 2)}\n`);
 }
 
-async function exportDashboard(dashboardId: number): Promise<void> {
-  console.log(`→ Exporting dashboard ${dashboardId} from ${apiBase}`);
+async function exportDashboard(client: MetabaseClient, dashboardId: number): Promise<void> {
+  console.log(`→ Exporting dashboard ${dashboardId} from ${client.baseUrl}`);
 
-  const dashboardRaw = await apiGet<unknown>(`/api/dashboard/${dashboardId}`);
+  const dashboardRaw = await client.get<unknown>(entityPath('dashboard', dashboardId));
   const cardIds = extractCardIds(dashboardRaw);
   console.log(`  dashboard fetched, ${cardIds.length} unique card(s) referenced`);
 
-  const cards = await Promise.all(cardIds.map(async (id) => ({ id, raw: await apiGet<unknown>(`/api/card/${id}`) })));
+  const cards = await Promise.all(
+    cardIds.map(async (id) => ({ id, raw: await client.get<unknown>(entityPath('card', id)) })),
+  );
+
+  const fetched = new Set(cardIds);
+  const pending = extractValuesSourceCardIds([dashboardRaw, ...cards.map((card) => card.raw)]).filter(
+    (id) => !fetched.has(id),
+  );
+  for (const id of pending) {
+    fetched.add(id);
+    cards.push({ id, raw: await client.get<unknown>(entityPath('card', id)) });
+  }
+  if (pending.length > 0) console.log(`  + ${pending.length} filter values-source card(s): ${pending.join(', ')}`);
 
   const outDir = resolve(OUTPUT_ROOT, String(dashboardId));
   await writeJson(resolve(outDir, 'dashboard.json'), normalize(dashboardRaw));
@@ -147,6 +48,59 @@ async function exportDashboard(dashboardId: number): Promise<void> {
   console.log(`✓ Wrote ${1 + cards.length} file(s) under docs/metabase_dashboards/${dashboardId}/`);
 }
 
-for (const dashboardId of dashboardIds) {
-  await exportDashboard(dashboardId);
+async function main(): Promise<void> {
+  const siteUrl = process.env.METABASE_SITE_URL;
+  const apiKey = process.env.METABASE_API_KEY;
+  const [, , dashboardIdArg] = process.argv;
+
+  if (!siteUrl) {
+    console.error('Missing METABASE_SITE_URL');
+    process.exitCode = 1;
+    return;
+  }
+  if (!apiKey) {
+    console.error('Missing METABASE_API_KEY (Metabase Admin -> Authentication -> API keys)');
+    process.exitCode = 1;
+    return;
+  }
+
+  registerSecret(apiKey);
+
+  const rawDashboardIds = dashboardIdArg
+    ? [dashboardIdArg]
+    : [process.env.METABASE_DASHBOARD_ID, process.env.METABASE_DASHBOARD_ID_ADMIN].filter((id): id is string =>
+        Boolean(id),
+      );
+
+  if (rawDashboardIds.length === 0) {
+    console.error('Missing dashboard id (pass as CLI arg or set METABASE_DASHBOARD_ID / METABASE_DASHBOARD_ID_ADMIN)');
+    process.exitCode = 1;
+    return;
+  }
+
+  const dashboardIds: number[] = [];
+  for (const raw of rawDashboardIds) {
+    const id = Number.parseInt(raw, 10);
+    if (!Number.isFinite(id) || id <= 0) {
+      console.error(`Invalid dashboard id: ${raw}`);
+      process.exitCode = 1;
+      return;
+    }
+    dashboardIds.push(id);
+  }
+
+  const client = createMetabaseClient({ siteUrl, apiKey });
+  for (const dashboardId of dashboardIds) {
+    await exportDashboard(client, dashboardId);
+  }
+}
+
+try {
+  await main();
+} catch (error) {
+  console.error(`✗ ${redactSecrets(error instanceof Error ? error.message : String(error))}`);
+  if (!(error instanceof UserError) && error instanceof Error && error.stack) {
+    console.error(redactSecrets(error.stack));
+  }
+  process.exitCode = 1;
 }
