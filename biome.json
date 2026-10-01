@@ -70,5 +70,30 @@
     "parser": {
       "cssModules": true
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["apps/frontend/src/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@sirena/db": "@sirena/db is reserved to the e2e tests (apps/frontend/tests): importing it here would bundle Prisma into the frontend build."
+                },
+                "patterns": [
+                  {
+                    "group": ["@sirena/db/**"],
+                    "message": "@sirena/db is reserved to the e2e tests (apps/frontend/tests): importing it here would bundle Prisma into the frontend build."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

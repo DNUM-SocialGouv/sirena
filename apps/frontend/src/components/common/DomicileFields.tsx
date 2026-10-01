@@ -98,6 +98,7 @@ export function DomicileFields({
               {
                 label: MANUAL_TOGGLE_LABEL,
                 nativeInputProps: {
+                  ...{ 'data-testid': 'domicile-manual-toggle' },
                   checked: isManual,
                   onChange: (e) => setIsManual(e.target.checked),
                   'aria-expanded': isManual,
@@ -127,6 +128,7 @@ export function DomicileFields({
             <Input
               label={labels.adresseDomicile}
               nativeInputProps={{
+                ...{ 'data-testid': 'domicile-adresse' },
                 value: values.adresseDomicile,
                 onChange: handleFieldChange('adresseDomicile'),
               }}
@@ -136,6 +138,7 @@ export function DomicileFields({
             <Input
               label={labels.codePostal}
               nativeInputProps={{
+                ...{ 'data-testid': 'domicile-code-postal' },
                 value: values.codePostal,
                 onChange: handleFieldChange('codePostal'),
                 maxLength: 5,
@@ -146,6 +149,7 @@ export function DomicileFields({
             <Input
               label={labels.ville}
               nativeInputProps={{
+                ...{ 'data-testid': 'domicile-ville' },
                 value: values.ville,
                 onChange: handleFieldChange('ville'),
               }}

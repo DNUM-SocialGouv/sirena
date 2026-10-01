@@ -1,0 +1,13 @@
+.table {
+  overflow-x: auto;
+}
+
+.table:global(.fr-table) > table {
+  display: table;
+}
+
+.pagination {
+  padding: 1rem 1rem 0;
+  border: 1px solid var(--border-contrast-grey);
+  border-top: 0;
+}
