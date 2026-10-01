@@ -31,8 +31,6 @@ const status = (scanStatus = 'PENDING', sanitizeStatus = 'PENDING'): FileProcess
   status: 'PROCESSING',
   scanStatus,
   sanitizeStatus,
-  processingError: null,
-  safeFilePath: null,
 });
 
 beforeEach(() => {

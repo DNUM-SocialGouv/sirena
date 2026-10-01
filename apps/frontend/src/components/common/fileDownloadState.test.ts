@@ -7,8 +7,6 @@ const fileStatus = (scanStatus: string, sanitizeStatus: string): FileProcessingS
   status: 'PROCESSING',
   scanStatus,
   sanitizeStatus,
-  processingError: null,
-  safeFilePath: null,
 });
 
 describe('getFileProcessingState', () => {
