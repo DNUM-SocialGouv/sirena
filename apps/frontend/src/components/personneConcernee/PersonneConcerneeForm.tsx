@@ -17,6 +17,7 @@ import { DomicileFields } from '@/components/common/DomicileFields';
 import { personneConcerneeFieldMetadata } from '@/lib/fieldMetadata';
 import type { PersonneConcerneeData } from '@/lib/personneConcernee';
 import { buildNonRenseigneOption, buildOuiNonOptions } from '@/lib/radioOptions';
+import { BACK_LINK_ACTIVE_OPTIONS } from '@/utils/backLink';
 
 interface PersonneConcerneeFormProps {
   mode: 'create' | 'edit';
@@ -151,7 +152,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
     <div>
       <div className="fr-container fr-mt-4w">
         <div className="fr-mb-3w">
-          <Link className="fr-link" to={backUrl}>
+          <Link className="fr-link" to={backUrl} activeOptions={BACK_LINK_ACTIVE_OPTIONS}>
             <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true" />
             Retour
           </Link>

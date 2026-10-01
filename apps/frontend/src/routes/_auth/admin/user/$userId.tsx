@@ -10,6 +10,7 @@ import { useUserById } from '@/hooks/queries/users.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { useListStateStore } from '@/stores/listStateStore';
 import { useUserStore } from '@/stores/userStore';
+import { BACK_LINK_ACTIVE_OPTIONS } from '@/utils/backLink';
 import './$userId.css';
 import { Toast } from '@sirena/ui';
 import { useQuery } from '@tanstack/react-query';
@@ -60,6 +61,35 @@ const userFormSchema = z
 
 type UserFormData = z.infer<typeof userFormSchema>;
 
+type UsersListTo = '/admin/users' | '/admin/users/all';
+
+const usersListLabels: Record<UsersListTo, string> = {
+  '/admin/users': 'Liste des habilitations',
+  '/admin/users/all': 'Liste des utilisateurs',
+};
+
+function UsersListBackLink({ roleId }: { roleId: string }) {
+  const usersListState = useListStateStore((s) => s.states.users);
+  const fromList = usersListState?.to;
+  const to: UsersListTo =
+    fromList === '/admin/users' || fromList === '/admin/users/all'
+      ? fromList
+      : roleId === ROLES.PENDING
+        ? '/admin/users'
+        : '/admin/users/all';
+
+  return (
+    <Link
+      className="fr-link fr-mb-1w"
+      to={to}
+      search={usersListState?.to === to ? usersListState.search : {}}
+      activeOptions={BACK_LINK_ACTIVE_OPTIONS}
+    >
+      <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span> {usersListLabels[to]}
+    </Link>
+  );
+}
+
 function SubmitButton({ isPending }: { isPending: boolean }) {
   return (
     <Button type="submit" disabled={isPending}>
@@ -75,8 +105,6 @@ function RouteComponent() {
   const navigate = useNavigate();
   const router = useRouter();
   const userStore = useUserStore();
-  const usersListState = useListStateStore((s) => s.states.users);
-  const usersListTo = usersListState?.to === '/admin/users/all' ? '/admin/users/all' : '/admin/users';
   const userQuery = useUserById(userId);
   const patchUser = usePatchUser();
   const { data: profile } = useQuery({ ...profileQueryOptions(), enabled: false });
@@ -173,10 +201,7 @@ function RouteComponent() {
           {({ data: user }) => (
             <div className="fr-container">
               <div className="fr-mb-2w">
-                <Link className="fr-link fr-mb-1w" to={usersListTo} search={usersListState?.search ?? {}}>
-                  <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span> Liste des
-                  utilisateurs
-                </Link>
+                <UsersListBackLink roleId={user.roleId} />
               </div>
               <div className="user">
                 <h1>Modifier les informations de l'utilisateur</h1>

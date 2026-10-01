@@ -6,6 +6,7 @@ import { useCallback, useRef, useState } from 'react';
 import { MisEnCause } from '@/components/situation/sections/MisEnCause';
 import { useEntites } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
+import { BACK_LINK_ACTIVE_OPTIONS } from '@/utils/backLink';
 import { hasSituationContent } from '@/utils/situationHelpers';
 import { DescriptionFaits, type DescriptionFaitsRef } from './sections/DescriptionSituation';
 import { Identification } from './sections/Identification';
@@ -115,7 +116,7 @@ export function SituationForm({
     <div>
       <div className="fr-container fr-mt-4w">
         <div className="fr-mb-3w">
-          <Link className="fr-link" to={backUrl}>
+          <Link className="fr-link" to={backUrl} activeOptions={BACK_LINK_ACTIVE_OPTIONS}>
             <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true" />
             Détails de la requête
           </Link>
