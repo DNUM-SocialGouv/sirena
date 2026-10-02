@@ -81,8 +81,30 @@ describe('Auth endpoints: /auth', () => {
       const res = await client.login.$post();
       expect(res.status).toBe(302);
       expect(res.headers.get('Location')).toBe(fakeData.redirectTo.href);
-      expect(res.headers.get('Set-Cookie')).toContain(`state=${fakeData.state}; Path=/; HttpOnly`);
-      expect(res.headers.get('Set-Cookie')).toContain(`nonce=${fakeData.nonce}; Path=/; HttpOnly`);
+
+      const cookies = res.headers.getSetCookie();
+      expect(cookies).toHaveLength(2);
+      expect(cookies[0]).toBe(`state=${fakeData.state}; Max-Age=600; Path=/; HttpOnly; Secure; SameSite=Lax`);
+      expect(cookies[1]).toBe(`nonce=${fakeData.nonce}; Max-Age=600; Path=/; HttpOnly; Secure; SameSite=Lax`);
+    });
+
+    it.each(['state', 'nonce'])('should harden the %s cookie attributes', async (name) => {
+      const fakeData = {
+        redirectTo: new URL('https://example.com/auth'),
+        nonce: 'fakeNonce',
+        state: 'fakeState',
+      };
+
+      vi.mocked(buildAuthorizationUrl).mockResolvedValueOnce(fakeData);
+
+      const res = await client.login.$post();
+      const cookie = res.headers.getSetCookie().find((value) => value.startsWith(`${name}=`));
+
+      expect(cookie).toBeDefined();
+      expect(cookie).toMatch(/; Secure(;|$)/);
+      expect(cookie).toMatch(/; HttpOnly(;|$)/);
+      expect(cookie).toMatch(/; SameSite=Lax(;|$)/);
+      expect(cookie).toMatch(/; Max-Age=[1-9][0-9]*(;|$)/);
     });
 
     it('should redirect to error page when buildAuthorizationUrl fails', async () => {
