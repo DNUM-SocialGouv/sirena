@@ -1,9 +1,7 @@
-import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
-import { createModal } from '@codegouvfr/react-dsfr/Modal';
-import { useId, useMemo, useState } from 'react';
+import { useId, useMemo, useRef } from 'react';
 import { useDisclosureMenu } from '@/hooks/useDisclosureMenu';
-import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
 import styles from './DownloadMenu.module.css';
+import { RiskAcknowledgementModal, type RiskAcknowledgementModalHandle } from './RiskAcknowledgementModal';
 
 type DownloadMenuProps = {
   requestId: string;
@@ -11,18 +9,10 @@ type DownloadMenuProps = {
   hasUnsafeFiles?: boolean;
 };
 
-const warningModalInstance = createModal({
-  id: 'download-zip-warning-modal',
-  isOpenedByDefault: false,
-});
-
-const WARNING_MODAL_IDS = [warningModalInstance.id];
-
 export const DownloadMenu = ({ requestId, disabled, hasUnsafeFiles }: DownloadMenuProps) => {
-  const [accepted, setAccepted] = useState(false);
   const { isOpen, close, toggle, triggerRef, panelRef, onPanelBlur } = useDisclosureMenu();
-  const { registerTrigger } = useModalFocusRestore(WARNING_MODAL_IDS);
   const panelId = useId();
+  const riskAcknowledgementModalRef = useRef<RiskAcknowledgementModalHandle>(null);
 
   // ZIP entry dates are timezone-less: the backend writes them in the reader timezone so they display correctly.
   const downloadUrl = useMemo(() => {
@@ -37,26 +27,34 @@ export const DownloadMenu = ({ requestId, disabled, hasUnsafeFiles }: DownloadMe
     window.open(pdfUrl, '_blank');
   };
 
-  const handleDownloadAttachments = () => {
+  const handleDownloadAttachments = (event: React.MouseEvent<HTMLButtonElement>) => {
     if (disabled) return;
 
     if (hasUnsafeFiles) {
-      if (triggerRef.current) registerTrigger(triggerRef.current);
+      const trigger = triggerRef.current ?? event.currentTarget;
       close({ restoreFocus: false });
-      setAccepted(false);
-      warningModalInstance.open();
+      riskAcknowledgementModalRef.current?.open({
+        trigger,
+        content: {
+          title: 'Attention : pièces jointes potentiellement dangereuses',
+          message:
+            "Certaines pièces jointes de cette requête n'ont pas pu être vérifiées ou sécurisées, ou présentent un risque détecté. Nous vous recommandons de ne pas télécharger cette archive sans précaution.",
+          details: (
+            <>
+              <p>Si vous choisissez de continuer, assurez-vous que votre logiciel antivirus est à jour.</p>
+              <p>Le bouton « Télécharger malgré le risque » ne devient actif qu'une fois la case ci-dessous cochée.</p>
+            </>
+          ),
+          acknowledgementLabel: 'Je comprends les risques et souhaite télécharger l’archive',
+          confirmLabel: 'Télécharger malgré le risque',
+        },
+        onConfirm: () => window.open(downloadUrl, '_blank'),
+      });
       return;
     }
 
     close();
     window.open(downloadUrl, '_blank');
-  };
-
-  const handleConfirmDownload = () => {
-    if (accepted) {
-      window.open(downloadUrl, '_blank');
-    }
-    setAccepted(false);
   };
 
   return (
@@ -109,42 +107,7 @@ export const DownloadMenu = ({ requestId, disabled, hasUnsafeFiles }: DownloadMe
         ) : null}
       </div>
 
-      <warningModalInstance.Component
-        title="Attention : pièces jointes potentiellement dangereuses"
-        iconId="fr-icon-warning-line"
-        buttons={[
-          {
-            doClosesModal: true,
-            children: 'Annuler',
-            onClick: () => setAccepted(false),
-          },
-          {
-            doClosesModal: true,
-            children: 'Télécharger malgré le risque',
-            disabled: !accepted,
-            onClick: handleConfirmDownload,
-          },
-        ]}
-      >
-        <p>
-          Certaines pièces jointes de cette requête n'ont pas pu être vérifiées ou sécurisées, ou présentent un risque
-          détecté. Nous vous recommandons de ne pas télécharger cette archive sans précaution.
-        </p>
-        <p>Si vous choisissez de continuer, assurez-vous que votre logiciel antivirus est à jour.</p>
-        <p>Le bouton « Télécharger malgré le risque » ne devient actif qu'une fois la case ci-dessous cochée.</p>
-        <Checkbox
-          className="fr-mt-2w"
-          options={[
-            {
-              label: 'Je comprends les risques et souhaite télécharger l’archive',
-              nativeInputProps: {
-                checked: accepted,
-                onChange: (e) => setAccepted(e.target.checked),
-              },
-            },
-          ]}
-        />
-      </warningModalInstance.Component>
+      <RiskAcknowledgementModal ref={riskAcknowledgementModalRef} />
     </>
   );
 };
