@@ -34,31 +34,36 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'CLOTUREE'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                         AND {{inclure_eig}} = 'false') ]];",
+        "native": "-- Carte : « Répartition des requêtes par statut »\n-- Une ligne par statut (y compris les statuts à 0), triée par nombre de requêtes croissant.\nWITH requetes AS (\n  SELECT DISTINCT re.\"requeteId\" AS requete_id, re.\"statutId\" AS statut_id\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\"  e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE 1 = 1\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                         AND {{inclure_eig}} = 'false') ]]\n),\ntotal AS (SELECT COUNT(*) AS nb_total FROM requetes),\npar_statut AS (\n  -- LEFT JOIN depuis l'enum : les statuts sans requête restent affichés avec 0\n  SELECT s.label AS statut, COUNT(q.requete_id) AS nb_requetes\n  FROM \"RequeteStatusEnum\" s\n  LEFT JOIN requetes q ON q.statut_id = s.id\n  GROUP BY s.label\n)\nSELECT\n  ps.statut                                                AS \"Statut\",\n  ps.nb_requetes                                           AS \"Nombre de requêtes\",\n  ROUND(100.0 * ps.nb_requetes / NULLIF(t.nb_total, 0), 1) AS \"Part des requêtes (%)\"\nFROM par_statut ps\nCROSS JOIN total t\nORDER BY ps.nb_requetes ASC, ps.statut ASC;",
         "template-tags": [
           {
             "display-name": "Entity Label",
-            "id": "cc23122a-24e6-4299-91ae-a3d6e6e3e71c",
+            "id": "2bc6f36c-733e-4b9d-babb-5ef37c73736c",
             "name": "entity_label",
-            "required": true,
             "type": "text"
           },
           {
             "display-name": "Start Date",
-            "id": "1b5c1e68-6b21-4d5c-8d50-9af1862a4303",
+            "id": "ea152fb6-0aca-44cf-8b36-b0faaa5a63a2",
             "name": "start_date",
             "type": "date"
           },
           {
             "display-name": "End Date",
-            "id": "f4098765-99bf-4fa5-a062-f5784b68228d",
+            "id": "362617b3-92b1-496f-adc1-6470ee1afd9d",
             "name": "end_date",
             "type": "date"
           },
           {
             "display-name": "Domaine Fonctionnel",
-            "id": "d9c60aec-e4e0-42da-a7c8-810d9021669d",
+            "id": "0f7afb49-ac33-469a-a2e9-3722037bb788",
             "name": "domaine_fonctionnel",
+            "type": "text"
+          },
+          {
+            "display-name": "Lieu De Survenue",
+            "id": "810bb3d6-c736-4ce0-b5e7-c5adba42788c",
+            "name": "lieu_de_survenue",
             "type": "text"
           },
           {
@@ -66,43 +71,36 @@
               true
             ],
             "display-name": "Inclure Eig",
-            "id": "3d576d88-8c7b-4211-a258-6d21c51e3637",
+            "id": "334eef15-8309-4d58-88fc-0fb0db72298b",
             "name": "inclure_eig",
             "type": "boolean"
-          },
-          {
-            "display-name": "Lieu De Survenue",
-            "id": "00a432f8-6b3d-4828-8951-52a04878b5d4",
-            "name": "lieu_de_survenue",
-            "type": "text"
           }
         ]
       }
     ]
   },
-  "description": "Nombre de requêtes affectées à mon entité administrative et au statut “clôturée”",
+  "description": "Répartition des requêtes affectées à mon entité administrative selon leur statut.",
   "dimension_mappings": null,
   "dimensions": null,
-  "display": "scalar",
+  "display": "pie",
   "document_id": null,
   "embedding_params": null,
   "embedding_type": null,
   "enable_embedding": false,
-  "entity_id": "_9ybydYPyhKzf76tn1pu5",
-  "id": 45,
+  "entity_id": "K8WIGLPgO8fIowYpLdXNq",
+  "id": 107,
   "is_remote_synced": false,
   "legacy_query": null,
   "moderation_reviews": [],
-  "name": "Requêtes clôturées",
+  "name": "Répartition des requêtes par statut",
   "param_fields": {},
   "parameter_mappings": [],
   "parameter_usage_count": 0,
   "parameters": [
     {
-      "id": "cc23122a-24e6-4299-91ae-a3d6e6e3e71c",
+      "id": "2bc6f36c-733e-4b9d-babb-5ef37c73736c",
       "isMultiSelect": false,
       "name": "Entity Label",
-      "required": true,
       "slug": "entity_label",
       "target": [
         "variable",
@@ -115,6 +113,13 @@
       "values_query_type": "list",
       "values_source_config": {
         "card_id": 46,
+        "label_field": [
+          "field",
+          "nomComplet",
+          {
+            "base-type": "type/Text"
+          }
+        ],
         "value_field": [
           "field",
           "label",
@@ -126,7 +131,7 @@
       "values_source_type": "card"
     },
     {
-      "id": "1b5c1e68-6b21-4d5c-8d50-9af1862a4303",
+      "id": "ea152fb6-0aca-44cf-8b36-b0faaa5a63a2",
       "isMultiSelect": false,
       "name": "Start Date",
       "slug": "start_date",
@@ -140,7 +145,7 @@
       "type": "date/single"
     },
     {
-      "id": "f4098765-99bf-4fa5-a062-f5784b68228d",
+      "id": "362617b3-92b1-496f-adc1-6470ee1afd9d",
       "isMultiSelect": false,
       "name": "End Date",
       "slug": "end_date",
@@ -154,7 +159,7 @@
       "type": "date/single"
     },
     {
-      "id": "d9c60aec-e4e0-42da-a7c8-810d9021669d",
+      "id": "0f7afb49-ac33-469a-a2e9-3722037bb788",
       "isMultiSelect": true,
       "name": "Domaine Fonctionnel",
       "slug": "domaine_fonctionnel",
@@ -258,24 +263,7 @@
       "values_source_type": "static-list"
     },
     {
-      "default": [
-        true
-      ],
-      "id": "3d576d88-8c7b-4211-a258-6d21c51e3637",
-      "isMultiSelect": false,
-      "name": "Inclure Eig",
-      "slug": "inclure_eig",
-      "target": [
-        "variable",
-        [
-          "template-tag",
-          "inclure_eig"
-        ]
-      ],
-      "type": "boolean/="
-    },
-    {
-      "id": "00a432f8-6b3d-4828-8951-52a04878b5d4",
+      "id": "810bb3d6-c736-4ce0-b5e7-c5adba42788c",
       "isMultiSelect": true,
       "name": "Lieu De Survenue",
       "slug": "lieu_de_survenue",
@@ -585,6 +573,23 @@
         ]
       },
       "values_source_type": "static-list"
+    },
+    {
+      "default": [
+        true
+      ],
+      "id": "334eef15-8309-4d58-88fc-0fb0db72298b",
+      "isMultiSelect": false,
+      "name": "Inclure Eig",
+      "slug": "inclure_eig",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "inclure_eig"
+        ]
+      ],
+      "type": "boolean/="
     }
   ],
   "public_uuid_prefix": null,
@@ -593,6 +598,7 @@
   "table_id": null,
   "type": "question",
   "visualization_settings": {
-    "scalar.segments": []
+    "table.cell_column": "Nombre de requêtes",
+    "table.pivot_column": "Part des requêtes (%)"
   }
 }
