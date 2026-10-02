@@ -1,0 +1,63 @@
+{
+  "archived": false,
+  "archived_directly": false,
+  "cache_ttl": null,
+  "can_delete": false,
+  "can_manage_db": true,
+  "can_restore": false,
+  "can_write": true,
+  "card_schema": 23,
+  "collection": {
+    "authority_level": null,
+    "can_write": true,
+    "id": "root",
+    "is_personal": false,
+    "is_remote_synced": false,
+    "metabase.collections.models.collection.root/is-root?": true,
+    "name": "Our analytics"
+  },
+  "collection_id": null,
+  "collection_position": null,
+  "collection_preview": true,
+  "creator_id": 3,
+  "dashboard": null,
+  "dashboard_count": 0,
+  "dashboard_id": null,
+  "database_id": 4,
+  "dataset_query": {
+    "database": 4,
+    "lib/type": "mbql/query",
+    "stages": [
+      {
+        "lib/type": "mbql.stage/native",
+        "native": "  SELECT \"id\", \"nomComplet\", \"label\"\n  FROM \"Entite\" re\n  WHERE re.\"entiteMereId\" IS NULL;"
+      }
+    ]
+  },
+  "description": null,
+  "dimension_mappings": null,
+  "dimensions": null,
+  "display": "table",
+  "document_id": null,
+  "embedding_params": null,
+  "embedding_type": null,
+  "enable_embedding": false,
+  "entity_id": "xGIYI775qetP3N1eDkzSQ",
+  "id": 46,
+  "is_remote_synced": false,
+  "legacy_query": null,
+  "moderation_reviews": [],
+  "name": "[integration] Liste des entités mères",
+  "param_fields": {},
+  "parameter_mappings": [],
+  "parameter_usage_count": 26,
+  "parameters": [],
+  "public_uuid_prefix": null,
+  "query_type": "native",
+  "source_card_id": null,
+  "table_id": null,
+  "type": "question",
+  "visualization_settings": {
+    "table.cell_column": "label"
+  }
+}
