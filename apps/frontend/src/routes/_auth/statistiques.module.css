@@ -87,3 +87,7 @@
 .kpi-label {
   margin: 0;
 }
+
+.kpi-name {
+  color: var(--text-title-grey);
+}

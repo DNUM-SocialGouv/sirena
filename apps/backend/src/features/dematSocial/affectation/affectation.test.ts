@@ -260,7 +260,7 @@ describe('assignEntitesToRequeteTask', () => {
       },
     });
 
-    expect(prisma.$disconnect).toHaveBeenCalled();
+    expect(prisma.$disconnect).not.toHaveBeenCalled();
 
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
@@ -826,5 +826,43 @@ describe('assignEntitesToRequeteTask', () => {
     await assignEntitesToRequeteTask('requete-1');
 
     expect(createDefaultRequeteEtapes).not.toHaveBeenCalled();
+  });
+  it('should not disconnect the shared prisma client on success', async () => {
+    const mockRequete = {
+      id: 'requete-1',
+      receptionDate: new Date('2024-01-01'),
+      situations: [
+        {
+          id: 'situation-1',
+          lieuDeSurvenue: {
+            adresse: { codePostal: '75001' },
+          },
+          misEnCause: {},
+          faits: [],
+        },
+      ],
+    };
+
+    const mockEntite = {
+      id: 'entite-1',
+      nomComplet: 'ARS - Île-de-France',
+    };
+
+    vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);
+    (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
+      postalCode: '75001',
+    });
+    (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['ARS'] as EntiteAdminType[]);
+    (findGeoByPostalCode as ReturnType<typeof vi.fn>).mockReturnValue({
+      departementCode: '75',
+      ctcdCode: '75C',
+      regionCode: '11',
+    });
+    vi.mocked(prisma.entite.findFirst).mockResolvedValue(mockEntite as never);
+
+    await assignEntitesToRequeteTask('requete-1');
+
+    expect(prisma.$transaction).toHaveBeenCalled();
+    expect(prisma.$disconnect).not.toHaveBeenCalled();
   });
 });

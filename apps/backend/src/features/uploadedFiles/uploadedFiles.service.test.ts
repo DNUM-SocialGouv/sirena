@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import {
@@ -8,6 +8,7 @@ import {
   FilesNotOwnedError,
   getRequeteEtapeUploadedFile,
   getRequeteMessageUploadedFile,
+  getUnprocessedFiles,
   getUploadedFileById,
   isUploadedFileAttachedToImmutableAcknowledgment,
   isUserOwner,
@@ -15,6 +16,7 @@ import {
   setFaitFiles,
   setMessageFiles,
   setRequeteFile,
+  tryAcquireProcessingLock,
 } from './uploadedFiles.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
@@ -471,6 +473,53 @@ describe('uploadedFiles.service.ts', () => {
         },
       });
       expect(res).toBe(false);
+    });
+  });
+
+  describe('processable files predicate', () => {
+    const NOW = new Date('2026-01-15T12:00:00.000Z');
+    const STUCK_THRESHOLD = new Date(NOW.getTime() - 5 * 60 * 1000);
+
+    const expectedOr = [
+      { status: 'PENDING' },
+      { status: 'PROCESSING', updatedAt: { lt: STUCK_THRESHOLD } },
+      { status: { in: ['COMPLETED', 'FAILED'] }, scanStatus: { in: ['PENDING', 'ERROR'] } },
+      { status: 'FAILED', scanStatus: 'SCANNING', updatedAt: { lt: STUCK_THRESHOLD } },
+    ];
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(NOW);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('getUnprocessedFiles() picks up files whose scan lock was never released', async () => {
+      mockedUploadedFile.findMany.mockResolvedValueOnce([]);
+
+      await getUnprocessedFiles();
+
+      expect(mockedUploadedFile.findMany).toHaveBeenCalledWith({ where: { OR: expectedOr } });
+    });
+
+    it('tryAcquireProcessingLock() reuses the very same predicate, scoped to one file', async () => {
+      mockedUploadedFile.updateMany.mockResolvedValueOnce({ count: 1 });
+
+      const acquired = await tryAcquireProcessingLock('file1');
+
+      expect(mockedUploadedFile.updateMany).toHaveBeenCalledWith({
+        where: { id: 'file1', OR: expectedOr },
+        data: { status: 'PROCESSING', scanStatus: 'SCANNING', processingError: null },
+      });
+      expect(acquired).toBe(true);
+    });
+
+    it('tryAcquireProcessingLock() returns false when another worker won the race', async () => {
+      mockedUploadedFile.updateMany.mockResolvedValueOnce({ count: 0 });
+
+      await expect(tryAcquireProcessingLock('file1')).resolves.toBe(false);
     });
   });
 });
