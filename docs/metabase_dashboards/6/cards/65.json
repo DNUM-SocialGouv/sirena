@@ -1,7 +1,6 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 255.88235294117646,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -92,10 +91,7 @@
   "entity_id": "2z5eiukXf6jmI88kBaqxj",
   "id": 65,
   "is_remote_synced": false,
-  "last_query_start": "2026-09-10T16:00:27.913256Z",
   "legacy_query": null,
-  "made_public_by_id": null,
-  "metabase_version": "v0.62.3.3 (686cac9)",
   "moderation_reviews": [],
   "name": "Requêtes au total",
   "param_fields": {},
@@ -598,53 +594,8 @@
       "values_source_type": "static-list"
     }
   ],
-  "public_uuid": null,
   "public_uuid_prefix": null,
   "query_type": "native",
-  "result_metadata": [
-    {
-      "base_type": "type/BigInteger",
-      "database_type": "int8",
-      "display_name": "nombre_requetes",
-      "effective_type": "type/BigInteger",
-      "field_ref": [
-        "field",
-        "nombre_requetes",
-        {
-          "base-type": "type/BigInteger"
-        }
-      ],
-      "fingerprint": {
-        "global": {
-          "distinct-count": 1,
-          "nil%": 0
-        },
-        "type": {
-          "type/Number": {
-            "avg": 52399,
-            "excess-kurtosis": null,
-            "max": 52399,
-            "min": 52399,
-            "mode-fraction": 1,
-            "q1": 52399,
-            "q3": 52399,
-            "sd": 0,
-            "skewness": null,
-            "top-3-fraction": 1,
-            "zero-fraction": 0
-          }
-        }
-      },
-      "lib/deduplicated-name": "nombre_requetes",
-      "lib/desired-column-alias": "nombre_requetes",
-      "lib/original-name": "nombre_requetes",
-      "lib/source": "source/native",
-      "lib/source-column-alias": "nombre_requetes",
-      "name": "nombre_requetes",
-      "semantic_type": null,
-      "source": "native"
-    }
-  ],
   "source_card_id": null,
   "table_id": null,
   "type": "question",
