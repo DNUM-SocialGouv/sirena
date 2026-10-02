@@ -5,6 +5,11 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json && cp -R src/assets dist/assets",
     "build:ci": "tsc -p tsconfig.build.json && cp -R src/assets dist/assets && pnpm sentry:sourcemaps",
+    "predev": "pnpm --filter @sirena/db build",
+    "prebuild": "pnpm --filter @sirena/db build",
+    "prebuild:ci": "pnpm --filter @sirena/db build",
+    "pretypecheck": "pnpm --filter @sirena/db build",
+    "pretest": "pnpm --filter @sirena/db build",
     "dev": "tsx watch --clear-screen=false src/index.ts",
     "start": "node ./dist/index.js",
     "gql": "tsx src/gql.ts",
