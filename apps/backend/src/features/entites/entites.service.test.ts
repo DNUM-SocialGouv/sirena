@@ -1,5 +1,8 @@
+import { ROLES } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Entite, prisma } from '../../libs/prisma.js';
+import { getUserEntiteContext } from '../users/users.service.js';
+import { entitesDescendantIdsCache } from './entites.cache.js';
 import { DirectionOrServiceCreationForbiddenError } from './entites.error.js';
 import {
   createDirectionAdminLocal,
@@ -36,6 +39,22 @@ vi.mock('../../libs/prisma.js', () => ({
     situationEntite: {
       findMany: vi.fn(),
     },
+    user: {
+      findFirst: vi.fn(),
+    },
+  },
+}));
+
+vi.mock('../../config/env.js', () => ({
+  envVars: {
+    SUPER_ADMIN_LIST_EMAIL: '',
+  },
+}));
+
+vi.mock('../../helpers/sse.js', () => ({
+  sseEventManager: {
+    emitUserList: vi.fn(),
+    emitUserStatus: vi.fn(),
   },
 }));
 
@@ -2211,5 +2230,250 @@ describe('getEntitesListAdmin()', () => {
 
     expect(result.total).toBe(4);
     expect(result.data.map((row) => row.id)).toEqual(['dir-1', 'svc-1']);
+  });
+});
+
+describe("invalidation du cache du périmètre d'autorisation", () => {
+  const agentEntiteId = 'root-ars';
+
+  const mockHierarchy = (hierarchy: Record<string, string[]>) => {
+    vi.mocked(prisma.entite.findMany).mockImplementation((async (args: { where: { entiteMereId: string } }) =>
+      (hierarchy[args.where.entiteMereId] ?? []).map((id) => fakeEntite(id))) as never);
+  };
+
+  const mockAgents = (agents: Record<string, { entiteId: string | null; roleId: string }>) => {
+    vi.mocked(prisma.user.findFirst).mockImplementation((async (args: { where: { id: string } }) => {
+      const agent = agents[args.where.id];
+      return agent ? { ...agent, id: args.where.id } : null;
+    }) as never);
+  };
+
+  const mutations = [
+    {
+      name: 'editEntiteAdmin',
+      run: async () => {
+        vi.mocked(prisma.entite.update).mockResolvedValueOnce({ id: 'dir-autonomie' } as never);
+        await editEntiteAdmin('dir-autonomie', {
+          nomComplet: 'Direction Autonomie',
+          label: 'DA',
+          email: 'direction-autonomie@ars.fr',
+          emailContactUsager: '',
+          adresseContactUsager: '',
+          telContactUsager: '',
+          isActive: true,
+        });
+      },
+    },
+    {
+      name: 'editEntiteAdministrativeAdminLocal',
+      run: async () => {
+        vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(localEntite(agentEntiteId, null));
+        vi.mocked(prisma.entite.update).mockResolvedValueOnce({ id: agentEntiteId } as never);
+        await editEntiteAdministrativeAdminLocal(agentEntiteId, {
+          email: 'notification@ars.fr',
+          emailContactUsager: 'contact@ars.fr',
+          telContactUsager: '0102030405',
+          adresseContactUsager: '2 rue de Paris',
+        });
+      },
+    },
+    {
+      name: 'editDirectionServiceAdminLocal',
+      run: async () => {
+        const assignedDirection = localEntite('dir-autonomie', agentEntiteId);
+        vi.mocked(prisma.entite.findUnique)
+          .mockResolvedValueOnce(assignedDirection)
+          .mockResolvedValueOnce(assignedDirection)
+          .mockResolvedValueOnce({ entiteMereId: null } as never);
+        vi.mocked(prisma.entite.update).mockResolvedValueOnce({ id: 'dir-autonomie' } as never);
+        await editDirectionServiceAdminLocal('dir-autonomie', 'dir-autonomie', { email: 'notification@ars.fr' });
+      },
+    },
+    {
+      name: 'createDirectionOrServiceAdmin',
+      run: async () => {
+        vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
+          entiteTypeId: 'ARS',
+          departementCode: '14',
+          ctcdCode: '14118',
+          regionCode: '28',
+          regLib: 'Normandie',
+          dptLib: 'Calvados',
+          entiteMereId: null,
+          isActive: true,
+          entiteMere: null,
+        } as never);
+        vi.mocked(prisma.entite.create).mockResolvedValueOnce({ id: 'dir-autonomie' } as never);
+        await createDirectionOrServiceAdmin(agentEntiteId, {
+          nomComplet: 'Direction Autonomie',
+          label: 'DA',
+          email: 'direction-autonomie@ars.fr',
+          emailContactUsager: '',
+          adresseContactUsager: '',
+          telContactUsager: '',
+          isActive: true,
+        });
+      },
+    },
+    {
+      name: 'createDirectionAdminLocal',
+      run: async () => {
+        vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
+          entiteTypeId: 'ARS',
+          departementCode: '14',
+          ctcdCode: '14118',
+          regionCode: '28',
+          regLib: 'Normandie',
+          dptLib: 'Calvados',
+          entiteMereId: null,
+          isActive: true,
+          entiteMere: null,
+        } as never);
+        vi.mocked(prisma.entite.create).mockResolvedValueOnce({ id: 'dir-autonomie' } as never);
+        await createDirectionAdminLocal(agentEntiteId, {
+          nomComplet: 'Direction Autonomie',
+          label: 'DA',
+          email: 'direction-autonomie@ars.fr',
+        });
+      },
+    },
+  ];
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    entitesDescendantIdsCache.clear();
+  });
+
+  it.each(mutations)('$name invalide le cache du périmètre après écriture', async ({ run }) => {
+    mockAgents({ 'agent-1': { entiteId: agentEntiteId, roleId: ROLES.ENTITY_ADMIN } });
+    mockHierarchy({ [agentEntiteId]: [] });
+
+    await getUserEntiteContext('agent-1');
+    expect(entitesDescendantIdsCache.has(agentEntiteId)).toBe(true);
+
+    await run();
+
+    expect(entitesDescendantIdsCache.has(agentEntiteId)).toBe(false);
+  });
+
+  it("expose immédiatement une entité fille nouvellement créée dans le périmètre de l'agent", async () => {
+    mockAgents({ 'agent-1': { entiteId: agentEntiteId, roleId: ROLES.ENTITY_ADMIN } });
+    mockHierarchy({ [agentEntiteId]: [] });
+
+    await expect(getUserEntiteContext('agent-1')).resolves.toEqual({
+      assignedEntiteId: agentEntiteId,
+      entiteIds: [agentEntiteId],
+    });
+
+    vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
+      entiteTypeId: 'ARS',
+      departementCode: '14',
+      ctcdCode: '14118',
+      regionCode: '28',
+      regLib: 'Normandie',
+      dptLib: 'Calvados',
+      entiteMereId: null,
+      isActive: true,
+      entiteMere: null,
+    } as never);
+    vi.mocked(prisma.entite.create).mockResolvedValueOnce({ id: 'dir-autonomie' } as never);
+    await createDirectionAdminLocal(agentEntiteId, {
+      nomComplet: 'Direction Autonomie',
+      label: 'DA',
+      email: 'direction-autonomie@ars.fr',
+    });
+
+    mockHierarchy({ [agentEntiteId]: ['dir-autonomie'] });
+
+    await expect(getUserEntiteContext('agent-1')).resolves.toEqual({
+      assignedEntiteId: agentEntiteId,
+      entiteIds: [agentEntiteId, 'dir-autonomie'],
+    });
+  });
+
+  it("recalcule les deux périmètres concernés quand une entité est déplacée dans l'arbre", async () => {
+    mockAgents({
+      'agent-a': { entiteId: 'root-a', roleId: ROLES.ENTITY_ADMIN },
+      'agent-b': { entiteId: 'root-b', roleId: ROLES.ENTITY_ADMIN },
+    });
+    mockHierarchy({ 'root-a': ['svc-1'], 'root-b': [] });
+
+    await expect(getUserEntiteContext('agent-a')).resolves.toEqual({
+      assignedEntiteId: 'root-a',
+      entiteIds: ['root-a', 'svc-1'],
+    });
+    await expect(getUserEntiteContext('agent-b')).resolves.toEqual({
+      assignedEntiteId: 'root-b',
+      entiteIds: ['root-b'],
+    });
+
+    mockHierarchy({ 'root-a': [], 'root-b': ['svc-1'] });
+    vi.mocked(prisma.entite.update).mockResolvedValueOnce({ id: 'svc-1' } as never);
+    await editEntiteAdmin('svc-1', {
+      nomComplet: 'Service Autonomie',
+      label: 'SA',
+      email: 'service-autonomie@ars.fr',
+      emailContactUsager: '',
+      adresseContactUsager: '',
+      telContactUsager: '',
+      isActive: true,
+    });
+
+    await expect(getUserEntiteContext('agent-a')).resolves.toEqual({
+      assignedEntiteId: 'root-a',
+      entiteIds: ['root-a'],
+    });
+    await expect(getUserEntiteContext('agent-b')).resolves.toEqual({
+      assignedEntiteId: 'root-b',
+      entiteIds: ['root-b', 'svc-1'],
+    });
+  });
+
+  it('retire du périmètre une entité supprimée de la hiérarchie', async () => {
+    mockAgents({ 'agent-1': { entiteId: agentEntiteId, roleId: ROLES.ENTITY_ADMIN } });
+    mockHierarchy({ [agentEntiteId]: ['dir-autonomie'], 'dir-autonomie': ['svc-1'] });
+
+    await expect(getUserEntiteContext('agent-1')).resolves.toEqual({
+      assignedEntiteId: agentEntiteId,
+      entiteIds: [agentEntiteId, 'dir-autonomie', 'svc-1'],
+    });
+
+    mockHierarchy({ [agentEntiteId]: ['dir-autonomie'], 'dir-autonomie': [] });
+    vi.mocked(prisma.entite.update).mockResolvedValueOnce({ id: 'dir-autonomie' } as never);
+    await editEntiteAdmin('dir-autonomie', {
+      nomComplet: 'Direction Autonomie',
+      label: 'DA',
+      email: 'direction-autonomie@ars.fr',
+      emailContactUsager: '',
+      adresseContactUsager: '',
+      telContactUsager: '',
+      isActive: true,
+    });
+
+    await expect(getUserEntiteContext('agent-1')).resolves.toEqual({
+      assignedEntiteId: agentEntiteId,
+      entiteIds: [agentEntiteId, 'dir-autonomie'],
+    });
+  });
+
+  it('renvoie un périmètre vide pour un utilisateur inconnu', async () => {
+    mockAgents({});
+
+    await expect(getUserEntiteContext('inconnu')).resolves.toEqual({ assignedEntiteId: null, entiteIds: [] });
+  });
+
+  it('renvoie un périmètre vide pour un utilisateur sans entité de rattachement', async () => {
+    mockAgents({ 'agent-1': { entiteId: null, roleId: ROLES.READER } });
+
+    await expect(getUserEntiteContext('agent-1')).resolves.toEqual({ assignedEntiteId: null, entiteIds: [] });
+  });
+
+  it('ne restreint pas le périmètre des SUPER_ADMIN', async () => {
+    mockAgents({ 'agent-1': { entiteId: agentEntiteId, roleId: ROLES.SUPER_ADMIN } });
+
+    await expect(getUserEntiteContext('agent-1')).resolves.toEqual({
+      assignedEntiteId: agentEntiteId,
+      entiteIds: null,
+    });
   });
 });
