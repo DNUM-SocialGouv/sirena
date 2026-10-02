@@ -4,9 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useUserById } from '@/hooks/queries/users.hook';
 import { useListStateStore } from '@/stores/listStateStore';
-import { Route } from './$userId';
-
-const RouteComponent = (Route as unknown as { component: React.ComponentType }).component;
+import { RouteComponent } from './$userId';
 
 const { routerNavigateSpy, navigateSpy } = vi.hoisted(() => ({ routerNavigateSpy: vi.fn(), navigateSpy: vi.fn() }));
 
@@ -181,5 +179,30 @@ describe('User edition page back link', () => {
     render(<RouteComponent />);
 
     expect(navigateSpy).toHaveBeenCalledWith({ to: '/admin/users/all', search: { search: 'dupont' } });
+  });
+});
+
+describe('User edition page required fields (RGAA 11.10)', () => {
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
+  it('announces upfront that fields are optional unless stated otherwise', () => {
+    mockUser(ROLES.WRITER);
+
+    render(<RouteComponent />);
+
+    expect(screen.getByText('Sauf mention contraire, les champs sont facultatifs.')).toBeVisible();
+  });
+
+  it('spells out the required fields instead of marking them with an asterisk', () => {
+    mockUser(ROLES.WRITER);
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('combobox', { name: 'Rôle (obligatoire)' })).toBeRequired();
+    expect(screen.getByRole('combobox', { name: 'Statut (obligatoire)' })).toBeRequired();
+    expect(screen.queryByRole('combobox', { name: /\*/ })).not.toBeInTheDocument();
   });
 });
