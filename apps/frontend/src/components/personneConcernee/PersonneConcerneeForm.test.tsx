@@ -30,6 +30,13 @@ const setInputValidity = (input: HTMLInputElement, valid: boolean) => {
 };
 
 describe('PersonneConcerneeForm', () => {
+  it('announces upfront that fields are optional unless stated otherwise', () => {
+    renderForm();
+
+    expect(screen.getByText('Sauf mention contraire, les champs sont facultatifs.')).toBeVisible();
+    expect(screen.queryByText('Tous les champs sont facultatifs')).not.toBeInTheDocument();
+  });
+
   it('shows an error, focuses the birth date and does not save when the date is invalid', async () => {
     const user = userEvent.setup();
     const onSave = vi.fn().mockResolvedValue(undefined);
