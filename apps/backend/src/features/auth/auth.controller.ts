@@ -18,6 +18,16 @@ import {
   getOrCreateUser,
 } from './auth.service.js';
 
+const OAUTH_COOKIE_MAX_AGE_SECONDS = 10 * 60;
+
+const OAUTH_STATE_COOKIE_OPTIONS = {
+  path: '/',
+  secure: true,
+  httpOnly: true,
+  sameSite: 'Lax',
+  maxAge: OAUTH_COOKIE_MAX_AGE_SECONDS,
+} as const;
+
 const app = factoryWithLogs
   .createApp()
 
@@ -39,8 +49,8 @@ const app = factoryWithLogs
       return c.redirect(errorPageUrl, 302);
     }
 
-    setCookie(c, 'state', state, { path: '/', httpOnly: true });
-    setCookie(c, 'nonce', nonce, { path: '/', httpOnly: true });
+    setCookie(c, 'state', state, OAUTH_STATE_COOKIE_OPTIONS);
+    setCookie(c, 'nonce', nonce, OAUTH_STATE_COOKIE_OPTIONS);
     logger.info('OAuth state and nonce cookies set');
 
     return c.redirect(redirectTo.href, 302);
