@@ -303,13 +303,26 @@ const processFile = async (job: Job<FileProcessingJobData>): Promise<void> => {
 
         logger.info('File processing completed');
       } catch (error) {
+        const durationSeconds = (Date.now() - startTime) / 1000;
+
+        if (error instanceof TransientScanError) {
+          logger.warn({ error }, 'Transient failure during file processing, releasing the file for a retry');
+          await updateFileProcessingStatus(fileId, {
+            processingError: error.message,
+            scanStatus: 'PENDING',
+            status: 'PENDING',
+          });
+          recordFileProcessing('RETRY', 'RETRY', fileType, durationSeconds);
+
+          throw error;
+        }
+
         logger.error({ error }, 'Unexpected error during file processing');
         await updateFileProcessingStatus(fileId, {
           processingError: error instanceof Error ? error.message : 'Unknown error',
+          scanStatus: 'ERROR',
           status: 'FAILED',
         });
-
-        const durationSeconds = (Date.now() - startTime) / 1000;
         recordFileProcessing('ERROR', 'ERROR', fileType, durationSeconds);
 
         throw error;
