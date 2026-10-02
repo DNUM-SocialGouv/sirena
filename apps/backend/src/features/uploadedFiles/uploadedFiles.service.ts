@@ -457,41 +457,38 @@ export const getUploadedFileByIdInternal = async (id: UploadedFile['id']): Promi
 
 const PROCESSING_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
-export const getUnprocessedFiles = async (): Promise<UploadedFile[]> => {
+const buildProcessableFileFilter = (): Prisma.UploadedFileWhereInput => {
   const stuckThreshold = new Date(Date.now() - PROCESSING_TIMEOUT_MS);
 
+  return {
+    OR: [
+      { status: 'PENDING' },
+      { status: 'PROCESSING', updatedAt: { lt: stuckThreshold } },
+      {
+        status: { in: ['COMPLETED', 'FAILED'] },
+        scanStatus: { in: ['PENDING', 'ERROR'] },
+      },
+      { status: 'FAILED', scanStatus: 'SCANNING', updatedAt: { lt: stuckThreshold } },
+    ],
+  };
+};
+
+export const getUnprocessedFiles = async (): Promise<UploadedFile[]> => {
   return prisma.uploadedFile.findMany({
-    where: {
-      OR: [
-        { status: 'PENDING' },
-        { status: 'PROCESSING', updatedAt: { lt: stuckThreshold } },
-        {
-          status: { in: ['COMPLETED', 'FAILED'] },
-          scanStatus: { in: ['PENDING', 'ERROR'] },
-        },
-      ],
-    },
+    where: buildProcessableFileFilter(),
   });
 };
 
 export const tryAcquireProcessingLock = async (fileId: string): Promise<boolean> => {
-  const stuckThreshold = new Date(Date.now() - PROCESSING_TIMEOUT_MS);
-
   const result = await prisma.uploadedFile.updateMany({
     where: {
       id: fileId,
-      OR: [
-        { status: 'PENDING' },
-        { status: 'PROCESSING', updatedAt: { lt: stuckThreshold } },
-        {
-          status: { in: ['COMPLETED', 'FAILED'] },
-          scanStatus: { in: ['PENDING', 'ERROR'] },
-        },
-      ],
+      ...buildProcessableFileFilter(),
     },
     data: {
       status: 'PROCESSING',
       scanStatus: 'SCANNING',
+      processingError: null,
     },
   });
 
