@@ -124,7 +124,7 @@ export function SituationForm({
         <h1 className="fr-mb-2w" data-testid="situation-form-title">
           Description de la situation
         </h1>
-        <p className="fr-text--sm fr-mb-5w">Tous les champs sont facultatifs</p>
+        <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
         <LieuSurvenu formData={formData} isSaving={isSaving} receptionType={receptionType} setFormData={setFormData} />
 
