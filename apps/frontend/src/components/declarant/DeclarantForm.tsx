@@ -150,7 +150,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
         <h1 className="fr-mb-2w" data-testid="declarant-form-title">
           Déclarant
         </h1>
-        <p className="fr-text--sm fr-mb-5w">Tous les champs sont facultatifs</p>
+        <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
         <div
           className="fr-p-4w fr-mb-4w"
