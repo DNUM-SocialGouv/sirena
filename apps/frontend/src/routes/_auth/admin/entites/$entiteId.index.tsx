@@ -10,6 +10,7 @@ import { useEditEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 import { useListStateStore } from '@/stores/listStateStore';
+import { BACK_LINK_ACTIVE_OPTIONS } from '@/utils/backLink';
 import { EntiteAdminFormFields } from './-components/EntiteAdminFormFields';
 import { getEditEntiteTitle } from './-helpers';
 
@@ -172,7 +173,12 @@ export function RouteComponent() {
   return (
     <div className="fr-container fr-mt-4w">
       <div className="fr-mb-3w">
-        <Link className="fr-link" to="/admin/entites" search={entitesListSearch ?? {}}>
+        <Link
+          className="fr-link"
+          to="/admin/entites"
+          search={entitesListSearch ?? {}}
+          activeOptions={BACK_LINK_ACTIVE_OPTIONS}
+        >
           <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true" />
           Liste des entités
         </Link>

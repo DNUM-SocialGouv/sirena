@@ -5,6 +5,7 @@ import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useCallback, useEffect } from 'react';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
 import { useDirectionServiceAdminLocal, useEditDirectionServiceAdminLocal } from '@/hooks/queries/entites.hook';
+import { BACK_LINK_ACTIVE_OPTIONS } from '@/utils/backLink';
 import { requireAdminLocalAccess } from '../-admin-local-route-guard';
 import { LocalEntiteFormFields } from '../-components/LocalEntiteFormFields';
 import { useLocalEntiteForm } from '../-components/useLocalEntiteForm';
@@ -91,7 +92,7 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
   return (
     <section>
       <div className="fr-mb-3w">
-        <Link className="fr-link" to="/admin/directions-services">
+        <Link className="fr-link" to="/admin/directions-services" activeOptions={BACK_LINK_ACTIVE_OPTIONS}>
           <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true" />
           Directions et services
         </Link>
