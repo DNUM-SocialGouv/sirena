@@ -137,6 +137,7 @@ export function DomicileFields({
           <div className="fr-col-12 fr-col-md-2">
             <Input
               label={labels.codePostal}
+              hintText="Format attendu : 5 chiffres (exemple : 75001)"
               nativeInputProps={{
                 ...{ 'data-testid': 'domicile-code-postal' },
                 value: values.codePostal,

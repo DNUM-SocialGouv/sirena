@@ -447,6 +447,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                     ) : (
                       <Input
                         label="Code postal"
+                        hintText="Format attendu : 5 chiffres (exemple : 75001)"
                         nativeInputProps={{
                           value: formData.misEnCause?.codePostal || '',
                           onChange: (e) =>
@@ -562,6 +563,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
               <div className="fr-col-12 fr-col-md-3">
                 <Input
                   label="Code postal"
+                  hintText="Format attendu : 5 chiffres (exemple : 75001)"
                   nativeInputProps={{
                     value: formData.misEnCause?.codePostal || '',
                     onChange: (e) =>

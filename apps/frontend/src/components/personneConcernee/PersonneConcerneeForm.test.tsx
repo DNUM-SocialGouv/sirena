@@ -37,6 +37,17 @@ describe('PersonneConcerneeForm', () => {
     expect(screen.queryByText('Tous les champs sont facultatifs')).not.toBeInTheDocument();
   });
 
+  it('describes the expected postal code format on the manual address fields', async () => {
+    const user = userEvent.setup();
+
+    renderForm();
+    await user.click(screen.getByRole('checkbox', { name: "Remplir l'adresse manuellement" }));
+
+    expect(screen.getByRole('textbox', { name: /^Code postal/ })).toHaveAccessibleName(
+      /Format attendu : 5 chiffres \(exemple : 75001\)/,
+    );
+  });
+
   it('shows an error, focuses the birth date and does not save when the date is invalid', async () => {
     const user = userEvent.setup();
     const onSave = vi.fn().mockResolvedValue(undefined);
