@@ -1,7 +1,6 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 733.8453159041394,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -91,10 +90,7 @@
   "entity_id": "pfEguIi5DjK77MqToiTG4",
   "id": 71,
   "is_remote_synced": false,
-  "last_query_start": "2026-09-10T15:58:49.713672Z",
   "legacy_query": null,
-  "made_public_by_id": null,
-  "metabase_version": "v0.63.1.2 (b067da1)",
   "moderation_reviews": [],
   "name": "Répartition des requêtes par mode de réception",
   "param_fields": {},
@@ -487,10 +483,8 @@
       "values_source_type": "static-list"
     }
   ],
-  "public_uuid": null,
   "public_uuid_prefix": null,
   "query_type": "native",
-  "result_metadata": null,
   "source_card_id": null,
   "table_id": null,
   "type": "question",

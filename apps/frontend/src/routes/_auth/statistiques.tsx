@@ -81,8 +81,9 @@ function KpiCard({ card }: { card: StatisticsCard }) {
   return (
     <p className={styles['kpi-card']}>
       <span className={styles['kpi-value']}>{display}</span>{' '}
-      <span className={`${fr.cx('fr-text--md', 'fr-text--bold', 'fr-mb-0')} ${styles['kpi-label']}`}>
-        {card.name} <CardHelp description={card.description} />
+      <span className={`${fr.cx('fr-text--md', 'fr-mb-0')} ${styles['kpi-label']}`}>
+        <span className={`${fr.cx('fr-text--bold')} ${styles['kpi-name']}`}>{card.name}</span>{' '}
+        <CardHelp description={card.description} />
       </span>
     </p>
   );
