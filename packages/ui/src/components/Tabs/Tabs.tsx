@@ -49,17 +49,19 @@ const TabsListItem = ({ tab, index, selected, onChangeTab }: TabsListItemProps) 
   const handleClick = useCallback(() => onChangeTab(index), [onChangeTab, index]);
 
   return (
-    <TabsItem
-      panelId={tab.tabPanelId}
-      selected={selected}
-      tabId={tab.tabId}
-      onTabClick={handleClick}
-      title={tab.title}
-      disabled={tab.disabled}
-      dataTestId={tab.dataTestId}
-    >
-      {tab.label}
-    </TabsItem>
+    <li role="presentation">
+      <TabsItem
+        panelId={tab.tabPanelId}
+        selected={selected}
+        tabId={tab.tabId}
+        onTabClick={handleClick}
+        title={tab.title}
+        disabled={tab.disabled}
+        dataTestId={tab.dataTestId}
+      >
+        {tab.label}
+      </TabsItem>
+    </li>
   );
 };
 

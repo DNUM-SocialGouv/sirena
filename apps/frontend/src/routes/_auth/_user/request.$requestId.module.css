@@ -139,7 +139,7 @@
   padding-right: 1.5rem;
 }
 
-.request-tabs :global(.fr-tabs__list > button:first-child) {
+.request-tabs :global(.fr-tabs__list > li:first-child > .fr-tabs__tab) {
   margin-left: 0;
 }
 
