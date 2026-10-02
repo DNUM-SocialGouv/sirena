@@ -216,6 +216,7 @@ describe('requetesEntite.service', () => {
 
       expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith({
         skip: 0,
+        take: 10,
         orderBy: {
           requete: {
             createdAt: 'desc',
