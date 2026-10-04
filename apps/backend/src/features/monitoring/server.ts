@@ -16,6 +16,8 @@ export function createMonitoringServer(options: MonitoringServerOptions) {
 
   const app = new Hono();
 
+  app.get('/health', (c) => c.text('ok', 200));
+
   app.get('/metrics', async (c) => {
     const metrics = await loggerStorage.run(logger, () => getMetrics());
     return c.text(metrics, 200, {
