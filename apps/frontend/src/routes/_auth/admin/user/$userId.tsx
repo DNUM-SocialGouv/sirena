@@ -141,14 +141,20 @@ function RouteComponent() {
 
       setValidationErrors({});
 
-      await patchUser.mutateAsync({
-        id: userId,
-        json: {
-          roleId: validationResult.data.roleId,
-          statutId: validationResult.data.statutId,
-          entiteId: validationResult.data.entiteId || null,
-        },
-      });
+      try {
+        await patchUser.mutateAsync({
+          id: userId,
+          json: {
+            roleId: validationResult.data.roleId,
+            statutId: validationResult.data.statutId,
+            entiteId: validationResult.data.entiteId || null,
+          },
+        });
+      } catch {
+        // Already notified by the mutation's onError: keep the form on the values
+        // the admin entered instead of letting the rejection escape unhandled.
+        return;
+      }
       toastManager.add({
         title: 'Utilisateur modifié',
         description: 'Les modifications ont été enregistrées avec succès.',
