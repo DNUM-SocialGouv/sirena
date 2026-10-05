@@ -2,14 +2,15 @@ import { fr } from '@codegouvfr/react-dsfr';
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import Button from '@codegouvfr/react-dsfr/Button';
 import type { ErrorComponentProps } from '@tanstack/react-router';
+import type { ReactNode } from 'react';
 
 const DEFAULT_TITLE = 'Une erreur est survenue';
 const DEFAULT_DESCRIPTION =
-  'Le contenu n’a pas pu s’afficher. Vous pouvez réessayer ; si le problème persiste, contactez le support.';
+  'Le contenu n’a pas pu s’afficher. Vous pouvez réessayer ; si le problème persiste, signalez-le via le bouton « Assistance ».';
 
 type AppErrorProps = ErrorComponentProps & {
   title?: string;
-  description?: string;
+  description?: NonNullable<ReactNode>;
 };
 
 const getErrorMessage = (error: unknown): string | null => {

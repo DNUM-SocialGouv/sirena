@@ -11,7 +11,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { routerFallbackComponents } from './routerFallbacks';
 
-const ERROR_MESSAGE = 'Explosion au rendu';
+const ERROR_MESSAGE = 'Erreur lors de l’affichage de la page';
 
 let shouldThrow = true;
 
@@ -51,7 +51,7 @@ const renderAt = async (initialPath: string) => {
   return render(<RouterProvider router={router} />);
 };
 
-describe('repli du routeur', () => {
+describe('en cas d’erreur', () => {
   beforeEach(() => {
     shouldThrow = true;
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -62,7 +62,7 @@ describe('repli du routeur', () => {
     vi.restoreAllMocks();
   });
 
-  it('affiche l’écran de repli au lieu d’une page vide quand le rendu d’une route échoue', async () => {
+  it('affiche une page d’erreur au lieu d’une page vide lorsqu’une page ne peut pas être affichée', async () => {
     const { container } = await renderAt('/casse');
 
     expect(screen.getByRole('heading', { name: 'Une erreur est survenue' })).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe('repli du routeur', () => {
     expect(container).not.toBeEmptyDOMElement();
   });
 
-  it('re-rend la route quand l’utilisateur clique sur Réessayer', async () => {
+  it('permet à l’utilisateur d’afficher à nouveau la page quand il clique sur Réessayer', async () => {
     const user = userEvent.setup();
     await renderAt('/casse');
 
@@ -98,8 +98,8 @@ describe('repli du routeur', () => {
   it('affiche la page introuvable pour une URL inconnue', async () => {
     await renderAt('/url-qui-n-existe-pas');
 
-    expect(screen.getByRole('heading', { name: 'Page introuvable' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Retour à l’accueil' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Page non trouvée' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Page d’accueil' })).toBeInTheDocument();
   });
 
   it('laisse une redirection levée dans beforeLoad s’appliquer', async () => {
