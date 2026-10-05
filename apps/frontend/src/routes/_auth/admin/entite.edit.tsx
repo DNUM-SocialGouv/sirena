@@ -74,13 +74,6 @@ function EntiteAdministrativeEditForm({ entite }: { entite: AssignedEntite }) {
 
   return (
     <section>
-      <div className="fr-mb-3w">
-        <Link className="fr-link" to="/admin/entite">
-          <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true" />
-          Entités
-        </Link>
-      </div>
-
       <h2>{title}</h2>
 
       <div className="fr-card fr-p-3w fr-mt-4w">
