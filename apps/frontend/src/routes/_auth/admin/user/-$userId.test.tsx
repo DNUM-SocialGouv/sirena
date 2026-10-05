@@ -1,11 +1,14 @@
 import { ROLES, STATUT_TYPES } from '@sirena/common/constants';
 import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useUserById } from '@/hooks/queries/users.hook';
 import { useListStateStore } from '@/stores/listStateStore';
 import { Route } from './$userId';
 
 const RouteComponent = (Route as unknown as { component: React.ComponentType }).component;
+
+const { routerNavigateSpy } = vi.hoisted(() => ({ routerNavigateSpy: vi.fn() }));
 
 vi.mock('@tanstack/react-router', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@tanstack/react-router')>()),
@@ -33,7 +36,7 @@ vi.mock('@tanstack/react-router', async (importOriginal) => ({
     </a>
   ),
   useNavigate: () => vi.fn(),
-  useRouter: () => ({ navigate: vi.fn(), history: { back: vi.fn() } }),
+  useRouter: () => ({ navigate: routerNavigateSpy, history: { back: vi.fn() } }),
 }));
 
 vi.mock('@tanstack/react-query', async (importOriginal) => ({
@@ -143,5 +146,16 @@ describe('User edition page back link', () => {
     render(<RouteComponent />);
 
     expect(backLink()).toHaveAttribute('data-exact', 'true');
+  });
+
+  it('cancels to the same list as the back link when there is no history', async () => {
+    // A page opened directly (new tab) has no history to go back to.
+    useListStateStore.getState().setListState('users', { to: '/admin/users/all', search: { search: 'dupont' } });
+    mockUser(ROLES.WRITER);
+
+    render(<RouteComponent />);
+    await userEvent.click(screen.getByRole('button', { name: 'Annuler les modifications' }));
+
+    expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/users/all', search: { search: 'dupont' } });
   });
 });

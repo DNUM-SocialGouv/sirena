@@ -210,7 +210,12 @@ export function RouteComponent() {
           />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
-            <Link className="fr-btn fr-btn--secondary" to="/admin/entites" search={entitesListSearch ?? {}}>
+            <Link
+              className="fr-btn fr-btn--secondary"
+              to="/admin/entites"
+              search={entitesListSearch ?? {}}
+              activeOptions={BACK_LINK_ACTIVE_OPTIONS}
+            >
               Annuler
             </Link>
             <Button type="submit" disabled={editEntiteAdmin.isPending}>

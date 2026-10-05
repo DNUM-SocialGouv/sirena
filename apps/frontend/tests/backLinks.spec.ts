@@ -45,6 +45,17 @@ test.describe('Back links', () => {
     }
   });
 
+  test('"Annuler" links of the admin forms are not flagged as the current page', async () => {
+    for (const path of ['/admin/directions-services/directions/create', '/admin/directions-services/services/create']) {
+      await page.goto(`${baseUrl}${path}`);
+      for (const name of ['Directions et services', 'Annuler']) {
+        const link = page.getByRole('link', { name, exact: true });
+        await expect(link).toHaveAttribute('href', '/admin/directions-services');
+        await expect(link).not.toHaveAttribute('aria-current');
+      }
+    }
+  });
+
   test('the user page goes back to the "Utilisateurs" list it was opened from', async () => {
     await page.goto(`${baseUrl}/admin/users/all`);
     await page.getByRole('table').getByTestId('user-row-link').first().click();

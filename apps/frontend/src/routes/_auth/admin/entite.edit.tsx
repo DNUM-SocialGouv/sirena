@@ -91,7 +91,7 @@ function EntiteAdministrativeEditForm({ entite }: { entite: AssignedEntite }) {
           <LocalEntiteFormFields form={form} />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
-            <Link className="fr-btn fr-btn--secondary" to="/admin/entite">
+            <Link className="fr-btn fr-btn--secondary" to="/admin/entite" activeOptions={BACK_LINK_ACTIVE_OPTIONS}>
               Annuler
             </Link>
             <Button type="submit" disabled={editEntite.isPending}>

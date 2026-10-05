@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { usePatchUser } from '@/hooks/mutations/updateUser.hook';
 import { useUserById } from '@/hooks/queries/users.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
+import type { QueryParams } from '@/schemas/pagination.schema';
 import { useListStateStore } from '@/stores/listStateStore';
 import { useUserStore } from '@/stores/userStore';
 import { BACK_LINK_ACTIVE_OPTIONS } from '@/utils/backLink';
@@ -68,7 +69,9 @@ const usersListLabels: Record<UsersListTo, string> = {
   '/admin/users/all': 'Liste des utilisateurs',
 };
 
-function UsersListBackLink({ roleId }: { roleId: string }) {
+const NO_SEARCH: QueryParams = {};
+
+function useUsersList(roleId: string | undefined): { to: UsersListTo; search: QueryParams } {
   const usersListState = useListStateStore((s) => s.states.users);
   const fromList = usersListState?.to;
   const to: UsersListTo =
@@ -78,16 +81,7 @@ function UsersListBackLink({ roleId }: { roleId: string }) {
         ? '/admin/users'
         : '/admin/users/all';
 
-  return (
-    <Link
-      className="fr-link fr-mb-1w"
-      to={to}
-      search={usersListState?.to === to ? usersListState.search : {}}
-      activeOptions={BACK_LINK_ACTIVE_OPTIONS}
-    >
-      <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span> {usersListLabels[to]}
-    </Link>
-  );
+  return { to, search: usersListState?.to === to ? usersListState.search : NO_SEARCH };
 }
 
 function SubmitButton({ isPending }: { isPending: boolean }) {
@@ -106,6 +100,7 @@ function RouteComponent() {
   const router = useRouter();
   const userStore = useUserStore();
   const userQuery = useUserById(userId);
+  const usersList = useUsersList(userQuery.data?.roleId);
   const patchUser = usePatchUser();
   const { data: profile } = useQuery({ ...profileQueryOptions(), enabled: false });
 
@@ -148,9 +143,9 @@ function RouteComponent() {
     if (window.history.length > 1) {
       router.history.back();
     } else {
-      router.navigate({ to: '/admin/users' });
+      router.navigate({ to: usersList.to, search: usersList.search });
     }
-  }, [router]);
+  }, [router, usersList.to, usersList.search]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -201,7 +196,15 @@ function RouteComponent() {
           {({ data: user }) => (
             <div className="fr-container">
               <div className="fr-mb-2w">
-                <UsersListBackLink roleId={user.roleId} />
+                <Link
+                  className="fr-link fr-mb-1w"
+                  to={usersList.to}
+                  search={usersList.search}
+                  activeOptions={BACK_LINK_ACTIVE_OPTIONS}
+                >
+                  <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span>{' '}
+                  {usersListLabels[usersList.to]}
+                </Link>
               </div>
               <div className="user">
                 <h1>Modifier les informations de l'utilisateur</h1>

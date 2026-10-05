@@ -71,7 +71,11 @@ export function RouteComponent() {
           <LocalEntiteFormFields form={form} />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
-            <Link className="fr-btn fr-btn--secondary" to="/admin/directions-services">
+            <Link
+              className="fr-btn fr-btn--secondary"
+              to="/admin/directions-services"
+              activeOptions={BACK_LINK_ACTIVE_OPTIONS}
+            >
               Annuler
             </Link>
             <Button type="submit" disabled={createDirectionAdminLocal.isPending}>
