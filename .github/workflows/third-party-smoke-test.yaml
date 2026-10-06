@@ -1,9 +1,5 @@
 name: Third-Party API Smoke Test
 
-# Runs the third-party API contract smoke test (apps/backend/**/*.smoke.ts) against
-# throwaway Postgres + Redis services: real database constraints and seeded enums,
-# no shared environment polluted, no secret needed.
-
 on:
   push:
     paths:
@@ -35,7 +31,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U sirena"
+          --health-cmd "pg_isready -U sirena -d sirena_smoke"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -49,7 +45,6 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-    # Values from .env.example are used for everything else (dotenv does not override these).
     env:
       PG_URL: postgresql://sirena:sirena@localhost:5432/sirena_smoke?schema=public
       REDIS_HOST: localhost

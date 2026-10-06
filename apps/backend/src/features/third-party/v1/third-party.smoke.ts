@@ -9,8 +9,6 @@ import { sendDeclarantAcknowledgmentEmail } from '../../declarants/declarants.no
 import { assignEntitesToRequeteTask } from '../../dematSocial/affectation/affectation.js';
 import ThirdPartyController from '../third-party.controller.js';
 
-// Fire-and-forget side effects are not part of the API contract: running them for real races with
-// the cleanup below (FK violations) and would send emails from CI.
 vi.mock('../../dematSocial/affectation/affectation.js', () => ({
   assignEntitesToRequeteTask: vi.fn(() => Promise.resolve()),
 }));
