@@ -6,8 +6,10 @@ import {
   acceptDossierWithoutNotification,
   getRequetes,
   importRequetes,
+  importSingleDossier,
   updateInstruction,
 } from './dematSocial.service.js';
+import { createImportFailure, markFailureAsResolved } from './dematSocialImportFailure.service.js';
 
 const sendMock = vi.fn();
 
@@ -344,6 +346,99 @@ describe('dematSocial.service.ts', () => {
       const result = await importRequetes();
       expect(createRequeteFromDematSocial).not.toHaveBeenCalled();
       expect(result).toEqual({ errorCount: 0, count: 0, skippedCount: 0 });
+    });
+  });
+
+  describe('importSingleDossier()', () => {
+    const makeFakeRequete = (id: string, dematSocialId: number, date: Date) => ({
+      id,
+      dematSocialId,
+      sirecId: null,
+      createdAt: date,
+      updatedAt: date,
+      createdById: null,
+      commentaire: '',
+      receptionDate: date,
+      dateDemandeDeclarant: null,
+      receptionTypeId: '1',
+      provenanceId: null,
+      provenancePrecision: null,
+      thirdPartyAccountId: null,
+    });
+
+    it('creates a single requete when two jobs import the same dossier concurrently', async () => {
+      const dossierNumber = 300000;
+      const dateDepot = new Date('2024-01-01');
+
+      sendMock.mockImplementation(async (variables: Record<string, unknown>) => {
+        if ('dossierNumber' in variables) {
+          return {
+            dossier: {
+              demandeur: { __typename: 'PersonnePhysique', civilite: 'M', nom: 'test', prenom: 'test' },
+              usager: { email: 'test@test.fr' },
+              champs: [],
+              dateDepot: dateDepot.toISOString(),
+              pdf: null,
+            },
+          };
+        }
+        return { dossierPasserEnInstruction: { dossier: { id: '1' } } };
+      });
+
+      const storedRequetes = new Map<number, ReturnType<typeof makeFakeRequete>>();
+
+      vi.mocked(getRequeteByDematSocialId).mockImplementation(async (id) => storedRequetes.get(id) ?? null);
+
+      vi.mocked(createRequeteFromDematSocial).mockImplementation(async ({ dematSocialId }) => {
+        if (dematSocialId === null || storedRequetes.has(dematSocialId)) {
+          throw Object.assign(new Error('Unique constraint failed on the fields: (`dematSocialId`)'), {
+            code: 'P2002',
+            meta: { target: ['dematSocialId'] },
+          });
+        }
+        const requete = makeFakeRequete(`requete-${storedRequetes.size + 1}`, dematSocialId, dateDepot);
+        storedRequetes.set(dematSocialId, requete);
+        return requete;
+      });
+
+      const [first, second] = await Promise.all([
+        importSingleDossier(dossierNumber),
+        importSingleDossier(dossierNumber),
+      ]);
+
+      expect(storedRequetes.size).toBe(1);
+      expect(first).toEqual({ success: true, requeteId: 'requete-1' });
+      expect(second).toEqual({ success: true, requeteId: 'requete-1', alreadyImported: true });
+      expect(createImportFailure).not.toHaveBeenCalled();
+      expect(markFailureAsResolved).toHaveBeenCalledWith(dossierNumber, 'requete-1');
+    });
+
+    it('reports a failure when the unique violation is not on dematSocialId', async () => {
+      const dossierNumber = 300002;
+      const dateDepot = new Date('2024-01-01');
+
+      sendMock.mockImplementation(async () => ({
+        dossier: {
+          demandeur: { __typename: 'PersonnePhysique', civilite: 'M', nom: 'test', prenom: 'test' },
+          usager: { email: 'test@test.fr' },
+          champs: [],
+          dateDepot: dateDepot.toISOString(),
+          pdf: null,
+        },
+      }));
+
+      vi.mocked(getRequeteByDematSocialId).mockResolvedValue(null);
+      vi.mocked(createRequeteFromDematSocial).mockRejectedValue(
+        Object.assign(new Error('Unique constraint failed on the fields: (`sirecId`)'), {
+          code: 'P2002',
+          meta: { target: ['sirecId'] },
+        }),
+      );
+
+      const result = await importSingleDossier(dossierNumber);
+
+      expect(result).toEqual({ success: false });
+      expect(createImportFailure).toHaveBeenCalledTimes(1);
     });
   });
 });
