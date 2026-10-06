@@ -1,7 +1,8 @@
 import type { Pagination } from '@sirena/backend-utils/types';
 import { type Entite, prisma } from '../../libs/prisma.js';
 import { buildEntitesListAdmin } from './entites.admin.mapper.js';
-import { entitesDescendantIdsCache } from './entites.cache.js';
+import { entitesDescendantIdsCache, entitesHierarchyCache } from './entites.cache.js';
+import { resolveEntiteChain } from './entites.chains.js';
 import { getEntiteDescendantIds } from './entites.descendants.js';
 import { buildDirectionsServicesRows as buildDirectionsServicesRowsFromHierarchy } from './entites.directions-services.mapper.js';
 import { DirectionOrServiceCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
@@ -12,7 +13,6 @@ import type {
   CreateServiceAdminLocalInput,
   EditDirectionServiceAdminLocalInput,
   EditEntiteContactInput,
-  EntiteChain,
   EntiteTraitement,
   EntiteTraitementInput,
 } from './entites.type.js';
@@ -43,6 +43,7 @@ const sortAdminRows = (rows: ReturnType<typeof buildEntitesListAdmin>, sort: Adm
 
 const invalidateEntitesPerimetreCache = () => {
   entitesDescendantIdsCache.clear();
+  entitesHierarchyCache.clear();
 };
 
 export const getEntiteForUser = async (organizationalUnit: string | null, email: string) => {
@@ -643,38 +644,8 @@ export const editEntiteAdmin = async (
   return updatedEntite;
 };
 
-export async function* getEntiteChainGenerator(entiteId: string) {
-  let currentId: string | null = entiteId;
-
-  while (currentId) {
-    const current: EntiteChain | null = await prisma.entite.findUnique({
-      where: { id: currentId },
-      select: {
-        id: true,
-        nomComplet: true,
-        entiteMereId: true,
-        label: true,
-        entiteTypeId: true,
-      },
-    });
-
-    if (!current) break;
-
-    yield current;
-
-    currentId = current.entiteMereId ?? null;
-  }
-}
-
-export const getEntiteChain = async (entiteId: string) => {
-  const results: EntiteChain[] = [];
-
-  for await (const entite of getEntiteChainGenerator(entiteId)) {
-    results.push(entite);
-  }
-
-  return results.reverse();
-};
+export const getEntiteChain = async (entiteId: string) =>
+  resolveEntiteChain(await entitesHierarchyCache.get(), entiteId);
 
 export const getEditableEntitiesChain = async (entiteId: string, editableEntiteIds: string[] | null) => {
   const chain = await getEntiteChain(entiteId);
@@ -810,11 +781,12 @@ export const getDirectionsServicesFromRequeteEntiteId = async (
 };
 
 export const buildEntitesTraitement = async (entites: EntiteTraitementInput[]): Promise<EntiteTraitement[]> => {
+  const hierarchy = await entitesHierarchyCache.get();
   const entitesTraitement: EntiteTraitement[] = [];
   const seen = new Set<string>();
 
   for (const entite of entites) {
-    const chain = await getEntiteChain(entite.id);
+    const chain = resolveEntiteChain(hierarchy, entite.id);
     if (!chain.length) continue;
 
     const root = chain[0];

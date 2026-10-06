@@ -18,6 +18,7 @@ function serializeKey(key: SerializableKeyTuple): string {
 
 export class CacheEntity<T, Args extends SerializableKeyTuple> {
   private store = new Map<string, CacheItem<T>>();
+  private inFlight = new Map<string, Promise<T>>();
   private ttlMs: number;
   private fetcher: (...args: Args) => Promise<T>;
 
@@ -46,9 +47,22 @@ export class CacheEntity<T, Args extends SerializableKeyTuple> {
       return item.data;
     }
 
-    const data = await this.fetcher(...args);
-    this.set(data, ...args);
-    return data;
+    const pending = this.inFlight.get(key);
+    if (pending) {
+      return pending;
+    }
+
+    const fetch = this.fetcher(...args)
+      .then((data) => {
+        this.set(data, ...args);
+        return data;
+      })
+      .finally(() => {
+        this.inFlight.delete(key);
+      });
+
+    this.inFlight.set(key, fetch);
+    return fetch;
   }
 
   set(data: T, ...args: Args): void {
@@ -62,9 +76,11 @@ export class CacheEntity<T, Args extends SerializableKeyTuple> {
   delete(...args: Args): void {
     const key = serializeKey(args);
     this.store.delete(key);
+    this.inFlight.delete(key);
   }
 
   clear(): void {
     this.store.clear();
+    this.inFlight.clear();
   }
 }
