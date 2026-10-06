@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { envVars } from '../config/env.js';
-import type { RoleEnum, User } from '../libs/prisma.js';
+import type { RoleEnum, Session, User } from '../libs/prisma.js';
 
 export const isJwtError = (
   error: unknown,
@@ -14,10 +14,10 @@ export const isJwtError = (
 
 export const verify = <T>(token: string, secret: string): T => <T>jwt.verify(token, secret);
 
-type authUserParams = { id: User['id']; roleId: RoleEnum['id'] };
+type authUserParams = { id: User['id']; roleId: RoleEnum['id']; sessionId: Session['id'] };
 
-export const signAuthCookie = ({ id, roleId }: authUserParams, date: Date) => {
-  return jwt.sign({ id, roleId }, envVars.AUTH_TOKEN_SECRET_KEY, {
+export const signAuthCookie = ({ id, roleId, sessionId }: authUserParams, date: Date) => {
+  return jwt.sign({ id, roleId, sessionId }, envVars.AUTH_TOKEN_SECRET_KEY, {
     expiresIn: Math.floor((date.getTime() - Date.now()) / 1000),
   });
 };

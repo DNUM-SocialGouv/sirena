@@ -8,7 +8,7 @@ import { envVars } from '../../config/env.js';
 import type { AppBindings } from '../../helpers/factories/appWithLogs.js';
 import { getJwtExpirationDate, signAuthCookie, signRefreshCookie } from '../../helpers/jsonwebtoken.js';
 import * as prismaHelpers from '../../helpers/prisma.js';
-import { Prisma } from '../../libs/prisma.js';
+import { Prisma, type Session } from '../../libs/prisma.js';
 import { createSession } from '../sessions/sessions.service.js';
 import * as authHelper from './auth.helper.js';
 
@@ -62,6 +62,16 @@ describe('auth.helper.ts Auth Helpers', () => {
     vi.mocked(signRefreshCookie).mockReturnValueOnce('SIGNED_REFRESH_TOKEN_VALUE');
     vi.mocked(signAuthCookie).mockReturnValueOnce('SIGNED_AUTH_TOKEN_VALUE');
 
+    const createdSession: Session = {
+      id: 'sess-1',
+      userId,
+      token: 'SIGNED_REFRESH_TOKEN_VALUE',
+      pcIdToken: idToken,
+      expiresAt: fakeRefreshExpiry,
+      createdAt: new Date(now),
+    };
+    vi.mocked(createSession).mockResolvedValueOnce(createdSession);
+
     const app = new Hono<{ Bindings: AppBindings }>().get('/test', async (c: Context<AppBindings>) => {
       await authHelper.authUser(c, { id: userId, roleId: 'PENDING' }, idToken);
       return c.json({ ok: true });
@@ -79,7 +89,14 @@ describe('auth.helper.ts Auth Helpers', () => {
     expect(getJwtExpirationDate).toHaveBeenCalledWith(envVars.REFRESH_TOKEN_EXPIRATION);
 
     expect(signAuthCookie).toHaveBeenCalledTimes(1);
-    expect(signAuthCookie).toHaveBeenCalledWith({ id: userId, roleId: 'PENDING' }, fakeAuthExpiry);
+    expect(signAuthCookie).toHaveBeenCalledWith(
+      { id: userId, roleId: 'PENDING', sessionId: createdSession.id },
+      fakeAuthExpiry,
+    );
+
+    expect(vi.mocked(createSession).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(signAuthCookie).mock.invocationCallOrder[0],
+    );
 
     expect(signRefreshCookie).toHaveBeenCalledTimes(1);
     expect(signRefreshCookie).toHaveBeenCalledWith(userId, fakeRefreshExpiry);
@@ -144,7 +161,6 @@ describe('auth.helper.ts Auth Helpers', () => {
     );
 
     vi.mocked(signRefreshCookie).mockReturnValueOnce('SIGNED_REFRESH_TOKEN_VALUE');
-    vi.mocked(signAuthCookie).mockReturnValueOnce('SIGNED_AUTH_TOKEN_VALUE');
     vi.mocked(createSession).mockRejectedValueOnce(
       new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
         code: 'P2002',
@@ -169,6 +185,7 @@ describe('auth.helper.ts Auth Helpers', () => {
 
     expect(res.status).toBe(302);
     expect(res.headers.get('Location')).toMatch(AUTH_ERROR_CODES.SESSION_ALREADY_EXISTS);
+    expect(signAuthCookie).not.toHaveBeenCalled();
   });
 
   it('authUser: should redirect to error page when createSession fails with an SESSION_CREATE_ERROR error code', async () => {
@@ -187,7 +204,6 @@ describe('auth.helper.ts Auth Helpers', () => {
     );
 
     vi.mocked(signRefreshCookie).mockReturnValueOnce('SIGNED_REFRESH_TOKEN_VALUE');
-    vi.mocked(signAuthCookie).mockReturnValueOnce('SIGNED_AUTH_TOKEN_VALUE');
     vi.mocked(createSession).mockRejectedValueOnce(
       new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
         code: 'P2002',
@@ -212,5 +228,6 @@ describe('auth.helper.ts Auth Helpers', () => {
 
     expect(res.status).toBe(302);
     expect(res.headers.get('Location')).toMatch(AUTH_ERROR_CODES.SESSION_CREATE_ERROR);
+    expect(signAuthCookie).not.toHaveBeenCalled();
   });
 });
