@@ -1,10 +1,22 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { REPONSE_OUI_NON } from '@sirena/common/constants';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { errorHandler } from '../../../helpers/errors.js';
 import appWithLogs from '../../../helpers/factories/appWithLogs.js';
 import { generateApiKey } from '../../../libs/apiKey.js';
 import { prisma } from '../../../libs/prisma.js';
 import { enhancedPinoMiddleware } from '../../../middlewares/pino.middleware.js';
+import { sendDeclarantAcknowledgmentEmail } from '../../declarants/declarants.notification.service.js';
+import { assignEntitesToRequeteTask } from '../../dematSocial/affectation/affectation.js';
 import ThirdPartyController from '../third-party.controller.js';
+
+// Fire-and-forget side effects are not part of the API contract: running them for real races with
+// the cleanup below (FK violations) and would send emails from CI.
+vi.mock('../../dematSocial/affectation/affectation.js', () => ({
+  assignEntitesToRequeteTask: vi.fn(() => Promise.resolve()),
+}));
+vi.mock('../../declarants/declarants.notification.service.js', () => ({
+  sendDeclarantAcknowledgmentEmail: vi.fn(() => Promise.resolve()),
+}));
 
 const app = appWithLogs
   .createApp()
@@ -152,16 +164,20 @@ describe('Third-Party API - POST /v1/requetes', () => {
     declarant: {
       nom: 'Smoke',
       prenom: 'Test',
+      telephone: '0600000000',
+      estVictime: false,
+      veutGarderAnonymat: false,
     },
     victime: {
       nom: 'Victime',
       prenom: 'Test',
+      estHandicapee: false,
     },
     situations: [
       {
-        lieuDeSurvenue: {},
-        misEnCause: {},
-        demarchesEngagees: {},
+        lieuDeSurvenue: { codePostal: '75001', lieuTypeId: 'DOMICILE' },
+        misEnCause: { misEnCauseTypeId: 'MEMBRE_FAMILLE' },
+        faits: [{ motifsDeclaratifs: ['AUTRE'], maltraitanceTypes: ['NON'] }],
       },
     ],
   };
@@ -176,8 +192,15 @@ describe('Third-Party API - POST /v1/requetes', () => {
 
     const json = await res.json();
     expect(json.requeteId).toBeDefined();
+    expect(res.headers.get('x-trace-id')).toBeTruthy();
 
     createdRequeteIds.push(json.requeteId);
+
+    expect(assignEntitesToRequeteTask).toHaveBeenCalledWith(json.requeteId);
+    await vi.waitFor(() => expect(sendDeclarantAcknowledgmentEmail).toHaveBeenCalledWith(json.requeteId));
+
+    const requete = await prisma.requete.findUniqueOrThrow({ where: { id: json.requeteId } });
+    expect(requete.thirdPartyAccountId).toBe(accountId);
   });
 
   it('returns 400 with empty body', async () => {
@@ -347,7 +370,7 @@ describe('Third-Party API - POST /v1/requetes (fiche contact complète)', () => 
     expect(requete.declarant?.identite?.email).toBe('marie.durand@example.com');
     expect(requete.declarant?.identite?.telephone).toBe('0612345678');
     expect(requete.declarant?.lienVictime?.id).toBe('MEMBRE_FAMILLE');
-    expect(requete.declarant?.veutGarderAnonymat).toBe(true);
+    expect(requete.declarant?.veutGarderAnonymat).toBe(REPONSE_OUI_NON.OUI);
     expect(requete.declarant?.adresse?.codePostal).toBe('75002');
     expect(requete.declarant?.adresse?.ville).toBe('Paris');
 
@@ -356,7 +379,7 @@ describe('Third-Party API - POST /v1/requetes (fiche contact complète)', () => 
     expect(requete.participant?.identite?.nom).toBe('Durand');
     expect(requete.participant?.identite?.prenom).toBe('Jean');
     expect(requete.participant?.age?.id).toBe('>= 80');
-    expect(requete.participant?.estVictimeInformee).toBe(true);
+    expect(requete.participant?.estVictimeInformee).toBe(REPONSE_OUI_NON.OUI);
     expect(requete.participant?.adresse?.ville).toBe('Marseille');
 
     // Situation
