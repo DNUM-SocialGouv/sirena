@@ -5,6 +5,7 @@ import { getUserEntiteContext } from '../users/users.service.js';
 import { entitesDescendantIdsCache } from './entites.cache.js';
 import { DirectionOrServiceCreationForbiddenError } from './entites.error.js';
 import {
+  buildEntitesTraitement,
   createDirectionAdminLocal,
   createDirectionOrServiceAdmin,
   createServiceAdminLocal,
@@ -87,6 +88,28 @@ const localEntite = (id: string, entiteMereId: string | null, overrides: Partial
   entiteMereId,
   ...overrides,
 });
+
+const projectSelection = (entite: Entite, select?: Record<string, boolean>) => {
+  if (!select) return entite;
+  return Object.fromEntries(
+    Object.entries(select)
+      .filter(([, isSelected]) => isSelected)
+      .map(([key]) => [key, entite[key as keyof Entite]]),
+  );
+};
+
+const mockEntitesHierarchy = (entites: Entite[]) => {
+  const byId = new Map(entites.map((entite) => [entite.id, entite]));
+  vi.mocked(prisma.entite.findUnique).mockImplementation((async (args: {
+    where: { id: string };
+    select?: Record<string, boolean>;
+  }) => {
+    const entite = byId.get(args.where.id);
+    return entite ? projectSelection(entite, args.select) : null;
+  }) as never);
+  vi.mocked(prisma.entite.findMany).mockImplementation((async (args: { select?: Record<string, boolean> }) =>
+    entites.map((entite) => projectSelection(entite, args?.select))) as never);
+};
 
 describe('entites.service', () => {
   describe('getDirectionsFromRequeteEntiteId()', () => {
@@ -552,6 +575,106 @@ describe('entites.service', () => {
       const result = await getEntiteChain('unknown-id');
       expect(result).toEqual([]);
       expect(prisma.entite.findUnique).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('buildEntitesTraitement()', () => {
+    const ars = localEntite('ars', null, { nomComplet: 'ARS Normandie', label: 'ARS', entiteTypeId: 'ARS' });
+    const direction = localEntite('dir', 'ars', {
+      nomComplet: 'Direction Autonomie',
+      label: 'DA',
+      entiteTypeId: 'ARS',
+    });
+    const service = localEntite('svc', 'dir', { nomComplet: 'Service PA', label: 'SPA', entiteTypeId: 'ARS' });
+    const ddets = localEntite('ddets', null, { nomComplet: 'DDETS Calvados', label: 'DDETS', entiteTypeId: 'DDETS' });
+
+    const chainOf = (entite: Entite) => ({
+      id: entite.id,
+      nomComplet: entite.nomComplet,
+      entiteMereId: entite.entiteMereId,
+      label: entite.label,
+      entiteTypeId: entite.entiteTypeId,
+    });
+
+    const inputOf = (entite: Entite) => ({
+      id: entite.id,
+      nomComplet: entite.nomComplet,
+      entiteMereId: entite.entiteMereId,
+    });
+
+    beforeEach(() => {
+      vi.resetAllMocks();
+      mockEntitesHierarchy([ars, direction, service, ddets]);
+    });
+
+    it('maps a root entite without direction or service', async () => {
+      await expect(buildEntitesTraitement([inputOf(ars)])).resolves.toEqual([
+        {
+          entiteId: 'ars',
+          entiteTypeId: 'ARS',
+          entiteName: 'ARS Normandie',
+          directionServiceId: undefined,
+          directionServiceName: undefined,
+          chain: [chainOf(ars)],
+        },
+      ]);
+    });
+
+    it('maps a direction and a service to their root entite with the full chain', async () => {
+      await expect(buildEntitesTraitement([inputOf(direction), inputOf(service)])).resolves.toEqual([
+        {
+          entiteId: 'ars',
+          entiteTypeId: 'ARS',
+          entiteName: 'ARS Normandie',
+          directionServiceId: 'dir',
+          directionServiceName: 'Direction Autonomie',
+          chain: [chainOf(ars), chainOf(direction)],
+        },
+        {
+          entiteId: 'ars',
+          entiteTypeId: 'ARS',
+          entiteName: 'ARS Normandie',
+          directionServiceId: 'svc',
+          directionServiceName: 'Service PA',
+          chain: [chainOf(ars), chainOf(direction), chainOf(service)],
+        },
+      ]);
+    });
+
+    it('keeps input order and deduplicates on entite and direction service', async () => {
+      const result = await buildEntitesTraitement([
+        inputOf(service),
+        inputOf(ddets),
+        inputOf(service),
+        inputOf(direction),
+      ]);
+
+      expect(
+        result.map((entiteTraitement) => [entiteTraitement.entiteId, entiteTraitement.directionServiceId]),
+      ).toEqual([
+        ['ars', 'svc'],
+        ['ddets', undefined],
+        ['ars', 'dir'],
+      ]);
+    });
+
+    it('skips entites that are absent from the hierarchy', async () => {
+      await expect(
+        buildEntitesTraitement([{ id: 'ghost', nomComplet: 'Entité disparue', entiteMereId: null }]),
+      ).resolves.toEqual([]);
+    });
+
+    it('derives the direction service flag from the input parent, not from the resolved chain', async () => {
+      await expect(buildEntitesTraitement([{ ...inputOf(service), entiteMereId: null }])).resolves.toEqual([
+        {
+          entiteId: 'ars',
+          entiteTypeId: 'ARS',
+          entiteName: 'ARS Normandie',
+          directionServiceId: undefined,
+          directionServiceName: undefined,
+          chain: [chainOf(ars), chainOf(direction), chainOf(service)],
+        },
+      ]);
     });
   });
 
