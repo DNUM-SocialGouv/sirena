@@ -7,7 +7,13 @@ SDPSN-devops-charts:
     imagePullSecretsName: registry-secret
 
     readinessProbe:
-      enable: false
+      enable: true
+      initialDelaySeconds: 2
+      periodSeconds: 5
+      failureThreshold: 3
+      timeoutSeconds: 3
+      path: /
+      port: 8080
     livenessProbe:
       enable: true
       initialDelaySeconds: 30
