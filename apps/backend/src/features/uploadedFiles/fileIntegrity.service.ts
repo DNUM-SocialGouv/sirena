@@ -220,15 +220,25 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
 
   // Phase 3: S3 objects with no matching DB row. Requires the full `dbPaths` set,
   // so it can only run after the DB scan above has completed.
+  const s3OrphanCandidates: string[] = [];
+  for (const name of s3Sizes.keys()) {
+    if (!dbPaths.has(name)) s3OrphanCandidates.push(name);
+  }
+
+  // `dbPaths` is not a consistent snapshot: the keyset scan runs on random
+  // UUIDs, so a row inserted during the scan behind the cursor is never
+  // visited, and a `safeFilePath` written on an already-scanned row is missed.
+  // Re-check each candidate against the DB before treating it as an orphan.
+  throwIfAborted('orphan-s3-recheck');
+  const s3OrphanKeys = await confirmS3Orphans(s3OrphanCandidates, dbBatchSize, logger, throwIfAborted);
+
   let s3OrphanCount = 0;
   let s3OrphanSize = 0;
-  const s3OrphanKeys: string[] = [];
   const s3OrphanSample: { name: string; size: number }[] = [];
-  for (const [name, size] of s3Sizes) {
-    if (dbPaths.has(name)) continue;
+  for (const name of s3OrphanKeys) {
+    const size = s3Sizes.get(name) ?? 0;
     s3OrphanCount++;
     s3OrphanSize += size;
-    s3OrphanKeys.push(name);
     if (s3OrphanSample.length < LOG_SAMPLE_SIZE) s3OrphanSample.push({ name, size });
     writeReport('orphan-s3', { name, size });
   }
@@ -363,6 +373,45 @@ async function confirmDangling(candidates: DbFile[], logger: ReturnType<typeof g
   }
   if (falsePositives > 0) {
     logger.info({ count: falsePositives }, 'Dangling candidates found in S3 on re-check (uploaded during the scan)');
+  }
+  return confirmed;
+}
+
+/**
+ * Keeps only the S3 keys that no `uploadedFile` row references (as `filePath`
+ * or `safeFilePath`) according to a fresh DB query. If a query fails, its
+ * whole batch is dropped: when in doubt, the S3 object is kept.
+ */
+async function confirmS3Orphans(
+  keys: string[],
+  batchSize: number,
+  logger: ReturnType<typeof getLoggerStore>,
+  throwIfAborted: (phase: string) => void,
+): Promise<string[]> {
+  const confirmed: string[] = [];
+  let falsePositives = 0;
+  for (const batch of chunk(keys, batchSize)) {
+    throwIfAborted('orphan-s3-recheck');
+    try {
+      const rows = await prisma.uploadedFile.findMany({
+        select: { filePath: true, safeFilePath: true },
+        where: { OR: [{ filePath: { in: batch } }, { safeFilePath: { in: batch } }] },
+      });
+      const referenced = new Set<string>();
+      for (const r of rows) {
+        referenced.add(r.filePath);
+        if (r.safeFilePath) referenced.add(r.safeFilePath);
+      }
+      for (const key of batch) {
+        if (referenced.has(key)) falsePositives++;
+        else confirmed.push(key);
+      }
+    } catch (err) {
+      logger.error({ err, count: batch.length }, 'Failed to re-check S3 orphan candidates, keeping them');
+    }
+  }
+  if (falsePositives > 0) {
+    logger.info({ count: falsePositives }, 'S3 orphan candidates found in DB on re-check (written during the scan)');
   }
   return confirmed;
 }

@@ -256,6 +256,50 @@ describe('fileIntegrity.service.ts', () => {
     expect(mockedDeleteFilesFromMinio).toHaveBeenCalledWith(['uploads/ghost.pdf']);
   });
 
+  it('does not report nor delete an S3 object referenced by a row the scan missed', async () => {
+    // The keyset scan runs on random UUIDs: a row inserted mid-scan behind the
+    // cursor, or a `safeFilePath` written on an already-scanned row, never makes
+    // it into `dbPaths`. Candidates must be re-checked against the DB.
+    mockedListMinioObjects.mockResolvedValue(
+      s3Map([
+        { name: 'uploads/late-insert.pdf', size: 10 },
+        { name: 'uploads/late-safe.pdf', size: 20 },
+        { name: 'uploads/ghost.pdf', size: 30 },
+      ]),
+    );
+    mockedFindMany
+      .mockResolvedValueOnce([] as never) // DB scan: the rows were not visited
+      .mockResolvedValueOnce([
+        { filePath: 'uploads/late-insert.pdf', safeFilePath: null },
+        { filePath: 'uploads/original.pdf', safeFilePath: 'uploads/late-safe.pdf' },
+      ] as never); // re-check query
+
+    const result = await runFileIntegrityCheck({ removeOrphans: true });
+
+    expect(mockedFindMany.mock.calls[1][0]).toMatchObject({
+      where: {
+        OR: [
+          { filePath: { in: ['uploads/late-insert.pdf', 'uploads/late-safe.pdf', 'uploads/ghost.pdf'] } },
+          { safeFilePath: { in: ['uploads/late-insert.pdf', 'uploads/late-safe.pdf', 'uploads/ghost.pdf'] } },
+        ],
+      },
+    });
+    expect(result.s3FilesWithoutDb).toBe(1);
+    expect(result.s3FilesWithoutDbSize).toBe(30);
+    expect(mockedDeleteFilesFromMinio).toHaveBeenCalledTimes(1);
+    expect(mockedDeleteFilesFromMinio).toHaveBeenCalledWith(['uploads/ghost.pdf']);
+  });
+
+  it('keeps S3 orphan candidates when the DB re-check fails', async () => {
+    mockedListMinioObjects.mockResolvedValue(s3Map([{ name: 'uploads/ghost.pdf', size: 10 }]));
+    mockedFindMany.mockResolvedValueOnce([] as never).mockRejectedValueOnce(new Error('db down'));
+
+    const result = await runFileIntegrityCheck({ removeOrphans: true });
+
+    expect(result.s3FilesWithoutDb).toBe(0);
+    expect(mockedDeleteFilesFromMinio).not.toHaveBeenCalled();
+  });
+
   it('logs a name+size sample of S3-only orphans without fetching their lastModified date', async () => {
     // Regression test: `listMinioObjects` only returns a `name -> size` map
     // (no per-object Date), and S3-only orphans are only known once compared
