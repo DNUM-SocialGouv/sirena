@@ -10,31 +10,42 @@ Thank you for your interest in improving this project. To keep our workflow clea
 
 * **`main`** : Main development branch
 
-  * All feature branches are created from `main`
-  * Automatic deployment to development environment
+  * All working branches are created from `main`
+  * Automatic deployment to the integration environment
   * Should never be deleted
 
-* **`validation`** : Validation branch
+* **`validation`** : Release candidate branch
 
-  * Merge from `main` at the end of sprints (or more frequently if needed)
-  * Deployment to validation environment
-  * Hotfixes in validation are pushed to this branch
-  * Hotfixes must be backported to `main` via a PR and merge
+  * Hard rebased onto `main` at the start of a release (`git reset --hard origin/main`, then a
+    force push), which also deploys it to the validation environment
+  * QA fixes are pushed directly to this branch, then brought back to `main` through a
+    `validation → main` PR
   * Should never be deleted
 
-* **`production`** : Production branch
+There is **no `production` branch**. Formation, preproduction and production are deployed from a
+`vX.Y.Z` tag cut on `validation`, through the `manual-deploy` workflow (manual dispatch). Never
+rebase `main` onto `validation` — always merge `validation` into `main`.
 
-  * Merge from `validation` for production deployments
-  * Deployment to production environment
-  * Hotfixes in production are pushed to this branch
-  * Hotfixes must be backported to `validation` then `main` via PRs and merges
-  * Should never be deleted
+The full release, hotfix and rollback procedures live in
+[docs/RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md).
+
+### Working branches
+
+Create working branches from `main`, prefixed by type and carrying the Jira reference when there
+is one:
+
+```
+fix/sirena-818-pagination-bornee
+feat/sirena-745-discussion-realtime
+chore/update-deps-2026-09-28
+```
 
 > **Merge flows:**
 >
-> * PR → `main`
-> * `validation` → `main`
-> * `production` → `validation` → `main`
+> * working branch → `main` (PR)
+> * `main` → `validation` (hard rebase, start of release)
+> * `validation` → `main` (PR, to bring QA fixes back)
+> * production hotfix: tag → `validation` (or a short-lived `hotfix/*`) → `main` (PR)
 
 ---
 
@@ -43,7 +54,11 @@ Thank you for your interest in improving this project. To keep our workflow clea
 We enforce quality checks on every commit using Husky:
 
 * **`pnpm lint`** (Biome) — enforces code style and formatting.
-* **`pnpm gitleaks`** — scans for secrets in your commits.
+* **`pnpm gitleaks:detect-secrets`** — scans for secrets in your commits.
+
+A `commit-msg` hook also runs `commitlint` with `@commitlint/config-conventional`.
+[convco](https://convco.github.io/) is a handy local companion: `convco commit` walks you through
+a compliant message and `convco check` validates a commit range before you push.
 
 Ensure these checks pass locally before pushing your code.
 
@@ -81,6 +96,9 @@ If you encounter a bug or have a feature request:
 * Follow the existing code style (indentation, naming, etc.).
 * Run linters and formatters before committing (`pnpm lint`).
 * Write meaningful tests for new features and bug fixes.
+
+Our day-to-day practices — repo layout, code conventions, tests, review, migrations, CI and
+working with LLM assistants — are documented in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ---
 
