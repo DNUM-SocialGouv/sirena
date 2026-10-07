@@ -11,37 +11,43 @@ allowBuilds:
   # ERD (pnpm db:erd): Puppeteer downloads its Chromium at install time (into
   # ~/.cache/puppeteer, outside node_modules → absent from prod images). Docker
   # builds skip it via PUPPETEER_SKIP_DOWNLOAD (they never render the ERD).
+  # Il est déclaré dans @sirena/db (au lieu d'être une peer auto-installée de
+  # @mermaid-js/mermaid-cli) pour tenir la v25 : les v23/v24 embarquent
+  # @puppeteer/browsers 2.x, donc extract-zip 2.0.1, dont les traversées de
+  # chemin par lien symbolique n'ont jamais été corrigées (GHSA-jmr9-qjv8-65gv,
+  # GHSA-7pqw-9j4j-h8q3 ; dernière publication : 2020). @puppeteer/browsers 3
+  # l'a remplacé par modern-tar.
   puppeteer: true
 catalog:
-  "@biomejs/biome": ^2.5.11
-  "@codegouvfr/react-dsfr": ^1.34.0
+  "@biomejs/biome": ^2.5.14
+  "@codegouvfr/react-dsfr": ^1.35.0
   "@hono/standard-validator": ^0.4.0
   "@prisma/adapter-pg": ^7.10.0
   "@prisma/client": ^7.10.0
-  "@tanstack/react-router": ^1.170.32
-  "@testing-library/dom": ^10.4.1
+  "@tanstack/react-router": ^1.170.40
+  "@testing-library/dom": ^10.4.2
   "@testing-library/jest-dom": ^7.0.1
   "@testing-library/react": ^16.3.3
-  "@testing-library/user-event": ^14.6.6
-  "@types/node": ^26.4.0
-  "@types/react": ^19.2.18
-  "@types/react-dom": ^19.2.5
+  "@testing-library/user-event": ^14.6.7
+  "@types/node": ^26.6.3
+  "@types/react": ^19.3.0
+  "@types/react-dom": ^19.3.0
   "@vitejs/plugin-react": ^6.1.1
   "@vitest/browser": ^4.1.11
   "@vitest/coverage-v8": ^4.1.11
   clsx: ^2.1.1
   dotenv: ^17.4.2
-  hono: ^4.13.5
-  hono-openapi: ^1.3.1
-  jsdom: ^30.0.1
+  hono: ^4.13.10
+  hono-openapi: ^1.3.3
+  jsdom: ^30.1.1
   prisma: ^7.10.0
-  react: ^19.2.8
-  react-dom: ^19.2.8
-  tsx: ^4.23.13
+  react: ^19.3.0
+  react-dom: ^19.3.0
+  tsx: ^4.23.15
   typescript: ~7.0.2
-  vite: ^8.2.2
+  vite: ^8.3.1
   vitest: ^4.1.11
-  zod: ^4.5.4
+  zod: ^4.6.5
 enablePrePostScripts: true
 minimumReleaseAge: 10080
 # Security fixes (see overrides) whose patched version is less than 7 days old:
@@ -52,27 +58,31 @@ overrides:
   # ajv via prisma/commitlint, minio) : leurs ranges parents résolvent aujourd'hui
   # une version saine, mais on garde le plancher pour que le nettoyage annuel des
   # ranges en amont ne réintroduise pas silencieusement la vuln.
-  undici@>=6.26.0 <6.27.0: ^6.27.0
+  "undici@>=6.25.0 <6.28.1": "6.28.1"
+  "undici@>=8.1.0 <8.10.2": "8.10.2"
   # decode-uri-component <=0.4.2 : DoS via une entrée percent-encoded malformée — GHSA-vcc3-ghjq-m6fr.
   "decode-uri-component@<=0.4.2": ">=0.5.0"
   # fast-uri host confusion / SSRF via malformed URL normalization, pulled in
   # by ajv (prisma/commitlint) — GHSA-7p8r-x3mc-p8w7, GHSA-5jgf-p345-68v8,
   # GHSA-f65p-4m7j-42xc, GHSA-fph4-wmhf-6fwf, GHSA-jqff-g426-hqxp.
-  "fast-uri@>=3.0.0 <3.1.5": ">=3.1.5"
-  "fast-uri@>=4.0.0 <4.1.3": ">=4.1.3"
+  # ajv demande ^3 : on reste en v3 (borne ^ indispensable, sinon la plage
+  # ouverte résout la v4, vulnérable). Les sélecteurs pnpm matchent la plage
+  # demandée par le parent, pas la version résolue.
+  "fast-uri@>=3.0.0 <3.1.5": "^3.1.5"
+  # brace-expansion (via minimatch) : DoS par récursion non bornée et expansion
+  # quadratique — patché en 5.0.12.
+  "brace-expansion@>=5.0.0 <5.0.12": "^5.0.12"
   # mysql2 : fuite d'identifiants par downgrade du plugin d'authentification et
   # bombe de décompression zlib — GHSA-3f6p-5ww8-9rcr, GHSA-rgwj-5xj2-c3m3.
   "mysql2@<=3.23.0": ">=3.23.1"
   # fast-xml-parser : reset des déclarations DOCTYPE répétées — GHSA-8r6m-32jq-jx6q.
   "fast-xml-parser@>=5.9.3 <5.10.1": ">=5.10.1"
-# extract-zip <=2.0.1: symlink path traversal — GHSA-jmr9-qjv8-65gv. Aucune
-# version corrigée n'a jamais été publiée sur npm (dernière release : 2.0.1,
-# 2020), un override est donc impossible. Tiré par prisma-erd-generator >
-# @mermaid-js/mermaid-cli > puppeteer(-core) > @puppeteer/browsers (db:erd
-# only ; zips générés localement, pas de contenu attaquant).
+  # js-yaml <4.3.2 : les sources de fusion vides échappent à maxTotalMergeKeys,
+  # d'où une consommation CPU non bornée — GHSA-2883-xcg3-v3hh. Tiré par
+  # cosmiconfig (commitlint, @graphql-codegen/cli).
+  "js-yaml@>=4.0.0 <4.3.2": "^4.3.2"
 auditConfig:
   ignoreGhsas:
-    - GHSA-jmr9-qjv8-65gv
     # deepmerge-ts <8: stack exhaustion requires attacker-controlled cyclic
     # JavaScript object graphs. Current consumers use static configuration, and
     # Prisma pins 7.1.5; remove when upstream supports deepmerge-ts >=8.
@@ -80,3 +90,10 @@ auditConfig:
     # stream-json <=3.4.0: quadratic behavior only affects the pick/ignore/filter/replace
     # filters. MinIO uses only jsonl/Parser; remove when MinIO supports stream-json >=3.5.
     - GHSA-528h-pc64-c93x
+    # braces <=3.0.3 (CVE-2026-93687): stack overflow in the recursive AST walkers.
+    # No patched release exists yet (the advisory names 3.0.4, which is not published
+    # on npm), so neither an override nor a bump can resolve it today. braces only
+    # enters the tree through @graphql-codegen/cli (a devDependency of @sirena/backend,
+    # via micromatch): never in a production image, and the globs it receives come from
+    # our codegen config, not from user input. Remove once braces ships the fix.
+    - GHSA-vfj7-8cjw-p6xm

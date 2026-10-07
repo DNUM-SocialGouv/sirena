@@ -1,3 +1,4 @@
+import { FEATURE_FLAGS, type RequeteMessageEvent } from '@sirena/common/constants';
 import { type TabDescriptor, Tabs } from '@sirena/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -6,7 +7,12 @@ import { Details } from '@/components/requestId/details';
 import { Processing } from '@/components/requestId/processing';
 import { RequestInfos } from '@/components/requestId/requestInfos';
 import { formatFullName } from '@/components/requestId/sections/helpers';
+import { useProfile } from '@/hooks/queries/profile.hook';
+import { appendNewerMessages } from '@/hooks/queries/requeteMessages.hook';
+import { requeteUnreadCountQueryKey } from '@/hooks/queries/requeteMessagesUnread.hook';
 import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
+import { useHasFeature } from '@/hooks/useHasFeature';
+import { useRequeteMessagesSSE } from '@/hooks/useRequeteMessagesSSE';
 import { useRequeteStatusSSE } from '@/hooks/useRequeteStatusSSE';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { useListStateStore } from '@/stores/listStateStore';
@@ -43,6 +49,31 @@ export function RequestForm({ requestId, activeTab: activeTabProp = 0 }: Request
     requeteId: requestId || '',
     enabled: !!requestId,
     onUpdate: handleUpdate,
+  });
+
+  const discussionEnabled = useHasFeature(FEATURE_FLAGS.REQUETE_DISCUSSION, false) && !!requestId;
+  const profile = useProfile();
+  const currentUserId = profile.data?.id;
+
+  const handleDiscussionEvent = useCallback(
+    (event: RequeteMessageEvent) => {
+      if (event.action === 'read') {
+        if (event.userId === currentUserId) {
+          queryClient.invalidateQueries({ queryKey: requeteUnreadCountQueryKey(requestId || '') });
+        }
+        return;
+      }
+
+      void appendNewerMessages(queryClient, requestId || '');
+      queryClient.invalidateQueries({ queryKey: requeteUnreadCountQueryKey(requestId || '') });
+    },
+    [queryClient, requestId, currentUserId],
+  );
+
+  useRequeteMessagesSSE({
+    requeteId: requestId || '',
+    enabled: discussionEnabled,
+    onMessage: handleDiscussionEvent,
   });
   const declarantIdentite = requestQuery.data?.requete.participant?.identite;
   const fullName = formatFullName(
@@ -106,8 +137,8 @@ export function RequestForm({ requestId, activeTab: activeTabProp = 0 }: Request
 
   return (
     <>
-      <div className="bg-cumulus fr-mb-4w">
-        <div className="fr-py-2w">
+      <div className="bg-cumulus">
+        <div className="fr-container--fluid fr-py-2w fr-pl-7w fr-pr-3w">
           <div className="fr-mb-2w">
             <Link className="fr-link fr-mb-1w" to="/home" search={requetesListSearch ?? {}}>
               <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span> Liste des requêtes
@@ -123,11 +154,11 @@ export function RequestForm({ requestId, activeTab: activeTabProp = 0 }: Request
             hasUnsafeFiles={hasUnsafeFiles}
           />{' '}
         </div>
-      </div>
-      <div>
         <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange} className={styles['request-tabs']}>
-          {activeTab === 0 && <Details requestId={requestId} requestQuery={requestQuery} />}
-          {activeTab === 1 && <Processing requestId={requestId} requestQuery={requestQuery} />}
+          <div className="fr-container">
+            {activeTab === 0 && <Details requestId={requestId} requestQuery={requestQuery} />}
+            {activeTab === 1 && <Processing requestId={requestId} requestQuery={requestQuery} />}
+          </div>
         </Tabs>
       </div>
     </>

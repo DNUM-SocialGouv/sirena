@@ -6,13 +6,14 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import { mappers } from '@sirena/common';
-import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
+import { optionalEmailSchema, optionalPhoneSchema, type ReponseOuiNon } from '@sirena/common/schemas';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
 import { DomicileFields } from '@/components/common/DomicileFields';
 import type { DeclarantData } from '@/lib/declarant';
 import { declarantFieldMetadata } from '@/lib/fieldMetadata';
+import { buildOuiNonOptions } from '@/lib/radioOptions';
 
 interface DeclarantFormProps {
   mode: 'create' | 'edit';
@@ -61,7 +62,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
       }
     };
 
-  const handleBooleanChange = (field: keyof DeclarantData, value: boolean) => {
+  const handleReponseChange = (field: keyof DeclarantData, value: ReponseOuiNon) => {
     setFormData((prev: DeclarantData) => ({ ...prev, [field]: value }));
   };
 
@@ -146,7 +147,9 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
           </Link>
         </div>
 
-        <h1 className="fr-mb-2w">Déclarant</h1>
+        <h1 className="fr-mb-2w" data-testid="declarant-form-title">
+          Déclarant
+        </h1>
         <p className="fr-text--sm fr-mb-5w">Tous les champs sont facultatifs</p>
 
         <div
@@ -163,6 +166,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                 {
                   label: 'Le déclarant est la personne concernée par les faits',
                   nativeInputProps: {
+                    ...{ 'data-testid': 'declarant-est-personne-concernee' },
                     checked: estPersonneConcernee,
                     onChange: (e) => {
                       const checked = e.target.checked;
@@ -182,7 +186,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
               ]}
             />
             {estPersonneConcernee && showPCWarning ? (
-              <div className="fr-mt-2w fr-mb-2w">
+              <div className="fr-mt-2w fr-mb-2w" data-testid="declarant-personne-concernee-warning">
                 <Alert
                   severity="warning"
                   title="Avertissement"
@@ -192,7 +196,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
               </div>
             ) : null}
             {estPersonneConcernee && !showPCWarning && (
-              <div className="fr-mt-2w">
+              <div className="fr-mt-2w" data-testid="declarant-personne-concernee-callout">
                 <CallOut>Enregistrez puis complétez la section "Personne concernée".</CallOut>
               </div>
             )}
@@ -203,6 +207,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                   <Select
                     label={declarantFieldMetadata.civilite.label}
                     nativeSelectProps={{
+                      ...{ 'data-testid': 'declarant-civilite' },
                       value: formData.civilite ?? '',
                       onChange: (e) => {
                         const value = e.target.value;
@@ -222,6 +227,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                   <Input
                     label={declarantFieldMetadata.nom.label}
                     nativeInputProps={{
+                      ...{ 'data-testid': 'declarant-nom' },
                       value: formData.nom || '',
                       onChange: handleInputChange('nom'),
                     }}
@@ -231,6 +237,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                   <Input
                     label={declarantFieldMetadata.prenom.label}
                     nativeInputProps={{
+                      ...{ 'data-testid': 'declarant-prenom' },
                       value: formData.prenom || '',
                       onChange: handleInputChange('prenom'),
                     }}
@@ -241,6 +248,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                   <Select
                     label={declarantFieldMetadata.lienAvecPersonneConcernee.label}
                     nativeSelectProps={{
+                      ...{ 'data-testid': 'declarant-lien-personne-concernee' },
                       value: formData.lienAvecPersonneConcernee ?? '',
                       onChange: (e) => {
                         const value = e.target.value;
@@ -264,6 +272,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                     <Input
                       label={declarantFieldMetadata.lienAvecPersonneConcerneePrecision.label}
                       nativeInputProps={{
+                        ...{ 'data-testid': 'declarant-lien-precision' },
                         value: formData.lienAvecPersonneConcerneePrecision || '',
                         onChange: handleInputChange('lienAvecPersonneConcerneePrecision'),
                         placeholder: 'Précisez votre lien avec la personne concernée',
@@ -277,6 +286,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                       {
                         label: declarantFieldMetadata.isTuteur.label,
                         nativeInputProps: {
+                          ...{ 'data-testid': 'declarant-is-tuteur' },
                           checked: formData.isTuteur || false,
                           onChange: handleCheckboxChange('isTuteur'),
                         },
@@ -321,6 +331,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                       state={phoneError ? 'error' : undefined}
                       stateRelatedMessage={phoneError}
                       nativeInputProps={{
+                        ...{ 'data-testid': 'declarant-telephone' },
                         ref: phoneInputRef,
                         value: formData.numeroTelephone || '',
                         onChange: handleInputChange('numeroTelephone'),
@@ -336,6 +347,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                       state={emailError ? 'error' : undefined}
                       stateRelatedMessage={emailError}
                       nativeInputProps={{
+                        ...{ 'data-testid': 'declarant-email' },
                         ref: emailInputRef,
                         value: formData.courrierElectronique || '',
                         onChange: handleInputChange('courrierElectronique'),
@@ -355,57 +367,30 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                 <legend>
                   <h2 className="fr-h6 fr-mb-3w">Informations complémentaires</h2>
                 </legend>
-                <RadioButtons
-                  legend={declarantFieldMetadata.consentCommuniquerIdentite.label}
-                  name="declarant-consent-identite"
-                  orientation="horizontal"
-                  options={[
-                    {
-                      label: 'Oui',
-                      nativeInputProps: {
-                        value: 'true',
-                        checked: formData.consentCommuniquerIdentite === true,
-                        onChange: () => handleBooleanChange('consentCommuniquerIdentite', true),
-                      },
-                    },
-                    {
-                      label: 'Non',
-                      nativeInputProps: {
-                        value: 'false',
-                        checked: formData.consentCommuniquerIdentite === false,
-                        onChange: () => handleBooleanChange('consentCommuniquerIdentite', false),
-                      },
-                    },
-                  ]}
-                />
+                <div data-testid="declarant-consent-identite">
+                  <RadioButtons
+                    legend={declarantFieldMetadata.consentCommuniquerIdentite.label}
+                    name="declarant-consent-identite"
+                    orientation="horizontal"
+                    options={buildOuiNonOptions(formData.consentCommuniquerIdentite, (value) =>
+                      handleReponseChange('consentCommuniquerIdentite', value),
+                    )}
+                  />
+                </div>
                 <RadioButtons
                   legend={declarantFieldMetadata.estSignalementProfessionnel.label}
                   name="declarant-signalement-pro"
                   orientation="horizontal"
-                  options={[
-                    {
-                      label: 'Oui',
-                      nativeInputProps: {
-                        value: 'true',
-                        checked: formData.estSignalementProfessionnel === true,
-                        onChange: () => handleBooleanChange('estSignalementProfessionnel', true),
-                      },
-                    },
-                    {
-                      label: 'Non',
-                      nativeInputProps: {
-                        value: 'false',
-                        checked: formData.estSignalementProfessionnel === false,
-                        onChange: () => handleBooleanChange('estSignalementProfessionnel', false),
-                      },
-                    },
-                  ]}
+                  options={buildOuiNonOptions(formData.estSignalementProfessionnel, (value) =>
+                    handleReponseChange('estSignalementProfessionnel', value),
+                  )}
                 />
 
                 <Input
                   label={declarantFieldMetadata.autresPrecisions.label}
                   textArea
                   nativeTextAreaProps={{
+                    ...{ 'data-testid': 'declarant-autres-precisions' },
                     value: formData.autresPrecisions || '',
                     onChange: handleInputChange('autresPrecisions'),
                     rows: 4,
@@ -420,7 +405,11 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
           <Button priority="secondary" onClick={handleCancel}>
             Annuler
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+            nativeButtonProps={{ ...{ 'data-testid': 'declarant-save' } }}
+          >
             {isSaving ? 'Enregistrement...' : 'Enregistrer'}
           </Button>
         </div>

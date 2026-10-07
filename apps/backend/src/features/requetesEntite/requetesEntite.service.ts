@@ -6,6 +6,7 @@ import {
   type EntiteType,
   ERROR_KIND,
   MOTIFS_HIERARCHICAL_DATA,
+  REPONSE_OUI_NON,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_ETAPE_TYPES,
   REQUETE_STATUT_TYPES,
@@ -17,11 +18,15 @@ import {
 } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import {
+  formatReponseOuiNon,
   getDateTodayInParis,
   getLieuPrecisionLabel,
   getMesureProtectionShortLabel,
   getOver90DaysCutoffDate,
   isAutomaticRequest,
+  isReponseOuiNonRenseignee,
+  negateReponseOuiNon,
+  REPONSE_NON_RENSEIGNE_LABEL,
   toWallClockDate,
 } from '@sirena/common/utils';
 import { ZipArchive } from 'archiver';
@@ -40,7 +45,11 @@ import { safeSyncRequetePriseEnChargeToDematSocial } from '../dematSocial/priseE
 import { buildEntitesTraitement, getEntiteAscendanteInfo, getEntiteDescendantIds } from '../entites/entites.service.js';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service.js';
 import { generateRequeteId } from '../requetes/functionalId.service.js';
-import { deleteFaitFilesRemovedFromSituation, setFaitFiles } from '../uploadedFiles/uploadedFiles.service.js';
+import {
+  deleteFaitFilesRemovedFromSituation,
+  setFaitFiles,
+  UNATTACHED_FILE_RELATIONS,
+} from '../uploadedFiles/uploadedFiles.service.js';
 import {
   mapDeclarantToPrismaCreate,
   mapPersonneConcerneeToPrismaCreate,
@@ -462,6 +471,15 @@ export const hasAccessToRequete = async ({ requeteId, entiteId }: RequeteEntiteK
   return !!requete;
 };
 
+export const getRequeteEntiteStatutId = async ({ requeteId, entiteId }: RequeteEntiteKey): Promise<string | null> => {
+  const requeteEntite = await prisma.requeteEntite.findUnique({
+    where: { requeteId_entiteId: { requeteId, entiteId } },
+    select: { statutId: true },
+  });
+
+  return requeteEntite?.statutId ?? null;
+};
+
 export const filterOtherEntitesAffectedForUser = <T extends { id: string }>(
   otherEntites: T[],
   userEntityIds: string[],
@@ -665,6 +683,7 @@ interface UpdateRequeteInput {
 interface UpdateRequeteControls {
   declarant?: { updatedAt?: string };
   participant?: { updatedAt?: string };
+  situation?: { updatedAt?: string };
 }
 
 const buildPersonneAdresseUpsert = (
@@ -774,10 +793,7 @@ export const updateRequete = async (requeteId: string, data: UpdateRequeteInput,
           declarant: {
             update: {
               estIdentifie: true,
-              veutGarderAnonymat:
-                declarantData.consentCommuniquerIdentite === undefined
-                  ? undefined
-                  : !declarantData.consentCommuniquerIdentite,
+              veutGarderAnonymat: negateReponseOuiNon(declarantData.consentCommuniquerIdentite),
               isTuteur: declarantData.isTuteur ?? undefined,
               estSignalementProfessionnel: declarantData.estSignalementProfessionnel ?? null,
               estVictime: declarantData.estPersonneConcernee || false,
@@ -932,12 +948,13 @@ export const updateRequeteParticipant = async (
     const serverUpdatedAt = requete.participant.identite.updatedAt;
 
     if (clientUpdatedAt.getTime() !== serverUpdatedAt.getTime()) {
-      const error = new Error('CONFLICT: The participant identity has been modified by another user.');
-      (error as Error & { conflictData?: unknown }).conflictData = {
-        serverData: requete.participant,
-        serverUpdatedAt: serverUpdatedAt.toISOString(),
-      };
-      throw error;
+      helpers.throwHTTPException409Conflict('The participant identity has been modified by another user.', {
+        cause: {
+          serverData: requete.participant,
+          serverUpdatedAt: serverUpdatedAt.toISOString(),
+        },
+        kind: ERROR_KIND.BUSINESS,
+      });
     }
   }
 
@@ -973,17 +990,17 @@ export const updateRequeteParticipant = async (
       data: {
         participant: {
           update: {
-            estHandicapee: participantData.estHandicapee ?? undefined,
-            veutGarderAnonymat:
-              participantData.consentCommuniquerIdentite === undefined
-                ? undefined
-                : !participantData.consentCommuniquerIdentite,
-            estVictimeInformee: participantData.estVictimeInformee ?? undefined,
+            estHandicapee: participantData.estHandicapee ?? null,
+            veutGarderAnonymat: negateReponseOuiNon(participantData.consentCommuniquerIdentite),
+            estVictimeInformee: participantData.estVictimeInformee ?? null,
             victimeInformeeCommentaire:
-              participantData.estVictimeInformee === false ? participantData.victimeInformeeCommentaire || '' : '',
-            autrePersonnes: participantData.autrePersonnes || '',
-            aAutrePersonnes: participantData.aAutrePersonnes ?? undefined,
-            mesureProtection: participantData.mesureProtection ?? undefined,
+              participantData.estVictimeInformee === REPONSE_OUI_NON.NON
+                ? participantData.victimeInformeeCommentaire || ''
+                : '',
+            autrePersonnes:
+              participantData.aAutrePersonnes === REPONSE_OUI_NON.OUI ? participantData.autrePersonnes || '' : '',
+            aAutrePersonnes: participantData.aAutrePersonnes ?? null,
+            mesureProtection: participantData.mesureProtection ?? null,
             commentaire: participantData.commentaire || '',
             ageId: participantData.age || undefined,
             dateNaissance: participantData.dateNaissance ? new Date(participantData.dateNaissance) : null,
@@ -1406,7 +1423,8 @@ const updateExistingSituation = async (
     where: { id: existingSituation.id },
     data: {
       estLieAuSignalement: situationData.estLieAuSignalement ?? null,
-      numerosSignalement: situationData.estLieAuSignalement === true ? situationData.numerosSignalement || '' : '',
+      numerosSignalement:
+        situationData.estLieAuSignalement === REPONSE_OUI_NON.OUI ? situationData.numerosSignalement || '' : '',
       lieuDeSurvenue: { update: buildLieuDeSurvenueUpdate(situationData.lieuDeSurvenue) },
       misEnCause: { update: buildMisEnCauseUpdate(situationData.misEnCause) },
       demarchesEngagees: { update: buildDemarchesEngageesUpdate(situationData.demarchesEngagees) },
@@ -1667,6 +1685,7 @@ export const updateRequeteSituation = async (
   changedById?: string,
   userEntityIds?: string[],
   topEntiteId?: string,
+  controls?: UpdateRequeteControls,
 ): Promise<{
   requete: Awaited<ReturnType<typeof prisma.requete.findUnique>>;
   newAssignedEntiteIds: string[];
@@ -1679,6 +1698,29 @@ export const updateRequeteSituation = async (
   });
   if (!requete) {
     throw new Error('Requete not found');
+  }
+
+  if (controls?.situation?.updatedAt) {
+    const targetSituation = requete.situations.find((situation) => situation.id === situationId);
+
+    if (targetSituation) {
+      const clientUpdatedAt = new Date(controls.situation.updatedAt);
+      const serverUpdatedAt = targetSituation.updatedAt;
+
+      if (clientUpdatedAt.getTime() !== serverUpdatedAt.getTime()) {
+        const fullSituation = await prisma.situation.findUnique({
+          where: { id: situationId },
+          include: SITUATION_INCLUDE_FULL,
+        });
+        // traitementDesFaits is derived, not stored: without it the client merge would erase it.
+        const serverData = fullSituation ? await enrichSituationWithTraitementDesFaits(fullSituation) : targetSituation;
+
+        helpers.throwHTTPException409Conflict('The situation has been modified by another user.', {
+          cause: { serverData, serverUpdatedAt: serverUpdatedAt.toISOString() },
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+    }
   }
 
   let newAssignedEntiteIds: string[] = [];
@@ -1859,10 +1901,7 @@ export const closeRequeteForEntite = async (
           id: { in: fileIds },
           uploadedById: authorId,
           entiteId,
-          requeteId: null,
-          requeteEtapeId: null,
-          faitSituationId: null,
-          demarchesEngageesId: null,
+          ...UNATTACHED_FILE_RELATIONS,
         },
         data: {
           requeteEtapeId: etape.id,
@@ -1874,7 +1913,7 @@ export const closeRequeteForEntite = async (
       }
     }
 
-    await updateStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.CLOTUREE, tx);
+    await setStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.CLOTUREE, tx);
 
     if (requeteEntite.prioriteId) {
       await tx.requeteEntite.update({
@@ -1892,6 +1931,8 @@ export const closeRequeteForEntite = async (
       note,
     };
   });
+
+  sseEventManager.emitRequeteUpdated({ requeteId, entiteId, field: REQUETE_UPDATE_FIELDS.CLOSED });
 
   if (shouldTriggerDematSocialPriseEnChargeSync(requeteEntite.statutId, REQUETE_STATUT_TYPES.CLOTUREE)) {
     await safeSyncRequetePriseEnChargeToDematSocial(requeteId);
@@ -1985,6 +2026,7 @@ export const reopenRequeteForEntite = async (requeteId: string, entiteId: string
         entiteId,
         statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
         type: REQUETE_ETAPE_TYPES.REOPEN,
+        estPartagee: true,
         createdById: authorId,
         nom: `Requête rouverte le ${new Date().toLocaleDateString('fr-FR', {
           day: '2-digit',
@@ -1994,7 +2036,7 @@ export const reopenRequeteForEntite = async (requeteId: string, entiteId: string
       },
     });
 
-    await updateStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.EN_COURS, tx);
+    await setStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.EN_COURS, tx);
 
     return {
       etapeId: etape.id,
@@ -2002,6 +2044,8 @@ export const reopenRequeteForEntite = async (requeteId: string, entiteId: string
       etape,
     };
   });
+
+  sseEventManager.emitRequeteUpdated({ requeteId, entiteId, field: REQUETE_UPDATE_FIELDS.REOPENED });
 
   await createChangeLogForRequeteEntite({
     requeteId,
@@ -2015,7 +2059,7 @@ export const reopenRequeteForEntite = async (requeteId: string, entiteId: string
   return result;
 };
 
-export const updateStatusRequete = async (
+export const setStatusRequete = async (
   requeteId: string,
   entiteId: string,
   statut: RequeteStatutType,
@@ -2034,15 +2078,21 @@ export const updateStatusRequete = async (
     data: { statutId: statut },
   });
 
+  if (shouldTriggerDematSocialPriseEnChargeSync(previousRequeteEntite?.statutId, statut)) {
+    await safeSyncRequetePriseEnChargeToDematSocial(requeteId);
+  }
+
+  return requeteEntite;
+};
+
+export const updateStatusRequete = async (requeteId: string, entiteId: string, statut: RequeteStatutType) => {
+  const requeteEntite = await setStatusRequete(requeteId, entiteId, statut);
+
   sseEventManager.emitRequeteUpdated({
     requeteId,
     entiteId,
     field: REQUETE_UPDATE_FIELDS.STATUS,
   });
-
-  if (shouldTriggerDematSocialPriseEnChargeSync(previousRequeteEntite?.statutId, statut)) {
-    await safeSyncRequetePriseEnChargeToDematSocial(requeteId);
-  }
 
   return requeteEntite;
 };
@@ -2204,11 +2254,6 @@ export const createRequeteFilesArchive = async (requeteId: string, entiteId: str
   archive.finalize();
 
   return { archive, requeteId: requeteEntite.requeteId };
-};
-
-const booleanLabel = (value: boolean | null | undefined): string | null => {
-  if (value === null || value === undefined) return null;
-  return value ? 'Oui' : 'Non';
 };
 
 const formatRue = (adresse: { numero: string | null; rue: string | null } | null) =>
@@ -2438,18 +2483,21 @@ export const generateRequetePdfBuffer = async (
         .field('Téléphone', d.identite?.telephone || null)
         .field(
           'Consent à ce que son identité soit communiquée',
-          booleanLabel(
-            d.veutGarderAnonymat === null || d.veutGarderAnonymat === undefined ? null : !d.veutGarderAnonymat,
-          ),
+          formatReponseOuiNon(negateReponseOuiNon(d.veutGarderAnonymat)),
         );
 
       if (d.isTuteur) {
         pdf.paragraph('Le déclarant est curateur ou tuteur de la personne concernée');
       }
 
-      if (d.estSignalementProfessionnel !== null && d.estSignalementProfessionnel !== undefined) {
+      if (isReponseOuiNonRenseignee(d.estSignalementProfessionnel)) {
         pdf.paragraph(
-          `Le déclarant ${d.estSignalementProfessionnel ? 'est' : "n'est pas"} un professionnel qui signale des dysfonctionnements et évènements indésirables graves (EIG)`,
+          `Le déclarant ${d.estSignalementProfessionnel === REPONSE_OUI_NON.OUI ? 'est' : "n'est pas"} un professionnel qui signale des dysfonctionnements et évènements indésirables graves (EIG)`,
+        );
+      } else if (d.estSignalementProfessionnel === REPONSE_OUI_NON.NON_RENSEIGNE) {
+        pdf.field(
+          'Professionnel qui signale des dysfonctionnements et évènements indésirables graves (EIG)',
+          REPONSE_NON_RENSEIGNE_LABEL,
         );
       }
 
@@ -2469,22 +2517,23 @@ export const generateRequetePdfBuffer = async (
       .field('Nom', p.identite?.nom || null)
       .field('Date de naissance', p.dateNaissance ? formatDateFr(p.dateNaissance) : null)
       .field("Tranche d'âge", p.age ? p.age.label : null)
-      .field('En situation de handicap', booleanLabel(p.estHandicapee))
+      .field('En situation de handicap', formatReponseOuiNon(p.estHandicapee))
       .field('Adresse', formatRue(p.adresse))
       .field('Code postal', p.adresse?.codePostal || null)
       .field('Ville', p.adresse?.ville || null)
       .field('Email', p.identite?.email || null)
       .field('Téléphone', p.identite?.telephone || null)
-      .field('A été informé(e) de la démarche par le déclarant', booleanLabel(p.estVictimeInformee))
+      .field('A été informé(e) de la démarche par le déclarant', formatReponseOuiNon(p.estVictimeInformee))
       .field("Raison pour laquelle elle n'a pas été informée", p.victimeInformeeCommentaire || null)
       .field(
         'Consent à ce que son identité soit communiquée',
-        booleanLabel(
-          p.veutGarderAnonymat === null || p.veutGarderAnonymat === undefined ? null : !p.veutGarderAnonymat,
-        ),
+        formatReponseOuiNon(negateReponseOuiNon(p.veutGarderAnonymat)),
       )
-      .field("D'autres personnes sont concernées par la requête", booleanLabel(p.aAutrePersonnes))
-      .field('Précisions sur les autres personnes concernées', p.autrePersonnes || null)
+      .field("D'autres personnes sont concernées par la requête", formatReponseOuiNon(p.aAutrePersonnes))
+      .field(
+        'Précisions sur les autres personnes concernées',
+        p.aAutrePersonnes === REPONSE_OUI_NON.OUI ? p.autrePersonnes || null : null,
+      )
       .field('Autres précisions', p.commentaire || null);
 
     if (mesureProtectionLabel) {
@@ -2501,11 +2550,14 @@ export const generateRequetePdfBuffer = async (
       : 'Description de la situation';
     pdf.subsection(situationTitle);
 
-    if (situation.estLieAuSignalement !== null && situation.estLieAuSignalement !== undefined) {
+    if (situation.estLieAuSignalement != null) {
       pdf
         .subsubsection('Identification')
-        .field('Situation en lien avec un ou plusieurs signalement(s)', situation.estLieAuSignalement ? 'Oui' : 'Non');
-      if (situation.estLieAuSignalement && situation.numerosSignalement) {
+        .field(
+          'Situation en lien avec un ou plusieurs signalement(s)',
+          formatReponseOuiNon(situation.estLieAuSignalement),
+        );
+      if (situation.estLieAuSignalement === REPONSE_OUI_NON.OUI && situation.numerosSignalement) {
         pdf.field('Numéro(s) de signalement associé(s)', situation.numerosSignalement);
       }
     }

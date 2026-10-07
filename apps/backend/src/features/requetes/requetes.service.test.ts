@@ -15,6 +15,7 @@ import {
   REQUETE_STATUT_TYPES,
   TRANSPORT_TYPE,
 } from '@sirena/common/constants';
+import { booleanToReponseOuiNon } from '@sirena/common/utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sanitizeFilename, urlToStream } from '../../helpers/file.js';
 import { prisma } from '../../libs/__mocks__/prisma.js';
@@ -438,7 +439,7 @@ describe('requetes.service.ts', () => {
 
   describe('getRequeteByDematSocialId()', () => {
     it('should return the requete matching the dematSocialId', async () => {
-      const mockedFindFirst = vi.mocked(prisma.requete.findFirst);
+      const mockedFindUnique = vi.mocked(prisma.requete.findUnique);
 
       const mockRequete = {
         id: '1',
@@ -455,19 +456,19 @@ describe('requetes.service.ts', () => {
         thirdPartyAccountId: '',
         provenancePrecision: '',
       };
-      mockedFindFirst.mockResolvedValueOnce(mockRequete);
+      mockedFindUnique.mockResolvedValueOnce(mockRequete);
 
       const result = await getRequeteByDematSocialId(123);
 
-      expect(mockedFindFirst).toHaveBeenCalledWith({
+      expect(mockedFindUnique).toHaveBeenCalledWith({
         where: { dematSocialId: 123 },
       });
       expect(result).toEqual(mockRequete);
     });
 
     it('should return null if no requete found', async () => {
-      const mockedFindFirst = vi.mocked(prisma.requete.findFirst);
-      mockedFindFirst.mockResolvedValueOnce(null);
+      const mockedFindUnique = vi.mocked(prisma.requete.findUnique);
+      mockedFindUnique.mockResolvedValueOnce(null);
 
       const result = await getRequeteByDematSocialId(999);
       expect(result).toBeNull();
@@ -585,6 +586,7 @@ describe('requetes.service.ts', () => {
         id: '1',
         estNonIdentifiee: null,
         estIdentifie: null,
+        estHandicapee: null,
         isTuteur: null,
         mesureProtection: null,
         estVictimeInformee: null,
@@ -712,6 +714,7 @@ describe('requetes.service.ts', () => {
           estLieAuSignalement: null,
           numerosSignalement: '',
           sirecDepartement: null,
+          updatedAt: new Date(),
         });
 
         situation.faits.forEach((fait) => {
@@ -800,7 +803,7 @@ describe('requetes.service.ts', () => {
           estVictime: false,
           declarantDe: { connect: { id: '1' } },
           lienVictime: { connect: { id: fakeRequeteDto.declarant.lienVictimeId } },
-          estHandicapee: fakeRequeteDto.declarant.estHandicapee,
+          estHandicapee: booleanToReponseOuiNon(fakeRequeteDto.declarant.estHandicapee),
           veutGarderAnonymat: null,
           identite: {
             create: {
@@ -819,10 +822,10 @@ describe('requetes.service.ts', () => {
           age: { connect: { id: fakeRequeteDto.participant.ageId } },
           participantDe: { connect: { id: '1' } },
           autrePersonnes: '',
-          aAutrePersonnes: fakeRequeteDto.participant.aAutrePersonnes,
+          aAutrePersonnes: booleanToReponseOuiNon(fakeRequeteDto.participant.aAutrePersonnes),
           commentaire: fakeRequeteDto.participant.commentaire,
-          estHandicapee: fakeRequeteDto.participant.estHandicapee,
-          estVictimeInformee: fakeRequeteDto.participant.estVictimeInformee,
+          estHandicapee: booleanToReponseOuiNon(fakeRequeteDto.participant.estHandicapee),
+          estVictimeInformee: booleanToReponseOuiNon(fakeRequeteDto.participant.estVictimeInformee),
           veutGarderAnonymat: null,
           identite: {
             create: {
@@ -868,6 +871,7 @@ describe('requetes.service.ts', () => {
         id: '1',
         estNonIdentifiee: null,
         estIdentifie: null,
+        estHandicapee: null,
         isTuteur: null,
         mesureProtection: null,
         estVictimeInformee: null,
@@ -960,6 +964,7 @@ describe('requetes.service.ts', () => {
           estLieAuSignalement: null,
           numerosSignalement: '',
           sirecDepartement: null,
+          updatedAt: new Date(),
         });
 
         situation.faits.forEach((fait) => {
@@ -1077,11 +1082,8 @@ describe('requetes.service.ts', () => {
           { updatedAt: new Date('2025-02-01T00:00:00.000Z').toISOString() },
         ),
       ).rejects.toMatchObject({
-        message: 'CONFLICT: The participant identity has been modified by another user.',
-        conflictData: {
-          serverData: existing,
-          serverUpdatedAt: serverUpdatedAt.toISOString(),
-        },
+        message: 'The requete has been modified by another user.',
+        cause: { serverData: existing, serverUpdatedAt: serverUpdatedAt.toISOString() },
       });
 
       expect(prisma.requete.update).not.toHaveBeenCalled();

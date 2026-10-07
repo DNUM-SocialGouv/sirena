@@ -1,0 +1,250 @@
+import { lieuPrecisionLabelsByType } from '@sirena/common/utils';
+import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { LieuTypeFilter } from './LieuTypeFilter';
+
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
+
+const openMenu = async () => {
+  await userEvent.click(screen.getByRole('button', { name: /Type de lieu de survenue/ }));
+};
+
+const expandGroup = async (label: string) => {
+  await userEvent.click(screen.getByRole('button', { name: label }));
+};
+
+const categoryName = (label: string) =>
+  `Tous les lieux de la catégorie ${label}. Permet de sélectionner ou désélectionner tous les lieux de cette catégorie.`;
+
+const categoryCheckbox = (label: string) => screen.getByRole('checkbox', { name: categoryName(label) });
+
+describe('LieuTypeFilter', () => {
+  it('opens the list and selects a whole lieu type', async () => {
+    const onChange = vi.fn();
+    render(<LieuTypeFilter selectedTokens={[]} onChange={onChange} />);
+
+    await openMenu();
+    await userEvent.click(categoryCheckbox('Établissements de santé'));
+
+    expect(onChange).toHaveBeenCalledWith(['ETABLISSEMENT_SANTE']);
+  });
+
+  it('keeps the options collapsed until the category is expanded', async () => {
+    render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);
+
+    await openMenu();
+    expect(screen.queryByRole('checkbox', { name: 'Chez un tiers' })).not.toBeInTheDocument();
+
+    await expandGroup('Domicile');
+
+    expect(screen.getByRole('checkbox', { name: 'Chez un tiers' })).toBeInTheDocument();
+  });
+
+  it('collapses an expanded category again', async () => {
+    render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);
+
+    await openMenu();
+    await expandGroup('Domicile');
+    await expandGroup('Domicile');
+
+    expect(screen.queryByRole('checkbox', { name: 'Chez un tiers' })).not.toBeInTheDocument();
+  });
+
+  it('expands on its own the categories that already carry a selected option', async () => {
+    render(<LieuTypeFilter selectedTokens={['DOMICILE:CHEZ_TIERS']} onChange={vi.fn()} />);
+
+    await openMenu();
+
+    expect(screen.getByRole('checkbox', { name: 'Chez un tiers' })).toBeChecked();
+  });
+
+  it('leaves out the lieu types that have no option in the référentiel', async () => {
+    render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);
+
+    await openMenu();
+
+    expect(screen.queryByRole('checkbox', { name: categoryName('Établissement fictif') })).not.toBeInTheDocument();
+  });
+
+  it('selects an option of a lieu category', async () => {
+    const onChange = vi.fn();
+    render(<LieuTypeFilter selectedTokens={[]} onChange={onChange} />);
+
+    await openMenu();
+    await expandGroup('Domicile');
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Chez un tiers' }));
+
+    expect(onChange).toHaveBeenCalledWith(['DOMICILE:CHEZ_TIERS']);
+  });
+
+  it('marks the parent as mixed when only one of its options is selected', async () => {
+    render(<LieuTypeFilter selectedTokens={['DOMICILE:CHEZ_TIERS']} onChange={vi.fn()} />);
+
+    await openMenu();
+    const parent = categoryCheckbox('Domicile') as HTMLInputElement;
+
+    expect(parent.checked).toBe(false);
+    expect(parent.indeterminate).toBe(true);
+  });
+
+  it('replaces selected options by the whole category when the parent is checked', async () => {
+    const onChange = vi.fn();
+    render(<LieuTypeFilter selectedTokens={['DOMICILE:CHEZ_TIERS', 'ETABLISSEMENT_SANTE:CHU']} onChange={onChange} />);
+
+    await openMenu();
+    await userEvent.click(categoryCheckbox('Domicile'));
+
+    expect(onChange).toHaveBeenCalledWith(['ETABLISSEMENT_SANTE:CHU', 'DOMICILE']);
+  });
+
+  it('clears the whole category and its options when the parent is unchecked', async () => {
+    const onChange = vi.fn();
+    render(<LieuTypeFilter selectedTokens={['DOMICILE', 'ETABLISSEMENT_SANTE:CHU']} onChange={onChange} />);
+
+    await openMenu();
+    await userEvent.click(categoryCheckbox('Domicile'));
+
+    expect(onChange).toHaveBeenCalledWith(['ETABLISSEMENT_SANTE:CHU']);
+  });
+
+  it('unselects a single option', async () => {
+    const onChange = vi.fn();
+    render(<LieuTypeFilter selectedTokens={['DOMICILE:CHEZ_TIERS', 'DOMICILE:REQUERANT']} onChange={onChange} />);
+
+    await openMenu();
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Chez un tiers' }));
+
+    expect(onChange).toHaveBeenCalledWith(['DOMICILE:REQUERANT']);
+  });
+
+  it('carries the selection count in the accessible name, not only in the visible badge', () => {
+    render(<LieuTypeFilter selectedTokens={['DOMICILE:CHEZ_TIERS', 'ETABLISSEMENT_SANTE:CHU']} onChange={vi.fn()} />);
+
+    const trigger = screen.getByRole('button', { name: 'Type de lieu de survenue, 2 types de lieu sélectionnés' });
+
+    expect(trigger).toHaveTextContent('(2)');
+  });
+
+  it('counts every lieu of a category selected as a whole, not the category as one', () => {
+    render(<LieuTypeFilter selectedTokens={['DOMICILE', 'ETABLISSEMENT_SANTE:CHU']} onChange={vi.fn()} />);
+
+    const domicileLieux = Object.keys(lieuPrecisionLabelsByType.DOMICILE).length;
+    const trigger = screen.getByRole('button', { name: /Type de lieu de survenue/ });
+
+    expect(trigger).toHaveTextContent(`(${domicileLieux + 1})`);
+  });
+
+  it('keeps the options modifiable one by one while the whole type is selected', async () => {
+    const onChange = vi.fn();
+    render(<LieuTypeFilter selectedTokens={['DOMICILE']} onChange={onChange} />);
+
+    await openMenu();
+    await expandGroup('Domicile');
+    const child = screen.getByRole('checkbox', { name: 'Chez un tiers' }) as HTMLInputElement;
+
+    expect(child.checked).toBe(true);
+    expect(child.disabled).toBe(false);
+
+    await userEvent.click(child);
+    const [tokens] = onChange.mock.calls.at(-1) as [string[]];
+
+    expect(tokens).not.toContain('DOMICILE');
+    expect(tokens).not.toContain('DOMICILE:CHEZ_TIERS');
+    expect(tokens).toContain('DOMICILE:REQUERANT');
+  });
+
+  it('closes the open lieu type when another one is expanded', async () => {
+    render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);
+
+    await openMenu();
+    await expandGroup('Domicile');
+    expect(screen.getByRole('checkbox', { name: 'Chez un tiers' })).toBeInTheDocument();
+
+    await expandGroup('Établissements de santé');
+
+    expect(screen.queryByRole('checkbox', { name: 'Chez un tiers' })).not.toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'CHU' })).toBeInTheDocument();
+  });
+  describe('accessibilité', () => {
+    it('exposes the expanded state of each lieu type on its disclosure button', async () => {
+      render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);
+
+      await openMenu();
+      const disclosure = screen.getByRole('button', { name: 'Domicile' });
+
+      expect(disclosure).toHaveAttribute('aria-expanded', 'false');
+
+      await userEvent.click(disclosure);
+
+      expect(disclosure).toHaveAttribute('aria-expanded', 'true');
+    });
+
+    it('points every aria-controls at an element that exists in the document', async () => {
+      render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);
+
+      const trigger = screen.getByRole('button', { name: /Type de lieu de survenue/ });
+      expect(trigger).not.toHaveAttribute('aria-controls');
+
+      await openMenu();
+
+      const controllers = [...document.querySelectorAll('[aria-controls]')];
+      expect(controllers.length).toBeGreaterThan(1);
+
+      for (const element of controllers) {
+        const id = element.getAttribute('aria-controls') as string;
+        expect(document.getElementById(id)).not.toBeNull();
+      }
+    });
+
+    it('keeps the collapsed options out of the accessibility tree', async () => {
+      render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);
+
+      await openMenu();
+      const options = document.getElementById(
+        screen.getByRole('button', { name: 'Domicile' }).getAttribute('aria-controls') as string,
+      );
+
+      expect(options).toBeInTheDocument();
+      expect(options).toHaveAttribute('hidden');
+      expect(screen.queryByRole('checkbox', { name: 'Chez un tiers' })).not.toBeInTheDocument();
+    });
+
+    it('names each group of options after its lieu category', async () => {
+      render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);
+
+      await openMenu();
+      await expandGroup('Domicile');
+
+      expect(screen.getByRole('group', { name: 'Lieux de la catégorie Domicile' })).toBeInTheDocument();
+    });
+
+    it('states that a lieu type is selected as a whole', async () => {
+      render(<LieuTypeFilter selectedTokens={['DOMICILE']} onChange={vi.fn()} />);
+
+      await openMenu();
+      await expandGroup('Domicile');
+      const options = document.getElementById(
+        screen.getByRole('button', { name: 'Domicile' }).getAttribute('aria-controls') as string,
+      ) as HTMLElement;
+
+      expect(options.querySelector('p')).toHaveTextContent(
+        'Tous les lieux de la catégorie Domicile sont sélectionnés.',
+      );
+    });
+
+    it('closes on Escape and hands the focus back to the trigger', async () => {
+      render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);
+
+      await openMenu();
+      await userEvent.keyboard('{Escape}');
+
+      const trigger = screen.getByRole('button', { name: /Type de lieu de survenue/ });
+      expect(trigger).toHaveAttribute('aria-expanded', 'false');
+      await vi.waitFor(() => expect(trigger).toHaveFocus());
+    });
+  });
+});

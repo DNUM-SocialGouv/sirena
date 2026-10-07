@@ -18,6 +18,7 @@
     "db:studio": "dotenv -e .env -- pnpm --filter @sirena/db studio",
     "db:migrate": "dotenv -e .env -- pnpm --filter @sirena/db migrate",
     "op:seed": "dotenv -e .env -- pnpm --filter @sirena/backend op:seed",
+    "op:seed:e2e": "dotenv -e .env -- pnpm --filter @sirena/backend op:seed:e2e",
     "op:import:geodata": "dotenv -e .env -- pnpm --filter @sirena/backend op:import:geodata",
     "op:diff:enums": "dotenv -e .env -- pnpm --filter @sirena/backend op:diff:enums",
     "op:diff:entites:analyze": "dotenv -e .env -- pnpm --filter @sirena/backend op:diff:entites:analyze",
@@ -30,8 +31,10 @@
     "op:get-load-test-user": "dotenv -e .env -- pnpm --filter @sirena/backend op:get-load-test-user",
     "op:delete-requetes-by-entite": "dotenv -e .env -- pnpm --filter @sirena/backend op:delete-requetes-by-entite",
     "op:metabase:export-dashboard": "dotenv -e .env -- pnpm --filter @sirena/backend op:metabase:export-dashboard",
+    "op:metabase:restore-dashboard": "dotenv -e .env -- pnpm --filter @sirena/backend op:metabase:restore-dashboard",
     "db:deploy": "dotenv -e .env -- pnpm --filter @sirena/db run deploy",
-    "db:generate": "dotenv -e .env -- pnpm --filter @sirena/db generate",
+    "db:generate": "pnpm db:client:generate && pnpm --filter @sirena/db build:types",
+    "db:client:generate": "dotenv -e .env -- pnpm --filter @sirena/db generate",
     "db:erd": "dotenv -e .env -- pnpm --filter @sirena/db erd",
     "db:erd:check": "pnpm --filter @sirena/db erd:check",
     "db:migrate:resolve": "dotenv -e .env -- pnpm --filter @sirena/db migrate:resolve",
@@ -67,8 +70,8 @@
     "dotenv-cli": "^11.0.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.2.2",
-    "@commitlint/config-conventional": "^21.2.2",
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
     "husky": "^9.1.7"
   }
 }

@@ -75,7 +75,11 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
             />
             {canEdit ? (
               <div className="fr-mb-4w">
-                <Link to={getEditSituationHref()} className="fr-btn--secondary fr-icon-add-line">
+                <Link
+                  to={getEditSituationHref()}
+                  className="fr-btn--secondary fr-icon-add-line"
+                  data-testid="add-situation-link"
+                >
                   Ajouter une autre situation
                 </Link>
               </div>
@@ -168,6 +172,7 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
                     <Link
                       to={getEditSituationHref()}
                       className="fr-btn fr-btn--secondary fr-btn--icon-left fr-icon-add-line"
+                      data-testid="add-situation-link"
                     >
                       Ajouter une autre situation
                     </Link>

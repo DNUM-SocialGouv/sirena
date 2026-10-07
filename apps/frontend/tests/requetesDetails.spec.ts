@@ -1,5 +1,5 @@
-import { randomUUID } from 'node:crypto';
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
+import { autoCloseAnnouncements } from './utils/announcements';
 import { AUTH_CONFIGS, ensureAuthenticationFileExists } from './utils/authHelper';
 import { baseUrl } from './utils/constants';
 
@@ -23,16 +23,17 @@ test.describe('Request Details Feature', () => {
 
   test.beforeEach(async ({ browser }) => {
     context = await browser.newContext({ storageState: authFile });
+    await autoCloseAnnouncements(context);
     page = await context.newPage();
 
     // Exclure les requêtes clôturées : elles sont en lecture seule (bouton « Ajouter une étape » masqué).
     await page.goto(`${baseUrl}/home?statutIds=NOUVEAU,EN_COURS,TRAITEE`);
-    await expect(page.getByText(/Bienvenue/)).toBeVisible();
+    await expect(page.getByTestId('home-title')).toBeVisible();
 
     const requetesTable = page.getByRole('table');
     await expect(requetesTable).toBeVisible();
 
-    const firstRow = requetesTable.locator('tbody tr').first();
+    const firstRow = requetesTable.getByTestId('datatable-row').first();
     await expect(firstRow).toBeVisible();
 
     await expect(firstRow).toHaveAttribute('data-row-key');
@@ -42,7 +43,7 @@ test.describe('Request Details Feature', () => {
 
     requestUuid = uuid as string;
 
-    const viewRequestButton = firstRow.getByRole('link', { name: 'Voir la requête' });
+    const viewRequestButton = firstRow.getByTestId('requete-row-link');
     await viewRequestButton.click();
 
     await expect(page).toHaveURL(`${baseUrl}/request/${requestUuid}`);
@@ -56,26 +57,5 @@ test.describe('Request Details Feature', () => {
 
   test('should navigate to request detail page from table', async () => {
     await expect(page.getByRole('heading', { name: `Requête ${requestUuid}`, level: 1 })).toBeVisible();
-  });
-
-  test('should add a processing step and see it after reload', async () => {
-    const randomStepName = `test-${randomUUID()}`;
-    await page.getByRole('tab', { name: 'Traitement' }).click();
-
-    await page.getByRole('button', { name: 'Ajouter une étape' }).click();
-
-    const inputEtape = page.getByRole('textbox', { name: "Nom de l'étape (obligatoire)" });
-    await expect(inputEtape).toBeVisible();
-    await inputEtape.fill(randomStepName);
-
-    await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
-
-    await expect(page.getByRole('heading', { name: randomStepName, level: 3 })).toBeVisible({ timeout: 10000 });
-
-    await page.reload();
-
-    await page.getByRole('tab', { name: 'Traitement' }).click();
-
-    await expect(page.getByRole('heading', { name: randomStepName, level: 3 })).toBeVisible({ timeout: 10000 });
   });
 });

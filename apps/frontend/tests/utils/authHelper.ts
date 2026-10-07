@@ -1,11 +1,12 @@
-import { closeSync, existsSync, openSync, unlinkSync } from 'node:fs';
+import { closeSync, existsSync, openSync, readFileSync, unlinkSync } from 'node:fs';
 import { type Browser, type BrowserContext, expect } from '@playwright/test';
-import { baseUrl, ENTITY_ADMIN_USER } from './constants';
+import { authTokenName, baseUrl, E2E_TARGET, ENTITY_ADMIN_USER, isLocalTarget } from './constants';
+import { createLocalAuthFile } from './localAuth';
 import { loginWithProconnect } from './login';
 
 export interface AuthConfig {
   user: string;
-  password: string;
+  password?: string;
   organisation: string;
   fileName: string;
 }
@@ -15,16 +16,62 @@ export const AUTH_CONFIGS = {
     user: ENTITY_ADMIN_USER.user,
     password: ENTITY_ADMIN_USER.password,
     organisation: 'Commune de clamart - Mairie',
-    fileName: `${ENTITY_ADMIN_USER.user}.json`,
+    // Namespaced by target: local (forged cookie) and integration (ProConnect)
+    // cookies are domain-bound, so they must not share a cache file.
+    fileName: `${ENTITY_ADMIN_USER.user}.${E2E_TARGET}.json`,
   },
 } as const;
+
+/**
+ * Other seeded users (`pnpm op:seed:e2e`). They have no ProConnect account, so
+ * they are only available on the local target, where the auth cookie is forged.
+ */
+export const LOCAL_AUTH_CONFIGS = {
+  /** ENTITY_ADMIN of ARS Normandie: the other entity of multi-entity requests. */
+  OTHER_ENTITY_ADMIN: {
+    user: 'user18@yopmail.com',
+    organisation: '',
+    fileName: 'user18@yopmail.com.local.json',
+  },
+  /** READER of ARS Normandie. */
+  READER: {
+    user: 'reader@yopmail.com',
+    organisation: '',
+    fileName: 'reader@yopmail.com.local.json',
+  },
+} as const satisfies Record<string, AuthConfig>;
+
+const LOCAL_AUTH_MIN_REMAINING_SECONDS = 5 * 60;
+
+type StoredCookie = { name: string; expires: number };
+
+function hasValidLocalAuthCookie(authFile: string): boolean {
+  try {
+    const { cookies } = JSON.parse(readFileSync(authFile, 'utf8')) as { cookies?: StoredCookie[] };
+    const authCookie = cookies?.find((cookie) => cookie.name === authTokenName);
+    return authCookie !== undefined && authCookie.expires > Date.now() / 1000 + LOCAL_AUTH_MIN_REMAINING_SECONDS;
+  } catch {
+    return false;
+  }
+}
+
+function isAuthFileUsable(authFile: string): boolean {
+  if (!existsSync(authFile)) {
+    return false;
+  }
+  return !isLocalTarget || hasValidLocalAuthCookie(authFile);
+}
 
 export async function ensureAuthenticationFileExists(browser: Browser, config: AuthConfig): Promise<string> {
   const authFile = `playwright/.auth/${config.fileName}`;
   const lockFile = `${authFile}.lock`;
 
-  if (existsSync(authFile)) {
+  if (isAuthFileUsable(authFile)) {
     return authFile;
+  }
+
+  if (existsSync(authFile)) {
+    unlinkSync(authFile);
   }
 
   let hasLock = false;
@@ -39,11 +86,11 @@ export async function ensureAuthenticationFileExists(browser: Browser, config: A
       const startTime = Date.now();
 
       // Poll until auth file appears or timeout
-      while (!existsSync(authFile) && Date.now() - startTime < maxWaitMs) {
+      while (!isAuthFileUsable(authFile) && Date.now() - startTime < maxWaitMs) {
         await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
       }
 
-      if (existsSync(authFile)) {
+      if (isAuthFileUsable(authFile)) {
         return authFile;
       } else {
         throw new Error(`Timeout waiting for authentication file: ${authFile}`);
@@ -54,26 +101,33 @@ export async function ensureAuthenticationFileExists(browser: Browser, config: A
 
   try {
     // Double-check in case file appeared between lock acquisition and this check
-    if (existsSync(authFile)) {
+    if (isAuthFileUsable(authFile)) {
       return authFile;
     }
 
-    const context = await browser.newContext({ storageState: undefined });
-    const page = await context.newPage();
+    if (isLocalTarget) {
+      // Local target: forge the auth cookie, no ProConnect round-trip.
+      await createLocalAuthFile(browser, config.user, authFile);
+    } else {
+      const context = await browser.newContext({ storageState: undefined });
+      const page = await context.newPage();
 
-    try {
-      await loginWithProconnect(page, {
-        user: config.user,
-        password: config.password,
-        organisation: config.organisation || 'Commune de clamart - Mairie',
-      });
+      try {
+        await loginWithProconnect(page, {
+          user: config.user,
+          password: config.password,
+          organisation: config.organisation || 'Commune de clamart - Mairie',
+        });
 
-      await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 30000 });
-      await expect(page.getByText(/Bienvenue/)).toBeVisible({ timeout: 10000 });
+        await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 30000 });
+        await expect(page.getByRole('heading', { name: 'Liste des requêtes', level: 1 })).toBeVisible({
+          timeout: 10000,
+        });
 
-      await context.storageState({ path: authFile });
-    } finally {
-      await context.close();
+        await context.storageState({ path: authFile });
+      } finally {
+        await context.close();
+      }
     }
   } finally {
     // clean up the lock file

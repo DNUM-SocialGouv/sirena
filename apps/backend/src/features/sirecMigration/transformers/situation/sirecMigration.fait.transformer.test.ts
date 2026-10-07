@@ -27,6 +27,8 @@ describe('sirecMigration.fait.transformer.ts', () => {
       accuser_reception: null as number | null,
       date_envoi_ar: null as Date | null,
       accuser_reception_precision: null as string | null,
+      niv_competence_reclam: null as number | null,
+      prec_niv_comp: null as string | null,
     },
     motifsDeclaresIdDicos: [809, 811],
     groupIds: [],
@@ -187,5 +189,78 @@ describe('sirecMigration.fait.transformer.ts', () => {
     const result = transformSirecFait(sirecData);
 
     expect(result.motifs).toEqual([]);
+  });
+
+  describe('niveau de compétence ARS', () => {
+    it('should append the ARS competence line when niv_competence_reclam is 50', () => {
+      const result = transformSirecFait({
+        ...sirecData,
+        reclamation: { ...sirecData.reclamation, prioritaire_precisez: null, niv_competence_reclam: 50 },
+      });
+
+      expect(result.autresPrecisions).toBe('Niveau de compétence de traitement de la réclamation : ARS');
+    });
+
+    it('should not append the ARS competence line when niv_competence_reclam is a different value', () => {
+      const result = transformSirecFait({
+        ...sirecData,
+        reclamation: { ...sirecData.reclamation, prioritaire_precisez: null, niv_competence_reclam: 52 },
+      });
+
+      expect(result.autresPrecisions).toBe('');
+    });
+
+    it('should not append the ARS competence line when niv_competence_reclam is null', () => {
+      const result = transformSirecFait({
+        ...sirecData,
+        reclamation: { ...sirecData.reclamation, prioritaire_precisez: null, niv_competence_reclam: null },
+      });
+
+      expect(result.autresPrecisions).toBe('');
+    });
+
+    it('should append a précisions line after the ARS competence line when prec_niv_comp is set', () => {
+      const result = transformSirecFait({
+        ...sirecData,
+        reclamation: {
+          ...sirecData.reclamation,
+          prioritaire_precisez: null,
+          niv_competence_reclam: 50,
+          prec_niv_comp: 'Motif transféré au niveau régional',
+        },
+      });
+
+      expect(result.autresPrecisions).toBe(
+        'Niveau de compétence de traitement de la réclamation : ARS\nPrécisions : Motif transféré au niveau régional',
+      );
+    });
+
+    it('should not append a précisions line when prec_niv_comp is null', () => {
+      const result = transformSirecFait({
+        ...sirecData,
+        reclamation: {
+          ...sirecData.reclamation,
+          prioritaire_precisez: null,
+          niv_competence_reclam: 50,
+          prec_niv_comp: null,
+        },
+      });
+
+      expect(result.autresPrecisions).toBe('Niveau de compétence de traitement de la réclamation : ARS');
+    });
+
+    it('should not append the précisions line when prec_niv_comp is set but niv_competence_reclam is not 50', () => {
+      const result = transformSirecFait({
+        ...sirecData,
+        reclamation: {
+          ...sirecData.reclamation,
+          prioritaire_precisez: null,
+          niv_competence_reclam: 54,
+          prec_niv_comp: 'Précision hors ARS',
+        },
+      });
+
+      expect(result.autresPrecisions).toBe('');
+    });
   });
 });

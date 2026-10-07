@@ -3,13 +3,20 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import { mappers } from '@sirena/common';
-import { type MesureProtection, optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
+import { MESURE_PROTECTION, REPONSE_OUI_NON } from '@sirena/common/constants';
+import {
+  type MesureProtection,
+  optionalEmailSchema,
+  optionalPhoneSchema,
+  type ReponseOuiNon,
+} from '@sirena/common/schemas';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
 import { DomicileFields } from '@/components/common/DomicileFields';
 import { personneConcerneeFieldMetadata } from '@/lib/fieldMetadata';
 import type { PersonneConcerneeData } from '@/lib/personneConcernee';
+import { buildNonRenseigneOption, buildOuiNonOptions } from '@/lib/radioOptions';
 
 interface PersonneConcerneeFormProps {
   mode: 'create' | 'edit';
@@ -62,13 +69,8 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
       }
     };
 
-  const handleBooleanChange = (field: keyof PersonneConcerneeData, value: boolean) => {
-    setFormData((prev: PersonneConcerneeData) => {
-      if (field === 'estVictimeInformee' && value) {
-        return { ...prev, [field]: value, victimeInformeeCommentaire: '' };
-      }
-      return { ...prev, [field]: value };
-    });
+  const handleReponseChange = (field: keyof PersonneConcerneeData, value: ReponseOuiNon) => {
+    setFormData((prev: PersonneConcerneeData) => ({ ...prev, [field]: value }));
   };
 
   const handleMesureProtectionChange = (value: MesureProtection) => {
@@ -155,7 +157,9 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
           </Link>
         </div>
 
-        <h1 className="fr-mb-2w">Personne concernée</h1>
+        <h1 className="fr-mb-2w" data-testid="personne-concernee-form-title">
+          Personne concernée
+        </h1>
         <p className="fr-text--sm fr-mb-5w">Tous les champs sont facultatifs</p>
 
         <div
@@ -172,6 +176,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                 <Select
                   label={personneConcerneeFieldMetadata.civilite.label}
                   nativeSelectProps={{
+                    ...{ 'data-testid': 'personne-concernee-civilite' },
                     value: formData.civilite ?? '',
                     onChange: (e) => {
                       const value = e.target.value;
@@ -191,6 +196,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                 <Input
                   label={personneConcerneeFieldMetadata.nom.label}
                   nativeInputProps={{
+                    ...{ 'data-testid': 'personne-concernee-nom' },
                     value: formData.nom || '',
                     onChange: handleInputChange('nom'),
                   }}
@@ -200,6 +206,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                 <Input
                   label={personneConcerneeFieldMetadata.prenom.label}
                   nativeInputProps={{
+                    ...{ 'data-testid': 'personne-concernee-prenom' },
                     value: formData.prenom || '',
                     onChange: handleInputChange('prenom'),
                   }}
@@ -213,6 +220,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                   label={personneConcerneeFieldMetadata.age.label}
                   hint={<span aria-hidden="true">&nbsp;</span>}
                   nativeSelectProps={{
+                    ...{ 'data-testid': 'personne-concernee-age' },
                     value: formData.age ?? '',
                     onChange: (e) => {
                       const value = e.target.value;
@@ -235,6 +243,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                   state={dateNaissanceError ? 'error' : 'default'}
                   stateRelatedMessage={dateNaissanceError}
                   nativeInputProps={{
+                    ...{ 'data-testid': 'personne-concernee-date-naissance' },
                     ref: dateNaissanceInputRef,
                     type: 'date',
                     max: new Date().toISOString().split('T')[0],
@@ -283,6 +292,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                   state={phoneError ? 'error' : undefined}
                   stateRelatedMessage={phoneError}
                   nativeInputProps={{
+                    ...{ 'data-testid': 'personne-concernee-telephone' },
                     ref: phoneInputRef,
                     value: formData.numeroTelephone || '',
                     onChange: handleInputChange('numeroTelephone'),
@@ -298,6 +308,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                   state={emailError ? 'error' : undefined}
                   stateRelatedMessage={emailError}
                   nativeInputProps={{
+                    ...{ 'data-testid': 'personne-concernee-email' },
                     ref: emailInputRef,
                     value: formData.courrierElectronique || '',
                     onChange: handleInputChange('courrierElectronique'),
@@ -317,62 +328,33 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
             <legend>
               <h2 className="fr-h6 fr-mb-3w">Informations complémentaires</h2>
             </legend>
-            <div className="fr-mb-3w">
+            <div className="fr-mb-3w" data-testid="personne-concernee-consent-identite">
               <RadioButtons
                 legend={personneConcerneeFieldMetadata.consentCommuniquerIdentite.label}
                 name="personne-concernee-consent-identite"
                 orientation="horizontal"
-                options={[
-                  {
-                    label: 'Oui',
-                    nativeInputProps: {
-                      value: 'true',
-                      checked: formData.consentCommuniquerIdentite === true,
-                      onChange: () => handleBooleanChange('consentCommuniquerIdentite', true),
-                    },
-                  },
-                  {
-                    label: 'Non',
-                    nativeInputProps: {
-                      value: 'false',
-                      checked: formData.consentCommuniquerIdentite === false,
-                      onChange: () => handleBooleanChange('consentCommuniquerIdentite', false),
-                    },
-                  },
-                ]}
+                options={buildOuiNonOptions(formData.consentCommuniquerIdentite, (value) =>
+                  handleReponseChange('consentCommuniquerIdentite', value),
+                )}
               />
             </div>
 
-            <div className="fr-mb-3w">
+            <div className="fr-mb-3w" data-testid="personne-concernee-victime-informee">
               <RadioButtons
                 legend={personneConcerneeFieldMetadata.estVictimeInformee.label}
                 name="personne-concernee-est-victime-informee"
                 orientation="horizontal"
-                options={[
-                  {
-                    label: 'Oui',
-                    nativeInputProps: {
-                      value: 'true',
-                      checked: formData.estVictimeInformee === true,
-                      onChange: () => handleBooleanChange('estVictimeInformee', true),
-                    },
-                  },
-                  {
-                    label: 'Non',
-                    nativeInputProps: {
-                      value: 'false',
-                      checked: formData.estVictimeInformee === false,
-                      onChange: () => handleBooleanChange('estVictimeInformee', false),
-                    },
-                  },
-                ]}
+                options={buildOuiNonOptions(formData.estVictimeInformee, (value) =>
+                  handleReponseChange('estVictimeInformee', value),
+                )}
               />
             </div>
-            {formData.estVictimeInformee === false && (
+            {formData.estVictimeInformee === REPONSE_OUI_NON.NON && (
               <div className="fr-mb-3w">
                 <Input
                   label={personneConcerneeFieldMetadata.victimeInformeeCommentaire.label}
                   nativeInputProps={{
+                    ...{ 'data-testid': 'personne-concernee-victime-informee-commentaire' },
                     value: formData.victimeInformeeCommentaire || '',
                     onChange: handleInputChange('victimeInformeeCommentaire'),
                   }}
@@ -380,7 +362,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
               </div>
             )}
 
-            <div className="fr-mb-3w">
+            <div className="fr-mb-3w" data-testid="personne-concernee-mesure-protection">
               <RadioButtons
                 legend={personneConcerneeFieldMetadata.mesureProtection.label}
                 name="personne-concernee-mesure-protection"
@@ -389,89 +371,63 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                   {
                     label: 'Mandataire judiciaire',
                     nativeInputProps: {
-                      value: 'MANDATAIRE_JUDICIAIRE',
-                      checked: formData.mesureProtection === 'MANDATAIRE_JUDICIAIRE',
-                      onChange: () => handleMesureProtectionChange('MANDATAIRE_JUDICIAIRE'),
+                      value: MESURE_PROTECTION.MANDATAIRE_JUDICIAIRE,
+                      checked: formData.mesureProtection === MESURE_PROTECTION.MANDATAIRE_JUDICIAIRE,
+                      onChange: () => handleMesureProtectionChange(MESURE_PROTECTION.MANDATAIRE_JUDICIAIRE),
                     },
                   },
                   {
                     label: 'Mandataire familial',
                     nativeInputProps: {
-                      value: 'MANDATAIRE_FAMILIAL',
-                      checked: formData.mesureProtection === 'MANDATAIRE_FAMILIAL',
-                      onChange: () => handleMesureProtectionChange('MANDATAIRE_FAMILIAL'),
+                      value: MESURE_PROTECTION.MANDATAIRE_FAMILIAL,
+                      checked: formData.mesureProtection === MESURE_PROTECTION.MANDATAIRE_FAMILIAL,
+                      onChange: () => handleMesureProtectionChange(MESURE_PROTECTION.MANDATAIRE_FAMILIAL),
                     },
                   },
                   {
                     label: 'Non',
                     nativeInputProps: {
-                      value: 'NON',
-                      checked: formData.mesureProtection === 'NON',
-                      onChange: () => handleMesureProtectionChange('NON'),
+                      value: MESURE_PROTECTION.NON,
+                      checked: formData.mesureProtection === MESURE_PROTECTION.NON,
+                      onChange: () => handleMesureProtectionChange(MESURE_PROTECTION.NON),
                     },
                   },
+                  buildNonRenseigneOption(formData.mesureProtection === MESURE_PROTECTION.NON_RENSEIGNE, () =>
+                    handleMesureProtectionChange(MESURE_PROTECTION.NON_RENSEIGNE),
+                  ),
                 ]}
               />
             </div>
 
-            <div className="fr-mb-3w">
+            <div className="fr-mb-3w" data-testid="personne-concernee-est-handicapee">
               <RadioButtons
                 legend={personneConcerneeFieldMetadata.estHandicapee.label}
                 name="personne-concernee-est-handicapee"
                 orientation="horizontal"
-                options={[
-                  {
-                    label: 'Oui',
-                    nativeInputProps: {
-                      value: 'true',
-                      checked: formData.estHandicapee === true,
-                      onChange: () => handleBooleanChange('estHandicapee', true),
-                    },
-                  },
-                  {
-                    label: 'Non',
-                    nativeInputProps: {
-                      value: 'false',
-                      checked: formData.estHandicapee === false,
-                      onChange: () => handleBooleanChange('estHandicapee', false),
-                    },
-                  },
-                ]}
+                options={buildOuiNonOptions(formData.estHandicapee, (value) =>
+                  handleReponseChange('estHandicapee', value),
+                )}
               />
             </div>
 
-            <div className="fr-mb-3w">
+            <div className="fr-mb-3w" data-testid="personne-concernee-autres-personnes">
               <RadioButtons
                 legend={personneConcerneeFieldMetadata.aAutrePersonnes.label}
                 name="personne-concernee-a-autre-personnes"
                 orientation="horizontal"
-                options={[
-                  {
-                    label: 'Oui',
-                    nativeInputProps: {
-                      value: 'true',
-                      checked: formData.aAutrePersonnes === true,
-                      onChange: () => handleBooleanChange('aAutrePersonnes', true),
-                    },
-                  },
-                  {
-                    label: 'Non',
-                    nativeInputProps: {
-                      value: 'false',
-                      checked: formData.aAutrePersonnes === false,
-                      onChange: () => handleBooleanChange('aAutrePersonnes', false),
-                    },
-                  },
-                ]}
+                options={buildOuiNonOptions(formData.aAutrePersonnes, (value) =>
+                  handleReponseChange('aAutrePersonnes', value),
+                )}
               />
             </div>
 
-            {formData.aAutrePersonnes ? (
+            {formData.aAutrePersonnes === REPONSE_OUI_NON.OUI ? (
               <Input
                 label={personneConcerneeFieldMetadata.autrePersonnes.label}
                 hintText="Nom, prénom, lien avec la personne concernée, etc."
                 textArea
                 nativeTextAreaProps={{
+                  ...{ 'data-testid': 'personne-concernee-autres-personnes-precisions' },
                   value: formData.autrePersonnes || '',
                   onChange: handleInputChange('autrePersonnes'),
                   rows: 3,
@@ -495,7 +451,11 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
           <Button priority="secondary" onClick={handleCancel}>
             Annuler
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+            nativeButtonProps={{ ...{ 'data-testid': 'personne-concernee-save' } }}
+          >
             {isSaving ? 'Enregistrement...' : 'Enregistrer'}
           </Button>
         </div>

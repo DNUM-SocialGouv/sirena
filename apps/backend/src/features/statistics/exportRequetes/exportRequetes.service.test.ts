@@ -190,15 +190,15 @@ describe('prepareExportRequetesCsv', () => {
           estVictime: false,
           isTuteur: false,
           adresse: { codePostal: '75001' },
-          veutGarderAnonymat: false,
-          estSignalementProfessionnel: false,
+          veutGarderAnonymat: 'NON',
+          estSignalementProfessionnel: 'NON',
         },
         participant: {
           adresse: { codePostal: '69002' },
-          veutGarderAnonymat: false,
-          estVictimeInformee: false,
-          estHandicapee: false,
-          aAutrePersonnes: false,
+          veutGarderAnonymat: 'NON',
+          estVictimeInformee: 'NON',
+          estHandicapee: 'NON',
+          aAutrePersonnes: 'NON',
         },
         requeteEntites: [
           {

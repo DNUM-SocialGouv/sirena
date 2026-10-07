@@ -1,6 +1,8 @@
 import { z } from 'zod';
+import { MESURE_PROTECTION } from '../constants/mesureProtection.constant.js';
+import { ReponseOuiNonSchema } from './reponseOuiNon.schema.js';
 
-export const MesureProtectionSchema = z.enum(['MANDATAIRE_JUDICIAIRE', 'MANDATAIRE_FAMILIAL', 'NON']);
+export const MesureProtectionSchema = z.enum(MESURE_PROTECTION);
 
 export const PersonneConcerneeDataSchema = z.object({
   civilite: z.string().optional(),
@@ -28,12 +30,12 @@ export const PersonneConcerneeDataSchema = z.object({
   ville: z.string().optional(),
   numeroTelephone: z.string().optional(),
   courrierElectronique: z.email().optional().or(z.literal('')),
-  estHandicapee: z.boolean().optional(),
-  consentCommuniquerIdentite: z.boolean().optional(),
-  estVictimeInformee: z.boolean().optional(),
+  estHandicapee: ReponseOuiNonSchema.optional().nullable(),
+  consentCommuniquerIdentite: ReponseOuiNonSchema.optional().nullable(),
+  estVictimeInformee: ReponseOuiNonSchema.optional().nullable(),
   victimeInformeeCommentaire: z.string().optional(),
   autrePersonnes: z.string().optional(),
-  aAutrePersonnes: z.boolean().optional().nullable(),
+  aAutrePersonnes: ReponseOuiNonSchema.optional().nullable(),
   mesureProtection: MesureProtectionSchema.optional().nullable(),
   commentaire: z.string().optional(),
 });

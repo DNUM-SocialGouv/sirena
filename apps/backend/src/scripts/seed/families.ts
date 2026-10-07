@@ -1,12 +1,14 @@
 import {
   AGE,
   LIEU_TYPE,
+  MESURE_PROTECTION,
   MIS_EN_CAUSE_TYPE,
   RECEPTION_TYPE,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_PRIORITE_TYPES,
   REQUETE_STATUT_TYPES,
 } from '@sirena/common/constants';
+import { lieuPrecisionLabelsByType } from '@sirena/common/utils';
 import type {
   DemarchesBlueprint,
   EtapeBlueprint,
@@ -43,8 +45,15 @@ const makeIdentifiedPersonne = (ctx: SeedContext, estVictime: boolean): Personne
   adresse: address(ctx.faker),
 });
 
+const pickLieuPrecision = (ctx: SeedContext, lieuTypeId: string): string => {
+  const precisions = Object.keys(lieuPrecisionLabelsByType[lieuTypeId] ?? {});
+  if (precisions.length === 0) return '';
+  return ctx.faker.helpers.arrayElement([...precisions, '']);
+};
+
 const makeLieu = (ctx: SeedContext, lieuTypeId: string): LieuBlueprint => ({
   lieuTypeId,
+  lieuPrecision: pickLieuPrecision(ctx, lieuTypeId),
   transportTypeId: null,
   societeTransport: '',
   finess: '',
@@ -213,7 +222,7 @@ export const FAMILIES: Family[] = [
         ...makeIdentifiedPersonne(ctx, true),
         ageId: ctx.refs.ages.requireOrPick(ctx.faker, AGE['-18']),
         estHandicapee: true,
-        mesureProtection: 'MANDATAIRE_JUDICIAIRE',
+        mesureProtection: MESURE_PROTECTION.MANDATAIRE_JUDICIAIRE,
       };
       return bp;
     },

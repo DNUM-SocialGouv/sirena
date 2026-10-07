@@ -1,4 +1,5 @@
 import { envVars } from './config/env.js';
+import { createLivenessCheck } from './features/monitoring/liveness.js';
 import { getPrometheusContentType, getPrometheusMetrics } from './features/monitoring/metrics.worker.js';
 import { createMonitoringServer } from './features/monitoring/server.js';
 import { createDefaultLogger } from './helpers/pino.js';
@@ -34,10 +35,19 @@ if (sirecMigrationWorker) {
   logger.info('[worker] SIREC migration worker not started (MARIADB env vars not set)');
 }
 
+const checkLiveness = createLivenessCheck([
+  { name: cronWorker.name, isRunning: () => cronWorker.isRunning() },
+  { name: fileProcessingWorker.name, isRunning: () => fileProcessingWorker.isRunning() },
+  ...(sirecMigrationWorker
+    ? [{ name: sirecMigrationWorker.name, isRunning: () => sirecMigrationWorker.isRunning() }]
+    : []),
+]);
+
 const monitoringServer = createMonitoringServer({
   getMetrics: getPrometheusMetrics,
   getContentType: getPrometheusContentType,
   port: envVars.WORKER_MONITORING_PORT,
+  checkLiveness,
 });
 
 const shutdown = async () => {

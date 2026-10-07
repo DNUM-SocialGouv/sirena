@@ -42,6 +42,7 @@ type DbFile = {
   faitSituationId: string | null;
   requeteEtapeId: string | null;
   demarchesEngageesId: string | null;
+  requeteMessageId: string | null;
 };
 
 const formatBytes = (bytes: number): string => {
@@ -53,7 +54,7 @@ const formatBytes = (bytes: number): string => {
 };
 
 const isOrphan = (f: DbFile): boolean =>
-  !f.requeteId && !f.faitSituationId && !f.requeteEtapeId && !f.demarchesEngageesId;
+  !f.requeteId && !f.faitSituationId && !f.requeteEtapeId && !f.demarchesEngageesId && !f.requeteMessageId;
 
 const chunk = <T>(items: T[], size: number): T[][] => {
   const chunks: T[][] = [];
@@ -140,6 +141,7 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
         faitSituationId: true,
         requeteEtapeId: true,
         demarchesEngageesId: true,
+        requeteMessageId: true,
       },
       // Keyset pagination via an explicit `id > cursor` filter, NOT Prisma's
       // `cursor`/`skip` option: that option requires the cursor row to still

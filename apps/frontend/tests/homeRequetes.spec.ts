@@ -1,4 +1,5 @@
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
+import { autoCloseAnnouncements } from './utils/announcements';
 import { AUTH_CONFIGS, ensureAuthenticationFileExists } from './utils/authHelper';
 import { baseUrl } from './utils/constants';
 
@@ -21,12 +22,13 @@ test.describe('Requete Feature', () => {
 
   test.beforeEach(async ({ browser }) => {
     context = await browser.newContext({ storageState: authFile });
+    await autoCloseAnnouncements(context);
     page = await context.newPage();
 
     await page.goto(`${baseUrl}/home`);
     await page.waitForURL((url) => url.pathname === '/home', { timeout: 15000 });
 
-    await expect(page.getByText(/Bienvenue/)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('home-title')).toBeVisible({ timeout: 15000 });
   });
 
   test.afterEach(async () => {
@@ -35,30 +37,27 @@ test.describe('Requete Feature', () => {
     }
   });
 
-  test('should display home page with welcome message', async () => {
-    const heading = page.getByRole('heading', {
-      name: 'Tableau de bord des requêtes',
-      level: 1,
-    });
+  test('should display home page with its heading', async () => {
+    const heading = page.getByTestId('home-title');
 
     await expect(heading).toBeVisible();
-    await expect(page.getByText(/Bienvenue/)).toBeVisible();
+    await expect(heading).toHaveText('Liste des requêtes');
   });
 
   test('should display requetes table with at least 1 requete', async () => {
     const requetesTable = page.getByRole('table');
     await expect(requetesTable).toBeVisible();
 
-    const requetesRows = requetesTable.locator('tbody tr');
+    const requetesRows = requetesTable.getByTestId('datatable-row');
     const count = await requetesRows.count();
     expect(count).toBeGreaterThanOrEqual(1);
   });
 
-  test('should navigate to request detail page when clicking "Voir la requête"', async () => {
+  test('should navigate to request detail page when clicking the request link', async () => {
     const requetesTable = page.getByRole('table');
     await expect(requetesTable).toBeVisible();
 
-    const firstRow = requetesTable.locator('tbody tr').first();
+    const firstRow = requetesTable.getByTestId('datatable-row').first();
     await expect(firstRow).toBeVisible();
 
     await expect(firstRow).toHaveAttribute('data-row-key');
@@ -66,7 +65,7 @@ test.describe('Requete Feature', () => {
     const requestUuid = await firstRow.getAttribute('data-row-key');
     expect(requestUuid).toBeTruthy();
 
-    const viewRequestButton = firstRow.getByRole('link', { name: 'Voir la requête' });
+    const viewRequestButton = firstRow.getByTestId('requete-row-link');
     await expect(viewRequestButton).toBeVisible();
     await viewRequestButton.click();
 

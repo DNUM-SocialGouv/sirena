@@ -61,6 +61,27 @@ describe('requeteEtapeAuthorization', () => {
     },
   );
 
+  it.each([
+    { viewer: 'owner-entite', shared: true, flag: false, canRead: true },
+    { viewer: 'other-entite', shared: true, flag: true, canRead: true },
+    { viewer: 'other-entite', shared: true, flag: false, canRead: false },
+    { viewer: 'other-entite', shared: false, flag: true, canRead: false },
+  ])(
+    'keeps reopenings immutable and respects persisted sharing: viewer=$viewer, shared=$shared, flag=$flag',
+    ({ viewer, shared, flag, canRead }) => {
+      const reopening = {
+        entiteId: ownerEntiteId,
+        estPartagee: shared,
+        type: 'REOPEN',
+        statutId: 'FAIT',
+        acknowledgmentSendMode: null,
+      };
+
+      expect(requeteEtapeAuthorization.canRead(viewer, reopening, flag)).toBe(canRead);
+      expect(requeteEtapeAuthorization.canWrite(viewer, reopening)).toBe(false);
+    },
+  );
+
   it('allows the owner to read an assignment but rejects writes', () => {
     const assignment = {
       entiteId: ownerEntiteId,

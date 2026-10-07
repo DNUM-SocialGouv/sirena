@@ -143,16 +143,32 @@ describe('PeriodFilter', () => {
     expect(screen.getByText('Le filtre porte sur la date de création de la requête dans SIRENA.')).toBeInTheDocument();
   });
 
-  it('stays open on a transient focusout while focus remains inside the panel', async () => {
+  it('stays open when focus moves to another field inside the panel', async () => {
     render(<PeriodFilter value={{}} onChange={vi.fn()} />);
 
     await userEvent.click(screen.getByRole('button', { name: 'Période' }));
     const firstRadio = screen.getByRole('radio', { name: 'Semaine courante' });
-    firstRadio.focus();
+    const startDate = screen.getByLabelText(/Date de début/);
 
-    fireEvent.focusOut(firstRadio, { relatedTarget: null });
+    startDate.focus();
+    fireEvent.focusOut(firstRadio, { relatedTarget: startDate });
 
     await waitFor(() => expect(screen.getByRole('radio', { name: 'Semaine courante' })).toBeInTheDocument());
+  });
+
+  it('stays open and keeps presets selectable after selecting a radio', async () => {
+    render(<PeriodFilter value={{}} onChange={vi.fn()} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+    const currentMonth = screen.getByRole('radio', { name: 'Mois courant' });
+    await userEvent.click(currentMonth);
+
+    expect(currentMonth).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Semaine courante' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('radio', { name: 'Semaine courante' }));
+
+    expect(screen.getByRole('radio', { name: 'Semaine courante' })).toBeChecked();
   });
 
   it('closes when focus actually leaves the panel (WCAG keyboard tab-out)', async () => {
@@ -171,6 +187,45 @@ describe('PeriodFilter', () => {
     fireEvent.focusOut(screen.getByRole('radio', { name: 'Semaine courante' }), { relatedTarget: outside });
 
     await waitFor(() => expect(screen.queryByRole('radio', { name: 'Semaine courante' })).not.toBeInTheDocument());
+  });
+
+  it('stays open when a click beside a field focuses a focusable ancestor (panneau d’onglet DSFR)', async () => {
+    render(
+      // biome-ignore lint/a11y/noNoninteractiveTabindex: reproduit le tabpanel de react-dsfr, qui porte tabindex="0"
+      <div role="tabpanel" tabIndex={0} data-testid="tabpanel">
+        <PeriodFilter value={{}} onChange={vi.fn()} />
+      </div>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+    const firstRadio = screen.getByRole('radio', { name: 'Semaine courante' });
+    const ancestor = screen.getByTestId('tabpanel');
+
+    ancestor.focus();
+    fireEvent.focusOut(firstRadio, { relatedTarget: ancestor });
+
+    await waitFor(() => expect(screen.getByRole('radio', { name: 'Semaine courante' })).toBeInTheDocument());
+  });
+
+  it('still selects a preset when the mousedown on its label focuses the tab panel first', async () => {
+    render(
+      // biome-ignore lint/a11y/noNoninteractiveTabindex: reproduit le tabpanel de react-dsfr, qui porte tabindex="0"
+      <div role="tabpanel" tabIndex={0} data-testid="tabpanel">
+        <PeriodFilter value={{}} onChange={vi.fn()} />
+      </div>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+    const currentMonth = screen.getByRole('radio', { name: 'Mois courant' });
+    const label = screen.getByText('Mois courant');
+    const ancestor = screen.getByTestId('tabpanel');
+
+    fireEvent.mouseDown(label);
+    ancestor.focus();
+    fireEvent.focusOut(currentMonth, { relatedTarget: ancestor });
+    await userEvent.click(currentMonth);
+
+    expect(screen.getByRole('radio', { name: 'Mois courant' })).toBeChecked();
   });
 
   it('does not close via focusout when focus moves to the trigger', async () => {

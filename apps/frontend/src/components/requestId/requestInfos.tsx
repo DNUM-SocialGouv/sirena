@@ -9,6 +9,7 @@ import { useCanEdit } from '@/hooks/useCanEdit';
 import { DownloadMenu } from '../common/DownloadMenu';
 import { PrioriteMenu } from '../common/PrioriteMenu';
 import { RequeteStatutTag } from '../common/RequeteStatutTag';
+import { DiscussionDrawer } from './discussion/DiscussionDrawer';
 import style from './requestInfos.module.css';
 import { ContactInfo } from './sections/helpers';
 
@@ -61,7 +62,7 @@ export const RequestInfos = ({
           <div className="fr-col">
             <div className={style['request-header']}>
               <div className={style['request-left']}>
-                <h1>{requestId ? `Requête ${requestId}` : 'Nouvelle requête'}</h1>
+                <h1 data-testid="request-title">{requestId ? `Requête ${requestId}` : 'Nouvelle requête'}</h1>
 
                 {requestId ? (
                   <>
@@ -96,13 +97,14 @@ export const RequestInfos = ({
               {requestId ? (
                 <div className={style['download-menu-wrapper']}>
                   <DownloadMenu requestId={requestId} disabled={!hasAttachments} hasUnsafeFiles={hasUnsafeFiles} />
+                  <DiscussionDrawer requestId={requestId} />
                 </div>
               ) : null}
             </div>
           </div>
         </div>
         {fullName ? (
-          <div className={style['legend-display']}>
+          <div className={style['legend-display']} data-testid="request-personne-concernee">
             <ContactInfo icon="fr-icon-user-line" ariaLabel="Identité - personne concernée">
               {fullName}
             </ContactInfo>

@@ -27,6 +27,8 @@ export type TabDescriptor = {
   tabId: string;
   title?: string;
   disabled?: boolean;
+  /** Stable e2e anchor, independent of the tab label. */
+  dataTestId?: string;
 };
 
 export type TabsProps = {
@@ -47,16 +49,19 @@ const TabsListItem = ({ tab, index, selected, onChangeTab }: TabsListItemProps) 
   const handleClick = useCallback(() => onChangeTab(index), [onChangeTab, index]);
 
   return (
-    <TabsItem
-      panelId={tab.tabPanelId}
-      selected={selected}
-      tabId={tab.tabId}
-      onTabClick={handleClick}
-      title={tab.title}
-      disabled={tab.disabled}
-    >
-      {tab.label}
-    </TabsItem>
+    <li role="presentation">
+      <TabsItem
+        panelId={tab.tabPanelId}
+        selected={selected}
+        tabId={tab.tabId}
+        onTabClick={handleClick}
+        title={tab.title}
+        disabled={tab.disabled}
+        dataTestId={tab.dataTestId}
+      >
+        {tab.label}
+      </TabsItem>
+    </li>
   );
 };
 

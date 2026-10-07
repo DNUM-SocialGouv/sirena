@@ -149,17 +149,23 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
         ? [geo.ctcdCode, `${geo.departementCode}${t}`].filter((c, i, arr) => arr.indexOf(c) === i)
         : null;
 
+      // CeA: one CD entity (ctcdCode "6AE") covers depts 67 and 68, so match by
+      // ctcdCode alone. DD entities keep per-department matching below.
+      const isAlsaceCd = t === 'CD' && geo.ctcdCode === '6AE';
+
       const whereClause = {
         entiteTypeId: t,
         entiteMereId: null,
-        ...(ctcdCodesForCdDd
-          ? {
-              ctcdCode: { in: ctcdCodesForCdDd },
-              departementCode: geo.departementCode,
-            }
-          : {}),
+        ...(isAlsaceCd
+          ? { ctcdCode: '6AE' }
+          : ctcdCodesForCdDd
+            ? {
+                ctcdCode: { in: ctcdCodesForCdDd },
+                departementCode: geo.departementCode,
+              }
+            : {}),
         ...(['ARS'].includes(t) ? { regionCode: geo.regionCode } : {}),
-      };
+      } satisfies Prisma.EntiteWhereInput;
       logger.info(
         { type: t, whereClause },
         `Searching for entity of type ${t} for request ${requeteId} - situation ${s.id}`,
@@ -196,108 +202,104 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
   const existingEntiteIds = new Set(existingRequeteEntites.map((re) => re.entiteId));
 
   let isFallback = false;
-  try {
-    if (entiteIdsToLinkToRequete.size === 0) {
-      isFallback = true;
+  if (entiteIdsToLinkToRequete.size === 0) {
+    isFallback = true;
 
-      // Try to deduce the region from any available postal code
-      const postalCodeCandidates = [
-        ...allAssignments.map((a) => a.context.postalCode).filter(Boolean),
-        ...requete.situations.map((s) => s.lieuDeSurvenue.codePostal).filter(Boolean),
-      ];
+    // Try to deduce the region from any available postal code
+    const postalCodeCandidates = [
+      ...allAssignments.map((a) => a.context.postalCode).filter(Boolean),
+      ...requete.situations.map((s) => s.lieuDeSurvenue.codePostal).filter(Boolean),
+    ];
 
-      let fallbackArs: { id: string; nomComplet: string | null } | null = null;
+    let fallbackArs: { id: string; nomComplet: string | null } | null = null;
 
-      for (const postalCode of postalCodeCandidates) {
-        if (!postalCode) continue;
-        const geo = await findGeoByPostalCode(postalCode);
-        if (!geo?.regionCode) continue;
+    for (const postalCode of postalCodeCandidates) {
+      if (!postalCode) continue;
+      const geo = await findGeoByPostalCode(postalCode);
+      if (!geo?.regionCode) continue;
 
-        fallbackArs = await prisma.entite.findFirst({
-          where: { entiteTypeId: 'ARS', entiteMereId: null, regionCode: geo.regionCode },
-        });
-
-        if (fallbackArs) {
-          logger.warn(
-            { requeteId, postalCode, regionCode: geo.regionCode, arsId: fallbackArs.id },
-            'No entity assigned, falling back to regional ARS',
-          );
-          break;
-        }
-      }
-
-      // Ultimate fallback: ARS Normandie if region could not be determined
-      if (!fallbackArs) {
-        logger.warn({ requeteId }, 'Region not deducible, falling back to ARS Normandie');
-        fallbackArs = await prisma.entite.findFirst({
-          where: { entiteTypeId: 'ARS', entiteMereId: null, regionCode: '28' },
-        });
-      }
-
-      if (!fallbackArs) {
-        logger.error({ requeteId }, 'ARS Normandie not found in database, cannot assign fallback');
-        throw new Error('ARS Normandie not found in database');
-      }
-
-      entiteIdsToLinkToRequete.add(fallbackArs.id);
-      for (const situation of requete.situations) {
-        situationEntitesToLink.push({ situationId: situation.id, entiteId: fallbackArs.id });
-      }
-    }
-
-    await prisma.$transaction(async (tx) => {
-      for (const entiteId of entiteIdsToLinkToRequete) {
-        await tx.requeteEntite.upsert({
-          where: { requeteId_entiteId: { requeteId, entiteId } },
-          create: {
-            requeteId,
-            entiteId,
-            statutId: REQUETE_STATUT_TYPES.NOUVEAU,
-          },
-          update: {},
-        });
-
-        await assignDefaultRequeteEtapes(requeteId, entiteId, tx);
-      }
-
-      for (const { situationId, entiteId } of situationEntitesToLink) {
-        await tx.situationEntite.upsert({
-          where: { situationId_entiteId: { situationId, entiteId } },
-          create: { situationId, entiteId },
-          update: {},
-        });
-      }
-
-      await tx.changeLog.create({
-        data: {
-          entity: 'Requete',
-          entityId: requeteId,
-          action: 'AFFECTATION_ENTITES',
-          before: undefined,
-          after: {
-            entiteIds: Array.from(entiteIdsToLinkToRequete),
-            isFallback,
-          },
-          changedById: null,
-        },
+      fallbackArs = await prisma.entite.findFirst({
+        where: { entiteTypeId: 'ARS', entiteMereId: null, regionCode: geo.regionCode },
       });
-    });
 
-    logger.info({ requeteId, entiteIds: Array.from(entiteIdsToLinkToRequete) }, 'Affectation OK');
-
-    // Notify only entities newly assigned to this requete (first assignment or new assignment)
-    const newEntiteIds = Array.from(entiteIdsToLinkToRequete).filter((id) => !existingEntiteIds.has(id));
-    if (newEntiteIds.length > 0) {
-      try {
-        await sendEntiteAssignedNotification(requeteId, newEntiteIds);
-      } catch (notificationErr) {
-        logger.error(
-          { requeteId, newEntiteIds, err: notificationErr },
-          'Failed to send entity assigned notification, but affectation succeeded',
+      if (fallbackArs) {
+        logger.warn(
+          { requeteId, postalCode, regionCode: geo.regionCode, arsId: fallbackArs.id },
+          'No entity assigned, falling back to regional ARS',
         );
+        break;
       }
     }
-  } finally {
-    await prisma.$disconnect();
+
+    // Ultimate fallback: ARS Normandie if region could not be determined
+    if (!fallbackArs) {
+      logger.warn({ requeteId }, 'Region not deducible, falling back to ARS Normandie');
+      fallbackArs = await prisma.entite.findFirst({
+        where: { entiteTypeId: 'ARS', entiteMereId: null, regionCode: '28' },
+      });
+    }
+
+    if (!fallbackArs) {
+      logger.error({ requeteId }, 'ARS Normandie not found in database, cannot assign fallback');
+      throw new Error('ARS Normandie not found in database');
+    }
+
+    entiteIdsToLinkToRequete.add(fallbackArs.id);
+    for (const situation of requete.situations) {
+      situationEntitesToLink.push({ situationId: situation.id, entiteId: fallbackArs.id });
+    }
+  }
+
+  await prisma.$transaction(async (tx) => {
+    for (const entiteId of entiteIdsToLinkToRequete) {
+      await tx.requeteEntite.upsert({
+        where: { requeteId_entiteId: { requeteId, entiteId } },
+        create: {
+          requeteId,
+          entiteId,
+          statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+        },
+        update: {},
+      });
+
+      await assignDefaultRequeteEtapes(requeteId, entiteId, tx);
+    }
+
+    for (const { situationId, entiteId } of situationEntitesToLink) {
+      await tx.situationEntite.upsert({
+        where: { situationId_entiteId: { situationId, entiteId } },
+        create: { situationId, entiteId },
+        update: {},
+      });
+    }
+
+    await tx.changeLog.create({
+      data: {
+        entity: 'Requete',
+        entityId: requeteId,
+        action: 'AFFECTATION_ENTITES',
+        before: undefined,
+        after: {
+          entiteIds: Array.from(entiteIdsToLinkToRequete),
+          isFallback,
+        },
+        changedById: null,
+      },
+    });
+  });
+
+  logger.info({ requeteId, entiteIds: Array.from(entiteIdsToLinkToRequete) }, 'Affectation OK');
+
+  // Notify only entities newly assigned to this requete (first assignment or new assignment)
+  const newEntiteIds = Array.from(entiteIdsToLinkToRequete).filter((id) => !existingEntiteIds.has(id));
+  if (newEntiteIds.length > 0) {
+    try {
+      await sendEntiteAssignedNotification(requeteId, newEntiteIds);
+    } catch (notificationErr) {
+      logger.error(
+        { requeteId, newEntiteIds, err: notificationErr },
+        'Failed to send entity assigned notification, but affectation succeeded',
+      );
+    }
   }
 }

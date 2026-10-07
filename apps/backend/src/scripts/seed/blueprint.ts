@@ -1,4 +1,5 @@
 import type { RequetePrioriteType, RequeteStatutType } from '@sirena/common/constants';
+import type { MesureProtection } from '@sirena/common/schemas';
 
 /**
  * Neutral description of a request graph: plain data, no Prisma. Families
@@ -25,12 +26,13 @@ export type PersonneBlueprint = {
   veutGarderAnonymat: boolean | null;
   estIdentifie: boolean | null;
   lienVictimeId: string | null;
-  mesureProtection: 'MANDATAIRE_JUDICIAIRE' | 'MANDATAIRE_FAMILIAL' | 'NON' | null;
+  mesureProtection: MesureProtection | null;
   adresse: AdresseBlueprint | null;
 };
 
 export type LieuBlueprint = {
   lieuTypeId: string | null;
+  lieuPrecision: string;
   transportTypeId: string | null;
   societeTransport: string;
   finess: string;

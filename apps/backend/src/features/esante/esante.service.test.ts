@@ -96,6 +96,35 @@ describe('esante.service.ts', () => {
       expect(logger.warn).not.toHaveBeenCalled();
       expect(logger.error).not.toHaveBeenCalled();
     });
+
+    it('deduplicates practitioners sharing the same RPPS', async () => {
+      vi.clearAllMocks();
+      const bundle = {
+        entry: [
+          {
+            resource: {
+              name: [{ text: 'Dr Alice A', family: 'Alice', given: ['A'] }],
+              identifier: rppsIdentifiers('10000509124'),
+            },
+          },
+          {
+            resource: {
+              name: [{ text: 'Dr Alice A', family: 'Alice', given: ['A'] }],
+              identifier: rppsIdentifiers('10000509124'),
+            },
+          },
+        ],
+      };
+
+      fetchMock.mockResolvedValueOnce({ ok: true, status: 200, statusText: 'OK', json: async () => bundle });
+      safeParse.mockReturnValueOnce({ success: true, data: bundle });
+
+      const res = await getPractionners({ identifier: '10000509124' });
+
+      expect(res).toEqual([
+        { fullName: 'Dr Alice A', firstName: 'A', lastName: 'Alice', prefix: '', rpps: '10000509124' },
+      ]);
+    });
   });
 
   describe('getOrganizations', () => {
@@ -141,6 +170,32 @@ describe('esante.service.ts', () => {
 
       expect(logger.warn).not.toHaveBeenCalled();
       expect(logger.error).not.toHaveBeenCalled();
+    });
+
+    it('deduplicates several resources sharing a FINESS, keeping the one with an address', async () => {
+      vi.clearAllMocks();
+      const bundle = {
+        entry: [
+          { resource: { name: 'EPHAD LE CHATELET', identifier: finessIdentifiers('880783402') } },
+          {
+            resource: {
+              name: 'EPHAD LE CHATELET',
+              identifier: finessIdentifiers('880783402'),
+              address: [{ postalCode: '88200', city: 'REMIREMONT' }],
+            },
+          },
+          { resource: { name: 'EPHAD LE CHATELET', identifier: finessIdentifiers('880783402') } },
+        ],
+      };
+
+      fetchMock.mockResolvedValueOnce({ ok: true, status: 200, statusText: 'OK', json: async () => bundle });
+      safeParse.mockReturnValueOnce({ success: true, data: bundle });
+
+      const res = await getOrganizations({ identifier: '880783402' });
+
+      expect(res).toEqual([
+        { name: 'EPHAD LE CHATELET', identifier: '880783402', addressPostalcode: '88200', addressCity: 'REMIREMONT' },
+      ]);
     });
   });
 });

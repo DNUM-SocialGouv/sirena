@@ -1,6 +1,8 @@
 import type { Pagination } from '@sirena/backend-utils/types';
 import { type Entite, prisma } from '../../libs/prisma.js';
 import { buildEntitesListAdmin } from './entites.admin.mapper.js';
+import { entitesDescendantIdsCache } from './entites.cache.js';
+import { getEntiteDescendantIds } from './entites.descendants.js';
 import { buildDirectionsServicesRows as buildDirectionsServicesRowsFromHierarchy } from './entites.directions-services.mapper.js';
 import { DirectionOrServiceCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import { getAdminLocalAssignmentLevel, groupEntitesByParentId } from './entites.hierarchy.js';
@@ -14,6 +16,8 @@ import type {
   EntiteTraitement,
   EntiteTraitementInput,
 } from './entites.type.js';
+
+export { getEntiteDescendantIds, getEntiteDescendantIdsGenerator } from './entites.descendants.js';
 
 const ADMIN_SORT_COLUMNS = [
   'entiteNom',
@@ -36,6 +40,10 @@ const sortAdminRows = (rows: ReturnType<typeof buildEntitesListAdmin>, sort: Adm
     const comparison = a[sort].localeCompare(b[sort], 'fr', { sensitivity: 'base' });
     return order === 'asc' ? comparison : -comparison;
   });
+
+const invalidateEntitesPerimetreCache = () => {
+  entitesDescendantIdsCache.clear();
+};
 
 export const getEntiteForUser = async (organizationalUnit: string | null, email: string) => {
   if (organizationalUnit?.trim()) {
@@ -217,8 +225,8 @@ export const getEntiteAdministrativeAdminLocal = async (assignedEntiteId: string
   };
 };
 
-const updateEntiteInformation = (entiteId: string, data: EditEntiteContactInput) =>
-  prisma.entite.update({
+const updateEntiteInformation = async (entiteId: string, data: EditEntiteContactInput) => {
+  const updatedEntite = await prisma.entite.update({
     where: { id: entiteId },
     data,
     select: {
@@ -231,6 +239,11 @@ const updateEntiteInformation = (entiteId: string, data: EditEntiteContactInput)
       adresseContactUsager: true,
     },
   });
+
+  invalidateEntitesPerimetreCache();
+
+  return updatedEntite;
+};
 
 export const editEntiteAdministrativeAdminLocal = async (assignedEntiteId: string, data: EditEntiteContactInput) => {
   const assignedEntite = await getEntiteAdministrativeAdminLocal(assignedEntiteId);
@@ -358,6 +371,8 @@ export const editDirectionServiceAdminLocal = async (
       email: true,
     },
   });
+
+  invalidateEntitesPerimetreCache();
 
   return target.entiteType === 'service'
     ? { ...updatedFields, entiteType: target.entiteType, parentDirection: target.parentDirection }
@@ -568,7 +583,7 @@ export const createDirectionOrServiceAdmin = async (
     throw new DirectionOrServiceCreationForbiddenError();
   }
 
-  return prisma.entite.create({
+  const createdEntite = await prisma.entite.create({
     data: {
       ...data,
       entiteMereId: parentId,
@@ -590,6 +605,10 @@ export const createDirectionOrServiceAdmin = async (
       isActive: true,
     },
   });
+
+  invalidateEntitesPerimetreCache();
+
+  return createdEntite;
 };
 
 export const editEntiteAdmin = async (
@@ -603,8 +622,8 @@ export const editEntiteAdmin = async (
     telContactUsager: string;
     isActive: boolean;
   },
-) =>
-  prisma.entite.update({
+) => {
+  const updatedEntite = await prisma.entite.update({
     where: { id: entiteId },
     data,
     select: {
@@ -618,6 +637,11 @@ export const editEntiteAdmin = async (
       isActive: true,
     },
   });
+
+  invalidateEntitesPerimetreCache();
+
+  return updatedEntite;
+};
 
 export async function* getEntiteChainGenerator(entiteId: string) {
   let currentId: string | null = entiteId;
@@ -668,34 +692,6 @@ export const getEditableEntitiesChain = async (entiteId: string, editableEntiteI
     ...entite,
     disabled: shouldDisable(entite.id),
   }));
-};
-
-export async function* getEntiteDescendantIdsGenerator(entiteId: string) {
-  const stack: string[] = [entiteId];
-
-  while (stack.length > 0) {
-    const currentId = stack.pop();
-    const children = await prisma.entite.findMany({
-      where: { entiteMereId: currentId },
-      select: { id: true },
-    });
-    for (const child of children) {
-      stack.push(child.id);
-    }
-    yield children.map((child) => child.id);
-  }
-}
-
-export const getEntiteDescendantIds = async (entiteId: string | null) => {
-  // Should be SUPER_ADMIN
-  if (!entiteId) {
-    return null;
-  }
-  const results: string[] = [entiteId];
-  for await (const entite of getEntiteDescendantIdsGenerator(entiteId)) {
-    results.push(...entite);
-  }
-  return results;
 };
 
 export const getEntitesByIds = async (ids: string[]) =>

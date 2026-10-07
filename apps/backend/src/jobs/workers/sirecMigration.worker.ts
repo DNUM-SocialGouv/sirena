@@ -1,6 +1,5 @@
 import { type Job, UnrecoverableError, Worker } from 'bullmq';
 import { ZodError } from 'zod';
-import { envVars } from '../../config/env.js';
 import { connection } from '../../config/redis.js';
 import { migrateSirecFiles } from '../../features/sirecMigration/sirecMigration.files.service.js';
 import { fetchSirecData } from '../../features/sirecMigration/sirecMigration.repository.js';
@@ -16,6 +15,8 @@ import { transformSirecReclamation } from '../../features/sirecMigration/transfo
 import { createDefaultLogger } from '../../helpers/pino.js';
 import { getLoggerStore, loggerStorage } from '../../libs/asyncLocalStorage.js';
 import { SIREC_MIGRATION_QUEUE_NAME, type SirecMigrationJobData } from '../queues/sirecMigration.queue.js';
+
+const SIREC_MIGRATION_CONCURRENCY = 50;
 
 let transcoInitPromise: Promise<void> | null = null;
 
@@ -101,7 +102,7 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
 export const createSirecMigrationWorker = (): Worker<SirecMigrationJobData> => {
   const worker = new Worker<SirecMigrationJobData>(SIREC_MIGRATION_QUEUE_NAME, processMigration, {
     connection,
-    concurrency: envVars.REDIS_MIGRATION_CONCURRENCY,
+    concurrency: SIREC_MIGRATION_CONCURRENCY,
   });
 
   const eventLogger = createDefaultLogger().child({ context: 'sirec-migration-worker' });

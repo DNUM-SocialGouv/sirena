@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { baseUrl, ENTITY_ADMIN_USER, loginUrl } from './utils/constants';
+import { baseUrl, ENTITY_ADMIN_USER, isLocalTarget, loginUrl } from './utils/constants';
 import { loginWithProconnect } from './utils/login';
 
 test('login', async ({ browser }) => {
+  test.skip(isLocalTarget, 'ProConnect flow is not exercised in local target.');
   const context = await browser.newContext();
   const page = await context.newPage();
   await loginWithProconnect(page, {
@@ -12,8 +13,7 @@ test('login', async ({ browser }) => {
   });
 
   await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 30000 });
-  const heading = page.getByRole('heading', { level: 1 });
-  await expect(heading).toHaveText(/Tableau de bord des requêtes/, { timeout: 10000 });
+  await expect(page.getByTestId('home-title')).toBeVisible({ timeout: 10000 });
   await page.goto(loginUrl);
   await expect(page).toHaveURL(`${baseUrl}/home`);
   await context.close();

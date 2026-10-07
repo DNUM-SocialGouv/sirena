@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <test purposes> */
 
+import type { ReponseOuiNonValue } from '@sirena/common/schemas';
 import type { MesureProtection } from '@sirena/db/generated-client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
@@ -162,7 +163,7 @@ describe('sirecMigration.service.ts', () => {
           misEnCauseData: null as any,
           lieuDeSurvenueData: null as any,
           domainesFonctionnelsId: null as string | null,
-          estLieAuSignalement: undefined as boolean | undefined,
+          estLieAuSignalement: undefined as ReponseOuiNonValue,
           numerosSignalement: '',
           sirecDepartement: null as string | null,
         },
@@ -502,18 +503,18 @@ describe('sirecMigration.service.ts', () => {
       await saveFromSirec(data);
 
       expect(prisma.situation.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ estLieAuSignalement: undefined }) }),
+        expect.objectContaining({ data: expect.objectContaining({ estLieAuSignalement: null }) }),
       );
     });
 
-    it('should create Situation with estLieAuSignalement true when set', async () => {
+    it('should create Situation with estLieAuSignalement OUI when set', async () => {
       await saveFromSirec({
         ...data,
-        situations: [{ ...data.situations[0], estLieAuSignalement: true }],
+        situations: [{ ...data.situations[0], estLieAuSignalement: 'OUI' as const }],
       });
 
       expect(prisma.situation.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ estLieAuSignalement: true }) }),
+        expect.objectContaining({ data: expect.objectContaining({ estLieAuSignalement: 'OUI' }) }),
       );
     });
 
@@ -856,7 +857,7 @@ describe('sirecMigration.service.ts', () => {
         data: {
           createdAt: new Date('2024-01-20'),
           estVictime: null,
-          veutGarderAnonymat: true,
+          veutGarderAnonymat: 'OUI',
           lienVictimeId: null,
           lienAutrePrecision: null,
           commentaire: '',
@@ -1150,7 +1151,7 @@ describe('sirecMigration.service.ts', () => {
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ estSignalementProfessionnel: true, declarantDeId: 'SIREC-42' }),
+        data: expect.objectContaining({ estSignalementProfessionnel: 'OUI', declarantDeId: 'SIREC-42' }),
       });
     });
 
@@ -1173,7 +1174,7 @@ describe('sirecMigration.service.ts', () => {
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          estSignalementProfessionnel: true,
+          estSignalementProfessionnel: 'OUI',
           declarantDeId: 'SIREC-42',
           participantDeId: 'SIREC-42',
         }),

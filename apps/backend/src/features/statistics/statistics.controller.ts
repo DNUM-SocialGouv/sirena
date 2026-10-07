@@ -12,7 +12,7 @@ import { getEntiteById } from '../entites/entites.service.js';
 import { type ExportRequetesCsvWriter, prepareExportRequetesCsv } from './exportRequetes/exportRequetes.service.js';
 import { getExportRequetesRoute, getStatisticsDashboardRoute } from './statistics.route.js';
 import { StatisticsDashboardQuerySchema } from './statistics.schema.js';
-import { fetchDashboardCardsData } from './statistics.service.js';
+import { type DashboardFilterSlug, fetchDashboardData } from './statistics.service.js';
 
 const app = factoryWithLogs
   .createApp()
@@ -94,18 +94,19 @@ const app = factoryWithLogs
     const userId = c.get('userId');
     const entiteIds = c.get('entiteIds');
     const topEntiteId = c.get('topEntiteId');
-    const { startDate, endDate, domaineIds, includeEIG } = c.req.valid('query');
+    const { startDate, endDate, domaineIds, includeEIG, lieuTypes } = c.req.valid('query');
 
-    const optionalParams = {
+    const optionalParams: Record<DashboardFilterSlug, string | string[] | undefined> = {
       start_date: startDate,
       end_date: endDate,
       domaine_fonctionnel: splitCsv(domaineIds),
       inclure_eig: includeEIG,
+      lieu_de_survenue: splitCsv(lieuTypes),
     };
 
     if (entiteIds === null) {
-      const cards = await fetchDashboardCardsData({}, optionalParams, 'national');
-      return c.json({ data: { cards } });
+      const dashboard = await fetchDashboardData({}, optionalParams, 'national');
+      return c.json({ data: dashboard });
     }
 
     if (!topEntiteId) {
@@ -128,8 +129,8 @@ const app = factoryWithLogs
     // Les bornes de date sont des filtres optionnels : le service ne les signe que si le dashboard
     // les déclare réellement, donc un dashboard sans filtre de date continue de fonctionner.
     // Voir docs/metabase_dashboards/FILTERS.md.
-    const cards = await fetchDashboardCardsData({ entity_label: topEntite.label }, optionalParams);
-    return c.json({ data: { cards } });
+    const dashboard = await fetchDashboardData({ entity_label: topEntite.label }, optionalParams);
+    return c.json({ data: dashboard });
   });
 
 export default app;

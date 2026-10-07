@@ -26,6 +26,18 @@ describe('Tabs Component', () => {
     expect(screen.getByText('Content 1')).toBeInTheDocument();
   });
 
+  it('wraps each tab in a presentation li inside the tablist (RGAA 7.1)', () => {
+    render(<TabsWrapper />);
+    const tablist = screen.getByRole('tablist');
+    const items = Array.from(tablist.children);
+    expect(items).toHaveLength(tabsData.length);
+    for (const item of items) {
+      expect(item.tagName).toBe('LI');
+      expect(item).toHaveAttribute('role', 'presentation');
+      expect(item.firstElementChild).toHaveAttribute('role', 'tab');
+    }
+  });
+
   it('clicking Tab 2 shows next panel', async () => {
     render(<TabsWrapper />);
     fireEvent.click(screen.getByText('Tab 2'));

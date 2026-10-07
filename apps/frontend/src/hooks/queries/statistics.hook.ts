@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { fetchStatisticsDashboard, type StatisticsDashboardFilters } from '@/lib/api/fetchStatistics';
 
 export const useStatisticsDashboard = (filters: StatisticsDashboardFilters = {}, enabled = true) =>
@@ -10,9 +10,11 @@ export const useStatisticsDashboard = (filters: StatisticsDashboardFilters = {},
       filters.endDate ?? null,
       filters.domaineIds ?? null,
       filters.includeEIG ?? null,
+      filters.lieuTypes ?? null,
     ],
     queryFn: () => fetchStatisticsDashboard(filters),
     enabled,
+    placeholderData: keepPreviousData,
     staleTime: 5 * 60_000,
     retry: 1,
   });

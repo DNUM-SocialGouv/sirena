@@ -1,24 +1,24 @@
-import type { StatisticsCard } from '@/components/statistics/statistics.types';
+import type { StatisticsCard, StatisticsDashboard } from '@/components/statistics/statistics.types';
 import { client } from '@/lib/api/hc';
 import { handleRequestErrors } from '@/lib/api/tanstackQuery';
 
-export type { StatisticsCard };
+export type { StatisticsCard, StatisticsDashboard };
 
 export type StatisticsDashboardFilters = {
   startDate?: string;
   endDate?: string;
   domaineIds?: string;
   includeEIG?: boolean;
+  lieuTypes?: string;
 };
 
-export async function fetchStatisticsDashboard(
-  filters: StatisticsDashboardFilters = {},
-): Promise<{ cards: StatisticsCard[] }> {
+export async function fetchStatisticsDashboard(filters: StatisticsDashboardFilters = {}): Promise<StatisticsDashboard> {
   const query: Record<string, string> = {};
   if (filters.startDate) query.startDate = filters.startDate;
   if (filters.endDate) query.endDate = filters.endDate;
   if (filters.domaineIds) query.domaineIds = filters.domaineIds;
   if (filters.includeEIG === false) query.includeEIG = 'false';
+  if (filters.lieuTypes) query.lieuTypes = filters.lieuTypes;
 
   const res = await client.statistics.dashboard.$get({ query });
   await handleRequestErrors(res);

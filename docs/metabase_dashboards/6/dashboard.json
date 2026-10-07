@@ -42,7 +42,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "SELECT\n    COUNT(DISTINCT r.id) AS nombre_requetes\nFROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\nWHERE\n    TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]];",
+              "native": "SELECT\n    COUNT(DISTINCT r.id) AS nombre_requetes\nFROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\nWHERE\n    TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                         AND {{inclure_eig}} = 'false') ]];",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -77,12 +77,18 @@
                   "name": "inclure_eig",
                   "required": false,
                   "type": "boolean"
+                },
+                {
+                  "display-name": "Lieu De Survenue",
+                  "id": "4157bcaa-3033-4325-bda1-5b27f3350fd4",
+                  "name": "lieu_de_survenue",
+                  "type": "text"
                 }
               ]
             }
           ]
         },
-        "description": null,
+        "description": "Nombre total de requêtes au niveau national",
         "dimension_mappings": null,
         "dimensions": null,
         "display": "scalar",
@@ -94,8 +100,6 @@
         "entity_id": "2z5eiukXf6jmI88kBaqxj",
         "id": 65,
         "legacy_query": null,
-        "made_public_by_id": null,
-        "metabase_version": "v0.62.3.3 (686cac9)",
         "moderation_reviews": [],
         "name": "Requêtes au total",
         "parameter_mappings": [],
@@ -282,55 +286,323 @@
               ]
             ],
             "type": "boolean/="
-          }
-        ],
-        "public_uuid": null,
-        "query_average_duration": 566,
-        "query_type": "native",
-        "result_metadata": [
+          },
           {
-            "base_type": "type/BigInteger",
-            "database_type": "int8",
-            "display_name": "nombre_requetes",
-            "effective_type": "type/BigInteger",
-            "field_ref": [
-              "field",
-              "nombre_requetes",
-              {
-                "base-type": "type/BigInteger"
-              }
+            "id": "4157bcaa-3033-4325-bda1-5b27f3350fd4",
+            "isMultiSelect": true,
+            "name": "Lieu De Survenue",
+            "slug": "lieu_de_survenue",
+            "target": [
+              "variable",
+              [
+                "template-tag",
+                "lieu_de_survenue"
+              ]
             ],
-            "fingerprint": {
-              "global": {
-                "distinct-count": 1,
-                "nil%": 0
-              },
-              "type": {
-                "type/Number": {
-                  "avg": 17401,
-                  "excess-kurtosis": null,
-                  "max": 17401,
-                  "min": 17401,
-                  "mode-fraction": 1,
-                  "q1": 17401,
-                  "q3": 17401,
-                  "sd": 0,
-                  "skewness": null,
-                  "top-3-fraction": 1,
-                  "zero-fraction": 0
-                }
-              }
+            "type": "string/=",
+            "values_query_type": "list",
+            "values_source_config": {
+              "values": [
+                [
+                  "DOMICILE",
+                  "Domicile"
+                ],
+                [
+                  "DOMICILE:PERSONNE_CONCERNEE",
+                  "Domicile — De la personne concernée"
+                ],
+                [
+                  "DOMICILE:REQUERANT",
+                  "Domicile — Du réquérant"
+                ],
+                [
+                  "DOMICILE:CHEZ_TIERS",
+                  "Domicile — Chez un tiers"
+                ],
+                [
+                  "DOMICILE:HABITAT_INCLUSIF",
+                  "Domicile — Habitat inclusif"
+                ],
+                [
+                  "DOMICILE:EQUIPES_MOBILES",
+                  "Domicile — Equipes mobiles"
+                ],
+                [
+                  "DOMICILE:AUTRE",
+                  "Domicile — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE",
+                  "Etablissements de santé"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CH",
+                  "Etablissements de santé — CH"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CHU",
+                  "Etablissements de santé — CHU"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CABINET_MEDICAL",
+                  "Etablissements de santé — Cabinet médical ou dentaire, laboratoire, centre de radiologie, ..."
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CLINIQUE",
+                  "Etablissements de santé — Clinique"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CLCC",
+                  "Etablissements de santé — CLCC (Centre de lutte contre le cancer)"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:SSR_SMR",
+                  "Etablissements de santé — SSR/SMR"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:USLD",
+                  "Etablissements de santé — USLD"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:BAPU",
+                  "Etablissements de santé — BAPU (Bureaux d'aide psychologique universitaires)"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CMP_CMPP",
+                  "Etablissements de santé — CMPP (Centres médico-psycho-pédagogiques), CMP (Centre médico-psychologique)"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CENTRE_SANTE",
+                  "Etablissements de santé — Centre de santé"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:MAISON_SANTE",
+                  "Etablissements de santé — Maison de santé"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:AUTRE",
+                  "Etablissements de santé — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES",
+                  "Etablissements pour personnes âgées"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:EHPAD",
+                  "Etablissements pour personnes âgées — EHPAD"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:PASA",
+                  "Etablissements pour personnes âgées — PASA (Pôles d'activité et soins adaptés)"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:ACCUEIL_JOUR",
+                  "Etablissements pour personnes âgées — Accueil de jour"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:PUV",
+                  "Etablissements pour personnes âgées — PUV (Petite unité de vie)"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:RA",
+                  "Etablissements pour personnes âgées — RA (résidence autonomie)"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:UHR",
+                  "Etablissements pour personnes âgées — UHR (Unité d'Hébergement Renforcé)"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:AUTRE",
+                  "Etablissements pour personnes âgées — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP",
+                  "Etablissements pour personnes handicapées"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:MAS",
+                  "Etablissements pour personnes handicapées — MAS (Maison d'accueil spécialisée)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:EAM",
+                  "Etablissements pour personnes handicapées — EAM (Foyer d'acceuil médicalisés)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:EANM",
+                  "Etablissements pour personnes handicapées — EANM"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:IEM",
+                  "Etablissements pour personnes handicapées — IEM (Instituts d'éducation motrice)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:EEAP",
+                  "Etablissements pour personnes handicapées — EEAP (Etablissements pour enfants ou adolescents polyhandicapés)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:IDA",
+                  "Etablissements pour personnes handicapées — IDA (instituts pour déficients auditifs)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:IDV",
+                  "Etablissements pour personnes handicapées — IDV (instituts our déficients visuels)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:CAMSP",
+                  "Etablissements pour personnes handicapées — CAMSP (Centre d'action médico-sociale précoce)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:ESAT",
+                  "Etablissements pour personnes handicapées — ESAT (Etablissement et services d'aide par le travail)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:CPO",
+                  "Etablissements pour personnes handicapées — CPO (Centres de pré orientation pour handicapés)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:CERFP",
+                  "Etablissements pour personnes handicapées — CERFP (Centre d'éducation de rééducation et de formation professionnel)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:IME",
+                  "Etablissements pour personnes handicapées — IME (Instituts médicoéducatifs)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:ITEP",
+                  "Etablissements pour personnes handicapées — ITEP (Instituts thérapeutiques, éducatifs et pédagogiques)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:ACCUEIL_JOUR",
+                  "Etablissements pour personnes handicapées — Accueil de jour"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:AUTRE",
+                  "Etablissements pour personnes handicapées — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL",
+                  "Etablissements sociaux"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CAARUD",
+                  "Etablissements sociaux — CAARUD"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CPFSE",
+                  "Etablissements sociaux — CPFSE (centres de placement familial socioéducatif)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CADA",
+                  "Etablissements sociaux — CADA (Centre d'accueil pour demandeurs d'asile)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CENTRE_MATERNEL",
+                  "Etablissements sociaux — CENTRE MATERNEL (Etablissement d'accueil mère-enfant)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:VILLAGES_ENFANTS",
+                  "Etablissements sociaux — Villages d'enfants"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:FOYERS_ENFANCE",
+                  "Etablissements sociaux — Foyers de l'enfance"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:MECS",
+                  "Etablissements sociaux — MECS (Maisons d'enfants à caractère social)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:POUPONNIERE",
+                  "Etablissements sociaux — Pouponnière à caractère social"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CHRS",
+                  "Etablissements sociaux — CHRS (Centre d'hébergement et de réinsertion)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CHU",
+                  "Etablissements sociaux — CHU (Centre d'hébergement d'urgence)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CHS",
+                  "Etablissements sociaux — CHS (Centre d'hébergement de stabilisation)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:RESIDENCES_SOCIALES",
+                  "Etablissements sociaux — Résidences sociales (dont pensions de familles ou maisons relais et résidences accueil)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CPH",
+                  "Etablissements sociaux — CPH (Centres provisoires d'hébergement)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:AUTRE",
+                  "Etablissements sociaux — Autre"
+                ],
+                [
+                  "AUTRES_ETABLISSEMENTS",
+                  "Autres établissements"
+                ],
+                [
+                  "AUTRES_ETABLISSEMENTS:SALON_TATOUAGE_ESTHETIQUE",
+                  "Autres établissements — Salon de tatouage, salon d'esthétique"
+                ],
+                [
+                  "AUTRES_ETABLISSEMENTS:MAISON_ARRET",
+                  "Autres établissements — Maison d'arrêt"
+                ],
+                [
+                  "AUTRES_ETABLISSEMENTS:AUTRE",
+                  "Autres établissements — Autre"
+                ],
+                [
+                  "TRAJET",
+                  "Trajet"
+                ],
+                [
+                  "TRAJET:BSPP",
+                  "Trajet — Sapeurs Pompiers"
+                ],
+                [
+                  "TRAJET:ASSU",
+                  "Trajet — ASSU"
+                ],
+                [
+                  "TRAJET:VSAV",
+                  "Trajet — VSAV"
+                ],
+                [
+                  "TRAJET:AMBULANCE",
+                  "Trajet — Ambulance"
+                ],
+                [
+                  "TRAJET:VSL",
+                  "Trajet — Véhicule sanitaire léger"
+                ],
+                [
+                  "TRAJET:TAXI",
+                  "Trajet — Taxi"
+                ],
+                [
+                  "TRAJET:TRANSPORTEUR_SANITAIRE",
+                  "Trajet — Transporteur Sanitaire"
+                ],
+                [
+                  "TRAJET:AUTRE",
+                  "Trajet — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_FICTIF",
+                  "Etablissement fictif"
+                ]
+              ]
             },
-            "lib/deduplicated-name": "nombre_requetes",
-            "lib/desired-column-alias": "nombre_requetes",
-            "lib/original-name": "nombre_requetes",
-            "lib/source": "source/native",
-            "lib/source-column-alias": "nombre_requetes",
-            "name": "nombre_requetes",
-            "semantic_type": null,
-            "source": "native"
+            "values_source_type": "static-list"
           }
         ],
+        "public_uuid_prefix": null,
+        "query_average_duration": 744,
+        "query_type": "native",
         "source_card_id": null,
         "table_id": null,
         "type": "question",
@@ -382,23 +654,34 @@
         },
         {
           "card_id": 65,
-          "parameter_id": "254bf0ec",
-          "target": [
-            "variable",
-            [
-              "template-tag",
-              "domaine_fonctionnel"
-            ]
-          ]
-        },
-        {
-          "card_id": 65,
           "parameter_id": "a28a16da",
           "target": [
             "variable",
             [
               "template-tag",
               "inclure_eig"
+            ]
+          ]
+        },
+        {
+          "card_id": 65,
+          "parameter_id": "9f77840e",
+          "target": [
+            "variable",
+            [
+              "template-tag",
+              "lieu_de_survenue"
+            ]
+          ]
+        },
+        {
+          "card_id": 65,
+          "parameter_id": "254bf0ec",
+          "target": [
+            "variable",
+            [
+              "template-tag",
+              "domaine_fonctionnel"
             ]
           ]
         }
@@ -429,7 +712,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "WITH RECURSIVE\n-- 1. Périmètre entités : l'entité de premier niveau de l'utilisateur (entiteMereId IS NULL)\n--    identifiée par {{entity_label}}, PLUS tous ses services descendants (récursif).\nentites_scope AS (\n  SELECT e.id\n  FROM \"Entite\" e\n  WHERE e.\"entiteMereId\" IS NULL\n    [[ AND e.label = {{entity_label}} ]]\n\n  UNION ALL\n\n  SELECT child.id\n  FROM \"Entite\" child\n  JOIN entites_scope s ON child.\"entiteMereId\" = s.id\n),\n\n-- 2. Requêtes ayant AU MOINS un motif dont le 1er niveau est \"Maltraitance professionnels ou entourage\".\n--    Les id de MotifEnum sont au format \"PARENT/ENFANT\" -> on filtre sur le parent.\nrequetes_maltraitance AS (\n  SELECT DISTINCT s.\"requeteId\" AS requete_id\n  FROM \"Situation\" s\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  WHERE s.\"requeteId\" IS NOT NULL\n    AND fm.\"motifId\" LIKE 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/%'\n)\n\nSELECT COUNT(DISTINCT r.id) AS \"Requêtes maltraitance\"\nFROM \"Requete\" r\nJOIN requetes_maltraitance rm ON rm.requete_id = r.id\nJOIN \"RequeteEntite\" re     ON re.\"requeteId\" = r.id\nJOIN entites_scope es       ON es.id = re.\"entiteId\"\nWHERE 1 = 1\n  [[ AND r.\"createdAt\"::date >= {{start_date}} ]]\n  [[ AND r.\"createdAt\"::date <= {{end_date}} ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                       AND {{inclure_eig}} = 'false') ]]",
+              "native": "WITH RECURSIVE\n-- 1. Périmètre entités : l'entité de premier niveau de l'utilisateur (entiteMereId IS NULL)\n--    identifiée par {{entity_label}}, PLUS tous ses services descendants (récursif).\nentites_scope AS (\n  SELECT e.id\n  FROM \"Entite\" e\n  WHERE e.\"entiteMereId\" IS NULL\n    [[ AND e.label = {{entity_label}} ]]\n\n  UNION ALL\n\n  SELECT child.id\n  FROM \"Entite\" child\n  JOIN entites_scope s ON child.\"entiteMereId\" = s.id\n),\n\n-- 2. Requêtes ayant AU MOINS un motif dont le 1er niveau est \"Maltraitance professionnels ou entourage\".\n--    Les id de MotifEnum sont au format \"PARENT/ENFANT\" -> on filtre sur le parent.\nrequetes_maltraitance AS (\n  SELECT DISTINCT s.\"requeteId\" AS requete_id\n  FROM \"Situation\" s\n  JOIN \"FaitMotif\" fm ON fm.\"situationId\" = s.id\n  WHERE s.\"requeteId\" IS NOT NULL\n    AND fm.\"motifId\" LIKE 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/%'\n)\n\nSELECT COUNT(DISTINCT r.id) AS \"Requêtes maltraitance\"\nFROM \"Requete\" r\nJOIN requetes_maltraitance rm ON rm.requete_id = r.id\nJOIN \"RequeteEntite\" re     ON re.\"requeteId\" = r.id\nJOIN entites_scope es       ON es.id = re.\"entiteId\"\nWHERE 1 = 1\n  [[ AND r.\"createdAt\"::date >= {{start_date}} ]]\n  [[ AND r.\"createdAt\"::date <= {{end_date}} ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                 JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                 WHERE s_lieu.\"requeteId\" = r.id\n                   AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                        OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                       AND {{inclure_eig}} = 'false') ]]",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -463,6 +746,12 @@
                   "id": "7ca1a556-dabf-4e19-9e5b-fcb8656fc6de",
                   "name": "inclure_eig",
                   "type": "boolean"
+                },
+                {
+                  "display-name": "Lieu De Survenue",
+                  "id": "17bbe86b-7de4-46b2-917a-95cb53c03ce7",
+                  "name": "lieu_de_survenue",
+                  "type": "text"
                 }
               ]
             }
@@ -480,8 +769,6 @@
         "entity_id": "2P4X0t5mBkSBs54R0UTUb",
         "id": 69,
         "legacy_query": null,
-        "made_public_by_id": null,
-        "metabase_version": "v0.63.1.2 (b067da1)",
         "moderation_reviews": [],
         "name": "Requêtes concernées par la maltraitance",
         "parameter_mappings": [],
@@ -667,55 +954,323 @@
               ]
             ],
             "type": "boolean/="
-          }
-        ],
-        "public_uuid": null,
-        "query_average_duration": 221,
-        "query_type": "native",
-        "result_metadata": [
+          },
           {
-            "base_type": "type/BigInteger",
-            "database_type": "int8",
-            "display_name": "Requêtes maltraitance",
-            "effective_type": "type/BigInteger",
-            "field_ref": [
-              "field",
-              "Requêtes maltraitance",
-              {
-                "base-type": "type/BigInteger"
-              }
+            "id": "17bbe86b-7de4-46b2-917a-95cb53c03ce7",
+            "isMultiSelect": true,
+            "name": "Lieu De Survenue",
+            "slug": "lieu_de_survenue",
+            "target": [
+              "variable",
+              [
+                "template-tag",
+                "lieu_de_survenue"
+              ]
             ],
-            "fingerprint": {
-              "global": {
-                "distinct-count": 1,
-                "nil%": 0
-              },
-              "type": {
-                "type/Number": {
-                  "avg": 1824,
-                  "excess-kurtosis": null,
-                  "max": 1824,
-                  "min": 1824,
-                  "mode-fraction": 1,
-                  "q1": 1824,
-                  "q3": 1824,
-                  "sd": 0,
-                  "skewness": null,
-                  "top-3-fraction": 1,
-                  "zero-fraction": 0
-                }
-              }
+            "type": "string/=",
+            "values_query_type": "list",
+            "values_source_config": {
+              "values": [
+                [
+                  "DOMICILE",
+                  "Domicile"
+                ],
+                [
+                  "DOMICILE:PERSONNE_CONCERNEE",
+                  "Domicile — De la personne concernée"
+                ],
+                [
+                  "DOMICILE:REQUERANT",
+                  "Domicile — Du réquérant"
+                ],
+                [
+                  "DOMICILE:CHEZ_TIERS",
+                  "Domicile — Chez un tiers"
+                ],
+                [
+                  "DOMICILE:HABITAT_INCLUSIF",
+                  "Domicile — Habitat inclusif"
+                ],
+                [
+                  "DOMICILE:EQUIPES_MOBILES",
+                  "Domicile — Equipes mobiles"
+                ],
+                [
+                  "DOMICILE:AUTRE",
+                  "Domicile — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE",
+                  "Etablissements de santé"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CH",
+                  "Etablissements de santé — CH"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CHU",
+                  "Etablissements de santé — CHU"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CABINET_MEDICAL",
+                  "Etablissements de santé — Cabinet médical ou dentaire, laboratoire, centre de radiologie, ..."
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CLINIQUE",
+                  "Etablissements de santé — Clinique"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CLCC",
+                  "Etablissements de santé — CLCC (Centre de lutte contre le cancer)"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:SSR_SMR",
+                  "Etablissements de santé — SSR/SMR"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:USLD",
+                  "Etablissements de santé — USLD"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:BAPU",
+                  "Etablissements de santé — BAPU (Bureaux d'aide psychologique universitaires)"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CMP_CMPP",
+                  "Etablissements de santé — CMPP (Centres médico-psycho-pédagogiques), CMP (Centre médico-psychologique)"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CENTRE_SANTE",
+                  "Etablissements de santé — Centre de santé"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:MAISON_SANTE",
+                  "Etablissements de santé — Maison de santé"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:AUTRE",
+                  "Etablissements de santé — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES",
+                  "Etablissements pour personnes âgées"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:EHPAD",
+                  "Etablissements pour personnes âgées — EHPAD"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:PASA",
+                  "Etablissements pour personnes âgées — PASA (Pôles d'activité et soins adaptés)"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:ACCUEIL_JOUR",
+                  "Etablissements pour personnes âgées — Accueil de jour"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:PUV",
+                  "Etablissements pour personnes âgées — PUV (Petite unité de vie)"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:RA",
+                  "Etablissements pour personnes âgées — RA (résidence autonomie)"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:UHR",
+                  "Etablissements pour personnes âgées — UHR (Unité d'Hébergement Renforcé)"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:AUTRE",
+                  "Etablissements pour personnes âgées — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP",
+                  "Etablissements pour personnes handicapées"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:MAS",
+                  "Etablissements pour personnes handicapées — MAS (Maison d'accueil spécialisée)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:EAM",
+                  "Etablissements pour personnes handicapées — EAM (Foyer d'acceuil médicalisés)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:EANM",
+                  "Etablissements pour personnes handicapées — EANM"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:IEM",
+                  "Etablissements pour personnes handicapées — IEM (Instituts d'éducation motrice)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:EEAP",
+                  "Etablissements pour personnes handicapées — EEAP (Etablissements pour enfants ou adolescents polyhandicapés)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:IDA",
+                  "Etablissements pour personnes handicapées — IDA (instituts pour déficients auditifs)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:IDV",
+                  "Etablissements pour personnes handicapées — IDV (instituts our déficients visuels)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:CAMSP",
+                  "Etablissements pour personnes handicapées — CAMSP (Centre d'action médico-sociale précoce)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:ESAT",
+                  "Etablissements pour personnes handicapées — ESAT (Etablissement et services d'aide par le travail)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:CPO",
+                  "Etablissements pour personnes handicapées — CPO (Centres de pré orientation pour handicapés)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:CERFP",
+                  "Etablissements pour personnes handicapées — CERFP (Centre d'éducation de rééducation et de formation professionnel)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:IME",
+                  "Etablissements pour personnes handicapées — IME (Instituts médicoéducatifs)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:ITEP",
+                  "Etablissements pour personnes handicapées — ITEP (Instituts thérapeutiques, éducatifs et pédagogiques)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:ACCUEIL_JOUR",
+                  "Etablissements pour personnes handicapées — Accueil de jour"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:AUTRE",
+                  "Etablissements pour personnes handicapées — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL",
+                  "Etablissements sociaux"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CAARUD",
+                  "Etablissements sociaux — CAARUD"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CPFSE",
+                  "Etablissements sociaux — CPFSE (centres de placement familial socioéducatif)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CADA",
+                  "Etablissements sociaux — CADA (Centre d'accueil pour demandeurs d'asile)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CENTRE_MATERNEL",
+                  "Etablissements sociaux — CENTRE MATERNEL (Etablissement d'accueil mère-enfant)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:VILLAGES_ENFANTS",
+                  "Etablissements sociaux — Villages d'enfants"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:FOYERS_ENFANCE",
+                  "Etablissements sociaux — Foyers de l'enfance"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:MECS",
+                  "Etablissements sociaux — MECS (Maisons d'enfants à caractère social)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:POUPONNIERE",
+                  "Etablissements sociaux — Pouponnière à caractère social"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CHRS",
+                  "Etablissements sociaux — CHRS (Centre d'hébergement et de réinsertion)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CHU",
+                  "Etablissements sociaux — CHU (Centre d'hébergement d'urgence)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CHS",
+                  "Etablissements sociaux — CHS (Centre d'hébergement de stabilisation)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:RESIDENCES_SOCIALES",
+                  "Etablissements sociaux — Résidences sociales (dont pensions de familles ou maisons relais et résidences accueil)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CPH",
+                  "Etablissements sociaux — CPH (Centres provisoires d'hébergement)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:AUTRE",
+                  "Etablissements sociaux — Autre"
+                ],
+                [
+                  "AUTRES_ETABLISSEMENTS",
+                  "Autres établissements"
+                ],
+                [
+                  "AUTRES_ETABLISSEMENTS:SALON_TATOUAGE_ESTHETIQUE",
+                  "Autres établissements — Salon de tatouage, salon d'esthétique"
+                ],
+                [
+                  "AUTRES_ETABLISSEMENTS:MAISON_ARRET",
+                  "Autres établissements — Maison d'arrêt"
+                ],
+                [
+                  "AUTRES_ETABLISSEMENTS:AUTRE",
+                  "Autres établissements — Autre"
+                ],
+                [
+                  "TRAJET",
+                  "Trajet"
+                ],
+                [
+                  "TRAJET:BSPP",
+                  "Trajet — Sapeurs Pompiers"
+                ],
+                [
+                  "TRAJET:ASSU",
+                  "Trajet — ASSU"
+                ],
+                [
+                  "TRAJET:VSAV",
+                  "Trajet — VSAV"
+                ],
+                [
+                  "TRAJET:AMBULANCE",
+                  "Trajet — Ambulance"
+                ],
+                [
+                  "TRAJET:VSL",
+                  "Trajet — Véhicule sanitaire léger"
+                ],
+                [
+                  "TRAJET:TAXI",
+                  "Trajet — Taxi"
+                ],
+                [
+                  "TRAJET:TRANSPORTEUR_SANITAIRE",
+                  "Trajet — Transporteur Sanitaire"
+                ],
+                [
+                  "TRAJET:AUTRE",
+                  "Trajet — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_FICTIF",
+                  "Etablissement fictif"
+                ]
+              ]
             },
-            "lib/deduplicated-name": "Requêtes maltraitance",
-            "lib/desired-column-alias": "Requêtes maltraitance",
-            "lib/original-name": "Requêtes maltraitance",
-            "lib/source": "source/native",
-            "lib/source-column-alias": "Requêtes maltraitance",
-            "name": "Requêtes maltraitance",
-            "semantic_type": null,
-            "source": "native"
+            "values_source_type": "static-list"
           }
         ],
+        "public_uuid_prefix": null,
+        "query_average_duration": 1583,
+        "query_type": "native",
         "source_card_id": null,
         "table_id": null,
         "type": "question",
@@ -786,6 +1341,17 @@
               "inclure_eig"
             ]
           ]
+        },
+        {
+          "card_id": 69,
+          "parameter_id": "9f77840e",
+          "target": [
+            "variable",
+            [
+              "template-tag",
+              "lieu_de_survenue"
+            ]
+          ]
         }
       ],
       "row": 0,
@@ -814,7 +1380,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "SELECT\n    COUNT(DISTINCT r.id) AS nombre_requetes\nFROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\nWHERE\n    re.\"statutId\" = 'CLOTUREE'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                         AND {{inclure_eig}} = 'false') ]];",
+              "native": "SELECT\n    COUNT(DISTINCT r.id) AS nombre_requetes\nFROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\nWHERE\n    re.\"statutId\" = 'CLOTUREE'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                   WHERE s_df.\"requeteId\" = r.id\n                     AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n    [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                   JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                   WHERE s_lieu.\"requeteId\" = r.id\n                     AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                          OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n    [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                       WHERE pc_eig.\"declarantDeId\" = r.id\n                         AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                         AND {{inclure_eig}} = 'false') ]];",
               "template-tags": [
                 {
                   "display-name": "Entity Label",
@@ -848,6 +1414,12 @@
                   "id": "1de5f835-b181-4784-929f-177e1d0e82ca",
                   "name": "inclure_eig",
                   "type": "boolean"
+                },
+                {
+                  "display-name": "Lieu De Survenue",
+                  "id": "bdb3d8c2-5309-43a7-9d65-8e2619d9c666",
+                  "name": "lieu_de_survenue",
+                  "type": "text"
                 }
               ]
             }
@@ -865,8 +1437,6 @@
         "entity_id": "paldPpFzo9i4BjPMGje1K",
         "id": 76,
         "legacy_query": null,
-        "made_public_by_id": null,
-        "metabase_version": "v0.63.5 (1dca717)",
         "moderation_reviews": [],
         "name": "Requêtes clôturées",
         "parameter_mappings": [],
@@ -943,55 +1513,323 @@
               ]
             ],
             "type": "boolean/="
-          }
-        ],
-        "public_uuid": null,
-        "query_average_duration": 397,
-        "query_type": "native",
-        "result_metadata": [
+          },
           {
-            "base_type": "type/BigInteger",
-            "database_type": "int8",
-            "display_name": "nombre_requetes",
-            "effective_type": "type/BigInteger",
-            "field_ref": [
-              "field",
-              "nombre_requetes",
-              {
-                "base-type": "type/BigInteger"
-              }
+            "id": "bdb3d8c2-5309-43a7-9d65-8e2619d9c666",
+            "isMultiSelect": true,
+            "name": "Lieu De Survenue",
+            "slug": "lieu_de_survenue",
+            "target": [
+              "variable",
+              [
+                "template-tag",
+                "lieu_de_survenue"
+              ]
             ],
-            "fingerprint": {
-              "global": {
-                "distinct-count": 1,
-                "nil%": 0
-              },
-              "type": {
-                "type/Number": {
-                  "avg": 16036,
-                  "excess-kurtosis": null,
-                  "max": 16036,
-                  "min": 16036,
-                  "mode-fraction": 1,
-                  "q1": 16036,
-                  "q3": 16036,
-                  "sd": 0,
-                  "skewness": null,
-                  "top-3-fraction": 1,
-                  "zero-fraction": 0
-                }
-              }
+            "type": "string/=",
+            "values_query_type": "list",
+            "values_source_config": {
+              "values": [
+                [
+                  "DOMICILE",
+                  "Domicile"
+                ],
+                [
+                  "DOMICILE:PERSONNE_CONCERNEE",
+                  "Domicile — De la personne concernée"
+                ],
+                [
+                  "DOMICILE:REQUERANT",
+                  "Domicile — Du réquérant"
+                ],
+                [
+                  "DOMICILE:CHEZ_TIERS",
+                  "Domicile — Chez un tiers"
+                ],
+                [
+                  "DOMICILE:HABITAT_INCLUSIF",
+                  "Domicile — Habitat inclusif"
+                ],
+                [
+                  "DOMICILE:EQUIPES_MOBILES",
+                  "Domicile — Equipes mobiles"
+                ],
+                [
+                  "DOMICILE:AUTRE",
+                  "Domicile — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE",
+                  "Etablissements de santé"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CH",
+                  "Etablissements de santé — CH"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CHU",
+                  "Etablissements de santé — CHU"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CABINET_MEDICAL",
+                  "Etablissements de santé — Cabinet médical ou dentaire, laboratoire, centre de radiologie, ..."
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CLINIQUE",
+                  "Etablissements de santé — Clinique"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CLCC",
+                  "Etablissements de santé — CLCC (Centre de lutte contre le cancer)"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:SSR_SMR",
+                  "Etablissements de santé — SSR/SMR"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:USLD",
+                  "Etablissements de santé — USLD"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:BAPU",
+                  "Etablissements de santé — BAPU (Bureaux d'aide psychologique universitaires)"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CMP_CMPP",
+                  "Etablissements de santé — CMPP (Centres médico-psycho-pédagogiques), CMP (Centre médico-psychologique)"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CENTRE_SANTE",
+                  "Etablissements de santé — Centre de santé"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:MAISON_SANTE",
+                  "Etablissements de santé — Maison de santé"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:AUTRE",
+                  "Etablissements de santé — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES",
+                  "Etablissements pour personnes âgées"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:EHPAD",
+                  "Etablissements pour personnes âgées — EHPAD"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:PASA",
+                  "Etablissements pour personnes âgées — PASA (Pôles d'activité et soins adaptés)"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:ACCUEIL_JOUR",
+                  "Etablissements pour personnes âgées — Accueil de jour"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:PUV",
+                  "Etablissements pour personnes âgées — PUV (Petite unité de vie)"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:RA",
+                  "Etablissements pour personnes âgées — RA (résidence autonomie)"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:UHR",
+                  "Etablissements pour personnes âgées — UHR (Unité d'Hébergement Renforcé)"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:AUTRE",
+                  "Etablissements pour personnes âgées — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP",
+                  "Etablissements pour personnes handicapées"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:MAS",
+                  "Etablissements pour personnes handicapées — MAS (Maison d'accueil spécialisée)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:EAM",
+                  "Etablissements pour personnes handicapées — EAM (Foyer d'acceuil médicalisés)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:EANM",
+                  "Etablissements pour personnes handicapées — EANM"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:IEM",
+                  "Etablissements pour personnes handicapées — IEM (Instituts d'éducation motrice)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:EEAP",
+                  "Etablissements pour personnes handicapées — EEAP (Etablissements pour enfants ou adolescents polyhandicapés)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:IDA",
+                  "Etablissements pour personnes handicapées — IDA (instituts pour déficients auditifs)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:IDV",
+                  "Etablissements pour personnes handicapées — IDV (instituts our déficients visuels)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:CAMSP",
+                  "Etablissements pour personnes handicapées — CAMSP (Centre d'action médico-sociale précoce)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:ESAT",
+                  "Etablissements pour personnes handicapées — ESAT (Etablissement et services d'aide par le travail)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:CPO",
+                  "Etablissements pour personnes handicapées — CPO (Centres de pré orientation pour handicapés)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:CERFP",
+                  "Etablissements pour personnes handicapées — CERFP (Centre d'éducation de rééducation et de formation professionnel)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:IME",
+                  "Etablissements pour personnes handicapées — IME (Instituts médicoéducatifs)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:ITEP",
+                  "Etablissements pour personnes handicapées — ITEP (Instituts thérapeutiques, éducatifs et pédagogiques)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:ACCUEIL_JOUR",
+                  "Etablissements pour personnes handicapées — Accueil de jour"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:AUTRE",
+                  "Etablissements pour personnes handicapées — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL",
+                  "Etablissements sociaux"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CAARUD",
+                  "Etablissements sociaux — CAARUD"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CPFSE",
+                  "Etablissements sociaux — CPFSE (centres de placement familial socioéducatif)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CADA",
+                  "Etablissements sociaux — CADA (Centre d'accueil pour demandeurs d'asile)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CENTRE_MATERNEL",
+                  "Etablissements sociaux — CENTRE MATERNEL (Etablissement d'accueil mère-enfant)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:VILLAGES_ENFANTS",
+                  "Etablissements sociaux — Villages d'enfants"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:FOYERS_ENFANCE",
+                  "Etablissements sociaux — Foyers de l'enfance"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:MECS",
+                  "Etablissements sociaux — MECS (Maisons d'enfants à caractère social)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:POUPONNIERE",
+                  "Etablissements sociaux — Pouponnière à caractère social"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CHRS",
+                  "Etablissements sociaux — CHRS (Centre d'hébergement et de réinsertion)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CHU",
+                  "Etablissements sociaux — CHU (Centre d'hébergement d'urgence)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CHS",
+                  "Etablissements sociaux — CHS (Centre d'hébergement de stabilisation)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:RESIDENCES_SOCIALES",
+                  "Etablissements sociaux — Résidences sociales (dont pensions de familles ou maisons relais et résidences accueil)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CPH",
+                  "Etablissements sociaux — CPH (Centres provisoires d'hébergement)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:AUTRE",
+                  "Etablissements sociaux — Autre"
+                ],
+                [
+                  "AUTRES_ETABLISSEMENTS",
+                  "Autres établissements"
+                ],
+                [
+                  "AUTRES_ETABLISSEMENTS:SALON_TATOUAGE_ESTHETIQUE",
+                  "Autres établissements — Salon de tatouage, salon d'esthétique"
+                ],
+                [
+                  "AUTRES_ETABLISSEMENTS:MAISON_ARRET",
+                  "Autres établissements — Maison d'arrêt"
+                ],
+                [
+                  "AUTRES_ETABLISSEMENTS:AUTRE",
+                  "Autres établissements — Autre"
+                ],
+                [
+                  "TRAJET",
+                  "Trajet"
+                ],
+                [
+                  "TRAJET:BSPP",
+                  "Trajet — Sapeurs Pompiers"
+                ],
+                [
+                  "TRAJET:ASSU",
+                  "Trajet — ASSU"
+                ],
+                [
+                  "TRAJET:VSAV",
+                  "Trajet — VSAV"
+                ],
+                [
+                  "TRAJET:AMBULANCE",
+                  "Trajet — Ambulance"
+                ],
+                [
+                  "TRAJET:VSL",
+                  "Trajet — Véhicule sanitaire léger"
+                ],
+                [
+                  "TRAJET:TAXI",
+                  "Trajet — Taxi"
+                ],
+                [
+                  "TRAJET:TRANSPORTEUR_SANITAIRE",
+                  "Trajet — Transporteur Sanitaire"
+                ],
+                [
+                  "TRAJET:AUTRE",
+                  "Trajet — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_FICTIF",
+                  "Etablissement fictif"
+                ]
+              ]
             },
-            "lib/deduplicated-name": "nombre_requetes",
-            "lib/desired-column-alias": "nombre_requetes",
-            "lib/original-name": "nombre_requetes",
-            "lib/source": "source/native",
-            "lib/source-column-alias": "nombre_requetes",
-            "name": "nombre_requetes",
-            "semantic_type": null,
-            "source": "native"
+            "values_source_type": "static-list"
           }
         ],
+        "public_uuid_prefix": null,
+        "query_average_duration": 619,
+        "query_type": "native",
         "source_card_id": null,
         "table_id": null,
         "type": "question",
@@ -1062,6 +1900,17 @@
               "inclure_eig"
             ]
           ]
+        },
+        {
+          "card_id": 76,
+          "parameter_id": "9f77840e",
+          "target": [
+            "variable",
+            [
+              "template-tag",
+              "lieu_de_survenue"
+            ]
+          ]
         }
       ],
       "row": 0,
@@ -1090,7 +1939,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "-- Requêtes « en compétence partagée » au niveau national :\n-- au moins 2 entités affectées, après avoir exclu les entités\n-- clôturées pour motif « Hors compétence ».\nSELECT\n  COUNT(*) AS nombre_requetes_competence_partagee\nFROM (\n  SELECT r.id\n  FROM \"Requete\" r\n  JOIN \"RequeteEntite\" re ON re.\"requeteId\" = r.id\n  JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n  WHERE NOT (\n    re.\"statutId\" = 'CLOTUREE'\n    AND EXISTS (\n      SELECT 1\n      FROM \"RequeteEtape\" et\n      JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n      WHERE et.\"requeteId\" = re.\"requeteId\"\n        AND et.\"entiteId\"  = re.\"entiteId\"\n        AND et.\"statutId\"  = 'CLOTUREE'\n        AND j.\"A\"          = 'HORS_COMPETENCE'\n    )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" IS TRUE\n                       AND {{inclure_eig}} = 'false') ]]\n  GROUP BY r.id\n  HAVING COUNT(DISTINCT re.\"entiteId\") >= 2\n     [[ AND bool_or(e.label = {{entity_label}}) ]]\n) t;",
+              "native": "-- Requêtes « en compétence partagée » au niveau national :\n-- au moins 2 entités affectées, après avoir exclu les entités\n-- clôturées pour motif « Hors compétence ».\nSELECT\n  COUNT(*) AS nombre_requetes_competence_partagee\nFROM (\n  SELECT r.id\n  FROM \"Requete\" r\n  JOIN \"RequeteEntite\" re ON re.\"requeteId\" = r.id\n  JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n  WHERE NOT (\n    re.\"statutId\" = 'CLOTUREE'\n    AND EXISTS (\n      SELECT 1\n      FROM \"RequeteEtape\" et\n      JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n      WHERE et.\"requeteId\" = re.\"requeteId\"\n        AND et.\"entiteId\"  = re.\"entiteId\"\n        AND et.\"statutId\"  = 'CLOTUREE'\n        AND j.\"A\"          = 'HORS_COMPETENCE'\n    )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_df\n                 WHERE s_df.\"requeteId\" = r.id\n                   AND s_df.\"domainesFonctionnelsId\" IN ({{domaine_fonctionnel}})) ]]\n  [[ AND EXISTS (SELECT 1 FROM \"Situation\" s_lieu\n                 JOIN \"LieuDeSurvenue\" l_lieu ON l_lieu.id = s_lieu.\"lieuDeSurvenueId\"\n                 WHERE s_lieu.\"requeteId\" = r.id\n                   AND (l_lieu.\"lieuTypeId\" IN ({{lieu_de_survenue}})\n                        OR (l_lieu.\"lieuTypeId\" || ':' || l_lieu.\"lieuPrecision\") IN ({{lieu_de_survenue}}))) ]]\n  [[ AND NOT EXISTS (SELECT 1 FROM \"PersonneConcernee\" pc_eig\n                     WHERE pc_eig.\"declarantDeId\" = r.id\n                       AND pc_eig.\"estSignalementProfessionnel\" = 'OUI'\n                       AND {{inclure_eig}} = 'false') ]]\n  GROUP BY r.id\n  HAVING COUNT(DISTINCT re.\"entiteId\") >= 2\n     [[ AND bool_or(e.label = {{entity_label}}) ]]\n) t;",
               "template-tags": [
                 {
                   "display-name": "Start Date",
@@ -1124,6 +1973,12 @@
                   "id": "1fd533ad-b2b1-4d5d-bc6c-66bc6a6734af",
                   "name": "inclure_eig",
                   "type": "boolean"
+                },
+                {
+                  "display-name": "Lieu De Survenue",
+                  "id": "2dc9bb64-32a9-43da-8ffb-d4d32cd8247e",
+                  "name": "lieu_de_survenue",
+                  "type": "text"
                 }
               ]
             }
@@ -1141,8 +1996,6 @@
         "entity_id": "KSCh9ti0JapmM8pcSof7f",
         "id": 77,
         "legacy_query": null,
-        "made_public_by_id": null,
-        "metabase_version": "v0.63.5 (1dca717)",
         "moderation_reviews": [],
         "name": "Requêtes en compétence partagée",
         "parameter_mappings": [],
@@ -1219,55 +2072,323 @@
               ]
             ],
             "type": "boolean/="
-          }
-        ],
-        "public_uuid": null,
-        "query_average_duration": 1066,
-        "query_type": "native",
-        "result_metadata": [
+          },
           {
-            "base_type": "type/BigInteger",
-            "database_type": "int8",
-            "display_name": "nombre_requetes_competence_partagee",
-            "effective_type": "type/BigInteger",
-            "field_ref": [
-              "field",
-              "nombre_requetes_competence_partagee",
-              {
-                "base-type": "type/BigInteger"
-              }
+            "id": "2dc9bb64-32a9-43da-8ffb-d4d32cd8247e",
+            "isMultiSelect": true,
+            "name": "Lieu De Survenue",
+            "slug": "lieu_de_survenue",
+            "target": [
+              "variable",
+              [
+                "template-tag",
+                "lieu_de_survenue"
+              ]
             ],
-            "fingerprint": {
-              "global": {
-                "distinct-count": 1,
-                "nil%": 0
-              },
-              "type": {
-                "type/Number": {
-                  "avg": 5326,
-                  "excess-kurtosis": null,
-                  "max": 5326,
-                  "min": 5326,
-                  "mode-fraction": 1,
-                  "q1": 5326,
-                  "q3": 5326,
-                  "sd": 0,
-                  "skewness": null,
-                  "top-3-fraction": 1,
-                  "zero-fraction": 0
-                }
-              }
+            "type": "string/=",
+            "values_query_type": "list",
+            "values_source_config": {
+              "values": [
+                [
+                  "DOMICILE",
+                  "Domicile"
+                ],
+                [
+                  "DOMICILE:PERSONNE_CONCERNEE",
+                  "Domicile — De la personne concernée"
+                ],
+                [
+                  "DOMICILE:REQUERANT",
+                  "Domicile — Du réquérant"
+                ],
+                [
+                  "DOMICILE:CHEZ_TIERS",
+                  "Domicile — Chez un tiers"
+                ],
+                [
+                  "DOMICILE:HABITAT_INCLUSIF",
+                  "Domicile — Habitat inclusif"
+                ],
+                [
+                  "DOMICILE:EQUIPES_MOBILES",
+                  "Domicile — Equipes mobiles"
+                ],
+                [
+                  "DOMICILE:AUTRE",
+                  "Domicile — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE",
+                  "Etablissements de santé"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CH",
+                  "Etablissements de santé — CH"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CHU",
+                  "Etablissements de santé — CHU"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CABINET_MEDICAL",
+                  "Etablissements de santé — Cabinet médical ou dentaire, laboratoire, centre de radiologie, ..."
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CLINIQUE",
+                  "Etablissements de santé — Clinique"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CLCC",
+                  "Etablissements de santé — CLCC (Centre de lutte contre le cancer)"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:SSR_SMR",
+                  "Etablissements de santé — SSR/SMR"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:USLD",
+                  "Etablissements de santé — USLD"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:BAPU",
+                  "Etablissements de santé — BAPU (Bureaux d'aide psychologique universitaires)"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CMP_CMPP",
+                  "Etablissements de santé — CMPP (Centres médico-psycho-pédagogiques), CMP (Centre médico-psychologique)"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:CENTRE_SANTE",
+                  "Etablissements de santé — Centre de santé"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:MAISON_SANTE",
+                  "Etablissements de santé — Maison de santé"
+                ],
+                [
+                  "ETABLISSEMENT_SANTE:AUTRE",
+                  "Etablissements de santé — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES",
+                  "Etablissements pour personnes âgées"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:EHPAD",
+                  "Etablissements pour personnes âgées — EHPAD"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:PASA",
+                  "Etablissements pour personnes âgées — PASA (Pôles d'activité et soins adaptés)"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:ACCUEIL_JOUR",
+                  "Etablissements pour personnes âgées — Accueil de jour"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:PUV",
+                  "Etablissements pour personnes âgées — PUV (Petite unité de vie)"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:RA",
+                  "Etablissements pour personnes âgées — RA (résidence autonomie)"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:UHR",
+                  "Etablissements pour personnes âgées — UHR (Unité d'Hébergement Renforcé)"
+                ],
+                [
+                  "ETABLISSEMENT_PERSONNES_AGEES:AUTRE",
+                  "Etablissements pour personnes âgées — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP",
+                  "Etablissements pour personnes handicapées"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:MAS",
+                  "Etablissements pour personnes handicapées — MAS (Maison d'accueil spécialisée)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:EAM",
+                  "Etablissements pour personnes handicapées — EAM (Foyer d'acceuil médicalisés)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:EANM",
+                  "Etablissements pour personnes handicapées — EANM"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:IEM",
+                  "Etablissements pour personnes handicapées — IEM (Instituts d'éducation motrice)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:EEAP",
+                  "Etablissements pour personnes handicapées — EEAP (Etablissements pour enfants ou adolescents polyhandicapés)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:IDA",
+                  "Etablissements pour personnes handicapées — IDA (instituts pour déficients auditifs)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:IDV",
+                  "Etablissements pour personnes handicapées — IDV (instituts our déficients visuels)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:CAMSP",
+                  "Etablissements pour personnes handicapées — CAMSP (Centre d'action médico-sociale précoce)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:ESAT",
+                  "Etablissements pour personnes handicapées — ESAT (Etablissement et services d'aide par le travail)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:CPO",
+                  "Etablissements pour personnes handicapées — CPO (Centres de pré orientation pour handicapés)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:CERFP",
+                  "Etablissements pour personnes handicapées — CERFP (Centre d'éducation de rééducation et de formation professionnel)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:IME",
+                  "Etablissements pour personnes handicapées — IME (Instituts médicoéducatifs)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:ITEP",
+                  "Etablissements pour personnes handicapées — ITEP (Instituts thérapeutiques, éducatifs et pédagogiques)"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:ACCUEIL_JOUR",
+                  "Etablissements pour personnes handicapées — Accueil de jour"
+                ],
+                [
+                  "ETABLISSEMENT_HANDICAP:AUTRE",
+                  "Etablissements pour personnes handicapées — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL",
+                  "Etablissements sociaux"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CAARUD",
+                  "Etablissements sociaux — CAARUD"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CPFSE",
+                  "Etablissements sociaux — CPFSE (centres de placement familial socioéducatif)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CADA",
+                  "Etablissements sociaux — CADA (Centre d'accueil pour demandeurs d'asile)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CENTRE_MATERNEL",
+                  "Etablissements sociaux — CENTRE MATERNEL (Etablissement d'accueil mère-enfant)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:VILLAGES_ENFANTS",
+                  "Etablissements sociaux — Villages d'enfants"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:FOYERS_ENFANCE",
+                  "Etablissements sociaux — Foyers de l'enfance"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:MECS",
+                  "Etablissements sociaux — MECS (Maisons d'enfants à caractère social)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:POUPONNIERE",
+                  "Etablissements sociaux — Pouponnière à caractère social"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CHRS",
+                  "Etablissements sociaux — CHRS (Centre d'hébergement et de réinsertion)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CHU",
+                  "Etablissements sociaux — CHU (Centre d'hébergement d'urgence)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CHS",
+                  "Etablissements sociaux — CHS (Centre d'hébergement de stabilisation)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:RESIDENCES_SOCIALES",
+                  "Etablissements sociaux — Résidences sociales (dont pensions de familles ou maisons relais et résidences accueil)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:CPH",
+                  "Etablissements sociaux — CPH (Centres provisoires d'hébergement)"
+                ],
+                [
+                  "ETABLISSEMENT_SOCIAL:AUTRE",
+                  "Etablissements sociaux — Autre"
+                ],
+                [
+                  "AUTRES_ETABLISSEMENTS",
+                  "Autres établissements"
+                ],
+                [
+                  "AUTRES_ETABLISSEMENTS:SALON_TATOUAGE_ESTHETIQUE",
+                  "Autres établissements — Salon de tatouage, salon d'esthétique"
+                ],
+                [
+                  "AUTRES_ETABLISSEMENTS:MAISON_ARRET",
+                  "Autres établissements — Maison d'arrêt"
+                ],
+                [
+                  "AUTRES_ETABLISSEMENTS:AUTRE",
+                  "Autres établissements — Autre"
+                ],
+                [
+                  "TRAJET",
+                  "Trajet"
+                ],
+                [
+                  "TRAJET:BSPP",
+                  "Trajet — Sapeurs Pompiers"
+                ],
+                [
+                  "TRAJET:ASSU",
+                  "Trajet — ASSU"
+                ],
+                [
+                  "TRAJET:VSAV",
+                  "Trajet — VSAV"
+                ],
+                [
+                  "TRAJET:AMBULANCE",
+                  "Trajet — Ambulance"
+                ],
+                [
+                  "TRAJET:VSL",
+                  "Trajet — Véhicule sanitaire léger"
+                ],
+                [
+                  "TRAJET:TAXI",
+                  "Trajet — Taxi"
+                ],
+                [
+                  "TRAJET:TRANSPORTEUR_SANITAIRE",
+                  "Trajet — Transporteur Sanitaire"
+                ],
+                [
+                  "TRAJET:AUTRE",
+                  "Trajet — Autre"
+                ],
+                [
+                  "ETABLISSEMENT_FICTIF",
+                  "Etablissement fictif"
+                ]
+              ]
             },
-            "lib/deduplicated-name": "nombre_requetes_competence_partagee",
-            "lib/desired-column-alias": "nombre_requetes_competence_partagee",
-            "lib/original-name": "nombre_requetes_competence_partagee",
-            "lib/source": "source/native",
-            "lib/source-column-alias": "nombre_requetes_competence_partagee",
-            "name": "nombre_requetes_competence_partagee",
-            "semantic_type": null,
-            "source": "native"
+            "values_source_type": "static-list"
           }
         ],
+        "public_uuid_prefix": null,
+        "query_average_duration": 2548,
+        "query_type": "native",
         "source_card_id": null,
         "table_id": null,
         "type": "question",
@@ -1338,12 +2459,152 @@
               "inclure_eig"
             ]
           ]
+        },
+        {
+          "card_id": 77,
+          "parameter_id": "9f77840e",
+          "target": [
+            "variable",
+            [
+              "template-tag",
+              "lieu_de_survenue"
+            ]
+          ]
         }
       ],
       "row": 0,
       "series": [],
       "size_x": 5,
       "size_y": 3,
+      "visualization_settings": {}
+    },
+    {
+      "action_id": null,
+      "card": {
+        "archived": false,
+        "archived_directly": false,
+        "cache_ttl": null,
+        "can_write": true,
+        "card_schema": 23,
+        "collection_id": null,
+        "collection_position": null,
+        "collection_preview": true,
+        "creator_id": 3,
+        "dashboard_id": 6,
+        "database_id": 4,
+        "dataset_query": {
+          "database": 4,
+          "lib/type": "mbql/query",
+          "stages": [
+            {
+              "lib/type": "mbql.stage/native",
+              "native": "-- Carte : « Nombre de comptes actifs par entité »\n-- Comptes utilisateurs au statut ACTIF, regroupés par entité de rattachement.\nSELECT\n  COALESCE(NULLIF(e.\"nomComplet\", ''), e.label, 'Non rattaché à une entité') AS \"Entité\",\n  COUNT(*)                                                                   AS \"Nombre de comptes actifs\"\nFROM \"User\" u\nLEFT JOIN \"Entite\" e ON e.id = u.\"entiteId\"\nWHERE u.\"statutId\" = 'ACTIF'\n  [[ AND u.\"createdAt\" >= {{start_date}} ]]\n  [[ AND u.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\nGROUP BY COALESCE(NULLIF(e.\"nomComplet\", ''), e.label, 'Non rattaché à une entité')\nORDER BY COUNT(*) DESC, 1 ASC;",
+              "template-tags": [
+                {
+                  "display-name": "Start Date",
+                  "id": "ddd1e7ca-b3fd-49f6-9cd7-88e79c7bb569",
+                  "name": "start_date",
+                  "type": "date"
+                },
+                {
+                  "display-name": "End Date",
+                  "id": "0a0af0c2-6c89-4c61-b233-fbd26a0d6234",
+                  "name": "end_date",
+                  "type": "date"
+                }
+              ]
+            }
+          ]
+        },
+        "description": "Nombre de comptes ouverts avec un statut actif répartis par entité",
+        "dimension_mappings": null,
+        "dimensions": null,
+        "display": "table",
+        "document_id": null,
+        "download_perms": "full",
+        "embedding_params": null,
+        "embedding_type": null,
+        "enable_embedding": false,
+        "entity_id": "UCbPKJ1kak_DZqeWXLAN1",
+        "id": 106,
+        "legacy_query": null,
+        "moderation_reviews": [],
+        "name": "Nombre de comptes actifs par entité",
+        "parameter_mappings": [],
+        "parameters": [
+          {
+            "id": "ddd1e7ca-b3fd-49f6-9cd7-88e79c7bb569",
+            "isMultiSelect": false,
+            "name": "Start Date",
+            "slug": "start_date",
+            "target": [
+              "variable",
+              [
+                "template-tag",
+                "start_date"
+              ]
+            ],
+            "type": "date/single"
+          },
+          {
+            "id": "0a0af0c2-6c89-4c61-b233-fbd26a0d6234",
+            "isMultiSelect": false,
+            "name": "End Date",
+            "slug": "end_date",
+            "target": [
+              "variable",
+              [
+                "template-tag",
+                "end_date"
+              ]
+            ],
+            "type": "date/single"
+          }
+        ],
+        "public_uuid_prefix": null,
+        "query_average_duration": 140,
+        "query_type": "native",
+        "source_card_id": null,
+        "table_id": null,
+        "type": "question",
+        "visualization_settings": {}
+      },
+      "card_id": 106,
+      "col": 0,
+      "collection_authority_level": null,
+      "dashboard_id": 6,
+      "dashboard_tab_id": null,
+      "entity_id": "ZSYasQcmcIm4Bl10zWW9X",
+      "id": 146,
+      "inline_parameters": [],
+      "parameter_mappings": [
+        {
+          "card_id": 106,
+          "parameter_id": "5bf40cdc",
+          "target": [
+            "variable",
+            [
+              "template-tag",
+              "end_date"
+            ]
+          ]
+        },
+        {
+          "card_id": 106,
+          "parameter_id": "4e8d9288",
+          "target": [
+            "variable",
+            [
+              "template-tag",
+              "start_date"
+            ]
+          ]
+        }
+      ],
+      "row": 3,
+      "series": [],
+      "size_x": 12,
+      "size_y": 9,
       "visualization_settings": {}
     }
   ],
@@ -1353,6 +2614,7 @@
     "end_date": "enabled",
     "entity_label": "disabled",
     "inclure_eig": "enabled",
+    "lieu_de_survenue": "enabled",
     "start_date": "enabled"
   },
   "embedding_type": "guest-embed",
@@ -1360,9 +2622,6 @@
   "entity_id": "_R6K_jVgaAQlMryqFOuyr",
   "id": 6,
   "is_remote_synced": false,
-  "last_used_param_values": {},
-  "last_viewed_at": "2026-08-27T10:31:13.140471Z",
-  "made_public_by_id": null,
   "moderation_reviews": [],
   "name": "[integration] Dashboard national",
   "param_fields": {},
@@ -1509,11 +2768,315 @@
       "sectionId": "boolean",
       "slug": "inclure_eig",
       "type": "boolean/="
+    },
+    {
+      "id": "9f77840e",
+      "name": "lieu_de_survenue",
+      "sectionId": "string",
+      "slug": "lieu_de_survenue",
+      "type": "string/=",
+      "values_source_config": {
+        "values": [
+          [
+            "DOMICILE",
+            "Domicile"
+          ],
+          [
+            "DOMICILE:PERSONNE_CONCERNEE",
+            "Domicile — De la personne concernée"
+          ],
+          [
+            "DOMICILE:REQUERANT",
+            "Domicile — Du réquérant"
+          ],
+          [
+            "DOMICILE:CHEZ_TIERS",
+            "Domicile — Chez un tiers"
+          ],
+          [
+            "DOMICILE:HABITAT_INCLUSIF",
+            "Domicile — Habitat inclusif"
+          ],
+          [
+            "DOMICILE:EQUIPES_MOBILES",
+            "Domicile — Equipes mobiles"
+          ],
+          [
+            "DOMICILE:AUTRE",
+            "Domicile — Autre"
+          ],
+          [
+            "ETABLISSEMENT_SANTE",
+            "Etablissements de santé"
+          ],
+          [
+            "ETABLISSEMENT_SANTE:CH",
+            "Etablissements de santé — CH"
+          ],
+          [
+            "ETABLISSEMENT_SANTE:CHU",
+            "Etablissements de santé — CHU"
+          ],
+          [
+            "ETABLISSEMENT_SANTE:CABINET_MEDICAL",
+            "Etablissements de santé — Cabinet médical ou dentaire, laboratoire, centre de radiologie, ..."
+          ],
+          [
+            "ETABLISSEMENT_SANTE:CLINIQUE",
+            "Etablissements de santé — Clinique"
+          ],
+          [
+            "ETABLISSEMENT_SANTE:CLCC",
+            "Etablissements de santé — CLCC (Centre de lutte contre le cancer)"
+          ],
+          [
+            "ETABLISSEMENT_SANTE:SSR_SMR",
+            "Etablissements de santé — SSR/SMR"
+          ],
+          [
+            "ETABLISSEMENT_SANTE:USLD",
+            "Etablissements de santé — USLD"
+          ],
+          [
+            "ETABLISSEMENT_SANTE:BAPU",
+            "Etablissements de santé — BAPU (Bureaux d'aide psychologique universitaires)"
+          ],
+          [
+            "ETABLISSEMENT_SANTE:CMP_CMPP",
+            "Etablissements de santé — CMPP (Centres médico-psycho-pédagogiques), CMP (Centre médico-psychologique)"
+          ],
+          [
+            "ETABLISSEMENT_SANTE:CENTRE_SANTE",
+            "Etablissements de santé — Centre de santé"
+          ],
+          [
+            "ETABLISSEMENT_SANTE:MAISON_SANTE",
+            "Etablissements de santé — Maison de santé"
+          ],
+          [
+            "ETABLISSEMENT_SANTE:AUTRE",
+            "Etablissements de santé — Autre"
+          ],
+          [
+            "ETABLISSEMENT_PERSONNES_AGEES",
+            "Etablissements pour personnes âgées"
+          ],
+          [
+            "ETABLISSEMENT_PERSONNES_AGEES:EHPAD",
+            "Etablissements pour personnes âgées — EHPAD"
+          ],
+          [
+            "ETABLISSEMENT_PERSONNES_AGEES:PASA",
+            "Etablissements pour personnes âgées — PASA (Pôles d'activité et soins adaptés)"
+          ],
+          [
+            "ETABLISSEMENT_PERSONNES_AGEES:ACCUEIL_JOUR",
+            "Etablissements pour personnes âgées — Accueil de jour"
+          ],
+          [
+            "ETABLISSEMENT_PERSONNES_AGEES:PUV",
+            "Etablissements pour personnes âgées — PUV (Petite unité de vie)"
+          ],
+          [
+            "ETABLISSEMENT_PERSONNES_AGEES:RA",
+            "Etablissements pour personnes âgées — RA (résidence autonomie)"
+          ],
+          [
+            "ETABLISSEMENT_PERSONNES_AGEES:UHR",
+            "Etablissements pour personnes âgées — UHR (Unité d'Hébergement Renforcé)"
+          ],
+          [
+            "ETABLISSEMENT_PERSONNES_AGEES:AUTRE",
+            "Etablissements pour personnes âgées — Autre"
+          ],
+          [
+            "ETABLISSEMENT_HANDICAP",
+            "Etablissements pour personnes handicapées"
+          ],
+          [
+            "ETABLISSEMENT_HANDICAP:MAS",
+            "Etablissements pour personnes handicapées — MAS (Maison d'accueil spécialisée)"
+          ],
+          [
+            "ETABLISSEMENT_HANDICAP:EAM",
+            "Etablissements pour personnes handicapées — EAM (Foyer d'acceuil médicalisés)"
+          ],
+          [
+            "ETABLISSEMENT_HANDICAP:EANM",
+            "Etablissements pour personnes handicapées — EANM"
+          ],
+          [
+            "ETABLISSEMENT_HANDICAP:IEM",
+            "Etablissements pour personnes handicapées — IEM (Instituts d'éducation motrice)"
+          ],
+          [
+            "ETABLISSEMENT_HANDICAP:EEAP",
+            "Etablissements pour personnes handicapées — EEAP (Etablissements pour enfants ou adolescents polyhandicapés)"
+          ],
+          [
+            "ETABLISSEMENT_HANDICAP:IDA",
+            "Etablissements pour personnes handicapées — IDA (instituts pour déficients auditifs)"
+          ],
+          [
+            "ETABLISSEMENT_HANDICAP:IDV",
+            "Etablissements pour personnes handicapées — IDV (instituts our déficients visuels)"
+          ],
+          [
+            "ETABLISSEMENT_HANDICAP:CAMSP",
+            "Etablissements pour personnes handicapées — CAMSP (Centre d'action médico-sociale précoce)"
+          ],
+          [
+            "ETABLISSEMENT_HANDICAP:ESAT",
+            "Etablissements pour personnes handicapées — ESAT (Etablissement et services d'aide par le travail)"
+          ],
+          [
+            "ETABLISSEMENT_HANDICAP:CPO",
+            "Etablissements pour personnes handicapées — CPO (Centres de pré orientation pour handicapés)"
+          ],
+          [
+            "ETABLISSEMENT_HANDICAP:CERFP",
+            "Etablissements pour personnes handicapées — CERFP (Centre d'éducation de rééducation et de formation professionnel)"
+          ],
+          [
+            "ETABLISSEMENT_HANDICAP:IME",
+            "Etablissements pour personnes handicapées — IME (Instituts médicoéducatifs)"
+          ],
+          [
+            "ETABLISSEMENT_HANDICAP:ITEP",
+            "Etablissements pour personnes handicapées — ITEP (Instituts thérapeutiques, éducatifs et pédagogiques)"
+          ],
+          [
+            "ETABLISSEMENT_HANDICAP:ACCUEIL_JOUR",
+            "Etablissements pour personnes handicapées — Accueil de jour"
+          ],
+          [
+            "ETABLISSEMENT_HANDICAP:AUTRE",
+            "Etablissements pour personnes handicapées — Autre"
+          ],
+          [
+            "ETABLISSEMENT_SOCIAL",
+            "Etablissements sociaux"
+          ],
+          [
+            "ETABLISSEMENT_SOCIAL:CAARUD",
+            "Etablissements sociaux — CAARUD"
+          ],
+          [
+            "ETABLISSEMENT_SOCIAL:CPFSE",
+            "Etablissements sociaux — CPFSE (centres de placement familial socioéducatif)"
+          ],
+          [
+            "ETABLISSEMENT_SOCIAL:CADA",
+            "Etablissements sociaux — CADA (Centre d'accueil pour demandeurs d'asile)"
+          ],
+          [
+            "ETABLISSEMENT_SOCIAL:CENTRE_MATERNEL",
+            "Etablissements sociaux — CENTRE MATERNEL (Etablissement d'accueil mère-enfant)"
+          ],
+          [
+            "ETABLISSEMENT_SOCIAL:VILLAGES_ENFANTS",
+            "Etablissements sociaux — Villages d'enfants"
+          ],
+          [
+            "ETABLISSEMENT_SOCIAL:FOYERS_ENFANCE",
+            "Etablissements sociaux — Foyers de l'enfance"
+          ],
+          [
+            "ETABLISSEMENT_SOCIAL:MECS",
+            "Etablissements sociaux — MECS (Maisons d'enfants à caractère social)"
+          ],
+          [
+            "ETABLISSEMENT_SOCIAL:POUPONNIERE",
+            "Etablissements sociaux — Pouponnière à caractère social"
+          ],
+          [
+            "ETABLISSEMENT_SOCIAL:CHRS",
+            "Etablissements sociaux — CHRS (Centre d'hébergement et de réinsertion)"
+          ],
+          [
+            "ETABLISSEMENT_SOCIAL:CHU",
+            "Etablissements sociaux — CHU (Centre d'hébergement d'urgence)"
+          ],
+          [
+            "ETABLISSEMENT_SOCIAL:CHS",
+            "Etablissements sociaux — CHS (Centre d'hébergement de stabilisation)"
+          ],
+          [
+            "ETABLISSEMENT_SOCIAL:RESIDENCES_SOCIALES",
+            "Etablissements sociaux — Résidences sociales (dont pensions de familles ou maisons relais et résidences accueil)"
+          ],
+          [
+            "ETABLISSEMENT_SOCIAL:CPH",
+            "Etablissements sociaux — CPH (Centres provisoires d'hébergement)"
+          ],
+          [
+            "ETABLISSEMENT_SOCIAL:AUTRE",
+            "Etablissements sociaux — Autre"
+          ],
+          [
+            "AUTRES_ETABLISSEMENTS",
+            "Autres établissements"
+          ],
+          [
+            "AUTRES_ETABLISSEMENTS:SALON_TATOUAGE_ESTHETIQUE",
+            "Autres établissements — Salon de tatouage, salon d'esthétique"
+          ],
+          [
+            "AUTRES_ETABLISSEMENTS:MAISON_ARRET",
+            "Autres établissements — Maison d'arrêt"
+          ],
+          [
+            "AUTRES_ETABLISSEMENTS:AUTRE",
+            "Autres établissements — Autre"
+          ],
+          [
+            "TRAJET",
+            "Trajet"
+          ],
+          [
+            "TRAJET:BSPP",
+            "Trajet — Sapeurs Pompiers"
+          ],
+          [
+            "TRAJET:ASSU",
+            "Trajet — ASSU"
+          ],
+          [
+            "TRAJET:VSAV",
+            "Trajet — VSAV"
+          ],
+          [
+            "TRAJET:AMBULANCE",
+            "Trajet — Ambulance"
+          ],
+          [
+            "TRAJET:VSL",
+            "Trajet — Véhicule sanitaire léger"
+          ],
+          [
+            "TRAJET:TAXI",
+            "Trajet — Taxi"
+          ],
+          [
+            "TRAJET:TRANSPORTEUR_SANITAIRE",
+            "Trajet — Transporteur Sanitaire"
+          ],
+          [
+            "TRAJET:AUTRE",
+            "Trajet — Autre"
+          ],
+          [
+            "ETABLISSEMENT_FICTIF",
+            "Etablissement fictif"
+          ]
+        ]
+      },
+      "values_source_type": "static-list"
     }
   ],
   "points_of_interest": null,
   "position": null,
-  "public_uuid": null,
+  "public_uuid_prefix": null,
   "show_in_getting_started": false,
   "tabs": [],
   "width": "fixed"

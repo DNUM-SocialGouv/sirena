@@ -41,7 +41,7 @@ const loadAgentsByEntite = async (): Promise<Map<string, Agent[]>> => {
 /**
  * Builds the context shared by every family and by the graph builder.
  */
-export const buildSeedContext = async (fakerSeed: number | null): Promise<SeedContext> => {
+export const buildSeedContext = async (fakerSeed: number | null, referenceDate?: Date): Promise<SeedContext> => {
   const [refs, entites, agentsByEntite] = await Promise.all([
     loadReferentials(),
     resolveArsEntites(),
@@ -49,10 +49,10 @@ export const buildSeedContext = async (fakerSeed: number | null): Promise<SeedCo
   ]);
 
   return {
-    faker: buildFaker(fakerSeed),
+    faker: buildFaker(fakerSeed, referenceDate),
     refs,
     entites,
     agentsByEntite,
-    now: new Date(),
+    now: referenceDate ?? new Date(),
   };
 };

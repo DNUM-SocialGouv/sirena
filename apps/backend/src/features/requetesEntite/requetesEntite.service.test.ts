@@ -23,8 +23,11 @@ import {
   getOtherEntitesAffected,
   getPrefixedFileName,
   getRequeteEntiteById,
+  getRequeteEntiteStatutId,
   getRequetesEntite,
   hasAccessToRequete,
+  reopenRequeteForEntite,
+  setStatusRequete,
   updatePrioriteRequete,
   updateRequete,
   updateRequeteDeclarant,
@@ -87,7 +90,13 @@ vi.mock('archiver', () => {
 });
 
 import type { Readable } from 'node:stream';
-import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import {
+  REQUETE_ETAPE_STATUT_TYPES,
+  REQUETE_ETAPE_TYPES,
+  REQUETE_STATUT_TYPES,
+  REQUETE_UPDATE_FIELDS,
+} from '@sirena/common/constants';
+import { sseEventManager } from '../../helpers/sse.js';
 import { getFileStream } from '../../libs/minio.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
@@ -114,6 +123,9 @@ vi.mock('../../libs/prisma.js', () => ({
     },
     requeteEtape: {
       findFirst: vi.fn(),
+    },
+    situation: {
+      findUnique: vi.fn(),
     },
     situationEntite: {
       findFirst: vi.fn(),
@@ -589,6 +601,28 @@ describe('requetesEntite.service', () => {
     });
   });
 
+  describe('getRequeteEntiteStatutId', () => {
+    it('reads the status through the composite key of the requete and the entity', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
+        statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+      } as unknown as Awaited<ReturnType<typeof prisma.requeteEntite.findUnique>>);
+
+      const result = await getRequeteEntiteStatutId({ requeteId: 'REQ', entiteId: 'e1' });
+
+      expect(result).toBe(REQUETE_STATUT_TYPES.CLOTUREE);
+      expect(prisma.requeteEntite.findUnique).toHaveBeenCalledWith({
+        where: { requeteId_entiteId: { requeteId: 'REQ', entiteId: 'e1' } },
+        select: { statutId: true },
+      });
+    });
+
+    it('returns null when the entity is not affected to the requete', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(null);
+
+      await expect(getRequeteEntiteStatutId({ requeteId: 'REQ', entiteId: 'other' })).resolves.toBeNull();
+    });
+  });
+
   describe('getOtherEntitesAffected', () => {
     it('should return other entites affected by the requete', async () => {
       const mockOtherEntite = {
@@ -880,7 +914,7 @@ describe('requetesEntite.service', () => {
         estVictime: false,
         estVictimeInformee: null,
         victimeInformeeCommentaire: '',
-        veutGarderAnonymat: false,
+        veutGarderAnonymat: 'NON',
         commentaire: '',
         autrePersonnes: '',
         ageId: null,
@@ -959,7 +993,7 @@ describe('requetesEntite.service', () => {
         estVictime: false,
         estVictimeInformee: null,
         victimeInformeeCommentaire: '',
-        veutGarderAnonymat: false,
+        veutGarderAnonymat: 'NON',
         commentaire: '',
         autrePersonnes: '',
         ageId: null,
@@ -1032,7 +1066,7 @@ describe('requetesEntite.service', () => {
       estVictime: false,
       estVictimeInformee: null,
       victimeInformeeCommentaire: '',
-      veutGarderAnonymat: false,
+      veutGarderAnonymat: 'NON',
       commentaire: '',
       autrePersonnes: '',
       ageId: null,
@@ -1172,7 +1206,7 @@ describe('requetesEntite.service', () => {
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
           participantDeId: 'req123',
-          veutGarderAnonymat: false,
+          veutGarderAnonymat: 'NON',
           estHandicapee: null,
           estVictimeInformee: null,
           victimeInformeeCommentaire: '',
@@ -1203,7 +1237,7 @@ describe('requetesEntite.service', () => {
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
           participantDeId: 'req123',
-          veutGarderAnonymat: false,
+          veutGarderAnonymat: 'NON',
           estHandicapee: null,
           estVictimeInformee: null,
           victimeInformeeCommentaire: '',
@@ -1247,7 +1281,7 @@ describe('requetesEntite.service', () => {
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
           participantDeId: 'req123',
-          veutGarderAnonymat: false,
+          veutGarderAnonymat: 'NON',
           estHandicapee: null,
           estVictimeInformee: null,
           victimeInformeeCommentaire: '',
@@ -1282,12 +1316,12 @@ describe('requetesEntite.service', () => {
         adresse: mockAdresse,
         ageId: 'age-adulte',
         dateNaissance: new Date('1940-06-15'),
-        veutGarderAnonymat: true,
-        estHandicapee: false,
-        estVictimeInformee: true,
+        veutGarderAnonymat: 'OUI' as const,
+        estHandicapee: 'NON' as const,
+        estVictimeInformee: 'OUI' as const,
         victimeInformeeCommentaire: 'commentaire informee',
         commentaire: 'autres précisions',
-        aAutrePersonnes: true,
+        aAutrePersonnes: 'OUI' as const,
         autrePersonnes: 'un enfant',
       };
       vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteWithoutDeclarant);
@@ -1305,12 +1339,12 @@ describe('requetesEntite.service', () => {
           participantDeId: 'req123',
           ageId: 'age-adulte',
           dateNaissance: new Date('1940-06-15'),
-          veutGarderAnonymat: true,
-          estHandicapee: false,
-          estVictimeInformee: true,
+          veutGarderAnonymat: 'OUI',
+          estHandicapee: 'NON',
+          estVictimeInformee: 'OUI',
           victimeInformeeCommentaire: 'commentaire informee',
           commentaire: 'autres précisions',
-          aAutrePersonnes: true,
+          aAutrePersonnes: 'OUI',
           autrePersonnes: 'un enfant',
           identite: {
             create: {
@@ -1371,7 +1405,7 @@ describe('requetesEntite.service', () => {
         estVictime: false,
         estVictimeInformee: null,
         victimeInformeeCommentaire: '',
-        veutGarderAnonymat: false,
+        veutGarderAnonymat: 'NON',
         commentaire: '',
         autrePersonnes: '',
         ageId: null,
@@ -1380,7 +1414,7 @@ describe('requetesEntite.service', () => {
         lienAutrePrecision: null,
         declarantDeId: 'req123',
         participantDeId: null,
-        aAutrePersonnes: false,
+        aAutrePersonnes: 'NON',
         createdAt: timestamp,
         updatedAt: timestamp,
         isTuteur: null,
@@ -1436,7 +1470,7 @@ describe('requetesEntite.service', () => {
       estVictime: false,
       estVictimeInformee: null,
       victimeInformeeCommentaire: '',
-      veutGarderAnonymat: false,
+      veutGarderAnonymat: 'NON',
       commentaire: '',
       autrePersonnes: '',
       ageId: null,
@@ -1445,7 +1479,7 @@ describe('requetesEntite.service', () => {
       lienAutrePrecision: null,
       declarantDeId: 'req123',
       participantDeId: null,
-      aAutrePersonnes: false,
+      aAutrePersonnes: 'NON',
       createdAt: new Date('2024-01-01T10:00:00Z'),
       updatedAt: new Date('2024-01-01T10:00:00Z'),
       isTuteur: null,
@@ -1575,6 +1609,93 @@ describe('requetesEntite.service', () => {
         }),
       );
     });
+
+    it('clears the answers sent back as "Non renseigné"', async () => {
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        ...mockRequeteEntite.requete,
+        participant: { id: 'participant123', identite: null },
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+
+      await updateRequeteParticipant('req123', {
+        estHandicapee: null,
+        consentCommuniquerIdentite: null,
+        estVictimeInformee: null,
+        aAutrePersonnes: null,
+        mesureProtection: null,
+      });
+
+      expect(prisma.requete.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            participant: expect.objectContaining({
+              update: expect.objectContaining({
+                estHandicapee: null,
+                veutGarderAnonymat: null,
+                estVictimeInformee: null,
+                aAutrePersonnes: null,
+                mesureProtection: null,
+              }),
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('persists an explicit "Non renseigné" answer without collapsing it to null', async () => {
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        ...mockRequeteEntite.requete,
+        participant: { id: 'participant123', identite: null },
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+
+      await updateRequeteParticipant('req123', {
+        estHandicapee: 'NON_RENSEIGNE',
+        consentCommuniquerIdentite: 'NON_RENSEIGNE',
+        estVictimeInformee: 'NON_RENSEIGNE',
+        aAutrePersonnes: 'NON_RENSEIGNE',
+        mesureProtection: 'NON_RENSEIGNE',
+      });
+
+      expect(prisma.requete.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            participant: expect.objectContaining({
+              update: expect.objectContaining({
+                estHandicapee: 'NON_RENSEIGNE',
+                veutGarderAnonymat: 'NON_RENSEIGNE',
+                estVictimeInformee: 'NON_RENSEIGNE',
+                aAutrePersonnes: 'NON_RENSEIGNE',
+                mesureProtection: 'NON_RENSEIGNE',
+              }),
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('reports a conflict with the server state when identite updatedAt does not match', async () => {
+      const serverUpdatedAt = new Date('2024-01-01T12:00:00.000Z');
+      const participant = { id: 'participant123', identite: { id: 'identite123', updatedAt: serverUpdatedAt } };
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        ...mockRequeteEntite.requete,
+        participant,
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+
+      await expect(
+        updateRequeteParticipant(
+          'req123',
+          { nom: 'Updated Name' },
+          { participant: { updatedAt: new Date('2024-01-01T10:00:00.000Z').toISOString() } },
+        ),
+      ).rejects.toMatchObject({
+        message: 'The participant identity has been modified by another user.',
+        cause: { serverData: participant, serverUpdatedAt: serverUpdatedAt.toISOString() },
+      });
+
+      expect(prisma.requete.update).not.toHaveBeenCalled();
+    });
   });
 
   describe('closeRequeteForEntite', () => {
@@ -1696,6 +1817,7 @@ describe('requetesEntite.service', () => {
           requeteEtapeId: null,
           faitSituationId: null,
           demarchesEngageesId: null,
+          requeteMessageId: null,
           canDelete: true,
           scanStatus: 'PENDING',
           sanitizeStatus: 'PENDING',
@@ -1719,6 +1841,7 @@ describe('requetesEntite.service', () => {
           requeteEtapeId: null,
           faitSituationId: null,
           demarchesEngageesId: null,
+          requeteMessageId: null,
           canDelete: true,
           scanStatus: 'PENDING',
           sanitizeStatus: 'PENDING',
@@ -1795,6 +1918,7 @@ describe('requetesEntite.service', () => {
           requeteEtapeId: null,
           faitSituationId: null,
           demarchesEngageesId: null,
+          requeteMessageId: null,
         },
         data: { requeteEtapeId: 'etape123' },
       });
@@ -2099,6 +2223,7 @@ describe('requetesEntite.service', () => {
           requeteEtapeId: null,
           faitSituationId: null,
           demarchesEngageesId: null,
+          requeteMessageId: null,
           canDelete: true,
           scanStatus: 'PENDING',
           sanitizeStatus: 'PENDING',
@@ -2171,6 +2296,7 @@ describe('requetesEntite.service', () => {
           requeteEtapeId: null,
           faitSituationId: null,
           demarchesEngageesId: null,
+          requeteMessageId: null,
         },
         data: { requeteEtapeId: 'etape123' },
       });
@@ -2197,6 +2323,172 @@ describe('requetesEntite.service', () => {
         },
         changedById: 'user123',
       });
+    });
+
+    it('emits a single closed event, only once the transaction is committed', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
+        { id: 'reason123', label: 'Reason 123' },
+      ]);
+
+      const events: string[] = [];
+      const mockEtape = {
+        id: 'etape123',
+        nom: 'Clôture',
+        estPartagee: true,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
+        requeteId: 'req123',
+        entiteId: 'ent123',
+        createdAt: new Date('2024-01-01T10:00:00Z'),
+      };
+
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        events.push('transaction:start');
+        const mockTx = {
+          ...prismaMock,
+          requeteEtape: { ...prismaMock.requeteEtape, create: vi.fn().mockResolvedValue(mockEtape) },
+          requeteEntite: {
+            ...prismaMock.requeteEntite,
+            findUnique: vi.fn().mockResolvedValue(mockRequeteEntite),
+            update: vi.fn().mockResolvedValue({ ...mockRequeteEntite, statutId: REQUETE_STATUT_TYPES.CLOTUREE }),
+          },
+        } as typeof prismaMock;
+        const result = await cb(mockTx);
+        events.push('transaction:committed');
+        return result;
+      });
+      vi.mocked(sseEventManager.emitRequeteUpdated).mockImplementation(() => {
+        events.push('sse:emit');
+      });
+
+      await closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2024-01-01');
+
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledTimes(1);
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledWith({
+        requeteId: 'req123',
+        entiteId: 'ent123',
+        field: REQUETE_UPDATE_FIELDS.CLOSED,
+      });
+      expect(events).toEqual(['transaction:start', 'transaction:committed', 'sse:emit']);
+    });
+
+    it('emits no event when the transaction is rolled back', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
+        { id: 'reason123', label: 'Reason 123' },
+      ]);
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        const mockTx = {
+          ...prismaMock,
+          requeteEtape: { ...prismaMock.requeteEtape, create: vi.fn().mockResolvedValue({ id: 'etape123' }) },
+          requeteEntite: {
+            ...prismaMock.requeteEntite,
+            update: vi.fn().mockRejectedValue(new Error('DB_FAILURE')),
+          },
+        } as typeof prismaMock;
+        return cb(mockTx);
+      });
+
+      await expect(closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2024-01-01')).rejects.toThrow(
+        'DB_FAILURE',
+      );
+
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
+      expect(createChangeLog).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('reopenRequeteForEntite', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      // Earlier suites may leave unconsumed `mockResolvedValueOnce` values behind.
+      vi.mocked(prisma.requeteEntite.findUnique).mockReset();
+      vi.mocked(prisma.$transaction).mockReset();
+    });
+
+    it('should throw error if requeteEntite is not found', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(null);
+
+      await expect(reopenRequeteForEntite('req123', 'ent123', 'user123')).rejects.toThrow('REQUETE_NOT_FOUND');
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
+    });
+
+    it('should throw error if requete is not closed for entity', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+
+      await expect(reopenRequeteForEntite('req123', 'ent123', 'user123')).rejects.toThrow('REQUETE_NOT_CLOSED');
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
+    });
+
+    it('emits a single reopened event, only once the transaction is committed', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockClosedRequeteEntite);
+
+      const events: string[] = [];
+      const mockEtape = {
+        id: 'etape-reopen',
+        nom: 'Requête rouverte le 01/01/2024',
+        type: REQUETE_ETAPE_TYPES.REOPEN,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        requeteId: 'req123',
+        entiteId: 'ent123',
+        createdAt: new Date('2024-01-01T10:00:00Z'),
+      };
+      const requeteEntiteUpdate = vi
+        .fn()
+        .mockResolvedValue({ ...mockClosedRequeteEntite, statutId: REQUETE_STATUT_TYPES.EN_COURS });
+
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        events.push('transaction:start');
+        const mockTx = {
+          ...prismaMock,
+          requeteEtape: { ...prismaMock.requeteEtape, create: vi.fn().mockResolvedValue(mockEtape) },
+          requeteEntite: { ...prismaMock.requeteEntite, update: requeteEntiteUpdate },
+        } as typeof prismaMock;
+        const result = await cb(mockTx);
+        events.push('transaction:committed');
+        return result;
+      });
+      vi.mocked(sseEventManager.emitRequeteUpdated).mockImplementation(() => {
+        events.push('sse:emit');
+      });
+
+      const result = await reopenRequeteForEntite('req123', 'ent123', 'user123');
+
+      expect(result).toEqual({
+        etapeId: 'etape-reopen',
+        reopenedAt: '2024-01-01T10:00:00.000Z',
+        etape: mockEtape,
+      });
+      expect(requeteEntiteUpdate).toHaveBeenCalledWith({
+        where: { requeteId_entiteId: { requeteId: 'req123', entiteId: 'ent123' } },
+        data: { statutId: REQUETE_STATUT_TYPES.EN_COURS },
+      });
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledTimes(1);
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledWith({
+        requeteId: 'req123',
+        entiteId: 'ent123',
+        field: REQUETE_UPDATE_FIELDS.REOPENED,
+      });
+      expect(events).toEqual(['transaction:start', 'transaction:committed', 'sse:emit']);
+      expect(createChangeLog).toHaveBeenCalledWith({
+        entity: 'RequeteEntite',
+        entityId: 'req123:ent123',
+        action: ChangeLogAction.UPDATED,
+        before: { statutId: REQUETE_STATUT_TYPES.CLOTUREE },
+        after: { statutId: REQUETE_STATUT_TYPES.EN_COURS },
+        changedById: 'user123',
+      });
+    });
+
+    it('emits no event when the transaction is rolled back', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockClosedRequeteEntite);
+      vi.mocked(prisma.$transaction).mockRejectedValueOnce(new Error('DB_FAILURE'));
+
+      await expect(reopenRequeteForEntite('req123', 'ent123', 'user123')).rejects.toThrow('DB_FAILURE');
+
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
+      expect(createChangeLog).not.toHaveBeenCalled();
     });
   });
 
@@ -3429,6 +3721,136 @@ describe('requetesEntite.service', () => {
       // Should not add any new entities
       expect(mockTx.situationEntite.upsert).not.toHaveBeenCalled();
     });
+
+    describe('optimistic lock on updateRequeteSituation', () => {
+      const requeteId = 'req1';
+      const situationId = 'sit1';
+      const userTopEntiteId = 'root1';
+      const serverUpdatedAt = new Date('2024-01-01T12:00:00.000Z');
+      const staleUpdatedAt = new Date('2024-01-01T10:00:00.000Z').toISOString();
+
+      const buildRequeteWithSituation = () =>
+        ({
+          id: requeteId,
+          situations: [{ id: situationId, faits: [], updatedAt: serverUpdatedAt }],
+        }) as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+
+      const fullSituation = {
+        id: situationId,
+        updatedAt: serverUpdatedAt,
+        numerosSignalement: '',
+        situationEntites: [{ entite: { id: 'ent1' } }],
+      };
+
+      const emptySituationData = {} as Parameters<typeof updateRequeteSituation>[2];
+
+      beforeEach(() => {
+        // clearAllMocks leaves the `*Once` queues seeded by the surrounding tests in place.
+        vi.clearAllMocks();
+        vi.mocked(prisma.requete.findUnique).mockReset();
+        vi.mocked(prisma.requeteEntite.findMany).mockReset();
+        vi.mocked(prisma.situation.findUnique).mockReset();
+        vi.mocked(prisma.$transaction).mockReset();
+        vi.mocked(buildEntitesTraitement).mockReset();
+        vi.mocked(getEntiteAscendanteInfo).mockReset();
+      });
+
+      it('reports a conflict with the enriched server situation when updatedAt does not match', async () => {
+        vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(buildRequeteWithSituation());
+        vi.mocked(prisma.situation.findUnique).mockResolvedValueOnce(
+          fullSituation as unknown as Awaited<ReturnType<typeof prisma.situation.findUnique>>,
+        );
+        vi.mocked(buildEntitesTraitement).mockResolvedValueOnce([{ entiteId: 'ent1' }] as unknown as Awaited<
+          ReturnType<typeof buildEntitesTraitement>
+        >);
+
+        await expect(
+          updateRequeteSituation(
+            requeteId,
+            situationId,
+            emptySituationData,
+            userTopEntiteId,
+            'user1',
+            undefined,
+            undefined,
+            { situation: { updatedAt: staleUpdatedAt } },
+          ),
+        ).rejects.toMatchObject({
+          message: 'The situation has been modified by another user.',
+          cause: {
+            serverData: { ...fullSituation, traitementDesFaits: { entites: [{ entiteId: 'ent1' }] } },
+            serverUpdatedAt: serverUpdatedAt.toISOString(),
+          },
+        });
+      });
+
+      it('does not write anything when the situation was modified by another user', async () => {
+        vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(buildRequeteWithSituation());
+        vi.mocked(prisma.situation.findUnique).mockResolvedValueOnce(
+          fullSituation as unknown as Awaited<ReturnType<typeof prisma.situation.findUnique>>,
+        );
+        vi.mocked(buildEntitesTraitement).mockResolvedValueOnce(
+          [] as unknown as Awaited<ReturnType<typeof buildEntitesTraitement>>,
+        );
+
+        await expect(
+          updateRequeteSituation(
+            requeteId,
+            situationId,
+            emptySituationData,
+            userTopEntiteId,
+            'user1',
+            undefined,
+            undefined,
+            { situation: { updatedAt: staleUpdatedAt } },
+          ),
+        ).rejects.toThrow('The situation has been modified by another user.');
+
+        expect(prisma.$transaction).not.toHaveBeenCalled();
+      });
+
+      it('updates the situation when the controls updatedAt matches the server one', async () => {
+        const mockTx = createMockTx({
+          situation: {
+            findUnique: vi.fn().mockResolvedValue({ id: situationId, requeteId }),
+            update: vi.fn().mockResolvedValue({}),
+          },
+          situationEntite: {
+            findMany: vi.fn().mockResolvedValue([{ entiteId: 'ent1' }]),
+            deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+            upsert: vi.fn().mockResolvedValue({}),
+          },
+          requeteEntite: {
+            findMany: vi.fn().mockResolvedValue([{ entiteId: userTopEntiteId }]),
+            updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+          },
+          requete: {
+            findUnique: vi.fn().mockResolvedValue({ id: requeteId, situations: [] }),
+          },
+        });
+
+        vi.mocked(getEntiteAscendanteInfo).mockResolvedValue({ entiteId: userTopEntiteId, level: 1 });
+        vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(buildRequeteWithSituation());
+        vi.mocked(prisma.requeteEntite.findMany).mockResolvedValueOnce([]);
+        vi.mocked(prisma.$transaction).mockImplementationOnce(async (callback) => {
+          return callback(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+        });
+
+        await updateRequeteSituation(
+          requeteId,
+          situationId,
+          { traitementDesFaits: { entites: [{ entiteId: 'ent1' }] } } as Parameters<typeof updateRequeteSituation>[2],
+          userTopEntiteId,
+          'user1',
+          undefined,
+          undefined,
+          { situation: { updatedAt: serverUpdatedAt.toISOString() } },
+        );
+
+        expect(prisma.situation.findUnique).not.toHaveBeenCalled();
+        expect(mockTx.situation.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: situationId } }));
+      });
+    });
   });
 
   describe('enrichSituationWithTraitementDesFaits', () => {
@@ -3828,6 +4250,71 @@ describe('requetesEntite.service', () => {
       await expect(updateStatusRequete('req123', 'ent123', REQUETE_STATUT_TYPES.EN_COURS)).resolves.toMatchObject({
         statutId: REQUETE_STATUT_TYPES.EN_COURS,
       });
+    });
+
+    it('emits a single status event once the status is written', async () => {
+      vi.clearAllMocks();
+      const events: string[] = [];
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteEntite.update).mockImplementationOnce((() => {
+        events.push('db:update');
+        return Promise.resolve({ ...mockRequeteEntite, statutId: REQUETE_STATUT_TYPES.CLOTUREE });
+      }) as unknown as typeof prisma.requeteEntite.update);
+      vi.mocked(sseEventManager.emitRequeteUpdated).mockImplementation(() => {
+        events.push('sse:emit');
+      });
+
+      await updateStatusRequete('req123', 'ent123', REQUETE_STATUT_TYPES.CLOTUREE);
+
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledTimes(1);
+      expect(sseEventManager.emitRequeteUpdated).toHaveBeenCalledWith({
+        requeteId: 'req123',
+        entiteId: 'ent123',
+        field: REQUETE_UPDATE_FIELDS.STATUS,
+      });
+      expect(events).toEqual(['db:update', 'sse:emit']);
+    });
+  });
+
+  describe('setStatusRequete', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      vi.mocked(safeSyncRequetePriseEnChargeToDematSocial).mockResolvedValue(undefined);
+    });
+
+    it('writes through the transaction client and never emits an SSE event', async () => {
+      const txUpdate = vi.fn().mockResolvedValue({ ...mockRequeteEntite, statutId: REQUETE_STATUT_TYPES.CLOTUREE });
+      const tx = { requeteEntite: { update: txUpdate, findUnique: vi.fn() } } as unknown as Parameters<
+        typeof setStatusRequete
+      >[3];
+
+      const result = await setStatusRequete('req123', 'ent123', REQUETE_STATUT_TYPES.CLOTUREE, tx);
+
+      expect(txUpdate).toHaveBeenCalledWith({
+        where: { requeteId_entiteId: { requeteId: 'req123', entiteId: 'ent123' } },
+        data: { statutId: REQUETE_STATUT_TYPES.CLOTUREE },
+      });
+      expect(prisma.requeteEntite.update).not.toHaveBeenCalled();
+      expect(prisma.requeteEntite.findUnique).not.toHaveBeenCalled();
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
+      expect(result.statutId).toBe(REQUETE_STATUT_TYPES.CLOTUREE);
+    });
+
+    it('writes the status without emitting an SSE event when no transaction is given', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+      });
+      vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.EN_COURS,
+      });
+
+      await setStatusRequete('req123', 'ent123', REQUETE_STATUT_TYPES.EN_COURS);
+
+      expect(prisma.requeteEntite.update).toHaveBeenCalledOnce();
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
+      expect(safeSyncRequetePriseEnChargeToDematSocial).toHaveBeenCalledWith('req123');
     });
   });
 

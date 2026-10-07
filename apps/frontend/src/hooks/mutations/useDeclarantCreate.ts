@@ -1,7 +1,8 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { client } from '@/lib/api/hc';
-import { handleRequestErrors } from '@/lib/api/tanstackQuery';
+import { notifySaveNetworkFailure } from '@/lib/api/saveError';
+import { HttpError, handleRequestErrors } from '@/lib/api/tanstackQuery';
 import type { DeclarantData } from '@/lib/declarant';
 
 export const useDeclarantCreate = () => {
@@ -21,6 +22,12 @@ export const useDeclarantCreate = () => {
       if (result?.id) {
         navigate({ to: '/request/$requestId', params: { requestId: result.id } });
       }
+    },
+    onError: (error: unknown) => {
+      if (error instanceof HttpError) {
+        return;
+      }
+      notifySaveNetworkFailure();
     },
   });
 

@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/react';
 import { ERROR_KIND } from '@sirena/common/constants';
 import { env } from '@/config/env';
 import { APP_VERSION } from '@/config/version.constant';
+import { isChunkLoadError } from '@/lib/preloadError';
 import { getLastKnownSentryUser } from '@/lib/sentryUser';
 import { getSessionId } from '@/lib/tracking';
 
@@ -34,6 +35,7 @@ if (env.SENTRY_ENABLED === 'true') {
     release: APP_VERSION,
     beforeSend: (event, hint) => {
       if (isBusinessHttpError(hint?.originalException)) return null;
+      if (isChunkLoadError(hint?.originalException)) return null;
 
       const sessionId = getSessionId();
       if (!event.tags?.sessionId) {

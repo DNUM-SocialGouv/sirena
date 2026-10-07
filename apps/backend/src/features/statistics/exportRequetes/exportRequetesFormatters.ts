@@ -1,3 +1,6 @@
+import type { ReponseOuiNonValue } from '@sirena/common/schemas';
+import { formatReponseOuiNon } from '@sirena/common/utils';
+
 export function deriveDepartmentCodeFromPostalCode(codePostal: string): string {
   if (!/^\d{5}$/.test(codePostal)) {
     return '';
@@ -36,6 +39,10 @@ export function formatExportBoolean(value: boolean | null | undefined): string {
   }
 
   return value ? 'Oui' : 'Non';
+}
+
+export function formatExportReponseOuiNon(reponse: ReponseOuiNonValue): string {
+  return formatReponseOuiNon(reponse) ?? '';
 }
 
 export function formatExportList(values: Array<string | null | undefined>): string {

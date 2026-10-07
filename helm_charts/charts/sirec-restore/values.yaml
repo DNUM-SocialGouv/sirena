@@ -10,11 +10,16 @@ enabled: false
 suspend: true
 schedule: "0 2 * * *"
 
-images:
-  # Client S3 générique (MinIO Client) pour récupérer le dump depuis le bucket.
-  s3: docker.io/minio/mc:latest
-  # Client MariaDB, version alignée sur le serveur (services-integration/…/mariadb).
-  mariadb: docker.io/mariadb:11.8.7
+# Image portant les deux clients du job, S3 et MariaDB (apps/sirec-restore/
+# Dockerfile). Le tag est remplacé au déploiement par celui de la version
+# déployée (generate_manifests.sh), comme pour le backend et le worker : la
+# valeur ci-dessous ne sert qu'aux rendus locaux du chart.
+#
+# Aucune image tierce n'est tirée à l'exécution du job : c'est délibéré, les
+# images minio/mc se sont évaporées de docker.io puis de quay.io, cassant la
+# restauration les deux fois.
+image: ghcr.io/dnum-socialgouv/sirena:latest-sirec-restore
+imagePullSecretsName: registry-secret
 
 # Secrets consommés, créés HORS de ce chart (external-secrets) :
 #   - migration-bucket-secret : credentials S3 du bucket sirena-migration-s3
@@ -26,6 +31,10 @@ mariadbSirecSecretName: mariadb-sirec-secret
 config:
   # Endpoint S3 OVH du bucket sirena-migration-s3 (resources/s3_migration.yaml).
   s3EndpointUrl: "https://s3.gra.io.cloud.ovh.net"
+  # Région du bucket, portée par la signature SigV4 : OVH rejette la requête
+  # (SignatureDoesNotMatch) dès que le périmètre signé ne correspond pas à
+  # l'endpoint. rclone ne la découvre pas, il faut donc la donner.
+  s3Region: "gra"
   # Nom de base à réécrire vers MARIADB_SIREC_DB pendant l'import (vide = aucune
   # réécriture ; "sirec_voo4" si l'on repasse sur dumps_preprod/).
   dumpSourceDb: ""
@@ -77,6 +86,7 @@ volumes:
   # Stockage du dump compressé (les dumps pèsent ~500 MiB).
   dump:
     sizeLimit: 5Gi
-  # Config mc + fichiers temporaires.
+  # Fichiers temporaires des deux containers (HOME de l'import, temp-dir rclone),
+  # la racine étant en lecture seule.
   tmp:
     sizeLimit: 128Mi

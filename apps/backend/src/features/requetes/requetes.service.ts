@@ -1,4 +1,6 @@
-import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { helpers } from '@sirena/backend-utils';
+import { ERROR_KIND, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { booleanToReponseOuiNon } from '@sirena/common/utils';
 import { sanitizeFilename, urlToStream } from '../../helpers/file.js';
 import type { FileProcessingJobData } from '../../jobs/queues/fileProcessing.queue.js';
 import { addFileProcessingJob } from '../../jobs/queues/fileProcessing.queue.js';
@@ -10,7 +12,7 @@ import { determineSource, generateRequeteId } from './functionalId.service.js';
 import type { CreateRequeteFromDematSocialDto, ElementLinked, File } from './requetes.type.js';
 
 export const getRequeteByDematSocialId = async (id: number) =>
-  await prisma.requete.findFirst({
+  await prisma.requete.findUnique({
     where: {
       dematSocialId: id,
     },
@@ -185,13 +187,13 @@ export const createRequeteFromDematSocial = async ({
               civilite: declarant.civiliteId ? { connect: { id: declarant.civiliteId } } : undefined,
             },
           },
-          estHandicapee: declarant.estHandicapee ?? null,
+          estHandicapee: booleanToReponseOuiNon(declarant.estHandicapee),
           estVictime: declarant.estVictime ?? null,
-          veutGarderAnonymat: declarant.veutGarderAnonymat ?? null,
+          veutGarderAnonymat: booleanToReponseOuiNon(declarant.veutGarderAnonymat),
           lienVictime: declarant.lienVictimeId ? { connect: { id: declarant.lienVictimeId } } : undefined,
           age: declarant.ageId ? { connect: { id: declarant.ageId } } : undefined,
           ...(isSamePerson && {
-            aAutrePersonnes: participant?.aAutrePersonnes ?? null,
+            aAutrePersonnes: booleanToReponseOuiNon(participant?.aAutrePersonnes),
             autrePersonnes: participant?.autrePersonnes ?? '',
           }),
           declarantDe: { connect: { id: requete.id } },
@@ -225,13 +227,13 @@ export const createRequeteFromDematSocial = async ({
                 civilite: participant.civiliteId ? { connect: { id: participant.civiliteId } } : undefined,
               },
             },
-            estHandicapee: participant.estHandicapee ?? null,
-            estVictimeInformee: participant.estVictimeInformee ?? null,
+            estHandicapee: booleanToReponseOuiNon(participant.estHandicapee),
+            estVictimeInformee: booleanToReponseOuiNon(participant.estVictimeInformee),
             commentaire: participant.commentaire ?? '',
             victimeInformeeCommentaire: participant.victimeInformeeCommentaire ?? '',
-            veutGarderAnonymat: participant.veutGarderAnonymat ?? null,
+            veutGarderAnonymat: booleanToReponseOuiNon(participant.veutGarderAnonymat),
             autrePersonnes: participant.autrePersonnes ?? '',
-            aAutrePersonnes: participant.aAutrePersonnes ?? null,
+            aAutrePersonnes: booleanToReponseOuiNon(participant.aAutrePersonnes),
             age: participant.ageId ? { connect: { id: participant.ageId } } : undefined,
             participantDe: { connect: { id: requete.id } },
           },
@@ -500,12 +502,13 @@ export const updateDateAndTypeRequete = async (
     const serverUpdatedAt = requete.updatedAt;
 
     if (serverUpdatedAt.getTime() !== clientUpdatedAt.getTime()) {
-      const error = new Error('CONFLICT: The participant identity has been modified by another user.');
-      (error as Error & { conflictData?: unknown }).conflictData = {
-        serverData: requete,
-        serverUpdatedAt: serverUpdatedAt.toISOString(),
-      };
-      throw error;
+      helpers.throwHTTPException409Conflict('The requete has been modified by another user.', {
+        cause: {
+          serverData: requete,
+          serverUpdatedAt: serverUpdatedAt.toISOString(),
+        },
+        kind: ERROR_KIND.BUSINESS,
+      });
     }
   }
 
