@@ -21,14 +21,9 @@ import { getLoggerStore, loggerStorage } from '../../libs/asyncLocalStorage.js';
 import { SIREC_MIGRATION_QUEUE_NAME, type SirecMigrationJobData } from '../queues/sirecMigration.queue.js';
 
 const SIREC_MIGRATION_CONCURRENCY = 50;
-
-let transcoInitPromise: Promise<void> | null = null;
+export const TRANSCO_INIT_RETRY_DELAY_MS = 30_000;
 
 const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> => {
-  if (!transcoInitPromise) {
-    transcoInitPromise = initAffectationTransco();
-  }
-  await transcoInitPromise;
   const { sirecId, deleteIfExists, migrateFiles, mockFilePath } = job.data;
 
   return loggerStorage.run(
@@ -105,13 +100,41 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
   );
 };
 
+/** Charge la transco d'affectation (en réessayant jusqu'au succès), puis démarre le worker. */
+const startWhenTranscoReady = async (
+  worker: Worker<SirecMigrationJobData>,
+  logger: ReturnType<typeof createDefaultLogger>,
+): Promise<void> => {
+  while (!worker.closing) {
+    try {
+      await initAffectationTransco();
+      break;
+    } catch (err) {
+      logger.error(
+        { err, retryInMs: TRANSCO_INIT_RETRY_DELAY_MS },
+        'SIREC affectation transco initialization failed, retrying',
+      );
+      await new Promise((resolve) => setTimeout(resolve, TRANSCO_INIT_RETRY_DELAY_MS));
+    }
+  }
+  if (worker.closing) return;
+  logger.info('SIREC affectation transco initialized, starting worker');
+  await worker.run();
+};
+
 export const createSirecMigrationWorker = (): Worker<SirecMigrationJobData> => {
   const worker = new Worker<SirecMigrationJobData>(SIREC_MIGRATION_QUEUE_NAME, processMigration, {
     connection,
     concurrency: SIREC_MIGRATION_CONCURRENCY,
+    // Démarré manuellement une fois la transco d'affectation chargée
+    autorun: false,
   });
 
   const eventLogger = createDefaultLogger().child({ context: 'sirec-migration-worker' });
+
+  startWhenTranscoReady(worker, eventLogger).catch((err) => {
+    eventLogger.error({ err }, 'SIREC migration worker stopped unexpectedly');
+  });
 
   worker.on('completed', (job) => {
     eventLogger.info({ jobId: job.id, sirecId: job.data.sirecId }, 'Migration job completed');
