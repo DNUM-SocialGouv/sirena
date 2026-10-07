@@ -1,6 +1,5 @@
 /**
- * Active options for links leaving the page for a previous one: arrow-left "back" links
- * and "Annuler" links.
+ * Active options for links that navigate back to a previous page, such as "retour" and "Annuler" links.
  *
  * By default TanStack Router flags a link as active when it targets a parent of the
  * current path, and then adds `aria-current="page"` (it cannot be overridden by props).

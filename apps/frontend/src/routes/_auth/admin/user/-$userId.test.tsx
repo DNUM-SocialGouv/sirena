@@ -118,7 +118,7 @@ describe('User edition page back link', () => {
     expect(backLink()).toHaveAttribute('href', '/admin/users/all?search=dupont');
   });
 
-  it('keeps the list it came from, whatever the role of the user', () => {
+  it('keeps the users list it came from, whatever the role of the user', () => {
     useListStateStore.getState().setListState('users', { to: '/admin/users/all', search: {} });
     mockUser(ROLES.PENDING);
 
@@ -128,10 +128,20 @@ describe('User edition page back link', () => {
     expect(backLink()).toHaveAttribute('href', '/admin/users/all');
   });
 
+  it('keeps the habilitation requests list it came from, whatever the role of the user', () => {
+    useListStateStore.getState().setListState('users', { to: '/admin/users', search: {} });
+    mockUser(ROLES.ENTITY_ADMIN);
+
+    render(<RouteComponent />);
+
+    expect(backLink()).toHaveTextContent('Liste des habilitations');
+    expect(backLink()).toHaveAttribute('href', '/admin/users');
+  });
+
   it.each([
     [ROLES.PENDING, 'Liste des habilitations', '/admin/users'],
     [ROLES.ENTITY_ADMIN, 'Liste des utilisateurs', '/admin/users/all'],
-  ])('without a remembered list (reload, new tab), infers it from the role %s', (roleId, label, href) => {
+  ])('when no list is remembered, infers it from the role: %s', (roleId, label, href) => {
     mockUser(roleId);
 
     render(<RouteComponent />);
@@ -148,8 +158,8 @@ describe('User edition page back link', () => {
     expect(backLink()).toHaveAttribute('data-exact', 'true');
   });
 
-  it('cancels to the same list as the back link when there is no history', async () => {
-    // A page opened directly (new tab) has no history to go back to.
+  it('navigates to the same list as the back link when there is no history', async () => {
+    // When there is no previous history entry, fall back to the back link destination.
     useListStateStore.getState().setListState('users', { to: '/admin/users/all', search: { search: 'dupont' } });
     mockUser(ROLES.WRITER);
 
