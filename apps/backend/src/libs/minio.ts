@@ -1,10 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
+import { Agent as HttpAgent } from 'node:http';
+import { Agent as HttpsAgent } from 'node:https';
 import path from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { Client, CopyDestinationOptions, CopySourceOptions } from 'minio';
 import { envVars } from '../config/env.js';
+import { createDefaultLogger } from '../helpers/pino.js';
+import { loggerStorage } from './asyncLocalStorage.js';
 import { createDecryptionStream, createEncryptionStream, type DecryptionParams } from './encryption.js';
 
 const {
@@ -16,16 +20,79 @@ const {
   S3_BUCKET_ROOT_DIR,
 } = envVars;
 
+// Without these bounds, a provider outage lets the backend pile up doomed requests until the
+// whole service goes down. See docs/postmortem-2026-10-07.md.
+const S3_MAX_SOCKETS = 32;
+const S3_SOCKET_TIMEOUT_MS = 30_000;
+const S3_MAX_RETRIES = 2;
+const S3_RETRY_BASE_DELAY_MS = 200;
+const S3_RETRY_MAX_DELAY_MS = 2_000;
+// With no explicit partSize, minio sizes its parts from the maximum object size (5 TiB) and
+// buffers roughly 550 MiB blocks in memory, far beyond the actual file.
+const S3_PART_SIZE = 16 * 1024 * 1024;
+
+const useSSL = S3_BUCKET_PORT === '443';
+const TransportAgent = useSSL ? HttpsAgent : HttpAgent;
+
 const minioClient = S3_BUCKET_ENDPOINT
   ? new Client({
       endPoint: S3_BUCKET_ENDPOINT,
       port: parseInt(S3_BUCKET_PORT, 10) || 443,
-      useSSL: S3_BUCKET_PORT === '443',
+      useSSL,
       accessKey: S3_BUCKET_ACCESS_KEY,
       secretKey: S3_BUCKET_SECRET_KEY,
       pathStyle: true,
+      partSize: S3_PART_SIZE,
+      transportAgent: new TransportAgent({
+        keepAlive: true,
+        maxSockets: S3_MAX_SOCKETS,
+        timeout: S3_SOCKET_TIMEOUT_MS,
+      }),
+      retryOptions: {
+        maximumRetryCount: S3_MAX_RETRIES,
+        baseDelayMs: S3_RETRY_BASE_DELAY_MS,
+        maximumDelayMs: S3_RETRY_MAX_DELAY_MS,
+      },
     })
   : null;
+
+const TRANSIENT_STORAGE_ERROR_CODES = new Set([
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'ETIMEDOUT',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'EPIPE',
+  'InternalError',
+  'RequestTimeout',
+  'ServiceUnavailable',
+  'SlowDown',
+]);
+
+// minio wraps retried 5xx responses in a generic Error carrying no usable code.
+const TRANSIENT_STORAGE_MESSAGE = /Retryable HTTP status: 5\d\d|Request failed after \d+ retr/;
+
+const hasStringCode = (err: Error): err is Error & { code: string } => 'code' in err && typeof err.code === 'string';
+
+// `seen` bounds the walk: a cyclic `cause` chain would otherwise overflow the stack.
+const isTransientStorageError = (err: unknown, seen: Set<unknown>): boolean => {
+  if (!(err instanceof Error) || seen.has(err)) {
+    return false;
+  }
+  seen.add(err);
+
+  if (hasStringCode(err) && TRANSIENT_STORAGE_ERROR_CODES.has(err.code)) {
+    return true;
+  }
+
+  if (TRANSIENT_STORAGE_MESSAGE.test(err.message)) {
+    return true;
+  }
+
+  return isTransientStorageError(err.cause, seen);
+};
+
+export const isStorageUnavailableError = (err: unknown): boolean => isTransientStorageError(err, new Set());
 
 export interface UploadResult {
   objectPath: string;
@@ -119,7 +186,12 @@ export const uploadFileToMinio = async (
       }),
     );
   } catch (err) {
-    await deleteFileFromMinio(objectPath).catch(() => {});
+    // Without its encryption metadata the object is permanently undecryptable: if the rollback
+    // fails too, we at least need to know an orphan is left on the bucket.
+    await deleteFileFromMinio(objectPath).catch((rollbackErr) => {
+      const logger = loggerStorage.getStore() ?? createDefaultLogger();
+      logger.warn({ err: rollbackErr, objectPath }, 'Failed to roll back orphaned S3 object');
+    });
     throw err;
   }
 

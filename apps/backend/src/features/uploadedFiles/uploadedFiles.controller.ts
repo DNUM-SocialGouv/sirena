@@ -1,9 +1,18 @@
-import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
-import { ERROR_KIND, ROLES_READ, ROLES_WRITE } from '@sirena/common/constants';
+import {
+  throwHTTPException400BadRequest,
+  throwHTTPException404NotFound,
+  throwHTTPException503ServiceUnavailable,
+} from '@sirena/backend-utils/helpers';
+import { API_ERROR_CODES, API_ERROR_MESSAGES, ERROR_KIND, ROLES_READ, ROLES_WRITE } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import { addFileProcessingJob } from '../../jobs/queues/fileProcessing.queue.js';
-import { deleteFileFromMinio, uploadFileToMinio } from '../../libs/minio.js';
+import {
+  deleteFileFromMinio,
+  isStorageUnavailableError,
+  type UploadResult,
+  uploadFileToMinio,
+} from '../../libs/minio.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import uploadedFileChangelogMiddleware from '../../middlewares/changelog/changelog.uploadedFile.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
@@ -58,11 +67,24 @@ const app = factoryWithLogs
 
       logger.info({ fileName: uploadedFile.fileName }, 'Uploaded file creation requested');
 
-      const {
-        objectPath,
-        rollback: rollbackMinio,
-        encryptionMetadata,
-      } = await uploadFileToMinio(uploadedFile.stream, uploadedFile.fileName, uploadedFile.contentType);
+      let upload: UploadResult;
+      try {
+        upload = await uploadFileToMinio(uploadedFile.stream, uploadedFile.fileName, uploadedFile.contentType);
+      } catch (err) {
+        // A storage outage must degrade attachments only: a retryable 503, not a 500 that
+        // reads as an application bug.
+        if (isStorageUnavailableError(err)) {
+          logger.error({ err }, 'Storage unavailable while uploading file');
+          throwHTTPException503ServiceUnavailable(API_ERROR_MESSAGES.STORAGE_UNAVAILABLE, {
+            res: c.res,
+            kind: ERROR_KIND.SYSTEM,
+            cause: { name: API_ERROR_CODES.STORAGE_UNAVAILABLE },
+          });
+        }
+        throw err;
+      }
+
+      const { objectPath, rollback: rollbackMinio, encryptionMetadata } = upload;
 
       const size = uploadedFile.getReadBytes();
 
