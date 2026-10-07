@@ -109,9 +109,20 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
     }
   };
 
-  const reportStream = reportFilePath ? fs.createWriteStream(reportFilePath, { flags: 'w' }) : undefined;
+  // Report lines are buffered in memory and flushed with an awaited write
+  // before each round of deletions: a write failure rejects (instead of an
+  // unhandled stream 'error' event) and aborts the run before any untraced
+  // deletion, and the buffer never grows past one page/batch of lines.
+  // Opened up front so a bad path fails before anything is deleted.
+  const reportHandle = reportFilePath ? await fs.promises.open(reportFilePath, 'w') : undefined;
+  const reportLines: string[] = [];
   const writeReport = (category: string, payload: unknown): void => {
-    reportStream?.write(`${JSON.stringify({ category, ...(payload as object) })}\n`);
+    if (reportHandle) reportLines.push(`${JSON.stringify({ category, ...(payload as object) })}\n`);
+  };
+  const flushReport = async (): Promise<void> => {
+    if (!reportHandle || reportLines.length === 0) return;
+    await reportHandle.write(reportLines.join(''));
+    reportLines.length = 0;
   };
 
   logger.info(
@@ -127,20 +138,6 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
     'Starting file integrity check',
   );
 
-  // Phase 1: list every S3 object once, as a `name -> size` map. Needed up
-  // front to classify DB rows as orphan/dangling while scanning them, and to
-  // detect S3-only orphans afterwards. Deliberately not an array of
-  // {name, size, lastModified} objects: at hundreds of thousands of objects,
-  // the per-entry Date is the single biggest avoidable memory cost, and
-  // nothing here needs it (see removeOrphanDbFiles / the orphan-s3 log below).
-  throwIfAborted('s3-list');
-  const s3StartedAt = Date.now();
-  const s3Sizes = await listMinioObjects();
-  logger.info({ count: s3Sizes.size, durationMs: Date.now() - s3StartedAt }, 'Listed objects from S3');
-
-  // Phase 2: page through `uploadedFile` with keyset pagination instead of loading
-  // the whole table at once. Orphan/dangling rows are removed page by page (when
-  // requested) so we never accumulate more than one page of full records in memory.
   const dbPaths = new Set<string>();
   let totalDbFiles = 0;
   let orphanCount = 0;
@@ -152,136 +149,155 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
   let danglingSize = 0;
   let removedDanglingCount = 0;
   const danglingSample: DbFile[] = [];
-
-  const dbStartedAt = Date.now();
-  let cursor: string | undefined;
-  for (;;) {
-    throwIfAborted('db-scan');
-    const page = await prisma.uploadedFile.findMany({
-      select: {
-        id: true,
-        fileName: true,
-        filePath: true,
-        safeFilePath: true,
-        size: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-        requeteId: true,
-        faitSituationId: true,
-        requeteEtapeId: true,
-        demarchesEngageesId: true,
-        requeteMessageId: true,
-      },
-      // Keyset pagination via an explicit `id > cursor` filter, NOT Prisma's
-      // `cursor`/`skip` option: that option requires the cursor row to still
-      // exist at query time, and rows from the current page get deleted
-      // (removeOrphans/removeDangling) before the next page is fetched — which
-      // would silently return an empty page and truncate the scan.
-      orderBy: { id: 'asc' },
-      take: dbBatchSize,
-      ...(cursor ? { where: { id: { gt: cursor } } } : {}),
-    });
-    if (page.length === 0) break;
-
-    totalDbFiles += page.length;
-    cursor = page[page.length - 1].id;
-
-    const pageOrphans: DbFile[] = [];
-    const pageDanglingCandidates: DbFile[] = [];
-
-    for (const f of page) {
-      dbPaths.add(f.filePath);
-      if (f.safeFilePath) dbPaths.add(f.safeFilePath);
-
-      if (isOrphan(f) && !isOldEnough(f)) {
-        recentUnlinkedCount++;
-      } else if (isOrphan(f)) {
-        orphanCount++;
-        orphanSize += f.size;
-        if (orphanSample.length < LOG_SAMPLE_SIZE) orphanSample.push(f);
-        writeReport('orphan-db', f);
-        pageOrphans.push(f);
-      }
-
-      if (!s3Sizes.has(f.filePath)) pageDanglingCandidates.push(f);
-    }
-
-    // `s3Sizes` is a snapshot taken before the scan started, while uploads
-    // write the S3 object *before* creating the DB row: a file uploaded during
-    // the scan has a row but no entry in the snapshot. Re-check each candidate
-    // against S3 so such rows are never reported (nor deleted) as dangling.
-    throwIfAborted('dangling-recheck');
-    const pageDangling = await confirmDangling(pageDanglingCandidates, logger);
-    for (const f of pageDangling) {
-      danglingCount++;
-      danglingSize += f.size;
-      if (danglingSample.length < LOG_SAMPLE_SIZE) danglingSample.push(f);
-      writeReport('dangling-db', f);
-    }
-
-    if (removeOrphans && pageOrphans.length > 0) {
-      removedOrphanDbCount += await removeOrphanDbFiles(pageOrphans, {
-        s3Sizes,
-        s3BatchSize: effectiveS3BatchSize,
-        dbBatchSize,
-        logger,
-        throwIfAborted,
-      });
-    }
-
-    if (removeDangling && pageDangling.length > 0) {
-      removedDanglingCount += await removeDbRowsByIds(
-        pageDangling.map((f) => f.id),
-        dbBatchSize,
-        logger,
-        throwIfAborted,
-        'dangling',
-      );
-    }
-
-    logger.info({ scanned: totalDbFiles }, 'DB scan progress');
-    if (page.length < dbBatchSize) break;
-  }
-  logger.info(
-    { count: totalDbFiles, durationMs: Date.now() - dbStartedAt },
-    'Finished scanning uploaded files from database',
-  );
-
-  // Phase 3: S3 objects with no matching DB row. Requires the full `dbPaths` set,
-  // so it can only run after the DB scan above has completed.
-  const s3OrphanCandidates: string[] = [];
-  for (const name of s3Sizes.keys()) {
-    if (!dbPaths.has(name)) s3OrphanCandidates.push(name);
-  }
-
-  // `dbPaths` is not a consistent snapshot: the keyset scan runs on random
-  // UUIDs, so a row inserted during the scan behind the cursor is never
-  // visited, and a `safeFilePath` written on an already-scanned row is missed.
-  // Re-check each candidate against the DB before treating it as an orphan.
-  throwIfAborted('orphan-s3-recheck');
-  const s3OrphanKeys = await confirmS3Orphans(s3OrphanCandidates, dbBatchSize, logger, throwIfAborted);
-
   let s3OrphanCount = 0;
   let s3OrphanSize = 0;
   const s3OrphanSample: { name: string; size: number }[] = [];
-  for (const name of s3OrphanKeys) {
-    const size = s3Sizes.get(name) ?? 0;
-    s3OrphanCount++;
-    s3OrphanSize += size;
-    if (s3OrphanSample.length < LOG_SAMPLE_SIZE) s3OrphanSample.push({ name, size });
-    writeReport('orphan-s3', { name, size });
-  }
-
   let removedOrphanS3Count = 0;
-  if (removeOrphans && s3OrphanKeys.length > 0) {
-    removedOrphanS3Count = await removeS3OnlyOrphans(s3OrphanKeys, effectiveS3BatchSize, logger, throwIfAborted);
-  }
 
-  if (reportStream) {
-    await new Promise<void>((resolve, reject) => {
-      reportStream.end((err: Error | null | undefined) => (err ? reject(err) : resolve()));
-    });
+  try {
+    // Phase 1: list every S3 object once, as a `name -> size` map. Needed up
+    // front to classify DB rows as orphan/dangling while scanning them, and to
+    // detect S3-only orphans afterwards. Deliberately not an array of
+    // {name, size, lastModified} objects: at hundreds of thousands of objects,
+    // the per-entry Date is the single biggest avoidable memory cost, and
+    // nothing here needs it (see removeOrphanDbFiles / the orphan-s3 log below).
+    throwIfAborted('s3-list');
+    const s3StartedAt = Date.now();
+    const s3Sizes = await listMinioObjects();
+    logger.info({ count: s3Sizes.size, durationMs: Date.now() - s3StartedAt }, 'Listed objects from S3');
+
+    // Phase 2: page through `uploadedFile` with keyset pagination instead of loading
+    // the whole table at once. Orphan/dangling rows are removed page by page (when
+    // requested) so we never accumulate more than one page of full records in memory.
+
+    const dbStartedAt = Date.now();
+    let cursor: string | undefined;
+    for (;;) {
+      throwIfAborted('db-scan');
+      const page = await prisma.uploadedFile.findMany({
+        select: {
+          id: true,
+          fileName: true,
+          filePath: true,
+          safeFilePath: true,
+          size: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          requeteId: true,
+          faitSituationId: true,
+          requeteEtapeId: true,
+          demarchesEngageesId: true,
+          requeteMessageId: true,
+        },
+        // Keyset pagination via an explicit `id > cursor` filter, NOT Prisma's
+        // `cursor`/`skip` option: that option requires the cursor row to still
+        // exist at query time, and rows from the current page get deleted
+        // (removeOrphans/removeDangling) before the next page is fetched — which
+        // would silently return an empty page and truncate the scan.
+        orderBy: { id: 'asc' },
+        take: dbBatchSize,
+        ...(cursor ? { where: { id: { gt: cursor } } } : {}),
+      });
+      if (page.length === 0) break;
+
+      totalDbFiles += page.length;
+      cursor = page[page.length - 1].id;
+
+      const pageOrphans: DbFile[] = [];
+      const pageDanglingCandidates: DbFile[] = [];
+
+      for (const f of page) {
+        dbPaths.add(f.filePath);
+        if (f.safeFilePath) dbPaths.add(f.safeFilePath);
+
+        if (isOrphan(f) && !isOldEnough(f)) {
+          recentUnlinkedCount++;
+        } else if (isOrphan(f)) {
+          orphanCount++;
+          orphanSize += f.size;
+          if (orphanSample.length < LOG_SAMPLE_SIZE) orphanSample.push(f);
+          writeReport('orphan-db', f);
+          pageOrphans.push(f);
+        }
+
+        if (!s3Sizes.has(f.filePath)) pageDanglingCandidates.push(f);
+      }
+
+      // `s3Sizes` is a snapshot taken before the scan started, while uploads
+      // write the S3 object *before* creating the DB row: a file uploaded during
+      // the scan has a row but no entry in the snapshot. Re-check each candidate
+      // against S3 so such rows are never reported (nor deleted) as dangling.
+      throwIfAborted('dangling-recheck');
+      const pageDangling = await confirmDangling(pageDanglingCandidates, logger);
+      for (const f of pageDangling) {
+        danglingCount++;
+        danglingSize += f.size;
+        if (danglingSample.length < LOG_SAMPLE_SIZE) danglingSample.push(f);
+        writeReport('dangling-db', f);
+      }
+      await flushReport();
+
+      if (removeOrphans && pageOrphans.length > 0) {
+        removedOrphanDbCount += await removeOrphanDbFiles(pageOrphans, {
+          s3Sizes,
+          s3BatchSize: effectiveS3BatchSize,
+          dbBatchSize,
+          logger,
+          throwIfAborted,
+        });
+      }
+
+      if (removeDangling && pageDangling.length > 0) {
+        removedDanglingCount += await removeDbRowsByIds(
+          pageDangling.map((f) => f.id),
+          dbBatchSize,
+          logger,
+          throwIfAborted,
+          'dangling',
+        );
+      }
+
+      logger.info({ scanned: totalDbFiles }, 'DB scan progress');
+      if (page.length < dbBatchSize) break;
+    }
+    logger.info(
+      { count: totalDbFiles, durationMs: Date.now() - dbStartedAt },
+      'Finished scanning uploaded files from database',
+    );
+
+    // Phase 3: S3 objects with no matching DB row. Requires the full `dbPaths` set,
+    // so it can only run after the DB scan above has completed.
+    const s3OrphanCandidates: string[] = [];
+    for (const name of s3Sizes.keys()) {
+      if (!dbPaths.has(name)) s3OrphanCandidates.push(name);
+    }
+
+    // `dbPaths` is not a consistent snapshot: the keyset scan runs on random
+    // UUIDs, so a row inserted during the scan behind the cursor is never
+    // visited, and a `safeFilePath` written on an already-scanned row is missed.
+    // Re-check each candidate against the DB before treating it as an orphan.
+    throwIfAborted('orphan-s3-recheck');
+    const s3OrphanKeys = await confirmS3Orphans(s3OrphanCandidates, dbBatchSize, logger, throwIfAborted);
+
+    for (const name of s3OrphanKeys) {
+      const size = s3Sizes.get(name) ?? 0;
+      s3OrphanCount++;
+      s3OrphanSize += size;
+      if (s3OrphanSample.length < LOG_SAMPLE_SIZE) s3OrphanSample.push({ name, size });
+      writeReport('orphan-s3', { name, size });
+      if (reportLines.length >= dbBatchSize) await flushReport();
+    }
+    await flushReport();
+
+    if (removeOrphans && s3OrphanKeys.length > 0) {
+      removedOrphanS3Count = await removeS3OnlyOrphans(s3OrphanKeys, effectiveS3BatchSize, logger, throwIfAborted);
+    }
+  } finally {
+    // Also on abort/throw: persist what was classified so far, then release
+    // the file. A flush failure here must not mask the original error.
+    await flushReport().catch((err) => logger.error({ err }, 'Failed to flush file integrity report'));
+    await reportHandle?.close();
   }
 
   logger.info(`Orphan DB files (unlinked to any entity): ${orphanCount} (${formatBytes(orphanSize)})`);

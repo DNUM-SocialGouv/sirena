@@ -1,4 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { deleteFilesFromMinio, listMinioObjects, statMinioObject } from '../../libs/minio.js';
 import { prisma } from '../../libs/prisma.js';
 import { runFileIntegrityCheck } from './fileIntegrity.service.js';
@@ -422,6 +425,66 @@ describe('fileIntegrity.service.ts', () => {
 
   it('rejects a negative orphanMinAgeHours', async () => {
     await expect(runFileIntegrityCheck({ orphanMinAgeHours: -1 })).rejects.toThrow(/orphanMinAgeHours/);
+  });
+
+  describe('report file', () => {
+    let tmpDir: string;
+    const readReport = (file: string) =>
+      fs
+        .readFileSync(file, 'utf-8')
+        .split('\n')
+        .filter(Boolean)
+        .map((l) => JSON.parse(l) as { category: string; id?: string; name?: string });
+
+    beforeEach(() => {
+      tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'file-integrity-'));
+    });
+    afterEach(() => {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    it('writes one NDJSON line per flagged file', async () => {
+      const reportFilePath = path.join(tmpDir, 'report.ndjson');
+      const orphan = makeFile({ id: 'o1', requeteId: null });
+      const dangling = makeFile({ id: 'd1' });
+      mockDbPages([[orphan, dangling]]);
+      mockedListMinioObjects.mockResolvedValue(
+        s3Map([
+          { name: orphan.filePath, size: 100 },
+          { name: 'uploads/ghost.pdf', size: 10 },
+        ]),
+      );
+
+      await runFileIntegrityCheck({ reportFilePath });
+
+      expect(readReport(reportFilePath)).toEqual([
+        expect.objectContaining({ category: 'orphan-db', id: 'o1' }),
+        expect.objectContaining({ category: 'dangling-db', id: 'd1' }),
+        { category: 'orphan-s3', name: 'uploads/ghost.pdf', size: 10 },
+      ]);
+    });
+
+    it('fails before deleting anything when the report file cannot be opened', async () => {
+      const reportFilePath = path.join(tmpDir, 'missing-dir', 'report.ndjson');
+
+      await expect(
+        runFileIntegrityCheck({ reportFilePath, removeOrphans: true, removeDangling: true }),
+      ).rejects.toThrow(/ENOENT/);
+      expect(mockedListMinioObjects).not.toHaveBeenCalled();
+      expect(mockedDeleteMany).not.toHaveBeenCalled();
+      expect(mockedDeleteFilesFromMinio).not.toHaveBeenCalled();
+    });
+
+    it('keeps the lines of already processed pages when the run fails midway', async () => {
+      const reportFilePath = path.join(tmpDir, 'report.ndjson');
+      mockedFindMany
+        .mockResolvedValueOnce([makeFile({ id: 'a' }), makeFile({ id: 'b' })] as never)
+        .mockRejectedValueOnce(new Error('db down'));
+
+      await expect(runFileIntegrityCheck({ reportFilePath, dbBatchSize: 2 })).rejects.toThrow('db down');
+
+      expect(readReport(reportFilePath).map((l) => l.id)).toEqual(['a', 'b']);
+    });
   });
 
   it('rejects a non-positive dbBatchSize', async () => {
