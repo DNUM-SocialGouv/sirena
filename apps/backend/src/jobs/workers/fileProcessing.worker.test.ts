@@ -203,4 +203,35 @@ describe('fileProcessing.worker.ts', () => {
 
     expect(row).not.toMatchObject({ status: 'FAILED', scanStatus: 'SCANNING' });
   });
+
+  it('rethrows an unexpected failure untouched, keeping the retry budget', async () => {
+    class ClamAvCrash extends Error {}
+    const crash = new ClamAvCrash('unexpected clamav crash');
+    vi.mocked(checkClamAvHealth).mockRejectedValue(crash);
+
+    await expect(runJob()).rejects.toBe(crash);
+
+    expect(row.status).toBe('FAILED');
+  });
+
+  it('releases the file for a retry when the object storage is unavailable', async () => {
+    // Message captured in production during the 2026-10-07 incident.
+    vi.mocked(checkClamAvHealth).mockRejectedValue(
+      new Error('Request failed after 1 retries: Error: Retryable HTTP status: 500'),
+    );
+
+    await expect(runJob()).rejects.toThrow('Retryable HTTP status: 500');
+
+    expect(row.status).toBe('PENDING');
+    expect(row.scanStatus).toBe('PENDING');
+  });
+
+  // A Postgres blip is not in the transient set, yet must not lose its retries the way the
+  // blanket UnrecoverableError did.
+  it('keeps the retry budget for a database failure', async () => {
+    const dbError = Object.assign(new Error("Can't reach database server"), { code: 'P1001' });
+    vi.mocked(checkClamAvHealth).mockRejectedValue(dbError);
+
+    await expect(runJob()).rejects.toBe(dbError);
+  });
 });
