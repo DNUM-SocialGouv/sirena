@@ -159,12 +159,14 @@ seul upload**, chacun étant un point de défaillance supplémentaire pendant l'
 exactement la pile observée dans les logs.
 
 Corollaire, indépendant de cet incident : sans taille connue, `minio` dimensionne ses parts
-multipart sur la taille d'objet maximale et bufferise en mémoire des blocs très supérieurs au
-fichier réel. Avec `MAX_FILE_SIZE = 200 Mo` (`config/files.constant.ts`) et une limite
+multipart sur la taille d'objet maximale (5 Tio) et bufferise en mémoire des blocs d'environ
+550 Mio, très supérieurs au fichier réel. Avec `MAX_FILE_SIZE = 200 Mo` (`config/files.constant.ts`) et une limite
 conteneur à 1500 Mi, le risque d'OOMKill est réel.
 
-**Leçon** : passer la taille à `putObject` quand elle est connue, ou borner explicitement
-`partSize`. Un paramètre optionnel omis a ici quadruplé l'exposition à la panne.
+**Leçon** : borner explicitement `partSize`. Un paramètre optionnel omis a ici quadruplé
+l'exposition à la panne et laissé un OOMKill latent. Passer la taille à `putObject` n'est en
+revanche pas la solution : dans `minio@8.0.7`, dès que `size <= partSize`, l'appel charge le
+fichier entier en mémoire.
 
 ### 4. Les appels sortants vers S3 ne sont pas bornés
 
@@ -259,8 +261,10 @@ Correctifs pérennes :
 - [ ] Rejouer les traitements de fichiers restés en `FAILED` sur la fenêtre de l'incident
 - [ ] Ajouter un circuit breaker et une limite de concurrence sur les dépendances sortantes
       (S3, ClamAV, DematSocial), dans un module partagé
-- [ ] Passer la taille à `putObject` ou borner `partSize`, pour supprimer le chemin
-      `findUploadId` et le risque d'OOM
+- [ ] Borner explicitement `partSize`, pour supprimer le risque d'OOM. Passer la taille à
+      `putObject` a été envisagé puis écarté : vérification faite dans la source de
+      `minio@8.0.7`, dès que `size <= partSize` l'appel fait `readAsBuffer` et charge le
+      fichier entier en mémoire
 - [ ] Nettoyer périodiquement les uploads multipart incomplets du bucket
 
 Observabilité et infrastructure :
@@ -268,7 +272,8 @@ Observabilité et infrastructure :
 - [ ] Alerter sur les redémarrages de pods et les CrashLoopBackOff (action non réalisée du
       post-mortem du 15/04/2026)
 - [ ] Exposer et alerter sur la durée et le taux d'erreur des appels sortants, par dépendance
-- [ ] Exposer la latence de boucle d'événements et le nombre de handles actifs
+- [ ] Alerter sur la latence de boucle d'événements et le nombre de handles actifs — déjà
+      exposés via `collectDefaultMetrics`, seule l'alerte manque
 - [ ] Mettre en place une sonde synthétique d'écriture/lecture S3
 - [ ] Sortir `prisma migrate deploy` du chemin de démarrage des pods (Job de pré-déploiement)
 - [ ] Passer les réplicas backend à 3 et ajouter un PodDisruptionBudget
