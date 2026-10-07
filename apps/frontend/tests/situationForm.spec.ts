@@ -55,7 +55,7 @@ async function createRequestWithSituation(page: Page, explication: string): Prom
   return expectRedirectToRequest(page);
 }
 
-test.describe('Situation form', () => {
+test.describe('Formulaire situation', () => {
   let context: BrowserContext;
   let page: Page;
   let authFile: string;
@@ -76,7 +76,7 @@ test.describe('Situation form', () => {
     }
   });
 
-  test('should create a request from a situation', async () => {
+  test("crée une requête à partir d'une situation", async () => {
     const explication = e2eTag();
     const entiteName = await openNewSituationForm(page);
 
@@ -100,7 +100,7 @@ test.describe('Situation form', () => {
     await expectDisplayed(section, 'Du 01/03/2026 au 15/03/2026');
   });
 
-  test('should add a second situation to an existing request', async () => {
+  test('ajoute une deuxième situation à une requête existante', async () => {
     const requestId = await createRequestWithSituation(page, e2eTag());
     await expect(page.getByTestId('situation-section')).toHaveCount(1);
 
@@ -115,7 +115,7 @@ test.describe('Situation form', () => {
     await expect(page.getByTestId('situation-section')).toHaveCount(2);
   });
 
-  test('should prefill and update an existing situation', async () => {
+  test('préremplit et met à jour une situation existante', async () => {
     const explication = e2eTag();
     const requestId = await createRequestWithSituation(page, explication);
 
@@ -137,7 +137,7 @@ test.describe('Situation form', () => {
     await expectNotDisplayed(section, explication);
   });
 
-  test('should require at least one administrative entity', async () => {
+  test('exige au moins une entité administrative', async () => {
     await openNewSituationForm(page);
     await page.getByTestId('situation-explication-faits').fill(e2eTag());
 
@@ -153,7 +153,7 @@ test.describe('Situation form', () => {
     await expect(page).toHaveURL(`${baseUrl}/request/create/situation`);
   });
 
-  test('should block the save on an invalid start date', async () => {
+  test("bloque l'enregistrement si la date de début est invalide", async () => {
     await openNewSituationForm(page);
     const dateDebut = page.getByTestId('situation-date-debut');
     await page.getByTestId('situation-explication-faits').fill(e2eTag());
