@@ -24,6 +24,10 @@ export default defineConfig({
   globalSetup: './tests/globalSetup.ts',
   use: {
     trace: 'on-first-retry',
+    // Dates are displayed in the browser timezone: align it with the app's users.
+    timezoneId: 'Europe/Paris',
+    // Optional delay (ms) between actions, to watch a run: PW_SLOW_MO=800
+    launchOptions: { slowMo: Number(process.env.PW_SLOW_MO) || 0 },
   },
 
   /* Configure projects for major browsers */

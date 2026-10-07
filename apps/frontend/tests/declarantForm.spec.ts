@@ -45,7 +45,7 @@ async function createRequestWithDeclarant(page: Page, nom: string): Promise<stri
   return expectRedirectToRequest(page);
 }
 
-test.describe('Déclarant form', () => {
+test.describe('Formulaire déclarant', () => {
   let context: BrowserContext;
   let page: Page;
   let authFile: string;
@@ -66,7 +66,7 @@ test.describe('Déclarant form', () => {
     }
   });
 
-  test('should create a request from a fully filled declarant', async () => {
+  test("crée une requête à partir d'un déclarant entièrement rempli", async () => {
     const nom = e2eTag();
     await openNewDeclarantForm(page);
 
@@ -97,7 +97,7 @@ test.describe('Déclarant form', () => {
     await expectDisplayed(section, `Précisions ${nom}`);
   });
 
-  test('should prefill and update an existing declarant', async () => {
+  test('préremplit et met à jour un déclarant existant', async () => {
     const nom = e2eTag();
     const requestId = await createRequestWithDeclarant(page, nom);
 
@@ -115,7 +115,7 @@ test.describe('Déclarant form', () => {
     await expectDisplayed(section, '0709080706');
   });
 
-  test('should block the save on invalid phone and email, then accept corrected values', async () => {
+  test("bloque l'enregistrement si le téléphone et l'e-mail sont invalides, puis accepte les valeurs corrigées", async () => {
     await openNewDeclarantForm(page);
     const telephone = page.getByTestId('declarant-telephone');
     const email = page.getByTestId('declarant-email');
@@ -142,7 +142,7 @@ test.describe('Déclarant form', () => {
     await expectDisplayed(page.getByTestId('declarant-section'), '+33601020304');
   });
 
-  test('should record that the declarant is the personne concernée', async () => {
+  test('enregistre que le déclarant est la personne concernée', async () => {
     await openNewDeclarantForm(page);
 
     await checkCheckbox(page, 'declarant-est-personne-concernee');
@@ -159,7 +159,7 @@ test.describe('Déclarant form', () => {
     );
   });
 
-  test('should warn that declarant data will be erased when checking "personne concernée"', async () => {
+  test('prévient que les données du déclarant seront effacées en cochant « personne concernée »', async () => {
     await openNewDeclarantForm(page);
     await page.getByTestId('declarant-nom').fill(e2eTag());
 
@@ -170,7 +170,7 @@ test.describe('Déclarant form', () => {
     );
   });
 
-  test('should not create a request when saving an empty declarant', async () => {
+  test('ne crée pas de requête en enregistrant un déclarant vide', async () => {
     await openNewDeclarantForm(page);
 
     await saveForm(page, 'declarant');

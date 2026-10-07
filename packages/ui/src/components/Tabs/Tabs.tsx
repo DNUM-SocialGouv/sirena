@@ -32,6 +32,8 @@ export type TabDescriptor = {
 };
 
 export type TabsProps = {
+  /** Accessible name of the tablist. */
+  label: string;
   tabs: TabDescriptor[];
   activeTab: number;
   onUpdateActiveTab: (newIndex: number) => void;
@@ -49,21 +51,23 @@ const TabsListItem = ({ tab, index, selected, onChangeTab }: TabsListItemProps) 
   const handleClick = useCallback(() => onChangeTab(index), [onChangeTab, index]);
 
   return (
-    <TabsItem
-      panelId={tab.tabPanelId}
-      selected={selected}
-      tabId={tab.tabId}
-      onTabClick={handleClick}
-      title={tab.title}
-      disabled={tab.disabled}
-      dataTestId={tab.dataTestId}
-    >
-      {tab.label}
-    </TabsItem>
+    <li role="presentation">
+      <TabsItem
+        panelId={tab.tabPanelId}
+        selected={selected}
+        tabId={tab.tabId}
+        onTabClick={handleClick}
+        title={tab.title}
+        disabled={tab.disabled}
+        dataTestId={tab.dataTestId}
+      >
+        {tab.label}
+      </TabsItem>
+    </li>
   );
 };
 
-const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children, className, ...props }: TabsProps) => {
+const TabsComponent = ({ label, tabs, activeTab, onUpdateActiveTab, children, className, ...props }: TabsProps) => {
   const panelRef = useRef<HTMLDivElement>(null);
 
   const [direction, setDirection] = useState<'left' | 'right'>('right');
@@ -106,7 +110,7 @@ const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children, className
         className="fr-tabs__list"
         // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: needed by the dsfr
         role="tablist"
-        aria-label="Informations et suivi de la requête"
+        aria-label={label}
         onKeyDownCapture={onKeyDownCapture}
       >
         {tabs.map((tab, index) => (

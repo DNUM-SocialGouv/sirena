@@ -160,7 +160,13 @@ export function RequestForm({ requestId, activeTab: activeTabProp = 0 }: Request
             hasUnsafeFiles={hasUnsafeFiles}
           />{' '}
         </div>
-        <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange} className={styles['request-tabs']}>
+        <Tabs
+          label="Informations et suivi de la requête"
+          tabs={tabs}
+          activeTab={activeTab}
+          onUpdateActiveTab={handleTabChange}
+          className={styles['request-tabs']}
+        >
           <div className="fr-container">
             {activeTab === 0 && <Details requestId={requestId} requestQuery={requestQuery} />}
             {activeTab === 1 && <Processing requestId={requestId} requestQuery={requestQuery} />}

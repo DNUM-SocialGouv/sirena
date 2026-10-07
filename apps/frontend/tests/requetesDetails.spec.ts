@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 import { autoCloseAnnouncements } from './utils/announcements';
 import { AUTH_CONFIGS, ensureAuthenticationFileExists } from './utils/authHelper';
@@ -12,7 +11,7 @@ import { baseUrl } from './utils/constants';
  * - User has ENTITY_ADMIN role
  */
 
-test.describe('Request Details Feature', () => {
+test.describe("Détail d'une requête", () => {
   let context: BrowserContext;
   let page: Page;
   let authFile: string;
@@ -56,43 +55,7 @@ test.describe('Request Details Feature', () => {
     }
   });
 
-  test('should navigate to request detail page from table', async () => {
+  test("ouvre le détail d'une requête depuis le tableau", async () => {
     await expect(page.getByRole('heading', { name: `Requête ${requestUuid}`, level: 1 })).toBeVisible();
-  });
-
-  test('should add a processing step and see it after reload', async () => {
-    const randomStepName = `test-${randomUUID()}`;
-    await page.getByRole('tab', { name: 'Traitement' }).click();
-
-    await page.getByRole('button', { name: 'Ajouter une étape' }).click();
-
-    const inputEtape = page
-      .getByTestId('step-nom-field')
-      .getByRole('textbox', { name: "Nom de l'étape (obligatoire)" });
-    await expect(inputEtape).toBeVisible();
-    await inputEtape.fill(randomStepName);
-
-    // Required on multi-entity requests, absent otherwise.
-    const shareStepGroup = page.getByTestId('step-partagee-choice');
-    if (await shareStepGroup.count()) {
-      await expect(shareStepGroup).toBeVisible();
-      await expect(shareStepGroup).toHaveRole('group');
-      await expect(shareStepGroup).toHaveAccessibleName(/Afficher l.étape pour les autres entités affectées/);
-      // DSFR hides the radio behind its label; click the label once the drawer has settled.
-      const shareStepNon = shareStepGroup.getByText('Non', { exact: true });
-      await shareStepNon.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(400);
-      await shareStepNon.click();
-    }
-
-    await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
-
-    await expect(page.getByRole('heading', { name: randomStepName, level: 3 })).toBeVisible({ timeout: 10000 });
-
-    await page.reload();
-
-    await page.getByRole('tab', { name: 'Traitement' }).click();
-
-    await expect(page.getByRole('heading', { name: randomStepName, level: 3 })).toBeVisible({ timeout: 10000 });
   });
 });

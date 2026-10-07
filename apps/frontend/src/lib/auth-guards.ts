@@ -44,7 +44,12 @@ export const checkNotAuth = (params: BeforeLoad, userStore: UserState) => {
 };
 
 export const checkRoles = (userStore: UserState, roles: string[]) => {
-  if (userStore.role && !roles.includes(userStore.role)) {
+  if (!userStore.role) {
+    throw redirect({
+      to: '/inactive',
+    });
+  }
+  if (!roles.includes(userStore.role)) {
     throw redirect({
       to: getFallbackByRole(userStore.role),
     });
@@ -52,7 +57,7 @@ export const checkRoles = (userStore: UserState, roles: string[]) => {
 };
 
 const checkActif = (userStore: UserState) => {
-  if (userStore.statutId !== 'ACTIF' && userStore.role !== ROLES.SUPER_ADMIN) {
+  if (userStore.statutId !== STATUT_TYPES.ACTIF && userStore.role !== ROLES.SUPER_ADMIN) {
     throw redirect({
       to: '/inactive',
     });

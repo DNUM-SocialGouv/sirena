@@ -276,15 +276,22 @@ export function DropdownTree({
   useEffect(() => {
     if (!isOpen) return;
     const panel = panelRef.current;
+    let frame = 0;
 
-    const onFocusOut = (e: FocusEvent) => {
-      if (hasFocusLeftMenu(e.relatedTarget as Node | null, panel, triggerRef.current)) {
-        close({ restoreFocus: false });
-      }
+    const onFocusOut = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const next = document.activeElement;
+        if (!next || next === document.body) return;
+        if (hasFocusLeftMenu(next, panel, triggerRef.current)) close({ restoreFocus: false });
+      });
     };
     panel?.addEventListener('focusout', onFocusOut);
 
-    return () => panel?.removeEventListener('focusout', onFocusOut);
+    return () => {
+      cancelAnimationFrame(frame);
+      panel?.removeEventListener('focusout', onFocusOut);
+    };
   }, [isOpen, panelRef, triggerRef, close]);
 
   const openOrClose = () => {

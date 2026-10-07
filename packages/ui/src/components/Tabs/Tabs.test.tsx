@@ -14,7 +14,7 @@ function TabsWrapper() {
   const [activeTab, setActiveTab] = useState(0);
   const panels = [<div key="1">Content 1</div>, <div key="2">Content 2</div>, <div key="3">Content 3</div>];
   return (
-    <Tabs tabs={tabsData} activeTab={activeTab} onUpdateActiveTab={setActiveTab}>
+    <Tabs label="Onglets de test" tabs={tabsData} activeTab={activeTab} onUpdateActiveTab={setActiveTab}>
       {panels[activeTab]}
     </Tabs>
   );
@@ -24,6 +24,18 @@ describe('Tabs Component', () => {
   it('renders first panel by default', () => {
     render(<TabsWrapper />);
     expect(screen.getByText('Content 1')).toBeInTheDocument();
+  });
+
+  it('wraps each tab in a presentation li inside the tablist (RGAA 7.1)', () => {
+    render(<TabsWrapper />);
+    const tablist = screen.getByRole('tablist', { name: 'Onglets de test' });
+    const items = Array.from(tablist.children);
+    expect(items).toHaveLength(tabsData.length);
+    for (const item of items) {
+      expect(item.tagName).toBe('LI');
+      expect(item).toHaveAttribute('role', 'presentation');
+      expect(item.firstElementChild).toHaveAttribute('role', 'tab');
+    }
   });
 
   it('clicking Tab 2 shows next panel', async () => {

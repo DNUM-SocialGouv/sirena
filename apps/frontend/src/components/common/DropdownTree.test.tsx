@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DropdownTree, type TreeNode } from './DropdownTree';
@@ -53,6 +53,10 @@ const renderTree = (selectedValues: string[], onChange = vi.fn()) => {
 };
 
 const openMenu = () => userEvent.click(screen.getByRole('button', { name: /Territoire/ }));
+const trigger = () => screen.getByRole('button', { name: /Territoire/ });
+const isOpen = () => trigger().getAttribute('aria-expanded') === 'true';
+const menuId = () => trigger().getAttribute('aria-controls') as string;
+const waitForFrame = () => act(() => new Promise((resolve) => requestAnimationFrame(() => resolve(undefined))));
 const expand = (label: string) => userEvent.click(screen.getByRole('button', { name: label }));
 const categoryName = (label: string) => `Toute la catégorie ${label}. ${SELECT_ALL_HINT}`;
 const category = (label: string) => screen.getByRole('checkbox', { name: categoryName(label) });
@@ -247,6 +251,36 @@ describe('DropdownTree', () => {
     await userEvent.tab();
 
     expect(category('France')).toHaveFocus();
+  });
+
+  it('stays open when a re-render drops the focus on the document', async () => {
+    renderTree([]);
+
+    await openMenu();
+    const panel = document.getElementById(menuId()) as HTMLElement;
+
+    fireEvent.focusOut(panel, { relatedTarget: document.body });
+    await waitForFrame();
+
+    expect(isOpen()).toBe(true);
+  });
+
+  it('closes once the focus reaches something outside the menu', async () => {
+    const outside = document.createElement('button');
+    document.body.append(outside);
+
+    renderTree([]);
+
+    await openMenu();
+    const panel = document.getElementById(menuId()) as HTMLElement;
+
+    outside.focus();
+    fireEvent.focusOut(panel, { relatedTarget: outside });
+    await waitForFrame();
+
+    expect(isOpen()).toBe(false);
+
+    outside.remove();
   });
 
   describe('structure DOM cible', () => {

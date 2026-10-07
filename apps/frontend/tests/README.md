@@ -47,6 +47,14 @@ E2E tests use Playwright browser context persistence to skip repeated ProConnect
  * - At least 1 requête exists in "/home"
  * - User has ENTITY_ADMIN role
 
+#### Processing (Traitement) E2E TESTS
+Specs: `processingSteps`, `processingCloture`, `processingAccuseReception`, `processingMultiEntite`.
+ * No seeded request is used nor modified: each spec creates its own manual request through the API (`utils/requeteApi.ts`) and closes it at the end (no API deletes a request). `processingSteps` also deletes the steps it adds after each test.
+ * Authenticated user (`E2E_ENTITY_ADMIN_USER_1`) has ENTITY_ADMIN role and an entity.
+ * `processingMultiEntite` runs in local target only: it also signs in as `user18@yopmail.com` (ENTITY_ADMIN, ARS Normandie) and `reader@yopmail.com` (READER, ARS Normandie) from the e2e seed, which have no ProConnect account.
+ * Scenario 20 (sending the acknowledgment of receipt) is skipped when the backend answers 503, i.e. runs with `TIPIMAIL_DISABLE_SENDING=true` (usual local setup). On integration, the e-mail goes to a disposable `@yopmail.com` address.
+ * Test files live in `tests/fixtures/` (a PDF, a PNG, and a ZIP for the rejected format case).
+
 ### How it works
 
 **Why:** ProConnect authentication is slow (~10-15s) and repetitive for each test. Instead of logging in every time, we save the browser state after the first login.

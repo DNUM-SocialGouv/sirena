@@ -1,3 +1,4 @@
+import { APP_ENVS } from '@sirena/common/constants';
 import * as client from 'openid-client';
 import { envVars } from '../../config/env.js';
 import { authorizationParams } from '../../config/openID.js';
@@ -6,7 +7,7 @@ import { createUser, getUserByEmail } from '../users/users.service.js';
 import type { UserInfo } from './auth.type.js';
 
 export const configOptions =
-  process.env.IS_HTTP_PROTOCOL_FORBIDDEN === 'True' ? undefined : { execute: [client.allowInsecureRequests] };
+  envVars.APP_ENV === APP_ENVS.LOCAL ? { execute: [client.allowInsecureRequests] } : undefined;
 
 let providerConfig: client.Configuration | null;
 
