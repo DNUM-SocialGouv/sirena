@@ -32,7 +32,13 @@ SDPSN-devops-charts:
     readinessProbe:
       enable: false
     livenessProbe:
-      enable: false
+      enable: true
+      initialDelaySeconds: 30
+      periodSeconds: 30
+      failureThreshold: 3
+      timeoutSeconds: 5
+      path: /health
+      port: 9090
 
     resources:
       limits:

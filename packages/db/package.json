@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "generate": "prisma generate --generator client",
+    "prebuild": "pnpm --workspace-root run db:client:generate",
     "migrate": "DISABLE_ERD=true prisma migrate dev",
     "studio": "prisma studio",
     "deploy": "prisma migrate deploy",
@@ -14,6 +15,7 @@
     "erd:check": "node scripts/erd/check.mjs",
     "lint": "biome check",
     "build": "tsc",
+    "build:types": "tsc",
     "typecheck": "tsc --build --noEmit"
   },
   "exports": {
@@ -47,7 +49,7 @@
     "@types/pg": "^8.23.1",
     "prisma": "catalog:",
     "prisma-erd-generator": "^3.2.1",
-    "puppeteer": "^25.11.0",
+    "puppeteer": "^25.12.0",
     "typescript": "catalog:"
   }
 }
