@@ -1,3 +1,4 @@
+import { APP_ENVS, type AppEnv } from '@sirena/common/constants';
 import type {
   Configuration,
   IDToken,
@@ -9,8 +10,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Entite, User } from '../../libs/prisma.js';
 import type { UserInfo } from './auth.type.js';
 
-vi.mock('../../config/env.js', () => ({
-  envVars: {
+const { baseEnvVars } = vi.hoisted(() => ({
+  baseEnvVars: {
     PC_DOMAIN: 'https://proconnect.example.com',
     PC_CLIENT_ID: 'test-client-id',
     PC_ID_TOKEN_SIGNED_RESPONSE_ALG: 'RS256',
@@ -18,6 +19,8 @@ vi.mock('../../config/env.js', () => ({
     FRONTEND_REDIRECT_LOGIN_URI: 'https://frontend.example.com/login',
   },
 }));
+
+vi.mock('../../config/env.js', () => ({ envVars: baseEnvVars }));
 
 vi.mock('../../config/openID.js', () => ({
   authorizationParams: {
@@ -35,8 +38,12 @@ vi.mock('../users/users.service.js', () => ({
   getUserByEmail: vi.fn(),
 }));
 
-async function loadAuthWithOpenIdMock() {
+async function loadAuthWithOpenIdMock(appEnv?: AppEnv) {
   vi.resetModules();
+
+  vi.doMock('../../config/env.js', () => ({
+    envVars: { ...baseEnvVars, APP_ENV: appEnv },
+  }));
 
   vi.doMock('openid-client', () => ({
     discovery: vi.fn(),
@@ -152,37 +159,32 @@ describe('auth.service', () => {
           userinfo_signed_response_alg: 'RS256',
         },
         'client-secret-post',
-        { execute: ['allowInsecureRequests'] },
+        undefined,
       );
     });
 
-    it('should initialize config without allowInsecureRequests when IS_HTTP_PROTOCOL_FORBIDDEN is True', async () => {
-      const originalEnv = process.env.IS_HTTP_PROTOCOL_FORBIDDEN;
-      process.env.IS_HTTP_PROTOCOL_FORBIDDEN = 'True';
-
+    it('should enable allowInsecureRequests when APP_ENV is local', async () => {
       const {
-        client,
-        auth: { getProviderConfig },
+        auth: { configOptions },
+      } = await loadAuthWithOpenIdMock(APP_ENVS.LOCAL);
+
+      expect(configOptions).toEqual({ execute: ['allowInsecureRequests'] });
+    });
+
+    it('should not enable allowInsecureRequests when APP_ENV is production', async () => {
+      const {
+        auth: { configOptions },
+      } = await loadAuthWithOpenIdMock(APP_ENVS.PRODUCTION);
+
+      expect(configOptions).toBeUndefined();
+    });
+
+    it('should not enable allowInsecureRequests when APP_ENV is not defined', async () => {
+      const {
+        auth: { configOptions },
       } = await loadAuthWithOpenIdMock();
 
-      const mockConfig = { id: 'test-config' } as unknown as Configuration;
-      vi.mocked(client.discovery).mockResolvedValueOnce(mockConfig);
-
-      const result = await getProviderConfig();
-
-      expect(result).toEqual(mockConfig);
-      expect(client.discovery).toHaveBeenCalledWith(
-        new URL('https://proconnect.example.com'),
-        'test-client-id',
-        {
-          id_token_signed_response_alg: 'RS256',
-          userinfo_signed_response_alg: 'RS256',
-        },
-        'client-secret-post',
-        undefined,
-      );
-
-      process.env.IS_HTTP_PROTOCOL_FORBIDDEN = originalEnv;
+      expect(configOptions).toBeUndefined();
     });
   });
 
