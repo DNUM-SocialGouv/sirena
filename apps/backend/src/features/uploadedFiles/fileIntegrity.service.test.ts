@@ -46,6 +46,7 @@ type DbFileFixture = {
   size: number;
   status: string;
   createdAt: Date;
+  updatedAt: Date;
   requeteId: string | null;
   faitSituationId: string | null;
   requeteEtapeId: string | null;
@@ -59,6 +60,7 @@ const makeFile = (overrides: Partial<DbFileFixture> & { id: string }): DbFileFix
   size: 100,
   status: 'COMPLETED',
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
+  updatedAt: new Date('2026-01-01T00:00:00.000Z'),
   requeteId: 'requete-1',
   faitSituationId: null,
   requeteEtapeId: null,
@@ -216,6 +218,43 @@ describe('fileIntegrity.service.ts', () => {
 
     expect(result.dbFilesWithoutS3).toBe(3);
     expect(table.remainingIds()).toEqual([]);
+  });
+
+  it('does not treat a recently uploaded, not yet attached file as an orphan', async () => {
+    // Uploads are created with every *Id at null and only attached on form
+    // submission: a fresh unlinked row is an in-flight upload, not an orphan.
+    const now = Date.now();
+    const hoursAgo = (h: number) => new Date(now - h * 60 * 60 * 1000);
+    const inFlight = makeFile({ id: 'in-flight', requeteId: null, createdAt: hoursAgo(1), updatedAt: hoursAgo(1) });
+    // SIREC migration backdates createdAt, but updatedAt still reflects the insert.
+    const backdated = makeFile({ id: 'backdated', requeteId: null, updatedAt: hoursAgo(1) });
+    const stale = makeFile({ id: 'stale', requeteId: null });
+    const files = [inFlight, backdated, stale];
+    mockDbPages([files]);
+    mockedListMinioObjects.mockResolvedValue(s3Map(files.map((f) => ({ name: f.filePath, size: f.size }))));
+    mockedDeleteMany.mockResolvedValue({ count: 1 } as never);
+
+    const result = await runFileIntegrityCheck({ removeOrphans: true });
+
+    expect(result.orphanDbFiles).toBe(1);
+    expect(mockedDeleteFilesFromMinio).toHaveBeenCalledWith(['uploads/stale.pdf']);
+    expect(mockedDeleteMany).toHaveBeenCalledWith({ where: { id: { in: ['stale'] } } });
+    expect(loggerMock.info).toHaveBeenCalledWith(expect.stringContaining('Skipped 2 unlinked DB files'));
+  });
+
+  it('treats every unlinked file as an orphan when orphanMinAgeHours is 0', async () => {
+    const fresh = makeFile({
+      id: 'fresh',
+      requeteId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(Date.now() - 1),
+    });
+    mockDbPages([[fresh]]);
+    mockedListMinioObjects.mockResolvedValue(s3Map([{ name: fresh.filePath, size: fresh.size }]));
+
+    const result = await runFileIntegrityCheck({ orphanMinAgeHours: 0 });
+
+    expect(result.orphanDbFiles).toBe(1);
   });
 
   it('removes orphan DB files and their S3 objects in batches when removeOrphans is set', async () => {
@@ -379,6 +418,10 @@ describe('fileIntegrity.service.ts', () => {
     await runFileIntegrityCheck({ s3BatchSize: 5000 });
 
     expect(loggerMock.warn).toHaveBeenCalledWith(expect.stringContaining('capping to 1000'));
+  });
+
+  it('rejects a negative orphanMinAgeHours', async () => {
+    await expect(runFileIntegrityCheck({ orphanMinAgeHours: -1 })).rejects.toThrow(/orphanMinAgeHours/);
   });
 
   it('rejects a non-positive dbBatchSize', async () => {

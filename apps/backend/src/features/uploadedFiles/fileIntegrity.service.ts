@@ -15,6 +15,14 @@ export type FileIntegrityResult = {
 export type FileIntegrityOptions = {
   removeOrphans?: boolean;
   removeDangling?: boolean;
+  /**
+   * Unlinked rows are only treated as orphans once both their `createdAt` and
+   * `updatedAt` are older than this many hours (default 24). Uploads are
+   * created unlinked and only attached on form submission, so a recent
+   * unlinked row is most likely an in-flight upload. `updatedAt` is checked
+   * too because the SIREC migration backdates `createdAt`. 0 disables it.
+   */
+  orphanMinAgeHours?: number;
   /** Page size for scanning `uploadedFile`, and chunk size for `deleteMany` calls. */
   dbBatchSize?: number;
   /** Chunk size for S3 `DeleteObjects` calls. Hard-capped at 1000 (API limit). */
@@ -27,6 +35,7 @@ export type FileIntegrityOptions = {
 const S3_DELETE_API_LIMIT = 1000;
 const DEFAULT_DB_BATCH_SIZE = 1000;
 const DEFAULT_S3_BATCH_SIZE = 1000;
+const DEFAULT_ORPHAN_MIN_AGE_HOURS = 24;
 // Number of example rows logged individually per category, to keep logs readable at scale.
 const LOG_SAMPLE_SIZE = 20;
 // Max concurrent `statObject` calls when re-checking dangling candidates.
@@ -40,6 +49,7 @@ type DbFile = {
   size: number;
   status: string;
   createdAt: Date;
+  updatedAt: Date;
   requeteId: string | null;
   faitSituationId: string | null;
   requeteEtapeId: string | null;
@@ -74,11 +84,19 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
     removeDangling = false,
     dbBatchSize = DEFAULT_DB_BATCH_SIZE,
     s3BatchSize = DEFAULT_S3_BATCH_SIZE,
+    orphanMinAgeHours = DEFAULT_ORPHAN_MIN_AGE_HOURS,
     reportFilePath,
   } = options ?? {};
 
   if (dbBatchSize <= 0) throw new Error('dbBatchSize must be a positive integer');
   if (s3BatchSize <= 0) throw new Error('s3BatchSize must be a positive integer');
+  if (!(orphanMinAgeHours >= 0)) throw new Error('orphanMinAgeHours must be a non-negative number');
+
+  // Fixed at the start of the run, so rows touched during the scan always fall
+  // on the "too recent" side of it.
+  const orphanCutoff = new Date(Date.now() - orphanMinAgeHours * 60 * 60 * 1000);
+  const isOldEnough = (f: DbFile): boolean =>
+    orphanMinAgeHours === 0 || (f.createdAt < orphanCutoff && f.updatedAt < orphanCutoff);
 
   const effectiveS3BatchSize = Math.min(s3BatchSize, S3_DELETE_API_LIMIT);
   if (s3BatchSize > S3_DELETE_API_LIMIT) {
@@ -97,7 +115,15 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
   };
 
   logger.info(
-    { removeOrphans, removeDangling, dbBatchSize, s3BatchSize: effectiveS3BatchSize, reportFilePath },
+    {
+      removeOrphans,
+      removeDangling,
+      dbBatchSize,
+      s3BatchSize: effectiveS3BatchSize,
+      orphanMinAgeHours,
+      orphanCutoff,
+      reportFilePath,
+    },
     'Starting file integrity check',
   );
 
@@ -121,6 +147,7 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
   let orphanSize = 0;
   let removedOrphanDbCount = 0;
   const orphanSample: DbFile[] = [];
+  let recentUnlinkedCount = 0;
   let danglingCount = 0;
   let danglingSize = 0;
   let removedDanglingCount = 0;
@@ -139,6 +166,7 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
         size: true,
         status: true,
         createdAt: true,
+        updatedAt: true,
         requeteId: true,
         faitSituationId: true,
         requeteEtapeId: true,
@@ -166,7 +194,9 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
       dbPaths.add(f.filePath);
       if (f.safeFilePath) dbPaths.add(f.safeFilePath);
 
-      if (isOrphan(f)) {
+      if (isOrphan(f) && !isOldEnough(f)) {
+        recentUnlinkedCount++;
+      } else if (isOrphan(f)) {
         orphanCount++;
         orphanSize += f.size;
         if (orphanSample.length < LOG_SAMPLE_SIZE) orphanSample.push(f);
@@ -261,6 +291,11 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
     );
   }
   if (removeOrphans) logger.info(`Removed ${removedOrphanDbCount}/${orphanCount} orphan DB files`);
+  if (recentUnlinkedCount > 0) {
+    logger.info(
+      `Skipped ${recentUnlinkedCount} unlinked DB files touched within the last ${orphanMinAgeHours}h (likely in-flight uploads)`,
+    );
+  }
 
   logger.info(`DB files missing from S3 (broken refs): ${danglingCount} (${formatBytes(danglingSize)})`);
   for (const [i, f] of danglingSample.entries()) {
