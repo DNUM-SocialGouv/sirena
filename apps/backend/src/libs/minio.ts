@@ -7,9 +7,11 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { Client, CopyDestinationOptions, CopySourceOptions } from 'minio';
 import { envVars } from '../config/env.js';
+import { recordDependencyCall } from '../features/monitoring/metrics.dependencies.js';
 import { createDefaultLogger } from '../helpers/pino.js';
 import { loggerStorage } from './asyncLocalStorage.js';
 import { createDecryptionStream, createEncryptionStream, type DecryptionParams } from './encryption.js';
+import { createDependencyGuard, isTransientDependencyError } from './resilience.js';
 
 const {
   S3_BUCKET_ACCESS_KEY,
@@ -30,6 +32,26 @@ const S3_PART_SIZE = 16 * 1024 * 1024;
 
 const useSSL = S3_BUCKET_PORT === '443';
 const TransportAgent = useSSL ? HttpsAgent : HttpAgent;
+
+const S3_METADATA_TIMEOUT_MS = 15_000;
+// 200 MB (MAX_FILE_SIZE) at ~150 kB/s: an upper bound, so a hung transfer cannot hold a slot forever.
+const S3_BODY_TIMEOUT_MS = 20 * 60 * 1000;
+const S3_MAX_CONCURRENT_CALLS = 32;
+const S3_MAX_QUEUED_CALLS = 64;
+const S3_QUEUE_TIMEOUT_MS = 10_000;
+const S3_CIRCUIT_FAILURE_THRESHOLD = 5;
+const S3_CIRCUIT_RESET_TIMEOUT_MS = 20_000;
+
+const s3Guard = createDependencyGuard({
+  name: 's3',
+  maxConcurrent: S3_MAX_CONCURRENT_CALLS,
+  maxQueued: S3_MAX_QUEUED_CALLS,
+  queueTimeoutMs: S3_QUEUE_TIMEOUT_MS,
+  failureThreshold: S3_CIRCUIT_FAILURE_THRESHOLD,
+  resetTimeoutMs: S3_CIRCUIT_RESET_TIMEOUT_MS,
+  isTransient: isTransientDependencyError,
+  onCall: recordDependencyCall,
+});
 
 const minioClient = S3_BUCKET_ENDPOINT
   ? new Client({
@@ -53,43 +75,8 @@ const minioClient = S3_BUCKET_ENDPOINT
     })
   : null;
 
-const TRANSIENT_STORAGE_ERROR_CODES = new Set([
-  'ECONNREFUSED',
-  'ECONNRESET',
-  'ETIMEDOUT',
-  'ENOTFOUND',
-  'EAI_AGAIN',
-  'EPIPE',
-  'InternalError',
-  'RequestTimeout',
-  'ServiceUnavailable',
-  'SlowDown',
-]);
-
-// minio wraps retried 5xx responses in a generic Error carrying no usable code.
-const TRANSIENT_STORAGE_MESSAGE = /Retryable HTTP status: 5\d\d|Request failed after \d+ retr/;
-
-const hasStringCode = (err: Error): err is Error & { code: string } => 'code' in err && typeof err.code === 'string';
-
-// `seen` bounds the walk: a cyclic `cause` chain would otherwise overflow the stack.
-const isTransientStorageError = (err: unknown, seen: Set<unknown>): boolean => {
-  if (!(err instanceof Error) || seen.has(err)) {
-    return false;
-  }
-  seen.add(err);
-
-  if (hasStringCode(err) && TRANSIENT_STORAGE_ERROR_CODES.has(err.code)) {
-    return true;
-  }
-
-  if (TRANSIENT_STORAGE_MESSAGE.test(err.message)) {
-    return true;
-  }
-
-  return isTransientStorageError(err.cause, seen);
-};
-
-export const isStorageUnavailableError = (err: unknown): boolean => isTransientStorageError(err, new Set());
+// Shared with the worker: resilience.ts counts an open circuit (DEPENDENCY_UNAVAILABLE) as transient.
+export const isStorageUnavailableError = isTransientDependencyError;
 
 export interface UploadResult {
   objectPath: string;
@@ -153,7 +140,11 @@ export const uploadFileToMinio = async (
   try {
     // minio ignores errors on the body stream: without awaiting the pipeline, a source failure hangs forever.
     await Promise.all([
-      minioClient.putObject(S3_BUCKET_NAME, objectPath, encryptStream, size, baseHeaders),
+      s3Guard.run(
+        'putObject',
+        () => minioClient.putObject(S3_BUCKET_NAME, objectPath, encryptStream, size, baseHeaders),
+        S3_BODY_TIMEOUT_MS,
+      ),
       encryption,
     ]);
   } catch (err) {
@@ -164,24 +155,24 @@ export const uploadFileToMinio = async (
   const encryptionMetadata = getMetadata();
 
   try {
-    await minioClient.copyObject(
-      new CopySourceOptions({ Bucket: S3_BUCKET_NAME, Object: objectPath }),
-      new CopyDestinationOptions({
-        Bucket: S3_BUCKET_NAME,
-        Object: objectPath,
-        MetadataDirective: 'REPLACE',
-        UserMetadata: {
-          filename: originalName,
-          uploadedfileid: fileId,
-          encrypted: 'true',
-          'encryption-iv': encryptionMetadata.iv,
-          'encryption-authtag': encryptionMetadata.authTag,
-        },
-        Headers: {
-          'Content-Type': resolvedContentType,
-        },
-      }),
-    );
+    const copySource = new CopySourceOptions({ Bucket: S3_BUCKET_NAME, Object: objectPath });
+    const copyDestination = new CopyDestinationOptions({
+      Bucket: S3_BUCKET_NAME,
+      Object: objectPath,
+      MetadataDirective: 'REPLACE',
+      UserMetadata: {
+        filename: originalName,
+        uploadedfileid: fileId,
+        encrypted: 'true',
+        'encryption-iv': encryptionMetadata.iv,
+        'encryption-authtag': encryptionMetadata.authTag,
+      },
+      Headers: {
+        'Content-Type': resolvedContentType,
+      },
+    });
+
+    await s3Guard.run('copyObject', () => minioClient.copyObject(copySource, copyDestination), S3_METADATA_TIMEOUT_MS);
   } catch (err) {
     await deleteFileFromMinio(objectPath).catch((rollbackErr) => {
       const logger = loggerStorage.getStore() ?? createDefaultLogger();
@@ -204,7 +195,7 @@ export const deleteFileFromMinio = async (filePath: string): Promise<void> => {
     throw new Error('MinIO client not initialized, check your S3_BUCKET_ENDPOINT');
   }
 
-  await minioClient.removeObject(S3_BUCKET_NAME, filePath);
+  await s3Guard.run('removeObject', () => minioClient.removeObject(S3_BUCKET_NAME, filePath), S3_METADATA_TIMEOUT_MS);
 };
 
 export interface RemoveObjectsError {
@@ -262,12 +253,20 @@ export const getFileStream = async (
     throw new Error('MinIO client not initialized, check your S3_BUCKET_ENDPOINT');
   }
 
-  const stat = await minioClient.statObject(S3_BUCKET_NAME, filePath);
+  const stat = await s3Guard.run(
+    'statObject',
+    () => minioClient.statObject(S3_BUCKET_NAME, filePath),
+    S3_METADATA_TIMEOUT_MS,
+  );
   const encrypted = stat.metaData?.encrypted === 'true';
   const contentType = stat.metaData?.['content-type'];
   const originalName = stat.metaData?.filename;
 
-  const stream = await minioClient.getObject(S3_BUCKET_NAME, filePath);
+  const stream = await s3Guard.run(
+    'getObject',
+    () => minioClient.getObject(S3_BUCKET_NAME, filePath),
+    S3_METADATA_TIMEOUT_MS,
+  );
 
   if (encrypted) {
     const params = decryptionParams ?? {
@@ -324,7 +323,7 @@ export const statMinioObject = async (filePath: string) => {
   if (!minioClient) {
     throw new Error('MinIO client not initialized, check your S3_BUCKET_ENDPOINT');
   }
-  return minioClient.statObject(S3_BUCKET_NAME, filePath);
+  return s3Guard.run('statObject', () => minioClient.statObject(S3_BUCKET_NAME, filePath), S3_METADATA_TIMEOUT_MS);
 };
 
 export const getFileBuffer = async (filePath: string, decryptionParams?: DecryptionParams): Promise<Buffer> => {
