@@ -9,9 +9,13 @@ import {
   type SaveFromSirecResult,
   saveFromSirec,
 } from '../../features/sirecMigration/sirecMigration.service.js';
-import { initAffectationTransco } from '../../features/sirecMigration/transco/affectation/affectation.transco.js';
+import {
+  ensureAffectationEntries,
+  initAffectationTransco,
+} from '../../features/sirecMigration/transco/affectation/affectation.transco.js';
 import { SirecDataError, SirecTranscoError } from '../../features/sirecMigration/transco/sirecTransco.error.js';
 import { transformSirecReclamation } from '../../features/sirecMigration/transformers/sirecMigration.transformer.js';
+import { collectAffectationSirecIds } from '../../features/sirecMigration/transformers/situation/sirecMigration.affectation.transformer.js';
 import { createDefaultLogger } from '../../helpers/pino.js';
 import { getLoggerStore, loggerStorage } from '../../libs/asyncLocalStorage.js';
 import { SIREC_MIGRATION_QUEUE_NAME, type SirecMigrationJobData } from '../queues/sirecMigration.queue.js';
@@ -51,6 +55,8 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
         );
         await deleteRequeteWithRelatedData(existingRequeteId);
       }
+
+      await ensureAffectationEntries(collectAffectationSirecIds(sirecData));
 
       let data: ReturnType<typeof transformSirecReclamation>;
       try {

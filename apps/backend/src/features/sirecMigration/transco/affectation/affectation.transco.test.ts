@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SirecTranscoError } from '../sirecTransco.error.js';
 import {
+  AFFECTATION_RELOAD_COOLDOWN_MS,
+  ensureAffectationEntries,
   filterArsEntiteIds,
   initAffectationTransco,
   SIREC_GROUP_MODE,
@@ -15,7 +17,7 @@ vi.mock('@sirena/db', () => ({
 
 const mockError = vi.hoisted(() => vi.fn());
 vi.mock('../../../../helpers/pino.js', () => ({
-  createDefaultLogger: () => ({ error: mockError }),
+  createDefaultLogger: () => ({ error: mockError, warn: vi.fn(), info: vi.fn() }),
 }));
 
 const ARS_NORMANDIE_ID = 'ars-normandie-dynamic-id';
@@ -417,6 +419,98 @@ describe('affectation.transco.ts', () => {
         expect((err as SirecTranscoError).idDico).toBe(9999);
         expect((err as SirecTranscoError).tableName).toBe('affectation');
       }
+    });
+  });
+
+  describe('ensureAffectationEntries — dynamic reload', () => {
+    const entitiesWithoutDau = () => makeAllRequiredEntities().filter((e) => e.id !== 'dau-id');
+
+    beforeEach(async () => {
+      const { prisma } = await import('@sirena/db');
+      vi.mocked(prisma.entite.findMany).mockReset();
+      vi.useRealTimers();
+    });
+
+    it('should resolve a service entity added after init', async () => {
+      const { prisma } = await import('@sirena/db');
+      await setupTransco(entitiesWithoutDau());
+      expect(() => transcodeAffectation(1115, SIREC_GROUP_MODE.ECRITURE)).toThrow(SirecTranscoError);
+
+      vi.mocked(prisma.entite.findMany).mockResolvedValueOnce(makeAllRequiredEntities() as never);
+      await ensureAffectationEntries([1115]);
+
+      expect(transcodeAffectation(1115, SIREC_GROUP_MODE.ECRITURE).situationEntiteIds).toContain('dau-id');
+      expect(prisma.entite.findMany).toHaveBeenCalledTimes(2);
+    });
+
+    it('should resolve a top-level entity added after init and register it as ARS', async () => {
+      const { prisma } = await import('@sirena/db');
+      await setupTransco(makeAllRequiredEntities().filter((e) => e.nomComplet !== 'ARS Normandie'));
+      expect(filterArsEntiteIds([ARS_NORMANDIE_ID])).toEqual([]);
+
+      vi.mocked(prisma.entite.findMany).mockResolvedValueOnce(makeAllRequiredEntities() as never);
+      await ensureAffectationEntries([693]);
+
+      expect(transcodeAffectation(693, SIREC_GROUP_MODE.ECRITURE).requeteEntiteIds).toEqual([ARS_NORMANDIE_ID]);
+      expect(filterArsEntiteIds([ARS_NORMANDIE_ID])).toEqual([ARS_NORMANDIE_ID]);
+    });
+
+    it('should not query the database when all entries are already known', async () => {
+      const { prisma } = await import('@sirena/db');
+      await setupTransco(makeAllRequiredEntities());
+
+      await ensureAffectationEntries([693, 1115]);
+
+      expect(prisma.entite.findMany).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not query the database for an id absent from the static transco table', async () => {
+      const { prisma } = await import('@sirena/db');
+      await setupTransco(makeAllRequiredEntities());
+
+      await ensureAffectationEntries([9999]);
+
+      expect(prisma.entite.findMany).toHaveBeenCalledTimes(1);
+    });
+
+    it('should query the database only once for concurrent calls', async () => {
+      const { prisma } = await import('@sirena/db');
+      await setupTransco(entitiesWithoutDau());
+
+      vi.mocked(prisma.entite.findMany).mockResolvedValue(makeAllRequiredEntities() as never);
+      await Promise.all([ensureAffectationEntries([1115]), ensureAffectationEntries([1115])]);
+
+      expect(prisma.entite.findMany).toHaveBeenCalledTimes(2);
+      expect(transcodeAffectation(1115, SIREC_GROUP_MODE.ECRITURE).situationEntiteIds).toContain('dau-id');
+    });
+
+    it('should not retry a still-missing entity before the cooldown has elapsed', async () => {
+      vi.useFakeTimers();
+      const { prisma } = await import('@sirena/db');
+      await setupTransco(entitiesWithoutDau());
+
+      vi.mocked(prisma.entite.findMany).mockResolvedValue(entitiesWithoutDau() as never);
+      await ensureAffectationEntries([1115]);
+      await ensureAffectationEntries([1115]);
+      expect(prisma.entite.findMany).toHaveBeenCalledTimes(2);
+
+      vi.advanceTimersByTime(AFFECTATION_RELOAD_COOLDOWN_MS);
+      await ensureAffectationEntries([1115]);
+      expect(prisma.entite.findMany).toHaveBeenCalledTimes(3);
+      expect(() => transcodeAffectation(1115, SIREC_GROUP_MODE.ECRITURE)).toThrow(SirecTranscoError);
+    });
+
+    it('should allow an immediate retry after a database failure', async () => {
+      const { prisma } = await import('@sirena/db');
+      await setupTransco(entitiesWithoutDau());
+
+      vi.mocked(prisma.entite.findMany).mockRejectedValueOnce(new Error('db down'));
+      await expect(ensureAffectationEntries([1115])).rejects.toThrow('db down');
+
+      vi.mocked(prisma.entite.findMany).mockResolvedValueOnce(makeAllRequiredEntities() as never);
+      await ensureAffectationEntries([1115]);
+
+      expect(transcodeAffectation(1115, SIREC_GROUP_MODE.ECRITURE).situationEntiteIds).toContain('dau-id');
     });
   });
 });
