@@ -17,8 +17,8 @@ export const useFileProcessingStatus = ({
   initialStatus,
 }: UseFileProcessingStatusOptions): FileProcessingStatus | null => {
   const [fileStatus, setFileStatus] = useState<FileProcessingStatus | null>(initialStatus);
+  const [pollingStopped, setPollingStopped] = useState(false);
   const initialPollDoneRef = useRef(false);
-  const pollingStoppedRef = useRef(false);
   const pollStartedAtRef = useRef<number | null>(null);
   const isComplete = getFileProcessingState(fileStatus).isComplete;
 
@@ -28,15 +28,15 @@ export const useFileProcessingStatus = ({
 
   const { isConnected: sseConnected } = useFileStatusSSE({
     fileId: fileId ?? '',
-    enabled: !!fileId && !pollingStoppedRef.current && !isComplete,
+    enabled: !!fileId && !pollingStopped && !isComplete,
     onStatusChange: handleSSEStatusChange,
   });
 
   const pollStatus = useCallback(async () => {
-    if (!fileId || pollingStoppedRef.current) return;
+    if (!fileId || pollingStopped) return;
 
     if (pollStartedAtRef.current !== null && Date.now() - pollStartedAtRef.current > MAX_POLL_DURATION_MS) {
-      pollingStoppedRef.current = true;
+      setPollingStopped(true);
       return;
     }
 
@@ -45,13 +45,13 @@ export const useFileProcessingStatus = ({
       setFileStatus(nextStatus);
     } catch (error) {
       if (error instanceof HttpError && error.status === 404) {
-        pollingStoppedRef.current = true;
+        setPollingStopped(true);
       }
     }
-  }, [fileId]);
+  }, [fileId, pollingStopped]);
 
   useEffect(() => {
-    if (!fileId || pollingStoppedRef.current || getFileProcessingState(fileStatus).isComplete || sseConnected) {
+    if (!fileId || pollingStopped || isComplete || sseConnected) {
       return;
     }
 
@@ -67,7 +67,7 @@ export const useFileProcessingStatus = ({
     const interval = setInterval(pollStatus, POLL_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [fileId, fileStatus, initialStatus, pollStatus, sseConnected]);
+  }, [fileId, initialStatus, isComplete, pollStatus, pollingStopped, sseConnected]);
 
   return fileStatus;
 };
