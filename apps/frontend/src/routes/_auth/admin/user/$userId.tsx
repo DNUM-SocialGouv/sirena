@@ -2,13 +2,12 @@ import Button from '@codegouvfr/react-dsfr/Button';
 import Select from '@codegouvfr/react-dsfr/Select';
 import { ROLES, type Role, STATUT_TYPES, type StatutType, statutTypes } from '@sirena/common/constants';
 import { getAssignableRoles } from '@sirena/common/utils';
-import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { z } from 'zod';
 import { usePatchUser } from '@/hooks/mutations/updateUser.hook';
 import { useUserById } from '@/hooks/queries/users.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
-import { useListStateStore } from '@/stores/listStateStore';
 import { useUserStore } from '@/stores/userStore';
 import './$userId.css';
 import { Toast } from '@sirena/ui';
@@ -75,8 +74,6 @@ function RouteComponent() {
   const navigate = useNavigate();
   const router = useRouter();
   const userStore = useUserStore();
-  const usersListState = useListStateStore((s) => s.states.users);
-  const usersListTo = usersListState?.to === '/admin/users/all' ? '/admin/users/all' : '/admin/users';
   const userQuery = useUserById(userId);
   const patchUser = usePatchUser();
   const { data: profile } = useQuery({ ...profileQueryOptions(), enabled: false });
@@ -171,128 +168,120 @@ function RouteComponent() {
       <div className="fr-mb-2w">
         <QueryStateHandler query={userQuery}>
           {({ data: user }) => (
-            <div>
-              <div className="fr-mb-2w">
-                <Link className="fr-link fr-mb-1w" to={usersListTo} search={usersListState?.search ?? {}}>
-                  <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span> Liste des
-                  utilisateurs
-                </Link>
-              </div>
-              <div className="user">
-                <h1>Modifier les informations de l'utilisateur</h1>
-                <div>
-                  <form onSubmit={handleSubmit}>
-                    <fieldset className="fr-fieldset">
-                      <legend className="fr-fieldset__legend">Identifiant de l'utilisateur</legend>
-                      <div className="fr-fieldset__content">
-                        <ReadOnlyField
-                          id={`${fieldId}-nom`}
-                          className="fr-mb-3w"
-                          label="Nom"
-                          hintText="Ce champ est en lecture seule."
-                          value={user.nom}
-                        />
-                      </div>
-                      <div className="fr-fieldset__content">
-                        <ReadOnlyField
-                          id={`${fieldId}-prenom`}
-                          className="fr-mb-3w"
-                          label="Prénom"
-                          hintText="Ce champ est en lecture seule."
-                          value={user.prenom}
-                        />
-                      </div>
-                    </fieldset>
-                    <fieldset className="fr-fieldset">
-                      <legend className="fr-fieldset__legend">Coordonnées de l'utilisateur</legend>
-                      <div className="fr-fieldset__content">
-                        <ReadOnlyField
-                          id={`${fieldId}-email`}
-                          label="Email"
-                          hintText="Ce champ est en lecture seule."
-                          value={user.email}
-                        />
-                      </div>
-                    </fieldset>
-                    <EntityHierarchySelector id={user.entiteId} setLevel={handleSetEntite} />
+            <div className="user">
+              <h1>Modifier les informations de l'utilisateur</h1>
+              <div>
+                <form onSubmit={handleSubmit}>
+                  <fieldset className="fr-fieldset">
+                    <legend className="fr-fieldset__legend">Identifiant de l'utilisateur</legend>
+                    <div className="fr-fieldset__content">
+                      <ReadOnlyField
+                        id={`${fieldId}-nom`}
+                        className="fr-mb-3w"
+                        label="Nom"
+                        hintText="Ce champ est en lecture seule."
+                        value={user.nom}
+                      />
+                    </div>
+                    <div className="fr-fieldset__content">
+                      <ReadOnlyField
+                        id={`${fieldId}-prenom`}
+                        className="fr-mb-3w"
+                        label="Prénom"
+                        hintText="Ce champ est en lecture seule."
+                        value={user.prenom}
+                      />
+                    </div>
+                  </fieldset>
+                  <fieldset className="fr-fieldset">
+                    <legend className="fr-fieldset__legend">Coordonnées de l'utilisateur</legend>
+                    <div className="fr-fieldset__content">
+                      <ReadOnlyField
+                        id={`${fieldId}-email`}
+                        label="Email"
+                        hintText="Ce champ est en lecture seule."
+                        value={user.email}
+                      />
+                    </div>
+                  </fieldset>
+                  <EntityHierarchySelector id={user.entiteId} setLevel={handleSetEntite} />
+                  <fieldset className="fr-fieldset">
+                    <Select
+                      className="fr-fieldset__content"
+                      label="Rôle*"
+                      disabled={profile?.id === userId}
+                      nativeSelectProps={{
+                        ...{ 'data-testid': 'user-role-select' },
+                        name: 'roleId',
+                        value: formData.roleId,
+                        onChange: (e) => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            roleId: e.target.value,
+                            statutId: e.target.value === ROLES.PENDING ? STATUT_TYPES.NON_RENSEIGNE : prev.statutId,
+                          }));
+                        },
+                        required: true,
+                      }}
+                    >
+                      <option value="" disabled>
+                        Sélectionnez une option
+                      </option>
+                      {filteredRoles.map(({ key, value }) => {
+                        return (
+                          <option key={key} value={key}>
+                            {value}
+                          </option>
+                        );
+                      })}
+                    </Select>
+                  </fieldset>
+                  {shouldShowStatut && (
                     <fieldset className="fr-fieldset">
                       <Select
                         className="fr-fieldset__content"
-                        label="Rôle*"
-                        disabled={profile?.id === userId}
+                        label="Statut*"
+                        state={validationErrors.statutId ? 'error' : 'default'}
+                        stateRelatedMessage={validationErrors.statutId}
                         nativeSelectProps={{
-                          ...{ 'data-testid': 'user-role-select' },
-                          name: 'roleId',
-                          value: formData.roleId,
+                          ...{ 'data-testid': 'user-statut-select' },
+                          name: 'statutId',
+                          value: formData.statutId,
                           onChange: (e) => {
-                            setFormData((prev) => ({
-                              ...prev,
-                              roleId: e.target.value,
-                              statutId: e.target.value === ROLES.PENDING ? STATUT_TYPES.NON_RENSEIGNE : prev.statutId,
-                            }));
+                            setFormData((prev) => ({ ...prev, statutId: e.target.value as StatutType }));
+                            if (validationErrors.statutId) {
+                              setValidationErrors((prev) => {
+                                const newErrors = { ...prev };
+                                delete newErrors.statutId;
+                                return newErrors;
+                              });
+                            }
                           },
                           required: true,
                         }}
                       >
-                        <option value="" disabled>
+                        <option value={STATUT_TYPES.NON_RENSEIGNE} disabled>
                           Sélectionnez une option
                         </option>
-                        {filteredRoles.map(({ key, value }) => {
-                          return (
-                            <option key={key} value={key}>
-                              {value}
-                            </option>
-                          );
-                        })}
+                        {Object.entries(statutTypes)
+                          .filter(([key]) => key !== STATUT_TYPES.NON_RENSEIGNE)
+                          .map(([key, value]) => {
+                            return (
+                              <option key={key} value={key}>
+                                {value}
+                              </option>
+                            );
+                          })}
                       </Select>
                     </fieldset>
-                    {shouldShowStatut && (
-                      <fieldset className="fr-fieldset">
-                        <Select
-                          className="fr-fieldset__content"
-                          label="Statut*"
-                          state={validationErrors.statutId ? 'error' : 'default'}
-                          stateRelatedMessage={validationErrors.statutId}
-                          nativeSelectProps={{
-                            ...{ 'data-testid': 'user-statut-select' },
-                            name: 'statutId',
-                            value: formData.statutId,
-                            onChange: (e) => {
-                              setFormData((prev) => ({ ...prev, statutId: e.target.value as StatutType }));
-                              if (validationErrors.statutId) {
-                                setValidationErrors((prev) => {
-                                  const newErrors = { ...prev };
-                                  delete newErrors.statutId;
-                                  return newErrors;
-                                });
-                              }
-                            },
-                            required: true,
-                          }}
-                        >
-                          <option value={STATUT_TYPES.NON_RENSEIGNE} disabled>
-                            Sélectionnez une option
-                          </option>
-                          {Object.entries(statutTypes)
-                            .filter(([key]) => key !== STATUT_TYPES.NON_RENSEIGNE)
-                            .map(([key, value]) => {
-                              return (
-                                <option key={key} value={key}>
-                                  {value}
-                                </option>
-                              );
-                            })}
-                        </Select>
-                      </fieldset>
-                    )}
-                    <div className="form-actions">
-                      <Button priority="secondary" onClick={handleBack} type="button">
-                        Annuler les modifications
-                      </Button>
-                      <SubmitButton isPending={patchUser.isPending} />
-                    </div>
-                  </form>
-                </div>
+                  )}
+                  <div className="form-actions">
+                    <Button priority="secondary" onClick={handleBack} type="button">
+                      Annuler les modifications
+                    </Button>
+                    <SubmitButton isPending={patchUser.isPending} />
+                  </div>
+                </form>
               </div>
             </div>
           )}

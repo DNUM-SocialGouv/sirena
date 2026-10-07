@@ -50,7 +50,7 @@ describe('getBreadCrumbItems', () => {
     });
 
     expect(items?.[1]).toEqual({ text: 'Requête RA-42', to: '/request/RA-42', current: false });
-    expect(items?.[2]).toMatchObject({ text: 'Situation', current: true });
+    expect(items?.[2]).toMatchObject({ text: 'Description de la situation', current: true });
   });
 
   it('roots the statistics page on the home page of the role', () => {

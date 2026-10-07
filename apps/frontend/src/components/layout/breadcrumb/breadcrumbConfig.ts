@@ -32,6 +32,8 @@ const rootTrail: Trail = (ctx) => (ctx.role === ROLES.SUPER_ADMIN ? [adminRoot] 
 // The admin area is a standalone section, whatever the role
 const adminTrail: Trail = () => [adminRoot];
 
+const SITUATION_LABEL = 'Description de la situation';
+
 const createRequestTrail: Trail = (ctx) => [...rootTrail(ctx), { text: 'Nouvelle requête', to: '/request/create' }];
 
 const requestTrail: Trail = (ctx) => [
@@ -86,7 +88,7 @@ const trails: Partial<Record<keyof FileRoutesById, Trail>> = {
     'Personne concernée',
     '/request/create/personne-concernee',
   ),
-  '/_auth/_user/request/create/situation': page(createRequestTrail, 'Situation', '/request/create/situation'),
+  '/_auth/_user/request/create/situation': page(createRequestTrail, SITUATION_LABEL, '/request/create/situation'),
 
   // Details and processing are tabs of the same page
   '/_auth/_user/request/$requestId/': requestTrail,
@@ -103,12 +105,12 @@ const trails: Partial<Record<keyof FileRoutesById, Trail>> = {
   ),
   '/_auth/_user/request/$requestId/situation/': page(
     requestTrail,
-    'Situation',
+    SITUATION_LABEL,
     (ctx) => `/request/${ctx.params.requestId}/situation`,
   ),
   '/_auth/_user/request/$requestId/situation/$situationId': page(
     requestTrail,
-    'Situation',
+    SITUATION_LABEL,
     (ctx) => `/request/${ctx.params.requestId}/situation/${ctx.params.situationId}`,
   ),
 
