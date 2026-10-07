@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import { Client, CopyDestinationOptions, CopySourceOptions } from 'minio';
 import { envVars } from '../config/env.js';
 import { createDecryptionStream, createEncryptionStream, type DecryptionParams } from './encryption.js';
@@ -74,8 +75,8 @@ export const uploadFileToMinio = async (
   // Create encryption stream
   const { stream: encryptStream, getMetadata } = createEncryptionStream();
 
-  sourceStream.on('error', (err) => encryptStream.destroy(err));
-  sourceStream.pipe(encryptStream);
+  // pipeline() avoids an uncaught stream error (process crash) when the source or putObject fails.
+  const encryption = pipeline(sourceStream, encryptStream);
 
   const resolvedContentType = contentType || 'application/octet-stream';
   const baseHeaders: Record<string, string> = {
@@ -86,9 +87,13 @@ export const uploadFileToMinio = async (
   };
 
   try {
-    await minioClient.putObject(S3_BUCKET_NAME, objectPath, encryptStream, size, baseHeaders);
+    // minio ignores errors on the body stream: without awaiting the pipeline, a source failure hangs forever.
+    await Promise.all([
+      minioClient.putObject(S3_BUCKET_NAME, objectPath, encryptStream, size, baseHeaders),
+      encryption,
+    ]);
   } catch (err) {
-    if (!sourceStream.destroyed) sourceStream.destroy(err as Error);
+    encryptStream.destroy(err as Error);
     throw err;
   }
 
