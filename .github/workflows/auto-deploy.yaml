@@ -134,6 +134,9 @@ jobs:
         run: pnpm install --frozen-lockfile --prefer-offline
         working-directory: apps/frontend
 
+      - name: Build shared packages
+        run: pnpm --filter @sirena/common build
+
       - name: Resolve Playwright version
         id: pw_version
         run: |
