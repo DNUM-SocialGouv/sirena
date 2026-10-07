@@ -150,6 +150,28 @@ describe('RiskAcknowledgementModal', () => {
     expect(confirm).toHaveAttribute('aria-disabled', 'true');
   });
 
+  it('confirms only once when the action synchronously triggers another confirmation', async () => {
+    const user = userEvent.setup();
+    renderModal();
+
+    await user.click(screen.getByRole('button', { name: 'Ouvrir' }));
+    const dialog = screen.getByRole('dialog');
+    const checkbox = within(dialog).getByRole('checkbox');
+    await user.click(checkbox);
+    const confirm = within(dialog).getByRole('button', { name: 'Télécharger malgré le risque' });
+
+    onConfirm.mockImplementationOnce(() => {
+      confirm.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    });
+
+    await user.click(confirm);
+
+    expect(onConfirm).toHaveBeenCalledOnce();
+    expect(concealModal).toHaveBeenCalledOnce();
+    expect(dialog).not.toHaveAttribute('open');
+    expect(checkbox).not.toBeChecked();
+  });
+
   it('resets acceptance when the user cancels', async () => {
     const user = userEvent.setup();
     renderModal();

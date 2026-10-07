@@ -34,7 +34,7 @@ export const RiskAcknowledgementModal = forwardRef<RiskAcknowledgementModalHandl
   const { registerTrigger } = useModalFocusRestore(modalIds);
   const [content, setContent] = useState<RiskAcknowledgementContent | null>(null);
   const [accepted, setAccepted] = useState(false);
-  const acceptedRef = useRef(false);
+  const acceptedRef = useRef(false); // State drives the UI; the ref blocks reentrant confirmation before React commits the reset.
   const onConfirmRef = useRef<(() => void) | null>(null);
 
   const resetAcceptance = useCallback(() => {
