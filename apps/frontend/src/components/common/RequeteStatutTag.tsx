@@ -1,10 +1,18 @@
 import Badge from '@codegouvfr/react-dsfr/Badge';
+import { REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
 import {
   requeteEtapeStatutBadges,
   requetePrioriteBadges,
   requeteStatutBadges,
   type StatutBadge,
 } from '@/utils/requeteStatutBadge.constant';
+import prioriteStyles from './PrioriteMenu.module.css';
+
+const prioriteClassMap: Record<string, string> = {
+  [REQUETE_PRIORITE_TYPES.HAUTE]: prioriteStyles['priorite-haute'],
+  [REQUETE_PRIORITE_TYPES.MOYENNE]: prioriteStyles['priorite-moyenne'],
+  [REQUETE_PRIORITE_TYPES.BASSE]: prioriteStyles['priorite-basse'],
+};
 
 type Props = {
   statut: string;
@@ -32,7 +40,7 @@ export const RequeteStatutTag = StatutTag(requeteStatutBadges);
 
 export const RequeteEtapeStatutTag = StatutTag(requeteEtapeStatutBadges);
 
-export const RequetePrioriteTag = ({ statut, noIcon }: Props) => {
+export const RequetePrioriteTag = ({ statut, noIcon, className = '' }: Props) => {
   const badge = requetePrioriteBadges.find((badge) => badge.value === statut);
 
   if (!badge) {
@@ -40,7 +48,7 @@ export const RequetePrioriteTag = ({ statut, noIcon }: Props) => {
   }
 
   return (
-    <Badge noIcon={noIcon} severity={badge.type}>
+    <Badge noIcon={noIcon} severity={badge.type} className={`${className} ${prioriteClassMap[statut] || ''}`.trim()}>
       {badge.text}
     </Badge>
   );

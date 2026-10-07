@@ -30,3 +30,34 @@
   align-items: center;
   gap: 0.25rem;
 }
+
+/* Only badges use priority colors, not the menu's radio groups. */
+.priorite-haute:global(.fr-badge) {
+  color: #b34000;
+  background-color: #ffe9e6;
+}
+
+.priorite-moyenne:global(.fr-badge) {
+  color: #493625;
+  background-color: #f7ece4;
+}
+
+.priorite-basse:global(.fr-badge) {
+  color: #57533d;
+  background-color: #fef7da;
+}
+
+:global(:root[data-fr-theme="dark"]) .priorite-haute:global(.fr-badge) {
+  color: var(--text-default-warning);
+  background-color: var(--background-contrast-warning);
+}
+
+:global(:root[data-fr-theme="dark"]) .priorite-moyenne:global(.fr-badge) {
+  color: var(--text-label-brown-opera);
+  background-color: var(--background-contrast-brown-opera);
+}
+
+:global(:root[data-fr-theme="dark"]) .priorite-basse:global(.fr-badge) {
+  color: var(--text-label-green-tilleul-verveine);
+  background-color: var(--background-alt-green-tilleul-verveine);
+}
