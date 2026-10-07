@@ -25,6 +25,7 @@ import { getDirectionsServicesFromRequeteEntiteId, getEntitesByIds } from '../en
 import type { EntiteTraitement } from '../entites/entites.type.js';
 import { updateDateAndTypeRequete } from '../requetes/requetes.service.js';
 import { getUploadedFileById, isFileBelongsToRequete } from '../uploadedFiles/uploadedFiles.service.js';
+import { DEFAULT_REQUETES_LIMIT } from './requetesEntite.constants.js';
 import RequetesEntiteController from './requetesEntite.controller.js';
 import {
   closeRequeteForEntite,
@@ -289,10 +290,10 @@ describe('RequetesEntite endpoints: /', () => {
       const json = await res.json();
       expect(json).toEqual({
         data: convertDatesToStrings(fakeData),
-        meta: { limit: 10, total: 1 },
+        meta: { limit: DEFAULT_REQUETES_LIMIT, total: 1 },
       });
 
-      expect(getRequetesEntite).toHaveBeenCalledWith(['entiteId'], { limit: 10 });
+      expect(getRequetesEntite).toHaveBeenCalledWith(['entiteId'], { limit: DEFAULT_REQUETES_LIMIT });
     });
 
     it('should return meta with offset and limit', async () => {

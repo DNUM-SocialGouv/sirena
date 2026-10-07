@@ -7,6 +7,7 @@ import { Prisma } from '../../libs/prisma.js';
 import { EntiteSchema } from '../entites/entites.schema.js';
 import { RequeteEtapeSchema } from '../requeteEtapes/requetesEtapes.schema.js';
 import { RequeteSchema } from '../requetes/requetes.schema.js';
+import { DEFAULT_REQUETES_LIMIT } from './requetesEntite.constants.js';
 
 export const RequeteEntiteSchema = z.object({
   requeteId: z.string(),
@@ -45,7 +46,7 @@ const TIME_ZONE_MAX = 64;
 const REQUETE_STATUT_IDS = Object.values(REQUETE_STATUT_TYPES) as string[];
 
 export const GetRequetesEntiteQuerySchema = paginationQueryParamsSchema(columns).extend({
-  limit: z.coerce.number().int().min(1).max(100).default(10),
+  limit: z.coerce.number().int().min(1).max(100).default(DEFAULT_REQUETES_LIMIT),
   offset: z.string().trim().min(1).pipe(z.coerce.number<string>().int().min(0)).optional(),
   entiteId: z.string().optional(),
   departementCodes: z.string().max(CSV_FILTER_MAX).optional(),
