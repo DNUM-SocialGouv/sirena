@@ -17,12 +17,6 @@ allowBuilds:
   # chemin par lien symbolique n'ont jamais été corrigées (GHSA-jmr9-qjv8-65gv,
   # GHSA-7pqw-9j4j-h8q3 ; dernière publication : 2020). @puppeteer/browsers 3
   # l'a remplacé par modern-tar.
-  # Il est déclaré dans @sirena/db (au lieu d'être une peer auto-installée de
-  # @mermaid-js/mermaid-cli) pour tenir la v25 : les v23/v24 embarquent
-  # @puppeteer/browsers 2.x, donc extract-zip 2.0.1, dont les traversées de
-  # chemin par lien symbolique n'ont jamais été corrigées (GHSA-jmr9-qjv8-65gv,
-  # GHSA-7pqw-9j4j-h8q3 ; dernière publication : 2020). @puppeteer/browsers 3
-  # l'a remplacé par modern-tar.
   puppeteer: true
 catalog:
   "@biomejs/biome": ^2.5.14
