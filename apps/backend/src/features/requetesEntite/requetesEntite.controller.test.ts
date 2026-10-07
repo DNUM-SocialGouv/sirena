@@ -330,12 +330,28 @@ describe('RequetesEntite endpoints: /', () => {
       expect(getRequetesEntite).not.toHaveBeenCalled();
     });
 
-    it.each(['', ' ', '-1', '0.5', 'NaN', 'Infinity'])('rejects an invalid offset of %s', async (offset) => {
-      const res = await client.index.$get({ query: { offset } });
+    it('accepts an offset of 10000', async () => {
+      vi.mocked(getRequetesEntite).mockResolvedValueOnce({ data: [], total: 0 });
 
-      expect(res.status).toBe(400);
-      expect(getRequetesEntite).not.toHaveBeenCalled();
+      const res = await client.index.$get({ query: { offset: '10000' } });
+
+      expect(res.status).toBe(200);
+      expect((await res.json()).meta).toEqual({ limit: DEFAULT_REQUETES_LIMIT, offset: 10_000, total: 0 });
+      expect(getRequetesEntite).toHaveBeenCalledWith(['entiteId'], {
+        limit: DEFAULT_REQUETES_LIMIT,
+        offset: 10_000,
+      });
     });
+
+    it.each(['', ' ', '-1', '0.5', '10001', '1e20', 'NaN', 'Infinity'])(
+      'rejects an invalid offset of %s',
+      async (offset) => {
+        const res = await client.index.$get({ query: { offset } });
+
+        expect(res.status).toBe(400);
+        expect(getRequetesEntite).not.toHaveBeenCalled();
+      },
+    );
   });
 
   describe('GET /:id/file/:fileId', () => {
