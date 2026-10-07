@@ -14,7 +14,7 @@ function TabsWrapper() {
   const [activeTab, setActiveTab] = useState(0);
   const panels = [<div key="1">Content 1</div>, <div key="2">Content 2</div>, <div key="3">Content 3</div>];
   return (
-    <Tabs tabs={tabsData} activeTab={activeTab} onUpdateActiveTab={setActiveTab}>
+    <Tabs label="Onglets de test" tabs={tabsData} activeTab={activeTab} onUpdateActiveTab={setActiveTab}>
       {panels[activeTab]}
     </Tabs>
   );
@@ -28,7 +28,7 @@ describe('Tabs Component', () => {
 
   it('wraps each tab in a presentation li inside the tablist (RGAA 7.1)', () => {
     render(<TabsWrapper />);
-    const tablist = screen.getByRole('tablist');
+    const tablist = screen.getByRole('tablist', { name: 'Onglets de test' });
     const items = Array.from(tablist.children);
     expect(items).toHaveLength(tabsData.length);
     for (const item of items) {

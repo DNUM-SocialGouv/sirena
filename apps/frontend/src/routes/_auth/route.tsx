@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { AppError } from '@/components/layout/AppError';
 import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import { requireAuth } from '@/lib/auth-guards';
@@ -10,6 +11,20 @@ export const Route = createFileRoute('/_auth')({
     await queryClient.ensureQueryData(profileQueryOptions());
   },
   component: RouteComponent,
+  errorComponent: (props) => (
+    <AppError
+      {...props}
+      title="Votre espace est momentanément indisponible"
+      description={
+        <>
+          Vos informations de profil n’ont pas pu être récupérées. Essayez de rafraîchir la page, sinon merci de
+          réessayer plus tard.
+          <br />
+          Si le problème persiste, reconnectez-vous.
+        </>
+      }
+    />
+  ),
 });
 
 function RouteComponent() {
