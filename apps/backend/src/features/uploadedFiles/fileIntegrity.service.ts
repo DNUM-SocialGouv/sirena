@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { abortControllerStorage, getLoggerStore } from '../../libs/asyncLocalStorage.js';
-import { deleteFilesFromMinio, listMinioObjects } from '../../libs/minio.js';
+import { deleteFilesFromMinio, listMinioObjects, statMinioObject } from '../../libs/minio.js';
 import { prisma } from '../../libs/prisma.js';
 
 export type FileIntegrityResult = {
@@ -29,6 +29,8 @@ const DEFAULT_DB_BATCH_SIZE = 1000;
 const DEFAULT_S3_BATCH_SIZE = 1000;
 // Number of example rows logged individually per category, to keep logs readable at scale.
 const LOG_SAMPLE_SIZE = 20;
+// Max concurrent `statObject` calls when re-checking dangling candidates.
+const DANGLING_RECHECK_CONCURRENCY = 10;
 
 type DbFile = {
   id: string;
@@ -158,7 +160,7 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
     cursor = page[page.length - 1].id;
 
     const pageOrphans: DbFile[] = [];
-    const pageDangling: DbFile[] = [];
+    const pageDanglingCandidates: DbFile[] = [];
 
     for (const f of page) {
       dbPaths.add(f.filePath);
@@ -172,13 +174,20 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
         pageOrphans.push(f);
       }
 
-      if (!s3Sizes.has(f.filePath)) {
-        danglingCount++;
-        danglingSize += f.size;
-        if (danglingSample.length < LOG_SAMPLE_SIZE) danglingSample.push(f);
-        writeReport('dangling-db', f);
-        pageDangling.push(f);
-      }
+      if (!s3Sizes.has(f.filePath)) pageDanglingCandidates.push(f);
+    }
+
+    // `s3Sizes` is a snapshot taken before the scan started, while uploads
+    // write the S3 object *before* creating the DB row: a file uploaded during
+    // the scan has a row but no entry in the snapshot. Re-check each candidate
+    // against S3 so such rows are never reported (nor deleted) as dangling.
+    throwIfAborted('dangling-recheck');
+    const pageDangling = await confirmDangling(pageDanglingCandidates, logger);
+    for (const f of pageDangling) {
+      danglingCount++;
+      danglingSize += f.size;
+      if (danglingSample.length < LOG_SAMPLE_SIZE) danglingSample.push(f);
+      writeReport('dangling-db', f);
     }
 
     if (removeOrphans && pageOrphans.length > 0) {
@@ -319,6 +328,43 @@ async function removeOrphanDbFiles(
     .map((f) => f.id);
 
   return removeDbRowsByIds(removableIds, dbBatchSize, logger, throwIfAborted, 'orphan');
+}
+
+const isS3NotFoundError = (err: unknown): boolean => {
+  const code = (err as { code?: string } | null)?.code;
+  return code === 'NotFound' || code === 'NoSuchKey';
+};
+
+/**
+ * Keeps only the candidates whose S3 object is confirmed missing by a fresh
+ * `statObject`. Any other outcome (object found, or a stat error other than
+ * "not found") drops the candidate: when in doubt, the row is kept.
+ */
+async function confirmDangling(candidates: DbFile[], logger: ReturnType<typeof getLoggerStore>): Promise<DbFile[]> {
+  const confirmed: DbFile[] = [];
+  let falsePositives = 0;
+  for (const batch of chunk(candidates, DANGLING_RECHECK_CONCURRENCY)) {
+    const missing = await Promise.all(
+      batch.map(async (f) => {
+        try {
+          await statMinioObject(f.filePath);
+          falsePositives++;
+          return false;
+        } catch (err) {
+          if (isS3NotFoundError(err)) return true;
+          logger.error({ err, id: f.id, filePath: f.filePath }, 'Failed to re-check dangling candidate, keeping it');
+          return false;
+        }
+      }),
+    );
+    batch.forEach((f, i) => {
+      if (missing[i]) confirmed.push(f);
+    });
+  }
+  if (falsePositives > 0) {
+    logger.info({ count: falsePositives }, 'Dangling candidates found in S3 on re-check (uploaded during the scan)');
+  }
+  return confirmed;
 }
 
 async function removeDbRowsByIds(

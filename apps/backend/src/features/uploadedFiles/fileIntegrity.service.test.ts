@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { deleteFilesFromMinio, listMinioObjects } from '../../libs/minio.js';
+import { deleteFilesFromMinio, listMinioObjects, statMinioObject } from '../../libs/minio.js';
 import { prisma } from '../../libs/prisma.js';
 import { runFileIntegrityCheck } from './fileIntegrity.service.js';
 
@@ -18,6 +18,7 @@ vi.mock('../../libs/asyncLocalStorage.js', () => ({
 vi.mock('../../libs/minio.js', () => ({
   listMinioObjects: vi.fn(),
   deleteFilesFromMinio: vi.fn(),
+  statMinioObject: vi.fn(),
 }));
 
 vi.mock('../../libs/prisma.js', () => ({
@@ -33,6 +34,9 @@ const mockedFindMany = vi.mocked(prisma.uploadedFile.findMany);
 const mockedDeleteMany = vi.mocked(prisma.uploadedFile.deleteMany);
 const mockedListMinioObjects = vi.mocked(listMinioObjects);
 const mockedDeleteFilesFromMinio = vi.mocked(deleteFilesFromMinio);
+const mockedStatMinioObject = vi.mocked(statMinioObject);
+
+const s3NotFoundError = () => Object.assign(new Error('Not Found'), { code: 'NotFound' });
 
 type DbFileFixture = {
   id: string;
@@ -120,6 +124,8 @@ describe('fileIntegrity.service.ts', () => {
     mockedListMinioObjects.mockResolvedValue(new Map());
     mockedDeleteFilesFromMinio.mockResolvedValue([]);
     mockedDeleteMany.mockResolvedValue({ count: 0 } as never);
+    // By default, the dangling re-check confirms the object is missing from S3.
+    mockedStatMinioObject.mockRejectedValue(s3NotFoundError());
     mockDbPages([]);
   });
 
@@ -275,6 +281,42 @@ describe('fileIntegrity.service.ts', () => {
 
     expect(mockedDeleteMany).toHaveBeenCalledWith({ where: { id: { in: ['d1'] } } });
     expect(mockedDeleteMany).toHaveBeenCalledWith({ where: { id: { in: ['d2'] } } });
+  });
+
+  it('does not report nor delete a row whose S3 object appeared after the listing (uploaded during the scan)', async () => {
+    // The S3 listing is a snapshot taken before the DB scan; uploads write the
+    // S3 object before creating the row. A row missing from the snapshot must
+    // be re-checked against S3 before being treated as dangling.
+    const freshUpload = makeFile({ id: 'fresh' });
+    const reallyDangling = makeFile({ id: 'gone' });
+    mockDbPages([[freshUpload, reallyDangling]]);
+    mockedListMinioObjects.mockResolvedValue(new Map());
+    mockedStatMinioObject.mockImplementation(async (filePath: string) => {
+      if (filePath === freshUpload.filePath) return { size: 100 } as never;
+      throw s3NotFoundError();
+    });
+    mockedDeleteMany.mockResolvedValue({ count: 1 } as never);
+
+    const result = await runFileIntegrityCheck({ removeDangling: true });
+
+    expect(result.dbFilesWithoutS3).toBe(1);
+    expect(mockedDeleteMany).toHaveBeenCalledTimes(1);
+    expect(mockedDeleteMany).toHaveBeenCalledWith({ where: { id: { in: ['gone'] } } });
+  });
+
+  it('keeps a dangling candidate when the S3 re-check fails for another reason than "not found"', async () => {
+    mockDbPages([[makeFile({ id: 'd1' })]]);
+    mockedListMinioObjects.mockResolvedValue(new Map());
+    mockedStatMinioObject.mockRejectedValue(Object.assign(new Error('timeout'), { code: 'ETIMEDOUT' }));
+
+    const result = await runFileIntegrityCheck({ removeDangling: true });
+
+    expect(result.dbFilesWithoutS3).toBe(0);
+    expect(mockedDeleteMany).not.toHaveBeenCalled();
+    expect(loggerMock.error).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'd1' }),
+      expect.stringContaining('keeping it'),
+    );
   });
 
   it('does not delete anything for dangling files when removeDangling is not set', async () => {
