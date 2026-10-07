@@ -82,7 +82,7 @@ export const RiskAcknowledgementModal = forwardRef<RiskAcknowledgementModalHandl
 
   return (
     <modal.Component
-      title={content?.title ?? ''}
+      title={content?.title ?? 'Confirmation du téléchargement'}
       iconId="fr-icon-warning-line"
       buttons={[
         {

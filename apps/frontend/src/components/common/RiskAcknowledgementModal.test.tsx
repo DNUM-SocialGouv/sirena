@@ -58,6 +58,31 @@ afterEach(() => {
 });
 
 describe('RiskAcknowledgementModal', () => {
+  it('renders a non-empty fallback title before the dialog is first opened', () => {
+    renderModal();
+
+    const dialog = screen.getByRole('dialog', { hidden: true });
+    const title = within(dialog).getByRole('heading', { hidden: true });
+
+    expect(dialog).not.toHaveAttribute('open');
+    expect(title).toHaveAttribute('id', dialog.getAttribute('aria-labelledby'));
+    expect(title).toHaveTextContent('Confirmation du téléchargement');
+  });
+
+  it('uses the requested title instead of the fallback when opened', async () => {
+    const user = userEvent.setup();
+    renderModal();
+
+    await user.click(screen.getByRole('button', { name: 'Ouvrir' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Fichier dangereux' });
+    expect(within(dialog).getByRole('heading', { name: 'Fichier dangereux' })).toHaveAttribute(
+      'id',
+      dialog.getAttribute('aria-labelledby'),
+    );
+    expect(within(dialog).queryByRole('heading', { name: 'Confirmation du téléchargement' })).not.toBeInTheDocument();
+  });
+
   it('keeps the unaccepted confirmation focusable and blocks its action and closure', async () => {
     const user = userEvent.setup();
     renderModal();
