@@ -32,6 +32,7 @@ function App() {
 
   return (
     <Tabs
+      label="Onglets d'exemple"
       tabs={sampleTabs}
       activeTab={activeTab}
       onUpdateActiveTab={setActiveTab}
@@ -43,6 +44,9 @@ function App() {
 \`\`\`
 
 ## Props
+
+- \`label: string\`  
+  The accessible name of the tablist (\`aria-label\`). Describe the whole set of tabs.
 
 - \`tabs: TabDescriptor[]\`  
   An array of objects describing each tab.  
@@ -128,6 +132,7 @@ type Story = StoryObj<Omit<TabsProps, 'children'>>;
 
 export const Default: Story = {
   args: {
+    label: "Onglets d'exemple",
     tabs: sampleTabs,
     activeTab: 0,
   },

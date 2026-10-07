@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 import { baseUrl, ENTITY_ADMIN_USER, isLocalTarget, loginUrl } from './utils/constants';
 import { loginWithProconnect } from './utils/login';
 
-test('login', async ({ browser }) => {
-  test.skip(isLocalTarget, 'ProConnect flow is not exercised in local target.');
+test('connexion via ProConnect', async ({ browser }) => {
+  test.skip(isLocalTarget, "La connexion ProConnect n'est pas testée en cible locale.");
   const context = await browser.newContext();
   const page = await context.newPage();
   await loginWithProconnect(page, {

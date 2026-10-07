@@ -11,7 +11,7 @@ import { baseUrl } from './utils/constants';
  * - User has ENTITY_ADMIN role
  */
 
-test.describe('Request Details Feature', () => {
+test.describe("Détail d'une requête", () => {
   let context: BrowserContext;
   let page: Page;
   let authFile: string;
@@ -55,7 +55,7 @@ test.describe('Request Details Feature', () => {
     }
   });
 
-  test('should navigate to request detail page from table', async () => {
+  test("ouvre le détail d'une requête depuis le tableau", async () => {
     await expect(page.getByRole('heading', { name: `Requête ${requestUuid}`, level: 1 })).toBeVisible();
   });
 });

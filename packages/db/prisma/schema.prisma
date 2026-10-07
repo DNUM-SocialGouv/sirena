@@ -132,7 +132,7 @@ model Requete {
   commentaire          String    @default("")
   receptionDate        DateTime?
   dateDemandeDeclarant DateTime?
-  dematSocialId        Int?
+  dematSocialId        Int?      @unique
   sirecId              Int?      @unique
 
   receptionTypeId String?
