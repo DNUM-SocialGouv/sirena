@@ -590,6 +590,30 @@ interface CreateRequeteInput {
   participant?: PersonneConcerneeInput;
 }
 
+interface PrismaUniqueConstraintError {
+  code: string;
+  meta?: {
+    target?: string[];
+    driverAdapterError?: {
+      cause?: { table?: string; constraint?: { index?: string; fields?: string[] } };
+    };
+  };
+}
+
+// With the pg driver adapter, P2002 carries the violated constraint in meta.driverAdapterError, not meta.target.
+const isRequeteIdConflict = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object' || !('code' in error)) return false;
+  const { code, meta } = error as PrismaUniqueConstraintError;
+  if (code !== 'P2002') return false;
+
+  const cause = meta?.driverAdapterError?.cause;
+  return (
+    meta?.target?.includes('id') === true ||
+    cause?.constraint?.index === 'Requete_pkey' ||
+    (cause?.table === 'Requete' && cause.constraint?.fields?.includes('id') === true)
+  );
+};
+
 export const createRequeteEntite = async (entiteId: string, data?: CreateRequeteInput, changedById?: string) => {
   const maxRetries = 5;
   let retryCount = 0;
@@ -597,77 +621,79 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
 
   while (retryCount < maxRetries) {
     try {
-      const requeteId = await generateRequeteId('SIRENA');
+      // Retry on id collision wraps the transaction: a P2002 aborts it, so each attempt needs a fresh one.
+      return await prisma.$transaction(async (tx) => {
+        const requeteId = await generateRequeteId('SIRENA', tx);
 
-      const requete = await prisma.requete.create({
-        data: {
-          id: requeteId,
-          receptionDate: data?.receptionDate ? new Date(data.receptionDate) : null,
-          dateDemandeDeclarant: data?.dateDemandeDeclarant ? new Date(data.dateDemandeDeclarant) : null,
-          receptionTypeId: data?.receptionTypeId ?? null,
-          provenanceId: data?.provenanceId ?? null,
-          provenancePrecision: data?.provenancePrecision ?? null,
-          ...(data?.declarant && {
-            declarant: {
-              create: mapDeclarantToPrismaCreate(data.declarant),
+        const requete = await tx.requete.create({
+          data: {
+            id: requeteId,
+            receptionDate: data?.receptionDate ? new Date(data.receptionDate) : null,
+            dateDemandeDeclarant: data?.dateDemandeDeclarant ? new Date(data.dateDemandeDeclarant) : null,
+            receptionTypeId: data?.receptionTypeId ?? null,
+            provenanceId: data?.provenanceId ?? null,
+            provenancePrecision: data?.provenancePrecision ?? null,
+            ...(data?.declarant && {
+              declarant: {
+                create: mapDeclarantToPrismaCreate(data.declarant),
+              },
+            }),
+            ...(data?.participant && {
+              participant: {
+                create: mapPersonneConcerneeToPrismaCreate(data.participant),
+              },
+            }),
+            requeteEntites: {
+              create: {
+                statutId: REQUETE_STATUT_TYPES.EN_COURS,
+                entiteId,
+              },
             },
-          }),
-          ...(data?.participant && {
-            participant: {
-              create: mapPersonneConcerneeToPrismaCreate(data.participant),
-            },
-          }),
-          requeteEntites: {
-            create: {
-              statutId: REQUETE_STATUT_TYPES.EN_COURS,
-              entiteId,
-            },
+            createdById: changedById,
           },
-          createdById: changedById,
-        },
-        include: {
-          requeteEntites: true,
-          declarant: data?.declarant
-            ? {
-                include: {
-                  identite: true,
-                  adresse: true,
-                },
-              }
-            : false,
-          participant: data?.participant
-            ? {
-                include: {
-                  identite: true,
-                  adresse: true,
-                },
-              }
-            : false,
-        },
-      });
-
-      // Create default processing steps for each entity
-      for (const entite of requete.requeteEntites) {
-        await createDefaultRequeteEtapes(requete.id, entite.entiteId, undefined, changedById);
-      }
-
-      if (data?.declarant?.estPersonneConcernee && requete.declarant) {
-        await prisma.personneConcernee.update({
-          where: { id: requete.declarant.id },
-          data: { participantDeId: requete.id },
+          include: {
+            requeteEntites: true,
+            declarant: data?.declarant
+              ? {
+                  include: {
+                    identite: true,
+                    adresse: true,
+                  },
+                }
+              : false,
+            participant: data?.participant
+              ? {
+                  include: {
+                    identite: true,
+                    adresse: true,
+                  },
+                }
+              : false,
+          },
         });
-      }
 
-      return requete;
-    } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'code' in error) {
-        const prismaError = error as { code: string; meta?: { target?: string[] }; message?: string };
-        if (prismaError.code === 'P2002' && prismaError.meta?.target?.includes('id')) {
-          lastError = new Error(prismaError.message || 'Unique constraint failed on id');
-          retryCount++;
-          await new Promise((resolve) => setTimeout(resolve, 100 * retryCount));
-          continue;
+        // Create default processing steps for each entity
+        for (const entite of requete.requeteEntites) {
+          await createDefaultRequeteEtapes(requete.id, entite.entiteId, tx, changedById, {
+            transactionalAudit: true,
+          });
         }
+
+        if (data?.declarant?.estPersonneConcernee && requete.declarant) {
+          await tx.personneConcernee.update({
+            where: { id: requete.declarant.id },
+            data: { participantDeId: requete.id },
+          });
+        }
+
+        return requete;
+      });
+    } catch (error: unknown) {
+      if (isRequeteIdConflict(error)) {
+        lastError = new Error((error as { message?: string }).message || 'Unique constraint failed on id');
+        retryCount++;
+        await new Promise((resolve) => setTimeout(resolve, 100 * retryCount));
+        continue;
       }
       throw error;
     }
