@@ -109,10 +109,12 @@ export const FileDownloadLink = ({
       case 'open':
         window.open(downloadState.action.href, downloadState.action.target);
         return;
+
       case 'confirm-download':
         registerTrigger(trigger);
         downloadModal.open();
         return;
+
       case 'acknowledge-risk': {
         const action = downloadState.action;
         riskAcknowledgementModalRef.current?.open({
@@ -131,7 +133,11 @@ export const FileDownloadLink = ({
           },
           onConfirm: () => window.open(action.href, action.target),
         });
+        return;
       }
+      default:
+        downloadState.action satisfies never;
+        throw new Error('Unexpected file download action');
     }
   };
 
