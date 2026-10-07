@@ -29,7 +29,10 @@ async function openSession(browser: Browser, config: AuthConfig): Promise<Sessio
  * (user18, plus a reader). These users only exist in the local seed.
  */
 test.describe('Traitement : requête multi-entités et droits', () => {
-  test.skip(!isLocalTarget, 'Needs the seeded Normandie users, only available with E2E_TARGET=local.');
+  test.skip(
+    !isLocalTarget,
+    'Nécessite les utilisateurs Normandie du seed, disponibles seulement avec E2E_TARGET=local.',
+  );
   test.describe.configure({ mode: 'serial' });
 
   let owner: Session;

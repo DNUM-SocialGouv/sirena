@@ -11,7 +11,7 @@ import { baseUrl } from './utils/constants';
  * - Authenticated user has ENTITY_ADMIN role
  */
 
-test.describe('Requete Feature', () => {
+test.describe('Liste des requêtes', () => {
   let context: BrowserContext;
   let page: Page;
   let authFile: string;
@@ -37,14 +37,14 @@ test.describe('Requete Feature', () => {
     }
   });
 
-  test('should display home page with its heading', async () => {
+  test("affiche la page d'accueil avec son titre", async () => {
     const heading = page.getByTestId('home-title');
 
     await expect(heading).toBeVisible();
     await expect(heading).toHaveText('Liste des requêtes');
   });
 
-  test('should display requetes table with at least 1 requete', async () => {
+  test('affiche le tableau des requêtes avec au moins une requête', async () => {
     const requetesTable = page.getByRole('table');
     await expect(requetesTable).toBeVisible();
 
@@ -53,7 +53,7 @@ test.describe('Requete Feature', () => {
     expect(count).toBeGreaterThanOrEqual(1);
   });
 
-  test('should navigate to request detail page when clicking the request link', async () => {
+  test("ouvre le détail d'une requête depuis son lien", async () => {
     const requetesTable = page.getByRole('table');
     await expect(requetesTable).toBeVisible();
 

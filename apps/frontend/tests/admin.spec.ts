@@ -44,7 +44,7 @@ async function navigateToUserEditPage(page: Page, context: BrowserContext): Prom
   return targetUserId;
 }
 
-test.describe('Admin Feature', () => {
+test.describe('Administration des utilisateurs', () => {
   let context: BrowserContext;
   let page: Page;
   let authFile: string;
@@ -68,7 +68,7 @@ test.describe('Admin Feature', () => {
     }
   });
 
-  test('should display admin users page with tabs', async () => {
+  test("affiche la page d'administration des utilisateurs avec ses onglets", async () => {
     const heading = page.getByRole('heading', {
       name: 'Espace administrateur',
       level: 1,
@@ -85,7 +85,7 @@ test.describe('Admin Feature', () => {
     await expect(allUsersTab).toContainText('Utilisateurs');
   });
 
-  test('should show pending users tab by default', async () => {
+  test("affiche l'onglet des demandes d'habilitation par défaut", async () => {
     const pendingTab = page.getByTestId('admin-tab-pending');
     await expect(pendingTab).toHaveAttribute('aria-selected', 'true');
 
@@ -96,7 +96,7 @@ test.describe('Admin Feature', () => {
     await expect(tableCaption).toBeVisible();
   });
 
-  test('should switch to all users tab', async () => {
+  test("bascule sur l'onglet de tous les utilisateurs", async () => {
     const allUsersTab = page.getByTestId('admin-tab-all');
     await allUsersTab.click();
 
@@ -111,7 +111,7 @@ test.describe('Admin Feature', () => {
     await expect(tableCaption).toBeVisible();
   });
 
-  test('should go to "Modifier les informations" form when clicking on "Gérer l\'utilisateur" link', async () => {
+  test("ouvre le formulaire « Modifier les informations » depuis le lien « Gérer l'utilisateur »", async () => {
     await navigateToUserEditPage(page, context);
 
     const heading = page.getByRole('heading', {
@@ -122,7 +122,7 @@ test.describe('Admin Feature', () => {
     await expect(heading).toBeVisible();
   });
 
-  test('should update user status to opposite value and reflect in table', async () => {
+  test("inverse le statut d'un utilisateur et le reflète dans le tableau", async () => {
     const targetUserId = await navigateToUserEditPage(page, context);
 
     const statutSelect = page.getByTestId('user-statut-select');
@@ -148,7 +148,7 @@ test.describe('Admin Feature', () => {
     expect(userData.statutId).toBe(oppositeStatus);
   });
 
-  test('should toggle user role and reset to original after verification', async () => {
+  test("change le rôle d'un utilisateur puis le remet à sa valeur d'origine", async () => {
     const targetUserId = await navigateToUserEditPage(page, context);
 
     const roleSelect = page.getByTestId('user-role-select');

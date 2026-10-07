@@ -3,8 +3,8 @@ import { autoCloseAnnouncements } from './utils/announcements';
 import { baseUrl, ENTITY_ADMIN_USER, isLocalTarget, loginUrl } from './utils/constants';
 import { loginWithProconnect } from './utils/login';
 
-test('logout', async ({ browser }) => {
-  test.skip(isLocalTarget, 'ProConnect flow is not exercised in local target.');
+test('déconnexion', async ({ browser }) => {
+  test.skip(isLocalTarget, "La connexion ProConnect n'est pas testée en cible locale.");
   const context = await browser.newContext({ httpCredentials: undefined });
   context.clearCookies();
   await autoCloseAnnouncements(context);

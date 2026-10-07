@@ -38,7 +38,7 @@ async function openNewPersonneConcerneeForm(page: Page): Promise<void> {
   await expect(page.getByTestId('personne-concernee-form-title')).toHaveText('Personne concernée');
 }
 
-test.describe('Personne concernée form', () => {
+test.describe('Formulaire personne concernée', () => {
   let context: BrowserContext;
   let page: Page;
   let authFile: string;
@@ -59,7 +59,7 @@ test.describe('Personne concernée form', () => {
     }
   });
 
-  test('should create a request from a fully filled personne concernée', async () => {
+  test("crée une requête à partir d'une personne concernée entièrement remplie", async () => {
     const nom = e2eTag();
     await openNewPersonneConcerneeForm(page);
 
@@ -94,7 +94,7 @@ test.describe('Personne concernée form', () => {
     await expectDisplayed(section, 'Il/elle est en mesure de protection : mandataire familial');
   });
 
-  test('should show and save the conditional fields', async () => {
+  test('affiche et enregistre les champs conditionnels', async () => {
     const nom = e2eTag();
     await openNewPersonneConcerneeForm(page);
     await page.getByTestId('personne-concernee-nom').fill(nom);
@@ -119,7 +119,7 @@ test.describe('Personne concernée form', () => {
     await expectDisplayed(section, `Frère ${nom}`);
   });
 
-  test('should block the save on invalid birth date, phone and email', async () => {
+  test("bloque l'enregistrement si la date de naissance, le téléphone et l'e-mail sont invalides", async () => {
     await openNewPersonneConcerneeForm(page);
     const dateNaissance = page.getByTestId('personne-concernee-date-naissance');
     const telephone = page.getByTestId('personne-concernee-telephone');
@@ -141,7 +141,7 @@ test.describe('Personne concernée form', () => {
     await expect(page).toHaveURL(`${baseUrl}/request/create/personne-concernee`);
   });
 
-  test('should prefill and update an existing personne concernée', async () => {
+  test('préremplit et met à jour une personne concernée existante', async () => {
     const nom = e2eTag();
     await openNewPersonneConcerneeForm(page);
     await page.getByTestId('personne-concernee-nom').fill(nom);
