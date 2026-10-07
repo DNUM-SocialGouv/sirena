@@ -25,6 +25,7 @@ export type RiskAcknowledgementModalHandle = {
 
 export const RiskAcknowledgementModal = forwardRef<RiskAcknowledgementModalHandle>((_, ref) => {
   const modalId = useId();
+  const acknowledgementHintId = `risk-acknowledgement-hint-${modalId}`;
   const modal = useMemo(
     () => createModal({ id: `risk-acknowledgement-modal-${modalId}`, isOpenedByDefault: false }),
     [modalId],
@@ -95,6 +96,7 @@ export const RiskAcknowledgementModal = forwardRef<RiskAcknowledgementModalHandl
           className: accepted ? undefined : styles.unavailable,
           nativeButtonProps: {
             'aria-disabled': accepted ? undefined : true,
+            'aria-describedby': accepted ? undefined : acknowledgementHintId,
           },
           onClick: handleConfirm,
         },
@@ -102,6 +104,7 @@ export const RiskAcknowledgementModal = forwardRef<RiskAcknowledgementModalHandl
     >
       <p>{content?.message}</p>
       {content?.details}
+      <p id={acknowledgementHintId}>Cochez la case ci-dessous pour activer le bouton de téléchargement.</p>
       <Checkbox
         className="fr-mt-2w"
         options={[

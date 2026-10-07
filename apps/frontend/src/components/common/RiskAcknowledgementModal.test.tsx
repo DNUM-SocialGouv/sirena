@@ -72,6 +72,10 @@ describe('RiskAcknowledgementModal', () => {
     });
 
     expect(confirm).toHaveAttribute('aria-disabled', 'true');
+    expect(confirm).toHaveAccessibleDescription('Cochez la case ci-dessous pour activer le bouton de téléchargement.');
+    expect(
+      within(dialog).getByText('Cochez la case ci-dessous pour activer le bouton de téléchargement.'),
+    ).toBeVisible();
     expect(confirm).not.toBeDisabled();
     expect(confirm.className).toContain('unavailable');
     expect(confirm).not.toHaveAttribute('aria-controls');
@@ -83,6 +87,24 @@ describe('RiskAcknowledgementModal', () => {
     await user.click(confirm);
     expect(onConfirm).not.toHaveBeenCalled();
     expect(concealModal).not.toHaveBeenCalled();
+  });
+
+  it('only describes the confirmation as unavailable while acceptance is unchecked', async () => {
+    const user = userEvent.setup();
+    renderModal();
+
+    await user.click(screen.getByRole('button', { name: 'Ouvrir' }));
+    const dialog = screen.getByRole('dialog');
+    const checkbox = within(dialog).getByRole('checkbox');
+    const confirm = within(dialog).getByRole('button', { name: 'Télécharger malgré le risque' });
+
+    await user.click(checkbox);
+    expect(confirm).not.toHaveAttribute('aria-disabled');
+    expect(confirm).not.toHaveAccessibleDescription();
+
+    await user.click(checkbox);
+    expect(confirm).toHaveAttribute('aria-disabled', 'true');
+    expect(confirm).toHaveAccessibleDescription('Cochez la case ci-dessous pour activer le bouton de téléchargement.');
   });
 
   it('confirms and closes once after acceptance, then resets its action', async () => {

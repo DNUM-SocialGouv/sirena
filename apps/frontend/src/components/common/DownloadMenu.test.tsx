@@ -146,16 +146,20 @@ describe('DownloadMenu', () => {
       ),
     ).toBeInTheDocument();
     expect(
-      within(dialog).getByText(
+      within(dialog).getByText('Cochez la case ci-dessous pour activer le bouton de téléchargement.'),
+    ).toBeVisible();
+    expect(
+      within(dialog).queryByText(
         "Le bouton « Télécharger malgré le risque » ne devient actif qu'une fois la case ci-dessous cochée.",
       ),
-    ).toBeInTheDocument();
+    ).not.toBeInTheDocument();
 
     const checkbox = within(dialog).getByRole('checkbox', {
       name: 'Je comprends les risques et souhaite télécharger l’archive',
     });
     const confirm = within(dialog).getByRole('button', { name: 'Télécharger malgré le risque' });
     expect(confirm).toHaveAttribute('aria-disabled', 'true');
+    expect(confirm).toHaveAccessibleDescription('Cochez la case ci-dessous pour activer le bouton de téléchargement.');
     expect(confirm).not.toBeDisabled();
     expect(confirm).not.toHaveAttribute('aria-controls');
 

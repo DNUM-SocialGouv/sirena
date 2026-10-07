@@ -7,8 +7,17 @@ import { FileDownloadLink } from './FileDownloadLink';
 let pushStatus: ((status: FileProcessingStatus) => void) | null = null;
 const discloseModal = vi.fn();
 const concealModal = vi.fn();
-const dsfr = vi.fn((_element: HTMLElement | null) => ({
-  modal: { disclose: discloseModal, conceal: concealModal },
+const dsfr = vi.fn((element: HTMLElement | null) => ({
+  modal: {
+    disclose: () => {
+      element?.setAttribute('open', '');
+      discloseModal();
+    },
+    conceal: () => {
+      element?.removeAttribute('open');
+      concealModal();
+    },
+  },
 }));
 
 vi.mock('@/hooks/useFileProcessingStatus', async () => {
@@ -140,6 +149,10 @@ describe('FileDownloadLink download decision', () => {
     ).toBeInTheDocument();
     const confirm = within(dialog).getByRole('button', { name: 'Télécharger malgré le risque', hidden: true });
     expect(confirm).toHaveAttribute('aria-disabled', 'true');
+    expect(confirm).toHaveAccessibleDescription('Cochez la case ci-dessous pour activer le bouton de téléchargement.');
+    expect(
+      within(dialog).getByText('Cochez la case ci-dessous pour activer le bouton de téléchargement.'),
+    ).toBeVisible();
     expect(confirm).not.toBeDisabled();
 
     await user.click(confirm);
@@ -147,6 +160,7 @@ describe('FileDownloadLink download decision', () => {
     expect(concealModal).not.toHaveBeenCalled();
 
     await user.click(within(dialog).getByRole('checkbox', { hidden: true }));
+    expect(confirm).not.toHaveAccessibleDescription();
     await user.click(confirm);
 
     expect(window.open).toHaveBeenCalledWith('/api/files/1', '_blank');

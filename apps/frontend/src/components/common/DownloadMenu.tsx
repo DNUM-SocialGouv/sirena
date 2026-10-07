@@ -39,12 +39,7 @@ export const DownloadMenu = ({ requestId, disabled, hasUnsafeFiles }: DownloadMe
           title: 'Attention : pièces jointes potentiellement dangereuses',
           message:
             "Certaines pièces jointes de cette requête n'ont pas pu être vérifiées ou sécurisées, ou présentent un risque détecté. Nous vous recommandons de ne pas télécharger cette archive sans précaution.",
-          details: (
-            <>
-              <p>Si vous choisissez de continuer, assurez-vous que votre logiciel antivirus est à jour.</p>
-              <p>Le bouton « Télécharger malgré le risque » ne devient actif qu'une fois la case ci-dessous cochée.</p>
-            </>
-          ),
+          details: <p>Si vous choisissez de continuer, assurez-vous que votre logiciel antivirus est à jour.</p>,
           acknowledgementLabel: 'Je comprends les risques et souhaite télécharger l’archive',
           confirmLabel: 'Télécharger malgré le risque',
         },
