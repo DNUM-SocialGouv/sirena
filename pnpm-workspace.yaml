@@ -17,6 +17,12 @@ allowBuilds:
   # chemin par lien symbolique n'ont jamais été corrigées (GHSA-jmr9-qjv8-65gv,
   # GHSA-7pqw-9j4j-h8q3 ; dernière publication : 2020). @puppeteer/browsers 3
   # l'a remplacé par modern-tar.
+  # Il est déclaré dans @sirena/db (au lieu d'être une peer auto-installée de
+  # @mermaid-js/mermaid-cli) pour tenir la v25 : les v23/v24 embarquent
+  # @puppeteer/browsers 2.x, donc extract-zip 2.0.1, dont les traversées de
+  # chemin par lien symbolique n'ont jamais été corrigées (GHSA-jmr9-qjv8-65gv,
+  # GHSA-7pqw-9j4j-h8q3 ; dernière publication : 2020). @puppeteer/browsers 3
+  # l'a remplacé par modern-tar.
   puppeteer: true
 catalog:
   "@biomejs/biome": ^2.5.14
@@ -52,7 +58,10 @@ enablePrePostScripts: true
 minimumReleaseAge: 10080
 # Security fixes (see overrides) whose patched version is less than 7 days old:
 # waive the maturation delay for these packages only, so the audit can pass.
-minimumReleaseAgeExclude: []
+minimumReleaseAgeExclude:
+  # source-map-js 1.2.2 (GHSA-68fv-2mgg-jv7q) : publié le 2026-09-30, donc encore
+  # en quarantaine. Entrée à retirer à partir du 2026-10-08.
+  - source-map-js
 overrides:
   # Planchers de sécurité sur des paquets tirés transitivement (@sentry/cli,
   # ajv via prisma/commitlint, minio) : leurs ranges parents résolvent aujourd'hui
@@ -81,15 +90,36 @@ overrides:
   # d'où une consommation CPU non bornée — GHSA-2883-xcg3-v3hh. Tiré par
   # cosmiconfig (commitlint, @graphql-codegen/cli).
   "js-yaml@>=4.0.0 <4.3.2": "^4.3.2"
+  # shell-quote <1.11.0 : injection de commande via un terminateur de ligne dans
+  # un token placé après un token `{ comment }` — GHSA-pqg4-j6r4-53mv. Tiré par
+  # @graphql-codegen/cli (qui demande ^1.7.3).
+  "shell-quote@>=1.8.4 <1.11.0": "^1.11.0"
+  # source-map-js <1.2.2 : DoS de la boucle d'événements via les offsets de
+  # sections indexées d'une source map — GHSA-68fv-2mgg-jv7q. Tiré par postcss
+  # (vite) et magicast (@prisma/config, @vitest/coverage-v8).
+  "source-map-js@>=1.0.0 <1.2.2": "^1.2.2"
+  # @graphql-tools/utils <=12.0.0 : pollution de prototype dans `mergeDeep` —
+  # GHSA-7mx3-vvmw-hjmv. Seul graphql-config (via @graphql-codegen/cli) reste en
+  # ^11 ; la 12.0.1 est déjà résolue pour le reste de l'arbre codegen et n'est
+  # qu'additive face à la 11.2.2 (ajout de getDirectiveValues).
+  "@graphql-tools/utils@<=12.0.0": "^12.0.1"
 auditConfig:
   ignoreGhsas:
     # deepmerge-ts <8: stack exhaustion requires attacker-controlled cyclic
     # JavaScript object graphs. Current consumers use static configuration, and
     # Prisma pins 7.1.5; remove when upstream supports deepmerge-ts >=8.
     - GHSA-ggr8-5vv4-36mx
-    # stream-json <=3.4.0: quadratic behavior only affects the pick/ignore/filter/replace
-    # filters. MinIO uses only jsonl/Parser; remove when MinIO supports stream-json >=3.5.
+    # stream-json (MinIO, ^1.8.0): the three advisories below all target code paths
+    # MinIO never reaches. `minio/notification` imports only `stream-json/jsonl/Parser.js`,
+    # whose parse loop is a plain `JSON.parse` per line: no pick/ignore/filter/replace
+    # filter (GHSA-528h-pc64-c93x), no JSONC comment scanner (GHSA-hqr4-qq8f-hg3x) and
+    # no Assembler (GHSA-mjw6-4jj6-33hc). An override is not an option either: the fixes
+    # land in 3.6.0/3.5.1, and stream-json 3.x moved that entry point to
+    # `src/jsonl/parser.js`, so forcing 3.x breaks MinIO's import on a case-sensitive
+    # filesystem. Remove when MinIO itself moves to stream-json >=3.6.
     - GHSA-528h-pc64-c93x
+    - GHSA-hqr4-qq8f-hg3x
+    - GHSA-mjw6-4jj6-33hc
     # braces <=3.0.3 (CVE-2026-93687): stack overflow in the recursive AST walkers.
     # No patched release exists yet (the advisory names 3.0.4, which is not published
     # on npm), so neither an override nor a bump can resolve it today. braces only
