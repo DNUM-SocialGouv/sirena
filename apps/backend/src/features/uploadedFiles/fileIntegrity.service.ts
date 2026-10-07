@@ -148,6 +148,9 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
   let danglingCount = 0;
   let danglingSize = 0;
   let removedDanglingCount = 0;
+  // Dangling rows that are also orphans: reported in both categories, but only
+  // deleted once, by the orphan pass, when removeOrphans is set.
+  let danglingAlsoOrphanCount = 0;
   const danglingSample: DbFile[] = [];
   let s3OrphanCount = 0;
   let s3OrphanSize = 0;
@@ -230,7 +233,9 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
       // against S3 so such rows are never reported (nor deleted) as dangling.
       throwIfAborted('dangling-recheck');
       const pageDangling = await confirmDangling(pageDanglingCandidates, logger);
+      const pageOrphanIds = new Set(pageOrphans.map((f) => f.id));
       for (const f of pageDangling) {
+        if (pageOrphanIds.has(f.id)) danglingAlsoOrphanCount++;
         danglingCount++;
         danglingSize += f.size;
         if (danglingSample.length < LOG_SAMPLE_SIZE) danglingSample.push(f);
@@ -248,9 +253,12 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
         });
       }
 
-      if (removeDangling && pageDangling.length > 0) {
+      // Rows that are also orphans were just handled by the orphan pass above;
+      // deleting them again would only yield `count: 0` and skew the totals.
+      const danglingToDelete = removeOrphans ? pageDangling.filter((f) => !pageOrphanIds.has(f.id)) : pageDangling;
+      if (removeDangling && danglingToDelete.length > 0) {
         removedDanglingCount += await removeDbRowsByIds(
-          pageDangling.map((f) => f.id),
+          danglingToDelete.map((f) => f.id),
           dbBatchSize,
           logger,
           throwIfAborted,
@@ -319,7 +327,16 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
       `dangling-db | ${i + 1}/${danglingCount} | ${f.id} | ${f.fileName} | ${f.filePath} | ${formatBytes(f.size)}`,
     );
   }
-  if (removeDangling) logger.info(`Removed ${removedDanglingCount}/${danglingCount} dangling DB records`);
+  if (danglingAlsoOrphanCount > 0) {
+    logger.info(`${danglingAlsoOrphanCount} of them are also orphan DB files (reported in both categories)`);
+  }
+  if (removeDangling) {
+    const handledByOrphanPass = removeOrphans ? danglingAlsoOrphanCount : 0;
+    logger.info(
+      `Removed ${removedDanglingCount}/${danglingCount - handledByOrphanPass} dangling DB records` +
+        (handledByOrphanPass > 0 ? ` (${handledByOrphanPass} more handled by the orphan pass)` : ''),
+    );
+  }
 
   logger.info(`S3 files without DB entry: ${s3OrphanCount} (${formatBytes(s3OrphanSize)})`);
   for (const [i, o] of s3OrphanSample.entries()) {

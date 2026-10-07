@@ -369,6 +369,37 @@ describe('fileIntegrity.service.ts', () => {
     expect(mockedDeleteMany).toHaveBeenCalledWith({ where: { id: { in: ['d2'] } } });
   });
 
+  it('deletes a row that is both orphan and dangling only once, via the orphan pass', async () => {
+    const both = makeFile({ id: 'both', requeteId: null });
+    const danglingOnly = makeFile({ id: 'dangling-only' });
+    mockDbPages([[both, danglingOnly]]);
+    mockedListMinioObjects.mockResolvedValue(new Map());
+    mockedDeleteMany.mockResolvedValue({ count: 1 } as never);
+
+    const result = await runFileIntegrityCheck({ removeOrphans: true, removeDangling: true });
+
+    // Still reported in both categories...
+    expect(result.orphanDbFiles).toBe(1);
+    expect(result.dbFilesWithoutS3).toBe(2);
+    // ...but each row is deleted exactly once.
+    expect(mockedDeleteMany).toHaveBeenCalledTimes(2);
+    expect(mockedDeleteMany).toHaveBeenCalledWith({ where: { id: { in: ['both'] } } });
+    expect(mockedDeleteMany).toHaveBeenCalledWith({ where: { id: { in: ['dangling-only'] } } });
+    expect(loggerMock.info).toHaveBeenCalledWith('Removed 1/1 dangling DB records (1 more handled by the orphan pass)');
+  });
+
+  it('still deletes an orphan dangling row via the dangling pass when removeOrphans is not set', async () => {
+    mockDbPages([[makeFile({ id: 'both', requeteId: null })]]);
+    mockedListMinioObjects.mockResolvedValue(new Map());
+    mockedDeleteMany.mockResolvedValue({ count: 1 } as never);
+
+    await runFileIntegrityCheck({ removeDangling: true });
+
+    expect(mockedDeleteMany).toHaveBeenCalledTimes(1);
+    expect(mockedDeleteMany).toHaveBeenCalledWith({ where: { id: { in: ['both'] } } });
+    expect(loggerMock.info).toHaveBeenCalledWith('Removed 1/1 dangling DB records');
+  });
+
   it('does not report nor delete a row whose S3 object appeared after the listing (uploaded during the scan)', async () => {
     // The S3 listing is a snapshot taken before the DB scan; uploads write the
     // S3 object before creating the row. A row missing from the snapshot must
