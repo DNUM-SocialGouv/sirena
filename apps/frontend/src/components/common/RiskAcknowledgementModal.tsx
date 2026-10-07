@@ -1,6 +1,7 @@
 import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { forwardRef, useCallback, useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
 import styles from './RiskAcknowledgementModal.module.css';
 
@@ -45,9 +46,12 @@ export const RiskAcknowledgementModal = forwardRef<RiskAcknowledgementModalHandl
     () => ({
       open: ({ trigger, content: nextContent, onConfirm }) => {
         registerTrigger(trigger);
-        setContent(nextContent);
         onConfirmRef.current = onConfirm;
-        resetAcceptance();
+        // DSFR opens imperatively, so commit the content and checkbox reset before opening.
+        flushSync(() => {
+          setContent(nextContent);
+          resetAcceptance();
+        });
         modal.open();
       },
     }),
