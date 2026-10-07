@@ -439,7 +439,7 @@ describe('requetes.service.ts', () => {
 
   describe('getRequeteByDematSocialId()', () => {
     it('should return the requete matching the dematSocialId', async () => {
-      const mockedFindFirst = vi.mocked(prisma.requete.findFirst);
+      const mockedFindUnique = vi.mocked(prisma.requete.findUnique);
 
       const mockRequete = {
         id: '1',
@@ -456,19 +456,19 @@ describe('requetes.service.ts', () => {
         thirdPartyAccountId: '',
         provenancePrecision: '',
       };
-      mockedFindFirst.mockResolvedValueOnce(mockRequete);
+      mockedFindUnique.mockResolvedValueOnce(mockRequete);
 
       const result = await getRequeteByDematSocialId(123);
 
-      expect(mockedFindFirst).toHaveBeenCalledWith({
+      expect(mockedFindUnique).toHaveBeenCalledWith({
         where: { dematSocialId: 123 },
       });
       expect(result).toEqual(mockRequete);
     });
 
     it('should return null if no requete found', async () => {
-      const mockedFindFirst = vi.mocked(prisma.requete.findFirst);
-      mockedFindFirst.mockResolvedValueOnce(null);
+      const mockedFindUnique = vi.mocked(prisma.requete.findUnique);
+      mockedFindUnique.mockResolvedValueOnce(null);
 
       const result = await getRequeteByDematSocialId(999);
       expect(result).toBeNull();

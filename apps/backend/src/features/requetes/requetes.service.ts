@@ -12,7 +12,7 @@ import { determineSource, generateRequeteId } from './functionalId.service.js';
 import type { CreateRequeteFromDematSocialDto, ElementLinked, File } from './requetes.type.js';
 
 export const getRequeteByDematSocialId = async (id: number) =>
-  await prisma.requete.findFirst({
+  await prisma.requete.findUnique({
     where: {
       dematSocialId: id,
     },
