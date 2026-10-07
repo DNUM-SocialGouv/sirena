@@ -146,6 +146,10 @@
   margin-top: 0.5rem;
 }
 
+.attachRow .attachButton:global(.fr-btn--icon-left)::before {
+  margin-right: 0;
+}
+
 .attachRow p {
   margin: 0;
 }

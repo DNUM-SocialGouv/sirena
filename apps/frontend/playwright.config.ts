@@ -24,6 +24,8 @@ export default defineConfig({
   globalSetup: './tests/globalSetup.ts',
   use: {
     trace: 'on-first-retry',
+    // Dates are displayed in the browser timezone: align it with the app's users.
+    timezoneId: 'Europe/Paris',
   },
 
   /* Configure projects for major browsers */
