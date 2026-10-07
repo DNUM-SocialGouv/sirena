@@ -72,8 +72,11 @@ export const RiskAcknowledgementModal = forwardRef<RiskAcknowledgementModalHandl
   const handleConfirm = () => {
     if (!acceptedRef.current) return;
     resetAcceptance();
-    onConfirmRef.current?.();
-    modal.close();
+    try {
+      onConfirmRef.current?.();
+    } finally {
+      modal.close();
+    }
   };
 
   return (
