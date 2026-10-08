@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { prisma } from '../../libs/prisma.js';
+import { prisma, type Session } from '../../libs/prisma.js';
 import { SessionCreationSchema } from './sessions.schema.js';
-import { createSession, deleteSession, getSession, getSessionById } from './sessions.service.js';
+import { createSession, deleteSession, getSession, getSessionIdById } from './sessions.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
@@ -66,31 +66,24 @@ describe('sessions.service.ts', () => {
     expect(result).toEqual(session);
   });
 
-  it('getSessionById - should call prisma.session.findUnique on the primary key and return session', async () => {
+  it('getSessionIdById - should call prisma.session.findUnique on the primary key and only select the id', async () => {
     const id = 'sess-1';
-    const session = {
-      id,
-      token: 'token123',
-      userId: 'user-abc',
-      createdAt: new Date('2025-06-27T00:00:00.000Z'),
-      expiresAt: new Date('2025-07-01T00:00:00.000Z'),
-      pcIdToken: 'pc-id-token',
-    };
 
-    mockedSession.findUnique.mockResolvedValueOnce(session);
+    mockedSession.findUnique.mockResolvedValueOnce({ id } as Session);
 
-    const result = await getSessionById(id);
+    const result = await getSessionIdById(id);
 
     expect(mockedSession.findUnique).toHaveBeenCalledWith({
       where: { id },
+      select: { id: true },
     });
-    expect(result).toEqual(session);
+    expect(result).toEqual({ id });
   });
 
-  it('getSessionById - should return null when no session matches the id', async () => {
+  it('getSessionIdById - should return null when no session matches the id', async () => {
     mockedSession.findUnique.mockResolvedValueOnce(null);
 
-    const result = await getSessionById('unknown-id');
+    const result = await getSessionIdById('unknown-id');
 
     expect(result).toBeNull();
   });

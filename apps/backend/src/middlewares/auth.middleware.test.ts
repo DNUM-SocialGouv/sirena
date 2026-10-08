@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { envVars } from '../config/env.js';
 import { authUser } from '../features/auth/auth.helper.js';
-import { createSession, deleteSession, getSession, getSessionById } from '../features/sessions/sessions.service.js';
+import { createSession, deleteSession, getSession, getSessionIdById } from '../features/sessions/sessions.service.js';
 import { getUserById } from '../features/users/users.service.js';
 import { errorHandler } from '../helpers/errors.js';
 import appWithAuth from '../helpers/factories/appWithAuth.js';
@@ -29,7 +29,7 @@ vi.mock('../../config/env.js', () => ({
 vi.mock('../features/sessions/sessions.service.js', () => ({
   createSession: vi.fn(),
   getSession: vi.fn(),
-  getSessionById: vi.fn(),
+  getSessionIdById: vi.fn(),
   deleteSession: vi.fn(),
 }));
 
@@ -81,7 +81,7 @@ describe('auth.middleware.ts Auth Helpers', () => {
     const authToken = signAuthCookie({ id: userId, roleId, sessionId: SESSION_ID }, authTokenExpirationDate);
 
     const fakeUser = { id: userId, roleId, email: 'test@test.com' };
-    vi.mocked(getSessionById).mockResolvedValueOnce(createSessionFixture(refreshToken));
+    vi.mocked(getSessionIdById).mockResolvedValueOnce(createSessionFixture(refreshToken));
     vi.mocked(getUserById).mockResolvedValueOnce(fakeUser as Awaited<ReturnType<typeof getUserById>>);
 
     const res = await client.test.$get(undefined, {
@@ -91,8 +91,8 @@ describe('auth.middleware.ts Auth Helpers', () => {
     });
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
-    expect(getSessionById).toHaveBeenCalledTimes(1);
-    expect(getSessionById).toHaveBeenCalledWith(SESSION_ID);
+    expect(getSessionIdById).toHaveBeenCalledTimes(1);
+    expect(getSessionIdById).toHaveBeenCalledWith(SESSION_ID);
   });
 
   it('should fetch fresh roleId from database even with valid auth token', async () => {
@@ -118,7 +118,7 @@ describe('auth.middleware.ts Auth Helpers', () => {
     );
 
     const fakeUser = { id: userId, roleId: dbRoleId, email: 'test@test.com' };
-    vi.mocked(getSessionById).mockResolvedValueOnce(createSessionFixture(refreshToken));
+    vi.mocked(getSessionIdById).mockResolvedValueOnce(createSessionFixture(refreshToken));
     vi.mocked(getUserById).mockResolvedValueOnce(fakeUser as Awaited<ReturnType<typeof getUserById>>);
 
     const res = await client.test.$get(undefined, {
@@ -155,7 +155,7 @@ describe('auth.middleware.ts Auth Helpers', () => {
       getJwtExpirationDate(envVars.AUTH_TOKEN_EXPIRATION),
     );
 
-    vi.mocked(getSessionById).mockResolvedValueOnce(null);
+    vi.mocked(getSessionIdById).mockResolvedValueOnce(null);
     vi.mocked(getSession).mockResolvedValueOnce(null);
 
     const res = await client.test.$get(undefined, {
@@ -165,7 +165,7 @@ describe('auth.middleware.ts Auth Helpers', () => {
     });
 
     expect(res.status).toBe(401);
-    expect(getSessionById).toHaveBeenCalledWith(SESSION_ID);
+    expect(getSessionIdById).toHaveBeenCalledWith(SESSION_ID);
     expect(getUserById).not.toHaveBeenCalled();
   });
 
@@ -191,7 +191,7 @@ describe('auth.middleware.ts Auth Helpers', () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
-    expect(getSessionById).not.toHaveBeenCalled();
+    expect(getSessionIdById).not.toHaveBeenCalled();
     expect(getSession).toHaveBeenCalledWith(refreshToken);
 
     const renewedAuthToken = extractAuthToken(res);
@@ -217,7 +217,7 @@ describe('auth.middleware.ts Auth Helpers', () => {
     const sessionStore = new Map<string, Session>([[SESSION_ID, createSessionFixture(refreshToken)]]);
     const findByToken = (token: string) => [...sessionStore.values()].find((session) => session.token === token);
 
-    vi.mocked(getSessionById).mockImplementation(async (id) => sessionStore.get(id) ?? null);
+    vi.mocked(getSessionIdById).mockImplementation(async (id) => sessionStore.get(id) ?? null);
     vi.mocked(getSession).mockImplementation(async (token) => findByToken(token) ?? null);
     vi.mocked(deleteSession).mockImplementation(async (token) => {
       const session = findByToken(token);
@@ -277,7 +277,7 @@ describe('auth.middleware.ts session lifecycle', () => {
       sessionStore.set(session.id, session);
       return session;
     });
-    vi.mocked(getSessionById).mockImplementation(async (id) => sessionStore.get(id) ?? null);
+    vi.mocked(getSessionIdById).mockImplementation(async (id) => sessionStore.get(id) ?? null);
     vi.mocked(getSession).mockImplementation(async (token) => findByToken(token) ?? null);
     vi.mocked(deleteSession).mockImplementation(async (token) => {
       const session = findByToken(token);
@@ -334,7 +334,7 @@ describe('auth.middleware.ts session lifecycle', () => {
 
     const authenticated = await client.test.$get(undefined, { headers: { Cookie: cookieHeader } });
     expect(authenticated.status).toBe(200);
-    expect(getSessionById).toHaveBeenCalledWith(SESSION_ID);
+    expect(getSessionIdById).toHaveBeenCalledWith(SESSION_ID);
 
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(Date.now() + (Number.parseInt(envVars.AUTH_TOKEN_EXPIRATION, 10) + 60) * 1000);

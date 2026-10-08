@@ -3,7 +3,7 @@ import { ERROR_KIND } from '@sirena/common/constants';
 import type { Context } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { envVars } from '../config/env.js';
-import { getSession, getSessionById } from '../features/sessions/sessions.service.js';
+import { getSession, getSessionIdById } from '../features/sessions/sessions.service.js';
 import { getUserById } from '../features/users/users.service.js';
 import type { AppBindings } from '../helpers/factories/appWithAuth.js';
 import factoryWithAuth from '../helpers/factories/appWithAuth.js';
@@ -58,7 +58,7 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
       if (!decoded.sessionId) {
         throw new UnboundAuthTokenError('Auth token was issued without a session identifier');
       }
-      const session = await getSessionById(decoded.sessionId);
+      const session = await getSessionIdById(decoded.sessionId);
       if (!session) {
         throw new UnboundAuthTokenError(`Session with ID ${decoded.sessionId} not found`);
       }

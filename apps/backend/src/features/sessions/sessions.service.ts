@@ -18,10 +18,13 @@ export const getSession = (token: Session['token']): Promise<Session | null> =>
     },
   });
 
-export const getSessionById = (id: Session['id']): Promise<Session | null> =>
+export const getSessionIdById = (id: Session['id']): Promise<Pick<Session, 'id'> | null> =>
   prisma.session.findUnique({
     where: {
       id,
+    },
+    select: {
+      id: true,
     },
   });
 
