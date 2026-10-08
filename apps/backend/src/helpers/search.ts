@@ -41,21 +41,15 @@ export const createSearchConditionsForRequeteEntite = (raw: string): Prisma.Requ
               { requete: { participant: { identite: { nom: ci(firstName) } } } },
             ],
           },
-          // Mis en cause: the same mis en cause must carry both the first name AND the last name
-          {
-            requete: {
-              situations: {
-                some: { misEnCause: { prenom: ci(firstName), nom: ci(lastName) } },
-              },
-            },
-          },
-          {
-            requete: {
-              situations: {
-                some: { misEnCause: { prenom: ci(lastName), nom: ci(firstName) } },
-              },
-            },
-          },
+        ]
+      : [];
+
+  // A full-name match must use the first and last name of the same MisEnCause.
+  const misEnCauseFullNameClauses: Prisma.MisEnCauseWhereInput[] =
+    firstName && lastName
+      ? [
+          { prenom: ci(firstName), nom: ci(lastName) },
+          { prenom: ci(lastName), nom: ci(firstName) },
         ]
       : [];
 
@@ -68,20 +62,28 @@ export const createSearchConditionsForRequeteEntite = (raw: string): Prisma.Requ
       ...(dematSocialId !== null ? [{ requete: { dematSocialId } }] : []),
 
       // ───────── Declarant ─────────
-      { requete: { declarant: { identite: { prenom: ci(search) } } } },
-      { requete: { declarant: { identite: { nom: ci(search) } } } },
-      { requete: { declarant: { identite: { email: ci(search) } } } },
-      { requete: { declarant: { identite: { telephone: ci(search) } } } },
-      { requete: { declarant: { adresse: { ville: ci(search) } } } },
-      { requete: { declarant: { adresse: { codePostal: ci(search) } } } },
+      {
+        requete: {
+          declarant: {
+            identite: {
+              OR: [{ prenom: ci(search) }, { nom: ci(search) }, { email: ci(search) }, { telephone: ci(search) }],
+            },
+          },
+        },
+      },
+      { requete: { declarant: { adresse: { OR: [{ ville: ci(search) }, { codePostal: ci(search) }] } } } },
 
       // ───────── Participant  ─────────
-      { requete: { participant: { identite: { prenom: ci(search) } } } },
-      { requete: { participant: { identite: { nom: ci(search) } } } },
-      { requete: { participant: { identite: { email: ci(search) } } } },
-      { requete: { participant: { identite: { telephone: ci(search) } } } },
-      { requete: { participant: { adresse: { ville: ci(search) } } } },
-      { requete: { participant: { adresse: { codePostal: ci(search) } } } },
+      {
+        requete: {
+          participant: {
+            identite: {
+              OR: [{ prenom: ci(search) }, { nom: ci(search) }, { email: ci(search) }, { telephone: ci(search) }],
+            },
+          },
+        },
+      },
+      { requete: { participant: { adresse: { OR: [{ ville: ci(search) }, { codePostal: ci(search) }] } } } },
       ...fullNameClauses,
 
       // ───────── Situations → Faits → Motifs/Conséquences/Maltraitance ─────────
@@ -131,84 +133,17 @@ export const createSearchConditionsForRequeteEntite = (raw: string): Prisma.Requ
           situations: {
             some: {
               misEnCause: {
-                commentaire: ci(search),
-              },
-            },
-          },
-        },
-      },
-      {
-        requete: {
-          situations: {
-            some: {
-              misEnCause: {
-                rpps: ci(search),
-              },
-            },
-          },
-        },
-      },
-      {
-        requete: {
-          situations: {
-            some: {
-              misEnCause: {
-                nom: ci(search),
-              },
-            },
-          },
-        },
-      },
-      {
-        requete: {
-          situations: {
-            some: {
-              misEnCause: {
-                prenom: ci(search),
-              },
-            },
-          },
-        },
-      },
-      {
-        requete: {
-          situations: {
-            some: {
-              misEnCause: {
-                finess: ci(search),
-              },
-            },
-          },
-        },
-      },
-      {
-        requete: {
-          situations: {
-            some: {
-              misEnCause: {
-                nomService: ci(search),
-              },
-            },
-          },
-        },
-      },
-      {
-        requete: {
-          situations: {
-            some: {
-              misEnCause: {
-                misEnCauseType: { label: ci(search) },
-              },
-            },
-          },
-        },
-      },
-      {
-        requete: {
-          situations: {
-            some: {
-              misEnCause: {
-                misEnCauseTypePrecision: { label: ci(search) },
+                OR: [
+                  { commentaire: ci(search) },
+                  { rpps: ci(search) },
+                  { nom: ci(search) },
+                  { prenom: ci(search) },
+                  { finess: ci(search) },
+                  { nomService: ci(search) },
+                  { misEnCauseType: { label: ci(search) } },
+                  { misEnCauseTypePrecision: { label: ci(search) } },
+                  ...misEnCauseFullNameClauses,
+                ],
               },
             },
           },
@@ -221,42 +156,12 @@ export const createSearchConditionsForRequeteEntite = (raw: string): Prisma.Requ
           situations: {
             some: {
               lieuDeSurvenue: {
-                commentaire: ci(search),
-              },
-            },
-          },
-        },
-      },
-      {
-        requete: {
-          situations: {
-            some: {
-              lieuDeSurvenue: {
-                finess: ci(search),
-              },
-            },
-          },
-        },
-      },
-      {
-        requete: {
-          situations: {
-            some: {
-              lieuDeSurvenue: {
-                societeTransport: ci(search),
-              },
-            },
-          },
-        },
-      },
-      {
-        requete: {
-          situations: {
-            some: {
-              lieuDeSurvenue: {
-                adresse: {
-                  OR: [{ ville: ci(search) }, { codePostal: ci(search) }, { label: ci(search) }],
-                },
+                OR: [
+                  { commentaire: ci(search) },
+                  { finess: ci(search) },
+                  { societeTransport: ci(search) },
+                  { adresse: { OR: [{ ville: ci(search) }, { codePostal: ci(search) }, { label: ci(search) }] } },
+                ],
               },
             },
           },

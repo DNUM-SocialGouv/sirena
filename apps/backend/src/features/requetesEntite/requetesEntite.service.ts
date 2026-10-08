@@ -50,6 +50,7 @@ import {
   setFaitFiles,
   UNATTACHED_FILE_RELATIONS,
 } from '../uploadedFiles/uploadedFiles.service.js';
+import { DEFAULT_REQUETES_LIMIT } from './requetesEntite.constants.js';
 import {
   mapDeclarantToPrismaCreate,
   mapPersonneConcerneeToPrismaCreate,
@@ -275,7 +276,7 @@ const buildRequetesEntiteWhere = async (
 
 // TODO handle entiteIds
 export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRequetesEntiteQuery = {}) => {
-  const { offset = 0, limit, sort = 'requete.createdAt', order = 'desc' } = query;
+  const { offset = 0, limit = DEFAULT_REQUETES_LIMIT, sort = 'requete.createdAt', order = 'desc' } = query;
 
   const where = await buildRequetesEntiteWhere(entiteIds, query);
 
@@ -283,7 +284,7 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
     prisma.requeteEntite.findMany({
       where,
       skip: offset,
-      ...(typeof limit === 'number' ? { take: limit } : {}),
+      take: limit,
       orderBy: sortObject(sort, order),
       include: {
         requete: {

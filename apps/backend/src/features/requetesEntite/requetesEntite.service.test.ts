@@ -9,6 +9,7 @@ import {
   type RequeteEtape,
   type UploadedFile,
 } from '../../libs/prisma.js';
+import { DEFAULT_REQUETES_LIMIT } from './requetesEntite.constants.js';
 import {
   closeRequeteForEntite,
   collectRequeteFiles,
@@ -216,6 +217,7 @@ describe('requetesEntite.service', () => {
 
       expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith({
         skip: 0,
+        take: DEFAULT_REQUETES_LIMIT,
         orderBy: {
           requete: {
             createdAt: 'desc',
