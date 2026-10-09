@@ -80,3 +80,27 @@ describe('MisEnCause — RGAA 3.2 read-only fields', () => {
     }
   });
 });
+
+describe('MisEnCause — RGAA 11.10 input formats', () => {
+  it('describes the expected formats on the editable service address', () => {
+    renderMisEnCause({
+      misEnCauseType: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
+      misEnCauseTypePrecision: MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SAD_MIXTE,
+      nomService: 'Service de test',
+    });
+
+    expect(screen.getByRole('textbox', { name: /^Code postal/ })).toHaveAccessibleName(
+      /Format attendu : 5 chiffres \(exemple : 75001\)/,
+    );
+    expect(screen.getByRole('textbox', { name: /^Ville/ })).toHaveAccessibleName(/Exemple : Paris/);
+  });
+
+  it('describes the expected formats on the practitioner address', () => {
+    renderMisEnCause({ misEnCauseType: MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE, rpps: '10101010101' });
+
+    expect(screen.getByRole('textbox', { name: /^Code postal/ })).toHaveAccessibleName(
+      /Format attendu : 5 chiffres \(exemple : 75001\)/,
+    );
+    expect(screen.getByRole('textbox', { name: /^Ville/ })).toHaveAccessibleName(/Exemple : Paris/);
+  });
+});
