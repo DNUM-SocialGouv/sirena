@@ -16,9 +16,38 @@ const createSyncLogger = () => {
   return pino(createPinoConfig(), destination);
 };
 
+const getArgValue = (args: string[], name: string): string | undefined => {
+  const prefix = `--${name}=`;
+  const found = args.find((a) => a.startsWith(prefix));
+  return found?.slice(prefix.length);
+};
+
+const parsePositiveInt = (value: string | undefined, name: string): number | undefined => {
+  if (value === undefined) return undefined;
+  const parsed = Number.parseInt(value, 10);
+  if (Number.isNaN(parsed) || parsed <= 0) {
+    throw new Error(`--${name} must be a positive integer, got "${value}"`);
+  }
+  return parsed;
+};
+
+const parseNonNegativeNumber = (value: string | undefined, name: string): number | undefined => {
+  if (value === undefined) return undefined;
+  const parsed = Number(value);
+  if (value.trim() === '' || Number.isNaN(parsed) || parsed < 0) {
+    throw new Error(`--${name} must be a non-negative number, got "${value}"`);
+  }
+  return parsed;
+};
+
 const args = process.argv.slice(2);
 const removeOrphans = args.includes('--remove-orphans');
 const removeDangling = args.includes('--remove-dangling');
+const dbBatchSize = parsePositiveInt(getArgValue(args, 'db-batch-size'), 'db-batch-size');
+const s3BatchSize = parsePositiveInt(getArgValue(args, 's3-batch-size'), 's3-batch-size');
+const reportFilePath = getArgValue(args, 'report-file');
+// Hours an unlinked file must have been left untouched before it counts as an orphan.
+const orphanMinAgeHours = parseNonNegativeNumber(getArgValue(args, 'older-than'), 'older-than');
 
 async function main() {
   const logger = createSyncLogger();
@@ -31,7 +60,14 @@ async function main() {
           try {
             logger.info('Starting file integrity check...');
 
-            const result = await runFileIntegrityCheck({ removeOrphans, removeDangling });
+            const result = await runFileIntegrityCheck({
+              removeOrphans,
+              removeDangling,
+              dbBatchSize,
+              s3BatchSize,
+              orphanMinAgeHours,
+              reportFilePath,
+            });
 
             if (!removeOrphans && (result.orphanDbFiles > 0 || result.s3FilesWithoutDb > 0)) {
               logger.info('Run with --remove-orphans to clean up orphaned files.');

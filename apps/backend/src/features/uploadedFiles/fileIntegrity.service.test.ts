@@ -1,0 +1,524 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { deleteFilesFromMinio, listMinioObjects, statMinioObject } from '../../libs/minio.js';
+import { prisma } from '../../libs/prisma.js';
+import { runFileIntegrityCheck } from './fileIntegrity.service.js';
+
+const loggerMock = {
+  info: vi.fn(),
+  debug: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+};
+
+vi.mock('../../libs/asyncLocalStorage.js', () => ({
+  getLoggerStore: () => loggerMock,
+  abortControllerStorage: { getStore: vi.fn(() => undefined) },
+}));
+
+vi.mock('../../libs/minio.js', () => ({
+  listMinioObjects: vi.fn(),
+  deleteFilesFromMinio: vi.fn(),
+  statMinioObject: vi.fn(),
+}));
+
+vi.mock('../../libs/prisma.js', () => ({
+  prisma: {
+    uploadedFile: {
+      findMany: vi.fn(),
+      deleteMany: vi.fn(),
+    },
+  },
+}));
+
+const mockedFindMany = vi.mocked(prisma.uploadedFile.findMany);
+const mockedDeleteMany = vi.mocked(prisma.uploadedFile.deleteMany);
+const mockedListMinioObjects = vi.mocked(listMinioObjects);
+const mockedDeleteFilesFromMinio = vi.mocked(deleteFilesFromMinio);
+const mockedStatMinioObject = vi.mocked(statMinioObject);
+
+const s3NotFoundError = () => Object.assign(new Error('Not Found'), { code: 'NotFound' });
+
+type DbFileFixture = {
+  id: string;
+  fileName: string;
+  filePath: string;
+  safeFilePath: string | null;
+  size: number;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+  requeteId: string | null;
+  faitSituationId: string | null;
+  requeteEtapeId: string | null;
+  demarchesEngageesId: string | null;
+};
+
+const makeFile = (overrides: Partial<DbFileFixture> & { id: string }): DbFileFixture => ({
+  fileName: `${overrides.id}.pdf`,
+  filePath: `uploads/${overrides.id}.pdf`,
+  safeFilePath: null,
+  size: 100,
+  status: 'COMPLETED',
+  createdAt: new Date('2026-01-01T00:00:00.000Z'),
+  updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+  requeteId: 'requete-1',
+  faitSituationId: null,
+  requeteEtapeId: null,
+  demarchesEngageesId: null,
+  ...overrides,
+});
+
+/** Builds the `name -> size` map `listMinioObjects` now resolves with. */
+const s3Map = (objects: { name: string; size: number }[]): Map<string, number> =>
+  new Map(objects.map((o) => [o.name, o.size]));
+
+/** Makes findMany resolve with one page per call, then an empty page. */
+const mockDbPages = (pages: DbFileFixture[][]) => {
+  for (const page of pages) {
+    mockedFindMany.mockResolvedValueOnce(page as never);
+  }
+  mockedFindMany.mockResolvedValue([] as never);
+};
+
+type FindManyArgs = {
+  where?: { id?: { gt?: string }; cursor?: never };
+  cursor?: { id: string };
+  skip?: number;
+  take?: number;
+};
+
+/**
+ * A minimal in-memory stand-in for `prisma.uploadedFile`, realistic enough to
+ * catch pagination bugs that a plain "one page per call" mock cannot: it
+ * actually removes rows on `deleteMany` and resolves `findMany` against what's
+ * left, including reproducing Prisma's real (and easy to trip over) behavior
+ * that a `cursor` pointing at a since-deleted row yields an empty page.
+ */
+const createFakeUploadedFileTable = (initialRows: DbFileFixture[]) => {
+  const byId = (a: DbFileFixture, b: DbFileFixture) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  let rows = [...initialRows].sort(byId);
+
+  const findMany = vi.fn(async (args: FindManyArgs) => {
+    let candidates = rows;
+    if (args.where?.id?.gt !== undefined) {
+      const gt = args.where.id.gt;
+      candidates = candidates.filter((r) => r.id > gt);
+    } else if (args.cursor?.id !== undefined) {
+      const idx = candidates.findIndex((r) => r.id === args.cursor?.id);
+      candidates = idx === -1 ? [] : candidates.slice(idx + (args.skip ?? 0));
+    }
+    return candidates.slice(0, args.take ?? candidates.length);
+  });
+
+  const deleteMany = vi.fn(async (args: { where: { id: { in: string[] } } }) => {
+    const ids = new Set(args.where.id.in);
+    const before = rows.length;
+    rows = rows.filter((r) => !ids.has(r.id));
+    return { count: before - rows.length };
+  });
+
+  return { findMany, deleteMany, remainingIds: () => rows.map((r) => r.id) };
+};
+
+describe('fileIntegrity.service.ts', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockedListMinioObjects.mockResolvedValue(new Map());
+    mockedDeleteFilesFromMinio.mockResolvedValue([]);
+    mockedDeleteMany.mockResolvedValue({ count: 0 } as never);
+    // By default, the dangling re-check confirms the object is missing from S3.
+    mockedStatMinioObject.mockRejectedValue(s3NotFoundError());
+    mockDbPages([]);
+  });
+
+  it('returns all zeros when DB and S3 are in sync', async () => {
+    const file = makeFile({ id: 'f1' });
+    mockDbPages([[file]]);
+    mockedListMinioObjects.mockResolvedValue(s3Map([{ name: file.filePath, size: 100 }]));
+
+    const result = await runFileIntegrityCheck();
+
+    expect(result).toEqual({
+      orphanDbFiles: 0,
+      orphanDbFilesSize: 0,
+      dbFilesWithoutS3: 0,
+      dbFilesWithoutS3Size: 0,
+      s3FilesWithoutDb: 0,
+      s3FilesWithoutDbSize: 0,
+    });
+    expect(mockedDeleteMany).not.toHaveBeenCalled();
+    expect(mockedDeleteFilesFromMinio).not.toHaveBeenCalled();
+  });
+
+  it('detects orphan DB files (unlinked to any entity) without removing them by default', async () => {
+    const orphan = makeFile({ id: 'orphan1', requeteId: null, size: 250 });
+    mockDbPages([[orphan]]);
+    mockedListMinioObjects.mockResolvedValue(s3Map([{ name: orphan.filePath, size: 250 }]));
+
+    const result = await runFileIntegrityCheck();
+
+    expect(result.orphanDbFiles).toBe(1);
+    expect(result.orphanDbFilesSize).toBe(250);
+    expect(mockedDeleteMany).not.toHaveBeenCalled();
+    expect(mockedDeleteFilesFromMinio).not.toHaveBeenCalled();
+  });
+
+  it('detects DB rows missing their S3 object (dangling)', async () => {
+    const dangling = makeFile({ id: 'dangling1', size: 50 });
+    mockDbPages([[dangling]]);
+    mockedListMinioObjects.mockResolvedValue(new Map());
+
+    const result = await runFileIntegrityCheck();
+
+    expect(result.dbFilesWithoutS3).toBe(1);
+    expect(result.dbFilesWithoutS3Size).toBe(50);
+  });
+
+  it('detects S3 objects without a DB row', async () => {
+    mockDbPages([]);
+    mockedListMinioObjects.mockResolvedValue(s3Map([{ name: 'uploads/ghost.pdf', size: 10 }]));
+
+    const result = await runFileIntegrityCheck();
+
+    expect(result.s3FilesWithoutDb).toBe(1);
+    expect(result.s3FilesWithoutDbSize).toBe(10);
+  });
+
+  it('paginates the DB scan using dbBatchSize and a keyset "id > cursor" filter', async () => {
+    const page1 = [makeFile({ id: 'a' }), makeFile({ id: 'b' })];
+    const page2 = [makeFile({ id: 'c' })];
+    mockDbPages([page1, page2]);
+    mockedListMinioObjects.mockResolvedValue(
+      s3Map([...page1, ...page2].map((f) => ({ name: f.filePath, size: f.size }))),
+    );
+
+    await runFileIntegrityCheck({ dbBatchSize: 2 });
+
+    // page1 is full (2 rows) so a second page is fetched; page2 is short (1 row)
+    // so the scan stops there without an extra round-trip.
+    expect(mockedFindMany).toHaveBeenCalledTimes(2);
+    expect(mockedFindMany.mock.calls[0][0]).toMatchObject({ take: 2 });
+    expect(mockedFindMany.mock.calls[0][0]).not.toHaveProperty('where');
+    expect(mockedFindMany.mock.calls[1][0]).toMatchObject({ take: 2, where: { id: { gt: 'b' } } });
+  });
+
+  it('keeps paginating past a page whose rows were all deleted (cursor row no longer exists)', async () => {
+    // Regression test: pagination must not rely on Prisma's `cursor` option,
+    // which silently returns an empty page once the anchor row no longer
+    // exists. Here every row is dangling and gets deleted as soon as its page
+    // is scanned — including the row used to page to the next batch — so a
+    // `cursor`-based implementation would stop after the first page instead
+    // of reaching all 3 rows.
+    const table = createFakeUploadedFileTable([makeFile({ id: 'a' }), makeFile({ id: 'b' }), makeFile({ id: 'c' })]);
+    mockedFindMany.mockImplementation(table.findMany as never);
+    mockedDeleteMany.mockImplementation(table.deleteMany as never);
+    mockedListMinioObjects.mockResolvedValue(new Map()); // nothing in S3 -> every row is dangling
+
+    const result = await runFileIntegrityCheck({ removeDangling: true, dbBatchSize: 2 });
+
+    expect(result.dbFilesWithoutS3).toBe(3);
+    expect(table.remainingIds()).toEqual([]);
+  });
+
+  it('does not treat a recently uploaded, not yet attached file as an orphan', async () => {
+    // Uploads are created with every *Id at null and only attached on form
+    // submission: a fresh unlinked row is an in-flight upload, not an orphan.
+    const now = Date.now();
+    const hoursAgo = (h: number) => new Date(now - h * 60 * 60 * 1000);
+    const inFlight = makeFile({ id: 'in-flight', requeteId: null, createdAt: hoursAgo(1), updatedAt: hoursAgo(1) });
+    // SIREC migration backdates createdAt, but updatedAt still reflects the insert.
+    const backdated = makeFile({ id: 'backdated', requeteId: null, updatedAt: hoursAgo(1) });
+    const stale = makeFile({ id: 'stale', requeteId: null });
+    const files = [inFlight, backdated, stale];
+    mockDbPages([files]);
+    mockedListMinioObjects.mockResolvedValue(s3Map(files.map((f) => ({ name: f.filePath, size: f.size }))));
+    mockedDeleteMany.mockResolvedValue({ count: 1 } as never);
+
+    const result = await runFileIntegrityCheck({ removeOrphans: true });
+
+    expect(result.orphanDbFiles).toBe(1);
+    expect(mockedDeleteFilesFromMinio).toHaveBeenCalledWith(['uploads/stale.pdf']);
+    expect(mockedDeleteMany).toHaveBeenCalledWith({ where: { id: { in: ['stale'] } } });
+    expect(loggerMock.info).toHaveBeenCalledWith(expect.stringContaining('Skipped 2 unlinked DB files'));
+  });
+
+  it('treats every unlinked file as an orphan when orphanMinAgeHours is 0', async () => {
+    const fresh = makeFile({
+      id: 'fresh',
+      requeteId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(Date.now() - 1),
+    });
+    mockDbPages([[fresh]]);
+    mockedListMinioObjects.mockResolvedValue(s3Map([{ name: fresh.filePath, size: fresh.size }]));
+
+    const result = await runFileIntegrityCheck({ orphanMinAgeHours: 0 });
+
+    expect(result.orphanDbFiles).toBe(1);
+  });
+
+  it('removes orphan DB files and their S3 objects in batches when removeOrphans is set', async () => {
+    const orphans = [makeFile({ id: 'o1', requeteId: null }), makeFile({ id: 'o2', requeteId: null })];
+    mockDbPages([orphans]);
+    mockedListMinioObjects.mockResolvedValue(s3Map(orphans.map((f) => ({ name: f.filePath, size: f.size }))));
+    mockedDeleteFilesFromMinio.mockResolvedValue([]);
+    mockedDeleteMany.mockResolvedValue({ count: 2 } as never);
+
+    const result = await runFileIntegrityCheck({ removeOrphans: true, s3BatchSize: 1 });
+
+    // s3BatchSize of 1 forces one call per key
+    expect(mockedDeleteFilesFromMinio).toHaveBeenCalledTimes(2);
+    expect(mockedDeleteFilesFromMinio).toHaveBeenCalledWith(['uploads/o1.pdf']);
+    expect(mockedDeleteFilesFromMinio).toHaveBeenCalledWith(['uploads/o2.pdf']);
+    expect(mockedDeleteMany).toHaveBeenCalledWith({ where: { id: { in: ['o1', 'o2'] } } });
+    expect(result.orphanDbFiles).toBe(2);
+  });
+
+  it('keeps the DB row when its S3 deletion fails, so the next run retries it', async () => {
+    const orphans = [makeFile({ id: 'o1', requeteId: null }), makeFile({ id: 'o2', requeteId: null })];
+    mockDbPages([orphans]);
+    mockedListMinioObjects.mockResolvedValue(s3Map(orphans.map((f) => ({ name: f.filePath, size: f.size }))));
+    mockedDeleteFilesFromMinio.mockResolvedValue([{ key: 'uploads/o1.pdf', message: 'AccessDenied' }]);
+
+    await runFileIntegrityCheck({ removeOrphans: true });
+
+    expect(mockedDeleteMany).toHaveBeenCalledWith({ where: { id: { in: ['o2'] } } });
+  });
+
+  it('removes S3 objects without a DB row when removeOrphans is set', async () => {
+    mockDbPages([]);
+    mockedListMinioObjects.mockResolvedValue(s3Map([{ name: 'uploads/ghost.pdf', size: 10 }]));
+    mockedDeleteFilesFromMinio.mockResolvedValue([]);
+
+    await runFileIntegrityCheck({ removeOrphans: true });
+
+    expect(mockedDeleteFilesFromMinio).toHaveBeenCalledWith(['uploads/ghost.pdf']);
+  });
+
+  it('does not report nor delete an S3 object referenced by a row the scan missed', async () => {
+    // The keyset scan runs on random UUIDs: a row inserted mid-scan behind the
+    // cursor, or a `safeFilePath` written on an already-scanned row, never makes
+    // it into `dbPaths`. Candidates must be re-checked against the DB.
+    mockedListMinioObjects.mockResolvedValue(
+      s3Map([
+        { name: 'uploads/late-insert.pdf', size: 10 },
+        { name: 'uploads/late-safe.pdf', size: 20 },
+        { name: 'uploads/ghost.pdf', size: 30 },
+      ]),
+    );
+    mockedFindMany
+      .mockResolvedValueOnce([] as never) // DB scan: the rows were not visited
+      .mockResolvedValueOnce([
+        { filePath: 'uploads/late-insert.pdf', safeFilePath: null },
+        { filePath: 'uploads/original.pdf', safeFilePath: 'uploads/late-safe.pdf' },
+      ] as never); // re-check query
+
+    const result = await runFileIntegrityCheck({ removeOrphans: true });
+
+    expect(mockedFindMany.mock.calls[1][0]).toMatchObject({
+      where: {
+        OR: [
+          { filePath: { in: ['uploads/late-insert.pdf', 'uploads/late-safe.pdf', 'uploads/ghost.pdf'] } },
+          { safeFilePath: { in: ['uploads/late-insert.pdf', 'uploads/late-safe.pdf', 'uploads/ghost.pdf'] } },
+        ],
+      },
+    });
+    expect(result.s3FilesWithoutDb).toBe(1);
+    expect(result.s3FilesWithoutDbSize).toBe(30);
+    expect(mockedDeleteFilesFromMinio).toHaveBeenCalledTimes(1);
+    expect(mockedDeleteFilesFromMinio).toHaveBeenCalledWith(['uploads/ghost.pdf']);
+  });
+
+  it('keeps S3 orphan candidates when the DB re-check fails', async () => {
+    mockedListMinioObjects.mockResolvedValue(s3Map([{ name: 'uploads/ghost.pdf', size: 10 }]));
+    mockedFindMany.mockResolvedValueOnce([] as never).mockRejectedValueOnce(new Error('db down'));
+
+    const result = await runFileIntegrityCheck({ removeOrphans: true });
+
+    expect(result.s3FilesWithoutDb).toBe(0);
+    expect(mockedDeleteFilesFromMinio).not.toHaveBeenCalled();
+  });
+
+  it('logs a name+size sample of S3-only orphans without fetching their lastModified date', async () => {
+    // Regression test: `listMinioObjects` only returns a `name -> size` map
+    // (no per-object Date), and S3-only orphans are only known once compared
+    // against `dbPaths` — after the listing pass is long over. The orphan-s3
+    // log must therefore work from name+size alone, with zero extra MinIO calls.
+    mockDbPages([]);
+    mockedListMinioObjects.mockResolvedValue(s3Map([{ name: 'uploads/ghost.pdf', size: 2048 }]));
+
+    await runFileIntegrityCheck();
+
+    expect(loggerMock.warn).toHaveBeenCalledWith(expect.stringContaining('orphan-s3 | 1/1 | uploads/ghost.pdf | 2 KB'));
+    // listMinioObjects is the only MinIO read call; nothing extra is fetched for the sample.
+    expect(mockedListMinioObjects).toHaveBeenCalledTimes(1);
+  });
+
+  it('removes dangling DB rows in batches when removeDangling is set', async () => {
+    const dangling = [makeFile({ id: 'd1' }), makeFile({ id: 'd2' })];
+    mockDbPages([dangling]);
+    mockedListMinioObjects.mockResolvedValue(new Map());
+    mockedDeleteMany.mockResolvedValue({ count: 1 } as never);
+
+    await runFileIntegrityCheck({ removeDangling: true, dbBatchSize: 1 });
+
+    expect(mockedDeleteMany).toHaveBeenCalledWith({ where: { id: { in: ['d1'] } } });
+    expect(mockedDeleteMany).toHaveBeenCalledWith({ where: { id: { in: ['d2'] } } });
+  });
+
+  it('deletes a row that is both orphan and dangling only once, via the orphan pass', async () => {
+    const both = makeFile({ id: 'both', requeteId: null });
+    const danglingOnly = makeFile({ id: 'dangling-only' });
+    mockDbPages([[both, danglingOnly]]);
+    mockedListMinioObjects.mockResolvedValue(new Map());
+    mockedDeleteMany.mockResolvedValue({ count: 1 } as never);
+
+    const result = await runFileIntegrityCheck({ removeOrphans: true, removeDangling: true });
+
+    // Still reported in both categories...
+    expect(result.orphanDbFiles).toBe(1);
+    expect(result.dbFilesWithoutS3).toBe(2);
+    // ...but each row is deleted exactly once.
+    expect(mockedDeleteMany).toHaveBeenCalledTimes(2);
+    expect(mockedDeleteMany).toHaveBeenCalledWith({ where: { id: { in: ['both'] } } });
+    expect(mockedDeleteMany).toHaveBeenCalledWith({ where: { id: { in: ['dangling-only'] } } });
+    expect(loggerMock.info).toHaveBeenCalledWith('Removed 1/1 dangling DB records (1 more handled by the orphan pass)');
+  });
+
+  it('still deletes an orphan dangling row via the dangling pass when removeOrphans is not set', async () => {
+    mockDbPages([[makeFile({ id: 'both', requeteId: null })]]);
+    mockedListMinioObjects.mockResolvedValue(new Map());
+    mockedDeleteMany.mockResolvedValue({ count: 1 } as never);
+
+    await runFileIntegrityCheck({ removeDangling: true });
+
+    expect(mockedDeleteMany).toHaveBeenCalledTimes(1);
+    expect(mockedDeleteMany).toHaveBeenCalledWith({ where: { id: { in: ['both'] } } });
+    expect(loggerMock.info).toHaveBeenCalledWith('Removed 1/1 dangling DB records');
+  });
+
+  it('does not report nor delete a row whose S3 object appeared after the listing (uploaded during the scan)', async () => {
+    // The S3 listing is a snapshot taken before the DB scan; uploads write the
+    // S3 object before creating the row. A row missing from the snapshot must
+    // be re-checked against S3 before being treated as dangling.
+    const freshUpload = makeFile({ id: 'fresh' });
+    const reallyDangling = makeFile({ id: 'gone' });
+    mockDbPages([[freshUpload, reallyDangling]]);
+    mockedListMinioObjects.mockResolvedValue(new Map());
+    mockedStatMinioObject.mockImplementation(async (filePath: string) => {
+      if (filePath === freshUpload.filePath) return { size: 100 } as never;
+      throw s3NotFoundError();
+    });
+    mockedDeleteMany.mockResolvedValue({ count: 1 } as never);
+
+    const result = await runFileIntegrityCheck({ removeDangling: true });
+
+    expect(result.dbFilesWithoutS3).toBe(1);
+    expect(mockedDeleteMany).toHaveBeenCalledTimes(1);
+    expect(mockedDeleteMany).toHaveBeenCalledWith({ where: { id: { in: ['gone'] } } });
+  });
+
+  it('keeps a dangling candidate when the S3 re-check fails for another reason than "not found"', async () => {
+    mockDbPages([[makeFile({ id: 'd1' })]]);
+    mockedListMinioObjects.mockResolvedValue(new Map());
+    mockedStatMinioObject.mockRejectedValue(Object.assign(new Error('timeout'), { code: 'ETIMEDOUT' }));
+
+    const result = await runFileIntegrityCheck({ removeDangling: true });
+
+    expect(result.dbFilesWithoutS3).toBe(0);
+    expect(mockedDeleteMany).not.toHaveBeenCalled();
+    expect(loggerMock.error).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'd1' }),
+      expect.stringContaining('keeping it'),
+    );
+  });
+
+  it('does not delete anything for dangling files when removeDangling is not set', async () => {
+    mockDbPages([[makeFile({ id: 'd1' })]]);
+    mockedListMinioObjects.mockResolvedValue(new Map());
+
+    await runFileIntegrityCheck();
+
+    expect(mockedDeleteMany).not.toHaveBeenCalled();
+  });
+
+  it('caps s3BatchSize to the S3 DeleteObjects API limit of 1000', async () => {
+    mockDbPages([]);
+    mockedListMinioObjects.mockResolvedValue(new Map());
+
+    await runFileIntegrityCheck({ s3BatchSize: 5000 });
+
+    expect(loggerMock.warn).toHaveBeenCalledWith(expect.stringContaining('capping to 1000'));
+  });
+
+  it('rejects a negative orphanMinAgeHours', async () => {
+    await expect(runFileIntegrityCheck({ orphanMinAgeHours: -1 })).rejects.toThrow(/orphanMinAgeHours/);
+  });
+
+  describe('report file', () => {
+    let tmpDir: string;
+    const readReport = (file: string) =>
+      fs
+        .readFileSync(file, 'utf-8')
+        .split('\n')
+        .filter(Boolean)
+        .map((l) => JSON.parse(l) as { category: string; id?: string; name?: string });
+
+    beforeEach(() => {
+      tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'file-integrity-'));
+    });
+    afterEach(() => {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    it('writes one NDJSON line per flagged file', async () => {
+      const reportFilePath = path.join(tmpDir, 'report.ndjson');
+      const orphan = makeFile({ id: 'o1', requeteId: null });
+      const dangling = makeFile({ id: 'd1' });
+      mockDbPages([[orphan, dangling]]);
+      mockedListMinioObjects.mockResolvedValue(
+        s3Map([
+          { name: orphan.filePath, size: 100 },
+          { name: 'uploads/ghost.pdf', size: 10 },
+        ]),
+      );
+
+      await runFileIntegrityCheck({ reportFilePath });
+
+      expect(readReport(reportFilePath)).toEqual([
+        expect.objectContaining({ category: 'orphan-db', id: 'o1' }),
+        expect.objectContaining({ category: 'dangling-db', id: 'd1' }),
+        { category: 'orphan-s3', name: 'uploads/ghost.pdf', size: 10 },
+      ]);
+    });
+
+    it('fails before deleting anything when the report file cannot be opened', async () => {
+      const reportFilePath = path.join(tmpDir, 'missing-dir', 'report.ndjson');
+
+      await expect(
+        runFileIntegrityCheck({ reportFilePath, removeOrphans: true, removeDangling: true }),
+      ).rejects.toThrow(/ENOENT/);
+      expect(mockedListMinioObjects).not.toHaveBeenCalled();
+      expect(mockedDeleteMany).not.toHaveBeenCalled();
+      expect(mockedDeleteFilesFromMinio).not.toHaveBeenCalled();
+    });
+
+    it('keeps the lines of already processed pages when the run fails midway', async () => {
+      const reportFilePath = path.join(tmpDir, 'report.ndjson');
+      mockedFindMany
+        .mockResolvedValueOnce([makeFile({ id: 'a' }), makeFile({ id: 'b' })] as never)
+        .mockRejectedValueOnce(new Error('db down'));
+
+      await expect(runFileIntegrityCheck({ reportFilePath, dbBatchSize: 2 })).rejects.toThrow('db down');
+
+      expect(readReport(reportFilePath).map((l) => l.id)).toEqual(['a', 'b']);
+    });
+  });
+
+  it('rejects a non-positive dbBatchSize', async () => {
+    await expect(runFileIntegrityCheck({ dbBatchSize: 0 })).rejects.toThrow(/dbBatchSize/);
+  });
+});
