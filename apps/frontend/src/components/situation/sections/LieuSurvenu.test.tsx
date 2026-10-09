@@ -53,6 +53,25 @@ describe('LieuSurvenu — RGAA 3.2 read-only fields', () => {
   });
 });
 
+describe('LieuSurvenu — RGAA 11.10 input formats', () => {
+  it('describes the expected postal code format on a transport address', () => {
+    renderLieu({ lieuType: LIEU_TYPE.TRAJET });
+
+    expect(screen.getByRole('textbox', { name: /^Code postal/ })).toHaveAccessibleName(
+      /Format attendu : 5 chiffres \(exemple : 75001\)/,
+    );
+  });
+
+  it('describes the expected formats on the address of an establishment without a FINESS number', () => {
+    renderLieu({ lieuType: LIEU_TYPE.ETABLISSEMENT_SANTE, adresse: { label: 'Clinique de test' } });
+
+    expect(screen.getByRole('textbox', { name: /^Code postal/ })).toHaveAccessibleName(
+      /Format attendu : 5 chiffres \(exemple : 75001\)/,
+    );
+    expect(screen.getByRole('textbox', { name: /^Ville/ })).toHaveAccessibleName(/Exemple : Paris/);
+  });
+});
+
 const makeAddress = (overrides: Partial<Address>): Address => ({
   id: 'a1',
   label: '',

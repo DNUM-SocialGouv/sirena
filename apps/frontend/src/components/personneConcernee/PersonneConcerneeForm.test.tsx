@@ -46,6 +46,7 @@ describe('PersonneConcerneeForm', () => {
     expect(screen.getByRole('textbox', { name: /^Code postal/ })).toHaveAccessibleName(
       /Format attendu : 5 chiffres \(exemple : 75001\)/,
     );
+    expect(screen.getByRole('textbox', { name: /^Ville/ })).toHaveAccessibleName(/Exemple : Paris/);
   });
 
   it('shows an error, focuses the birth date and does not save when the date is invalid', async () => {

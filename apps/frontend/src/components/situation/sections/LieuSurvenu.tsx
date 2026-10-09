@@ -426,6 +426,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
               <div className="fr-col-12 fr-col-md-3">
                 <Input
                   label="Code postal"
+                  hintText="Format attendu : 5 chiffres (exemple : 75001)"
                   nativeInputProps={{
                     value: formData.lieuDeSurvenue?.codePostal || '',
                     onChange: (e) =>
@@ -577,6 +578,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                     ) : (
                       <Input
                         label="Code postal"
+                        hintText="Format attendu : 5 chiffres (exemple : 75001)"
                         nativeInputProps={{
                           value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
                           onChange: (e) =>
@@ -604,6 +606,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                     ) : (
                       <Input
                         label="Ville"
+                        hintText="Exemple : Paris"
                         nativeInputProps={{
                           value: formData.lieuDeSurvenue?.adresse?.ville || '',
                           onChange: (e) =>
