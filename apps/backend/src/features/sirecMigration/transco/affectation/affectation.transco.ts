@@ -75,6 +75,11 @@ interface AffectationEntry {
 let transco: Map<number, AffectationEntry> | null = null;
 let arsEntiteIdSet: Set<string> = new Set();
 
+/** Délai minimal entre deux tentatives de rechargement d'un même id SIREC introuvable. */
+export const AFFECTATION_RELOAD_COOLDOWN_MS = 30000;
+let lastReloadAttemptAt = new Map<number, number>();
+let pendingReload: Promise<void> | null = null;
+
 type EntiteRow = {
   id: string;
   nomComplet: string;
@@ -99,8 +104,8 @@ function findEntityId(entities: EntiteRow[], sirenaLabels: EntiteSirenaLabels & 
   return match.id;
 }
 
-export async function initAffectationTransco(): Promise<void> {
-  const entities = await prisma.entite.findMany({
+function fetchActiveEntities(): Promise<EntiteRow[]> {
+  return prisma.entite.findMany({
     select: {
       id: true,
       nomComplet: true,
@@ -117,21 +122,32 @@ export async function initAffectationTransco(): Promise<void> {
       isActive: true,
     },
   });
+}
+
+/** Retourne null si l'entité de niveau supérieur est absente ; lève une erreur si un service est introuvable. */
+function resolveAffectationEntry(
+  entities: EntiteRow[],
+  entitesSirenaLabels: [EntiteSirenaLabels, ...EntiteSirenaLabels[]],
+): AffectationEntry | null {
+  const firstEntity = entitesSirenaLabels[0];
+  const topLevelLabel = firstEntity.grandParentLabel ?? firstEntity.parentLabel ?? firstEntity.label;
+  const topLevelEntity = entities.find((e) => normalize(e.nomComplet) === normalize(topLevelLabel) && !e.entiteMere);
+  if (!topLevelEntity) return null;
+  const services = entitesSirenaLabels
+    .filter((s): s is EntiteSirenaLabels & { parentLabel: string } => s.parentLabel !== undefined)
+    .map((s) => ({ entiteId: findEntityId(entities, s), groupMode: s.groupMode }));
+  return { topLevelEntiteId: topLevelEntity.id, services };
+}
+
+export async function initAffectationTransco(): Promise<void> {
+  const entities = await fetchActiveEntities();
 
   const newTransco = new Map<number, AffectationEntry>();
   for (const [sirecIdStr, entitesSirenaLabels] of Object.entries(ALL_AFFECTATION_ENTITES)) {
     const sirecId = Number(sirecIdStr);
     try {
-      const firstEntity = entitesSirenaLabels[0];
-      const topLevelLabel = firstEntity.grandParentLabel ?? firstEntity.parentLabel ?? firstEntity.label;
-      const topLevelEntity = entities.find(
-        (e) => normalize(e.nomComplet) === normalize(topLevelLabel) && !e.entiteMere,
-      );
-      if (!topLevelEntity) continue;
-      const services = entitesSirenaLabels
-        .filter((s): s is EntiteSirenaLabels & { parentLabel: string } => s.parentLabel !== undefined)
-        .map((s) => ({ entiteId: findEntityId(entities, s), groupMode: s.groupMode }));
-      newTransco.set(sirecId, { topLevelEntiteId: topLevelEntity.id, services });
+      const entry = resolveAffectationEntry(entities, entitesSirenaLabels);
+      if (entry) newTransco.set(sirecId, entry);
     } catch (err) {
       logger.error({ err, sirecId }, 'SIREC Entity not found in SIRENA, ignored during initialization');
     }
@@ -139,6 +155,60 @@ export async function initAffectationTransco(): Promise<void> {
 
   transco = newTransco;
   arsEntiteIdSet = new Set([...newTransco.values()].map((e) => e.topLevelEntiteId));
+  lastReloadAttemptAt = new Map();
+}
+
+async function reloadAffectationEntries(currentTransco: Map<number, AffectationEntry>, sirecIds: number[]) {
+  const entities = await fetchActiveEntities();
+  for (const sirecId of sirecIds) {
+    try {
+      const entry = resolveAffectationEntry(entities, ALL_AFFECTATION_ENTITES[sirecId]);
+      if (!entry) {
+        logger.warn({ sirecId }, 'SIREC top-level Entity still not found in SIRENA after reload');
+        continue;
+      }
+      currentTransco.set(sirecId, entry);
+      arsEntiteIdSet.add(entry.topLevelEntiteId);
+      logger.info({ sirecId }, 'SIREC affectation dynamically resolved after reload');
+    } catch (err) {
+      logger.warn({ err, sirecId }, 'SIREC Entity still not found in SIRENA after reload');
+    }
+  }
+}
+
+/**
+ * Recharge depuis la base les entrées de transco absentes (entités ajoutées dans SIRENA après le démarrage).
+ * Sans effet si toutes les entrées sont connues. Les rechargements sont sérialisés et limités
+ * à une tentative par id SIREC toutes les AFFECTATION_RELOAD_COOLDOWN_MS.
+ */
+export async function ensureAffectationEntries(sirecIds: number[]): Promise<void> {
+  if (transco === null) {
+    throw new Error('initAffectationTransco() must be called before ensureAffectationEntries()');
+  }
+  const isMissing = (id: number) => transco?.has(id) === false && ALL_AFFECTATION_ENTITES[id] !== undefined;
+  if (!sirecIds.some(isMissing)) return;
+
+  while (pendingReload) await pendingReload;
+
+  const now = Date.now();
+  const toReload = [...new Set(sirecIds)].filter(
+    (id) =>
+      isMissing(id) &&
+      now - (lastReloadAttemptAt.get(id) ?? Number.NEGATIVE_INFINITY) >= AFFECTATION_RELOAD_COOLDOWN_MS,
+  );
+  if (toReload.length === 0) return;
+
+  for (const id of toReload) lastReloadAttemptAt.set(id, now);
+  pendingReload = reloadAffectationEntries(transco, toReload)
+    .catch((err) => {
+      // Échec technique (ex. base indisponible) : on ne bloque pas les prochaines tentatives
+      for (const id of toReload) lastReloadAttemptAt.delete(id);
+      throw err;
+    })
+    .finally(() => {
+      pendingReload = null;
+    });
+  await pendingReload;
 }
 
 export interface AffectationEntites {
