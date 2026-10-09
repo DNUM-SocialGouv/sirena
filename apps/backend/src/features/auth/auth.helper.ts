@@ -5,7 +5,7 @@ import { envVars } from '../../config/env.js';
 import type { AppBindings } from '../../helpers/factories/appWithLogs.js';
 import { getJwtExpirationDate, signAuthCookie, signRefreshCookie } from '../../helpers/jsonwebtoken.js';
 import { isPrismaUniqueConstraintError } from '../../helpers/prisma.js';
-import type { RoleEnum, User } from '../../libs/prisma.js';
+import type { RoleEnum, Session, User } from '../../libs/prisma.js';
 import { createSession } from '../sessions/sessions.service.js';
 
 type ErrorParams = {
@@ -29,7 +29,31 @@ export const authUser = async (c: Context<AppBindings>, { id, roleId }: authUser
   const refreshTokenExpirationDate = getJwtExpirationDate(envVars.REFRESH_TOKEN_EXPIRATION);
 
   const refreshToken = signRefreshCookie(id, refreshTokenExpirationDate);
-  const authToken = signAuthCookie({ id, roleId }, authTokenExpirationDate);
+
+  let session: Session;
+
+  try {
+    session = await createSession({
+      userId: id,
+      token: refreshToken,
+      pcIdToken: idToken,
+      expiresAt: refreshTokenExpirationDate,
+    });
+  } catch (error) {
+    const logger = c.get('logger');
+
+    const errorCode = isPrismaUniqueConstraintError(error)
+      ? AUTH_ERROR_CODES.SESSION_ALREADY_EXISTS
+      : AUTH_ERROR_CODES.SESSION_CREATE_ERROR;
+
+    logger.error({ err: error }, 'Error in creating new session in database');
+
+    const errorPageUrl = createRedirectUrl({ error: errorCode });
+
+    return c.redirect(errorPageUrl, 302);
+  }
+
+  const authToken = signAuthCookie({ id, roleId, sessionId: session.id }, authTokenExpirationDate);
 
   setCookie(c, envVars.AUTH_TOKEN_NAME, authToken, {
     path: '/',
@@ -53,25 +77,4 @@ export const authUser = async (c: Context<AppBindings>, { id, roleId }: authUser
     expires: refreshTokenExpirationDate,
     sameSite: 'Strict',
   });
-
-  try {
-    await createSession({
-      userId: id,
-      token: refreshToken,
-      pcIdToken: idToken,
-      expiresAt: refreshTokenExpirationDate,
-    });
-  } catch (error) {
-    const logger = c.get('logger');
-
-    const errorCode = isPrismaUniqueConstraintError(error)
-      ? AUTH_ERROR_CODES.SESSION_ALREADY_EXISTS
-      : AUTH_ERROR_CODES.SESSION_CREATE_ERROR;
-
-    logger.error({ err: error }, 'Error in creating new session in database');
-
-    const errorPageUrl = createRedirectUrl({ error: errorCode });
-
-    return c.redirect(errorPageUrl, 302);
-  }
 };

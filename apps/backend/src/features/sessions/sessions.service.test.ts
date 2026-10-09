@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { prisma } from '../../libs/prisma.js';
+import { prisma, type Session } from '../../libs/prisma.js';
 import { SessionCreationSchema } from './sessions.schema.js';
-import { createSession, deleteSession, getSession } from './sessions.service.js';
+import { createSession, deleteSession, getSession, getSessionIdById } from './sessions.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
@@ -64,6 +64,28 @@ describe('sessions.service.ts', () => {
       where: { token },
     });
     expect(result).toEqual(session);
+  });
+
+  it('getSessionIdById - should call prisma.session.findUnique on the primary key and only select the id', async () => {
+    const id = 'sess-1';
+
+    mockedSession.findUnique.mockResolvedValueOnce({ id } as Session);
+
+    const result = await getSessionIdById(id);
+
+    expect(mockedSession.findUnique).toHaveBeenCalledWith({
+      where: { id },
+      select: { id: true },
+    });
+    expect(result).toEqual({ id });
+  });
+
+  it('getSessionIdById - should return null when no session matches the id', async () => {
+    mockedSession.findUnique.mockResolvedValueOnce(null);
+
+    const result = await getSessionIdById('unknown-id');
+
+    expect(result).toBeNull();
   });
 
   it('deleteSession - should call prisma.session.delete and return deleted session', async () => {

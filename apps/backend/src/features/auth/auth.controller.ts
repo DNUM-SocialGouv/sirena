@@ -152,7 +152,10 @@ const app = factoryWithLogs
       const errorPageUrl = createRedirectUrl({ error: AUTH_ERROR_CODES.USER_CREATE_ERROR });
       return c.redirect(errorPageUrl, 302);
     }
-    await authUser(c, { id: user.id, roleId: user.roleId }, tokens.id_token);
+    const authError = await authUser(c, { id: user.id, roleId: user.roleId }, tokens.id_token);
+    if (authError) {
+      return authError;
+    }
     logger.info({ userId: user.id }, 'User session created successfully');
 
     return c.redirect(envVars.FRONTEND_REDIRECT_URI, 302);
