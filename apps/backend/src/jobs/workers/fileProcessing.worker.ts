@@ -30,6 +30,7 @@ import type { DecryptionParams } from '../../libs/encryption.js';
 import { getFileBuffer, getFileStream, uploadFileToMinio } from '../../libs/minio.js';
 import { isPdfMimeType, sanitizePdf } from '../../libs/pdfSanitizer.js';
 import type { UploadedFile } from '../../libs/prisma.js';
+import { isTransientDependencyError } from '../../libs/resilience.js';
 import type { FileProcessingJobData } from '../queues/fileProcessing.queue.js';
 
 interface ProcessingResult {
@@ -305,10 +306,12 @@ const processFile = async (job: Job<FileProcessingJobData>): Promise<void> => {
       } catch (error) {
         const durationSeconds = (Date.now() - startTime) / 1000;
 
-        if (error instanceof TransientScanError) {
+        // An object storage outage is transient just like an unreachable ClamAV: the file must
+        // go back to the queue rather than end up FAILED.
+        if (error instanceof TransientScanError || isTransientDependencyError(error)) {
           logger.warn({ error }, 'Transient failure during file processing, releasing the file for a retry');
           await updateFileProcessingStatus(fileId, {
-            processingError: error.message,
+            processingError: error instanceof Error ? error.message : 'Unknown error',
             scanStatus: 'PENDING',
             status: 'PENDING',
           });
@@ -325,6 +328,9 @@ const processFile = async (job: Job<FileProcessingJobData>): Promise<void> => {
         });
         recordFileProcessing('ERROR', 'ERROR', fileType, durationSeconds);
 
+        // Rethrown as-is rather than rebuilt into an UnrecoverableError, which dropped its type,
+        // stack and cause and removed every retry: nothing here tells a permanently invalid file
+        // apart from a Postgres or Redis blip, whose codes are not in the transient set.
         throw error;
       }
     },
