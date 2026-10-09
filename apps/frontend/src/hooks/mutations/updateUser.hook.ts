@@ -8,31 +8,16 @@ import { useUserByIdQueryOptions } from '../queries/users.hook';
 export const usePatchUser = () => {
   return useMutation({
     mutationFn: ({ id, json }: { id: string; json: PatchUserJson }) => patchUserById(id, json),
-    onMutate: async ({ id, json }) => {
-      const queryOpts = useUserByIdQueryOptions(id);
-      await queryClient.cancelQueries(queryOpts);
-
-      const previousUser = queryClient.getQueryData(queryOpts.queryKey);
-
-      if (previousUser) {
-        queryClient.setQueryData(queryOpts.queryKey, {
-          ...previousUser,
-          ...json,
-        });
-      }
-
-      return { id, previousUser };
-    },
-    onError: (error, variables, context) => {
-      if (context?.previousUser) {
-        queryClient.setQueryData(['user', variables.id], context.previousUser);
-      }
+    // No optimistic write: nothing on the form renders the cached role or status, and
+    // rolling one back re-seeded the form from the server, discarding what the admin
+    // had just entered on a failed save.
+    onError: (error) => {
       // An HTTP failure is already toasted by handleRequestErrors; only a request
       // that never got an answer is silent.
       if (!(error instanceof HttpError)) notifySaveNetworkFailure();
     },
     onSuccess: (data, variables) => {
-      queryClient.setQueryData(['user', variables.id], data);
+      queryClient.setQueryData(useUserByIdQueryOptions(variables.id).queryKey, data);
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });

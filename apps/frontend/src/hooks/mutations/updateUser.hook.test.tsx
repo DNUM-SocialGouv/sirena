@@ -74,6 +74,27 @@ describe('usePatchUser', () => {
     expect(queryClient.getQueryData(['user', 'u-1'])).toEqual(PREVIOUS_USER);
   });
 
+  it('never writes the submitted values to the cache before the server confirms', async () => {
+    queryClient.setQueryData(['user', 'u-1'], PREVIOUS_USER);
+    let settle: (user: typeof PREVIOUS_USER) => void = () => {};
+    patchUserById.mockReturnValue(
+      new Promise<typeof PREVIOUS_USER>((resolve) => {
+        settle = resolve;
+      }),
+    );
+
+    const result = renderPatchUser();
+    result.current.mutate({ id: 'u-1', json: PATCH });
+
+    // An optimistic write would be rolled back on failure, and the rollback re-seeds
+    // the form from the cache: the admin would lose what they had just entered.
+    await waitFor(() => expect(result.current.isPending).toBe(true));
+    expect(queryClient.getQueryData(['user', 'u-1'])).toEqual(PREVIOUS_USER);
+
+    settle({ ...PREVIOUS_USER, ...PATCH });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+
   it('keeps the server answer on success', async () => {
     const saved = { ...PREVIOUS_USER, ...PATCH };
     patchUserById.mockResolvedValue(saved);
