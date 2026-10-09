@@ -16,6 +16,7 @@ import { useRequeteMessagesSSE } from '@/hooks/useRequeteMessagesSSE';
 import { useRequeteStatusSSE } from '@/hooks/useRequeteStatusSSE';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { useListStateStore } from '@/stores/listStateStore';
+import { BACK_LINK_ACTIVE_OPTIONS } from '@/utils/backLink';
 
 // TODO: Use API types instead of local interfaces
 interface RequestData {
@@ -140,7 +141,12 @@ export function RequestForm({ requestId, activeTab: activeTabProp = 0 }: Request
       <div className="bg-cumulus">
         <div className="fr-container--fluid fr-py-2w fr-pl-7w fr-pr-3w">
           <div className="fr-mb-2w">
-            <Link className="fr-link fr-mb-1w" to="/home" search={requetesListSearch ?? {}}>
+            <Link
+              className="fr-link fr-mb-1w"
+              to="/home"
+              search={requetesListSearch ?? {}}
+              activeOptions={BACK_LINK_ACTIVE_OPTIONS}
+            >
               <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span> Liste des requêtes
             </Link>
           </div>
