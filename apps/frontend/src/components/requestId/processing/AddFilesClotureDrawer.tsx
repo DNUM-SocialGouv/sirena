@@ -95,7 +95,10 @@ export const AddFilesClotureDrawer = forwardRef<AddFilesClotureDrawerRef, AddFil
         setIsLoading(false);
         if (error instanceof HttpError) {
           const errorName = error.data?.name;
-          if (error.status === 400 && errorName && typeof errorName === 'string' && errorName in API_ERROR_MESSAGES) {
+          // 503 included: a storage outage carries its own user-facing message, which would
+          // otherwise be replaced by the generic wording below.
+          const hasMappedMessage = error.status === 400 || error.status === 503;
+          if (hasMappedMessage && errorName && typeof errorName === 'string' && errorName in API_ERROR_MESSAGES) {
             setErrorMessage(API_ERROR_MESSAGES[errorName as ApiErrorCodes]);
             return;
           }

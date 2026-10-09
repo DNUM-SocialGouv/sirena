@@ -11,5 +11,10 @@ if (envVars.SENTRY_ENABLED) {
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
     release: APP_VERSION,
     integrations: [Sentry.prismaIntegration()],
+    // installProcessGuards (helpers/processGuards.ts) already reports fatal errors and then
+    // triggers the shutdown. Without this removal every crash would raise two Sentry events.
+    defaultIntegrations: Sentry.getDefaultIntegrations({}).filter(
+      (integration) => integration.name !== 'OnUncaughtException' && integration.name !== 'OnUnhandledRejection',
+    ),
   });
 }
