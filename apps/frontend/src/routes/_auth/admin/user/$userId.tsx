@@ -151,8 +151,9 @@ function RouteComponent() {
           },
         });
       } catch {
-        // Already notified by the mutation's onError: keep the form on the values
-        // the admin entered instead of letting the rejection escape unhandled.
+        // Already notified by the mutation's onError: stop here so the admin stays
+        // on the form, with the values they entered, instead of being sent back to
+        // the list as if the update had gone through.
         return;
       }
       toastManager.add({
