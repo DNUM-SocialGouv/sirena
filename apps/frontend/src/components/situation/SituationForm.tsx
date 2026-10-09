@@ -1,7 +1,7 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import type { ReceptionType } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useRef, useState } from 'react';
 import { MisEnCause } from '@/components/situation/sections/MisEnCause';
 import { useEntites } from '@/hooks/queries/entites.hook';
@@ -109,18 +109,9 @@ export function SituationForm({
     }
   }, [isTraitementDesFaitsValid, formData, faitFiles, handleCancel, mode, requestId, initialData, onSave]);
 
-  const backUrl = mode === 'create' && !requestId ? '/request/create' : requestId ? `/request/${requestId}` : '/home';
-
   return (
     <div>
-      <div className="fr-container fr-mt-4w">
-        <div className="fr-mb-3w">
-          <Link className="fr-link" to={backUrl}>
-            <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true" />
-            Détails de la requête
-          </Link>
-        </div>
-
+      <div>
         <h1 className="fr-mb-2w" data-testid="situation-form-title">
           Description de la situation
         </h1>

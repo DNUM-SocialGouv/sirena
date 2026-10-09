@@ -2,7 +2,7 @@ import Button from '@codegouvfr/react-dsfr/Button';
 import { ROLES } from '@sirena/common/constants';
 import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Loader, Toast } from '@sirena/ui';
-import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
@@ -176,13 +176,6 @@ export function RouteComponent() {
 
   return (
     <div className="fr-container fr-mt-4w">
-      <div className="fr-mb-3w">
-        <Link className="fr-link" to="/admin/entites/$entiteId" params={{ entiteId }}>
-          <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true" />
-          Modifier l’entité
-        </Link>
-      </div>
-
       <h2 className="fr-mb-4w">{title}</h2>
 
       <div className="fr-card fr-p-3w fr-mb-4w">

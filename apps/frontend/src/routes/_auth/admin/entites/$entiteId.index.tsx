@@ -171,13 +171,6 @@ export function RouteComponent() {
 
   return (
     <div className="fr-container fr-mt-4w">
-      <div className="fr-mb-3w">
-        <Link className="fr-link" to="/admin/entites" search={entitesListSearch ?? {}}>
-          <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true" />
-          Liste des entités
-        </Link>
-      </div>
-
       <div className="fr-grid-row fr-grid-row--middle fr-grid-row--gutters fr-mb-4w">
         <div className="fr-col-12 fr-col-md">
           <h2 className="fr-mb-0">{`${editTitlePrefix} ${entiteQuery.data.nomComplet}`}</h2>

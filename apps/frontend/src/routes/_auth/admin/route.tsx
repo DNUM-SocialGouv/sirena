@@ -3,6 +3,7 @@ import { Tabs } from '@sirena/ui';
 import { createFileRoute, Outlet, useMatches, useNavigate } from '@tanstack/react-router';
 import { useCallback } from 'react';
 import { AdminLayout } from '@/components/layout/admin/layout';
+import { useAppBreadCrumb } from '@/components/layout/breadcrumb/useAppBreadCrumb';
 import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
@@ -18,6 +19,8 @@ export function RouteComponent() {
   const matches = useMatches();
   const { data } = useProfile();
   const resolvedFlagsQuery = useResolvedFeatureFlags();
+  // Without breadcrumb (super admin home), the title needs its own spacing below the header
+  const hasBreadCrumb = useAppBreadCrumb() !== null;
   const hasSirecMigration = resolvedFlagsQuery.data?.[FEATURE_FLAGS.SIREC_MIGRATION] ?? false;
   const hasAdminLocalDirectionsServicesFeatureFlag =
     resolvedFlagsQuery.data?.[FEATURE_FLAGS.ADMIN_LOCAL_DIRECTIONS_SERVICES] ?? false;
@@ -63,7 +66,7 @@ export function RouteComponent() {
         <Outlet />
       ) : (
         <div className="home">
-          <h1 className="fr-mt-3w">Espace administrateur</h1>
+          <h1 className={hasBreadCrumb ? undefined : 'fr-mt-3w'}>Espace administrateur</h1>
           <Tabs label="Informations et gestion" tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange}>
             <Outlet />
           </Tabs>
