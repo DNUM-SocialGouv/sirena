@@ -117,9 +117,9 @@ function RouteComponent() {
 
   useEffect(() => {
     if (userQuery.error && 'status' in userQuery.error && userQuery.error.status === 404) {
-      navigate({ to: '/admin/users' });
+      navigate({ to: usersList.to, search: usersList.search });
     }
-  }, [userQuery.error, navigate]);
+  }, [userQuery.error, navigate, usersList.to, usersList.search]);
 
   useEffect(() => {
     if (userQuery.data) {

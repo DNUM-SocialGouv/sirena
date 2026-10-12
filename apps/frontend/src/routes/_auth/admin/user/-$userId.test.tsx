@@ -8,7 +8,7 @@ import { Route } from './$userId';
 
 const RouteComponent = (Route as unknown as { component: React.ComponentType }).component;
 
-const { routerNavigateSpy } = vi.hoisted(() => ({ routerNavigateSpy: vi.fn() }));
+const { routerNavigateSpy, navigateSpy } = vi.hoisted(() => ({ routerNavigateSpy: vi.fn(), navigateSpy: vi.fn() }));
 
 vi.mock('@tanstack/react-router', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@tanstack/react-router')>()),
@@ -35,7 +35,7 @@ vi.mock('@tanstack/react-router', async (importOriginal) => ({
       {children}
     </a>
   ),
-  useNavigate: () => vi.fn(),
+  useNavigate: () => navigateSpy,
   useRouter: () => ({ navigate: routerNavigateSpy, history: { back: vi.fn() } }),
 }));
 
@@ -167,5 +167,19 @@ describe('User edition page back link', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Annuler les modifications' }));
 
     expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/users/all', search: { search: 'dupont' } });
+  });
+
+  it('redirects an unknown user to the list it was opened from', () => {
+    useListStateStore.getState().setListState('users', { to: '/admin/users/all', search: { search: 'dupont' } });
+    vi.mocked(useUserById).mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isError: true,
+      error: { status: 404 },
+    } as never);
+
+    render(<RouteComponent />);
+
+    expect(navigateSpy).toHaveBeenCalledWith({ to: '/admin/users/all', search: { search: 'dupont' } });
   });
 });

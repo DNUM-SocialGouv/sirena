@@ -10,6 +10,8 @@ import { baseUrl } from './utils/constants';
  * Prerequisites:
  * - At least 1 requête in "/home" and 1 user in the "Utilisateurs" tab
  * - Authenticated user has ENTITY_ADMIN role
+ * - ADMIN_LOCAL_DIRECTIONS_SERVICES feature flag enabled and an entity allowed to create directions and services
+ *   (canCreateDirection / canCreateService), otherwise the create pages redirect and the "Annuler" test times out
  */
 test.describe('Back links', () => {
   let context: BrowserContext;
