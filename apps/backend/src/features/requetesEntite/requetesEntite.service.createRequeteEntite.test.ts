@@ -5,6 +5,7 @@ import { prisma } from '../../libs/__mocks__/prisma.js';
 import type { Prisma } from '../../libs/prisma.js';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service.js';
 import { generateRequeteId } from '../requetes/functionalId.service.js';
+import { FilesNotOwnedError, setRequeteFile } from '../uploadedFiles/uploadedFiles.service.js';
 import { createRequeteEntite } from './requetesEntite.service.js';
 
 vi.mock('../../libs/prisma.js');
@@ -20,6 +21,10 @@ vi.mock('../requetes/functionalId.service.js', () => ({
 }));
 vi.mock('../requeteEtapes/requetesEtapes.service.js', () => ({
   createDefaultRequeteEtapes: vi.fn(),
+}));
+vi.mock('../uploadedFiles/uploadedFiles.service.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../uploadedFiles/uploadedFiles.service.js')>()),
+  setRequeteFile: vi.fn(),
 }));
 
 const entiteId = 'entite-1';
@@ -62,7 +67,7 @@ describe('createRequeteEntite', () => {
 
     expect(result).toBe(createdRequete);
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
-    expect(generateRequeteId).toHaveBeenCalledWith('SIRENA', tx);
+    expect(generateRequeteId).toHaveBeenCalledWith('SIRENA');
     expect(tx.requete.create).toHaveBeenCalledTimes(1);
     expect(createDefaultRequeteEtapes).toHaveBeenCalledWith(createdRequete.id, entiteId, tx, userId, {
       transactionalAudit: true,
@@ -73,6 +78,30 @@ describe('createRequeteEntite', () => {
     });
     expect(prisma.requete.create).not.toHaveBeenCalled();
     expect(prisma.personneConcernee.update).not.toHaveBeenCalled();
+    expect(setRequeteFile).not.toHaveBeenCalled();
+  });
+
+  it('reserves the id before opening the transaction', async () => {
+    await createRequeteEntite(entiteId, undefined, userId);
+
+    const [generateOrder] = vi.mocked(generateRequeteId).mock.invocationCallOrder;
+    const [transactionOrder] = prisma.$transaction.mock.invocationCallOrder;
+    expect(generateOrder).toBeLessThan(transactionOrder);
+  });
+
+  it('links the uploaded files inside the transaction', async () => {
+    await createRequeteEntite(entiteId, { fileIds: ['file-1', 'file-2'] }, userId);
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(setRequeteFile).toHaveBeenCalledWith(createdRequete.id, ['file-1', 'file-2'], entiteId, userId, tx);
+  });
+
+  it('propagates a file linking failure out of the transaction so the requete is not committed', async () => {
+    const failure = new FilesNotOwnedError('FILES_NOT_OWNED');
+    vi.mocked(setRequeteFile).mockRejectedValueOnce(failure);
+
+    await expect(createRequeteEntite(entiteId, { fileIds: ['file-1'] }, userId)).rejects.toBe(failure);
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
   });
 
   it('propagates a failure of createDefaultRequeteEtapes out of the transaction so nothing is committed', async () => {
@@ -114,6 +143,13 @@ describe('createRequeteEntite', () => {
   it.each([
     ['another Requete constraint', p2002({ index: 'Requete_dematSocialId_key' })],
     ['the primary key of a nested record', p2002({ index: 'PersonneConcernee_pkey' }, 'PersonneConcernee')],
+    [
+      'an id target reported for another model',
+      Object.assign(new Error('Unique constraint failed'), {
+        code: 'P2002',
+        meta: { modelName: 'PersonneConcernee', target: ['id'] },
+      }),
+    ],
   ])('does not retry a P2002 on %s', async (_label, conflict) => {
     tx.requete.create.mockRejectedValueOnce(conflict);
 
