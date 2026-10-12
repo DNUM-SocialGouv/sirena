@@ -129,6 +129,8 @@ describe('third-party v1 requetes.controller.ts', () => {
           victime: expect.objectContaining({ prenom: 'Jean' }),
         }),
       );
+      // Let the fire-and-forget follow-up settle so it cannot leak into the next test
+      await vi.waitFor(() => expect(sendDeclarantAcknowledgmentEmail).toHaveBeenCalledWith(createdRequete.id));
     });
 
     it('defaults receptionDate to now when it is not provided', async () => {
@@ -140,6 +142,7 @@ describe('third-party v1 requetes.controller.ts', () => {
       expect(res.status).toBe(200);
       const [[dto]] = vi.mocked(createRequeteFromThirdParty).mock.calls;
       expect(dto.receptionDate).toBeInstanceOf(Date);
+      await vi.waitFor(() => expect(sendDeclarantAcknowledgmentEmail).toHaveBeenCalledWith(createdRequete.id));
     });
 
     it('triggers affectation then the acknowledgment email after creation', async () => {

@@ -74,6 +74,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --prefer-offline
 
+      # dotenv-cli does not override process.env: the job env (PG_URL, S3_ENCRYPTION_KEY...) wins over the
+      # .env.example values. Adding `-o` to the root `test:smoke` script would point the smoke test at the wrong database.
       - name: Create .env from example
         run: cp .env.example .env
 

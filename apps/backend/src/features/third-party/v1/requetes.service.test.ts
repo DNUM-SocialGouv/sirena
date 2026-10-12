@@ -230,11 +230,16 @@ describe('third-party v1 requetes.service.ts', () => {
         code: 'P2002',
         clientVersion: 'test',
       });
-      prisma.$transaction.mockRejectedValueOnce(collision).mockImplementationOnce(async (cb: any) => cb(prisma));
+      vi.mocked(generateRequeteId).mockResolvedValueOnce('2026-02-RT1').mockResolvedValueOnce(REQUETE_ID);
+      prisma.requete.create.mockRejectedValueOnce(collision);
 
       const result = await createRequeteFromThirdParty(getDto());
 
       expect(prisma.$transaction).toHaveBeenCalledTimes(2);
+      expect(generateRequeteId).toHaveBeenCalledTimes(2);
+      expect(prisma.requete.create).toHaveBeenLastCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ id: REQUETE_ID }) }),
+      );
       expect(result).toEqual({ id: REQUETE_ID, thirdPartyAccountId: ACCOUNT_ID });
     });
 
