@@ -52,6 +52,7 @@ import { generateRequeteId } from '../requetes/functionalId.service.js';
 import {
   deleteFaitFilesRemovedFromSituation,
   setFaitFiles,
+  setRequeteFile,
   UNATTACHED_FILE_RELATIONS,
 } from '../uploadedFiles/uploadedFiles.service.js';
 import { DEFAULT_REQUETES_LIMIT } from './requetesEntite.constants.js';
@@ -593,11 +594,13 @@ interface CreateRequeteInput {
   provenancePrecision?: string | null;
   declarant?: DeclarantInput;
   participant?: PersonneConcerneeInput;
+  fileIds?: string[];
 }
 
 interface PrismaUniqueConstraintError {
   code: string;
   meta?: {
+    modelName?: string;
     target?: string[];
     driverAdapterError?: {
       cause?: { table?: string; constraint?: { index?: string; fields?: string[] } };
@@ -613,7 +616,7 @@ const isRequeteIdConflict = (error: unknown): boolean => {
 
   const cause = meta?.driverAdapterError?.cause;
   return (
-    meta?.target?.includes('id') === true ||
+    (meta?.modelName === 'Requete' && meta.target?.includes('id') === true) ||
     cause?.constraint?.index === 'Requete_pkey' ||
     (cause?.table === 'Requete' && cause.constraint?.fields?.includes('id') === true)
   );
@@ -626,10 +629,12 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
 
   while (retryCount < maxRetries) {
     try {
+      // The id is reserved through a Redis lock before opening the transaction, so the transaction does not hold
+      // a pooled connection during Redis round trips. A rollback only skips a number in the sequence.
+      const requeteId = await generateRequeteId('SIRENA');
+
       // Retry on id collision wraps the transaction: a P2002 aborts it, so each attempt needs a fresh one.
       return await prisma.$transaction(async (tx) => {
-        const requeteId = await generateRequeteId('SIRENA', tx);
-
         const requete = await tx.requete.create({
           data: {
             id: requeteId,
@@ -689,6 +694,10 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
             where: { id: requete.declarant.id },
             data: { participantDeId: requete.id },
           });
+        }
+
+        if (data?.fileIds?.length) {
+          await setRequeteFile(requete.id, data.fileIds, entiteId, changedById, tx);
         }
 
         return requete;
