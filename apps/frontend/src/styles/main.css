@@ -155,3 +155,12 @@ dialog {
 .fr-breadcrumb.app-breadcrumb--banner {
   margin-bottom: -0.25rem;
 }
+
+/* Without breadcrumb (super admin home), the admin title needs its own spacing below the header */
+.admin-title {
+  margin-top: 1.5rem;
+}
+
+.app-breadcrumb + main .admin-title {
+  margin-top: 0;
+}
