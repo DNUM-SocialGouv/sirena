@@ -204,6 +204,33 @@ describe('minio.ts', () => {
         process.off('uncaughtException', onUncaught);
       }
     });
+
+    it('should reject with a premature close instead of hanging when the client aborts the upload', async () => {
+      const uncaughtErrors: unknown[] = [];
+      const onUncaught = (err: unknown) => uncaughtErrors.push(err);
+      process.on('uncaughtException', onUncaught);
+
+      mockMinioClient.putObject.mockImplementationOnce(() => new Promise(() => {}));
+
+      const source = new PassThrough();
+      source.write(Buffer.from('partial content'));
+
+      try {
+        const upload = uploadFileToMinio(source, 'test-document.pdf', 'application/pdf');
+        // A client cutting the connection destroys the request body without any error
+        source.destroy();
+
+        await expect(upload).rejects.toMatchObject({ code: 'ERR_STREAM_PREMATURE_CLOSE' });
+
+        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(uncaughtErrors).toEqual([]);
+        expect(mockMinioClient.copyObject).not.toHaveBeenCalled();
+      } finally {
+        process.off('uncaughtException', onUncaught);
+      }
+    });
   });
 
   describe('deleteFileFromMinio', () => {
