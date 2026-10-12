@@ -81,8 +81,30 @@ describe('Auth endpoints: /auth', () => {
       const res = await client.login.$post();
       expect(res.status).toBe(302);
       expect(res.headers.get('Location')).toBe(fakeData.redirectTo.href);
-      expect(res.headers.get('Set-Cookie')).toContain(`state=${fakeData.state}; Path=/; HttpOnly`);
-      expect(res.headers.get('Set-Cookie')).toContain(`nonce=${fakeData.nonce}; Path=/; HttpOnly`);
+
+      const cookies = res.headers.getSetCookie();
+      expect(cookies).toHaveLength(2);
+      expect(cookies[0]).toBe(`state=${fakeData.state}; Max-Age=600; Path=/; HttpOnly; Secure; SameSite=Lax`);
+      expect(cookies[1]).toBe(`nonce=${fakeData.nonce}; Max-Age=600; Path=/; HttpOnly; Secure; SameSite=Lax`);
+    });
+
+    it.each(['state', 'nonce'])('should harden the %s cookie attributes', async (name) => {
+      const fakeData = {
+        redirectTo: new URL('https://example.com/auth'),
+        nonce: 'fakeNonce',
+        state: 'fakeState',
+      };
+
+      vi.mocked(buildAuthorizationUrl).mockResolvedValueOnce(fakeData);
+
+      const res = await client.login.$post();
+      const cookie = res.headers.getSetCookie().find((value) => value.startsWith(`${name}=`));
+
+      expect(cookie).toBeDefined();
+      expect(cookie).toMatch(/; Secure(;|$)/);
+      expect(cookie).toMatch(/; HttpOnly(;|$)/);
+      expect(cookie).toMatch(/; SameSite=Lax(;|$)/);
+      expect(cookie).toMatch(/; Max-Age=[1-9][0-9]*(;|$)/);
     });
 
     it('should redirect to error page when buildAuthorizationUrl fails', async () => {
@@ -638,6 +660,76 @@ describe('Auth endpoints: /auth', () => {
 
       expect(res.status).toBe(302);
       expect(res.headers.get('Location')).toBe(envVars.FRONTEND_REDIRECT_URI);
+    });
+
+    it('should propagate the error redirect returned by authUser', async () => {
+      const stateValue = 'some-random-state';
+      const nonceValue = 'some-random-nonce';
+      const cookieHeader = `state=${stateValue}; nonce=${nonceValue}`;
+
+      const fakeTokens = {
+        access_token: 'validAccessToken123',
+        id_token: 'validIdToken123',
+        refresh_token: 'validRefreshToken123',
+        claims: () =>
+          ({
+            iss: 'a',
+            sub: 'a',
+            aud: 'a',
+            iat: 1,
+            exp: 1,
+          }) as IDToken,
+      } as unknown as TokenEndpointResponse & TokenEndpointResponseHelpers;
+
+      vi.mocked(authorizationCodeGrant).mockResolvedValueOnce(fakeTokens);
+
+      const fakeUserInfo = {
+        email: 'carol@example.com',
+        given_name: 'Carol',
+        usual_name: 'Durand',
+        sub: 'oidc-subject-xyz',
+        uid: 42,
+      };
+      vi.mocked(fetchUserInfo).mockResolvedValueOnce(fakeUserInfo);
+
+      vi.mocked(getOrCreateUser).mockResolvedValueOnce({
+        id: 'new-user',
+        sub: fakeUserInfo.sub,
+        uid: String(fakeUserInfo.uid),
+        email: fakeUserInfo.email,
+        prenom: fakeUserInfo.given_name,
+        nom: fakeUserInfo.usual_name,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        roleId: 'PENDING',
+        statutId: 'NON_RENSEIGNE',
+        entiteId: null,
+        pcData: {},
+      });
+
+      const errorPageUrl = `${envVars.FRONTEND_REDIRECT_LOGIN_URI}?error=${AUTH_ERROR_CODES.SESSION_CREATE_ERROR}`;
+      vi.mocked(authUser).mockResolvedValueOnce(
+        new Response(null, { status: 302, headers: { Location: errorPageUrl } }) as Awaited<
+          ReturnType<typeof authUser>
+        >,
+      );
+
+      const res = await client.callback.$get(
+        {
+          query: {
+            code: 'validCode123',
+            state: stateValue,
+          },
+        },
+        {
+          headers: {
+            Cookie: cookieHeader,
+          },
+        },
+      );
+
+      expect(res.status).toBe(302);
+      expect(res.headers.get('Location')).toBe(errorPageUrl);
     });
 
     it('should redirect to error page when getOrCreateUser throws', async () => {
