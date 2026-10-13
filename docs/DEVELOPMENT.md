@@ -17,8 +17,12 @@ La liste des espaces de travail, la stack et le catalogue de commandes sont dans
   non construit produit des centaines de fausses erreurs.
 - **Client RPC.** Le client typé du frontend est dérivé du build backend : `pnpm build:backend`
   avant le premier `pnpm dev`.
-- **Raccourcis pnpm.** Préférer `pnpm -r run <script>` à `pnpm <script>` : certains noms courts
-  sont interceptés par pnpm lui-même et échouent pour une mauvaise raison.
+- **Raccourcis pnpm.** Certains noms de scripts sont aussi des commandes pnpm (`test`, `deploy`,
+  `start`, `audit`, `prune`…) : écrit sans `run`, c'est la commande pnpm qui l'emporte. `pnpm test`
+  à la racine ne lance pas les tests, il déclenche une installation. Toujours passer par
+  `pnpm run <script>`, ou `pnpm -r run <script>` pour le lancer dans tous les espaces de
+  travail — c'est la raison d'être des `run` dans les scripts racine (`pnpm -r run test`,
+  `pnpm --filter @sirena/db run deploy`).
 
 ## Conventions de code
 
@@ -140,12 +144,13 @@ relecture de fin de cycle, elle fait partie de la définition de terminé.
   systématique sur les listes. Les requêtes brutes sont paramétrées.
 - **Fichiers téléversés.** Type et taille vérifiés, contenu analysé (ClamAV), stockage hors de
   l'arborescence servie, noms non réutilisés tels quels. Voir
-  [file-upload-flow.md](file-upload-flow.md).
+  [diagrams/file-upload-flow.md](diagrams/file-upload-flow.md).
 - **Messages d'erreur.** Utiles côté utilisateur, détaillés seulement dans les logs serveur :
   pas de trace ni de détail d'implémentation renvoyé au client.
-- **Dépendances.** `pnpm audit` en CI (non bloquant, mais suivi), Trivy sur le dépôt et sur les
-  images, Dependabot hebdomadaire, `minimumReleaseAge` pour ne pas installer une version le jour
-  de sa publication.
+- **Dépendances.** Les scans (`pnpm audit`, Trivy) et leur cadence sont dans la table ci-dessus,
+  le délai d'installation dans « Conventions de code ». Ce qui relève de la revue : une
+  vulnérabilité remontée se traite ou se justifie, elle ne se reconduit pas d'une semaine sur
+  l'autre.
 - **En-têtes HTTP.** `nginx/frontend.conf` pose `X-Content-Type-Options: nosniff`,
   `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: SAMEORIGIN` et une
   `Permissions-Policy` restrictive, et masque la bannière serveur. Il n'y a pas de
@@ -157,7 +162,7 @@ relecture de fin de cycle, elle fait partie de la définition de terminé.
 Service public : le RGAA s'applique. Le design system DSFR (`@codegouvfr/react-dsfr`) couvre
 l'essentiel à condition de ne pas le contourner.
 
-- Utiliser les composants DSFR plutôt que réimplémenter un équivalent stylé.
+- Utiliser les composants DSFR plutôt que réimplémenter un équivalent maison.
 - HTML sémantique d'abord : `header`, `nav`, `main`, `section`, `button` — pas une pile de `div`
   avec des gestionnaires de clic.
 - Toute action doit être atteignable au clavier, avec un focus visible.
@@ -182,7 +187,7 @@ l'essentiel à condition de ne pas le contourner.
 
 - Une décision structurante s'écrit dans [adr.md](adr.md) : contexte, options considérées,
   décision, conséquences. Une ADR n'est pas réécrite après coup, elle est remplacée par une
-  nouvelle qui la supersede.
+  nouvelle.
 - Les fonctionnalités à déploiement progressif passent par les feature flags
   ([feature-flags.md](feature-flags.md)) plutôt que par des branches longues.
 - La documentation d'une fonctionnalité vit à côté du code dans `docs/`, pas dans un outil
@@ -199,6 +204,11 @@ Ces règles ne sont pas outillées, elles relèvent de la revue :
   50 lignes, pas plus de quatre niveaux d'imbrication.
 - Sorties anticipées et clauses de garde plutôt que des blocs `if` imbriqués.
 - Immutabilité par défaut : produire une nouvelle valeur plutôt que muter un objet reçu.
+- Privilégier la programmation fonctionnelle à la programmation impérative : composer des
+  fonctions pures et des transformations (`map`, `filter`, `reduce`) plutôt que piloter un
+  accumulateur à la main.
+- Tout développement s'accompagne d'un ou plusieurs tests unitaires : ils valident le
+  comportement attendu et protègent des régressions ultérieures.
 - Pas de valeur codée en dur : constante nommée ou configuration.
 - Pas de `console.log` ni de code de débogage laissé dans une PR.
 - Dériver plutôt que dupliquer un état : ne pas recopier un état serveur dans un store client.
