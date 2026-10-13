@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { envVars } from '../../config/env.js';
 import { recordFileProcessing } from '../../features/monitoring/metrics.worker.js';
 import { checkClamAvHealth, scanBuffer, scanStream } from '../../libs/clamav.js';
-import { getFileBuffer, uploadFileToMinio } from '../../libs/minio.js';
+import { getFileBuffer, getFileStream, uploadFileToMinio } from '../../libs/minio.js';
 import { sanitizePdf } from '../../libs/pdfSanitizer.js';
 import { prisma } from '../../libs/prisma.js';
 import type { FileProcessingJobData } from '../queues/fileProcessing.queue.js';
@@ -84,6 +84,7 @@ const INFECTED_SCAN = {
   success: true,
   data: { result: [{ name: 'test.txt', is_infected: true, viruses: ['Eicar-Test-Signature'] }] },
 };
+const ENCRYPTED_METADATA = { encryption: { iv: 'file-iv', authTag: 'file-tag' } };
 const CLAMAV_DOWN = { status: 'error', clamav: { reachable: false, message: 'connect ECONNREFUSED' } };
 const CLAMAV_UP = { status: 'ok', clamav: { reachable: true, message: 'PONG', latencyMs: 3 } };
 
@@ -253,8 +254,8 @@ describe('fileProcessing.worker.ts', () => {
     });
   });
 
-  it('keeps the original PDF available when storing the sanitized copy in MinIO fails', async () => {
-    vi.mocked(uploadFileToMinio).mockRejectedValueOnce(new Error('Retryable HTTP status: 503'));
+  it('keeps the original PDF available when MinIO refuses the sanitized copy', async () => {
+    vi.mocked(uploadFileToMinio).mockRejectedValueOnce(new Error('Access Denied.'));
 
     await runJob('application/pdf');
 
@@ -263,8 +264,48 @@ describe('fileProcessing.worker.ts', () => {
       scanStatus: 'CLEAN',
       sanitizeStatus: 'ERROR',
       safeFilePath: null,
-      processingError: 'Retryable HTTP status: 503',
+      processingError: 'Access Denied.',
     });
+  });
+
+  it('does not record the sanitized copy when its encryption keys cannot be saved', async () => {
+    vi.mocked(prisma.uploadedFile.findUniqueOrThrow).mockRejectedValueOnce(new Error("Can't reach database server"));
+
+    await runJob('application/pdf');
+
+    expect(row).toMatchObject({
+      status: 'COMPLETED',
+      sanitizeStatus: 'ERROR',
+      safeFilePath: null,
+      metadata: null,
+      processingError: "Can't reach database server",
+    });
+  });
+
+  it('scans the decrypted content of an encrypted file', async () => {
+    row = { ...row, metadata: ENCRYPTED_METADATA };
+    const decrypted = Readable.from(['clear text']);
+    vi.mocked(getFileStream).mockImplementationOnce((async (_path: string, params?: unknown) => ({
+      stream: params ? decrypted : Readable.from(['cipher text']),
+    })) as never);
+
+    await runJob();
+
+    expect(getFileStream).toHaveBeenCalledWith('uploads/test.txt', ENCRYPTED_METADATA.encryption);
+    expect(scanStream).toHaveBeenCalledWith(decrypted, 'test.txt', 1024);
+  });
+
+  it('scans and sanitizes the decrypted content of an encrypted PDF', async () => {
+    row = { ...row, metadata: ENCRYPTED_METADATA };
+    const decrypted = Buffer.from('%PDF-1.4 clear');
+    vi.mocked(getFileBuffer).mockImplementationOnce((async (_path: string, params?: unknown) =>
+      params ? decrypted : Buffer.from('cipher')) as never);
+
+    await runJob('application/pdf');
+
+    expect(getFileBuffer).toHaveBeenCalledWith('uploads/test.txt', ENCRYPTED_METADATA.encryption);
+    expect(scanBuffer).toHaveBeenCalledWith(decrypted, 'test.txt');
+    expect(sanitizePdf).toHaveBeenCalledWith(decrypted);
   });
 
   it('marks the PDF FAILED when it cannot be downloaded from MinIO', async () => {
@@ -282,7 +323,11 @@ describe('fileProcessing.worker.ts', () => {
   });
 
   it('marks the file FAILED when ClamAV rejects the scan for a non transient reason', async () => {
-    vi.mocked(scanStream).mockResolvedValue({ success: false, error: 'File too large', errorReason: 'other' } as never);
+    vi.mocked(scanStream).mockResolvedValue({
+      success: false,
+      error: 'File too large',
+      errorReason: 'unknown',
+    } as never);
 
     await runJob();
 
