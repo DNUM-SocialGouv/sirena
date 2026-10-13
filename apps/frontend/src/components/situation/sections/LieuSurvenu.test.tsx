@@ -70,6 +70,16 @@ describe('LieuSurvenu — RGAA 11.10 input formats', () => {
     );
     expect(screen.getByRole('textbox', { name: /^Ville/ })).toHaveAccessibleName(/Exemple : Paris/);
   });
+
+  // The postcode hint wraps onto a second line in this narrow column, which pushes its input
+  // below the establishment name it shares a row with unless the columns opt into the alignment.
+  it('keeps the fields of the establishment address row aligned', () => {
+    renderLieu({ lieuType: LIEU_TYPE.ETABLISSEMENT_SANTE, adresse: { label: 'Clinique de test' } });
+
+    for (const label of [/^Nom de l'établissement/, /^Code postal/, /^Ville/]) {
+      expect(screen.getByRole('textbox', { name: label }).closest('[class*="alignedField"]')).not.toBeNull();
+    }
+  });
 });
 
 const makeAddress = (overrides: Partial<Address>): Address => ({

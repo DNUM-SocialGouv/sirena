@@ -26,6 +26,7 @@ import {
 import type { SituationData } from '@sirena/common/schemas';
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { DomicileFields, type DomicileValues, MANUAL_TOGGLE_LABEL } from '@/components/common/DomicileFields';
+import styles from '@/components/common/formGrid.module.css';
 import { OrganizationSearchField } from '@/components/common/OrganizationSearchField';
 import { ReadOnlyField } from '@/components/common/ReadOnlyField';
 import type { Organization } from '@/lib/api/fetchOrganizations';
@@ -509,7 +510,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
               {isNoFinessChecked || hasCompleteOrganizationFromFiness ? (
                 <>
                   <div
-                    className={shouldShowCabinetMedicalStreetField ? 'fr-col-12 fr-col-md-4' : 'fr-col-12 fr-col-md-6'}
+                    className={`${shouldShowCabinetMedicalStreetField ? 'fr-col-12 fr-col-md-4' : 'fr-col-12 fr-col-md-6'} ${styles.alignedField}`}
                   >
                     {isOrganizationReadOnly ? (
                       <ReadOnlyField
@@ -539,7 +540,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                     )}
                   </div>
                   {shouldShowCabinetMedicalStreetField ? (
-                    <div className="fr-col-12 fr-col-md-4">
+                    <div className={`fr-col-12 fr-col-md-4 ${styles.alignedField}`}>
                       {isOrganizationReadOnly ? (
                         <ReadOnlyField
                           id={`${fieldId}-rue`}
@@ -566,7 +567,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                     </div>
                   ) : null}
                   <div
-                    className={shouldShowCabinetMedicalStreetField ? 'fr-col-12 fr-col-md-2' : 'fr-col-12 fr-col-md-3'}
+                    className={`${shouldShowCabinetMedicalStreetField ? 'fr-col-12 fr-col-md-2' : 'fr-col-12 fr-col-md-3'} ${styles.alignedField}`}
                   >
                     {isOrganizationReadOnly ? (
                       <ReadOnlyField
@@ -594,7 +595,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                     )}
                   </div>
                   <div
-                    className={shouldShowCabinetMedicalStreetField ? 'fr-col-12 fr-col-md-2' : 'fr-col-12 fr-col-md-3'}
+                    className={`${shouldShowCabinetMedicalStreetField ? 'fr-col-12 fr-col-md-2' : 'fr-col-12 fr-col-md-3'} ${styles.alignedField}`}
                   >
                     {isOrganizationReadOnly ? (
                       <ReadOnlyField

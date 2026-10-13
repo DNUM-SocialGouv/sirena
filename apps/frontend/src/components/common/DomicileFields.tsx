@@ -3,6 +3,7 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import { useCallback, useId, useState } from 'react';
 import type { Address } from '@/lib/api/fetchAddresses';
 import { AddressSearchField } from './AddressSearchField';
+import styles from './formGrid.module.css';
 import { ReadOnlyField } from './ReadOnlyField';
 
 export interface DomicileValues {
@@ -135,10 +136,10 @@ export function DomicileFields({
             />
           </div>
         </div>
-        {/* Postcode and city sit on their own row: their hints make the fields taller
-            than the street input they used to share a row with. */}
+        {/* Postcode and city sit on their own row rather than alongside the street input,
+            as asked in review. */}
         <div className="fr-grid-row fr-grid-row--gutters">
-          <div className="fr-col-12 fr-col-md-3">
+          <div className={`fr-col-12 fr-col-md-3 ${styles.alignedField}`}>
             <Input
               label={labels.codePostal}
               hintText="Format attendu : 5 chiffres (exemple : 75001)"
@@ -150,7 +151,7 @@ export function DomicileFields({
               }}
             />
           </div>
-          <div className="fr-col-12 fr-col-md-3">
+          <div className={`fr-col-12 fr-col-md-3 ${styles.alignedField}`}>
             <Input
               label={labels.ville}
               hintText="Exemple : Paris"

@@ -103,4 +103,29 @@ describe('MisEnCause — RGAA 11.10 input formats', () => {
     );
     expect(screen.getByRole('textbox', { name: /^Ville/ })).toHaveAccessibleName(/Exemple : Paris/);
   });
+
+  // The postcode hint wraps onto a second line in these narrow columns, which pushes its
+  // input below the ones it shares a row with unless the columns opt into the alignment.
+  it.each([
+    [
+      'service address',
+      {
+        misEnCauseType: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
+        misEnCauseTypePrecision: MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SAD_MIXTE,
+        nomService: 'Service de test',
+      },
+      [/^Nom du service/, /^Code postal/, /^Ville/],
+    ],
+    [
+      'practitioner address',
+      { misEnCauseType: MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE, rpps: '10101010101' },
+      [/^Code postal/, /^Ville/],
+    ],
+  ])('keeps the fields of the %s row aligned', (_name, misEnCause, labels) => {
+    renderMisEnCause(misEnCause as SituationData['misEnCause']);
+
+    for (const label of labels) {
+      expect(screen.getByRole('textbox', { name: label }).closest('[class*="alignedField"]')).not.toBeNull();
+    }
+  });
 });
