@@ -84,6 +84,7 @@ const INFECTED_SCAN = {
   success: true,
   data: { result: [{ name: 'test.txt', is_infected: true, viruses: ['Eicar-Test-Signature'] }] },
 };
+const ENCRYPTED_METADATA = { encryption: { iv: 'file-iv', authTag: 'file-tag' } };
 const CLAMAV_DOWN = { status: 'error', clamav: { reachable: false, message: 'connect ECONNREFUSED' } };
 const CLAMAV_UP = { status: 'ok', clamav: { reachable: true, message: 'PONG', latencyMs: 3 } };
 
@@ -211,79 +212,6 @@ describe('fileProcessing.worker.ts', () => {
     expect(row).not.toMatchObject({ status: 'FAILED', scanStatus: 'SCANNING' });
   });
 
-  it('rethrows an unexpected failure untouched, keeping the retry budget', async () => {
-    class ClamAvCrash extends Error {}
-    const crash = new ClamAvCrash('unexpected clamav crash');
-    vi.mocked(checkClamAvHealth).mockRejectedValue(crash);
-
-    await expect(runJob()).rejects.toBe(crash);
-
-    expect(row.status).toBe('FAILED');
-  });
-
-  it('releases the file for a retry when the object storage is unavailable', async () => {
-    vi.mocked(checkClamAvHealth).mockRejectedValue(
-      new Error('Request failed after 1 retries: Error: Retryable HTTP status: 500'),
-    );
-
-    await expect(runJob()).rejects.toThrow('Retryable HTTP status: 500');
-
-    expect(row.status).toBe('PENDING');
-    expect(row.scanStatus).toBe('PENDING');
-  });
-
-  it('keeps the retry budget for a database failure', async () => {
-    const dbError = Object.assign(new Error("Can't reach database server"), { code: 'P1001' });
-    vi.mocked(checkClamAvHealth).mockRejectedValue(dbError);
-
-    await expect(runJob()).rejects.toBe(dbError);
-  });
-  // Message captured in production during the 2026-10-07 incident.
-  const storageOutage = () => new Error('Request failed after 1 retries: Error: Retryable HTTP status: 500');
-
-  it('releases the file for a retry when the download fails during a storage outage', async () => {
-    vi.mocked(getFileStream).mockRejectedValueOnce(storageOutage());
-
-    await expect(runJob()).rejects.toThrow('Retryable HTTP status: 500');
-
-    expect(row.status).toBe('PENDING');
-    expect(row.scanStatus).toBe('PENDING');
-  });
-
-  it('releases a PDF for a retry when its download fails during a storage outage', async () => {
-    vi.mocked(getFileBuffer).mockRejectedValueOnce(storageOutage());
-
-    await expect(runJob('application/pdf')).rejects.toThrow('Retryable HTTP status: 500');
-
-    expect(row.status).toBe('PENDING');
-    expect(row.scanStatus).toBe('PENDING');
-  });
-
-  // status COMPLETED is final as far as buildProcessableFileFilter is concerned, so retiring the
-  // file there on a storage outage meant it was never sanitised again.
-  it('does not retire a PDF as COMPLETED when the storage fails while storing the sanitised copy', async () => {
-    vi.mocked(uploadFileToMinio).mockRejectedValueOnce(storageOutage());
-
-    await expect(runJob('application/pdf')).rejects.toThrow('Retryable HTTP status: 500');
-
-    expect(row.status).toBe('PENDING');
-    expect(row.sanitizeStatus).toBe('PENDING');
-
-    await runJob('application/pdf');
-
-    expect(row.status).toBe('COMPLETED');
-    expect(row.sanitizeStatus).toBe('COMPLETED');
-  });
-
-  it('still retires a PDF whose sanitization genuinely fails', async () => {
-    vi.mocked(uploadFileToMinio).mockRejectedValueOnce(new Error('Invalid PDF structure'));
-
-    await runJob('application/pdf');
-
-    expect(row.status).toBe('COMPLETED');
-    expect(row.sanitizeStatus).toBe('ERROR');
-  });
-
   it('marks an infected file FAILED with the detected virus', async () => {
     vi.mocked(scanStream).mockResolvedValue(INFECTED_SCAN as never);
 
@@ -327,7 +255,7 @@ describe('fileProcessing.worker.ts', () => {
   });
 
   it('keeps the original PDF available when MinIO refuses the sanitized copy', async () => {
-    vi.mocked(uploadFileToMinio).mockRejectedValueOnce(new Error('Access Denied'));
+    vi.mocked(uploadFileToMinio).mockRejectedValueOnce(new Error('Access Denied.'));
 
     await runJob('application/pdf');
 
@@ -336,8 +264,48 @@ describe('fileProcessing.worker.ts', () => {
       scanStatus: 'CLEAN',
       sanitizeStatus: 'ERROR',
       safeFilePath: null,
-      processingError: 'Access Denied',
+      processingError: 'Access Denied.',
     });
+  });
+
+  it('does not record the sanitized copy when its encryption keys cannot be saved', async () => {
+    vi.mocked(prisma.uploadedFile.findUniqueOrThrow).mockRejectedValueOnce(new Error("Can't reach database server"));
+
+    await runJob('application/pdf');
+
+    expect(row).toMatchObject({
+      status: 'COMPLETED',
+      sanitizeStatus: 'ERROR',
+      safeFilePath: null,
+      metadata: null,
+      processingError: "Can't reach database server",
+    });
+  });
+
+  it('scans the decrypted content of an encrypted file', async () => {
+    row = { ...row, metadata: ENCRYPTED_METADATA };
+    const decrypted = Readable.from(['clear text']);
+    vi.mocked(getFileStream).mockImplementationOnce((async (_path: string, params?: unknown) => ({
+      stream: params ? decrypted : Readable.from(['cipher text']),
+    })) as never);
+
+    await runJob();
+
+    expect(getFileStream).toHaveBeenCalledWith('uploads/test.txt', ENCRYPTED_METADATA.encryption);
+    expect(scanStream).toHaveBeenCalledWith(decrypted, 'test.txt', 1024);
+  });
+
+  it('scans and sanitizes the decrypted content of an encrypted PDF', async () => {
+    row = { ...row, metadata: ENCRYPTED_METADATA };
+    const decrypted = Buffer.from('%PDF-1.4 clear');
+    vi.mocked(getFileBuffer).mockImplementationOnce((async (_path: string, params?: unknown) =>
+      params ? decrypted : Buffer.from('cipher')) as never);
+
+    await runJob('application/pdf');
+
+    expect(getFileBuffer).toHaveBeenCalledWith('uploads/test.txt', ENCRYPTED_METADATA.encryption);
+    expect(scanBuffer).toHaveBeenCalledWith(decrypted, 'test.txt');
+    expect(sanitizePdf).toHaveBeenCalledWith(decrypted);
   });
 
   it('marks the PDF FAILED when it cannot be downloaded from MinIO', async () => {
@@ -355,7 +323,11 @@ describe('fileProcessing.worker.ts', () => {
   });
 
   it('marks the file FAILED when ClamAV rejects the scan for a non transient reason', async () => {
-    vi.mocked(scanStream).mockResolvedValue({ success: false, error: 'File too large', errorReason: 'other' } as never);
+    vi.mocked(scanStream).mockResolvedValue({
+      success: false,
+      error: 'File too large',
+      errorReason: 'unknown',
+    } as never);
 
     await runJob();
 

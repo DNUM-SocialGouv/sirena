@@ -2,10 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { jobHandlers } from '../config/job.definitions.js';
 import { startScheduler } from './cron.scheduler.js';
 
-// In-memory stand-ins for Redis and the BullMQ queue, following their semantics:
-// SET NX only succeeds on a free key, and upsertJobScheduler replaces the scheduler with the same id.
+// In-memory stand-ins for Redis and the BullMQ queue, following their semantics: SET only refuses
+// an existing key with NX, getJobs only returns the jobs in the requested states, and
+// upsertJobScheduler replaces the scheduler with the same id.
 const { store, cronQueue, connection } = vi.hoisted(() => {
-  type QueuedJob = { name: string; data: unknown; remove: () => Promise<void> };
+  type QueuedJob = { name: string; data: unknown; state: string; remove: () => Promise<void> };
   const store = {
     locks: new Map<string, string>(),
     schedulers: new Map<string, { key: string; name: string; every: number; template: unknown }>(),
@@ -18,13 +19,15 @@ const { store, cronQueue, connection } = vi.hoisted(() => {
     upsertJobScheduler: vi.fn(async (id: string, repeat: { every: number }, template: unknown) => {
       store.schedulers.set(id, { key: id, name: id, every: repeat.every, template });
     }),
-    getJobs: vi.fn(async () => [...store.jobs]),
+    getJobs: vi.fn(async (states: string[]) => store.jobs.filter((job) => states.includes(job.state))),
     add: vi.fn(async (name: string, data: unknown) => {
       const job: QueuedJob = {
         name,
         data,
+        state: 'waiting',
         remove: vi.fn(async () => {
-          store.jobs.splice(store.jobs.indexOf(job), 1);
+          const index = store.jobs.indexOf(job);
+          if (index !== -1) store.jobs.splice(index, 1);
         }),
       };
       store.jobs.push(job);
@@ -33,8 +36,8 @@ const { store, cronQueue, connection } = vi.hoisted(() => {
   };
 
   const connection = {
-    set: vi.fn(async (key: string, value: string) => {
-      if (store.locks.has(key)) return null;
+    set: vi.fn(async (key: string, value: string, ...options: unknown[]) => {
+      if (options.includes('NX') && store.locks.has(key)) return null;
       store.locks.set(key, value);
       return 'OK';
     }),

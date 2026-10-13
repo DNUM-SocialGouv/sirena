@@ -19,7 +19,7 @@ vi.mock('../config/job.definitions.js', () => ({
   jobHandlers: Object.entries(handlers).map(([name, task]) => ({ name, task })),
 }));
 
-const { cronWorker } = await import('./cron.worker.js');
+await import('./cron.worker.js');
 
 type Processor = (job: Job) => Promise<unknown>;
 const processor = vi.mocked(Worker).mock.calls[0][1] as Processor;
@@ -33,7 +33,6 @@ describe('cron.worker.ts', () => {
   });
 
   it('listens on the cron queue', () => {
-    expect(cronWorker).toBeDefined();
     expect(Worker).toHaveBeenCalledWith(
       'cron-queue',
       expect.any(Function),
