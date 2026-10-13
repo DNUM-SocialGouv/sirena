@@ -39,6 +39,7 @@ vi.mock('../../helpers/file.js', () => ({
 vi.mock('../../jobs/queues/fileProcessing.queue.js', () => ({
   addFileProcessingJob: vi.fn(),
 }));
+vi.mock('../../config/redis.js');
 vi.mock('../../libs/minio.js', () => ({
   uploadFileToMinio: vi.fn(),
 }));
