@@ -373,6 +373,8 @@ model Situation {
   situationEntites SituationEntite[]
 
   updatedAt DateTime @updatedAt
+
+  @@index([sirecDepartement])
 }
 
 model DomainesFonctionnelsEnum {
