@@ -1,0 +1,1 @@
+export const DEFAULT_REQUETES_LIMIT = 10;

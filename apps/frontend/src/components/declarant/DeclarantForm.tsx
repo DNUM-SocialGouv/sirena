@@ -14,6 +14,7 @@ import { DomicileFields } from '@/components/common/DomicileFields';
 import type { DeclarantData } from '@/lib/declarant';
 import { declarantFieldMetadata } from '@/lib/fieldMetadata';
 import { buildOuiNonOptions } from '@/lib/radioOptions';
+import { BACK_LINK_ACTIVE_OPTIONS } from '@/utils/backLink';
 
 interface DeclarantFormProps {
   mode: 'create' | 'edit';
@@ -141,7 +142,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
     <div>
       <div className="fr-container fr-mt-4w">
         <div className="fr-mb-3w">
-          <Link className="fr-link" to={backUrl}>
+          <Link className="fr-link" to={backUrl} activeOptions={BACK_LINK_ACTIVE_OPTIONS}>
             <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true" />
             Retour
           </Link>
