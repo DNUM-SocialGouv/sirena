@@ -330,20 +330,20 @@ describe('RequetesEntite endpoints: /', () => {
       expect(getRequetesEntite).not.toHaveBeenCalled();
     });
 
-    it('accepts an offset of 10000', async () => {
+    it.each([10_000, 10_001, 10_210, 1_000_000_000])('accepts an offset of %s', async (offset) => {
       vi.mocked(getRequetesEntite).mockResolvedValueOnce({ data: [], total: 0 });
 
-      const res = await client.index.$get({ query: { offset: '10000' } });
+      const res = await client.index.$get({ query: { offset: String(offset) } });
 
       expect(res.status).toBe(200);
-      expect((await res.json()).meta).toEqual({ limit: DEFAULT_REQUETES_LIMIT, offset: 10_000, total: 0 });
+      expect((await res.json()).meta).toEqual({ limit: DEFAULT_REQUETES_LIMIT, offset, total: 0 });
       expect(getRequetesEntite).toHaveBeenCalledWith(['entiteId'], {
         limit: DEFAULT_REQUETES_LIMIT,
-        offset: 10_000,
+        offset,
       });
     });
 
-    it.each(['', ' ', '-1', '0.5', '10001', '1e20', 'NaN', 'Infinity'])(
+    it.each(['', ' ', '-1', '0.5', '1000000001', '1e20', 'NaN', 'Infinity'])(
       'rejects an invalid offset of %s',
       async (offset) => {
         const res = await client.index.$get({ query: { offset } });
