@@ -30,6 +30,7 @@ export const connection = new Redis({
         },
       }
     : {}),
+  protocol: 2,
   enableReadyCheck: false,
   keepAlive: 10,
   maxRetriesPerRequest: null,
