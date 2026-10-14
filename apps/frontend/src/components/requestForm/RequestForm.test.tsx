@@ -1,6 +1,6 @@
 import type { RequeteMessageEvent } from '@sirena/common/constants';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RequestForm } from './RequestForm';
 
@@ -147,6 +147,15 @@ describe('RequestForm', () => {
     emitDiscussionEvent = null;
     toastAdd.mockReset();
     fetchRequeteMessages.mockReset();
+  });
+
+  it('does not wrap the header in a container that clips overflowing panels', () => {
+    renderForm();
+
+    const clipping = ['fr-container--fluid'];
+    for (let node = screen.getByTestId('request-infos').parentElement; node; node = node.parentElement) {
+      expect(clipping.filter((className) => node.classList.contains(className))).toEqual([]);
+    }
   });
 
   it('subscribes to the discussion stream only when the feature flag is on', () => {

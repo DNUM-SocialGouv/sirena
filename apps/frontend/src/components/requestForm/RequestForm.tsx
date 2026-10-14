@@ -138,7 +138,7 @@ export function RequestForm({ requestId, activeTab: activeTabProp = 0 }: Request
   return (
     <>
       <div className="bg-cumulus">
-        <div className="fr-container--fluid fr-py-2w fr-pl-7w fr-pr-3w">
+        <div className="fr-py-2w fr-pl-7w fr-pr-3w">
           <div className="fr-mb-2w">
             <Link className="fr-link fr-mb-1w" to="/home" search={requetesListSearch ?? {}}>
               <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span> Liste des requêtes
