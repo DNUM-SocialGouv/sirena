@@ -816,6 +816,7 @@ model Commune {
   updatedAt DateTime @updatedAt
 
   @@index([dptCodeActuel])
+  @@index([dptLibActuel])
   @@index([regCodeActuel])
   @@index([ctcdCodeActuel])
 }
