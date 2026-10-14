@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initAffectationTransco } from '../../features/sirecMigration/transco/affectation/affectation.transco.js';
-import { createSirecMigrationWorker, TRANSCO_INIT_RETRY_DELAY_MS } from './sirecMigration.worker.js';
+import {
+  createSirecMigrationWorker,
+  TRANSCO_INIT_MAX_ATTEMPTS,
+  TRANSCO_INIT_RETRY_DELAY_MS,
+} from './sirecMigration.worker.js';
 
 const mockWorker = vi.hoisted(() => ({
   on: vi.fn(),
@@ -37,7 +41,7 @@ vi.mock('../../features/sirecMigration/sirecMigration.service.js', () => ({
 }));
 
 vi.mock('../../helpers/pino.js', () => {
-  const logger = { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() };
+  const logger = { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn(), fatal: vi.fn() };
   return { createDefaultLogger: () => ({ ...logger, child: () => logger }) };
 });
 
@@ -51,6 +55,7 @@ describe('createSirecMigrationWorker', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it('should create the worker with autorun disabled', async () => {
@@ -99,6 +104,22 @@ describe('createSirecMigrationWorker', () => {
     await vi.advanceTimersByTimeAsync(TRANSCO_INIT_RETRY_DELAY_MS * 3);
 
     expect(initAffectationTransco).toHaveBeenCalledTimes(1);
+    expect(mockWorker.run).not.toHaveBeenCalled();
+  });
+
+  it('should exit the process after the maximum number of failed initialization attempts', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+    vi.mocked(initAffectationTransco).mockRejectedValue(new Error('db down'));
+
+    createSirecMigrationWorker();
+    await vi.advanceTimersByTimeAsync(TRANSCO_INIT_RETRY_DELAY_MS * (TRANSCO_INIT_MAX_ATTEMPTS - 2));
+    expect(exitSpy).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(TRANSCO_INIT_RETRY_DELAY_MS * 5);
+
+    expect(initAffectationTransco).toHaveBeenCalledTimes(TRANSCO_INIT_MAX_ATTEMPTS);
+    expect(exitSpy).toHaveBeenCalledTimes(1);
+    expect(exitSpy).toHaveBeenCalledWith(1);
     expect(mockWorker.run).not.toHaveBeenCalled();
   });
 });

@@ -22,6 +22,7 @@ import { SIREC_MIGRATION_QUEUE_NAME, type SirecMigrationJobData } from '../queue
 
 const SIREC_MIGRATION_CONCURRENCY = 50;
 export const TRANSCO_INIT_RETRY_DELAY_MS = 30_000;
+export const TRANSCO_INIT_MAX_ATTEMPTS = 10;
 
 const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> => {
   const { sirecId, deleteIfExists, migrateFiles, mockFilePath } = job.data;
@@ -100,18 +101,26 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
   );
 };
 
-/** Charge la transco d'affectation (en réessayant jusqu'au succès), puis démarre le worker. */
+/**
+ * Charge la transco d'affectation, puis démarre le worker. Après TRANSCO_INIT_MAX_ATTEMPTS échecs,
+ * le process s'arrête pour que k8s redémarre le pod (la liveness ignore un worker jamais démarré).
+ */
 const startWhenTranscoReady = async (
   worker: Worker<SirecMigrationJobData>,
   logger: ReturnType<typeof createDefaultLogger>,
 ): Promise<void> => {
-  while (!worker.closing) {
+  for (let attempt = 1; !worker.closing; attempt++) {
     try {
       await initAffectationTransco();
       break;
     } catch (err) {
+      if (attempt >= TRANSCO_INIT_MAX_ATTEMPTS) {
+        logger.fatal({ err, attempt }, 'SIREC affectation transco initialization failed, exiting');
+        process.exit(1);
+        return;
+      }
       logger.error(
-        { err, retryInMs: TRANSCO_INIT_RETRY_DELAY_MS },
+        { err, attempt, maxAttempts: TRANSCO_INIT_MAX_ATTEMPTS, retryInMs: TRANSCO_INIT_RETRY_DELAY_MS },
         'SIREC affectation transco initialization failed, retrying',
       );
       await new Promise((resolve) => setTimeout(resolve, TRANSCO_INIT_RETRY_DELAY_MS));
