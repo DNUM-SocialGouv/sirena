@@ -190,7 +190,7 @@ const app = factoryWithLogs
       data,
       meta: {
         ...(query.offset !== undefined && { offset: query.offset }),
-        ...(query.limit !== undefined && { limit: query.limit }),
+        limit: query.limit,
         total,
       },
     });
