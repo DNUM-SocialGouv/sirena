@@ -158,28 +158,35 @@ export async function initAffectationTransco(): Promise<void> {
   lastReloadAttemptAt = new Map();
 }
 
-async function reloadAffectationEntries(currentTransco: Map<number, AffectationEntry>, sirecIds: number[]) {
+/** Résout toutes les entrées manquantes à partir d'une seule lecture ; ne journalise que les ids demandés. */
+async function reloadAffectationEntries(
+  currentTransco: Map<number, AffectationEntry>,
+  missingIds: number[],
+  requestedIds: Set<number>,
+) {
   const entities = await fetchActiveEntities();
-  for (const sirecId of sirecIds) {
+  for (const sirecId of missingIds) {
+    const isRequested = requestedIds.has(sirecId);
     try {
       const entry = resolveAffectationEntry(entities, ALL_AFFECTATION_ENTITES[sirecId]);
       if (!entry) {
-        logger.warn({ sirecId }, 'SIREC top-level Entity still not found in SIRENA after reload');
+        if (isRequested) logger.warn({ sirecId }, 'SIREC top-level Entity still not found in SIRENA after reload');
         continue;
       }
       currentTransco.set(sirecId, entry);
       arsEntiteIdSet.add(entry.topLevelEntiteId);
       logger.info({ sirecId }, 'SIREC affectation dynamically resolved after reload');
     } catch (err) {
-      logger.warn({ err, sirecId }, 'SIREC Entity still not found in SIRENA after reload');
+      if (isRequested) logger.warn({ err, sirecId }, 'SIREC Entity still not found in SIRENA after reload');
     }
   }
 }
 
 /**
  * Recharge depuis la base les entrées de transco absentes (entités ajoutées dans SIRENA après le démarrage).
- * Sans effet si toutes les entrées sont connues. Les rechargements sont sérialisés et limités
- * à une tentative par id SIREC toutes les AFFECTATION_RELOAD_COOLDOWN_MS.
+ * Sans effet si toutes les entrées sont connues. Une même lecture résout toutes les entrées absentes,
+ * pas seulement celles demandées, pour éviter qu'un appel concurrent ne relise la base. Les rechargements
+ * sont sérialisés et limités à une tentative par id SIREC toutes les AFFECTATION_RELOAD_COOLDOWN_MS.
  */
 export async function ensureAffectationEntries(sirecIds: number[]): Promise<void> {
   if (transco === null) {
@@ -198,11 +205,12 @@ export async function ensureAffectationEntries(sirecIds: number[]): Promise<void
   );
   if (toReload.length === 0) return;
 
-  for (const id of toReload) lastReloadAttemptAt.set(id, now);
-  pendingReload = reloadAffectationEntries(transco, toReload)
+  const allMissingIds = Object.keys(ALL_AFFECTATION_ENTITES).map(Number).filter(isMissing);
+  for (const id of allMissingIds) lastReloadAttemptAt.set(id, now);
+  pendingReload = reloadAffectationEntries(transco, allMissingIds, new Set(toReload))
     .catch((err) => {
       // Échec technique (ex. base indisponible) : on ne bloque pas les prochaines tentatives
-      for (const id of toReload) lastReloadAttemptAt.delete(id);
+      for (const id of allMissingIds) lastReloadAttemptAt.delete(id);
       throw err;
     })
     .finally(() => {

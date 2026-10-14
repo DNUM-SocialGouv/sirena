@@ -484,6 +484,33 @@ describe('affectation.transco.ts', () => {
       expect(transcodeAffectation(1115, SIREC_GROUP_MODE.ECRITURE).situationEntiteIds).toContain('dau-id');
     });
 
+    it('should query the database only once for concurrent calls with different ids', async () => {
+      const { prisma } = await import('@sirena/db');
+      await setupTransco(entitiesWithoutDau().filter((e) => e.id !== ARS_GRAND_EST_ID));
+
+      vi.mocked(prisma.entite.findMany).mockResolvedValue(makeAllRequiredEntities() as never);
+      await Promise.all([ensureAffectationEntries([1115]), ensureAffectationEntries([677])]);
+
+      expect(prisma.entite.findMany).toHaveBeenCalledTimes(2);
+      expect(transcodeAffectation(1115, SIREC_GROUP_MODE.ECRITURE).situationEntiteIds).toContain('dau-id');
+      expect(transcodeAffectation(677, SIREC_GROUP_MODE.ECRITURE).requeteEntiteIds).toEqual([ARS_GRAND_EST_ID]);
+    });
+
+    it('should not query the database again for an id still missing after a reload triggered by another id', async () => {
+      const { prisma } = await import('@sirena/db');
+      await setupTransco(entitiesWithoutDau().filter((e) => e.id !== ARS_GRAND_EST_ID));
+
+      vi.mocked(prisma.entite.findMany).mockResolvedValue(
+        makeAllRequiredEntities().filter((e) => e.id !== ARS_GRAND_EST_ID) as never,
+      );
+      await ensureAffectationEntries([1115]);
+      await ensureAffectationEntries([677]);
+
+      expect(prisma.entite.findMany).toHaveBeenCalledTimes(2);
+      expect(transcodeAffectation(1115, SIREC_GROUP_MODE.ECRITURE).situationEntiteIds).toContain('dau-id');
+      expect(() => transcodeAffectation(677, SIREC_GROUP_MODE.ECRITURE)).toThrow(SirecTranscoError);
+    });
+
     it('should not retry a still-missing entity before the cooldown has elapsed', async () => {
       vi.useFakeTimers();
       const { prisma } = await import('@sirena/db');
