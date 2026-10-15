@@ -4,9 +4,9 @@ import { ROLES, ROLES_STATISTICS } from '@sirena/common/constants';
 import { createFileRoute, Navigate, useNavigate, useSearch } from '@tanstack/react-router';
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { z } from 'zod';
+import { HelpTooltip } from '@/components/common/HelpTooltip';
 import { AuthLayout } from '@/components/layout/auth/layout';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
-import { CardHelp } from '@/components/statistics/CardHelp';
 import { parseCard } from '@/components/statistics/chartData';
 import { DashboardFilters } from '@/components/statistics/DashboardFilters';
 import { DownloadCsvButton } from '@/components/statistics/DownloadCsvButton';
@@ -84,7 +84,7 @@ function KpiCard({ card }: { card: StatisticsCard }) {
       <span className={styles['kpi-value']}>{display}</span>{' '}
       <span className={`${fr.cx('fr-text--md', 'fr-mb-0')} ${styles['kpi-label']}`}>
         <span className={`${fr.cx('fr-text--bold')} ${styles['kpi-name']}`}>{card.name}</span>{' '}
-        <CardHelp description={card.description} />
+        <HelpTooltip description={card.description} />
       </span>
     </p>
   );
@@ -177,7 +177,7 @@ function CardHeading({ card, action }: { card: StatisticsCard; action?: ReactNod
   return (
     <div className={styles['card-title']}>
       <h2 className={fr.cx('fr-text--md', 'fr-text--bold', 'fr-mb-0')}>{card.name}</h2>
-      <CardHelp description={card.description} />
+      <HelpTooltip description={card.description} />
       {action}
     </div>
   );
