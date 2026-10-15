@@ -10,6 +10,7 @@ import { useEditEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 import { useListStateStore } from '@/stores/listStateStore';
+import { BACK_LINK_ACTIVE_OPTIONS } from '@/utils/backLink';
 import { EntiteAdminFormFields } from './-components/EntiteAdminFormFields';
 import { getEditEntiteTitle } from './-helpers';
 
@@ -197,7 +198,12 @@ export function RouteComponent() {
           />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
-            <Link className="fr-btn fr-btn--secondary" to="/admin/entites" search={entitesListSearch ?? {}}>
+            <Link
+              className="fr-btn fr-btn--secondary"
+              to="/admin/entites"
+              search={entitesListSearch ?? {}}
+              activeOptions={BACK_LINK_ACTIVE_OPTIONS}
+            >
               Annuler
             </Link>
             <Button type="submit" disabled={editEntiteAdmin.isPending}>

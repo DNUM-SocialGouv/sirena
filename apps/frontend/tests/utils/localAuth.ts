@@ -22,14 +22,17 @@ function signHs256(payload: Record<string, unknown>, secret: string, expiresInSe
   return `${signingInput}.${signature}`;
 }
 
+const EXPIRES_IN_SECONDS = 12 * 60 * 60; // 12h, enough to cover a full run
+
 /**
- * Resolves the seeded user by email and returns its database id + role.
+ * Resolves the seeded user by email and returns its database id + role, along
+ * with a session the forged token can be bound to.
  *
  * The id is a non-deterministic cuid regenerated on every reseed, so we look it
  * up by email (which is stable) rather than hardcoding it. Prisma is imported
  * lazily so the integration target never needs a database connection (PG_URL).
  */
-async function resolveSeedUser(email: string): Promise<{ id: string; roleId: string }> {
+async function resolveSeedUser(email: string): Promise<{ id: string; roleId: string; sessionId: string }> {
   let db: typeof import('@sirena/db');
   try {
     db = await import('@sirena/db');
@@ -52,7 +55,21 @@ async function resolveSeedUser(email: string): Promise<{ id: string; roleId: str
       );
     }
 
-    return user;
+    const sessionToken = `e2e-local-auth-${email}`;
+    const expiresAt = new Date(Date.now() + EXPIRES_IN_SECONDS * 1000);
+    const session = await prisma.session.upsert({
+      where: { token: sessionToken },
+      update: { userId: user.id, expiresAt },
+      create: {
+        userId: user.id,
+        token: sessionToken,
+        pcIdToken: `e2e-local-auth-pc-id-${email}`,
+        expiresAt,
+      },
+      select: { id: true },
+    });
+
+    return { ...user, sessionId: session.id };
   } finally {
     await prisma.$disconnect();
   }
@@ -60,8 +77,9 @@ async function resolveSeedUser(email: string): Promise<{ id: string; roleId: str
 
 /**
  * Builds an authenticated storageState file by forging the `auth_token` cookie,
- * bypassing ProConnect. The backend is untouched: it already accepts any
- * `auth_token` signed with AUTH_TOKEN_SECRET_KEY for an existing user.
+ * bypassing ProConnect. The backend is untouched: it accepts any `auth_token`
+ * signed with AUTH_TOKEN_SECRET_KEY that carries the id of an existing user and
+ * of an existing session.
  */
 export async function createLocalAuthFile(browser: Browser, email: string, authFile: string): Promise<void> {
   if (!authTokenSecret || !authTokenName || !isLoggedTokenName) {
@@ -70,11 +88,10 @@ export async function createLocalAuthFile(browser: Browser, email: string, authF
     );
   }
 
-  const { id, roleId } = await resolveSeedUser(email);
-  const expiresInSeconds = 12 * 60 * 60; // 12h, enough to cover a full run
-  const token = signHs256({ id, roleId }, authTokenSecret, expiresInSeconds);
+  const { id, roleId, sessionId } = await resolveSeedUser(email);
+  const token = signHs256({ id, roleId, sessionId }, authTokenSecret, EXPIRES_IN_SECONDS);
 
-  const expires = Math.floor(Date.now() / 1000) + expiresInSeconds;
+  const expires = Math.floor(Date.now() / 1000) + EXPIRES_IN_SECONDS;
   // Secure cookies are only sent over https (Chromium also trusts http on
   // localhost/127.0.0.1), so mirror the target protocol rather than hardcoding.
   const secure = new URL(baseUrl).protocol === 'https:';

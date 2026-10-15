@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { connection } from '../../config/redis.js';
 import { prisma } from '../../libs/prisma.js';
 import { determineSource, generateRequeteId } from './functionalId.service.js';
@@ -14,6 +14,10 @@ vi.mock('../../libs/prisma.js', () => ({
     $queryRaw: vi.fn(),
   },
 }));
+
+const mockedSet = connection.set as unknown as Mock<
+  (key: string, value: string, ex: 'EX', seconds: number, nx: 'NX') => Promise<'OK' | null>
+>;
 
 describe('functionalId.service', () => {
   beforeEach(() => {
@@ -31,7 +35,7 @@ describe('functionalId.service', () => {
       vi.setSystemTime(mockDate);
 
       vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: null }]);
-      vi.mocked(connection.set).mockResolvedValue('OK');
+      mockedSet.mockResolvedValue('OK');
 
       const result = await generateRequeteId('SIRENA');
 
@@ -45,7 +49,7 @@ describe('functionalId.service', () => {
       vi.setSystemTime(mockDate);
 
       vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: 119 }]);
-      vi.mocked(connection.set).mockResolvedValue('OK');
+      mockedSet.mockResolvedValue('OK');
 
       const result = await generateRequeteId('FORMULAIRE');
 
@@ -57,7 +61,7 @@ describe('functionalId.service', () => {
       vi.setSystemTime(mockDate);
 
       vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: 41 }]);
-      vi.mocked(connection.set).mockResolvedValue('OK');
+      mockedSet.mockResolvedValue('OK');
 
       const result = await generateRequeteId('SIRENA');
 
@@ -72,7 +76,7 @@ describe('functionalId.service', () => {
         .mockResolvedValueOnce([{ maxNumber: 0 }])
         .mockResolvedValueOnce([{ maxNumber: 1 }])
         .mockResolvedValueOnce([{ maxNumber: 2 }]);
-      vi.mocked(connection.set).mockResolvedValue('OK');
+      mockedSet.mockResolvedValue('OK');
 
       const result1 = await generateRequeteId('SIRENA');
       const result2 = await generateRequeteId('SIRENA');
@@ -90,7 +94,7 @@ describe('functionalId.service', () => {
       vi.mocked(prisma.$queryRaw)
         .mockResolvedValueOnce([{ maxNumber: 5 }])
         .mockResolvedValueOnce([{ maxNumber: 3 }]);
-      vi.mocked(connection.set).mockResolvedValue('OK');
+      mockedSet.mockResolvedValue('OK');
 
       const result1 = await generateRequeteId('SIRENA');
       const result2 = await generateRequeteId('FORMULAIRE');
@@ -103,7 +107,7 @@ describe('functionalId.service', () => {
       vi.mocked(prisma.$queryRaw)
         .mockResolvedValueOnce([{ maxNumber: 10 }])
         .mockResolvedValueOnce([{ maxNumber: null }]);
-      vi.mocked(connection.set).mockResolvedValue('OK');
+      mockedSet.mockResolvedValue('OK');
 
       // Month 1
       vi.setSystemTime(new Date('2025-09-15'));
@@ -121,7 +125,7 @@ describe('functionalId.service', () => {
       vi.setSystemTime(mockDate);
 
       vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: null }]);
-      vi.mocked(connection.set).mockResolvedValue('OK');
+      mockedSet.mockResolvedValue('OK');
 
       const result = await generateRequeteId('SIRENA');
 
@@ -133,7 +137,7 @@ describe('functionalId.service', () => {
       vi.setSystemTime(mockDate);
 
       vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: 11 }]);
-      vi.mocked(connection.set).mockResolvedValue('OK');
+      mockedSet.mockResolvedValue('OK');
 
       const result = await generateRequeteId('FORMULAIRE');
 
@@ -145,7 +149,7 @@ describe('functionalId.service', () => {
       vi.setSystemTime(mockDate);
 
       vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: 4 }]);
-      vi.mocked(connection.set).mockResolvedValue('OK');
+      mockedSet.mockResolvedValue('OK');
 
       const result = await generateRequeteId('TELEPHONIQUE');
 
@@ -157,7 +161,7 @@ describe('functionalId.service', () => {
       vi.setSystemTime(mockDate);
 
       vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: 0 }]);
-      vi.mocked(connection.set).mockResolvedValueOnce(null).mockResolvedValueOnce('OK');
+      mockedSet.mockResolvedValueOnce(null).mockResolvedValueOnce('OK');
 
       const result = await generateRequeteId('SIRENA');
 

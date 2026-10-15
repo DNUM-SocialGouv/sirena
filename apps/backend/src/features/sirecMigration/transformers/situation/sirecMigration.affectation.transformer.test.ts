@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { SirecReclamationData } from '../../sirecMigration.repository.js';
 import { SirecDataError, SirecTranscoError } from '../../transco/sirecTransco.error.js';
-import { transformSirecAffectation } from './sirecMigration.affectation.transformer.js';
+import { collectAffectationSirecIds, transformSirecAffectation } from './sirecMigration.affectation.transformer.js';
 
 vi.mock('../../transco/affectation/affectation.transco.js', () => ({
   SIREC_NATIONAL_ENTITE_ID: 1,
@@ -177,6 +177,16 @@ describe('sirecMigration.affectation.transformer.ts', () => {
       transformSirecAffectation(data);
 
       expect(transcodeAffectation).toHaveBeenCalledWith(677, 'LECTURE');
+    });
+  });
+
+  describe('collectAffectationSirecIds', () => {
+    it('should collect service_gestionnaire and groupIds without duplicates', () => {
+      expect(collectAffectationSirecIds(makeData(693, [1115, 693]))).toEqual([693, 1115]);
+    });
+
+    it('should ignore null, zero and national ids', () => {
+      expect(collectAffectationSirecIds(makeData(null, [0, 1, 677]))).toEqual([677]);
     });
   });
 });

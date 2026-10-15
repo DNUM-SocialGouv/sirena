@@ -8,6 +8,8 @@ import { z } from 'zod';
 import { usePatchUser } from '@/hooks/mutations/updateUser.hook';
 import { useUserById } from '@/hooks/queries/users.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
+import type { QueryParams } from '@/schemas/pagination.schema';
+import { useListStateStore } from '@/stores/listStateStore';
 import { useUserStore } from '@/stores/userStore';
 import './$userId.css';
 import { Toast } from '@sirena/ui';
@@ -59,6 +61,23 @@ const userFormSchema = z
 
 type UserFormData = z.infer<typeof userFormSchema>;
 
+type UsersListTo = '/admin/users' | '/admin/users/all';
+
+const NO_SEARCH: QueryParams = {};
+
+function useUsersList(roleId: string | undefined): { to: UsersListTo; search: QueryParams } {
+  const usersListState = useListStateStore((s) => s.states.users);
+  const fromList = usersListState?.to;
+  const to: UsersListTo =
+    fromList === '/admin/users' || fromList === '/admin/users/all'
+      ? fromList
+      : roleId === ROLES.PENDING
+        ? '/admin/users'
+        : '/admin/users/all';
+
+  return { to, search: usersListState?.to === to ? usersListState.search : NO_SEARCH };
+}
+
 function SubmitButton({ isPending }: { isPending: boolean }) {
   return (
     <Button type="submit" disabled={isPending}>
@@ -75,6 +94,7 @@ function RouteComponent() {
   const router = useRouter();
   const userStore = useUserStore();
   const userQuery = useUserById(userId);
+  const usersList = useUsersList(userQuery.data?.roleId);
   const patchUser = usePatchUser();
   const { data: profile } = useQuery({ ...profileQueryOptions(), enabled: false });
 
@@ -91,9 +111,9 @@ function RouteComponent() {
 
   useEffect(() => {
     if (userQuery.error && 'status' in userQuery.error && userQuery.error.status === 404) {
-      navigate({ to: '/admin/users' });
+      navigate({ to: usersList.to, search: usersList.search });
     }
-  }, [userQuery.error, navigate]);
+  }, [userQuery.error, navigate, usersList.to, usersList.search]);
 
   useEffect(() => {
     if (userQuery.data) {
@@ -117,9 +137,9 @@ function RouteComponent() {
     if (window.history.length > 1) {
       router.history.back();
     } else {
-      router.navigate({ to: '/admin/users' });
+      router.navigate({ to: usersList.to, search: usersList.search });
     }
-  }, [router]);
+  }, [router, usersList.to, usersList.search]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
