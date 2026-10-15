@@ -42,6 +42,16 @@ describe('DataTableHeader Component', () => {
     expect(onToggleAll).toHaveBeenCalledTimes(1);
   });
 
+  it('renders the hint of a column next to its title', () => {
+    render(
+      <table>
+        <DataTableHeader {...defaultProps} columns={[{ key: 'name', label: 'Name', labelHint: <span>Aide</span> }]} />
+      </table>,
+    );
+    expect(screen.getByText('Name')).toBeInTheDocument();
+    expect(screen.getByText('Aide')).toBeInTheDocument();
+  });
+
   it('renders column headers with correct labels', () => {
     render(
       <table>
