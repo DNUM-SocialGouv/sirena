@@ -12,18 +12,21 @@ vi.mock('bullmq', () => ({
   }),
 }));
 
+// Captured at load time: Vitest clears mock calls before each test.
+const queueArgs = vi.mocked(Queue).mock.calls[0];
+
 describe('sirecMigration.queue.ts', () => {
   beforeEach(() => {
     addBulk.mockClear();
   });
 
   it('retries a failing migration a bounded number of times', () => {
-    expect(Queue).toHaveBeenCalledWith(
+    expect(queueArgs).toEqual([
       SIREC_MIGRATION_QUEUE_NAME,
       expect.objectContaining({
         defaultJobOptions: expect.objectContaining({ attempts: 3, backoff: { type: 'fixed', delay: 5000 } }),
       }),
-    );
+    ]);
   });
 
   it('queues one migration job per SIREC id with the requested options', async () => {

@@ -21,6 +21,9 @@ vi.mock('../config/job.definitions.js', () => ({
 
 await import('./cron.worker.js');
 
+// Captured at load time: Vitest clears mock calls before each test.
+const workerArgs = vi.mocked(Worker).mock.calls[0];
+
 type Processor = (job: Job) => Promise<unknown>;
 const processor = vi.mocked(Worker).mock.calls[0][1] as Processor;
 
@@ -33,11 +36,7 @@ describe('cron.worker.ts', () => {
   });
 
   it('listens on the cron queue', () => {
-    expect(Worker).toHaveBeenCalledWith(
-      'cron-queue',
-      expect.any(Function),
-      expect.objectContaining({ concurrency: 5 }),
-    );
+    expect(workerArgs).toEqual(['cron-queue', expect.any(Function), expect.objectContaining({ concurrency: 5 })]);
   });
 
   it('runs only the handler matching the job name, with a job logger available', async () => {

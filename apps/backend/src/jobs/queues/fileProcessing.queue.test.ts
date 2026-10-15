@@ -33,6 +33,9 @@ vi.mock('bullmq', () => ({
   }),
 }));
 
+// Captured at load time: Vitest clears mock calls before each test.
+const queueArgs = vi.mocked(Queue).mock.calls[0];
+
 const queue = vi.mocked(Queue).mock.results[0].value as { seed: (id: string, state: string) => void };
 
 const file = { fileId: 'f1', fileName: 'scan.pdf', filePath: 'uploads/scan.pdf', mimeType: 'application/pdf' };
@@ -43,7 +46,7 @@ describe('fileProcessing.queue.ts', () => {
   });
 
   it('retries a failing file a bounded number of times, with an exponential backoff', () => {
-    expect(Queue).toHaveBeenCalledWith(
+    expect(queueArgs).toEqual([
       'file-processing',
       expect.objectContaining({
         defaultJobOptions: expect.objectContaining({
@@ -51,7 +54,7 @@ describe('fileProcessing.queue.ts', () => {
           backoff: { type: 'exponential', delay: 5000 },
         }),
       }),
-    );
+    ]);
   });
 
   it('queues one processing job per file, keyed by the file id', async () => {
