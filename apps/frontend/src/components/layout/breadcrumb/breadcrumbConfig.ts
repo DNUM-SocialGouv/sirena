@@ -41,14 +41,19 @@ const requestTrail: Trail = (ctx) => [
   { text: `Requête ${ctx.params.requestId}`, to: `/request/${ctx.params.requestId}` },
 ];
 
-const usersTrail: Trail = (ctx) => [
-  ...adminTrail(ctx),
-  {
-    text: 'Utilisateurs',
-    to: '/admin/users/all',
-    search: ctx.listStates.users?.to === '/admin/users/all' ? ctx.listStates.users.search : undefined,
-  },
-];
+// A user is opened from either admin users tab: lead back to that tab, with its filters
+const usersTrail: Trail = (ctx) => {
+  const usersList = ctx.listStates.users;
+  const fromPending = usersList?.to === '/admin/users';
+  return [
+    ...adminTrail(ctx),
+    {
+      text: fromPending ? "Demandes d'habilitation" : 'Utilisateurs',
+      to: fromPending ? '/admin/users' : '/admin/users/all',
+      search: usersList?.search,
+    },
+  ];
+};
 
 const entitesTrail: Trail = (ctx) => [
   ...adminTrail(ctx),

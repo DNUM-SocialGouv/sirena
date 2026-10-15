@@ -94,19 +94,35 @@ describe('getBreadCrumbItems', () => {
     ]);
   });
 
-  it('only restores the users list search when it comes from the users tab', () => {
+  it('leads a user page back to the users tab it was opened from, with its filters', () => {
     const ctx = { ...superAdmin, params: { userId: 'u1' } };
     const fromPending = getBreadCrumbItems('/_auth/admin/user/$userId', {
       ...ctx,
-      listStates: { users: { to: '/admin/users', search: { offset: 20 } } },
+      listStates: { users: { to: '/admin/users', search: { offset: 20, search: 'Dupont' } } },
     });
     const fromAll = getBreadCrumbItems('/_auth/admin/user/$userId', {
       ...ctx,
       listStates: { users: { to: '/admin/users/all', search: { offset: 20 } } },
     });
 
-    expect(fromPending?.[1]).toMatchObject({ text: 'Utilisateurs', to: '/admin/users/all', search: undefined });
-    expect(fromAll?.[1]).toMatchObject({ search: { offset: 20 } });
+    expect(fromPending?.[1]).toEqual({
+      text: "Demandes d'habilitation",
+      to: '/admin/users',
+      search: { offset: 20, search: 'Dupont' },
+      current: false,
+    });
+    expect(fromAll?.[1]).toEqual({
+      text: 'Utilisateurs',
+      to: '/admin/users/all',
+      search: { offset: 20 },
+      current: false,
+    });
+  });
+
+  it('leads a user page back to the users tab when no list is remembered', () => {
+    const items = getBreadCrumbItems('/_auth/admin/user/$userId', { ...superAdmin, params: { userId: 'u1' } });
+
+    expect(items?.[1]).toMatchObject({ text: 'Utilisateurs', to: '/admin/users/all', search: undefined });
   });
 
   it('keeps the public pages under the site home', () => {
