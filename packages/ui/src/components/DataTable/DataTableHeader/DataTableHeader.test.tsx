@@ -42,6 +42,38 @@ describe('DataTableHeader Component', () => {
     expect(onToggleAll).toHaveBeenCalledTimes(1);
   });
 
+  it('renders the hint of a column next to its title', () => {
+    render(
+      <table>
+        <DataTableHeader {...defaultProps} columns={[{ key: 'name', label: 'Name', labelHint: <span>Aide</span> }]} />
+      </table>,
+    );
+    expect(screen.getByText('Name')).toBeInTheDocument();
+    expect(screen.getByText('Aide')).toBeInTheDocument();
+  });
+
+  it('keeps the column name to the label alone when a hint is rendered in the cell', () => {
+    render(
+      <table>
+        <DataTableHeader
+          {...defaultProps}
+          columns={[{ key: 'name', label: 'Département', labelHint: <button type="button">Information</button> }]}
+        />
+      </table>,
+    );
+    expect(screen.getByRole('columnheader', { name: 'Département' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Information' })).toBeInTheDocument();
+  });
+
+  it('leaves the column name computed from the cell when there is no hint', () => {
+    render(
+      <table>
+        <DataTableHeader {...defaultProps} columns={[{ key: 'name', label: 'Département' }]} />
+      </table>,
+    );
+    expect(screen.getByRole('columnheader', { name: 'Département' })).not.toHaveAttribute('aria-label');
+  });
+
   it('renders column headers with correct labels', () => {
     render(
       <table>
