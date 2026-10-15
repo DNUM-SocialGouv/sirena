@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma as prismaMock } from '../../libs/__mocks__/prisma.js';
 import {
   type Identite,
@@ -617,6 +617,16 @@ describe('requetesEntite.service', () => {
       mockedRequeteEntite.findMany.mockResolvedValue([]);
       vi.mocked(prisma.commune.findMany).mockResolvedValue([]);
       vi.mocked(prisma.inseePostal.findMany).mockResolvedValue([]);
+    });
+
+    // These mocks are shared with the rest of the file, and `vi.clearAllMocks()` keeps both the
+    // implementations and the `*Once` values a test left unconsumed. Without this, one of them
+    // would be served to whichever test reads the mock next — here or in a later block.
+    afterEach(() => {
+      mockedRequeteEntite.count.mockReset();
+      mockedRequeteEntite.findMany.mockReset();
+      vi.mocked(prisma.commune.findMany).mockReset();
+      vi.mocked(prisma.inseePostal.findMany).mockReset();
     });
 
     it('matches a situation either on its postal code or on its SIREC department', async () => {
