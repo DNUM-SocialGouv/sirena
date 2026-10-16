@@ -68,6 +68,7 @@ vi.mock('../entites/entites.service.js', () => ({
   getEntiteAscendanteInfo: vi.fn(),
 }));
 
+vi.mock('../../config/redis.js');
 vi.mock('../../libs/minio.js', () => ({
   deleteFileFromMinio: vi.fn(),
   getFileBuffer: vi.fn(),

@@ -78,6 +78,8 @@ vi.mock('../entites/entites.cache.js', () => ({
   },
 }));
 
+vi.mock('../../config/redis.js');
+vi.mock('../../jobs/queues/fileProcessing.queue.js', () => ({ addFileProcessingJob: vi.fn() }));
 vi.mock('../../libs/minio.js', () => ({
   getFileStream: vi.fn(),
 }));
