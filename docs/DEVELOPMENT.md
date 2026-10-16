@@ -204,9 +204,12 @@ Ces règles ne sont pas outillées, elles relèvent de la revue :
   50 lignes, pas plus de quatre niveaux d'imbrication.
 - Sorties anticipées et clauses de garde plutôt que des blocs `if` imbriqués.
 - Immutabilité par défaut : produire une nouvelle valeur plutôt que muter un objet reçu.
-- Privilégier la programmation fonctionnelle à la programmation impérative : composer des
-  fonctions pures et des transformations (`map`, `filter`, `reduce`) plutôt que piloter un
-  accumulateur à la main.
+- Style fonctionnel plutôt qu'impératif : des fonctions pures et des transformations (`map`,
+  `filter`, `reduce`) plutôt qu'une boucle qui pilote un accumulateur à la main. Il s'agit d'une
+  préférence d'écriture, pas d'un virage vers la programmation fonctionnelle comme paradigme : le
+  projet n'en fait pas, TypeScript s'y prête mal sans bibliothèque dédiée (`fp-ts` et
+  équivalents), et on n'en introduit pas une pour ça. Pas de `Either`, de monades ni de
+  point-free poussé : du TypeScript ordinaire, écrit sans mutation.
 - Tout développement s'accompagne d'un ou plusieurs tests unitaires : ils valident le
   comportement attendu et protègent des régressions ultérieures.
 - Pas de valeur codée en dur : constante nommée ou configuration.
