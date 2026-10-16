@@ -16,8 +16,10 @@ export const usePatchUser = () => {
       // that never got an answer is silent.
       if (!(error instanceof HttpError)) notifySaveNetworkFailure();
     },
-    onSuccess: (data, variables) => {
-      queryClient.setQueryData(useUserByIdQueryOptions(variables.id).queryKey, data);
+    onSuccess: (_data, variables) => {
+      // The PATCH answer carries no `role` relation, unlike what the detail query caches:
+      // writing it straight into the cache would drop it, so the query is refetched instead.
+      queryClient.invalidateQueries({ queryKey: useUserByIdQueryOptions(variables.id).queryKey });
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });

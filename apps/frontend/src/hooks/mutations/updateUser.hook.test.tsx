@@ -95,15 +95,18 @@ describe('usePatchUser', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 
-  it('keeps the server answer on success', async () => {
-    const saved = { ...PREVIOUS_USER, ...PATCH };
-    patchUserById.mockResolvedValue(saved);
+  it('refetches the user on success instead of caching the patch answer', async () => {
+    queryClient.setQueryData(['user', 'u-1'], PREVIOUS_USER);
+    // The PATCH answer has no `role` relation: written to the cache it would drop the one
+    // the detail query holds.
+    patchUserById.mockResolvedValue({ ...PREVIOUS_USER, ...PATCH });
 
     const result = renderPatchUser();
     result.current.mutate({ id: 'u-1', json: PATCH });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(notifySaveNetworkFailure).not.toHaveBeenCalled();
-    expect(queryClient.getQueryData(['user', 'u-1'])).toEqual(saved);
+    expect(queryClient.getQueryState(['user', 'u-1'])?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryData(['user', 'u-1'])).toEqual(PREVIOUS_USER);
   });
 });
