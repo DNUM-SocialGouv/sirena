@@ -73,10 +73,11 @@ const shutdown = async () => {
     });
   });
 
-  await stopCacheInvalidationSubscriber();
+  // Closed last: the jobs still draining need caches that stay invalidated.
   await cronWorker.close();
   await fileProcessingWorker.close();
   await sirecMigrationWorker?.close();
+  await stopCacheInvalidationSubscriber();
   process.exit(0);
 };
 

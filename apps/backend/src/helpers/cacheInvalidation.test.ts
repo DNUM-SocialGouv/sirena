@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const subscriberHandlers: Record<string, (channel: string, message: string) => void> = {};
 const subscriber = {
@@ -8,6 +8,7 @@ const subscriber = {
   subscribe: vi.fn(() => Promise.resolve()),
   unsubscribe: vi.fn(() => Promise.resolve()),
   quit: vi.fn(() => Promise.resolve()),
+  disconnect: vi.fn(),
 };
 const publish = vi.fn(() => Promise.resolve(1));
 
@@ -91,5 +92,25 @@ describe('cacheInvalidationBus', () => {
     expect(subscriber.quit).toHaveBeenCalled();
     expect(vi.mocked(handler)).toHaveBeenCalledTimes(1);
     expect(publish).not.toHaveBeenCalled();
+  });
+
+  describe('when the subscriber connection is unreachable', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+      subscriber.unsubscribe.mockImplementation(() => Promise.resolve());
+    });
+
+    it('does not wait forever on a command that never settles', async () => {
+      await startCacheInvalidationSubscriber();
+      // `maxRetriesPerRequest: null` keeps the command queued instead of failing.
+      subscriber.unsubscribe.mockImplementation(() => new Promise(() => {}));
+      vi.useFakeTimers();
+
+      const stopped = stopCacheInvalidationSubscriber();
+      await vi.advanceTimersByTimeAsync(2_000);
+      await expect(stopped).resolves.toBeUndefined();
+
+      expect(subscriber.disconnect).toHaveBeenCalled();
+    });
   });
 });

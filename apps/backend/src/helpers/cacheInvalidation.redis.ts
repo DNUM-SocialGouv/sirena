@@ -5,6 +5,8 @@ import { createDefaultLogger } from './pino.js';
 
 export const CACHE_INVALIDATION_CHANNEL = 'cache:invalidation';
 
+const SHUTDOWN_TIMEOUT_MS = 2_000;
+
 interface CacheInvalidationMessage {
   scope: CacheInvalidationScope;
 }
@@ -57,16 +59,38 @@ export const startCacheInvalidationSubscriber = async (): Promise<void> => {
   }
 };
 
+const closeGracefully = async (client: Redis): Promise<void> => {
+  await client.unsubscribe(CACHE_INVALIDATION_CHANNEL);
+  await client.quit();
+};
+
 export const stopCacheInvalidationSubscriber = async (): Promise<void> => {
   cacheInvalidationBus.setPublisher(null);
   if (!subscriber) return;
 
   const client = subscriber;
   subscriber = null;
+
+  let timer: NodeJS.Timeout | undefined;
   try {
-    await client.unsubscribe(CACHE_INVALIDATION_CHANNEL);
-    await client.quit();
+    // The subscriber inherits `maxRetriesPerRequest: null`, so a command issued on a
+    // down connection never settles. Bound the graceful close: the rest of the
+    // shutdown must not hang on an unreachable Redis.
+    await Promise.race([
+      closeGracefully(client),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`Cache invalidation subscriber did not close within ${SHUTDOWN_TIMEOUT_MS}ms`)),
+          SHUTDOWN_TIMEOUT_MS,
+        );
+        timer.unref();
+      }),
+    ]);
   } catch (err) {
     logger.error({ err: sanitizeRedisError(err) }, 'Failed to close cache invalidation subscriber');
+  } finally {
+    clearTimeout(timer);
+    // Drops the socket without waiting for a reply; a no-op once the connection is closed.
+    client.disconnect();
   }
 };
