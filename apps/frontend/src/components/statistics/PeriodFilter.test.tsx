@@ -10,6 +10,37 @@ vi.mock('@/hooks/useHasFeature', () => ({
 
 const mockedUseHasFeature = vi.mocked(useHasFeature);
 
+const CREATION_DATE_NOTE = 'La date prise en compte est la date de création de la requête dans SIRENA.';
+const INVALID_START_MESSAGE = 'Le champ “Date de début” n’est pas valide. Format attendu : JJ/MM/AAAA';
+const INVALID_END_MESSAGE = 'Le champ “Date de fin” n’est pas valide. Format attendu : JJ/MM/AAAA';
+
+// A date input holding an unparsable value exposes it as `validity.badInput`, not through `value`.
+const markAsBadInput = (input: HTMLElement) => {
+  Object.defineProperty(input, 'validity', {
+    value: { badInput: true },
+    configurable: true,
+  });
+};
+
+// A partially typed date keeps its text in the field while already reading as an empty `value`, so
+// React skips the DOM write and only an explicit one wipes the text. jsdom has no partial date
+// state: the write itself is what the test can observe.
+const spyOnValueWrites = (startInput: HTMLElement, endInput: HTMLElement) => {
+  const spies = { start: vi.fn(), end: vi.fn() };
+  Object.defineProperty(startInput, 'value', { get: () => '', set: spies.start, configurable: true });
+  Object.defineProperty(endInput, 'value', { get: () => '', set: spies.end, configurable: true });
+  return spies;
+};
+
+// Opening the panel moves focus into it through requestAnimationFrame. A test asserting where a
+// submission puts the focus has to wait for that first focus, or it lands afterwards and replaces it.
+const openPanelAndWaitForFocus = async (
+  focusTarget = () => screen.getByRole('radio', { name: 'Semaine courante' }),
+) => {
+  await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+  await waitFor(() => expect(focusTarget()).toHaveFocus());
+};
+
 beforeEach(() => {
   mockedUseHasFeature.mockReturnValue(true);
 });
@@ -94,7 +125,7 @@ describe('PeriodFilter', () => {
     const onChange = vi.fn();
     render(<PeriodFilter value={{}} onChange={onChange} />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+    await openPanelAndWaitForFocus();
     await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
 
     expect(onChange).not.toHaveBeenCalled();
@@ -108,7 +139,7 @@ describe('PeriodFilter', () => {
     const onChange = vi.fn();
     render(<PeriodFilter value={{}} onChange={onChange} />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+    await openPanelAndWaitForFocus();
     const endInput = screen.getByLabelText(/Date de fin/);
     fireEvent.change(screen.getByLabelText(/Date de début/), { target: { value: '2026-02-01' } });
     fireEvent.change(endInput, { target: { value: '2026-01-01' } });
@@ -116,13 +147,124 @@ describe('PeriodFilter', () => {
     const applyButton = screen.getByRole('button', { name: /Appliquer/ });
     // Le bouton reste actif (pas de disabled), le contrôle se fait à la soumission.
     expect(applyButton).toBeEnabled();
-    const form = applyButton.closest('form');
-    if (!form) throw new Error('form introuvable');
-    fireEvent.submit(form);
+    // Clic réel et non fireEvent.submit : seul le clic traverse la validation native du navigateur.
+    await userEvent.click(applyButton);
 
     expect(onChange).not.toHaveBeenCalled();
     expect(screen.getByText('La date de fin doit être postérieure à la date de début.')).toBeInTheDocument();
     expect(endInput).toHaveFocus();
+  });
+
+  describe('when a custom date cannot be parsed', () => {
+    it('shows the DSFR error on the start date and does not apply', async () => {
+      const onChange = vi.fn();
+      render(<PeriodFilter value={{}} onChange={onChange} />);
+
+      await openPanelAndWaitForFocus();
+      const startInput = screen.getByLabelText(/Date de début/);
+      markAsBadInput(startInput);
+
+      await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+
+      expect(onChange).not.toHaveBeenCalled();
+      expect(screen.getByText(INVALID_START_MESSAGE)).toBeInTheDocument();
+      expect(startInput).toHaveClass('fr-input--error');
+      expect(startInput).toHaveFocus();
+    });
+
+    it('shows the DSFR error on the end date and does not apply', async () => {
+      const onChange = vi.fn();
+      render(<PeriodFilter value={{}} onChange={onChange} />);
+
+      await openPanelAndWaitForFocus();
+      fireEvent.change(screen.getByLabelText(/Date de début/), { target: { value: '2026-01-01' } });
+      const endInput = screen.getByLabelText(/Date de fin/);
+      markAsBadInput(endInput);
+
+      await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+
+      expect(onChange).not.toHaveBeenCalled();
+      expect(screen.getByText(INVALID_END_MESSAGE)).toBeInTheDocument();
+      expect(endInput).toHaveClass('fr-input--error');
+      expect(endInput).toHaveFocus();
+      expect(screen.queryByText(INVALID_START_MESSAGE)).not.toBeInTheDocument();
+    });
+
+    it('reports both fields at once and focuses the first one', async () => {
+      const onChange = vi.fn();
+      render(<PeriodFilter value={{}} onChange={onChange} />);
+
+      await openPanelAndWaitForFocus();
+      const startInput = screen.getByLabelText(/Date de début/);
+      markAsBadInput(startInput);
+      markAsBadInput(screen.getByLabelText(/Date de fin/));
+
+      await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+
+      expect(onChange).not.toHaveBeenCalled();
+      expect(screen.getByText(INVALID_START_MESSAGE)).toBeInTheDocument();
+      expect(screen.getByText(INVALID_END_MESSAGE)).toBeInTheDocument();
+      expect(startInput).toHaveFocus();
+    });
+
+    it('prefers the format error over the range error on the end date', async () => {
+      render(<PeriodFilter value={{}} onChange={vi.fn()} />);
+
+      await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+      fireEvent.change(screen.getByLabelText(/Date de début/), { target: { value: '2026-02-01' } });
+      const endInput = screen.getByLabelText(/Date de fin/);
+      fireEvent.change(endInput, { target: { value: '2026-01-01' } });
+      markAsBadInput(endInput);
+
+      await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+
+      expect(screen.getByText(INVALID_END_MESSAGE)).toBeInTheDocument();
+      expect(screen.queryByText('La date de fin doit être postérieure à la date de début.')).not.toBeInTheDocument();
+    });
+
+    it('clears the error once the field holds a parsable date again', async () => {
+      const onChange = vi.fn();
+      render(<PeriodFilter value={{}} onChange={onChange} />);
+
+      await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+      const startInput = screen.getByLabelText(/Date de début/);
+      markAsBadInput(startInput);
+      await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+      expect(screen.getByText(INVALID_START_MESSAGE)).toBeInTheDocument();
+
+      Object.defineProperty(startInput, 'validity', { value: { badInput: false }, configurable: true });
+      fireEvent.change(startInput, { target: { value: '2026-01-01' } });
+
+      expect(screen.queryByText(INVALID_START_MESSAGE)).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+
+      expect(onChange).toHaveBeenCalledWith({ period: undefined, startDate: '2026-01-01', endDate: undefined });
+    });
+
+    it('empties the fields in the DOM on reset', async () => {
+      render(<PeriodFilter value={{}} onChange={vi.fn()} />);
+
+      await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+      const writes = spyOnValueWrites(screen.getByLabelText(/Date de début/), screen.getByLabelText(/Date de fin/));
+
+      await userEvent.click(screen.getByRole('button', { name: /Réinitialiser/ }));
+
+      expect(writes.start).toHaveBeenCalledWith('');
+      expect(writes.end).toHaveBeenCalledWith('');
+    });
+
+    it('empties the fields in the DOM when a preset is selected', async () => {
+      render(<PeriodFilter value={{}} onChange={vi.fn()} />);
+
+      await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+      const writes = spyOnValueWrites(screen.getByLabelText(/Date de début/), screen.getByLabelText(/Date de fin/));
+
+      await userEvent.click(screen.getByRole('radio', { name: 'Mois courant' }));
+
+      expect(writes.start).toHaveBeenCalledWith('');
+      expect(writes.end).toHaveBeenCalledWith('');
+    });
   });
 
   it('exposes presets as a radio group and marks the active one as checked', async () => {
@@ -140,7 +282,20 @@ describe('PeriodFilter', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Période' }));
 
-    expect(screen.getByText('Le filtre porte sur la date de création de la requête dans SIRENA.')).toBeInTheDocument();
+    expect(screen.getByText(CREATION_DATE_NOTE)).toBeInTheDocument();
+  });
+
+  it('puts that explanation at the top of the panel, above the predefined periods', async () => {
+    render(<PeriodFilter value={{}} onChange={vi.fn()} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+
+    const note = screen.getByText(CREATION_DATE_NOTE);
+    const form = note.closest('form');
+    expect(form?.firstElementChild).toBe(note);
+
+    const presets = screen.getByRole('group', { name: 'Période prédéfinie' });
+    expect(note.compareDocumentPosition(presets) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('stays open when focus moves to another field inside the panel', async () => {
@@ -272,7 +427,7 @@ describe('PeriodFilter', () => {
       const onChange = vi.fn();
       render(<PeriodFilter value={{}} onChange={onChange} />);
 
-      await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+      await openPanelAndWaitForFocus(() => screen.getByLabelText(/Date de début/));
       await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
 
       expect(onChange).not.toHaveBeenCalled();
