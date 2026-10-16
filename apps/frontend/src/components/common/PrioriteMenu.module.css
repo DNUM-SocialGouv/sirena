@@ -31,7 +31,6 @@
   gap: 0.25rem;
 }
 
-/* Only badges use priority colors, not the menu's radio groups. */
 .priorite-haute:global(.fr-badge) {
   color: #b34000;
   background-color: #ffe9e6;
