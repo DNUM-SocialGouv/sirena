@@ -1,12 +1,12 @@
 import { Readable } from 'node:stream';
-import { ERROR_KIND } from '@sirena/common/constants';
+import { API_ERROR_CODES, API_ERROR_MESSAGES, ERROR_KIND } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
-import { deleteFileFromMinio, uploadFileToMinio } from '../../libs/minio.js';
+import { deleteFileFromMinio, isStorageUnavailableError, uploadFileToMinio } from '../../libs/minio.js';
 import type { UploadedFile } from '../../libs/prisma.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import extractUploadedFileMiddleware from '../../middlewares/upload.middleware.js';
@@ -64,6 +64,7 @@ vi.mock('../../libs/minio.js', () => ({
   }),
   getSignedUrl: vi.fn(() => Promise.resolve(signedUrl)),
   deleteFileFromMinio: vi.fn(),
+  isStorageUnavailableError: vi.fn(() => false),
 }));
 
 vi.mock('./uploadedFiles.service.js', () => ({
@@ -225,6 +226,31 @@ describe('uploadedFiles.controller.ts', () => {
       expect(body).toEqual({
         message: 'Internal server error',
       });
+    });
+
+    it('should return a 503 error when the storage is unavailable', async () => {
+      const err = new Error('Request failed after 1 retries: Error: Retryable HTTP status: 500');
+      vi.mocked(uploadFileToMinio).mockImplementationOnce(() => Promise.reject(err));
+      vi.mocked(isStorageUnavailableError).mockReturnValueOnce(true);
+
+      const res = await client.index.$post();
+      const body = await res.json();
+
+      expect(res.status).toBe(503);
+      expect(body).toEqual({
+        message: API_ERROR_MESSAGES.STORAGE_UNAVAILABLE,
+        cause: { kind: ERROR_KIND.SYSTEM, name: API_ERROR_CODES.STORAGE_UNAVAILABLE },
+      });
+      expect(createUploadedFile).not.toHaveBeenCalled();
+    });
+
+    it('should still return a 500 error when the upload fails for another reason', async () => {
+      vi.mocked(uploadFileToMinio).mockImplementationOnce(() => Promise.reject(new Error('unexpected')));
+      vi.mocked(isStorageUnavailableError).mockReturnValueOnce(false);
+
+      const res = await client.index.$post();
+
+      expect(res.status).toBe(500);
     });
 
     it('should return a 500 error if file name is not valid', async () => {
