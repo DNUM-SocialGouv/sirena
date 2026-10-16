@@ -3,7 +3,7 @@ import { ERROR_KIND } from '@sirena/common/constants';
 import type { Context } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { envVars } from '../config/env.js';
-import { getSession } from '../features/sessions/sessions.service.js';
+import { getSession, getSessionIdById } from '../features/sessions/sessions.service.js';
 import { getUserById } from '../features/users/users.service.js';
 import type { AppBindings } from '../helpers/factories/appWithAuth.js';
 import factoryWithAuth from '../helpers/factories/appWithAuth.js';
@@ -11,6 +11,10 @@ import { getJwtExpirationDate, isJwtError, signAuthCookie, verify } from '../hel
 import { extractClientIp } from '../helpers/middleware.js';
 import { sentryStorage } from '../libs/asyncLocalStorage.js';
 import type { Session } from '../libs/prisma.js';
+
+class UnboundAuthTokenError extends Error {
+  override name = 'UnboundAuthTokenError';
+}
 
 const getErrorType = (error: unknown) => (error instanceof Error ? error.name : 'UnknownError');
 
@@ -47,7 +51,17 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
   const authToken = getCookie(c, envVars.AUTH_TOKEN_NAME);
   if (authToken) {
     try {
-      const decoded = verify<{ id: string; roleId: string }>(authToken, envVars.AUTH_TOKEN_SECRET_KEY);
+      const decoded = verify<{ id: string; roleId: string; sessionId?: string }>(
+        authToken,
+        envVars.AUTH_TOKEN_SECRET_KEY,
+      );
+      if (!decoded.sessionId) {
+        throw new UnboundAuthTokenError('Auth token was issued without a session identifier');
+      }
+      const session = await getSessionIdById(decoded.sessionId);
+      if (!session) {
+        throw new UnboundAuthTokenError(`Session with ID ${decoded.sessionId} not found`);
+      }
       const user = await getUserById(decoded.id, null, null);
       if (!user) {
         throw new Error(`User with ID ${decoded.id} not found`);
@@ -57,7 +71,9 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
       updateSentryUserContext(decoded.id, { ...user, ip });
       return next();
     } catch (error) {
-      if (!isJwtError(error)) {
+      if (error instanceof UnboundAuthTokenError) {
+        logger.info({ reason: error.message }, 'Auth token is not bound to an existing session');
+      } else if (!isJwtError(error)) {
         logger.error({ errorType: getErrorType(error) }, 'Error in auth token verification - not a JWT error');
       } else {
         logger.info({ errorType: getErrorType(error) }, 'Error in auth token verification');
@@ -97,7 +113,7 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
         throw new Error(`User with ID ${decoded.id} not found`);
       }
       const roleId = user.roleId;
-      const newAuthToken = signAuthCookie({ id: decoded.id, roleId }, newAuthTokenDate);
+      const newAuthToken = signAuthCookie({ id: decoded.id, roleId, sessionId: session.id }, newAuthTokenDate);
       setCookie(c, envVars.AUTH_TOKEN_NAME, newAuthToken, {
         path: '/',
         secure: true,

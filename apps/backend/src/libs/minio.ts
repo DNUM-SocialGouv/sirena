@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import { Client, CopyDestinationOptions, CopySourceOptions } from 'minio';
 import { envVars } from '../config/env.js';
 import { createDecryptionStream, createEncryptionStream, type DecryptionParams } from './encryption.js';
@@ -74,8 +75,8 @@ export const uploadFileToMinio = async (
   // Create encryption stream
   const { stream: encryptStream, getMetadata } = createEncryptionStream();
 
-  sourceStream.on('error', (err) => encryptStream.destroy(err));
-  sourceStream.pipe(encryptStream);
+  // pipeline() avoids an uncaught stream error (process crash) when the source or putObject fails.
+  const encryption = pipeline(sourceStream, encryptStream);
 
   const resolvedContentType = contentType || 'application/octet-stream';
   const baseHeaders: Record<string, string> = {
@@ -86,9 +87,13 @@ export const uploadFileToMinio = async (
   };
 
   try {
-    await minioClient.putObject(S3_BUCKET_NAME, objectPath, encryptStream, size, baseHeaders);
+    // minio ignores errors on the body stream: without awaiting the pipeline, a source failure hangs forever.
+    await Promise.all([
+      minioClient.putObject(S3_BUCKET_NAME, objectPath, encryptStream, size, baseHeaders),
+      encryption,
+    ]);
   } catch (err) {
-    if (!sourceStream.destroyed) sourceStream.destroy(err as Error);
+    encryptStream.destroy(err as Error);
     throw err;
   }
 
@@ -133,6 +138,44 @@ export const deleteFileFromMinio = async (filePath: string): Promise<void> => {
   }
 
   await minioClient.removeObject(S3_BUCKET_NAME, filePath);
+};
+
+export interface RemoveObjectsError {
+  key: string;
+  message: string;
+}
+
+/**
+ * Deletes multiple objects from MinIO in a single call to the DeleteObjects API.
+ *
+ * The caller is responsible for chunking `filePaths` to a reasonable size:
+ * the underlying S3/MinIO API accepts at most 1000 keys per request, and the
+ * minio SDK would otherwise split larger inputs into parallel sub-requests,
+ * which can overwhelm the server when deleting hundreds of thousands of keys.
+ *
+ * Returns the list of keys that failed to delete (S3 reports only failures,
+ * successful deletions are silent).
+ */
+export const deleteFilesFromMinio = async (filePaths: string[]): Promise<RemoveObjectsError[]> => {
+  if (!minioClient) {
+    throw new Error('MinIO client not initialized, check your S3_BUCKET_ENDPOINT');
+  }
+  if (filePaths.length === 0) return [];
+
+  const results = await minioClient.removeObjects(S3_BUCKET_NAME, filePaths);
+
+  // The minio SDK's published types wrap each failure under `.Error`, but at
+  // runtime the parsed XML <Error> entries are returned directly with `Key`/
+  // `Message` on them. Support both shapes defensively.
+  return results
+    .filter((r): r is NonNullable<typeof r> => Boolean(r))
+    .map((r) => {
+      const entry = 'Error' in r && r.Error ? r.Error : r;
+      return {
+        key: (entry as { Key?: string }).Key ?? '(unknown key)',
+        message: (entry as { Message?: string }).Message ?? 'Unknown error',
+      };
+    });
 };
 
 export interface FileStreamResult {
@@ -186,13 +229,13 @@ export const getFileStream = async (
   };
 };
 
-export interface MinioObjectInfo {
-  name: string;
-  size: number;
-  lastModified: Date;
-}
-
-export const listMinioObjects = async (prefix?: string): Promise<MinioObjectInfo[]> => {
+/**
+ * Lists every object in the bucket in a single pass as a `name -> size` map,
+ * without materializing a `{name, size, lastModified}` object per entry: at
+ * hundreds of thousands of objects, that per-entry `Date` (unused beyond an
+ * occasional log line) is the single biggest avoidable memory cost.
+ */
+export const listMinioObjects = async (prefix?: string): Promise<Map<string, number>> => {
   if (!minioClient) {
     throw new Error('MinIO client not initialized, check your S3_BUCKET_ENDPOINT');
   }
@@ -201,14 +244,12 @@ export const listMinioObjects = async (prefix?: string): Promise<MinioObjectInfo
   const stream = minioClient.listObjectsV2(S3_BUCKET_NAME, effectivePrefix, true);
 
   return new Promise((resolve, reject) => {
-    const objects: MinioObjectInfo[] = [];
+    const sizeByName = new Map<string, number>();
     stream.on('data', (obj) => {
-      if (obj.name) {
-        objects.push({ name: obj.name, size: obj.size, lastModified: obj.lastModified });
-      }
+      if (obj.name) sizeByName.set(obj.name, obj.size);
     });
     stream.on('error', reject);
-    stream.on('end', () => resolve(objects));
+    stream.on('end', () => resolve(sizeByName));
   });
 };
 

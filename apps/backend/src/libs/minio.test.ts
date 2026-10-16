@@ -1,5 +1,7 @@
+import { EventEmitter } from 'node:events';
+import { PassThrough } from 'node:stream';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { deleteFileFromMinio, uploadFileToMinio } from './minio.js';
+import { deleteFileFromMinio, deleteFilesFromMinio, listMinioObjects, uploadFileToMinio } from './minio.js';
 
 vi.mock('../config/env.js', () => ({
   envVars: {
@@ -19,8 +21,10 @@ const { mockMinioClient, mockReadStream, mockUnlink, mockReadFile } = vi.hoisted
     copyObject: vi.fn(),
     presignedUrl: vi.fn(),
     removeObject: vi.fn(),
+    removeObjects: vi.fn(),
     statObject: vi.fn(),
     getObject: vi.fn(),
+    listObjectsV2: vi.fn(),
   };
 
   const mockReadStream = vi.fn();
@@ -145,6 +149,88 @@ describe('minio.ts', () => {
       const [, dest] = mockMinioClient.copyObject.mock.calls[0];
       expect(dest.UserMetadata['encryption-authtag']).toBeDefined();
     });
+
+    it('should reject without crashing the process when S3 fails mid-upload', async () => {
+      const uncaughtErrors: unknown[] = [];
+      const onUncaught = (err: unknown) => uncaughtErrors.push(err);
+      process.on('uncaughtException', onUncaught);
+
+      // Upload still in flight: the source stream is open, as with a multipart request body
+      const source = new PassThrough();
+      source.write(Buffer.from('partial content'));
+
+      const s3Error = new Error('Request failed after 1 retries: Error: Retryable HTTP status: 503');
+      mockMinioClient.putObject.mockRejectedValueOnce(s3Error);
+
+      try {
+        await expect(uploadFileToMinio(source, 'test-document.pdf', 'application/pdf')).rejects.toThrow(s3Error);
+
+        // Stream errors are emitted asynchronously, let them flush
+        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(uncaughtErrors).toEqual([]);
+        expect(source.destroyed).toBe(true);
+        expect(mockMinioClient.copyObject).not.toHaveBeenCalled();
+      } finally {
+        process.off('uncaughtException', onUncaught);
+      }
+    });
+
+    it('should reject with the source error without crashing when the source fails mid-upload', async () => {
+      const uncaughtErrors: unknown[] = [];
+      const onUncaught = (err: unknown) => uncaughtErrors.push(err);
+      process.on('uncaughtException', onUncaught);
+
+      // Like the real minio client, putObject ignores errors on the body stream and never settles
+      mockMinioClient.putObject.mockImplementationOnce(() => new Promise(() => {}));
+
+      const source = new PassThrough();
+      source.write(Buffer.from('partial content'));
+      const sourceError = new Error('File size exceeds the maximum allowed');
+
+      try {
+        const upload = uploadFileToMinio(source, 'test-document.pdf', 'application/pdf');
+        source.destroy(sourceError);
+
+        await expect(upload).rejects.toBe(sourceError);
+
+        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(uncaughtErrors).toEqual([]);
+        expect(mockMinioClient.copyObject).not.toHaveBeenCalled();
+      } finally {
+        process.off('uncaughtException', onUncaught);
+      }
+    });
+
+    it('should reject with a premature close instead of hanging when the client aborts the upload', async () => {
+      const uncaughtErrors: unknown[] = [];
+      const onUncaught = (err: unknown) => uncaughtErrors.push(err);
+      process.on('uncaughtException', onUncaught);
+
+      mockMinioClient.putObject.mockImplementationOnce(() => new Promise(() => {}));
+
+      const source = new PassThrough();
+      source.write(Buffer.from('partial content'));
+
+      try {
+        const upload = uploadFileToMinio(source, 'test-document.pdf', 'application/pdf');
+        // A client cutting the connection destroys the request body without any error
+        source.destroy();
+
+        await expect(upload).rejects.toMatchObject({ code: 'ERR_STREAM_PREMATURE_CLOSE' });
+
+        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(uncaughtErrors).toEqual([]);
+        expect(mockMinioClient.copyObject).not.toHaveBeenCalled();
+      } finally {
+        process.off('uncaughtException', onUncaught);
+      }
+    });
   });
 
   describe('deleteFileFromMinio', () => {
@@ -152,6 +238,92 @@ describe('minio.ts', () => {
       const filePath = 'uploads/test-file.pdf';
       await deleteFileFromMinio(filePath);
       expect(mockMinioClient.removeObject).toHaveBeenCalledWith('test-bucket', filePath);
+    });
+  });
+
+  describe('deleteFilesFromMinio', () => {
+    it('should return an empty array without calling the API when given no paths', async () => {
+      const result = await deleteFilesFromMinio([]);
+      expect(result).toEqual([]);
+      expect(mockMinioClient.removeObjects).not.toHaveBeenCalled();
+    });
+
+    it('should delete a batch of files and return no errors when all succeed', async () => {
+      mockMinioClient.removeObjects.mockResolvedValue([]);
+      const paths = ['uploads/a.pdf', 'uploads/b.pdf'];
+
+      const result = await deleteFilesFromMinio(paths);
+
+      expect(mockMinioClient.removeObjects).toHaveBeenCalledWith('test-bucket', paths);
+      expect(result).toEqual([]);
+    });
+
+    it('should report failed keys returned by the API', async () => {
+      mockMinioClient.removeObjects.mockResolvedValue([{ Key: 'uploads/bad.pdf', Message: 'AccessDenied' }]);
+
+      const result = await deleteFilesFromMinio(['uploads/bad.pdf']);
+
+      expect(result).toEqual([{ key: 'uploads/bad.pdf', message: 'AccessDenied' }]);
+    });
+
+    it('should support the nested Error shape from the SDK typings', async () => {
+      mockMinioClient.removeObjects.mockResolvedValue([{ Error: { Key: 'uploads/bad.pdf', Message: 'AccessDenied' } }]);
+
+      const result = await deleteFilesFromMinio(['uploads/bad.pdf']);
+
+      expect(result).toEqual([{ key: 'uploads/bad.pdf', message: 'AccessDenied' }]);
+    });
+  });
+
+  describe('listMinioObjects', () => {
+    const emitListing = (entries: Array<{ name: string; size: number; lastModified?: Date }>) => {
+      const stream = new EventEmitter();
+      mockMinioClient.listObjectsV2.mockReturnValue(stream);
+      const promise = listMinioObjects();
+      for (const entry of entries) stream.emit('data', entry);
+      stream.emit('end');
+      return promise;
+    };
+
+    it('resolves a name -> size map (not an array of {name,size,lastModified} objects)', async () => {
+      const result = await emitListing([
+        { name: 'uploads/a.pdf', size: 100, lastModified: new Date() },
+        { name: 'uploads/b.pdf', size: 200, lastModified: new Date() },
+      ]);
+
+      expect(result).toBeInstanceOf(Map);
+      expect(result.size).toBe(2);
+      expect(result.get('uploads/a.pdf')).toBe(100);
+      expect(result.get('uploads/b.pdf')).toBe(200);
+    });
+
+    it('skips entries without a name', async () => {
+      const result = await emitListing([{ name: '', size: 1 }]);
+      expect(result.size).toBe(0);
+    });
+
+    it('rejects when the underlying stream errors', async () => {
+      const stream = new EventEmitter();
+      mockMinioClient.listObjectsV2.mockReturnValue(stream);
+      const promise = listMinioObjects();
+      stream.emit('error', new Error('boom'));
+      await expect(promise).rejects.toThrow('boom');
+    });
+
+    it('uses the given prefix, defaulting to the configured root dir', async () => {
+      const stream = new EventEmitter();
+      mockMinioClient.listObjectsV2.mockReturnValue(stream);
+      const promise = listMinioObjects('custom-prefix');
+      stream.emit('end');
+      await promise;
+      expect(mockMinioClient.listObjectsV2).toHaveBeenCalledWith('test-bucket', 'custom-prefix', true);
+
+      const stream2 = new EventEmitter();
+      mockMinioClient.listObjectsV2.mockReturnValue(stream2);
+      const promise2 = listMinioObjects();
+      stream2.emit('end');
+      await promise2;
+      expect(mockMinioClient.listObjectsV2).toHaveBeenCalledWith('test-bucket', 'uploads', true);
     });
   });
 });
