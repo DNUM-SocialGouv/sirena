@@ -37,6 +37,19 @@ describe('PersonneConcerneeForm', () => {
     expect(screen.queryByText('Tous les champs sont facultatifs')).not.toBeInTheDocument();
   });
 
+  // Each column of a DSFR row stacks its own label, hint and field, so a hint that only one
+  // of them carries (or one that wraps) offsets that column's input below its neighbours.
+  it.each([
+    ['the age and birth date row', [/^Âge/, /^Date de naissance/]],
+    ['the phone and email row', [/^Numéro de téléphone/, /^Courrier électronique/]],
+  ])('keeps the fields of %s aligned', (_name, labels) => {
+    renderForm();
+
+    for (const label of labels) {
+      expect(screen.getByLabelText(label).closest('[class*="alignedField"]')).not.toBeNull();
+    }
+  });
+
   it('describes the expected postal code format on the manual address fields', async () => {
     const user = userEvent.setup();
 

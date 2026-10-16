@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { SituationForm } from './SituationForm';
 
@@ -43,6 +44,21 @@ describe('SituationForm — RGAA 11.10', () => {
 
     for (const label of [/^Date de début des faits/, /^Date de fin des faits/]) {
       expect(screen.getByLabelText(label)).toHaveAccessibleName(/Format attendu : JJ\/MM\/AAAA/);
+    }
+  });
+
+  // Only the date carries a hint on this row, which offsets its input below the place of the
+  // complaint unless both columns opt into the shared alignment.
+  it('keeps the fields of the complaint row aligned', async () => {
+    const user = userEvent.setup();
+
+    renderForm();
+    await user.click(
+      screen.getByRole('checkbox', { name: 'Une plainte a été déposée auprès des autorités judiciaires' }),
+    );
+
+    for (const label of [/^Date du dépôt de plainte/, /^Lieu de dépôt de la plainte/]) {
+      expect(screen.getByLabelText(label).closest('[class*="alignedField"]')).not.toBeNull();
     }
   });
 });
