@@ -1,6 +1,7 @@
 import { domainesFonctionnelsLabels } from '@sirena/common/constants';
 import { useMemo } from 'react';
 import { DropdownCheckboxFilter } from './DropdownCheckboxFilter';
+import { withNonRenseigneOption } from './nonRenseigne';
 
 type CountsMap = Record<string, number>;
 
@@ -23,17 +24,22 @@ export function DomaineFilter({
   onOpen,
   onClose,
 }: Props) {
+  // « Non renseigné » reste en tête, hors du tri alphabétique : ce n'est pas un domaine du
+  // référentiel mais l'absence de domaine.
   const options = useMemo(
     () =>
-      Object.entries(domainesFonctionnelsLabels)
-        .sort(([, a], [, b]) => a.localeCompare(b, 'fr'))
-        .map(([id, label]) => {
-          const count = counts?.[id];
-          return {
-            value: id,
-            label: `${label}${count !== undefined ? ` (${count})` : ''}`,
-          };
-        }),
+      withNonRenseigneOption(
+        Object.entries(domainesFonctionnelsLabels)
+          .sort(([, a], [, b]) => a.localeCompare(b, 'fr'))
+          .map(([id, label]) => {
+            const count = counts?.[id];
+            return {
+              value: id,
+              label: `${label}${count !== undefined ? ` (${count})` : ''}`,
+            };
+          }),
+        counts,
+      ),
     [counts],
   );
 

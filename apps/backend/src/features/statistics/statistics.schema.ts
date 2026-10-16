@@ -1,13 +1,17 @@
-import { DOMAINES_FONCTIONNELS, LIEU_TYPE } from '@sirena/common/constants';
-import { lieuPrecisionLabelsByType } from '@sirena/common/utils';
+import { DOMAINES_FONCTIONNELS, FILTRE_NON_RENSEIGNE, LIEU_TYPE } from '@sirena/common/constants';
+import { estNonRenseigne, lieuPrecisionLabelsByType } from '@sirena/common/utils';
 import { z } from 'zod';
 import { splitCsv } from '../../helpers/string.js';
 
-const DOMAINE_IDS: string[] = Object.values(DOMAINES_FONCTIONNELS);
+// La sentinelle « Non renseigné » est une valeur cochable comme les autres : elle est acceptée par
+// les filtres multi-sélection et transmise telle quelle à Metabase, où le SQL de chaque carte la
+// reconnaît pour retenir les lignes dont le champ est NULL. Voir docs/metabase_dashboards/FILTERS.md.
+const DOMAINE_IDS: string[] = [...Object.values(DOMAINES_FONCTIONNELS), FILTRE_NON_RENSEIGNE];
 const LIEU_TYPE_IDS: string[] = Object.values(LIEU_TYPE);
 const CSV_FILTER_MAX = 500;
 
 const isValidLieuToken = (token: string): boolean => {
+  if (estNonRenseigne(token)) return true;
   const [lieuTypeId, precision, rest] = token.split(':');
   if (rest !== undefined || !LIEU_TYPE_IDS.includes(lieuTypeId)) return false;
   if (precision === undefined) return true;

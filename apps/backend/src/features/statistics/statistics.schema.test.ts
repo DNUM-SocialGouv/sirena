@@ -1,3 +1,4 @@
+import { DOMAINES_FONCTIONNELS, FILTRE_NON_RENSEIGNE } from '@sirena/common/constants';
 import { describe, expect, it } from 'vitest';
 import { StatisticsDashboardQuerySchema } from './statistics.schema.js';
 
@@ -124,6 +125,43 @@ describe('StatisticsDashboardQuerySchema', () => {
     expect(
       StatisticsDashboardQuerySchema.parse({ lieuTypes: ' DOMICILE , DOMICILE,ETABLISSEMENT_SANTE:CHU ' }).lieuTypes,
     ).toBe('DOMICILE,ETABLISSEMENT_SANTE:CHU');
+  });
+
+  describe('valeur « Non renseigné »', () => {
+    it('accepts the sentinel on the domaine filter, alone or alongside real values', () => {
+      expect(StatisticsDashboardQuerySchema.safeParse({ domaineIds: FILTRE_NON_RENSEIGNE }).success).toBe(true);
+      expect(StatisticsDashboardQuerySchema.safeParse({ domaineIds: `SOCIAL,${FILTRE_NON_RENSEIGNE}` }).success).toBe(
+        true,
+      );
+    });
+
+    it('accepts the sentinel on the lieu filter, alone or alongside real tokens', () => {
+      expect(StatisticsDashboardQuerySchema.safeParse({ lieuTypes: FILTRE_NON_RENSEIGNE }).success).toBe(true);
+      expect(
+        StatisticsDashboardQuerySchema.safeParse({ lieuTypes: `DOMICILE:CHEZ_TIERS,${FILTRE_NON_RENSEIGNE}` }).success,
+      ).toBe(true);
+    });
+
+    it('keeps the sentinel verbatim in the normalised lists', () => {
+      expect(StatisticsDashboardQuerySchema.parse({ domaineIds: `SOCIAL,${FILTRE_NON_RENSEIGNE}` }).domaineIds).toBe(
+        `SOCIAL,${FILTRE_NON_RENSEIGNE}`,
+      );
+      expect(StatisticsDashboardQuerySchema.parse({ lieuTypes: `${FILTRE_NON_RENSEIGNE},DOMICILE` }).lieuTypes).toBe(
+        `${FILTRE_NON_RENSEIGNE},DOMICILE`,
+      );
+    });
+
+    it('accepts every value at once, sentinel included', () => {
+      const domaineIds = [...Object.values(DOMAINES_FONCTIONNELS), FILTRE_NON_RENSEIGNE].join(',');
+      expect(StatisticsDashboardQuerySchema.safeParse({ domaineIds }).success).toBe(true);
+    });
+
+    it('does not turn the sentinel into a wildcard for malformed values', () => {
+      expect(StatisticsDashboardQuerySchema.safeParse({ domaineIds: 'NON_RENSEIGNE_X' }).success).toBe(false);
+      expect(StatisticsDashboardQuerySchema.safeParse({ lieuTypes: `DOMICILE:${FILTRE_NON_RENSEIGNE}` }).success).toBe(
+        false,
+      );
+    });
   });
 
   it('combines the period, domaines and lieu filters', () => {
