@@ -74,6 +74,7 @@ export const DataTableHeaderComponent = <T extends RowWithId<string>>({
             >
               <div className="fr-cell--sort">
                 <span className="fr-cell__title">{column.label}</span>
+                {column.labelHint}
 
                 {column.isSortable ? (
                   <SortButton<ColumnKey<T>>

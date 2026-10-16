@@ -31,6 +31,9 @@ export type ColumnKey<T extends Row> = NestedKeys<T> | `custom:${string}`;
 export type Column<T extends Row> = {
   key: ColumnKey<T>;
   label: string;
+  // Rendered next to the title: the label stays a plain string, so it remains usable
+  // as the accessible name of the sort button.
+  labelHint?: ReactNode;
   isFixedLeft?: boolean;
   isFixedRight?: boolean;
   isSortable?: boolean;

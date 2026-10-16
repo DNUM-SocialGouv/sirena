@@ -8,6 +8,7 @@ import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@si
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { HelpTooltip } from '@/components/common/HelpTooltip';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
 import { useHasFeature } from '@/hooks/useHasFeature';
@@ -24,6 +25,11 @@ type RequeteEntiteRow = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>
 };
 
 const DEFAULT_PAGE_SIZE = 10;
+
+// The column shows the postal code department, and falls back to the SIREC one when the
+// situation carries no postal code: the two sources need spelling out to the reader.
+const DEPARTEMENT_COLUMN_HELP =
+  'Département du lieu de survenue pour les requêtes SIRENA. Champ “Département en charge” pour les requêtes SIREC.';
 
 type SortDir = 'asc' | 'desc' | undefined;
 
@@ -242,7 +248,13 @@ export function RequetesEntite() {
     },
     { key: 'custom:affectation', label: 'Affectation' },
     ...(isTopEntiteARS
-      ? [{ key: 'custom:departement', label: 'Département lieu de survenue' } as Column<RequeteEntiteRow>]
+      ? [
+          {
+            key: 'custom:departement',
+            label: 'Département',
+            labelHint: <HelpTooltip description={DEPARTEMENT_COLUMN_HELP} />,
+          } as Column<RequeteEntiteRow>,
+        ]
       : []),
     { key: 'custom:domaine', label: 'Domaine fonctionnel' },
     { key: 'custom:misEnCause', label: 'Mis en cause' },

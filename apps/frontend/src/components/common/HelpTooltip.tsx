@@ -1,7 +1,7 @@
 import { Tooltip } from '@codegouvfr/react-dsfr/Tooltip';
-import styles from './cardHelp.module.css';
+import styles from './helpTooltip.module.css';
 
-export function CardHelp({ description }: { description?: string | null }) {
+export function HelpTooltip({ description }: { description?: string | null }) {
   if (!description) return null;
   return (
     <span className={styles.help}>
