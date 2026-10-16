@@ -3,6 +3,7 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import { AUTORITE_TYPE, autoriteTypeLabels, DEMARCHES_ENGAGEES, demarcheEngageeLabels } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
+import styles from '@/components/common/formGrid.module.css';
 
 type DemarchesEngageesProps = {
   formData: SituationData;
@@ -184,7 +185,7 @@ export function DemarchesEngagees({ formData, setFormData }: DemarchesEngageesPr
         {demarches.includes(DEMARCHES_ENGAGEES.PLAINTE) && (
           <div className="fr-col-12 fr-pl-6w">
             <div className="fr-grid-row fr-grid-row--gutters">
-              <div className="fr-col-12 fr-col-md-6">
+              <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
                 <Input
                   label="Date du dépôt de plainte"
                   hintText="Format attendu : JJ/MM/AAAA"
@@ -195,7 +196,7 @@ export function DemarchesEngagees({ formData, setFormData }: DemarchesEngageesPr
                   }}
                 />
               </div>
-              <div className="fr-col-12 fr-col-md-6">
+              <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
                 <Select
                   label="Lieu de dépôt de la plainte"
                   nativeSelectProps={{

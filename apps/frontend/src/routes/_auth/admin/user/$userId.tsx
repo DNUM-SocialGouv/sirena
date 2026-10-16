@@ -92,7 +92,7 @@ function SubmitButton({ isPending }: { isPending: boolean }) {
   );
 }
 
-function RouteComponent() {
+export function RouteComponent() {
   const { userId } = Route.useParams();
   const fieldId = useId();
   const toastManager = Toast.useToastManager();
@@ -215,6 +215,7 @@ function RouteComponent() {
               </div>
               <div className="user">
                 <h1>Modifier les informations de l'utilisateur</h1>
+                <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
                 <div>
                   <form onSubmit={handleSubmit}>
                     <fieldset className="fr-fieldset">
@@ -253,7 +254,7 @@ function RouteComponent() {
                     <fieldset className="fr-fieldset">
                       <Select
                         className="fr-fieldset__content"
-                        label="Rôle*"
+                        label="Rôle (obligatoire)"
                         disabled={profile?.id === userId}
                         nativeSelectProps={{
                           ...{ 'data-testid': 'user-role-select' },
@@ -285,7 +286,7 @@ function RouteComponent() {
                       <fieldset className="fr-fieldset">
                         <Select
                           className="fr-fieldset__content"
-                          label="Statut*"
+                          label="Statut (obligatoire)"
                           state={validationErrors.statutId ? 'error' : 'default'}
                           stateRelatedMessage={validationErrors.statutId}
                           nativeSelectProps={{

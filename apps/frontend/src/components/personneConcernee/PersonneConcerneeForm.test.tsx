@@ -30,6 +30,38 @@ const setInputValidity = (input: HTMLInputElement, valid: boolean) => {
 };
 
 describe('PersonneConcerneeForm', () => {
+  it('announces upfront that fields are optional unless stated otherwise', () => {
+    renderForm();
+
+    expect(screen.getByText('Sauf mention contraire, les champs sont facultatifs.')).toBeVisible();
+    expect(screen.queryByText('Tous les champs sont facultatifs')).not.toBeInTheDocument();
+  });
+
+  // Each column of a DSFR row stacks its own label, hint and field, so a hint that only one
+  // of them carries (or one that wraps) offsets that column's input below its neighbours.
+  it.each([
+    ['the age and birth date row', [/^Âge/, /^Date de naissance/]],
+    ['the phone and email row', [/^Numéro de téléphone/, /^Courrier électronique/]],
+  ])('keeps the fields of %s aligned', (_name, labels) => {
+    renderForm();
+
+    for (const label of labels) {
+      expect(screen.getByLabelText(label).closest('[class*="alignedField"]')).not.toBeNull();
+    }
+  });
+
+  it('describes the expected postal code format on the manual address fields', async () => {
+    const user = userEvent.setup();
+
+    renderForm();
+    await user.click(screen.getByRole('checkbox', { name: "Remplir l'adresse manuellement" }));
+
+    expect(screen.getByRole('textbox', { name: /^Code postal/ })).toHaveAccessibleName(
+      /Format attendu : 5 chiffres \(exemple : 75001\)/,
+    );
+    expect(screen.getByRole('textbox', { name: /^Ville/ })).toHaveAccessibleName(/Exemple : Paris/);
+  });
+
   it('shows an error, focuses the birth date and does not save when the date is invalid', async () => {
     const user = userEvent.setup();
     const onSave = vi.fn().mockResolvedValue(undefined);
