@@ -1,3 +1,4 @@
+import { DOMAINES_FONCTIONNELS, FILTRE_NON_RENSEIGNE } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma as prismaMock } from '../../libs/__mocks__/prisma.js';
 import {
@@ -535,6 +536,64 @@ describe('requetesEntite.service', () => {
           where: { AND: [{ statutId: { in: ['NOUVEAU', 'EN_COURS'] } }] },
         }),
       );
+    });
+
+    describe('filtre par domaine fonctionnel, valeur « Non renseigné » comprise', () => {
+      const whereFor = async (domaineIds: string) => {
+        mockedRequeteEntite.findMany.mockResolvedValueOnce([mockRequeteEntite]);
+        mockedRequeteEntite.count.mockResolvedValueOnce(1);
+
+        await getRequetesEntite(null, { domaineIds });
+
+        const [call] = mockedRequeteEntite.findMany.mock.calls.at(-1) as [{ where: unknown }];
+        return call.where;
+      };
+
+      const SOME_SOCIAL = { requete: { situations: { some: { domainesFonctionnelsId: { in: ['SOCIAL'] } } } } };
+      const NONE_DOMAINE = { requete: { situations: { none: { domainesFonctionnelsId: { not: null } } } } };
+
+      it('garde une clause simple quand seules des valeurs du référentiel sont cochées', async () => {
+        expect(await whereFor('SOCIAL,SANITAIRE')).toEqual({
+          AND: [{ requete: { situations: { some: { domainesFonctionnelsId: { in: ['SOCIAL', 'SANITAIRE'] } } } } }],
+        });
+      });
+
+      // CA3 : seule « Non renseigné » cochée
+      it('ne retient que les requêtes sans domaine quand seule la sentinelle est cochée', async () => {
+        expect(await whereFor(FILTRE_NON_RENSEIGNE)).toEqual({ AND: [NONE_DOMAINE] });
+      });
+
+      it('combine en OU la sentinelle et les valeurs du référentiel', async () => {
+        expect(await whereFor(`SOCIAL,${FILTRE_NON_RENSEIGNE}`)).toEqual({
+          AND: [{ OR: [SOME_SOCIAL, NONE_DOMAINE] }],
+        });
+      });
+
+      // CA2 : tout coché, sentinelle incluse, couvre l'ensemble des requêtes
+      it('couvre toutes les requêtes quand tout est coché, sentinelle incluse', async () => {
+        const allValues = [...Object.values(DOMAINES_FONCTIONNELS), FILTRE_NON_RENSEIGNE];
+        const where = (await whereFor(allValues.join(','))) as {
+          AND: [{ OR: [{ requete: { situations: { some: { domainesFonctionnelsId: { in: string[] } } } } }, unknown] }];
+        };
+        const [{ OR: branches }] = where.AND;
+
+        // Le premier membre couvre les requêtes renseignées, le second exactement les autres :
+        // leur union est l'ensemble des requêtes, donc le filtre n'est pas restrictif.
+        expect(branches).toHaveLength(2);
+        expect(branches[0].requete.situations.some.domainesFonctionnelsId.in).toEqual(
+          Object.values(DOMAINES_FONCTIONNELS),
+        );
+        expect(branches[1]).toEqual(NONE_DOMAINE);
+      });
+
+      // CA4 : aucune valeur cochée ⇒ aucune clause
+      it("ne pose aucune clause de domaine quand rien n'est coché", async () => {
+        expect(await whereFor('')).toEqual({});
+      });
+
+      it('ignore les valeurs vides sans perdre la sentinelle', async () => {
+        expect(await whereFor(` , ${FILTRE_NON_RENSEIGNE} , `)).toEqual({ AND: [NONE_DOMAINE] });
+      });
     });
 
     it('should filter by over90Days on open requêtes older than 90 days when provided', async () => {

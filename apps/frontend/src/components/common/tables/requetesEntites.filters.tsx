@@ -2,6 +2,7 @@ import {
   DOMAINES_FONCTIONNELS,
   entiteTypes,
   FEATURE_FLAGS,
+  FILTRE_NON_RENSEIGNE,
   REQUETE_PRIORITE_TYPES,
   REQUETE_STATUT_TYPES,
 } from '@sirena/common/constants';
@@ -33,7 +34,9 @@ export function RequetesEntiteQuickFilters() {
   const [isDomaineDropdownOpen, setIsDomaineDropdownOpen] = useState(false);
   const [isStatutDropdownOpen, setIsStatutDropdownOpen] = useState(false);
 
-  const allDomaineIds = useMemo(() => Object.values(DOMAINES_FONCTIONNELS).join(','), []);
+  // La sentinelle « Non renseigné » est demandée comme une valeur de plus : son effectif décide de
+  // l'affichage de l'option dans le filtre (CA1).
+  const allDomaineIds = useMemo(() => [...Object.values(DOMAINES_FONCTIONNELS), FILTRE_NON_RENSEIGNE].join(','), []);
 
   const allStatutIds = useMemo(() => Object.values(REQUETE_STATUT_TYPES).join(','), []);
 
