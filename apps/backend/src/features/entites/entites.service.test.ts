@@ -2370,6 +2370,39 @@ describe("invalidation du cache du périmètre d'autorisation", () => {
     expect(entitesDescendantIdsCache.has(agentEntiteId)).toBe(false);
   });
 
+  it('ne remet pas en cache une hiérarchie chargée avant une invalidation concurrente', async () => {
+    let resolveSnapshot: (entites: Entite[]) => void = () => {};
+    vi.mocked(prisma.entite.findMany).mockImplementationOnce(
+      (() =>
+        new Promise<Entite[]>((resolve) => {
+          resolveSnapshot = resolve;
+        })) as never,
+    );
+
+    const pendingChain = getEntiteChain(agentEntiteId);
+
+    vi.mocked(prisma.entite.update).mockResolvedValueOnce({ id: agentEntiteId } as never);
+    await editEntiteAdmin(agentEntiteId, {
+      nomComplet: 'Nouveau nom',
+      label: 'NN',
+      email: 'nouveau-nom@ars.fr',
+      emailContactUsager: '',
+      adresseContactUsager: '',
+      telContactUsager: '',
+      isActive: true,
+    });
+
+    resolveSnapshot([localEntite(agentEntiteId, null, { nomComplet: 'Ancien nom' })]);
+    await pendingChain;
+
+    expect(entitesHierarchyCache.has()).toBe(false);
+
+    const renamed = localEntite(agentEntiteId, null, { nomComplet: 'Nouveau nom' });
+    mockEntitesHierarchy([renamed]);
+
+    await expect(getEntiteChain(agentEntiteId)).resolves.toEqual([entiteChainOf(renamed)]);
+  });
+
   it("expose immédiatement une entité fille nouvellement créée dans le périmètre de l'agent", async () => {
     mockAgents({ 'agent-1': { entiteId: agentEntiteId, roleId: ROLES.ENTITY_ADMIN } });
     mockHierarchy({ [agentEntiteId]: [] });

@@ -3,6 +3,11 @@ type CacheItem<T> = {
   expiresAt: number;
 };
 
+type InFlightFetch<T> = {
+  promise: Promise<T>;
+  generation: number;
+};
+
 type CacheOptions<T, Args extends SerializableKeyTuple> = {
   ttlMs: number;
   fetcher: (...args: Args) => Promise<T>;
@@ -18,7 +23,8 @@ function serializeKey(key: SerializableKeyTuple): string {
 
 export class CacheEntity<T, Args extends SerializableKeyTuple> {
   private store = new Map<string, CacheItem<T>>();
-  private inFlight = new Map<string, Promise<T>>();
+  private inFlight = new Map<string, InFlightFetch<T>>();
+  private generation = 0;
   private ttlMs: number;
   private fetcher: (...args: Args) => Promise<T>;
 
@@ -49,20 +55,26 @@ export class CacheEntity<T, Args extends SerializableKeyTuple> {
 
     const pending = this.inFlight.get(key);
     if (pending) {
-      return pending;
+      return pending.promise;
     }
 
-    const fetch = this.fetcher(...args)
+    const generation = this.generation;
+    const promise = this.fetcher(...args)
       .then((data) => {
-        this.set(data, ...args);
+        // An invalidation during the fetch means this snapshot predates the write: serve it, never cache it.
+        if (this.generation === generation) {
+          this.set(data, ...args);
+        }
         return data;
       })
       .finally(() => {
-        this.inFlight.delete(key);
+        if (this.inFlight.get(key)?.generation === generation) {
+          this.inFlight.delete(key);
+        }
       });
 
-    this.inFlight.set(key, fetch);
-    return fetch;
+    this.inFlight.set(key, { promise, generation });
+    return promise;
   }
 
   set(data: T, ...args: Args): void {
@@ -77,10 +89,12 @@ export class CacheEntity<T, Args extends SerializableKeyTuple> {
     const key = serializeKey(args);
     this.store.delete(key);
     this.inFlight.delete(key);
+    this.generation++;
   }
 
   clear(): void {
     this.store.clear();
     this.inFlight.clear();
+    this.generation++;
   }
 }
