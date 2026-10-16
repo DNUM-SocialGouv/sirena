@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+import { PassThrough } from 'node:stream';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { deleteFileFromMinio, deleteFilesFromMinio, listMinioObjects, uploadFileToMinio } from './minio.js';
 
@@ -147,6 +148,88 @@ describe('minio.ts', () => {
       expect(mockMinioClient.copyObject).toHaveBeenCalledTimes(1);
       const [, dest] = mockMinioClient.copyObject.mock.calls[0];
       expect(dest.UserMetadata['encryption-authtag']).toBeDefined();
+    });
+
+    it('should reject without crashing the process when S3 fails mid-upload', async () => {
+      const uncaughtErrors: unknown[] = [];
+      const onUncaught = (err: unknown) => uncaughtErrors.push(err);
+      process.on('uncaughtException', onUncaught);
+
+      // Upload still in flight: the source stream is open, as with a multipart request body
+      const source = new PassThrough();
+      source.write(Buffer.from('partial content'));
+
+      const s3Error = new Error('Request failed after 1 retries: Error: Retryable HTTP status: 503');
+      mockMinioClient.putObject.mockRejectedValueOnce(s3Error);
+
+      try {
+        await expect(uploadFileToMinio(source, 'test-document.pdf', 'application/pdf')).rejects.toThrow(s3Error);
+
+        // Stream errors are emitted asynchronously, let them flush
+        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(uncaughtErrors).toEqual([]);
+        expect(source.destroyed).toBe(true);
+        expect(mockMinioClient.copyObject).not.toHaveBeenCalled();
+      } finally {
+        process.off('uncaughtException', onUncaught);
+      }
+    });
+
+    it('should reject with the source error without crashing when the source fails mid-upload', async () => {
+      const uncaughtErrors: unknown[] = [];
+      const onUncaught = (err: unknown) => uncaughtErrors.push(err);
+      process.on('uncaughtException', onUncaught);
+
+      // Like the real minio client, putObject ignores errors on the body stream and never settles
+      mockMinioClient.putObject.mockImplementationOnce(() => new Promise(() => {}));
+
+      const source = new PassThrough();
+      source.write(Buffer.from('partial content'));
+      const sourceError = new Error('File size exceeds the maximum allowed');
+
+      try {
+        const upload = uploadFileToMinio(source, 'test-document.pdf', 'application/pdf');
+        source.destroy(sourceError);
+
+        await expect(upload).rejects.toBe(sourceError);
+
+        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(uncaughtErrors).toEqual([]);
+        expect(mockMinioClient.copyObject).not.toHaveBeenCalled();
+      } finally {
+        process.off('uncaughtException', onUncaught);
+      }
+    });
+
+    it('should reject with a premature close instead of hanging when the client aborts the upload', async () => {
+      const uncaughtErrors: unknown[] = [];
+      const onUncaught = (err: unknown) => uncaughtErrors.push(err);
+      process.on('uncaughtException', onUncaught);
+
+      mockMinioClient.putObject.mockImplementationOnce(() => new Promise(() => {}));
+
+      const source = new PassThrough();
+      source.write(Buffer.from('partial content'));
+
+      try {
+        const upload = uploadFileToMinio(source, 'test-document.pdf', 'application/pdf');
+        // A client cutting the connection destroys the request body without any error
+        source.destroy();
+
+        await expect(upload).rejects.toMatchObject({ code: 'ERR_STREAM_PREMATURE_CLOSE' });
+
+        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(uncaughtErrors).toEqual([]);
+        expect(mockMinioClient.copyObject).not.toHaveBeenCalled();
+      } finally {
+        process.off('uncaughtException', onUncaught);
+      }
     });
   });
 
