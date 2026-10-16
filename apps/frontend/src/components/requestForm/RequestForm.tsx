@@ -1,7 +1,7 @@
 import { FEATURE_FLAGS, type RequeteMessageEvent } from '@sirena/common/constants';
 import { type TabDescriptor, Tabs } from '@sirena/ui';
 import { useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useState } from 'react';
 import { Details } from '@/components/requestId/details';
 import { Processing } from '@/components/requestId/processing';
@@ -15,8 +15,6 @@ import { useHasFeature } from '@/hooks/useHasFeature';
 import { useRequeteMessagesSSE } from '@/hooks/useRequeteMessagesSSE';
 import { useRequeteStatusSSE } from '@/hooks/useRequeteStatusSSE';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
-import { useListStateStore } from '@/stores/listStateStore';
-import { BACK_LINK_ACTIVE_OPTIONS } from '@/utils/backLink';
 
 // TODO: Use API types instead of local interfaces
 interface RequestData {
@@ -39,7 +37,6 @@ export function RequestForm({ requestId, activeTab: activeTabProp = 0 }: Request
   const [localActiveTab, setLocalActiveTab] = useState(0);
   const activeTab = requestId ? activeTabProp : localActiveTab;
   const queryClient = useQueryClient();
-  const requetesListSearch = useListStateStore((s) => s.states.requetes?.search);
   const requestQuery = useRequeteDetails(requestId);
 
   const handleUpdate = useCallback(() => {
@@ -140,16 +137,6 @@ export function RequestForm({ requestId, activeTab: activeTabProp = 0 }: Request
     <>
       <div className="bg-cumulus">
         <div className="fr-py-2w fr-pl-7w fr-pr-3w">
-          <div className="fr-mb-2w">
-            <Link
-              className="fr-link fr-mb-1w"
-              to="/home"
-              search={requetesListSearch ?? {}}
-              activeOptions={BACK_LINK_ACTIVE_OPTIONS}
-            >
-              <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span> Liste des requêtes
-            </Link>
-          </div>
           <RequestInfos
             requestId={requestId}
             fullName={fullName}
