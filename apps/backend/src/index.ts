@@ -7,6 +7,10 @@ import { setupThirdPartyOpenAPI } from './openAPI.thirdparty.js';
 import './config/env.js';
 import { getPrometheusContentType, getPrometheusMetrics } from './features/monitoring/metrics.backend.js';
 import { createMonitoringServer } from './features/monitoring/server.js';
+import {
+  startCacheInvalidationSubscriber,
+  stopCacheInvalidationSubscriber,
+} from './helpers/cacheInvalidation.redis.js';
 import { createDefaultLogger } from './helpers/pino.js';
 import { sseEventManager } from './helpers/sse.js';
 import './jobs/scheduler/index.js';
@@ -27,6 +31,11 @@ const initSSE = async () => {
 };
 
 initSSE();
+
+// Entity caches live in each process: a write on one pod must reach the others.
+startCacheInvalidationSubscriber().catch((err) =>
+  logger.error({ err }, 'Failed to start the cache invalidation subscriber'),
+);
 
 const server = serve(
   {
@@ -79,6 +88,9 @@ const gracefulShutdown = async (signal: string) => {
     // Close SSE Redis subscriber
     await sseEventManager.cleanup();
     logger.info('SSE subscriber closed');
+
+    await stopCacheInvalidationSubscriber();
+    logger.info('Cache invalidation subscriber closed');
 
     // Close Redis client
     await connection.quit();

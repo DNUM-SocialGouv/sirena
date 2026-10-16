@@ -11,10 +11,15 @@ const subscriber = {
   unsubscribe: vi.fn(() => Promise.resolve()),
   quit: vi.fn(() => Promise.resolve()),
 };
+const closeSubscriber = vi.fn(() => Promise.resolve());
 
 vi.mock('../config/redis.js', () => ({
   connection: { duplicate: () => subscriber, publish: vi.fn(() => Promise.resolve(1)) },
   sanitizeRedisError: (error: unknown) => error,
+}));
+
+vi.mock('../helpers/redisSubscriber.js', () => ({
+  closeSubscriber: (...args: unknown[]) => closeSubscriber(...(args as [])),
 }));
 
 vi.mock('./pino.js', () => ({
@@ -161,6 +166,29 @@ describe('createSSEStream', () => {
       expect(sseEventManager.listenerCount('user:status')).toBe(1);
       const { value } = await reader.read();
       expect(new TextDecoder().decode(value)).toContain('event: user:status');
+    });
+  });
+
+  describe('cleanup', () => {
+    it('closes the subscriber through the bounded helper', async () => {
+      await sseEventManager.cleanup();
+
+      expect(closeSubscriber).toHaveBeenCalledWith(subscriber, 'sse:events');
+    });
+
+    it('completes the shutdown even when the subscriber cannot be closed', async () => {
+      closeSubscriber.mockRejectedValueOnce(new Error('did not close within 2000ms'));
+
+      await expect(sseEventManager.cleanup()).resolves.toBeUndefined();
+    });
+
+    it('lets a later initSubscriber re-subscribe after a failed close', async () => {
+      closeSubscriber.mockRejectedValueOnce(new Error('did not close within 2000ms'));
+      await sseEventManager.cleanup();
+
+      await sseEventManager.initSubscriber();
+
+      expect(subscriber.subscribe).toHaveBeenCalledWith('sse:events');
     });
   });
 });

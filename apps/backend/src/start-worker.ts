@@ -2,6 +2,10 @@ import { envVars } from './config/env.js';
 import { createLivenessCheck } from './features/monitoring/liveness.js';
 import { getPrometheusContentType, getPrometheusMetrics } from './features/monitoring/metrics.worker.js';
 import { createMonitoringServer } from './features/monitoring/server.js';
+import {
+  startCacheInvalidationSubscriber,
+  stopCacheInvalidationSubscriber,
+} from './helpers/cacheInvalidation.redis.js';
 import { createDefaultLogger } from './helpers/pino.js';
 import { cronWorker } from './jobs/worker/cron.worker.js';
 import { createFileProcessingWorker } from './jobs/workers/fileProcessing.worker.js';
@@ -9,6 +13,11 @@ import { createSirecMigrationWorker } from './jobs/workers/sirecMigration.worker
 import './libs/instrument.js';
 
 const logger = createDefaultLogger();
+
+// Entity caches live in each process: a write on an API pod must reach the worker too.
+startCacheInvalidationSubscriber().catch((err) =>
+  logger.error({ err }, 'Failed to start the cache invalidation subscriber'),
+);
 
 logger.info(`[worker] Starting cron worker for queue "${cronWorker.name}"`);
 
@@ -64,9 +73,11 @@ const shutdown = async () => {
     });
   });
 
+  // Closed last: the jobs still draining need caches that stay invalidated.
   await cronWorker.close();
   await fileProcessingWorker.close();
   await sirecMigrationWorker?.close();
+  await stopCacheInvalidationSubscriber();
   process.exit(0);
 };
 
