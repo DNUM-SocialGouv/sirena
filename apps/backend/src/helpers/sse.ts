@@ -15,6 +15,7 @@ import type { Redis } from 'ioredis';
 import { connection, sanitizeRedisError } from '../config/redis.js';
 import type { AppBindings } from '../helpers/factories/appWithRole.js';
 import { createDefaultLogger } from '../helpers/pino.js';
+import { closeSubscriber } from '../helpers/redisSubscriber.js';
 import {
   requireTopEntiteId as requireTopEntiteIdFromContext,
   requireUserId as requireUserIdFromContext,
@@ -152,11 +153,16 @@ class SSEEventManager extends EventEmitter {
   }
 
   async cleanup(): Promise<void> {
-    if (this.subscriber) {
-      await this.subscriber.unsubscribe(SSE_REDIS_CHANNEL);
-      await this.subscriber.quit();
-      this.subscriber = null;
-      this.isSubscribed = false;
+    if (!this.subscriber) return;
+
+    const client = this.subscriber;
+    this.subscriber = null;
+    this.isSubscribed = false;
+    try {
+      await closeSubscriber(client, SSE_REDIS_CHANNEL);
+    } catch (err) {
+      // A subscriber being torn down that fails to say goodbye must not abort the shutdown.
+      this.logger.error({ err: sanitizeRedisError(err) }, 'Failed to close SSE Redis subscriber');
     }
   }
 }

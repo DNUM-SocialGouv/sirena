@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const subscriberHandlers: Record<string, (channel: string, message: string) => void> = {};
 const subscriber = {
@@ -8,13 +8,17 @@ const subscriber = {
   subscribe: vi.fn(() => Promise.resolve()),
   unsubscribe: vi.fn(() => Promise.resolve()),
   quit: vi.fn(() => Promise.resolve()),
-  disconnect: vi.fn(),
 };
+const closeSubscriber = vi.fn(() => Promise.resolve());
 const publish = vi.fn(() => Promise.resolve(1));
 
 vi.mock('../config/redis.js', () => ({
   connection: { duplicate: () => subscriber, publish: (...args: unknown[]) => publish(...(args as [])) },
   sanitizeRedisError: (error: unknown) => error,
+}));
+
+vi.mock('./redisSubscriber.js', () => ({
+  closeSubscriber: (...args: unknown[]) => closeSubscriber(...(args as [])),
 }));
 
 vi.mock('./pino.js', () => ({
@@ -88,29 +92,21 @@ describe('cacheInvalidationBus', () => {
 
     cacheInvalidationBus.invalidate(SCOPE);
 
-    expect(subscriber.unsubscribe).toHaveBeenCalledWith(CACHE_INVALIDATION_CHANNEL);
-    expect(subscriber.quit).toHaveBeenCalled();
     expect(vi.mocked(handler)).toHaveBeenCalledTimes(1);
     expect(publish).not.toHaveBeenCalled();
   });
 
-  describe('when the subscriber connection is unreachable', () => {
-    afterEach(() => {
-      vi.useRealTimers();
-      subscriber.unsubscribe.mockImplementation(() => Promise.resolve());
-    });
+  it('closes the subscriber through the bounded helper', async () => {
+    await startCacheInvalidationSubscriber();
+    await stopCacheInvalidationSubscriber();
 
-    it('does not wait forever on a command that never settles', async () => {
-      await startCacheInvalidationSubscriber();
-      // `maxRetriesPerRequest: null` keeps the command queued instead of failing.
-      subscriber.unsubscribe.mockImplementation(() => new Promise(() => {}));
-      vi.useFakeTimers();
+    expect(closeSubscriber).toHaveBeenCalledWith(subscriber, CACHE_INVALIDATION_CHANNEL);
+  });
 
-      const stopped = stopCacheInvalidationSubscriber();
-      await vi.advanceTimersByTimeAsync(2_000);
-      await expect(stopped).resolves.toBeUndefined();
+  it('completes the shutdown even when the subscriber cannot be closed', async () => {
+    await startCacheInvalidationSubscriber();
+    closeSubscriber.mockRejectedValueOnce(new Error('did not close within 2000ms'));
 
-      expect(subscriber.disconnect).toHaveBeenCalled();
-    });
+    await expect(stopCacheInvalidationSubscriber()).resolves.toBeUndefined();
   });
 });
