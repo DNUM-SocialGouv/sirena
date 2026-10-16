@@ -40,6 +40,29 @@ jobs:
       - name: Run GitLeaks
         run: bash .husky/gitleaks-detect-secrets-ci.sh
 
+  commit-attribution:
+    name: Commit attribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+        with:
+          # The check walks the pushed commits, so it needs their messages.
+          fetch-depth: 0
+      - name: Check commit attribution
+        env:
+          BEFORE: ${{ github.event.before }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          # On a branch's first push, `before` is the null SHA: fall back to
+          # everything the branch adds on top of the default branch.
+          if git rev-parse --verify --quiet "${BEFORE}^{commit}" > /dev/null; then
+            RANGE="${BEFORE}..${{ github.sha }}"
+          else
+            git fetch --quiet origin "${DEFAULT_BRANCH}"
+            RANGE="FETCH_HEAD..HEAD"
+          fi
+          bash .husky/check-commit-attribution-ci.sh "$RANGE"
+
   lint-build-test:
     name: Lint, Build and Unit Tests
     runs-on: ubuntu-latest

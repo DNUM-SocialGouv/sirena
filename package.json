@@ -57,6 +57,7 @@
     "typecheck": "pnpm build:common && pnpm -r run typecheck",
     "gitleaks:detect-secrets": "bash .husky/gitleaks-detect-secrets.sh",
     "gitleaks:ci": "bash .husky/gitleaks-detect-secrets-ci.sh",
+    "commits:check-attribution": "bash .husky/check-commit-attribution-ci.sh",
     "gitleaks:update-ignored-secrets": "bash .husky/gitleaks-update-ignored-secrets.sh",
     "lint": "pnpm -r run lint",
     "lint:staged": "pnpm -r run lint:staged",
