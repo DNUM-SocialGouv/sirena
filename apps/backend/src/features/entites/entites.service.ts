@@ -1,7 +1,8 @@
 import type { Pagination } from '@sirena/backend-utils/types';
+import { CACHE_INVALIDATION_SCOPES, cacheInvalidationBus } from '../../helpers/cacheInvalidation.js';
 import { type Entite, prisma } from '../../libs/prisma.js';
 import { buildEntitesListAdmin } from './entites.admin.mapper.js';
-import { entitesDescendantIdsCache, entitesHierarchyCache } from './entites.cache.js';
+import { entitesHierarchyCache } from './entites.cache.js';
 import { resolveEntiteChain } from './entites.chains.js';
 import { getEntiteDescendantIds } from './entites.descendants.js';
 import { buildDirectionsServicesRows as buildDirectionsServicesRowsFromHierarchy } from './entites.directions-services.mapper.js';
@@ -42,8 +43,7 @@ const sortAdminRows = (rows: ReturnType<typeof buildEntitesListAdmin>, sort: Adm
   });
 
 const invalidateEntitesPerimetreCache = () => {
-  entitesDescendantIdsCache.clear();
-  entitesHierarchyCache.clear();
+  cacheInvalidationBus.invalidate(CACHE_INVALIDATION_SCOPES.ENTITES_PERIMETRE);
 };
 
 export const getEntiteForUser = async (organizationalUnit: string | null, email: string) => {
