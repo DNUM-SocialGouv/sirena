@@ -113,6 +113,8 @@ model Entite {
   assignmentStepsReceived RequeteEtape[]  @relation("AssignedEntite")
   requeteMessages       RequeteMessage[]
   requeteMessageReads   RequeteMessageRead[]
+
+  @@index([entiteMereId])
 }
 
 model EntiteTypeEnum {
