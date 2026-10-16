@@ -4,6 +4,7 @@ export * from './authErrors.constant.js';
 export * from './dematSocial.constant.js';
 export * from './entite.constant.js';
 export * from './featureFlag.constant.js';
+export * from './filtreNonRenseigne.constant.js';
 export * from './mesureProtection.constant.js';
 export * from './motifs.constant.js';
 export * from './reponseOuiNon.constant.js';
