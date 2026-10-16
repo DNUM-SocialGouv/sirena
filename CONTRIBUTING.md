@@ -60,6 +60,11 @@ A `commit-msg` hook also runs `commitlint` with `@commitlint/config-conventional
 [convco](https://convco.github.io/) is a handy local companion: `convco commit` walks you through
 a compliant message and `convco check` validates a commit range before you push.
 
+An LLM assistant is never a co-author: a commit written with one carries an `Assisted-by: <model>`
+trailer instead of a `Co-authored-by:` line, and CI rejects the latter
+(`pnpm commits:check-attribution` runs the same check locally). See
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#assistants-llm).
+
 Ensure these checks pass locally before pushing your code.
 
 ---

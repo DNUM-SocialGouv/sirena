@@ -257,16 +257,29 @@ distinct.
 - Ne jamais donner à un agent un secret réel, et ne jamais lui faire exécuter une action
   irréversible (déploiement, migration en production, force-push) sans validation explicite.
 
-**Pas de mention de modèle ni d'outil dans le livrable.** Le dépôt ne fait pas la publicité d'un
-fournisseur de modèles. Concrètement :
+**Attribution : `Assisted-by`, jamais `Co-authored-by`.** Un modèle n'est pas un auteur et ne
+co-signe pas un commit ; en revanche on veut savoir quel assistant a participé à quoi — si un
+modèle se révèle défaillant, il faut pouvoir retrouver tous les commits écrits avec lui.
+Décision du point tech du 15 octobre 2026 :
 
-- Aucune mention d'un modèle ou d'un assistant dans les messages de commit : pas de ligne
-  `Co-Authored-By` vers un assistant, pas de mention « generated with », pas d'emoji ni de
-  signature d'outil. Un commit suit la convention du dépôt, et rien d'autre.
-- Aucune mention dans le code, les commentaires, les noms de branche, les descriptions de PR ou
-  la documentation. Un commentaire explique une contrainte technique, pas la façon dont la ligne
-  a été produite.
-- La responsabilité du contenu est celle de l'auteur de la PR, quel que soit l'outil utilisé pour
-  l'écrire. C'est précisément pourquoi l'outil n'a pas à être crédité : il n'engage personne.
+- **Pas de `Co-authored-by` vers un assistant.** La responsabilité du contenu est celle de
+  l'auteur de la PR, quel que soit l'outil : co-signer un modèle la dilue sans rien tracer de
+  plus. La CI rejette un commit qui porte une telle ligne
+  (`.husky/check-commit-attribution-ci.sh`, exécuté par le workflow `lint-and-test`).
+- **Un commit écrit avec un assistant porte un *trailer* `Assisted-by`** nommant le modèle, pas
+  le produit qui l'héberge :
+
+  ```
+  fix: borner la pagination des requêtes (sirena-818)
+
+  Assisted-by: claude-opus-5
+  ```
+
+  Plusieurs modèles sur un même commit : une ligne chacun. Un commit écrit à la main n'en porte
+  aucune.
+- **Rien d'autre.** Pas de « generated with », pas d'emoji ni de bannière d'outil, et aucune
+  mention dans le code, les commentaires, les noms de branche, les descriptions de PR ou la
+  documentation : le dépôt trace l'assistance, il ne fait pas la publicité d'un fournisseur. Un
+  commentaire explique une contrainte technique, pas la façon dont la ligne a été produite.
 - Cette règle vaut aussi pour les fichiers de configuration d'agents ajoutés au dépôt : on y
   décrit les pratiques du projet, pas un produit.
