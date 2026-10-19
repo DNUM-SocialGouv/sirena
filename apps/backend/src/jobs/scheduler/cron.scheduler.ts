@@ -6,8 +6,8 @@ import { getLoggerStore, loggerStorage, sentryStorage } from '../../libs/asyncLo
 import { jobHandlers } from '../config/job.definitions.js';
 import { cronQueue } from '../config/job.queues.js';
 
-const SCHEDULER_LOCK_KEY = 'sirena:scheduler:lock';
-const SCHEDULER_LOCK_TTL_SECONDS = 30;
+export const SCHEDULER_LOCK_KEY = 'sirena:scheduler:lock';
+export const SCHEDULER_LOCK_TTL_SECONDS = 30;
 
 export async function startScheduler() {
   return loggerStorage.run(createDefaultLogger(), async () => {
