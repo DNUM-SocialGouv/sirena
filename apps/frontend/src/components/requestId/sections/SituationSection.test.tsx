@@ -12,7 +12,7 @@ vi.mock('@/hooks/useCanEdit', () => ({
 
 const sectionId = 'situation';
 
-const renderWithLieu = (lieuTypeId: string, adresse: { label?: string; rue?: string }) =>
+const renderWithLieu = (lieuTypeId: string, adresse: { label?: string; rue?: string } | null) =>
   render(
     <SituationSection
       id={sectionId}
@@ -24,39 +24,81 @@ const renderWithLieu = (lieuTypeId: string, adresse: { label?: string; rue?: str
           lieuDeSurvenue: {
             lieuTypeId,
             lieuType: { id: lieuTypeId, label: lieuTypeId },
-            adresse: { label: '', rue: '', codePostal: '', ville: '', ...adresse },
+            adresse: adresse && { label: '', rue: '', codePostal: '', ville: '', ...adresse },
           },
         } as unknown as SituationProp
       }
     />,
   );
 
-const getLine = (label: string) => screen.getByText(label).closest('p');
+const ADDRESS_LABELS = ['Rue :', 'Adresse :', "Nom de l'établissement :"];
+
+// Address lines in display order, so that a missing or an orphan line fails the comparison.
+const getAddressLines = () =>
+  [...document.querySelectorAll('p')]
+    .filter((p) => ADDRESS_LABELS.includes(p.querySelector('span')?.textContent ?? ''))
+    .map((p) => p.textContent?.replace(/\s+/g, ' ').trim());
 
 describe('SituationSection', () => {
-  it('shows the street of a trajet place', () => {
-    renderWithLieu(LIEU_TYPE.TRAJET, { rue: 'Rue de la Gare' });
+  it.each([
+    {
+      name: 'the street of a trajet place',
+      lieuTypeId: LIEU_TYPE.TRAJET,
+      adresse: { rue: 'Rue de la Gare' },
+      lines: ['Rue : Rue de la Gare'],
+    },
+    {
+      name: 'the label of a trajet place without a street as an address',
+      lieuTypeId: LIEU_TYPE.TRAJET,
+      adresse: { label: '3 avenue Foch 75016 Paris' },
+      lines: ['Adresse : 3 avenue Foch 75016 Paris'],
+    },
+    {
+      name: 'the address of a domicile place',
+      lieuTypeId: LIEU_TYPE.DOMICILE,
+      adresse: { rue: '12 rue des Lilas' },
+      lines: ['Adresse : 12 rue des Lilas'],
+    },
+    {
+      name: 'the street of an establishment without a name',
+      lieuTypeId: LIEU_TYPE.ETABLISSEMENT_SANTE,
+      adresse: { rue: '1 place du Parvis' },
+      lines: ['Rue : 1 place du Parvis'],
+    },
+    {
+      name: 'the name of an establishment without a street',
+      lieuTypeId: LIEU_TYPE.ETABLISSEMENT_SANTE,
+      adresse: { label: 'CHU de Nantes' },
+      lines: ["Nom de l'établissement : CHU de Nantes"],
+    },
+    {
+      name: 'the name and the street of an establishment',
+      lieuTypeId: LIEU_TYPE.ETABLISSEMENT_SANTE,
+      adresse: { label: 'CHU de Nantes', rue: '1 place du Parvis' },
+      lines: ["Nom de l'établissement : CHU de Nantes", 'Rue : 1 place du Parvis'],
+    },
+    {
+      name: 'the name and the street of another kind of establishment',
+      lieuTypeId: LIEU_TYPE.AUTRES_ETABLISSEMENTS,
+      adresse: { label: 'Crèche Les Lutins', rue: '8 rue Pasteur' },
+      lines: ["Nom de l'établissement : Crèche Les Lutins", 'Rue : 8 rue Pasteur'],
+    },
+    {
+      name: 'no address line for an empty address',
+      lieuTypeId: LIEU_TYPE.TRAJET,
+      adresse: {},
+      lines: [],
+    },
+    {
+      name: 'no address line without an address',
+      lieuTypeId: LIEU_TYPE.ETABLISSEMENT_SANTE,
+      adresse: null,
+      lines: [],
+    },
+  ])('shows $name', ({ lieuTypeId, adresse, lines }) => {
+    renderWithLieu(lieuTypeId, adresse);
 
-    expect(getLine('Rue :')).toHaveTextContent('Rue : Rue de la Gare');
-  });
-
-  it('shows the address of a domicile place', () => {
-    renderWithLieu(LIEU_TYPE.DOMICILE, { rue: '12 rue des Lilas' });
-
-    expect(getLine('Adresse :')).toHaveTextContent('Adresse : 12 rue des Lilas');
-  });
-
-  it('shows the street of an establishment without a name', () => {
-    renderWithLieu(LIEU_TYPE.ETABLISSEMENT_SANTE, { rue: '1 place du Parvis' });
-
-    expect(getLine('Adresse :')).toHaveTextContent('Adresse : 1 place du Parvis');
-    expect(screen.queryByText("Nom de l'établissement :")).not.toBeInTheDocument();
-  });
-
-  it('shows the name and the street of an establishment', () => {
-    renderWithLieu(LIEU_TYPE.ETABLISSEMENT_SANTE, { label: 'CHU de Nantes', rue: '1 place du Parvis' });
-
-    expect(getLine("Nom de l'établissement :")).toHaveTextContent("Nom de l'établissement : CHU de Nantes");
-    expect(getLine('Adresse :')).toHaveTextContent('Adresse : 1 place du Parvis');
+    expect(screen.getByText('Type de lieu :')).toBeInTheDocument();
+    expect(getAddressLines()).toEqual(lines);
   });
 });

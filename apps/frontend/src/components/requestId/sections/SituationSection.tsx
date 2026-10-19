@@ -377,13 +377,17 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                   ) : null}
                   {situation?.lieuDeSurvenue?.adresse?.rue ? (
                     <p className={fr.cx('fr-mb-1w')}>
-                      <span>Adresse :</span> {situation.lieuDeSurvenue.adresse.rue}
+                      <span>Rue :</span> {situation.lieuDeSurvenue.adresse.rue}
                     </p>
                   ) : null}
                 </>
               ) : (
                 <p className={fr.cx('fr-mb-1w')}>
-                  <span>{situation.lieuDeSurvenue.lieuTypeId === LIEU_TYPE.TRAJET ? 'Rue :' : 'Adresse :'}</span>{' '}
+                  <span>
+                    {situation.lieuDeSurvenue.lieuTypeId === LIEU_TYPE.TRAJET && situation.lieuDeSurvenue.adresse.rue
+                      ? 'Rue :'
+                      : 'Adresse :'}
+                  </span>{' '}
                   {situation.lieuDeSurvenue.adresse.rue || situation.lieuDeSurvenue.adresse.label}
                 </p>
               ))}
