@@ -284,9 +284,10 @@ export const setRequeteFile = async (
   entiteId: string | null = null,
   changedById?: string,
   tx?: Prisma.TransactionClient,
+  relationWhere?: Prisma.UploadedFileWhereInput,
 ) => {
   const attachFiles = (client: Prisma.TransactionClient) =>
-    updateFilesWithRelation(uploadedFileId, { requeteId }, entiteId, changedById, client);
+    updateFilesWithRelation(uploadedFileId, { requeteId }, entiteId, changedById, client, relationWhere);
 
   // Without a transaction, a batch holding one file already attached to a message kept the rows the
   // update did manage to move before the refusal.

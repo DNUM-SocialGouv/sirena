@@ -682,7 +682,10 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
           },
         });
 
-        // Create default processing steps for each entity
+        // The step changelogs share the transaction, so that a rolled back attempt (id collision retry included)
+        // leaves no audit of steps that never existed. Trade-off: an audit write failure now cancels the whole
+        // creation instead of being only logged. The Requete changelog stays outside: requeteChangelogMiddleware
+        // writes it once the controller returns, after the commit.
         for (const entite of requete.requeteEntites) {
           await createDefaultRequeteEtapes(requete.id, entite.entiteId, tx, changedById, {
             transactionalAudit: true,
@@ -696,8 +699,14 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
           });
         }
 
+        // Same guard as setEtapeFile, checked by the update itself: only files the author uploaded for this
+        // entite and not attached anywhere yet (none without an author).
         if (data?.fileIds?.length) {
-          await setRequeteFile(requete.id, data.fileIds, entiteId, changedById, tx);
+          await setRequeteFile(requete.id, data.fileIds, entiteId, changedById, tx, {
+            uploadedById: changedById ?? null,
+            entiteId,
+            ...UNATTACHED_FILE_RELATIONS,
+          });
         }
 
         return requete;

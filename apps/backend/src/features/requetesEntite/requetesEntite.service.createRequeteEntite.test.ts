@@ -5,7 +5,11 @@ import { prisma } from '../../libs/__mocks__/prisma.js';
 import type { Prisma } from '../../libs/prisma.js';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service.js';
 import { generateRequeteId } from '../requetes/functionalId.service.js';
-import { FilesNotOwnedError, setRequeteFile } from '../uploadedFiles/uploadedFiles.service.js';
+import {
+  FilesNotOwnedError,
+  setRequeteFile,
+  UNATTACHED_FILE_RELATIONS,
+} from '../uploadedFiles/uploadedFiles.service.js';
 import { createRequeteEntite } from './requetesEntite.service.js';
 
 vi.mock('../../libs/prisma.js');
@@ -89,11 +93,15 @@ describe('createRequeteEntite', () => {
     expect(generateOrder).toBeLessThan(transactionOrder);
   });
 
-  it('links the uploaded files inside the transaction', async () => {
+  it('links the uploaded files inside the transaction, only if the author uploaded them unattached for the entite', async () => {
     await createRequeteEntite(entiteId, { fileIds: ['file-1', 'file-2'] }, userId);
 
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
-    expect(setRequeteFile).toHaveBeenCalledWith(createdRequete.id, ['file-1', 'file-2'], entiteId, userId, tx);
+    expect(setRequeteFile).toHaveBeenCalledWith(createdRequete.id, ['file-1', 'file-2'], entiteId, userId, tx, {
+      uploadedById: userId,
+      entiteId,
+      ...UNATTACHED_FILE_RELATIONS,
+    });
   });
 
   it('propagates a file linking failure out of the transaction so the requete is not committed', async () => {
