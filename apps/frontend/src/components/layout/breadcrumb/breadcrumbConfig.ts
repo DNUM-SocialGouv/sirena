@@ -1,4 +1,5 @@
 import { ROLES, type Role } from '@sirena/common/constants';
+import { ADMIN_TAB_LABELS } from '@/routes/_auth/admin/-tabs';
 import type { FileRoutesById } from '@/routeTree.gen';
 import type { ListKey, ListState } from '@/stores/listStateStore';
 import { resolveUsersList } from '@/utils/usersList';
@@ -50,7 +51,7 @@ const usersTrail: Trail = (ctx) => {
   return [
     ...adminTrail(ctx),
     {
-      text: usersList.to === '/admin/users' ? "Demandes d'habilitation" : 'Utilisateurs',
+      text: usersList.to === '/admin/users' ? ADMIN_TAB_LABELS.pending : ADMIN_TAB_LABELS.users,
       to: usersList.to,
       search: usersList.search,
     },
@@ -59,7 +60,7 @@ const usersTrail: Trail = (ctx) => {
 
 const entitesTrail: Trail = (ctx) => [
   ...adminTrail(ctx),
-  { text: 'Entités', to: '/admin/entites', search: ctx.listStates.entites?.search },
+  { text: ADMIN_TAB_LABELS.entites, to: '/admin/entites', search: ctx.listStates.entites?.search },
 ];
 
 const editEntiteTrail: Trail = (ctx) => [
@@ -67,11 +68,14 @@ const editEntiteTrail: Trail = (ctx) => [
   { text: 'Modifier l’entité', to: `/admin/entites/${ctx.params.entiteId}` },
 ];
 
-const localEntiteTrail: Trail = (ctx) => [...adminTrail(ctx), { text: 'Entités', to: '/admin/entite' }];
+const localEntiteTrail: Trail = (ctx) => [
+  ...adminTrail(ctx),
+  { text: ADMIN_TAB_LABELS.localEntite, to: '/admin/entite' },
+];
 
 const directionsServicesTrail: Trail = (ctx) => [
   ...adminTrail(ctx),
-  { text: 'Directions et services', to: '/admin/directions-services' },
+  { text: ADMIN_TAB_LABELS.directionsServices, to: '/admin/directions-services' },
 ];
 
 const publicTrail =

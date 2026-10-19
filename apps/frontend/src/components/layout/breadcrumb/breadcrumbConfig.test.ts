@@ -65,6 +65,14 @@ describe('getBreadCrumbItems', () => {
     expect(texts('/_auth/admin/directions-services/services/create', superAdmin)).toEqual(expected);
   });
 
+  it('names the entity tab in the singular for a root-level entity admin', () => {
+    expect(texts('/_auth/admin/entite/edit', entityAdmin)).toEqual([
+      'Espace administrateur',
+      'Entité',
+      'Modifier l’entité',
+    ]);
+  });
+
   it('nests entity creation under the edited entity', () => {
     const items = getBreadCrumbItems('/_auth/admin/entites/$entiteId/create', {
       ...superAdmin,
