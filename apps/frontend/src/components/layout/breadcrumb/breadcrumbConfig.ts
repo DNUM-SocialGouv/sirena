@@ -186,6 +186,10 @@ const trails: Record<RouteWithBreadcrumb, Trail> = {
   '/_public/accessibilite': publicTrail('Accessibilité', '/accessibilite'),
   '/_public/mentions-legales': publicTrail('Mentions légales', '/mentions-legales'),
   '/_public/donnees-personnelles': publicTrail('Données personnelles', '/donnees-personnelles'),
+  '/_public/conditions-generales-utilisation': publicTrail(
+    'Conditions générales d’utilisation',
+    '/conditions-generales-utilisation',
+  ),
   '/_public/gestion-cookies': publicTrail('Gestion des cookies', '/gestion-cookies'),
 };
 
