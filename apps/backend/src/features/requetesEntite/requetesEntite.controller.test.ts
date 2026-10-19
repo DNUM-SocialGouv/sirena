@@ -24,11 +24,17 @@ import { createAccessLog } from '../accessLog/accessLog.service.js';
 import { getDirectionsServicesFromRequeteEntiteId, getEntitesByIds } from '../entites/entites.service.js';
 import type { EntiteTraitement } from '../entites/entites.type.js';
 import { updateDateAndTypeRequete } from '../requetes/requetes.service.js';
-import { getUploadedFileById, isFileBelongsToRequete } from '../uploadedFiles/uploadedFiles.service.js';
+import {
+  FilesNotOwnedError,
+  getUploadedFileById,
+  isFileBelongsToRequete,
+  isUserOwner,
+} from '../uploadedFiles/uploadedFiles.service.js';
 import { DEFAULT_REQUETES_LIMIT } from './requetesEntite.constants.js';
 import RequetesEntiteController from './requetesEntite.controller.js';
 import {
   closeRequeteForEntite,
+  createRequeteEntite,
   generateRequetePdfBuffer,
   getOtherEntitesAffected,
   getRequeteEntiteById,
@@ -43,6 +49,7 @@ import {
 
 vi.mock('./requetesEntite.service.js', () => ({
   closeRequeteForEntite: vi.fn(),
+  createRequeteEntite: vi.fn(),
   filterOtherEntitesAffectedForUser: vi.fn((otherEntites, userEntityIds) =>
     otherEntites.filter((entite: { id: string }) => !userEntityIds.includes(entite.id)),
   ),
@@ -118,7 +125,9 @@ vi.mock('../../middlewares/entites.middleware.js', () => ({
   }),
 }));
 
-vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
+vi.mock('../uploadedFiles/uploadedFiles.service.js', async (importOriginal) => ({
+  FilesNotOwnedError: (await importOriginal<typeof import('../uploadedFiles/uploadedFiles.service.js')>())
+    .FilesNotOwnedError,
   getUploadedFileById: vi.fn(),
   isFileBelongsToRequete: vi.fn(),
   isUserOwner: vi.fn().mockResolvedValue(true),
@@ -688,6 +697,19 @@ describe('RequetesEntite endpoints: /', () => {
 
       expect(res.status).toBe(404);
       expect(updateStatusRequete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('POST /', () => {
+    it('answers 403 without announcing any requete when the files cannot be attached', async () => {
+      vi.mocked(isUserOwner).mockResolvedValueOnce(true);
+      vi.mocked(createRequeteEntite).mockRejectedValueOnce(new FilesNotOwnedError('FILES_NOT_OWNED'));
+
+      const res = await client.index.$post({ json: { fileIds: ['file-1'] } });
+
+      expect(res.status).toBe(403);
+      expect(createRequeteEntite).toHaveBeenCalledWith('entiteId', { fileIds: ['file-1'] }, 'id1');
+      expect(sseEventManager.emitRequeteUpdated).not.toHaveBeenCalled();
     });
   });
 
