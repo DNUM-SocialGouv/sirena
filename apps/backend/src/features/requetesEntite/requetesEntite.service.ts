@@ -52,6 +52,7 @@ import { generateRequeteId } from '../requetes/functionalId.service.js';
 import {
   deleteFaitFilesRemovedFromSituation,
   setFaitFiles,
+  setRequeteFile,
   UNATTACHED_FILE_RELATIONS,
 } from '../uploadedFiles/uploadedFiles.service.js';
 import { DEFAULT_REQUETES_LIMIT } from './requetesEntite.constants.js';
@@ -593,7 +594,33 @@ interface CreateRequeteInput {
   provenancePrecision?: string | null;
   declarant?: DeclarantInput;
   participant?: PersonneConcerneeInput;
+  fileIds?: string[];
 }
+
+interface PrismaUniqueConstraintError {
+  code: string;
+  meta?: {
+    modelName?: string;
+    target?: string[];
+    driverAdapterError?: {
+      cause?: { table?: string; constraint?: { index?: string; fields?: string[] } };
+    };
+  };
+}
+
+// With the pg driver adapter, P2002 carries the violated constraint in meta.driverAdapterError, not meta.target.
+const isRequeteIdConflict = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object' || !('code' in error)) return false;
+  const { code, meta } = error as PrismaUniqueConstraintError;
+  if (code !== 'P2002') return false;
+
+  const cause = meta?.driverAdapterError?.cause;
+  return (
+    (meta?.modelName === 'Requete' && meta.target?.includes('id') === true) ||
+    cause?.constraint?.index === 'Requete_pkey' ||
+    (cause?.table === 'Requete' && cause.constraint?.fields?.includes('id') === true)
+  );
+};
 
 export const createRequeteEntite = async (entiteId: string, data?: CreateRequeteInput, changedById?: string) => {
   const maxRetries = 5;
@@ -602,77 +629,94 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
 
   while (retryCount < maxRetries) {
     try {
+      // The id is reserved through a Redis lock before opening the transaction, so the transaction does not hold
+      // a pooled connection during Redis round trips. A rollback only skips a number in the sequence.
       const requeteId = await generateRequeteId('SIRENA');
 
-      const requete = await prisma.requete.create({
-        data: {
-          id: requeteId,
-          receptionDate: data?.receptionDate ? new Date(data.receptionDate) : null,
-          dateDemandeDeclarant: data?.dateDemandeDeclarant ? new Date(data.dateDemandeDeclarant) : null,
-          receptionTypeId: data?.receptionTypeId ?? null,
-          provenanceId: data?.provenanceId ?? null,
-          provenancePrecision: data?.provenancePrecision ?? null,
-          ...(data?.declarant && {
-            declarant: {
-              create: mapDeclarantToPrismaCreate(data.declarant),
+      // Retry on id collision wraps the transaction: a P2002 aborts it, so each attempt needs a fresh one.
+      return await prisma.$transaction(async (tx) => {
+        const requete = await tx.requete.create({
+          data: {
+            id: requeteId,
+            receptionDate: data?.receptionDate ? new Date(data.receptionDate) : null,
+            dateDemandeDeclarant: data?.dateDemandeDeclarant ? new Date(data.dateDemandeDeclarant) : null,
+            receptionTypeId: data?.receptionTypeId ?? null,
+            provenanceId: data?.provenanceId ?? null,
+            provenancePrecision: data?.provenancePrecision ?? null,
+            ...(data?.declarant && {
+              declarant: {
+                create: mapDeclarantToPrismaCreate(data.declarant),
+              },
+            }),
+            ...(data?.participant && {
+              participant: {
+                create: mapPersonneConcerneeToPrismaCreate(data.participant),
+              },
+            }),
+            requeteEntites: {
+              create: {
+                statutId: REQUETE_STATUT_TYPES.EN_COURS,
+                entiteId,
+              },
             },
-          }),
-          ...(data?.participant && {
-            participant: {
-              create: mapPersonneConcerneeToPrismaCreate(data.participant),
-            },
-          }),
-          requeteEntites: {
-            create: {
-              statutId: REQUETE_STATUT_TYPES.EN_COURS,
-              entiteId,
-            },
+            createdById: changedById,
           },
-          createdById: changedById,
-        },
-        include: {
-          requeteEntites: true,
-          declarant: data?.declarant
-            ? {
-                include: {
-                  identite: true,
-                  adresse: true,
-                },
-              }
-            : false,
-          participant: data?.participant
-            ? {
-                include: {
-                  identite: true,
-                  adresse: true,
-                },
-              }
-            : false,
-        },
-      });
-
-      // Create default processing steps for each entity
-      for (const entite of requete.requeteEntites) {
-        await createDefaultRequeteEtapes(requete.id, entite.entiteId, undefined, changedById);
-      }
-
-      if (data?.declarant?.estPersonneConcernee && requete.declarant) {
-        await prisma.personneConcernee.update({
-          where: { id: requete.declarant.id },
-          data: { participantDeId: requete.id },
+          include: {
+            requeteEntites: true,
+            declarant: data?.declarant
+              ? {
+                  include: {
+                    identite: true,
+                    adresse: true,
+                  },
+                }
+              : false,
+            participant: data?.participant
+              ? {
+                  include: {
+                    identite: true,
+                    adresse: true,
+                  },
+                }
+              : false,
+          },
         });
-      }
 
-      return requete;
-    } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'code' in error) {
-        const prismaError = error as { code: string; meta?: { target?: string[] }; message?: string };
-        if (prismaError.code === 'P2002' && prismaError.meta?.target?.includes('id')) {
-          lastError = new Error(prismaError.message || 'Unique constraint failed on id');
-          retryCount++;
-          await new Promise((resolve) => setTimeout(resolve, 100 * retryCount));
-          continue;
+        // The step changelogs share the transaction, so that a rolled back attempt (id collision retry included)
+        // leaves no audit of steps that never existed. Trade-off: an audit write failure now cancels the whole
+        // creation instead of being only logged. The Requete changelog stays outside: requeteChangelogMiddleware
+        // writes it once the controller returns, after the commit.
+        for (const entite of requete.requeteEntites) {
+          await createDefaultRequeteEtapes(requete.id, entite.entiteId, tx, changedById, {
+            transactionalAudit: true,
+          });
         }
+
+        if (data?.declarant?.estPersonneConcernee && requete.declarant) {
+          await tx.personneConcernee.update({
+            where: { id: requete.declarant.id },
+            data: { participantDeId: requete.id },
+          });
+        }
+
+        // Same guard as setEtapeFile, checked by the update itself: only files the author uploaded for this
+        // entite and not attached anywhere yet (none without an author).
+        if (data?.fileIds?.length) {
+          await setRequeteFile(requete.id, data.fileIds, entiteId, changedById, tx, {
+            uploadedById: changedById ?? null,
+            entiteId,
+            ...UNATTACHED_FILE_RELATIONS,
+          });
+        }
+
+        return requete;
+      });
+    } catch (error: unknown) {
+      if (isRequeteIdConflict(error)) {
+        lastError = new Error((error as { message?: string }).message || 'Unique constraint failed on id');
+        retryCount++;
+        await new Promise((resolve) => setTimeout(resolve, 100 * retryCount));
+        continue;
       }
       throw error;
     }

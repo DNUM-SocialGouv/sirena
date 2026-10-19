@@ -2,9 +2,11 @@ import { Readable } from 'node:stream';
 import type { Job } from 'bullmq';
 import { Worker } from 'bullmq';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { envVars } from '../../config/env.js';
 import { recordFileProcessing } from '../../features/monitoring/metrics.worker.js';
 import { checkClamAvHealth, scanBuffer, scanStream } from '../../libs/clamav.js';
 import { getFileBuffer, getFileStream, uploadFileToMinio } from '../../libs/minio.js';
+import { sanitizePdf } from '../../libs/pdfSanitizer.js';
 import { prisma } from '../../libs/prisma.js';
 import type { FileProcessingJobData } from '../queues/fileProcessing.queue.js';
 import { createFileProcessingWorker } from './fileProcessing.worker.js';
@@ -78,6 +80,11 @@ const matchesWhere = (row: Row, where: Row): boolean =>
   });
 
 const CLEAN_SCAN = { success: true, data: { result: [{ name: 'test.txt', is_infected: false, viruses: [] }] } };
+const INFECTED_SCAN = {
+  success: true,
+  data: { result: [{ name: 'test.txt', is_infected: true, viruses: ['Eicar-Test-Signature'] }] },
+};
+const ENCRYPTED_METADATA = { encryption: { iv: 'file-iv', authTag: 'file-tag' } };
 const CLAMAV_DOWN = { status: 'error', clamav: { reachable: false, message: 'connect ECONNREFUSED' } };
 const CLAMAV_UP = { status: 'ok', clamav: { reachable: true, message: 'PONG', latencyMs: 3 } };
 
@@ -203,6 +210,168 @@ describe('fileProcessing.worker.ts', () => {
     await expect(runJob()).rejects.toThrow('unexpected clamav crash');
 
     expect(row).not.toMatchObject({ status: 'FAILED', scanStatus: 'SCANNING' });
+  });
+
+  it('marks an infected file FAILED with the detected virus', async () => {
+    vi.mocked(scanStream).mockResolvedValue(INFECTED_SCAN as never);
+
+    await runJob();
+
+    expect(row).toMatchObject({
+      status: 'FAILED',
+      scanStatus: 'INFECTED',
+      sanitizeStatus: 'SKIPPED',
+      processingError: 'Virus detected: Eicar-Test-Signature',
+    });
+    expect(recordFileProcessing).toHaveBeenCalledWith('INFECTED', 'SKIPPED', 'other', expect.any(Number));
+  });
+
+  it('never sanitizes nor stores an infected PDF', async () => {
+    vi.mocked(scanBuffer).mockResolvedValue(INFECTED_SCAN as never);
+
+    await runJob('application/pdf');
+
+    expect(row).toMatchObject({ status: 'FAILED', scanStatus: 'INFECTED', safeFilePath: null });
+    expect(sanitizePdf).not.toHaveBeenCalled();
+    expect(uploadFileToMinio).not.toHaveBeenCalled();
+  });
+
+  it('stores the sanitized copy of a clean PDF and records its path and encryption', async () => {
+    await runJob('application/pdf');
+
+    expect(uploadFileToMinio).toHaveBeenCalledWith(
+      Buffer.from('sanitized'),
+      'safe_test.txt',
+      'application/pdf',
+      Buffer.from('sanitized').length,
+    );
+    expect(row).toMatchObject({
+      status: 'COMPLETED',
+      scanStatus: 'CLEAN',
+      sanitizeStatus: 'COMPLETED',
+      safeFilePath: 'safe/path.pdf',
+      metadata: { encryptionSafe: { iv: 'iv', authTag: 'tag' } },
+    });
+  });
+
+  it('keeps the original PDF available when MinIO refuses the sanitized copy', async () => {
+    vi.mocked(uploadFileToMinio).mockRejectedValueOnce(new Error('Access Denied.'));
+
+    await runJob('application/pdf');
+
+    expect(row).toMatchObject({
+      status: 'COMPLETED',
+      scanStatus: 'CLEAN',
+      sanitizeStatus: 'ERROR',
+      safeFilePath: null,
+      processingError: 'Access Denied.',
+    });
+  });
+
+  it('does not record the sanitized copy when its encryption keys cannot be saved', async () => {
+    vi.mocked(prisma.uploadedFile.findUniqueOrThrow).mockRejectedValueOnce(new Error("Can't reach database server"));
+
+    await runJob('application/pdf');
+
+    expect(row).toMatchObject({
+      status: 'COMPLETED',
+      sanitizeStatus: 'ERROR',
+      safeFilePath: null,
+      metadata: null,
+      processingError: "Can't reach database server",
+    });
+  });
+
+  it('scans the decrypted content of an encrypted file', async () => {
+    row = { ...row, metadata: ENCRYPTED_METADATA };
+    const decrypted = Readable.from(['clear text']);
+    vi.mocked(getFileStream).mockImplementationOnce((async (_path: string, params?: unknown) => ({
+      stream: params ? decrypted : Readable.from(['cipher text']),
+    })) as never);
+
+    await runJob();
+
+    expect(getFileStream).toHaveBeenCalledWith('uploads/test.txt', ENCRYPTED_METADATA.encryption);
+    expect(scanStream).toHaveBeenCalledWith(decrypted, 'test.txt', 1024);
+  });
+
+  it('scans and sanitizes the decrypted content of an encrypted PDF', async () => {
+    row = { ...row, metadata: ENCRYPTED_METADATA };
+    const decrypted = Buffer.from('%PDF-1.4 clear');
+    vi.mocked(getFileBuffer).mockImplementationOnce((async (_path: string, params?: unknown) =>
+      params ? decrypted : Buffer.from('cipher')) as never);
+
+    await runJob('application/pdf');
+
+    expect(getFileBuffer).toHaveBeenCalledWith('uploads/test.txt', ENCRYPTED_METADATA.encryption);
+    expect(scanBuffer).toHaveBeenCalledWith(decrypted, 'test.txt');
+    expect(sanitizePdf).toHaveBeenCalledWith(decrypted);
+  });
+
+  it('marks the PDF FAILED when it cannot be downloaded from MinIO', async () => {
+    vi.mocked(getFileBuffer).mockRejectedValueOnce(new Error('NoSuchKey'));
+
+    await runJob('application/pdf');
+
+    expect(row).toMatchObject({
+      status: 'FAILED',
+      scanStatus: 'ERROR',
+      sanitizeStatus: 'ERROR',
+      processingError: 'Failed to download file from storage',
+    });
+    expect(scanBuffer).not.toHaveBeenCalled();
+  });
+
+  it('marks the file FAILED when ClamAV rejects the scan for a non transient reason', async () => {
+    vi.mocked(scanStream).mockResolvedValue({
+      success: false,
+      error: 'File too large',
+      errorReason: 'unknown',
+    } as never);
+
+    await runJob();
+
+    expect(row).toMatchObject({ status: 'FAILED', scanStatus: 'ERROR', processingError: 'File too large' });
+  });
+
+  it('releases the file for a retry when the scan times out', async () => {
+    vi.mocked(scanStream).mockResolvedValue({ success: false, error: 'Scan timeout', errorReason: 'timeout' } as never);
+
+    await expect(runJob()).rejects.toThrow('Scan timeout');
+
+    expect(row).toMatchObject({ status: 'PENDING', scanStatus: 'PENDING', processingError: 'Scan timeout' });
+  });
+
+  it('completes the file without scan when ClamAV is not configured', async () => {
+    const clamavHost = envVars.CLAMAV_HOST;
+    Object.assign(envVars, { CLAMAV_HOST: '' });
+
+    try {
+      await runJob();
+    } finally {
+      Object.assign(envVars, { CLAMAV_HOST: clamavHost });
+    }
+
+    expect(row).toMatchObject({ status: 'COMPLETED', scanStatus: 'SKIPPED', sanitizeStatus: 'SKIPPED' });
+    expect(scanStream).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when the file no longer exists', async () => {
+    vi.mocked(prisma.uploadedFile.findUnique).mockResolvedValueOnce(null);
+
+    await runJob();
+
+    expect(prisma.uploadedFile.update).not.toHaveBeenCalled();
+    expect(scanStream).not.toHaveBeenCalled();
+  });
+
+  it('leaves a file already being processed by another worker untouched', async () => {
+    row = { ...row, status: 'PROCESSING', scanStatus: 'SCANNING', updatedAt: new Date() };
+
+    await runJob();
+
+    expect(row).toMatchObject({ status: 'PROCESSING', scanStatus: 'SCANNING' });
+    expect(scanStream).not.toHaveBeenCalled();
   });
 
   it('rethrows an unexpected failure untouched, keeping the retry budget', async () => {
