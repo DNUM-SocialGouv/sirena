@@ -30,6 +30,7 @@ import type { DecryptionParams } from '../../libs/encryption.js';
 import { getFileBuffer, getFileStream, uploadFileToMinio } from '../../libs/minio.js';
 import { isPdfMimeType, sanitizePdf } from '../../libs/pdfSanitizer.js';
 import type { UploadedFile } from '../../libs/prisma.js';
+import { isTransientDependencyError } from '../../libs/resilience.js';
 import type { FileProcessingJobData } from '../queues/fileProcessing.queue.js';
 
 interface ProcessingResult {
@@ -128,7 +129,9 @@ const processNonPdfFile = async (
     });
     return { scanStatus: 'CLEAN', sanitizeStatus: 'SKIPPED' };
   } catch (err) {
-    if (err instanceof TransientScanError) {
+    // Transient failures belong to the caller, which requeues the file: writing a definitive
+    // state here would retire the file over a mere outage.
+    if (err instanceof TransientScanError || isTransientDependencyError(err)) {
       throw err;
     }
     logger.error({ error: err }, 'Failed to scan file');
@@ -164,6 +167,9 @@ const processPdfFile = async (
   try {
     fileBuffer = await getFileBuffer(filePath, decryptionParams);
   } catch (err) {
+    if (isTransientDependencyError(err)) {
+      throw err;
+    }
     logger.error({ error: err }, 'Failed to download file from storage');
     await updateFileProcessingStatus(fileId, {
       scanStatus: 'ERROR',
@@ -254,6 +260,11 @@ const processPdfFile = async (
     });
     return { scanStatus, sanitizeStatus: 'COMPLETED' };
   } catch (err) {
+    // buildProcessableFileFilter only reconsiders a COMPLETED file on its scanStatus, so the
+    // state written below is final: a storage outage here would never be sanitised again.
+    if (isTransientDependencyError(err)) {
+      throw err;
+    }
     logger.error({ error: err }, 'PDF sanitization failed');
     await updateFileProcessingStatus(fileId, {
       sanitizeStatus: 'ERROR',
@@ -305,11 +316,13 @@ const processFile = async (job: Job<FileProcessingJobData>): Promise<void> => {
       } catch (error) {
         const durationSeconds = (Date.now() - startTime) / 1000;
 
-        if (error instanceof TransientScanError) {
+        if (error instanceof TransientScanError || isTransientDependencyError(error)) {
           logger.warn({ error }, 'Transient failure during file processing, releasing the file for a retry');
           await updateFileProcessingStatus(fileId, {
-            processingError: error.message,
+            processingError: error instanceof Error ? error.message : 'Unknown error',
             scanStatus: 'PENDING',
+            // Reset too: a file interrupted mid-sanitisation would keep advertising SANITIZING.
+            sanitizeStatus: 'PENDING',
             status: 'PENDING',
           });
           recordFileProcessing('RETRY', 'RETRY', fileType, durationSeconds);
