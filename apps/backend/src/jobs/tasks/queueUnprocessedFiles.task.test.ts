@@ -87,4 +87,26 @@ describe('queueUnprocessedFiles.task.ts', () => {
 
     expect(result).toEqual({ queuedCount: 1, skippedCount: 2 });
   });
+
+  it('fails the run without recording the queue depth when the unprocessed files cannot be listed', async () => {
+    vi.mocked(getUnprocessedFiles).mockRejectedValue(new Error('db down'));
+
+    await expect(queueUnprocessedFiles(job)).rejects.toThrow('db down');
+
+    expect(recordFileQueueDepth).not.toHaveBeenCalled();
+    expect(addFileProcessingJob).not.toHaveBeenCalled();
+  });
+
+  // Unlike retryImportRequetes, a failing file is not isolated: the rest of the batch waits for the next run.
+  it('stops the batch at the first file that cannot be queued', async () => {
+    vi.mocked(getUnprocessedFiles).mockResolvedValue([file('f1'), file('f2'), file('f3')] as never);
+    vi.mocked(addFileProcessingJob)
+      .mockResolvedValueOnce(true as never)
+      .mockRejectedValueOnce(new Error('redis down'));
+
+    await expect(queueUnprocessedFiles(job)).rejects.toThrow('redis down');
+
+    expect(addFileProcessingJob).toHaveBeenCalledTimes(2);
+    expect(result).toBeUndefined();
+  });
 });

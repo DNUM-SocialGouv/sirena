@@ -50,7 +50,7 @@ describe('fileIntegrityCheck.task.ts', () => {
     vi.useRealTimers();
   });
 
-  it('runs the integrity check, records its metrics and returns its result', async () => {
+  it('runs the integrity check, records its metrics and hands its result to the cron lifecycle', async () => {
     vi.mocked(runFileIntegrityCheck).mockResolvedValue(integrityResult as never);
 
     await fileIntegrityCheck(job);

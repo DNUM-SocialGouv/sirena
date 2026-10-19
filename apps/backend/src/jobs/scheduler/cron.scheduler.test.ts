@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { jobHandlers } from '../config/job.definitions.js';
-import { startScheduler } from './cron.scheduler.js';
+import { SCHEDULER_LOCK_KEY, SCHEDULER_LOCK_TTL_SECONDS, startScheduler } from './cron.scheduler.js';
 
 // In-memory stand-ins for Redis and the BullMQ queue, following their semantics: SET only refuses
 // an existing key with NX, getJobs only returns the jobs in the requested states, and
@@ -57,7 +57,6 @@ vi.mock('../tasks/queueUnprocessedFiles.task.js', () => ({ queueUnprocessedFiles
 vi.mock('../tasks/fileIntegrityCheck.task.js', () => ({ fileIntegrityCheck: vi.fn() }));
 vi.mock('../tasks/purgeAccessLogs.task.js', () => ({ purgeAccessLogs: vi.fn() }));
 
-const SCHEDULER_LOCK_KEY = 'sirena:scheduler:lock';
 const runOnStartNames = jobHandlers.filter((j) => j.runOnStart).map((j) => j.name);
 
 describe('cron.scheduler.ts', () => {
@@ -101,6 +100,18 @@ describe('cron.scheduler.ts', () => {
     await startScheduler();
 
     expect(store.jobs.find((j) => j.name === name && (j.data as { stale?: boolean }).stale)).toBeUndefined();
+  });
+
+  it('takes the lock with an expiry, so that a crashed instance cannot block scheduling for good', async () => {
+    await startScheduler();
+
+    expect(connection.set).toHaveBeenCalledWith(
+      SCHEDULER_LOCK_KEY,
+      expect.any(String),
+      'EX',
+      SCHEDULER_LOCK_TTL_SECONDS,
+      'NX',
+    );
   });
 
   it('schedules nothing when another instance holds the lock', async () => {

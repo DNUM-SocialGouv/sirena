@@ -3,8 +3,9 @@ import { Worker } from 'bullmq';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 
-const { handlers } = vi.hoisted(() => ({
+const { handlers, child } = vi.hoisted(() => ({
   handlers: { 'fetch-requetes': vi.fn(), 'purge-access-logs': vi.fn() },
+  child: vi.fn((bindings: Record<string, unknown>) => ({ bindings, info: vi.fn(), error: vi.fn() })),
 }));
 
 vi.mock('bullmq', () => ({
@@ -14,6 +15,7 @@ vi.mock('bullmq', () => ({
 }));
 
 vi.mock('../../config/redis.js', () => ({ connection: {} }));
+vi.mock('../../helpers/pino.js', () => ({ createDefaultLogger: () => ({ child }) }));
 vi.mock('../config/job.queues.js', () => ({ cronQueue: { name: 'cron-queue' } }));
 vi.mock('../config/job.definitions.js', () => ({
   jobHandlers: Object.entries(handlers).map(([name, task]) => ({ name, task })),
@@ -21,7 +23,7 @@ vi.mock('../config/job.definitions.js', () => ({
 
 await import('./cron.worker.js');
 
-// Captured at load time: Vitest clears mock calls before each test.
+// Captured at load time: Vitest 5 clears mock calls before each test (`clearMocks` defaults to true).
 const workerArgs = vi.mocked(Worker).mock.calls[0];
 
 type Processor = (job: Job) => Promise<unknown>;
@@ -39,10 +41,10 @@ describe('cron.worker.ts', () => {
     expect(workerArgs).toEqual(['cron-queue', expect.any(Function), expect.objectContaining({ concurrency: 5 })]);
   });
 
-  it('runs only the handler matching the job name, with a job logger available', async () => {
-    let hasLogger = false;
+  it('runs only the handler matching the job name, with a logger bound to the job', async () => {
+    let logger: unknown;
     handlers['purge-access-logs'].mockImplementation(async () => {
-      hasLogger = Boolean(getLoggerStore());
+      logger = getLoggerStore();
       return { purged: 3 };
     });
 
@@ -50,7 +52,7 @@ describe('cron.worker.ts', () => {
 
     expect(handlers['purge-access-logs']).toHaveBeenCalledWith(job('purge-access-logs'));
     expect(handlers['fetch-requetes']).not.toHaveBeenCalled();
-    expect(hasLogger).toBe(true);
+    expect(logger).toMatchObject({ bindings: { job_name: 'purge-access-logs', job_id: 'job-1', attempt: 1 } });
   });
 
   it('fails a job that has no handler', async () => {

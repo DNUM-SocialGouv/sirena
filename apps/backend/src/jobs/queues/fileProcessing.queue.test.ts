@@ -33,7 +33,7 @@ vi.mock('bullmq', () => ({
   }),
 }));
 
-// Captured at load time: Vitest clears mock calls before each test.
+// Captured at load time: Vitest 5 clears mock calls before each test (`clearMocks` defaults to true).
 const queueArgs = vi.mocked(Queue).mock.calls[0];
 
 const queue = vi.mocked(Queue).mock.results[0].value as { seed: (id: string, state: string) => void };

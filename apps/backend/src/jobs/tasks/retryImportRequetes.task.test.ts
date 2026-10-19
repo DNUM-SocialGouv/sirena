@@ -25,10 +25,6 @@ vi.mock('../../libs/asyncLocalStorage.js', () => ({
   getSentryStore: vi.fn(),
 }));
 
-vi.mock('@sentry/node', () => ({
-  captureException: vi.fn(),
-}));
-
 const job = {
   name: 'retry-import-requetes',
   id: 'job-1',
