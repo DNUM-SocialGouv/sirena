@@ -111,71 +111,69 @@ export function SituationForm({
 
   return (
     <div>
-      <div>
-        <h1 className="fr-mb-2w" data-testid="situation-form-title">
-          Description de la situation
-        </h1>
-        <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
+      <h1 className="fr-mb-2w" data-testid="situation-form-title">
+        Description de la situation
+      </h1>
+      <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
-        <LieuSurvenu formData={formData} isSaving={isSaving} receptionType={receptionType} setFormData={setFormData} />
+      <LieuSurvenu formData={formData} isSaving={isSaving} receptionType={receptionType} setFormData={setFormData} />
 
-        <MisEnCause formData={formData} isSaving={isSaving} setFormData={setFormData} />
+      <MisEnCause formData={formData} isSaving={isSaving} setFormData={setFormData} />
 
-        <DescriptionFaits
-          ref={descriptionFaitsRef}
-          formData={formData}
-          setFormData={setFormData}
-          receptionType={receptionType}
-          initialData={initialData}
-        />
+      <DescriptionFaits
+        ref={descriptionFaitsRef}
+        formData={formData}
+        setFormData={setFormData}
+        receptionType={receptionType}
+        initialData={initialData}
+      />
 
-        <InformationsComplementaires
-          formData={formData}
-          setFormData={setFormData}
-          situationId={situationId}
-          requestId={requestId}
-          faitFiles={faitFiles}
-          setFaitFiles={setFaitFiles}
-          isSaving={isSaving}
-        />
+      <InformationsComplementaires
+        formData={formData}
+        setFormData={setFormData}
+        situationId={situationId}
+        requestId={requestId}
+        faitFiles={faitFiles}
+        setFaitFiles={setFaitFiles}
+        isSaving={isSaving}
+      />
 
-        <Identification
-          formData={formData}
-          isSaving={isSaving}
-          setFormData={setFormData}
-          isFromSirec={isFromSirec}
-          sirecDepartement={sirecDepartement}
-        />
+      <Identification
+        formData={formData}
+        isSaving={isSaving}
+        setFormData={setFormData}
+        isFromSirec={isFromSirec}
+        sirecDepartement={sirecDepartement}
+      />
 
-        <TraitementDesFaitsSection
-          ref={traitementDesFaitsRef}
-          entites={(entitesData?.data || []).map((e: { id: string; nomComplet: string }) => ({
-            id: e.id,
-            nomComplet: e.nomComplet,
-          }))}
-          userEntiteId={profile?.entiteId}
-          topEntiteId={profile?.topEntiteId}
-          initialEntites={formData.traitementDesFaits?.entites}
-          onChange={handleTraitementDesFaitsChange}
-          onValidationChange={setIsTraitementDesFaitsValid}
+      <TraitementDesFaitsSection
+        ref={traitementDesFaitsRef}
+        entites={(entitesData?.data || []).map((e: { id: string; nomComplet: string }) => ({
+          id: e.id,
+          nomComplet: e.nomComplet,
+        }))}
+        userEntiteId={profile?.entiteId}
+        topEntiteId={profile?.topEntiteId}
+        initialEntites={formData.traitementDesFaits?.entites}
+        onChange={handleTraitementDesFaitsChange}
+        onValidationChange={setIsTraitementDesFaitsValid}
+        disabled={isSaving}
+        hasAttemptedSave={hasAttemptedSave}
+      />
+
+      {/* Actions */}
+      <div className="fr-btns-group fr-btns-group--inline-md fr-mb-6w">
+        <Button priority="secondary" onClick={handleCancel} disabled={isSaving}>
+          Annuler
+        </Button>
+        <Button
+          ref={saveButtonRef}
+          onClick={handleSave}
           disabled={isSaving}
-          hasAttemptedSave={hasAttemptedSave}
-        />
-
-        {/* Actions */}
-        <div className="fr-btns-group fr-btns-group--inline-md fr-mb-6w">
-          <Button priority="secondary" onClick={handleCancel} disabled={isSaving}>
-            Annuler
-          </Button>
-          <Button
-            ref={saveButtonRef}
-            onClick={handleSave}
-            disabled={isSaving}
-            nativeButtonProps={{ ...{ 'data-testid': 'situation-save' } }}
-          >
-            Enregistrer
-          </Button>
-        </div>
+          nativeButtonProps={{ ...{ 'data-testid': 'situation-save' } }}
+        >
+          Enregistrer
+        </Button>
       </div>
     </div>
   );

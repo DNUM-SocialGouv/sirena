@@ -1,6 +1,7 @@
 import { ROLES, type Role } from '@sirena/common/constants';
 import type { FileRoutesById } from '@/routeTree.gen';
 import type { ListKey, ListState } from '@/stores/listStateStore';
+import { resolveUsersList } from '@/utils/usersList';
 
 export type BreadCrumbItem = {
   text: string;
@@ -13,6 +14,8 @@ export type BreadCrumbContext = {
   params: Record<string, string>;
   role: Role | null;
   listStates: Partial<Record<ListKey, ListState>>;
+  // Role of the user shown on the user page, once loaded
+  editedUserRoleId?: string;
 };
 
 type Crumb = Omit<BreadCrumbItem, 'current'>;
@@ -43,14 +46,13 @@ const requestTrail: Trail = (ctx) => [
 
 // A user is opened from either admin users tab: lead back to that tab, with its filters
 const usersTrail: Trail = (ctx) => {
-  const usersList = ctx.listStates.users;
-  const fromPending = usersList?.to === '/admin/users';
+  const usersList = resolveUsersList(ctx.listStates.users, ctx.editedUserRoleId);
   return [
     ...adminTrail(ctx),
     {
-      text: fromPending ? "Demandes d'habilitation" : 'Utilisateurs',
-      to: fromPending ? '/admin/users' : '/admin/users/all',
-      search: usersList?.search,
+      text: usersList.to === '/admin/users' ? "Demandes d'habilitation" : 'Utilisateurs',
+      to: usersList.to,
+      search: usersList.search,
     },
   ];
 };
@@ -83,9 +85,40 @@ const page =
   (parent: Trail, text: string, to: string | ((ctx: BreadCrumbContext) => string)): Trail =>
   (ctx) => [...parent(ctx), { text, to: typeof to === 'function' ? to(ctx) : to }];
 
-// Trails follow the site hierarchy, never the navigation history. Routes absent from
-// this map (login, home, inactive account) have no breadcrumb.
-const trails: Partial<Record<keyof FileRoutesById, Trail>> = {
+// Every route is arbitrated: either it has a trail below, or it is listed here.
+// A new route breaks the build until it is added to one or the other.
+export const ROUTES_WITHOUT_BREADCRUMB = [
+  // Layouts never render as the leaf route
+  '__root__',
+  '/_auth',
+  '/_auth/_user',
+  '/_auth/_user/request/create',
+  '/_auth/_user/request/$requestId',
+  '/_auth/_user/request/$requestId/situation',
+  '/_auth/admin',
+  '/_auth/admin/users',
+  '/_auth/admin/entite',
+  '/_auth/admin/entites/$entiteId',
+  '/_public',
+  // Home pages and pages outside the site hierarchy
+  '/',
+  '/login',
+  '/_auth/inactive',
+  '/_auth/_user/home',
+  '/_auth/admin/', // redirects to the users tab
+  // Admin tabs are the home of the admin section: only their sub pages have a breadcrumb
+  '/_auth/admin/users/',
+  '/_auth/admin/users/all',
+  '/_auth/admin/entites/',
+  '/_auth/admin/entite/',
+  '/_auth/admin/directions-services/',
+  '/_auth/admin/sirec-migration',
+] as const satisfies readonly (keyof FileRoutesById)[];
+
+type RouteWithBreadcrumb = Exclude<keyof FileRoutesById, (typeof ROUTES_WITHOUT_BREADCRUMB)[number]>;
+
+// Trails follow the site hierarchy, never the navigation history
+const trails: Record<RouteWithBreadcrumb, Trail> = {
   '/_auth/_user/request/create/': createRequestTrail,
   '/_auth/_user/request/create/declarant': page(createRequestTrail, 'Déclarant', '/request/create/declarant'),
   '/_auth/_user/request/create/personne-concernee': page(
@@ -121,7 +154,6 @@ const trails: Partial<Record<keyof FileRoutesById, Trail>> = {
 
   '/_auth/statistiques': page(rootTrail, 'Indicateurs', '/statistiques'),
 
-  // Admin tabs are the home of the admin section: only their sub pages have a breadcrumb
   '/_auth/admin/feature-flags': page(adminTrail, 'Gestion des fonctionnalités', '/admin/feature-flags'),
   '/_auth/admin/user/$userId': page(usersTrail, 'Modifier l’utilisateur', (ctx) => `/admin/user/${ctx.params.userId}`),
   '/_auth/admin/entites/$entiteId/': editEntiteTrail,
@@ -154,7 +186,7 @@ const trails: Partial<Record<keyof FileRoutesById, Trail>> = {
 };
 
 export function getBreadCrumbItems(routeId: string, ctx: BreadCrumbContext): BreadCrumbItem[] | null {
-  const trail = trails[routeId as keyof FileRoutesById];
+  const trail: Trail | undefined = trails[routeId as RouteWithBreadcrumb];
   if (!trail) return null;
 
   const crumbs = trail(ctx);

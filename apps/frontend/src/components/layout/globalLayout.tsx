@@ -1,6 +1,7 @@
 import { Breadcrumb } from '@codegouvfr/react-dsfr/Breadcrumb';
 import { type LinkProps, useLocation } from '@tanstack/react-router';
 import { type ReactNode, useEffect, useRef } from 'react';
+import { BACK_LINK_ACTIVE_OPTIONS } from '@/utils/backLink';
 import type { BreadCrumbItem } from './breadcrumb/breadcrumbConfig';
 import { useAppBreadCrumb } from './breadcrumb/useAppBreadCrumb';
 import { EnvironmentBanner } from './EnvironmentBanner';
@@ -31,22 +32,17 @@ const getContainerClassName = (pathname: string): string => {
   return 'fr-container';
 };
 
-const AppBreadcrumb = ({ items, className }: { items: BreadCrumbItem[]; className: string }) => {
-  const current = items.at(-1);
-  if (!current) return null;
-  return (
-    <Breadcrumb
-      className={className}
-      currentPageLabel={current.text}
-      segments={items.slice(0, -1).map((item) => ({
-        label: item.text,
-        // Trails hold resolved paths, not route templates. Exact matching keeps ancestors from being flagged
-        // active (aria-current="page"), which DSFR renders as the non clickable current page.
-        linkProps: { to: item.to, search: item.search ?? {}, activeOptions: { exact: true } } as LinkProps,
-      }))}
-    />
-  );
-};
+const AppBreadcrumb = ({ items, className }: { items: BreadCrumbItem[]; className: string }) => (
+  <Breadcrumb
+    className={className}
+    currentPageLabel={items[items.length - 1].text}
+    segments={items.slice(0, -1).map((item) => ({
+      label: item.text,
+      // Trails hold resolved paths: ancestors are back links, they must not be flagged as the current page
+      linkProps: { to: item.to, search: item.search ?? {}, activeOptions: BACK_LINK_ACTIVE_OPTIONS } as LinkProps,
+    }))}
+  />
+);
 
 const BreadCrumbBar = ({ pathname, items }: { pathname: string; items: BreadCrumbItem[] }) => {
   // On request pages the breadcrumb opens the colored request banner rendered at the top of <main>
@@ -57,9 +53,7 @@ const BreadCrumbBar = ({ pathname, items }: { pathname: string; items: BreadCrum
       </div>
     );
   }
-  const className =
-    getContainerClassName(pathname) === 'fr-container' ? 'fr-container' : 'fr-container app-container--wide';
-  return <AppBreadcrumb items={items} className={`${className} app-breadcrumb`} />;
+  return <AppBreadcrumb items={items} className={`${getContainerClassName(pathname)} app-breadcrumb`} />;
 };
 
 export const GlobalLayout = ({ children }: GlobalLayoutProps) => {

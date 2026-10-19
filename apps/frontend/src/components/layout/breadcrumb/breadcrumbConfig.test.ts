@@ -1,6 +1,6 @@
 import { ROLES } from '@sirena/common/constants';
 import { describe, expect, it } from 'vitest';
-import { type BreadCrumbContext, getBreadCrumbItems } from './breadcrumbConfig';
+import { type BreadCrumbContext, getBreadCrumbItems, ROUTES_WITHOUT_BREADCRUMB } from './breadcrumbConfig';
 
 const writer: BreadCrumbContext = { params: {}, role: ROLES.WRITER, listStates: {} };
 const superAdmin: BreadCrumbContext = { params: {}, role: ROLES.SUPER_ADMIN, listStates: {} };
@@ -9,11 +9,11 @@ const entityAdmin: BreadCrumbContext = { params: {}, role: ROLES.ENTITY_ADMIN, l
 const texts = (routeId: string, ctx: BreadCrumbContext) => getBreadCrumbItems(routeId, ctx)?.map((item) => item.text);
 
 describe('getBreadCrumbItems', () => {
-  it('has no breadcrumb on the home pages', () => {
-    expect(getBreadCrumbItems('/', writer)).toBeNull();
-    expect(getBreadCrumbItems('/_auth/_user/home', writer)).toBeNull();
-    expect(getBreadCrumbItems('/_auth/inactive', writer)).toBeNull();
-    expect(getBreadCrumbItems('/_auth/admin/users/', superAdmin)).toBeNull();
+  it('has no breadcrumb on the routes left out of the site hierarchy', () => {
+    for (const routeId of ROUTES_WITHOUT_BREADCRUMB) {
+      expect(getBreadCrumbItems(routeId, writer)).toBeNull();
+      expect(getBreadCrumbItems(routeId, superAdmin)).toBeNull();
+    }
   });
 
   it('follows the request creation hierarchy', () => {
@@ -56,20 +56,6 @@ describe('getBreadCrumbItems', () => {
   it('roots the statistics page on the home page of the role', () => {
     expect(texts('/_auth/statistiques', writer)).toEqual(['Liste des requêtes', 'Indicateurs']);
     expect(texts('/_auth/statistiques', superAdmin)).toEqual(['Espace administrateur', 'Indicateurs']);
-  });
-
-  it('treats the admin tabs as the home of a standalone admin section', () => {
-    for (const routeId of [
-      '/_auth/admin/users/',
-      '/_auth/admin/users/all',
-      '/_auth/admin/entites/',
-      '/_auth/admin/entite/',
-      '/_auth/admin/directions-services/',
-      '/_auth/admin/sirec-migration',
-    ]) {
-      expect(getBreadCrumbItems(routeId, entityAdmin)).toBeNull();
-      expect(getBreadCrumbItems(routeId, superAdmin)).toBeNull();
-    }
   });
 
   it('roots the admin sub pages on the admin section for every role', () => {
@@ -119,10 +105,13 @@ describe('getBreadCrumbItems', () => {
     });
   });
 
-  it('leads a user page back to the users tab when no list is remembered', () => {
-    const items = getBreadCrumbItems('/_auth/admin/user/$userId', { ...superAdmin, params: { userId: 'u1' } });
+  it('when no list is remembered, leads a user page back to the users tab inferred from its role', () => {
+    const ctx = { ...superAdmin, params: { userId: 'u1' } };
+    const pending = getBreadCrumbItems('/_auth/admin/user/$userId', { ...ctx, editedUserRoleId: ROLES.PENDING });
+    const writerUser = getBreadCrumbItems('/_auth/admin/user/$userId', { ...ctx, editedUserRoleId: ROLES.WRITER });
 
-    expect(items?.[1]).toMatchObject({ text: 'Utilisateurs', to: '/admin/users/all', search: undefined });
+    expect(pending?.[1]).toMatchObject({ text: "Demandes d'habilitation", to: '/admin/users', search: {} });
+    expect(writerUser?.[1]).toMatchObject({ text: 'Utilisateurs', to: '/admin/users/all', search: {} });
   });
 
   it('keeps the public pages under the site home', () => {
