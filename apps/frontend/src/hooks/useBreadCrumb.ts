@@ -5,6 +5,7 @@ const breadCrumbLabels: Record<string, string> = {
   '/accessibilite': 'Accessibilité',
   '/mentions-legales': 'Mentions légales',
   '/donnees-personnelles': 'Données personnelles',
+  '/conditions-generales-utilisation': 'Conditions générales d’utilisation',
   '/gestion-cookies': 'Gestion des cookies',
 };
 
