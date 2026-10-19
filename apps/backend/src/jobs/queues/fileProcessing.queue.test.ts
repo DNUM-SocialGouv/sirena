@@ -50,8 +50,8 @@ describe('fileProcessing.queue.ts', () => {
       'file-processing',
       expect.objectContaining({
         defaultJobOptions: expect.objectContaining({
-          attempts: 3,
-          backoff: { type: 'exponential', delay: 5000 },
+          attempts: 5,
+          backoff: { type: 'exponential', delay: 10_000 },
         }),
       }),
     ]);

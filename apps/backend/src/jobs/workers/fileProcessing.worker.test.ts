@@ -373,4 +373,77 @@ describe('fileProcessing.worker.ts', () => {
     expect(row).toMatchObject({ status: 'PROCESSING', scanStatus: 'SCANNING' });
     expect(scanStream).not.toHaveBeenCalled();
   });
+
+  it('rethrows an unexpected failure untouched, keeping the retry budget', async () => {
+    class ClamAvCrash extends Error {}
+    const crash = new ClamAvCrash('unexpected clamav crash');
+    vi.mocked(checkClamAvHealth).mockRejectedValue(crash);
+
+    await expect(runJob()).rejects.toBe(crash);
+
+    expect(row.status).toBe('FAILED');
+  });
+
+  it('releases the file for a retry when the object storage is unavailable', async () => {
+    vi.mocked(checkClamAvHealth).mockRejectedValue(
+      new Error('Request failed after 1 retries: Error: Retryable HTTP status: 500'),
+    );
+
+    await expect(runJob()).rejects.toThrow('Retryable HTTP status: 500');
+
+    expect(row.status).toBe('PENDING');
+    expect(row.scanStatus).toBe('PENDING');
+  });
+
+  it('keeps the retry budget for a database failure', async () => {
+    const dbError = Object.assign(new Error("Can't reach database server"), { code: 'P1001' });
+    vi.mocked(checkClamAvHealth).mockRejectedValue(dbError);
+
+    await expect(runJob()).rejects.toBe(dbError);
+  });
+  // Message captured in production during the 2026-10-07 incident.
+  const storageOutage = () => new Error('Request failed after 1 retries: Error: Retryable HTTP status: 500');
+
+  it('releases the file for a retry when the download fails during a storage outage', async () => {
+    vi.mocked(getFileStream).mockRejectedValueOnce(storageOutage());
+
+    await expect(runJob()).rejects.toThrow('Retryable HTTP status: 500');
+
+    expect(row.status).toBe('PENDING');
+    expect(row.scanStatus).toBe('PENDING');
+  });
+
+  it('releases a PDF for a retry when its download fails during a storage outage', async () => {
+    vi.mocked(getFileBuffer).mockRejectedValueOnce(storageOutage());
+
+    await expect(runJob('application/pdf')).rejects.toThrow('Retryable HTTP status: 500');
+
+    expect(row.status).toBe('PENDING');
+    expect(row.scanStatus).toBe('PENDING');
+  });
+
+  // status COMPLETED is final as far as buildProcessableFileFilter is concerned, so retiring the
+  // file there on a storage outage meant it was never sanitised again.
+  it('does not retire a PDF as COMPLETED when the storage fails while storing the sanitised copy', async () => {
+    vi.mocked(uploadFileToMinio).mockRejectedValueOnce(storageOutage());
+
+    await expect(runJob('application/pdf')).rejects.toThrow('Retryable HTTP status: 500');
+
+    expect(row.status).toBe('PENDING');
+    expect(row.sanitizeStatus).toBe('PENDING');
+
+    await runJob('application/pdf');
+
+    expect(row.status).toBe('COMPLETED');
+    expect(row.sanitizeStatus).toBe('COMPLETED');
+  });
+
+  it('still retires a PDF whose sanitization genuinely fails', async () => {
+    vi.mocked(uploadFileToMinio).mockRejectedValueOnce(new Error('Invalid PDF structure'));
+
+    await runJob('application/pdf');
+
+    expect(row.status).toBe('COMPLETED');
+    expect(row.sanitizeStatus).toBe('ERROR');
+  });
 });
