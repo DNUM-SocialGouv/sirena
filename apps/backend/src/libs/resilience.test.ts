@@ -1,3 +1,4 @@
+import { PassThrough, Readable } from 'node:stream';
 import { describe, expect, it, vi } from 'vitest';
 import {
   createDependencyGuard,
@@ -35,6 +36,15 @@ const deferred = <T>() => {
 };
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
+
+const STREAM_TIMEOUTS = { handoffMs: 10_000, transferMs: 600_000 };
+
+const drain = async (stream: Readable) => {
+  const closed = new Promise((resolve) => stream.on('close', resolve));
+  stream.resume();
+  await closed;
+  await flush();
+};
 
 describe('resilience.ts', () => {
   describe('limite de concurrence', () => {
@@ -260,6 +270,119 @@ describe('resilience.ts', () => {
 
       expect(destroy).toHaveBeenCalledTimes(1);
       vi.useRealTimers();
+    });
+  });
+  describe('transfert en flux', () => {
+    it('garde la place jusqu_à la fin du transfert, pas jusqu_à l_obtention du flux', async () => {
+      const guard = createGuard({ maxConcurrent: 1 });
+      const body = new PassThrough();
+
+      const stream = await guard.runStreaming('getObject', async () => body, STREAM_TIMEOUTS);
+
+      const next = vi.fn(() => Promise.resolve('ok'));
+      const queued = guard.run('statObject', next);
+      await flush();
+      expect(next).not.toHaveBeenCalled();
+
+      body.end('payload');
+      await drain(stream);
+
+      await expect(queued).resolves.toBe('ok');
+    });
+
+    it('détruit un transfert qui dépasse le délai', async () => {
+      vi.useFakeTimers();
+      const guard = createGuard();
+      const body = new PassThrough();
+      body.write('first chunk');
+
+      const stream = await guard.runStreaming('getObject', async () => body, {
+        handoffMs: 10_000,
+        transferMs: 5_000,
+      });
+      let transferError: unknown;
+      stream.on('error', (err) => {
+        transferError = err;
+      });
+
+      await vi.advanceTimersByTimeAsync(5_000);
+
+      expect(transferError).toBeInstanceOf(DependencyTimeoutError);
+      expect(stream.destroyed).toBe(true);
+      vi.useRealTimers();
+    });
+
+    it('abandonne une obtention de flux trop lente et libère la place', async () => {
+      vi.useFakeTimers();
+      const guard = createGuard({ maxConcurrent: 1 });
+      const pending = deferred<Readable>();
+
+      const call = guard.runStreaming('getObject', () => pending.promise, { handoffMs: 5_000, transferMs: 600_000 });
+      const assertion = expect(call).rejects.toBeInstanceOf(DependencyTimeoutError);
+      await vi.advanceTimersByTimeAsync(5_000);
+      await assertion;
+
+      await expect(guard.run('statObject', () => Promise.resolve('ok'))).resolves.toBe('ok');
+      vi.useRealTimers();
+    });
+
+    // Recording the handoff as a success hid both the duration of the transfer and any failure
+    // during it: the metrics reported on a download that may never have completed.
+    it('ne rapporte l_appel qu_à la fin du transfert', async () => {
+      const onCall = vi.fn();
+      const guard = createGuard({ onCall });
+      const body = new PassThrough();
+
+      const stream = await guard.runStreaming('getObject', async () => body, STREAM_TIMEOUTS);
+      expect(onCall).not.toHaveBeenCalled();
+
+      body.end('payload');
+      await drain(stream);
+
+      expect(onCall).toHaveBeenCalledWith(expect.objectContaining({ operation: 'getObject', outcome: 'success' }));
+    });
+
+    it('rapporte une panne survenue pendant la lecture du corps', async () => {
+      const onCall = vi.fn();
+      const guard = createGuard({ onCall, failureThreshold: 1 });
+      const body = new PassThrough();
+
+      const stream = await guard.runStreaming('getObject', async () => body, STREAM_TIMEOUTS);
+      stream.on('error', () => {});
+      body.destroy(new TransientError('connection reset mid-download'));
+      await flush();
+      await flush();
+
+      expect(onCall).toHaveBeenCalledWith(expect.objectContaining({ operation: 'getObject', outcome: 'failure' }));
+      expect(guard.getState()).toBe('open');
+    });
+
+    it('libère la place quand le corps échoue', async () => {
+      const guard = createGuard({ maxConcurrent: 1 });
+      const body = new PassThrough();
+
+      const stream = await guard.runStreaming('getObject', async () => body, STREAM_TIMEOUTS);
+      stream.on('error', () => {});
+      body.destroy(new TransientError('connection reset mid-download'));
+      await flush();
+      await flush();
+
+      await expect(guard.run('statObject', () => Promise.resolve('ok'))).resolves.toBe('ok');
+    });
+
+    it('rapporte l_appel même pour un flux déjà terminé à son arrivée', async () => {
+      const onCall = vi.fn();
+      const guard = createGuard({ onCall, maxConcurrent: 1 });
+      const body = Readable.from([]);
+      await drain(body);
+
+      const stream = await guard.runStreaming('getObject', async () => body, STREAM_TIMEOUTS);
+      await flush();
+      await flush();
+
+      expect(onCall).toHaveBeenCalledWith(expect.objectContaining({ operation: 'getObject' }));
+      expect(stream).toBe(body);
+      await expect(guard.run('statObject', () => Promise.resolve('ok'))).resolves.toBe('ok');
     });
   });
 });

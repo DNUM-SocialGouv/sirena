@@ -78,6 +78,20 @@ const minioClient = S3_BUCKET_ENDPOINT
 // Shared with the worker: resilience.ts counts an open circuit (DEPENDENCY_UNAVAILABLE) as transient.
 export const isStorageUnavailableError = isTransientDependencyError;
 
+/**
+ * Stands in for a body that failed before S3 was done with it. No `cause` on purpose: a client
+ * cutting its upload short emits ECONNRESET, which the transient set would read as an S3 failure
+ * against the circuit. Callers still get the original error.
+ */
+class UploadBodyError extends Error {
+  readonly code = 'UPLOAD_BODY_FAILED';
+
+  constructor(readonly bodyError: unknown) {
+    super('Upload body stream failed before the object was stored');
+    this.name = 'UploadBodyError';
+  }
+}
+
 export interface UploadResult {
   objectPath: string;
   rollback: () => Promise<void>;
@@ -138,18 +152,23 @@ export const uploadFileToMinio = async (
   };
 
   try {
-    // minio ignores errors on the body stream: without awaiting the pipeline, a source failure hangs forever.
-    await Promise.all([
-      s3Guard.run(
-        'putObject',
-        () => minioClient.putObject(S3_BUCKET_NAME, objectPath, encryptStream, size, baseHeaders),
-        S3_BODY_TIMEOUT_MS,
-      ),
-      encryption,
-    ]);
+    // The pipeline is awaited inside the guarded call, not alongside it: minio ignores body
+    // errors and never settles, so a source failure would hold a slot for the whole body timeout.
+    await s3Guard.run(
+      'putObject',
+      () =>
+        Promise.all([
+          minioClient.putObject(S3_BUCKET_NAME, objectPath, encryptStream, size, baseHeaders),
+          encryption.catch((err) => {
+            throw new UploadBodyError(err);
+          }),
+        ]),
+      S3_BODY_TIMEOUT_MS,
+    );
   } catch (err) {
-    encryptStream.destroy(err as Error);
-    throw err;
+    const cause = err instanceof UploadBodyError ? err.bodyError : err;
+    encryptStream.destroy(cause as Error);
+    throw cause;
   }
 
   const encryptionMetadata = getMetadata();
@@ -262,11 +281,12 @@ export const getFileStream = async (
   const contentType = stat.metaData?.['content-type'];
   const originalName = stat.metaData?.filename;
 
-  const stream = await s3Guard.run(
-    'getObject',
-    () => minioClient.getObject(S3_BUCKET_NAME, filePath),
-    S3_METADATA_TIMEOUT_MS,
-  );
+  // getObject resolves as soon as the read stream exists: runStreaming keeps the slot, the
+  // deadline and the recorded outcome on the transfer itself.
+  const stream = await s3Guard.runStreaming('getObject', () => minioClient.getObject(S3_BUCKET_NAME, filePath), {
+    handoffMs: S3_METADATA_TIMEOUT_MS,
+    transferMs: S3_BODY_TIMEOUT_MS,
+  });
 
   if (encrypted) {
     const params = decryptionParams ?? {
@@ -280,6 +300,8 @@ export const getFileStream = async (
 
     const decryptionStream = createDecryptionStream(params);
     stream.on('error', (err) => decryptionStream.destroy(err));
+    // pipe() does not propagate backwards: without this an abandoned read holds its slot.
+    decryptionStream.on('close', () => stream.destroy());
     stream.pipe(decryptionStream);
 
     return {

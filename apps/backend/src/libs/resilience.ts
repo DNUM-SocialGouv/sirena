@@ -1,5 +1,7 @@
 // Concurrency limit, timeout and circuit breaker for calls to an external dependency.
 
+import { finished, type Readable } from 'node:stream';
+
 /** Only these may open a circuit and consume a retry budget; an invalid request may not. */
 const TRANSIENT_ERROR_CODES = new Set([
   'ECONNREFUSED',
@@ -112,9 +114,22 @@ export type DependencyGuardOptions = {
   now?: () => number;
 };
 
+export type StreamTimeouts = {
+  /** Deadline for the dependency to hand the stream over. */
+  handoffMs: number;
+  /** Deadline for the body itself, counted from the handoff. */
+  transferMs: number;
+};
+
 export type DependencyGuard = {
   /** Omitting `timeoutMs` leaves the call without any application-level deadline. */
   run: <T>(operation: string, fn: () => Promise<T>, timeoutMs?: number) => Promise<T>;
+  /**
+   * For an operation that resolves on the stream handoff, `getObject` typically: the slot, the
+   * deadline and the recorded outcome cover the transfer, which is what holds a socket on the
+   * dependency.
+   */
+  runStreaming: <T extends Readable>(operation: string, fn: () => Promise<T>, timeouts: StreamTimeouts) => Promise<T>;
   getState: () => CircuitState;
 };
 
@@ -222,9 +237,9 @@ export const createDependencyGuard = (options: DependencyGuardOptions): Dependen
     onCall?.({ dependency: name, operation, outcome, durationMs });
   };
 
-  const run = async <T>(operation: string, fn: () => Promise<T>, timeoutMs?: number): Promise<T> => {
-    // The probe is claimed in this synchronous block, so `isProbe` is true only for the caller
-    // that took it; every other one is rejected until it has settled.
+  // Throws when the circuit refuses the call, otherwise tells the caller whether it owns the
+  // half-open probe. Claimed synchronously, so exactly one caller gets it.
+  const enterCircuit = (operation: string): boolean => {
     let isProbe = false;
     if (state === 'open' && now() - openedAt >= resetTimeoutMs && !probing) {
       state = 'half-open';
@@ -236,6 +251,33 @@ export const createDependencyGuard = (options: DependencyGuardOptions): Dependen
       record(operation, 'rejected', 0);
       throw new DependencyUnavailableError(name, operation);
     }
+
+    return isProbe;
+  };
+
+  const onAnswered = () => {
+    consecutiveFailures = 0;
+    state = 'closed';
+  };
+
+  // Feeds a failure to the circuit and returns the outcome to report it under.
+  const classify = (err: unknown): DependencyCallOutcome => {
+    if (!isTransient(err)) {
+      onAnswered();
+      return 'business_error';
+    }
+
+    consecutiveFailures += 1;
+    if (consecutiveFailures >= failureThreshold) {
+      state = 'open';
+      openedAt = now();
+    }
+
+    return 'failure';
+  };
+
+  const run = async <T>(operation: string, fn: () => Promise<T>, timeoutMs?: number): Promise<T> => {
+    const isProbe = enterCircuit(operation);
 
     try {
       await acquire(operation);
@@ -252,25 +294,12 @@ export const createDependencyGuard = (options: DependencyGuardOptions): Dependen
     try {
       const result = timeoutMs === undefined ? await fn() : await withTimeout(name, operation, timeoutMs, fn);
 
-      consecutiveFailures = 0;
-      state = 'closed';
+      onAnswered();
       record(operation, 'success', now() - startedAt);
 
       return result;
     } catch (err) {
-      if (!isTransient(err)) {
-        consecutiveFailures = 0;
-        state = 'closed';
-        record(operation, 'business_error', now() - startedAt);
-        throw err;
-      }
-
-      consecutiveFailures += 1;
-      if (consecutiveFailures >= failureThreshold) {
-        state = 'open';
-        openedAt = now();
-      }
-      record(operation, 'failure', now() - startedAt);
+      record(operation, classify(err), now() - startedAt);
 
       throw err;
     } finally {
@@ -281,5 +310,58 @@ export const createDependencyGuard = (options: DependencyGuardOptions): Dependen
     }
   };
 
-  return { run, getState: () => state };
+  const runStreaming = async <T extends Readable>(
+    operation: string,
+    fn: () => Promise<T>,
+    { handoffMs, transferMs }: StreamTimeouts,
+  ): Promise<T> => {
+    const isProbe = enterCircuit(operation);
+
+    try {
+      await acquire(operation);
+    } catch (err) {
+      if (isProbe) {
+        probing = false;
+      }
+      record(operation, 'rejected', 0);
+      throw err;
+    }
+
+    const startedAt = now();
+    let stream: T;
+
+    try {
+      stream = await withTimeout(name, operation, handoffMs, fn);
+    } catch (err) {
+      record(operation, classify(err), now() - startedAt);
+      if (isProbe) {
+        probing = false;
+      }
+      release();
+
+      throw err;
+    }
+
+    // Handing the stream over is the verdict the probe waited for; the slot stays with the body.
+    onAnswered();
+    if (isProbe) {
+      probing = false;
+    }
+
+    const timer = setTimeout(() => {
+      stream.destroy(new DependencyTimeoutError(name, operation, transferMs));
+    }, transferMs);
+    timer.unref();
+
+    // finished(), not on('close'): it also fires for a stream already closed on arrival.
+    finished(stream, (err) => {
+      clearTimeout(timer);
+      record(operation, err ? classify(err) : 'success', now() - startedAt);
+      release();
+    });
+
+    return stream;
+  };
+
+  return { run, runStreaming, getState: () => state };
 };

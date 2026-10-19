@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { Readable } from 'node:stream';
 import { helpers } from '@sirena/backend-utils';
 import { mappers } from '@sirena/common';
 import {
@@ -33,11 +34,14 @@ import { ZipArchive } from 'archiver';
 import type { z } from 'zod';
 import { getFileEncryptionParams, getOriginalFileName, getSafeFileEncryptionParams } from '../../helpers/file.js';
 import { collectDataKeys } from '../../helpers/object.js';
+import { createDefaultLogger } from '../../helpers/pino.js';
 import { sortObject } from '../../helpers/prisma/sort.js';
 import { createSearchConditionsForRequeteEntite } from '../../helpers/search.js';
 import { sseEventManager } from '../../helpers/sse.js';
 import { capitalizeFirst, formatDateFr, splitCsv } from '../../helpers/string.js';
-import { deleteFileFromMinio, getFileStream } from '../../libs/minio.js';
+import { loggerStorage } from '../../libs/asyncLocalStorage.js';
+import type { DecryptionParams } from '../../libs/encryption.js';
+import { deleteFileFromMinio, getFileStream, statMinioObject } from '../../libs/minio.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
@@ -2208,6 +2212,27 @@ export const collectRequeteFiles = (requeteEntite: NonNullable<Awaited<ReturnTyp
   return { rootFiles, situationFiles };
 };
 
+const FILE_UNAVAILABLE_NOTICE = 'Fichier indisponible';
+
+/**
+ * Yields the file body on first read, not when the entry is appended. A file that turns out to be
+ * unreadable yields the same notice as an unavailable one: an error raised here would abort the
+ * whole archive.
+ */
+async function* readFileBody(filePath: string, decryptionParams?: DecryptionParams) {
+  let stream: Readable;
+  try {
+    ({ stream } = await getFileStream(filePath, decryptionParams));
+  } catch (err) {
+    const logger = loggerStorage.getStore() ?? createDefaultLogger();
+    logger.error({ err, filePath }, 'Failed to open an attachment while building the archive');
+    yield Buffer.from(FILE_UNAVAILABLE_NOTICE);
+    return;
+  }
+
+  yield* stream;
+}
+
 export const createRequeteFilesArchive = async (requeteId: string, entiteId: string, timeZone?: string) => {
   const requeteEntite = await getRequeteEntiteById(requeteId, entiteId);
   if (!requeteEntite) {
@@ -2227,12 +2252,20 @@ export const createRequeteFilesArchive = async (requeteId: string, entiteId: str
     const useSafeFile = isPdf(file) && file.safeFilePath;
     const filePath = useSafeFile ? (file.safeFilePath as string) : file.filePath;
     const decryptionParams = useSafeFile ? getSafeFileEncryptionParams(file) : getFileEncryptionParams(file);
+
     try {
-      const { stream } = await getFileStream(filePath, decryptionParams);
-      archive.append(stream, { name: entryName, date: toWallClockDate(file.createdAt, timeZone) });
+      await statMinioObject(filePath);
     } catch {
-      archive.append(Buffer.from('Fichier indisponible'), { name: `${entryName}.erreur.txt` });
+      archive.append(Buffer.from(FILE_UNAVAILABLE_NOTICE), { name: `${entryName}.erreur.txt` });
+      return;
     }
+
+    // The body is opened only once the archiver reaches this entry: opening every attachment up
+    // front held a storage slot per file, and nothing drains them before the response is piped.
+    archive.append(Readable.from(readFileBody(filePath, decryptionParams)), {
+      name: entryName,
+      date: toWallClockDate(file.createdAt, timeZone),
+    });
   };
 
   for (const file of rootFiles) {

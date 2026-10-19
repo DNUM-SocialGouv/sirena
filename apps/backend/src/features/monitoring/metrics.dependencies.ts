@@ -24,7 +24,8 @@ export const registerDependencyMetrics = (register: Registry) => {
       name: 'sirena_dependency_call_duration_seconds',
       help: 'Duration of outbound calls to an external dependency',
       labelNames: ['dependency', 'operation', 'outcome'],
-      buckets: [0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60],
+      // Up to 300 s: body transfers are measured end to end, and 60 s collapsed them into +Inf.
+      buckets: [0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60, 120, 300],
       registers: [register],
     }),
   });
