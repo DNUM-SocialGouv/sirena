@@ -32,18 +32,18 @@
 }
 
 .priorite-haute:global(.fr-badge) {
-  color: #b34000;
-  background-color: #ffe9e6;
+  color: var(--text-default-warning);
+  background-color: var(--background-contrast-warning);
 }
 
 .priorite-moyenne:global(.fr-badge) {
   color: #493625;
-  background-color: #f7ece4;
+  background-color: var(--background-contrast-brown-opera);
 }
 
 .priorite-basse:global(.fr-badge) {
   color: #57533d;
-  background-color: #fef7da;
+  background-color: var(--background-alt-green-tilleul-verveine);
 }
 
 :global(:root[data-fr-theme="dark"]) .priorite-haute:global(.fr-badge) {
