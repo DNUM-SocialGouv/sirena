@@ -3,14 +3,16 @@ import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { Table } from '@codegouvfr/react-dsfr/Table';
 import type { MouseEvent, ReactNode } from 'react';
 import { useCallback, useState } from 'react';
-import { type ChartItem, formatShare, numberFormatter, type ParsedCard, percentPointFormatter } from './chartData';
+import { formatShare, numberFormatter, percentPointFormatter } from './chartData';
+import { toNumber } from './columns';
 import styles from './statTable.module.css';
+import type { DerivedShare, ParsedTable, TableColumnKind } from './tableData';
 
 const PAGE_SIZE = 10;
 
 interface StatTableProps {
   caption: string;
-  parsed: ParsedCard;
+  table: ParsedTable;
   hideCaption?: boolean;
 }
 
@@ -23,27 +25,34 @@ function EmptyCell() {
   );
 }
 
-function formatPercent(item: ChartItem, total: number, hasPrecomputedPercent: boolean): ReactNode {
-  if (hasPrecomputedPercent) {
-    return item.percent == null ? <EmptyCell /> : `${percentPointFormatter.format(item.percent)} %`;
-  }
-  return total > 0 ? formatShare(item.value / total) : <EmptyCell />;
+function formatCell(value: unknown, kind: TableColumnKind, isLeadingColumn: boolean): ReactNode {
+  if (value == null) return isLeadingColumn ? 'Non précisé' : <EmptyCell />;
+  if (kind === 'text') return String(value);
+
+  const numericValue = toNumber(value);
+  if (numericValue == null) return String(value);
+  return kind === 'percent' ? `${percentPointFormatter.format(numericValue)} %` : numberFormatter.format(numericValue);
 }
 
-export function StatTable({ caption, parsed, hideCaption }: StatTableProps) {
-  const { items, total, dimensionLabel, metricLabel, percentLabel, hasPrecomputedPercent } = parsed;
+function formatDerivedShare(row: readonly unknown[], { columnIndex, total }: DerivedShare): ReactNode {
+  if (total <= 0) return <EmptyCell />;
+  return formatShare((toNumber(row[columnIndex]) ?? 0) / total);
+}
+
+export function StatTable({ caption, table, hideCaption }: StatTableProps) {
+  const { columns, rows, derivedShare } = table;
   const [page, setPage] = useState(1);
 
-  const [previousItems, setPreviousItems] = useState(items);
-  if (items !== previousItems) {
-    setPreviousItems(items);
+  const [previousRows, setPreviousRows] = useState(rows);
+  if (rows !== previousRows) {
+    setPreviousRows(rows);
     setPage(1);
   }
 
-  const pageCount = Math.ceil(items.length / PAGE_SIZE);
-  const showPagination = items.length > PAGE_SIZE;
+  const pageCount = Math.ceil(rows.length / PAGE_SIZE);
+  const showPagination = rows.length > PAGE_SIZE;
   const currentPage = Math.min(page, Math.max(pageCount, 1));
-  const visibleItems = showPagination ? items.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE) : items;
+  const visibleRows = showPagination ? rows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE) : rows;
 
   const getPageLinkProps = useCallback(
     (pageNumber: number) => ({
@@ -64,18 +73,21 @@ export function StatTable({ caption, parsed, hideCaption }: StatTableProps) {
     [paginationLabel],
   );
 
-  const data = visibleItems.map((item) => [
-    item.label,
-    numberFormatter.format(item.value),
-    formatPercent(item, total, hasPrecomputedPercent),
-  ]);
+  const headers = derivedShare
+    ? [...columns.map((column) => column.label), derivedShare.label]
+    : columns.map((column) => column.label);
+
+  const data = visibleRows.map((row) => {
+    const cells = columns.map((column, index) => formatCell(row[index], column.kind, index === 0));
+    return derivedShare ? [...cells, formatDerivedShare(row, derivedShare)] : cells;
+  });
 
   return (
     <>
       <Table
         caption={caption}
         noCaption={hideCaption}
-        headers={[dimensionLabel, metricLabel, percentLabel]}
+        headers={headers}
         data={data}
         className={`${fr.cx('fr-mb-0')} ${styles.table}`}
       />

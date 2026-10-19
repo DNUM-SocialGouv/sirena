@@ -1,3 +1,4 @@
+import { DEFAULT_PERCENT_LABEL, findPercentColumn, isNumericColumn, toNumber } from './columns';
 import type { CardData, MetabaseColumn } from './statistics.types';
 
 export type { CardData, MetabaseColumn };
@@ -55,32 +56,13 @@ export const CHART_COLORS = [
   'var(--sirena-chart-color-08)',
 ] as const;
 
-const toNumber = (value: unknown): number | null => {
-  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-  if (typeof value === 'string' && value.trim() !== '') {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-};
-
-const isNumericColumn = (col: MetabaseColumn): boolean => /Integer|Decimal|Float|Number/i.test(col.base_type);
-
-const PERCENT_SEMANTIC_TYPE = 'type/Percentage';
-
-const isPercentByName = (col: MetabaseColumn): boolean =>
-  /%|pourcent/i.test(col.display_name) || /%|pourcent/i.test(col.name);
-
 export const parseCard = (data: CardData | undefined | null): ParsedCard | null => {
   if (!data) return null;
   const { cols, rows } = data;
   if (!Array.isArray(cols) || !Array.isArray(rows)) return null;
   if (cols.length < 2 || rows.length === 0) return null;
 
-  const percentColumn =
-    cols.find((col) => col.semantic_type === PERCENT_SEMANTIC_TYPE) ??
-    cols.find((col) => isNumericColumn(col) && isPercentByName(col)) ??
-    null;
+  const percentColumn = findPercentColumn(cols);
 
   const metricColumns = cols.filter((col) => col !== percentColumn && isNumericColumn(col));
   const percentCol = metricColumns.length > 0 ? percentColumn : null;
@@ -114,7 +96,7 @@ export const parseCard = (data: CardData | undefined | null): ParsedCard | null 
     total,
     dimensionLabel: dimensionCol.display_name,
     metricLabel: metricCol.display_name,
-    percentLabel: percentCol ? percentCol.display_name : 'Part (%)',
+    percentLabel: percentCol ? percentCol.display_name : DEFAULT_PERCENT_LABEL,
     hasPrecomputedPercent: percentCol !== null,
   };
 };
