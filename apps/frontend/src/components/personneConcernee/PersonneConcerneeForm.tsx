@@ -14,6 +14,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
 import { DomicileFields } from '@/components/common/DomicileFields';
+import styles from '@/components/common/formGrid.module.css';
 import { personneConcerneeFieldMetadata } from '@/lib/fieldMetadata';
 import type { PersonneConcerneeData } from '@/lib/personneConcernee';
 import { buildNonRenseigneOption, buildOuiNonOptions } from '@/lib/radioOptions';
@@ -161,7 +162,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
         <h1 className="fr-mb-2w" data-testid="personne-concernee-form-title">
           Personne concernée
         </h1>
-        <p className="fr-text--sm fr-mb-5w">Tous les champs sont facultatifs</p>
+        <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
         <div
           className="fr-p-4w fr-mb-4w"
@@ -215,11 +216,10 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
               </div>
             </div>
 
-            <div className="fr-grid-row fr-grid-row--gutters fr-grid-row--top">
-              <div className="fr-col-12 fr-col-md-6">
+            <div className="fr-grid-row fr-grid-row--gutters">
+              <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
                 <Select
                   label={personneConcerneeFieldMetadata.age.label}
-                  hint={<span aria-hidden="true">&nbsp;</span>}
                   nativeSelectProps={{
                     ...{ 'data-testid': 'personne-concernee-age' },
                     value: formData.age ?? '',
@@ -237,7 +237,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                   ))}
                 </Select>
               </div>
-              <div className="fr-col-12 fr-col-md-6">
+              <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
                 <Input
                   label={personneConcerneeFieldMetadata.dateNaissance.label}
                   hintText="Format attendu : JJ/MM/AAAA"
@@ -286,7 +286,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
               }}
             />
             <div className="fr-grid-row fr-grid-row--gutters">
-              <div className="fr-col-12 fr-col-md-6">
+              <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
                 <Input
                   label={personneConcerneeFieldMetadata.numeroTelephone.label}
                   hintText="Format attendu : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
@@ -302,7 +302,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                   }}
                 />
               </div>
-              <div className="fr-col-12 fr-col-md-6">
+              <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
                 <Input
                   label={personneConcerneeFieldMetadata.courrierElectronique.label}
                   hintText="Exemple : prenom.nom@exemple.com"

@@ -25,5 +25,9 @@ if (envVars.SENTRY_ENABLED) {
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
     release: APP_VERSION,
     integrations: [Sentry.prismaIntegration()],
+    // installProcessGuards already reports fatal errors: avoid a duplicate Sentry event.
+    defaultIntegrations: Sentry.getDefaultIntegrations({}).filter(
+      (integration) => integration.name !== 'OnUncaughtException' && integration.name !== 'OnUnhandledRejection',
+    ),
   });
 }

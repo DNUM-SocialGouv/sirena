@@ -1,7 +1,13 @@
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { deleteFileFromMinio, deleteFilesFromMinio, listMinioObjects, uploadFileToMinio } from './minio.js';
+import {
+  deleteFileFromMinio,
+  deleteFilesFromMinio,
+  isStorageUnavailableError,
+  listMinioObjects,
+  uploadFileToMinio,
+} from './minio.js';
 
 vi.mock('../config/env.js', () => ({
   envVars: {
@@ -325,5 +331,48 @@ describe('minio.ts', () => {
       await promise2;
       expect(mockMinioClient.listObjectsV2).toHaveBeenCalledWith('test-bucket', 'uploads', true);
     });
+  });
+});
+
+describe('isStorageUnavailableError', () => {
+  it.each([
+    ['ECONNREFUSED', 'ECONNREFUSED'],
+    ['ETIMEDOUT', 'ETIMEDOUT'],
+    ['SlowDown', 'SlowDown'],
+    ['ServiceUnavailable', 'ServiceUnavailable'],
+  ])('detects the transient error code %s', (_label, code) => {
+    const err = Object.assign(new Error('nope'), { code });
+
+    expect(isStorageUnavailableError(err)).toBe(true);
+  });
+
+  it('detects the generic error minio wraps retried 5xx into', () => {
+    // Message captured in production during the 2026-10-07 incident.
+    const err = new Error('Request failed after 1 retries: Error: Retryable HTTP status: 500');
+
+    expect(isStorageUnavailableError(err)).toBe(true);
+  });
+
+  it('follows the cause chain', () => {
+    const err = new Error('upload failed', { cause: new Error('Retryable HTTP status: 503') });
+
+    expect(isStorageUnavailableError(err)).toBe(true);
+  });
+
+  it('does not overflow the stack on a cyclic cause chain', () => {
+    const first = new Error('wrapper');
+    const second = new Error('inner', { cause: first });
+    Object.defineProperty(first, 'cause', { value: second, configurable: true });
+
+    expect(isStorageUnavailableError(first)).toBe(false);
+  });
+
+  it.each([
+    ['a bucket policy error', Object.assign(new Error('denied'), { code: 'AccessDenied' })],
+    ['a missing object', Object.assign(new Error('nope'), { code: 'NoSuchKey' })],
+    ['a plain error', new Error('File name is not valid')],
+    ['a non-error value', 'boom'],
+  ])('does not treat %s as a storage outage', (_label, err) => {
+    expect(isStorageUnavailableError(err)).toBe(false);
   });
 });

@@ -1,0 +1,20 @@
+/* Dans une rangée DSFR, chaque colonne empile son libellé, son aide de saisie puis son
+   champ de façon indépendante : une aide qui passe sur deux lignes pousse son champ vers
+   le bas et désaligne la rangée. Le libellé absorbe l'écart, pour que les champs d'une
+   même ligne restent alignés quelle que soit la longueur de l'aide. */
+.alignedField {
+  display: flex;
+  flex-direction: column;
+}
+
+.alignedField :global(.fr-input-group),
+.alignedField :global(.fr-select-group) {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.alignedField :global(.fr-input-group > .fr-label),
+.alignedField :global(.fr-select-group > .fr-label) {
+  flex: 1 1 auto;
+}
