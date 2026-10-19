@@ -95,7 +95,8 @@ export const AddFilesClotureDrawer = forwardRef<AddFilesClotureDrawerRef, AddFil
         setIsLoading(false);
         if (error instanceof HttpError) {
           const errorName = error.data?.name;
-          if (error.status === 400 && errorName && typeof errorName === 'string' && errorName in API_ERROR_MESSAGES) {
+          const hasMappedMessage = error.status === 400 || error.status === 503;
+          if (hasMappedMessage && errorName && typeof errorName === 'string' && errorName in API_ERROR_MESSAGES) {
             setErrorMessage(API_ERROR_MESSAGES[errorName as ApiErrorCodes]);
             return;
           }

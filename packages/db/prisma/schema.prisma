@@ -66,6 +66,8 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([entiteId])
 }
 
 model Session {
@@ -373,6 +375,8 @@ model Situation {
   situationEntites SituationEntite[]
 
   updatedAt DateTime @updatedAt
+
+  @@index([requeteId])
 }
 
 model DomainesFonctionnelsEnum {
@@ -389,6 +393,7 @@ model SituationEntite {
   entite   Entite @relation(fields: [entiteId], references: [id])
 
   @@id([situationId, entiteId])
+  @@index([entiteId])
 }
 
 model LieuDeSurvenue {

@@ -22,6 +22,7 @@ import {
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
 import { useCallback, useEffect, useId, useState } from 'react';
+import styles from '@/components/common/formGrid.module.css';
 import { OrganizationSearchField } from '@/components/common/OrganizationSearchField';
 import { PractitionerSearchField } from '@/components/common/PractitionerSearchField';
 import { ReadOnlyField } from '@/components/common/ReadOnlyField';
@@ -414,7 +415,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
 
               {isNoFinessChecked || hasCompleteServiceFromFiness ? (
                 <>
-                  <div className="fr-col-12 fr-col-md-6">
+                  <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
                     {isServiceReadOnly ? (
                       <ReadOnlyField
                         id={`${fieldId}-nom-service`}
@@ -436,7 +437,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                       />
                     )}
                   </div>
-                  <div className="fr-col-12 fr-col-md-3">
+                  <div className={`fr-col-12 fr-col-md-3 ${styles.alignedField}`}>
                     {isServiceReadOnly ? (
                       <ReadOnlyField
                         id={`${fieldId}-service-code-postal`}
@@ -447,6 +448,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                     ) : (
                       <Input
                         label="Code postal"
+                        hintText="Format attendu : 5 chiffres (exemple : 75001)"
                         nativeInputProps={{
                           value: formData.misEnCause?.codePostal || '',
                           onChange: (e) =>
@@ -458,7 +460,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                       />
                     )}
                   </div>
-                  <div className="fr-col-12 fr-col-md-3">
+                  <div className={`fr-col-12 fr-col-md-3 ${styles.alignedField}`}>
                     {isServiceReadOnly ? (
                       <ReadOnlyField
                         id={`${fieldId}-service-ville`}
@@ -469,6 +471,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                     ) : (
                       <Input
                         label="Ville"
+                        hintText="Exemple : Paris"
                         nativeInputProps={{
                           value: formData.misEnCause?.ville || '',
                           onChange: (e) =>
@@ -559,9 +562,10 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
 
           {MIS_EN_CAUSE_RPPS.includes(misEnCauseType || '') && (
             <>
-              <div className="fr-col-12 fr-col-md-3">
+              <div className={`fr-col-12 fr-col-md-3 ${styles.alignedField}`}>
                 <Input
                   label="Code postal"
+                  hintText="Format attendu : 5 chiffres (exemple : 75001)"
                   nativeInputProps={{
                     value: formData.misEnCause?.codePostal || '',
                     onChange: (e) =>
@@ -572,9 +576,10 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                   }}
                 />
               </div>
-              <div className="fr-col-12 fr-col-md-3">
+              <div className={`fr-col-12 fr-col-md-3 ${styles.alignedField}`}>
                 <Input
                   label="Ville"
+                  hintText="Exemple : Paris"
                   nativeInputProps={{
                     value: formData.misEnCause?.ville || '',
                     onChange: (e) =>

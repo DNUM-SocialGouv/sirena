@@ -11,6 +11,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
 import { DomicileFields } from '@/components/common/DomicileFields';
+import styles from '@/components/common/formGrid.module.css';
 import type { DeclarantData } from '@/lib/declarant';
 import { declarantFieldMetadata } from '@/lib/fieldMetadata';
 import { buildOuiNonOptions } from '@/lib/radioOptions';
@@ -141,7 +142,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
         <h1 className="fr-mb-2w" data-testid="declarant-form-title">
           Déclarant
         </h1>
-        <p className="fr-text--sm fr-mb-5w">Tous les champs sont facultatifs</p>
+        <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
         <div
           className="fr-p-4w fr-mb-4w"
@@ -315,7 +316,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                 />
 
                 <div className="fr-grid-row fr-grid-row--gutters">
-                  <div className="fr-col-12 fr-col-md-6">
+                  <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
                     <Input
                       label={declarantFieldMetadata.numeroTelephone.label}
                       hintText="Format attendu : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
@@ -331,7 +332,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                       }}
                     />
                   </div>
-                  <div className="fr-col-12 fr-col-md-6">
+                  <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
                     <Input
                       label={declarantFieldMetadata.courrierElectronique.label}
                       hintText="Exemple : prenom.nom@exemple.com"

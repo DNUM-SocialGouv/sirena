@@ -1,4 +1,9 @@
-import { openApiDeleteResponse, openApiProtectedRoute, openApiResponse } from '@sirena/backend-utils/helpers';
+import {
+  openApi503Error,
+  openApiDeleteResponse,
+  openApiProtectedRoute,
+  openApiResponse,
+} from '@sirena/backend-utils/helpers';
 import z from 'zod';
 import { GetFileProcessingStatusResponseSchema, GetUploadedFileResponseSchema } from './uploadedFiles.schema.js';
 
@@ -6,6 +11,7 @@ export const createUploadedFileRoute = openApiProtectedRoute({
   description: 'Create uploaded file',
   responses: {
     ...openApiResponse(GetUploadedFileResponseSchema),
+    ...openApi503Error('Le stockage des pièces jointes est momentanément indisponible'),
   },
 });
 

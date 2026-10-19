@@ -8,9 +8,9 @@ import { z } from 'zod';
 import { usePatchUser } from '@/hooks/mutations/updateUser.hook';
 import { useUserById } from '@/hooks/queries/users.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
-import type { QueryParams } from '@/schemas/pagination.schema';
 import { useListStateStore } from '@/stores/listStateStore';
 import { useUserStore } from '@/stores/userStore';
+import { resolveUsersList } from '@/utils/usersList';
 import './$userId.css';
 import { Toast } from '@sirena/ui';
 import { useQuery } from '@tanstack/react-query';
@@ -61,21 +61,9 @@ const userFormSchema = z
 
 type UserFormData = z.infer<typeof userFormSchema>;
 
-type UsersListTo = '/admin/users' | '/admin/users/all';
-
-const NO_SEARCH: QueryParams = {};
-
-function useUsersList(roleId: string | undefined): { to: UsersListTo; search: QueryParams } {
+function useUsersList(roleId: string | undefined) {
   const usersListState = useListStateStore((s) => s.states.users);
-  const fromList = usersListState?.to;
-  const to: UsersListTo =
-    fromList === '/admin/users' || fromList === '/admin/users/all'
-      ? fromList
-      : roleId === ROLES.PENDING
-        ? '/admin/users'
-        : '/admin/users/all';
-
-  return { to, search: usersListState?.to === to ? usersListState.search : NO_SEARCH };
+  return resolveUsersList(usersListState, roleId);
 }
 
 function SubmitButton({ isPending }: { isPending: boolean }) {
@@ -86,7 +74,7 @@ function SubmitButton({ isPending }: { isPending: boolean }) {
   );
 }
 
-function RouteComponent() {
+export function RouteComponent() {
   const { userId } = Route.useParams();
   const fieldId = useId();
   const toastManager = Toast.useToastManager();
@@ -158,14 +146,21 @@ function RouteComponent() {
 
       setValidationErrors({});
 
-      await patchUser.mutateAsync({
-        id: userId,
-        json: {
-          roleId: validationResult.data.roleId,
-          statutId: validationResult.data.statutId,
-          entiteId: validationResult.data.entiteId || null,
-        },
-      });
+      try {
+        await patchUser.mutateAsync({
+          id: userId,
+          json: {
+            roleId: validationResult.data.roleId,
+            statutId: validationResult.data.statutId,
+            entiteId: validationResult.data.entiteId || null,
+          },
+        });
+      } catch {
+        // Already notified by the mutation's onError: stop here so the admin stays
+        // on the form, with the values they entered, instead of being sent back to
+        // the list as if the update had gone through.
+        return;
+      }
       toastManager.add({
         title: 'Utilisateur modifié',
         description: 'Les modifications ont été enregistrées avec succès.',
@@ -190,6 +185,7 @@ function RouteComponent() {
           {({ data: user }) => (
             <div className="user">
               <h1>Modifier les informations de l'utilisateur</h1>
+              <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
               <div>
                 <form onSubmit={handleSubmit}>
                   <fieldset className="fr-fieldset">
@@ -228,7 +224,7 @@ function RouteComponent() {
                   <fieldset className="fr-fieldset">
                     <Select
                       className="fr-fieldset__content"
-                      label="Rôle*"
+                      label="Rôle (obligatoire)"
                       disabled={profile?.id === userId}
                       nativeSelectProps={{
                         ...{ 'data-testid': 'user-role-select' },
@@ -260,7 +256,7 @@ function RouteComponent() {
                     <fieldset className="fr-fieldset">
                       <Select
                         className="fr-fieldset__content"
-                        label="Statut*"
+                        label="Statut (obligatoire)"
                         state={validationErrors.statutId ? 'error' : 'default'}
                         stateRelatedMessage={validationErrors.statutId}
                         nativeSelectProps={{
