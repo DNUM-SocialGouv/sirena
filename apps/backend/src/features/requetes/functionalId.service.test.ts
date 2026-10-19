@@ -41,7 +41,7 @@ describe('functionalId.service', () => {
 
       expect(result).toBe('2025-09-RS1');
       expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
-      expect(connection.set).toHaveBeenCalledWith('requete:id-lock:2025-09-RS1', '1', 'EX', 10, 'NX');
+      expect(connection.set).toHaveBeenCalledWith('requete:id-lock:2025-09-RS1', '1', 'EX', 35, 'NX');
     });
 
     it('should generate ID with RF prefix for FORMULAIRE source', async () => {
@@ -166,8 +166,8 @@ describe('functionalId.service', () => {
       const result = await generateRequeteId('SIRENA');
 
       expect(result).toBe('2025-09-RS2');
-      expect(connection.set).toHaveBeenNthCalledWith(1, 'requete:id-lock:2025-09-RS1', '1', 'EX', 10, 'NX');
-      expect(connection.set).toHaveBeenNthCalledWith(2, 'requete:id-lock:2025-09-RS2', '1', 'EX', 10, 'NX');
+      expect(connection.set).toHaveBeenNthCalledWith(1, 'requete:id-lock:2025-09-RS1', '1', 'EX', 35, 'NX');
+      expect(connection.set).toHaveBeenNthCalledWith(2, 'requete:id-lock:2025-09-RS2', '1', 'EX', 35, 'NX');
     });
   });
 

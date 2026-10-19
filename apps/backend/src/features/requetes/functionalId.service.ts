@@ -10,7 +10,9 @@ const SOURCE_PREFIX: Record<FunctionalIdSource, string> = {
   FORMULAIRE: 'RF',
 };
 
-const ID_LOCK_TTL_SECONDS = 10;
+// Must outlive the longest transaction inserting the reserved id (Prisma timeout of 30 s, see packages/db/src/client.ts):
+// until its commit, the row is invisible to the MAX() lookup and only this lock keeps the id from being handed out again.
+const ID_LOCK_TTL_SECONDS = 35;
 const MAX_LOCK_ATTEMPTS = 100;
 
 const getRequeteIdLockKey = (id: string) => `requete:id-lock:${id}`;

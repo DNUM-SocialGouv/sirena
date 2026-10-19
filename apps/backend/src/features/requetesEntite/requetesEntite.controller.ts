@@ -35,6 +35,7 @@ import {
 import { getDirectionsServicesFromRequeteEntiteId, getEntitesByIds } from '../entites/entites.service.js';
 import { updateDateAndTypeRequete } from '../requetes/requetes.service.js';
 import {
+  FilesNotOwnedError,
   getUploadedFileById,
   isFileBelongsToRequete,
   isUserOwner,
@@ -591,10 +592,20 @@ const app = factoryWithLogs
         }
       }
 
-      const requete = await createRequeteEntite(topEntiteId, body, userId);
+      let requete: Awaited<ReturnType<typeof createRequeteEntite>>;
+      try {
+        requete = await createRequeteEntite(topEntiteId, body, userId);
+      } catch (err) {
+        if (err instanceof FilesNotOwnedError) {
+          throwHTTPException403Forbidden('You are not allowed to add these files to the requete', {
+            res: c.res,
+            kind: ERROR_KIND.BUSINESS,
+          });
+        }
+        throw err;
+      }
 
       if (fileIds.length > 0) {
-        await setRequeteFile(requete.id, fileIds, topEntiteId, userId);
         logger.info({ requeteId: requete.id, fileIds }, 'Files linked to requete successfully');
       }
 
