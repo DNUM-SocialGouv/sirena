@@ -7,7 +7,7 @@ import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import { mappers } from '@sirena/common';
 import { optionalEmailSchema, optionalPhoneSchema, type ReponseOuiNon } from '@sirena/common/schemas';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
 import { DomicileFields } from '@/components/common/DomicileFields';
@@ -15,7 +15,6 @@ import styles from '@/components/common/formGrid.module.css';
 import type { DeclarantData } from '@/lib/declarant';
 import { declarantFieldMetadata } from '@/lib/fieldMetadata';
 import { buildOuiNonOptions } from '@/lib/radioOptions';
-import { BACK_LINK_ACTIVE_OPTIONS } from '@/utils/backLink';
 
 interface DeclarantFormProps {
   mode: 'create' | 'edit';
@@ -137,284 +136,269 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
     }
   }, [mode, requestId, navigate]);
 
-  const backUrl = mode === 'create' && !requestId ? '/request/create' : requestId ? `/request/${requestId}` : '/home';
-
   return (
     <div>
-      <div className="fr-container fr-mt-4w">
-        <div className="fr-mb-3w">
-          <Link className="fr-link" to={backUrl} activeOptions={BACK_LINK_ACTIVE_OPTIONS}>
-            <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true" />
-            Retour
-          </Link>
-        </div>
+      <h1 className="fr-mb-2w" data-testid="declarant-form-title">
+        Déclarant
+      </h1>
+      <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
-        <h1 className="fr-mb-2w" data-testid="declarant-form-title">
-          Déclarant
-        </h1>
-        <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
-
-        <div
-          className="fr-p-4w fr-mb-4w"
-          style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
-        >
-          <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
-            <legend>
-              <h2 className="fr-h6 fr-mb-3w">Identité</h2>
-            </legend>
-            <Checkbox
-              className="fr-mb-2w"
-              options={[
-                {
-                  label: 'Le déclarant est la personne concernée par les faits',
-                  nativeInputProps: {
-                    ...{ 'data-testid': 'declarant-est-personne-concernee' },
-                    checked: estPersonneConcernee,
-                    onChange: (e) => {
-                      const checked = e.target.checked;
-                      setFormData((prev: DeclarantData) => ({ ...prev, estPersonneConcernee: checked }));
-                      if (checked) {
-                        const hasData = Object.entries(formData).some(
-                          ([key, value]) =>
-                            key !== 'estPersonneConcernee' && value !== undefined && value !== '' && value !== false,
-                        );
-                        setShowPCWarning(hasData);
-                      } else {
-                        setShowPCWarning(false);
-                      }
-                    },
+      <div
+        className="fr-p-4w fr-mb-4w"
+        style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
+      >
+        <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+          <legend>
+            <h2 className="fr-h6 fr-mb-3w">Identité</h2>
+          </legend>
+          <Checkbox
+            className="fr-mb-2w"
+            options={[
+              {
+                label: 'Le déclarant est la personne concernée par les faits',
+                nativeInputProps: {
+                  ...{ 'data-testid': 'declarant-est-personne-concernee' },
+                  checked: estPersonneConcernee,
+                  onChange: (e) => {
+                    const checked = e.target.checked;
+                    setFormData((prev: DeclarantData) => ({ ...prev, estPersonneConcernee: checked }));
+                    if (checked) {
+                      const hasData = Object.entries(formData).some(
+                        ([key, value]) =>
+                          key !== 'estPersonneConcernee' && value !== undefined && value !== '' && value !== false,
+                      );
+                      setShowPCWarning(hasData);
+                    } else {
+                      setShowPCWarning(false);
+                    }
                   },
                 },
-              ]}
-            />
-            {estPersonneConcernee && showPCWarning ? (
-              <div className="fr-mt-2w fr-mb-2w" data-testid="declarant-personne-concernee-warning">
-                <Alert
-                  severity="warning"
-                  title="Avertissement"
-                  description='Si vous cochez cette case, les données renseignées dans la section "Déclarant" seront effacées. Seulement les données renseignées dans la section "Personne concernée" seront conservées.'
-                  small
-                />
-              </div>
-            ) : null}
-            {estPersonneConcernee && !showPCWarning && (
-              <div className="fr-mt-2w" data-testid="declarant-personne-concernee-callout">
-                <CallOut>Enregistrez puis complétez la section "Personne concernée".</CallOut>
-              </div>
-            )}
-
-            {(!estPersonneConcernee || showPCWarning) && (
-              <div className="fr-grid-row fr-grid-row--gutters">
-                <div className="fr-col-12 fr-col-md-3">
-                  <Select
-                    label={declarantFieldMetadata.civilite.label}
-                    nativeSelectProps={{
-                      ...{ 'data-testid': 'declarant-civilite' },
-                      value: formData.civilite ?? '',
-                      onChange: (e) => {
-                        const value = e.target.value;
-                        setFormData((prev: DeclarantData) => ({ ...prev, civilite: value || undefined }));
-                      },
-                    }}
-                  >
-                    <option value="">Sélectionner</option>
-                    {mappers.civiliteOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <div className="fr-col-12 fr-col-md-4">
-                  <Input
-                    label={declarantFieldMetadata.nom.label}
-                    nativeInputProps={{
-                      ...{ 'data-testid': 'declarant-nom' },
-                      value: formData.nom || '',
-                      onChange: handleInputChange('nom'),
-                    }}
-                  />
-                </div>
-                <div className="fr-col-12 fr-col-md-5">
-                  <Input
-                    label={declarantFieldMetadata.prenom.label}
-                    nativeInputProps={{
-                      ...{ 'data-testid': 'declarant-prenom' },
-                      value: formData.prenom || '',
-                      onChange: handleInputChange('prenom'),
-                    }}
-                  />
-                </div>
-
-                <div className="fr-col-12 fr-col-md-6">
-                  <Select
-                    label={declarantFieldMetadata.lienAvecPersonneConcernee.label}
-                    nativeSelectProps={{
-                      ...{ 'data-testid': 'declarant-lien-personne-concernee' },
-                      value: formData.lienAvecPersonneConcernee ?? '',
-                      onChange: (e) => {
-                        const value = e.target.value;
-                        setFormData((prev: DeclarantData) => ({
-                          ...prev,
-                          lienAvecPersonneConcernee: value || undefined,
-                        }));
-                      },
-                    }}
-                  >
-                    <option value="">Sélectionner une option</option>
-                    {mappers.lienAvecPersonneConcerneeOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                {formData.lienAvecPersonneConcernee === 'AUTRE' && (
-                  <div className="fr-col-12 fr-col-md-6">
-                    <Input
-                      label={declarantFieldMetadata.lienAvecPersonneConcerneePrecision.label}
-                      nativeInputProps={{
-                        ...{ 'data-testid': 'declarant-lien-precision' },
-                        value: formData.lienAvecPersonneConcerneePrecision || '',
-                        onChange: handleInputChange('lienAvecPersonneConcerneePrecision'),
-                        placeholder: 'Précisez votre lien avec la personne concernée',
-                      }}
-                    />
-                  </div>
-                )}
-                <div className="fr-col-12">
-                  <Checkbox
-                    options={[
-                      {
-                        label: declarantFieldMetadata.isTuteur.label,
-                        nativeInputProps: {
-                          ...{ 'data-testid': 'declarant-is-tuteur' },
-                          checked: formData.isTuteur || false,
-                          onChange: handleCheckboxChange('isTuteur'),
-                        },
-                      },
-                    ]}
-                  />
-                </div>
-              </div>
-            )}
-          </fieldset>
-        </div>
-
-        {(!estPersonneConcernee || showPCWarning) && (
-          <>
-            <div
-              className="fr-p-4w fr-mb-4w"
-              style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
-            >
-              <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
-                <legend>
-                  <h2 className="fr-h6 fr-mb-3w">Informations de contact</h2>
-                </legend>
-                <DomicileFields
-                  values={{
-                    adresseDomicile: formData.adresseDomicile || '',
-                    codePostal: formData.codePostal || '',
-                    ville: formData.ville || '',
-                  }}
-                  onChange={(v) => setFormData((prev) => ({ ...prev, ...v }))}
-                  labels={{
-                    adresseDomicile: declarantFieldMetadata.adresseDomicile.label,
-                    codePostal: declarantFieldMetadata.codePostal.label,
-                    ville: declarantFieldMetadata.ville.label,
-                  }}
-                />
-
-                <div className="fr-grid-row fr-grid-row--gutters">
-                  <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
-                    <Input
-                      label={declarantFieldMetadata.numeroTelephone.label}
-                      hintText="Format attendu : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
-                      state={phoneError ? 'error' : undefined}
-                      stateRelatedMessage={phoneError}
-                      nativeInputProps={{
-                        ...{ 'data-testid': 'declarant-telephone' },
-                        ref: phoneInputRef,
-                        value: formData.numeroTelephone || '',
-                        onChange: handleInputChange('numeroTelephone'),
-                        type: 'tel',
-                        maxLength: 15,
-                      }}
-                    />
-                  </div>
-                  <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
-                    <Input
-                      label={declarantFieldMetadata.courrierElectronique.label}
-                      hintText="Exemple : prenom.nom@exemple.com"
-                      state={emailError ? 'error' : undefined}
-                      stateRelatedMessage={emailError}
-                      nativeInputProps={{
-                        ...{ 'data-testid': 'declarant-email' },
-                        ref: emailInputRef,
-                        value: formData.courrierElectronique || '',
-                        onChange: handleInputChange('courrierElectronique'),
-                        type: 'email',
-                      }}
-                    />
-                  </div>
-                </div>
-              </fieldset>
+              },
+            ]}
+          />
+          {estPersonneConcernee && showPCWarning ? (
+            <div className="fr-mt-2w fr-mb-2w" data-testid="declarant-personne-concernee-warning">
+              <Alert
+                severity="warning"
+                title="Avertissement"
+                description='Si vous cochez cette case, les données renseignées dans la section "Déclarant" seront effacées. Seulement les données renseignées dans la section "Personne concernée" seront conservées.'
+                small
+              />
             </div>
+          ) : null}
+          {estPersonneConcernee && !showPCWarning && (
+            <div className="fr-mt-2w" data-testid="declarant-personne-concernee-callout">
+              <CallOut>Enregistrez puis complétez la section "Personne concernée".</CallOut>
+            </div>
+          )}
 
-            <div
-              className="fr-p-4w fr-mb-4w"
-              style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
-            >
-              <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
-                <legend>
-                  <h2 className="fr-h6 fr-mb-3w">Informations complémentaires</h2>
-                </legend>
-                <div data-testid="declarant-consent-identite">
-                  <RadioButtons
-                    legend={declarantFieldMetadata.consentCommuniquerIdentite.label}
-                    name="declarant-consent-identite"
-                    orientation="horizontal"
-                    options={buildOuiNonOptions(formData.consentCommuniquerIdentite, (value) =>
-                      handleReponseChange('consentCommuniquerIdentite', value),
-                    )}
+          {(!estPersonneConcernee || showPCWarning) && (
+            <div className="fr-grid-row fr-grid-row--gutters">
+              <div className="fr-col-12 fr-col-md-3">
+                <Select
+                  label={declarantFieldMetadata.civilite.label}
+                  nativeSelectProps={{
+                    ...{ 'data-testid': 'declarant-civilite' },
+                    value: formData.civilite ?? '',
+                    onChange: (e) => {
+                      const value = e.target.value;
+                      setFormData((prev: DeclarantData) => ({ ...prev, civilite: value || undefined }));
+                    },
+                  }}
+                >
+                  <option value="">Sélectionner</option>
+                  {mappers.civiliteOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="fr-col-12 fr-col-md-4">
+                <Input
+                  label={declarantFieldMetadata.nom.label}
+                  nativeInputProps={{
+                    ...{ 'data-testid': 'declarant-nom' },
+                    value: formData.nom || '',
+                    onChange: handleInputChange('nom'),
+                  }}
+                />
+              </div>
+              <div className="fr-col-12 fr-col-md-5">
+                <Input
+                  label={declarantFieldMetadata.prenom.label}
+                  nativeInputProps={{
+                    ...{ 'data-testid': 'declarant-prenom' },
+                    value: formData.prenom || '',
+                    onChange: handleInputChange('prenom'),
+                  }}
+                />
+              </div>
+
+              <div className="fr-col-12 fr-col-md-6">
+                <Select
+                  label={declarantFieldMetadata.lienAvecPersonneConcernee.label}
+                  nativeSelectProps={{
+                    ...{ 'data-testid': 'declarant-lien-personne-concernee' },
+                    value: formData.lienAvecPersonneConcernee ?? '',
+                    onChange: (e) => {
+                      const value = e.target.value;
+                      setFormData((prev: DeclarantData) => ({
+                        ...prev,
+                        lienAvecPersonneConcernee: value || undefined,
+                      }));
+                    },
+                  }}
+                >
+                  <option value="">Sélectionner une option</option>
+                  {mappers.lienAvecPersonneConcerneeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              {formData.lienAvecPersonneConcernee === 'AUTRE' && (
+                <div className="fr-col-12 fr-col-md-6">
+                  <Input
+                    label={declarantFieldMetadata.lienAvecPersonneConcerneePrecision.label}
+                    nativeInputProps={{
+                      ...{ 'data-testid': 'declarant-lien-precision' },
+                      value: formData.lienAvecPersonneConcerneePrecision || '',
+                      onChange: handleInputChange('lienAvecPersonneConcerneePrecision'),
+                      placeholder: 'Précisez votre lien avec la personne concernée',
+                    }}
                   />
                 </div>
+              )}
+              <div className="fr-col-12">
+                <Checkbox
+                  options={[
+                    {
+                      label: declarantFieldMetadata.isTuteur.label,
+                      nativeInputProps: {
+                        ...{ 'data-testid': 'declarant-is-tuteur' },
+                        checked: formData.isTuteur || false,
+                        onChange: handleCheckboxChange('isTuteur'),
+                      },
+                    },
+                  ]}
+                />
+              </div>
+            </div>
+          )}
+        </fieldset>
+      </div>
+
+      {(!estPersonneConcernee || showPCWarning) && (
+        <>
+          <div
+            className="fr-p-4w fr-mb-4w"
+            style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
+          >
+            <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+              <legend>
+                <h2 className="fr-h6 fr-mb-3w">Informations de contact</h2>
+              </legend>
+              <DomicileFields
+                values={{
+                  adresseDomicile: formData.adresseDomicile || '',
+                  codePostal: formData.codePostal || '',
+                  ville: formData.ville || '',
+                }}
+                onChange={(v) => setFormData((prev) => ({ ...prev, ...v }))}
+                labels={{
+                  adresseDomicile: declarantFieldMetadata.adresseDomicile.label,
+                  codePostal: declarantFieldMetadata.codePostal.label,
+                  ville: declarantFieldMetadata.ville.label,
+                }}
+              />
+
+              <div className="fr-grid-row fr-grid-row--gutters">
+                <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
+                  <Input
+                    label={declarantFieldMetadata.numeroTelephone.label}
+                    hintText="Format attendu : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
+                    state={phoneError ? 'error' : undefined}
+                    stateRelatedMessage={phoneError}
+                    nativeInputProps={{
+                      ...{ 'data-testid': 'declarant-telephone' },
+                      ref: phoneInputRef,
+                      value: formData.numeroTelephone || '',
+                      onChange: handleInputChange('numeroTelephone'),
+                      type: 'tel',
+                      maxLength: 15,
+                    }}
+                  />
+                </div>
+                <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
+                  <Input
+                    label={declarantFieldMetadata.courrierElectronique.label}
+                    hintText="Exemple : prenom.nom@exemple.com"
+                    state={emailError ? 'error' : undefined}
+                    stateRelatedMessage={emailError}
+                    nativeInputProps={{
+                      ...{ 'data-testid': 'declarant-email' },
+                      ref: emailInputRef,
+                      value: formData.courrierElectronique || '',
+                      onChange: handleInputChange('courrierElectronique'),
+                      type: 'email',
+                    }}
+                  />
+                </div>
+              </div>
+            </fieldset>
+          </div>
+
+          <div
+            className="fr-p-4w fr-mb-4w"
+            style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
+          >
+            <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+              <legend>
+                <h2 className="fr-h6 fr-mb-3w">Informations complémentaires</h2>
+              </legend>
+              <div data-testid="declarant-consent-identite">
                 <RadioButtons
-                  legend={declarantFieldMetadata.estSignalementProfessionnel.label}
-                  name="declarant-signalement-pro"
+                  legend={declarantFieldMetadata.consentCommuniquerIdentite.label}
+                  name="declarant-consent-identite"
                   orientation="horizontal"
-                  options={buildOuiNonOptions(formData.estSignalementProfessionnel, (value) =>
-                    handleReponseChange('estSignalementProfessionnel', value),
+                  options={buildOuiNonOptions(formData.consentCommuniquerIdentite, (value) =>
+                    handleReponseChange('consentCommuniquerIdentite', value),
                   )}
                 />
+              </div>
+              <RadioButtons
+                legend={declarantFieldMetadata.estSignalementProfessionnel.label}
+                name="declarant-signalement-pro"
+                orientation="horizontal"
+                options={buildOuiNonOptions(formData.estSignalementProfessionnel, (value) =>
+                  handleReponseChange('estSignalementProfessionnel', value),
+                )}
+              />
 
-                <Input
-                  label={declarantFieldMetadata.autresPrecisions.label}
-                  textArea
-                  nativeTextAreaProps={{
-                    ...{ 'data-testid': 'declarant-autres-precisions' },
-                    value: formData.autresPrecisions || '',
-                    onChange: handleInputChange('autresPrecisions'),
-                    rows: 4,
-                  }}
-                />
-              </fieldset>
-            </div>
-          </>
-        )}
+              <Input
+                label={declarantFieldMetadata.autresPrecisions.label}
+                textArea
+                nativeTextAreaProps={{
+                  ...{ 'data-testid': 'declarant-autres-precisions' },
+                  value: formData.autresPrecisions || '',
+                  onChange: handleInputChange('autresPrecisions'),
+                  rows: 4,
+                }}
+              />
+            </fieldset>
+          </div>
+        </>
+      )}
 
-        <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
-          <Button priority="secondary" onClick={handleCancel}>
-            Annuler
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-            nativeButtonProps={{ ...{ 'data-testid': 'declarant-save' } }}
-          >
-            {isSaving ? 'Enregistrement...' : 'Enregistrer'}
-          </Button>
-        </div>
+      <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
+        <Button priority="secondary" onClick={handleCancel}>
+          Annuler
+        </Button>
+        <Button onClick={handleSave} disabled={isSaving} nativeButtonProps={{ ...{ 'data-testid': 'declarant-save' } }}>
+          {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+        </Button>
       </div>
     </div>
   );

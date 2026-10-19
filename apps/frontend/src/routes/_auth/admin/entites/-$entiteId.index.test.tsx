@@ -148,7 +148,7 @@ describe('Admin entity edit route', () => {
 
     expect(mockedUseEntiteByIdAdmin).toHaveBeenCalledWith('root-ars');
     expect(screen.getByRole('heading', { level: 2, name: 'Modifier l’entité ARS Normandie' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /liste des entités/i })).toHaveAttribute('href', '/admin/entites');
+    expect(screen.queryByRole('link', { name: /liste des entités/i })).not.toBeInTheDocument();
     expect(screen.getByText('Sauf mention contraire, les champs sont facultatifs.')).toBeInTheDocument();
 
     expect(screen.getByLabelText(/Nom - libellé long \(obligatoire\)/i)).toHaveValue('ARS Normandie');

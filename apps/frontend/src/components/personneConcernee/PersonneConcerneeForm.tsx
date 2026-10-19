@@ -10,7 +10,7 @@ import {
   optionalPhoneSchema,
   type ReponseOuiNon,
 } from '@sirena/common/schemas';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
 import { DomicileFields } from '@/components/common/DomicileFields';
@@ -18,7 +18,6 @@ import styles from '@/components/common/formGrid.module.css';
 import { personneConcerneeFieldMetadata } from '@/lib/fieldMetadata';
 import type { PersonneConcerneeData } from '@/lib/personneConcernee';
 import { buildNonRenseigneOption, buildOuiNonOptions } from '@/lib/radioOptions';
-import { BACK_LINK_ACTIVE_OPTIONS } from '@/utils/backLink';
 
 interface PersonneConcerneeFormProps {
   mode: 'create' | 'edit';
@@ -147,319 +146,308 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
     }
   }, [mode, requestId, navigate]);
 
-  const backUrl = mode === 'create' && !requestId ? '/request/create' : requestId ? `/request/${requestId}` : '/home';
-
   return (
     <div>
-      <div className="fr-container fr-mt-4w">
-        <div className="fr-mb-3w">
-          <Link className="fr-link" to={backUrl} activeOptions={BACK_LINK_ACTIVE_OPTIONS}>
-            <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true" />
-            Retour
-          </Link>
-        </div>
+      <h1 className="fr-mb-2w" data-testid="personne-concernee-form-title">
+        Personne concernée
+      </h1>
+      <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
-        <h1 className="fr-mb-2w" data-testid="personne-concernee-form-title">
-          Personne concernée
-        </h1>
-        <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
+      <div
+        className="fr-p-4w fr-mb-4w"
+        style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
+      >
+        <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+          <legend>
+            <h2 className="fr-h6 fr-mb-3w">Identité</h2>
+          </legend>
 
-        <div
-          className="fr-p-4w fr-mb-4w"
-          style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
-        >
-          <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
-            <legend>
-              <h2 className="fr-h6 fr-mb-3w">Identité</h2>
-            </legend>
-
-            <div className="fr-grid-row fr-grid-row--gutters">
-              <div className="fr-col-12 fr-col-md-3">
-                <Select
-                  label={personneConcerneeFieldMetadata.civilite.label}
-                  nativeSelectProps={{
-                    ...{ 'data-testid': 'personne-concernee-civilite' },
-                    value: formData.civilite ?? '',
-                    onChange: (e) => {
-                      const value = e.target.value;
-                      setFormData((prev: PersonneConcerneeData) => ({ ...prev, civilite: value || undefined }));
-                    },
-                  }}
-                >
-                  <option value="">Sélectionner</option>
-                  {mappers.civiliteOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div className="fr-col-12 fr-col-md-4">
-                <Input
-                  label={personneConcerneeFieldMetadata.nom.label}
-                  nativeInputProps={{
-                    ...{ 'data-testid': 'personne-concernee-nom' },
-                    value: formData.nom || '',
-                    onChange: handleInputChange('nom'),
-                  }}
-                />
-              </div>
-              <div className="fr-col-12 fr-col-md-5">
-                <Input
-                  label={personneConcerneeFieldMetadata.prenom.label}
-                  nativeInputProps={{
-                    ...{ 'data-testid': 'personne-concernee-prenom' },
-                    value: formData.prenom || '',
-                    onChange: handleInputChange('prenom'),
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="fr-grid-row fr-grid-row--gutters">
-              <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
-                <Select
-                  label={personneConcerneeFieldMetadata.age.label}
-                  nativeSelectProps={{
-                    ...{ 'data-testid': 'personne-concernee-age' },
-                    value: formData.age ?? '',
-                    onChange: (e) => {
-                      const value = e.target.value;
-                      setFormData((prev: PersonneConcerneeData) => ({ ...prev, age: value || undefined }));
-                    },
-                  }}
-                >
-                  <option value="">Sélectionner une tranche d'âge</option>
-                  {mappers.ageOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
-                <Input
-                  label={personneConcerneeFieldMetadata.dateNaissance.label}
-                  hintText="Format attendu : JJ/MM/AAAA"
-                  state={dateNaissanceError ? 'error' : 'default'}
-                  stateRelatedMessage={dateNaissanceError}
-                  nativeInputProps={{
-                    ...{ 'data-testid': 'personne-concernee-date-naissance' },
-                    ref: dateNaissanceInputRef,
-                    type: 'date',
-                    max: new Date().toISOString().split('T')[0],
-                    value: formData.dateNaissance || '',
-                    onChange: (e) => {
-                      const value = e.target.value;
-                      const isValid = e.currentTarget.validity.valid;
-                      setFormData((prev: PersonneConcerneeData) => ({ ...prev, dateNaissance: value || undefined }));
-                      if (isValid) {
-                        setDateNaissanceError(undefined);
-                      }
-                    },
-                  }}
-                />
-              </div>
-            </div>
-          </fieldset>
-        </div>
-
-        <div
-          className="fr-p-4w fr-mb-4w"
-          style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
-        >
-          <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
-            <legend>
-              <h2 className="fr-h6 fr-mb-3w">Informations de contact</h2>
-            </legend>
-            <DomicileFields
-              values={{
-                adresseDomicile: formData.adresseDomicile || '',
-                codePostal: formData.codePostal || '',
-                ville: formData.ville || '',
-              }}
-              onChange={(v) => setFormData((prev) => ({ ...prev, ...v }))}
-              labels={{
-                adresseDomicile: personneConcerneeFieldMetadata.adresseDomicile.label,
-                codePostal: personneConcerneeFieldMetadata.codePostal.label,
-                ville: personneConcerneeFieldMetadata.ville.label,
-              }}
-            />
-            <div className="fr-grid-row fr-grid-row--gutters">
-              <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
-                <Input
-                  label={personneConcerneeFieldMetadata.numeroTelephone.label}
-                  hintText="Format attendu : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
-                  state={phoneError ? 'error' : undefined}
-                  stateRelatedMessage={phoneError}
-                  nativeInputProps={{
-                    ...{ 'data-testid': 'personne-concernee-telephone' },
-                    ref: phoneInputRef,
-                    value: formData.numeroTelephone || '',
-                    onChange: handleInputChange('numeroTelephone'),
-                    type: 'tel',
-                    maxLength: 15,
-                  }}
-                />
-              </div>
-              <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
-                <Input
-                  label={personneConcerneeFieldMetadata.courrierElectronique.label}
-                  hintText="Exemple : prenom.nom@exemple.com"
-                  state={emailError ? 'error' : undefined}
-                  stateRelatedMessage={emailError}
-                  nativeInputProps={{
-                    ...{ 'data-testid': 'personne-concernee-email' },
-                    ref: emailInputRef,
-                    value: formData.courrierElectronique || '',
-                    onChange: handleInputChange('courrierElectronique'),
-                    type: 'email',
-                  }}
-                />
-              </div>
-            </div>
-          </fieldset>
-        </div>
-
-        <div
-          className="fr-p-4w fr-mb-4w"
-          style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
-        >
-          <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
-            <legend>
-              <h2 className="fr-h6 fr-mb-3w">Informations complémentaires</h2>
-            </legend>
-            <div className="fr-mb-3w" data-testid="personne-concernee-consent-identite">
-              <RadioButtons
-                legend={personneConcerneeFieldMetadata.consentCommuniquerIdentite.label}
-                name="personne-concernee-consent-identite"
-                orientation="horizontal"
-                options={buildOuiNonOptions(formData.consentCommuniquerIdentite, (value) =>
-                  handleReponseChange('consentCommuniquerIdentite', value),
-                )}
-              />
-            </div>
-
-            <div className="fr-mb-3w" data-testid="personne-concernee-victime-informee">
-              <RadioButtons
-                legend={personneConcerneeFieldMetadata.estVictimeInformee.label}
-                name="personne-concernee-est-victime-informee"
-                orientation="horizontal"
-                options={buildOuiNonOptions(formData.estVictimeInformee, (value) =>
-                  handleReponseChange('estVictimeInformee', value),
-                )}
-              />
-            </div>
-            {formData.estVictimeInformee === REPONSE_OUI_NON.NON && (
-              <div className="fr-mb-3w">
-                <Input
-                  label={personneConcerneeFieldMetadata.victimeInformeeCommentaire.label}
-                  nativeInputProps={{
-                    ...{ 'data-testid': 'personne-concernee-victime-informee-commentaire' },
-                    value: formData.victimeInformeeCommentaire || '',
-                    onChange: handleInputChange('victimeInformeeCommentaire'),
-                  }}
-                />
-              </div>
-            )}
-
-            <div className="fr-mb-3w" data-testid="personne-concernee-mesure-protection">
-              <RadioButtons
-                legend={personneConcerneeFieldMetadata.mesureProtection.label}
-                name="personne-concernee-mesure-protection"
-                orientation="horizontal"
-                options={[
-                  {
-                    label: 'Mandataire judiciaire',
-                    nativeInputProps: {
-                      value: MESURE_PROTECTION.MANDATAIRE_JUDICIAIRE,
-                      checked: formData.mesureProtection === MESURE_PROTECTION.MANDATAIRE_JUDICIAIRE,
-                      onChange: () => handleMesureProtectionChange(MESURE_PROTECTION.MANDATAIRE_JUDICIAIRE),
-                    },
+          <div className="fr-grid-row fr-grid-row--gutters">
+            <div className="fr-col-12 fr-col-md-3">
+              <Select
+                label={personneConcerneeFieldMetadata.civilite.label}
+                nativeSelectProps={{
+                  ...{ 'data-testid': 'personne-concernee-civilite' },
+                  value: formData.civilite ?? '',
+                  onChange: (e) => {
+                    const value = e.target.value;
+                    setFormData((prev: PersonneConcerneeData) => ({ ...prev, civilite: value || undefined }));
                   },
-                  {
-                    label: 'Mandataire familial',
-                    nativeInputProps: {
-                      value: MESURE_PROTECTION.MANDATAIRE_FAMILIAL,
-                      checked: formData.mesureProtection === MESURE_PROTECTION.MANDATAIRE_FAMILIAL,
-                      onChange: () => handleMesureProtectionChange(MESURE_PROTECTION.MANDATAIRE_FAMILIAL),
-                    },
-                  },
-                  {
-                    label: 'Non',
-                    nativeInputProps: {
-                      value: MESURE_PROTECTION.NON,
-                      checked: formData.mesureProtection === MESURE_PROTECTION.NON,
-                      onChange: () => handleMesureProtectionChange(MESURE_PROTECTION.NON),
-                    },
-                  },
-                  buildNonRenseigneOption(formData.mesureProtection === MESURE_PROTECTION.NON_RENSEIGNE, () =>
-                    handleMesureProtectionChange(MESURE_PROTECTION.NON_RENSEIGNE),
-                  ),
-                ]}
-              />
+                }}
+              >
+                <option value="">Sélectionner</option>
+                {mappers.civiliteOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
             </div>
-
-            <div className="fr-mb-3w" data-testid="personne-concernee-est-handicapee">
-              <RadioButtons
-                legend={personneConcerneeFieldMetadata.estHandicapee.label}
-                name="personne-concernee-est-handicapee"
-                orientation="horizontal"
-                options={buildOuiNonOptions(formData.estHandicapee, (value) =>
-                  handleReponseChange('estHandicapee', value),
-                )}
-              />
-            </div>
-
-            <div className="fr-mb-3w" data-testid="personne-concernee-autres-personnes">
-              <RadioButtons
-                legend={personneConcerneeFieldMetadata.aAutrePersonnes.label}
-                name="personne-concernee-a-autre-personnes"
-                orientation="horizontal"
-                options={buildOuiNonOptions(formData.aAutrePersonnes, (value) =>
-                  handleReponseChange('aAutrePersonnes', value),
-                )}
-              />
-            </div>
-
-            {formData.aAutrePersonnes === REPONSE_OUI_NON.OUI ? (
+            <div className="fr-col-12 fr-col-md-4">
               <Input
-                label={personneConcerneeFieldMetadata.autrePersonnes.label}
-                hintText="Nom, prénom, lien avec la personne concernée, etc."
-                textArea
-                nativeTextAreaProps={{
-                  ...{ 'data-testid': 'personne-concernee-autres-personnes-precisions' },
-                  value: formData.autrePersonnes || '',
-                  onChange: handleInputChange('autrePersonnes'),
-                  rows: 3,
+                label={personneConcerneeFieldMetadata.nom.label}
+                nativeInputProps={{
+                  ...{ 'data-testid': 'personne-concernee-nom' },
+                  value: formData.nom || '',
+                  onChange: handleInputChange('nom'),
                 }}
               />
-            ) : null}
+            </div>
+            <div className="fr-col-12 fr-col-md-5">
+              <Input
+                label={personneConcerneeFieldMetadata.prenom.label}
+                nativeInputProps={{
+                  ...{ 'data-testid': 'personne-concernee-prenom' },
+                  value: formData.prenom || '',
+                  onChange: handleInputChange('prenom'),
+                }}
+              />
+            </div>
+          </div>
 
+          <div className="fr-grid-row fr-grid-row--gutters">
+            <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
+              <Select
+                label={personneConcerneeFieldMetadata.age.label}
+                nativeSelectProps={{
+                  ...{ 'data-testid': 'personne-concernee-age' },
+                  value: formData.age ?? '',
+                  onChange: (e) => {
+                    const value = e.target.value;
+                    setFormData((prev: PersonneConcerneeData) => ({ ...prev, age: value || undefined }));
+                  },
+                }}
+              >
+                <option value="">Sélectionner une tranche d'âge</option>
+                {mappers.ageOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
+              <Input
+                label={personneConcerneeFieldMetadata.dateNaissance.label}
+                hintText="Format attendu : JJ/MM/AAAA"
+                state={dateNaissanceError ? 'error' : 'default'}
+                stateRelatedMessage={dateNaissanceError}
+                nativeInputProps={{
+                  ...{ 'data-testid': 'personne-concernee-date-naissance' },
+                  ref: dateNaissanceInputRef,
+                  type: 'date',
+                  max: new Date().toISOString().split('T')[0],
+                  value: formData.dateNaissance || '',
+                  onChange: (e) => {
+                    const value = e.target.value;
+                    const isValid = e.currentTarget.validity.valid;
+                    setFormData((prev: PersonneConcerneeData) => ({ ...prev, dateNaissance: value || undefined }));
+                    if (isValid) {
+                      setDateNaissanceError(undefined);
+                    }
+                  },
+                }}
+              />
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+      <div
+        className="fr-p-4w fr-mb-4w"
+        style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
+      >
+        <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+          <legend>
+            <h2 className="fr-h6 fr-mb-3w">Informations de contact</h2>
+          </legend>
+          <DomicileFields
+            values={{
+              adresseDomicile: formData.adresseDomicile || '',
+              codePostal: formData.codePostal || '',
+              ville: formData.ville || '',
+            }}
+            onChange={(v) => setFormData((prev) => ({ ...prev, ...v }))}
+            labels={{
+              adresseDomicile: personneConcerneeFieldMetadata.adresseDomicile.label,
+              codePostal: personneConcerneeFieldMetadata.codePostal.label,
+              ville: personneConcerneeFieldMetadata.ville.label,
+            }}
+          />
+          <div className="fr-grid-row fr-grid-row--gutters">
+            <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
+              <Input
+                label={personneConcerneeFieldMetadata.numeroTelephone.label}
+                hintText="Format attendu : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
+                state={phoneError ? 'error' : undefined}
+                stateRelatedMessage={phoneError}
+                nativeInputProps={{
+                  ...{ 'data-testid': 'personne-concernee-telephone' },
+                  ref: phoneInputRef,
+                  value: formData.numeroTelephone || '',
+                  onChange: handleInputChange('numeroTelephone'),
+                  type: 'tel',
+                  maxLength: 15,
+                }}
+              />
+            </div>
+            <div className={`fr-col-12 fr-col-md-6 ${styles.alignedField}`}>
+              <Input
+                label={personneConcerneeFieldMetadata.courrierElectronique.label}
+                hintText="Exemple : prenom.nom@exemple.com"
+                state={emailError ? 'error' : undefined}
+                stateRelatedMessage={emailError}
+                nativeInputProps={{
+                  ...{ 'data-testid': 'personne-concernee-email' },
+                  ref: emailInputRef,
+                  value: formData.courrierElectronique || '',
+                  onChange: handleInputChange('courrierElectronique'),
+                  type: 'email',
+                }}
+              />
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+      <div
+        className="fr-p-4w fr-mb-4w"
+        style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
+      >
+        <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+          <legend>
+            <h2 className="fr-h6 fr-mb-3w">Informations complémentaires</h2>
+          </legend>
+          <div className="fr-mb-3w" data-testid="personne-concernee-consent-identite">
+            <RadioButtons
+              legend={personneConcerneeFieldMetadata.consentCommuniquerIdentite.label}
+              name="personne-concernee-consent-identite"
+              orientation="horizontal"
+              options={buildOuiNonOptions(formData.consentCommuniquerIdentite, (value) =>
+                handleReponseChange('consentCommuniquerIdentite', value),
+              )}
+            />
+          </div>
+
+          <div className="fr-mb-3w" data-testid="personne-concernee-victime-informee">
+            <RadioButtons
+              legend={personneConcerneeFieldMetadata.estVictimeInformee.label}
+              name="personne-concernee-est-victime-informee"
+              orientation="horizontal"
+              options={buildOuiNonOptions(formData.estVictimeInformee, (value) =>
+                handleReponseChange('estVictimeInformee', value),
+              )}
+            />
+          </div>
+          {formData.estVictimeInformee === REPONSE_OUI_NON.NON && (
+            <div className="fr-mb-3w">
+              <Input
+                label={personneConcerneeFieldMetadata.victimeInformeeCommentaire.label}
+                nativeInputProps={{
+                  ...{ 'data-testid': 'personne-concernee-victime-informee-commentaire' },
+                  value: formData.victimeInformeeCommentaire || '',
+                  onChange: handleInputChange('victimeInformeeCommentaire'),
+                }}
+              />
+            </div>
+          )}
+
+          <div className="fr-mb-3w" data-testid="personne-concernee-mesure-protection">
+            <RadioButtons
+              legend={personneConcerneeFieldMetadata.mesureProtection.label}
+              name="personne-concernee-mesure-protection"
+              orientation="horizontal"
+              options={[
+                {
+                  label: 'Mandataire judiciaire',
+                  nativeInputProps: {
+                    value: MESURE_PROTECTION.MANDATAIRE_JUDICIAIRE,
+                    checked: formData.mesureProtection === MESURE_PROTECTION.MANDATAIRE_JUDICIAIRE,
+                    onChange: () => handleMesureProtectionChange(MESURE_PROTECTION.MANDATAIRE_JUDICIAIRE),
+                  },
+                },
+                {
+                  label: 'Mandataire familial',
+                  nativeInputProps: {
+                    value: MESURE_PROTECTION.MANDATAIRE_FAMILIAL,
+                    checked: formData.mesureProtection === MESURE_PROTECTION.MANDATAIRE_FAMILIAL,
+                    onChange: () => handleMesureProtectionChange(MESURE_PROTECTION.MANDATAIRE_FAMILIAL),
+                  },
+                },
+                {
+                  label: 'Non',
+                  nativeInputProps: {
+                    value: MESURE_PROTECTION.NON,
+                    checked: formData.mesureProtection === MESURE_PROTECTION.NON,
+                    onChange: () => handleMesureProtectionChange(MESURE_PROTECTION.NON),
+                  },
+                },
+                buildNonRenseigneOption(formData.mesureProtection === MESURE_PROTECTION.NON_RENSEIGNE, () =>
+                  handleMesureProtectionChange(MESURE_PROTECTION.NON_RENSEIGNE),
+                ),
+              ]}
+            />
+          </div>
+
+          <div className="fr-mb-3w" data-testid="personne-concernee-est-handicapee">
+            <RadioButtons
+              legend={personneConcerneeFieldMetadata.estHandicapee.label}
+              name="personne-concernee-est-handicapee"
+              orientation="horizontal"
+              options={buildOuiNonOptions(formData.estHandicapee, (value) =>
+                handleReponseChange('estHandicapee', value),
+              )}
+            />
+          </div>
+
+          <div className="fr-mb-3w" data-testid="personne-concernee-autres-personnes">
+            <RadioButtons
+              legend={personneConcerneeFieldMetadata.aAutrePersonnes.label}
+              name="personne-concernee-a-autre-personnes"
+              orientation="horizontal"
+              options={buildOuiNonOptions(formData.aAutrePersonnes, (value) =>
+                handleReponseChange('aAutrePersonnes', value),
+              )}
+            />
+          </div>
+
+          {formData.aAutrePersonnes === REPONSE_OUI_NON.OUI ? (
             <Input
-              label={personneConcerneeFieldMetadata.commentaire.label}
+              label={personneConcerneeFieldMetadata.autrePersonnes.label}
+              hintText="Nom, prénom, lien avec la personne concernée, etc."
               textArea
               nativeTextAreaProps={{
-                value: formData.commentaire || '',
-                onChange: handleInputChange('commentaire'),
-                rows: 4,
+                ...{ 'data-testid': 'personne-concernee-autres-personnes-precisions' },
+                value: formData.autrePersonnes || '',
+                onChange: handleInputChange('autrePersonnes'),
+                rows: 3,
               }}
             />
-          </fieldset>
-        </div>
+          ) : null}
 
-        <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
-          <Button priority="secondary" onClick={handleCancel}>
-            Annuler
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-            nativeButtonProps={{ ...{ 'data-testid': 'personne-concernee-save' } }}
-          >
-            {isSaving ? 'Enregistrement...' : 'Enregistrer'}
-          </Button>
-        </div>
+          <Input
+            label={personneConcerneeFieldMetadata.commentaire.label}
+            textArea
+            nativeTextAreaProps={{
+              value: formData.commentaire || '',
+              onChange: handleInputChange('commentaire'),
+              rows: 4,
+            }}
+          />
+        </fieldset>
+      </div>
+
+      <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
+        <Button priority="secondary" onClick={handleCancel}>
+          Annuler
+        </Button>
+        <Button
+          onClick={handleSave}
+          disabled={isSaving}
+          nativeButtonProps={{ ...{ 'data-testid': 'personne-concernee-save' } }}
+        >
+          {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+        </Button>
       </div>
     </div>
   );
