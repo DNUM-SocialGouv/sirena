@@ -152,6 +152,12 @@ dialog {
   margin-bottom: 1rem;
 }
 
+/* The DSFR breadcrumb margin shorthand resets the auto side margins that center .fr-container */
+.fr-breadcrumb.app-breadcrumb.fr-container {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .fr-breadcrumb.app-breadcrumb--banner {
   margin-bottom: -0.25rem;
 }
