@@ -63,7 +63,7 @@ export function RouteComponent() {
         <Outlet />
       ) : (
         <div className="home">
-          <h1 className="fr-mt-3w">Espace administrateur</h1>
+          <h1 className="admin-title">Espace administrateur</h1>
           <Tabs label="Informations et gestion" tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange}>
             <Outlet />
           </Tabs>

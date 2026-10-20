@@ -68,10 +68,12 @@ vi.mock('../entites/entites.service.js', () => ({
   getEntiteAscendanteInfo: vi.fn(),
 }));
 
+vi.mock('../../config/redis.js');
 vi.mock('../../libs/minio.js', () => ({
   deleteFileFromMinio: vi.fn(),
   getFileBuffer: vi.fn(),
   getFileStream: vi.fn(),
+  statMinioObject: vi.fn(),
   uploadFileToMinio: vi.fn(),
 }));
 
@@ -90,7 +92,7 @@ vi.mock('archiver', () => {
   };
 });
 
-import type { Readable } from 'node:stream';
+import { Readable } from 'node:stream';
 import {
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_ETAPE_TYPES,
@@ -98,7 +100,7 @@ import {
   REQUETE_UPDATE_FIELDS,
 } from '@sirena/common/constants';
 import { sseEventManager } from '../../helpers/sse.js';
-import { getFileStream } from '../../libs/minio.js';
+import { getFileStream, statMinioObject } from '../../libs/minio.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import { safeSyncRequetePriseEnChargeToDematSocial } from '../dematSocial/priseEnChargeSync/priseEnChargeSync.service.js';
@@ -5054,6 +5056,7 @@ describe('requetesEntite.service', () => {
   describe('createRequeteFilesArchive', () => {
     beforeEach(() => {
       vi.clearAllMocks();
+      vi.mocked(statMinioObject).mockResolvedValue({ metaData: {} } as never);
     });
 
     it('should return null when requete is not found', async () => {
@@ -5153,10 +5156,63 @@ describe('requetesEntite.service', () => {
       const result = await createRequeteFilesArchive('req123', 'ent123', 'Indian/Reunion');
       const archive = (result as unknown as { archive: { append: ReturnType<typeof vi.fn> } }).archive;
 
-      expect(archive.append).toHaveBeenCalledWith(mockStream, {
+      expect(archive.append).toHaveBeenCalledWith(expect.any(Readable), {
         name: 'photo.png',
         date: new Date('2026-04-20T20:03:12.000Z'),
       });
+    });
+
+    const mockOneAttachment = () => {
+      mockedRequeteEntite.findFirst.mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        requeteId: 'req123',
+        requete: {
+          ...mockRequeteEntite.requete,
+          fichiersRequeteOriginale: [
+            {
+              id: 'f1',
+              fileName: 'test.png',
+              filePath: '/files/test.png',
+              mimeType: 'image/png',
+              size: 1024,
+              scanStatus: 'CLEAN',
+              sanitizeStatus: 'COMPLETED',
+              safeFilePath: null,
+              metadata: { originalName: 'photo.png' },
+            },
+          ],
+          situations: [],
+        },
+      } as never);
+    };
+
+    const appendedEntries = (result: unknown) =>
+      (result as { archive: { append: ReturnType<typeof vi.fn> } }).archive.append.mock.calls;
+
+    // Opening every body up front held one storage slot per attachment for the whole download,
+    // and nothing drains those streams before the response is piped.
+    it('opens an attachment body only once the archiver reaches its entry', async () => {
+      vi.mocked(getFileStream).mockResolvedValue({ stream: Readable.from(['payload']), metadata: {} } as never);
+      mockOneAttachment();
+
+      const result = await createRequeteFilesArchive('req123', 'ent123');
+      expect(getFileStream).not.toHaveBeenCalled();
+
+      const [[body]] = appendedEntries(result);
+      await expect((body as Readable).toArray()).resolves.toEqual(['payload']);
+      expect(getFileStream).toHaveBeenCalledWith('/files/test.png', undefined);
+    });
+
+    it('replaces an unavailable attachment with an error entry rather than failing the archive', async () => {
+      vi.mocked(statMinioObject).mockRejectedValue(Object.assign(new Error('nope'), { code: 'NoSuchKey' }));
+      mockOneAttachment();
+
+      const result = await createRequeteFilesArchive('req123', 'ent123');
+
+      expect(appendedEntries(result)).toEqual([
+        [Buffer.from('Fichier indisponible'), { name: 'photo.png.erreur.txt' }],
+      ]);
+      expect(getFileStream).not.toHaveBeenCalled();
     });
 
     it('should fall back to the Paris wall clock when no timezone is provided', async () => {
@@ -5189,7 +5245,7 @@ describe('requetesEntite.service', () => {
       const result = await createRequeteFilesArchive('req123', 'ent123');
       const archive = (result as unknown as { archive: { append: ReturnType<typeof vi.fn> } }).archive;
 
-      expect(archive.append).toHaveBeenCalledWith(mockStream, {
+      expect(archive.append).toHaveBeenCalledWith(expect.any(Readable), {
         name: 'photo.png',
         date: new Date('2026-04-20T18:03:12.000Z'),
       });

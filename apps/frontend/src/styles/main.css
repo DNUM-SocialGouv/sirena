@@ -141,3 +141,26 @@ dialog {
 .lastname {
   text-transform: uppercase;
 }
+
+.fr-breadcrumb .fr-breadcrumb__link[aria-current="page"] {
+  color: var(--text-title-grey);
+}
+
+/* DSFR breadcrumb items use a 28px line-height: margins compensate its leading to match the mockups,
+   24px above the page title, 20px above the request banner title */
+.fr-breadcrumb.app-breadcrumb {
+  margin-bottom: 1rem;
+}
+
+.fr-breadcrumb.app-breadcrumb--banner {
+  margin-bottom: -0.25rem;
+}
+
+/* Without breadcrumb (super admin home), the admin title needs its own spacing below the header */
+.admin-title {
+  margin-top: 1.5rem;
+}
+
+.app-breadcrumb + main .admin-title {
+  margin-top: 0;
+}
