@@ -79,6 +79,7 @@ describe('Admin route', () => {
     expect(screen.getByRole('tab', { name: "Demandes d'habilitation" })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tab', { name: 'Utilisateurs' })).toHaveAttribute('aria-selected', 'false');
     expect(screen.getByRole('tab', { name: 'Directions et services' })).toHaveAttribute('aria-selected', 'false');
+    expect(screen.queryByRole('tab', { name: 'Entité' })).not.toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Entités' })).not.toBeInTheDocument();
   });
 
@@ -98,7 +99,7 @@ describe('Admin route', () => {
         { id: 'service-pa', nomComplet: 'Service PA' },
       ],
     ],
-  ])('does not render local Entités for a %s-level entity admin', (_level, affectationChain) => {
+  ])('does not render local Entité for a %s-level entity admin', (_level, affectationChain) => {
     mockRole(ROLES.ENTITY_ADMIN, affectationChain);
     mockedUseMatches.mockReturnValue([
       { routeId: '/_auth/admin', pathname: '/admin' },
@@ -107,11 +108,12 @@ describe('Admin route', () => {
 
     render(<RouteComponent />);
 
+    expect(screen.queryByRole('tab', { name: 'Entité' })).not.toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Entités' })).not.toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Directions et services' })).toBeInTheDocument();
   });
 
-  it('renders Entités and Directions et services for root-level entity admins', () => {
+  it('renders Entité and Directions et services for root-level entity admins', () => {
     mockRole(ROLES.ENTITY_ADMIN, [{ id: 'root-ars', nomComplet: 'ARS Normandie' }]);
     mockedUseMatches.mockReturnValue([
       { routeId: '/_auth/admin', pathname: '/admin' },
@@ -120,7 +122,7 @@ describe('Admin route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.getByRole('tab', { name: 'Entités' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Entité' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tab', { name: 'Directions et services' })).toHaveAttribute('aria-selected', 'false');
   });
 
@@ -135,6 +137,7 @@ describe('Admin route', () => {
     expect(screen.getByRole('tab', { name: 'Directions et services' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tab', { name: "Demandes d'habilitation" })).toHaveAttribute('aria-selected', 'false');
     expect(screen.getByRole('tab', { name: 'Utilisateurs' })).toHaveAttribute('aria-selected', 'false');
+    expect(screen.queryByRole('tab', { name: 'Entité' })).not.toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Entités' })).not.toBeInTheDocument();
   });
 
