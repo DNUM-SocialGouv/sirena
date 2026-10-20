@@ -3,6 +3,10 @@
   white-space: normal;
 }
 
+.fr-table__container {
+  position: relative;
+}
+
 .fr-table__content .fr-cell--fixed-left {
   position: sticky;
   left: 0;
