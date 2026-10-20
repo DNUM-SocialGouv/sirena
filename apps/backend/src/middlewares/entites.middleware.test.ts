@@ -1,26 +1,42 @@
 import { testClient } from 'hono/testing';
-import { describe, expect, it, vi } from 'vitest';
-import { getEntiteAscendanteInfo } from '../features/entites/entites.service.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { entiteAscendanteInfoCache } from '../features/entites/entites.cache.js';
 import { getUserEntiteContext } from '../features/users/users.service.js';
 import { errorHandler } from '../helpers/errors.js';
 import appWithAuth from '../helpers/factories/appWithAuth.js';
 import appWithLogs from '../helpers/factories/appWithLogs.js';
+import { prisma } from '../libs/prisma.js';
 import entitesMiddleware from './entites.middleware.js';
 
 vi.mock('../features/users/users.service.js', () => ({
   getUserEntiteContext: vi.fn(),
 }));
 
-vi.mock('../features/entites/entites.service.js', () => ({
-  getEntiteAscendanteInfo: vi.fn(),
+vi.mock('../libs/prisma.js', () => ({
+  prisma: {
+    entite: {
+      findUnique: vi.fn(),
+    },
+  },
 }));
 
+const mockEntiteMeres = (entiteMereIds: Record<string, string | null>) => {
+  vi.mocked(prisma.entite.findUnique).mockImplementation((async (args: { where: { id: string } }) =>
+    args.where.id in entiteMereIds ? { entiteMereId: entiteMereIds[args.where.id] } : null) as never);
+};
+
 describe('entite.middleware.ts', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    entiteAscendanteInfoCache.clear();
+  });
+
   it('should fetch and attach entiteIds to context', async () => {
     const mockUserId = 'user-123';
     const mockEntiteIds = ['e1', 'e2'];
 
     vi.mocked(getUserEntiteContext).mockResolvedValueOnce({ assignedEntiteId: 'e1', entiteIds: mockEntiteIds });
+    mockEntiteMeres({ e1: null });
 
     const route = appWithAuth
       .createApp()
@@ -48,7 +64,7 @@ describe('entite.middleware.ts', () => {
     const mockTopEntiteId = 'e1';
 
     vi.mocked(getUserEntiteContext).mockResolvedValueOnce({ assignedEntiteId: 'e1', entiteIds: ['e1'] });
-    vi.mocked(getEntiteAscendanteInfo).mockResolvedValueOnce({ entiteId: 'e1', level: 1 });
+    mockEntiteMeres({ e1: null });
 
     const route = appWithAuth
       .createApp()
@@ -78,7 +94,7 @@ describe('entite.middleware.ts', () => {
       assignedEntiteId: 'dir-autonomie',
       entiteIds: ['dir-autonomie', 'service-pa'],
     });
-    vi.mocked(getEntiteAscendanteInfo).mockResolvedValueOnce({ entiteId: 'root-ars', level: 2 });
+    mockEntiteMeres({ 'dir-autonomie': 'root-ars', 'root-ars': null });
 
     const route = appWithAuth
       .createApp()
@@ -128,5 +144,33 @@ describe('entite.middleware.ts', () => {
     const json = await res.json();
     expect(json.entiteIds).toBeNull();
     expect(json.isNull).toBe(true);
+  });
+
+  it("ne remonte la hiérarchie qu'une seule fois pour deux requêtes successives du même agent", async () => {
+    vi.mocked(getUserEntiteContext).mockResolvedValue({
+      assignedEntiteId: 'service-pa',
+      entiteIds: ['service-pa'],
+    });
+    mockEntiteMeres({ 'service-pa': 'dir-autonomie', 'dir-autonomie': 'root-ars', 'root-ars': null });
+
+    const route = appWithAuth
+      .createApp()
+      .use((c, next) => {
+        c.set('userId', 'user-123');
+        return next();
+      })
+      .use(entitesMiddleware)
+      .get('/', (c) => c.json({ topEntiteId: c.get('topEntiteId'), entiteIdLevel: c.get('entiteIdLevel') }));
+
+    const app = appWithLogs.createApp().route('/test', route).onError(errorHandler);
+    const client = testClient(app);
+
+    const first = await client.test.$get();
+    const second = await client.test.$get();
+
+    const expected = { topEntiteId: 'root-ars', entiteIdLevel: 3 };
+    expect(await first.json()).toEqual(expected);
+    expect(await second.json()).toEqual(expected);
+    expect(prisma.entite.findUnique).toHaveBeenCalledTimes(3);
   });
 });

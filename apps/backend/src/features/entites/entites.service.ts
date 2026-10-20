@@ -2,6 +2,7 @@ import type { Pagination } from '@sirena/backend-utils/types';
 import { CACHE_INVALIDATION_SCOPES, cacheInvalidationBus } from '../../helpers/cacheInvalidation.js';
 import { type Entite, prisma } from '../../libs/prisma.js';
 import { buildEntitesListAdmin } from './entites.admin.mapper.js';
+import { getEntiteAscendanteInfo } from './entites.ascendants.js';
 import { entitesHierarchyCache } from './entites.cache.js';
 import { resolveEntiteChain } from './entites.chains.js';
 import { getEntiteDescendantIds } from './entites.descendants.js';
@@ -18,6 +19,7 @@ import type {
   EntiteTraitementInput,
 } from './entites.type.js';
 
+export { getEntiteAscendanteInfo } from './entites.ascendants.js';
 export { getEntiteDescendantIds, getEntiteDescendantIdsGenerator } from './entites.descendants.js';
 
 const ADMIN_SORT_COLUMNS = [
@@ -681,39 +683,6 @@ export const getDepartementsByRegionCode = async (regionCode: string) => {
   });
   return rows.map((r) => ({ code: r.dptCodeActuel, label: r.dptLibActuel }));
 };
-
-export async function getEntiteAscendanteInfo(entiteId: string) {
-  const CYCLE_LIMIT = 6;
-  let currentEntiteId = entiteId;
-  let n = 0;
-
-  while (currentEntiteId) {
-    n += 1;
-    // Prevent infinite loop in case of cycle in entite hierarchy
-    if (n > CYCLE_LIMIT) {
-      break;
-    }
-    const lastEntiteId = await prisma.entite.findUnique({
-      where: { id: currentEntiteId },
-      select: { entiteMereId: true },
-    });
-
-    if (lastEntiteId === null) {
-      return { entiteId: null, level: n };
-    }
-
-    if (!lastEntiteId.entiteMereId) {
-      return { entiteId: currentEntiteId, level: n };
-    }
-
-    if (lastEntiteId.entiteMereId) {
-      currentEntiteId = lastEntiteId.entiteMereId;
-    }
-  }
-
-  // Should not happen
-  throw new Error(`Possible cycle detected in entite hierarchy, ${entiteId}`);
-}
 
 export async function getEntiteAscendanteIds(entiteId: string | null) {
   if (!entiteId) {
