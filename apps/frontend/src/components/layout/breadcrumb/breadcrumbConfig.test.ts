@@ -58,6 +58,23 @@ describe('getBreadCrumbItems', () => {
     expect(texts('/_auth/statistiques', superAdmin)).toEqual(['Espace administrateur', 'Indicateurs']);
   });
 
+  it('shows each admin tab as the current page of the admin section, for every role', () => {
+    for (const ctx of [entityAdmin, superAdmin]) {
+      expect(getBreadCrumbItems('/_auth/admin/users/', ctx)).toEqual([
+        { text: 'Espace administrateur', to: '/admin', current: false },
+        { text: "Demandes d'habilitation", to: '/admin/users', current: true },
+      ]);
+      expect(texts('/_auth/admin/users/all', ctx)).toEqual(['Espace administrateur', 'Utilisateurs']);
+      expect(texts('/_auth/admin/entites/', ctx)).toEqual(['Espace administrateur', 'Entités']);
+      expect(texts('/_auth/admin/entite/', ctx)).toEqual(['Espace administrateur', 'Entité']);
+      expect(texts('/_auth/admin/directions-services/', ctx)).toEqual([
+        'Espace administrateur',
+        'Directions et services',
+      ]);
+      expect(texts('/_auth/admin/sirec-migration', ctx)).toEqual(['Espace administrateur', 'Migration SIREC']);
+    }
+  });
+
   it('roots the admin sub pages on the admin section for every role', () => {
     const expected = ['Espace administrateur', 'Directions et services', 'Ajouter un service'];
 
@@ -81,7 +98,7 @@ describe('getBreadCrumbItems', () => {
     });
 
     expect(items).toEqual([
-      { text: 'Espace administrateur', to: '/admin/users', current: false },
+      { text: 'Espace administrateur', to: '/admin', current: false },
       { text: 'Entités', to: '/admin/entites', search: { offset: 30 }, current: false },
       { text: 'Modifier l’entité', to: '/admin/entites/e1', current: false },
       { text: 'Créer une entité', to: '/admin/entites/e1/create', current: true },
