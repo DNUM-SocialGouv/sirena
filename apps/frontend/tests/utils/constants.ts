@@ -25,6 +25,13 @@ export const ENTITY_ADMIN_USER = {
 };
 
 /**
+ * Target of the scenarios that change a habilitation: a throwaway account of the
+ * admin user's perimeter, since those scenarios rewrite its role and its statut.
+ * It never authenticates — only the admin user writes to it, so it needs no password.
+ */
+export const HABILITATION_TARGET_USER_EMAIL = process.env.E2E_TARGET_USER_EMAIL!;
+
+/**
  * AUTH TOKEN (local target only)
  *
  * The backend middleware authenticates any request carrying a valid `auth_token`

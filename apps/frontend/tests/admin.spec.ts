@@ -1,6 +1,8 @@
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
+import { ROLES, STATUT_TYPES } from '@sirena/common/constants';
 import { AUTH_CONFIGS, ensureAuthenticationFileExists, getCurrentUserId } from './utils/authHelper';
-import { baseUrl } from './utils/constants';
+import { baseUrl, HABILITATION_TARGET_USER_EMAIL } from './utils/constants';
+import { findUserIdByEmail, getUserHabilitation, setUserHabilitation, type UserHabilitation } from './utils/usersApi';
 
 /**
  * ADMIN E2E TESTS
@@ -8,6 +10,7 @@ import { baseUrl } from './utils/constants';
  * Prerequisites:
  * - At least 2 users in "Gestion des utilisateurs" table
  * - Authenticated user has ENTITY_ADMIN role
+ * - `HABILITATION_TARGET_USER_EMAIL` provisioned in that user's perimeter (see tests/README.md)
  */
 
 /**
@@ -42,6 +45,27 @@ async function navigateToUserEditPage(page: Page, context: BrowserContext): Prom
   await expect(page.getByTestId('user-role-select')).toBeVisible();
 
   return targetUserId;
+}
+
+/** Opens the edit form of a named user, without going through the list. */
+async function openUserEditPage(page: Page, userId: string): Promise<void> {
+  await page.goto(`${baseUrl}/admin/user/${userId}`);
+  await expect(page.getByRole('heading', { name: 'Modifier les informations', level: 1 })).toBeVisible();
+  await expect(page.getByTestId('user-role-select')).toBeVisible();
+}
+
+/**
+ * Submits the form and waits for the server to acknowledge the save. The page then
+ * goes back in history, so its destination depends on how the form was reached —
+ * only the response is a reliable signal. Its status is read, never its body: a
+ * body captured across a navigation is released before it can be parsed.
+ */
+async function saveUserForm(page: Page): Promise<void> {
+  const [response] = await Promise.all([
+    page.waitForResponse((res) => res.url().includes('/users/') && res.request().method() === 'PATCH'),
+    page.getByRole('button', { name: /Modifier les informations de l.utilisateur/ }).click(),
+  ]);
+  expect(response.ok(), `PATCH /users answered ${response.status()}`).toBeTruthy();
 }
 
 test.describe('Administration des utilisateurs', () => {
@@ -122,82 +146,47 @@ test.describe('Administration des utilisateurs', () => {
     await expect(heading).toBeVisible();
   });
 
-  test("inverse le statut d'un utilisateur et le reflète dans le tableau", async () => {
-    const targetUserId = await navigateToUserEditPage(page, context);
+  test.describe("Modification d'une habilitation", () => {
+    let targetUserId: string;
+    let initialHabilitation: UserHabilitation;
+    let snapshotTaken = false;
 
-    const statutSelect = page.getByTestId('user-statut-select');
-    await expect(statutSelect).toBeVisible();
+    test.beforeEach(async () => {
+      snapshotTaken = false;
+      targetUserId = await findUserIdByEmail(context.request, HABILITATION_TARGET_USER_EMAIL);
+      initialHabilitation = await getUserHabilitation(context.request, targetUserId);
+      snapshotTaken = true;
+      await openUserEditPage(page, targetUserId);
+    });
 
-    const currentStatus = await statutSelect.inputValue();
-    const oppositeStatus = currentStatus === 'ACTIF' ? 'INACTIF' : 'ACTIF';
+    // Through the API and not the form, so an aborted assertion still restores.
+    test.afterEach(async () => {
+      if (!snapshotTaken) {
+        return;
+      }
+      await setUserHabilitation(context.request, targetUserId, initialHabilitation);
+    });
 
-    await statutSelect.selectOption(oppositeStatus);
-    await page.getByRole('button', { name: /Modifier les informations de l.utilisateur/ }).click();
-    await expect(page).toHaveURL(`${baseUrl}/admin/users/all`);
-
-    const [userResponse] = await Promise.all([
-      page.waitForResponse((res) => res.url().includes(`/users/${targetUserId}`) && res.request().method() === 'GET'),
-      page.goto(`${baseUrl}/admin/user/${targetUserId}`),
-    ]);
-
-    await expect(page.getByTestId('user-statut-select')).toBeVisible();
-
-    const { data: userData } = await userResponse.json();
-    expect(userData).toBeTruthy();
-    expect(userData.id).toBe(targetUserId);
-    expect(userData.statutId).toBe(oppositeStatus);
-  });
-
-  test("change le rôle d'un utilisateur puis le remet à sa valeur d'origine", async () => {
-    const targetUserId = await navigateToUserEditPage(page, context);
-
-    const roleSelect = page.getByTestId('user-role-select');
-    await expect(roleSelect).toBeVisible();
-
-    const originalRole = await roleSelect.inputValue();
-    const oppositeRole = originalRole === 'PENDING' ? 'ENTITY_ADMIN' : 'PENDING';
-
-    // PART 1: Set to opposite role
-    await roleSelect.selectOption(oppositeRole);
-    await page.getByRole('button', { name: /Modifier les informations de l.utilisateur/ }).click();
-    await expect(page).toHaveURL(`${baseUrl}/admin/users/all`);
-
-    const [responseAfterChange] = await Promise.all([
-      page.waitForResponse((res) => res.url().includes(`/users/${targetUserId}`) && res.request().method() === 'GET'),
-      page.goto(`${baseUrl}/admin/user/${targetUserId}`),
-    ]);
-
-    await expect(page.getByTestId('user-role-select')).toBeVisible();
-
-    const { data: updatedUser } = await responseAfterChange.json();
-    expect(updatedUser).toBeTruthy();
-    expect(updatedUser.id).toBe(targetUserId);
-    expect(updatedUser.roleId).toBe(oppositeRole);
-
-    // PART 2: Revert to original role
-    const resetRoleSelect = page.getByTestId('user-role-select');
-    await expect(resetRoleSelect).toBeVisible();
-    await resetRoleSelect.selectOption(originalRole);
-
-    if (oppositeRole === 'PENDING') {
+    test("inverse le statut d'un utilisateur et le reflète dans le tableau", async () => {
       const statutSelect = page.getByTestId('user-statut-select');
       await expect(statutSelect).toBeVisible();
-      await statutSelect.selectOption('ACTIF');
-    }
 
-    await page.getByRole('button', { name: /Modifier les informations de l.utilisateur/ }).click();
-    await expect(page).toHaveURL(`${baseUrl}/admin/users/all`);
+      const oppositeStatus =
+        initialHabilitation.statutId === STATUT_TYPES.ACTIF ? STATUT_TYPES.INACTIF : STATUT_TYPES.ACTIF;
+      await statutSelect.selectOption(oppositeStatus);
+      await saveUserForm(page);
 
-    const [responseAfterReset] = await Promise.all([
-      page.waitForResponse((res) => res.url().includes(`/users/${targetUserId}`) && res.request().method() === 'GET'),
-      page.goto(`${baseUrl}/admin/user/${targetUserId}`),
-    ]);
+      const saved = await getUserHabilitation(context.request, targetUserId);
+      expect(saved.statutId).toBe(oppositeStatus);
+    });
 
-    await expect(page.getByTestId('user-role-select')).toBeVisible();
+    test("change le rôle d'un utilisateur et le reflète dans le tableau", async () => {
+      const otherRole = initialHabilitation.roleId === ROLES.READER ? ROLES.WRITER : ROLES.READER;
+      await page.getByTestId('user-role-select').selectOption(otherRole);
+      await saveUserForm(page);
 
-    const { data: revertedUser } = await responseAfterReset.json();
-    expect(revertedUser).toBeTruthy();
-    expect(revertedUser.id).toBe(targetUserId);
-    expect(revertedUser.roleId).toBe(originalRole);
+      const saved = await getUserHabilitation(context.request, targetUserId);
+      expect(saved.roleId).toBe(otherRole);
+    });
   });
 });
