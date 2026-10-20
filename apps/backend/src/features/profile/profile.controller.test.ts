@@ -1,3 +1,4 @@
+import { CGU_VERSION } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
@@ -8,6 +9,7 @@ import { convertDatesToStrings } from '../../tests/formatter.js';
 import { getEntiteChain, getEntitesByIds } from '../entites/entites.service.js';
 import { getUserById } from '../users/users.service.js';
 import ProfileController from './profile.controller.js';
+import { acceptCgu } from './profile.service.js';
 
 vi.mock('../../config/env.js', () => ({
   envVars: {},
@@ -15,6 +17,10 @@ vi.mock('../../config/env.js', () => ({
 
 vi.mock('../users/users.service.js', () => ({
   getUserById: vi.fn(),
+}));
+
+vi.mock('./profile.service.js', () => ({
+  acceptCgu: vi.fn(),
 }));
 
 vi.mock('../entites/entites.service.js', () => ({
@@ -59,6 +65,8 @@ describe('Profile endpoints: /profile', () => {
     pcData: {},
     statutId: 'ACTIF',
     entiteId: null,
+    cguAcceptedVersion: null,
+    cguAcceptedAt: null,
     role: { id: 'role1', label: 'Admin' },
   };
 
@@ -130,6 +138,36 @@ describe('Profile endpoints: /profile', () => {
       } else {
         throw new Error('Response does not contain message property');
       }
+    });
+  });
+
+  describe('POST /cgu-acceptance', () => {
+    it('should record the acceptance of the CGU version in force', async () => {
+      const acceptedAt = new Date('2026-10-20T08:30:00.000Z');
+      vi.mocked(acceptCgu).mockResolvedValueOnce({ cguAcceptedVersion: CGU_VERSION, cguAcceptedAt: acceptedAt });
+
+      const res = await client.profile['cgu-acceptance'].$post({ json: { version: CGU_VERSION } });
+      const json = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(json).toEqual({
+        data: { cguAcceptedVersion: CGU_VERSION, cguAcceptedAt: acceptedAt.toISOString() },
+      });
+      expect(acceptCgu).toHaveBeenCalledWith('id1', CGU_VERSION);
+    });
+
+    it('should refuse an outdated CGU version with 409', async () => {
+      const res = await client.profile['cgu-acceptance'].$post({ json: { version: 'outdated-version' } });
+
+      expect(res.status).toBe(409);
+      expect(acceptCgu).not.toHaveBeenCalled();
+    });
+
+    it('should return 400 when the version is missing', async () => {
+      const res = await client.profile['cgu-acceptance'].$post({ json: {} as { version: string } });
+
+      expect(res.status).toBe(400);
+      expect(acceptCgu).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,0 +1,13 @@
+/* The CGU can only be accepted or refused: Escape still closes the modal, as a refusal */
+.modal :global(.fr-btn--close) {
+  display: none;
+}
+
+.title {
+  text-align: center;
+}
+
+.pictogram {
+  display: block;
+  margin: 0 auto 1.5rem;
+}

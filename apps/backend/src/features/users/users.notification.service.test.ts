@@ -50,6 +50,8 @@ const mockUser = {
   createdAt: new Date(),
   updatedAt: new Date(),
   pcData: {},
+  cguAcceptedVersion: null,
+  cguAcceptedAt: null,
   roleId: ROLES.ENTITY_ADMIN,
   statutId: STATUT_TYPES.ACTIF,
   entiteId: 'entite1',

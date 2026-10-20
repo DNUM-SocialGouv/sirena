@@ -1,6 +1,7 @@
 export * from './apiErrors.constant.js';
 export * from './appEnv.constant.js';
 export * from './authErrors.constant.js';
+export * from './cgu.constant.js';
 export * from './dematSocial.constant.js';
 export * from './entite.constant.js';
 export * from './featureFlag.constant.js';

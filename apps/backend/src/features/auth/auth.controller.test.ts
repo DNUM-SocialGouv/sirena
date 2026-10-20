@@ -328,6 +328,8 @@ describe('Auth endpoints: /auth', () => {
         statutId: 'NON_RENSEIGNE',
         entiteId: null,
         pcData: {},
+        cguAcceptedVersion: null,
+        cguAcceptedAt: null,
       };
       vi.mocked(getOrCreateUser).mockResolvedValueOnce(createdUser);
 
@@ -629,6 +631,8 @@ describe('Auth endpoints: /auth', () => {
         statutId: 'NON_RENSEIGNE',
         entiteId: null,
         pcData: {},
+        cguAcceptedVersion: null,
+        cguAcceptedAt: null,
       };
       vi.mocked(getOrCreateUser).mockResolvedValueOnce(createdUser);
 
@@ -705,6 +709,8 @@ describe('Auth endpoints: /auth', () => {
         statutId: 'NON_RENSEIGNE',
         entiteId: null,
         pcData: {},
+        cguAcceptedVersion: null,
+        cguAcceptedAt: null,
       });
 
       const errorPageUrl = `${envVars.FRONTEND_REDIRECT_LOGIN_URI}?error=${AUTH_ERROR_CODES.SESSION_CREATE_ERROR}`;

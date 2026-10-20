@@ -11,6 +11,7 @@ export async function fetchProfile() {
   const userStore = useUserStore.getState();
   userStore.setRole(data.roleId as Role);
   userStore.setStatutId(data.statutId as StatutType);
+  userStore.setCguAcceptedVersion(data.cguAcceptedVersion);
   identifySentryUser({
     id: data.id,
     email: data.email,

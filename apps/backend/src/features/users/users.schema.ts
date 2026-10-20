@@ -14,6 +14,8 @@ export const UserSchema = z.object({
   roleId: z.string(),
   statutId: z.string(),
   entiteId: z.string().nullable(),
+  cguAcceptedVersion: z.string().nullable(),
+  cguAcceptedAt: z.coerce.date().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
