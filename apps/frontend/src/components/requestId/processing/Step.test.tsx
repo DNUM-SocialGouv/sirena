@@ -1,5 +1,5 @@
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, ROLES } from '@sirena/common/constants';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { forwardRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Step } from './Step';
@@ -590,6 +590,56 @@ describe('Step', () => {
     expect(screen.getAllByText(/Fichier ajouté le 19\/05\/2026/)).toHaveLength(2);
     expect(screen.getByText('a.pdf')).toBeInTheDocument();
     expect(screen.getByText('b.pdf')).toBeInTheDocument();
+  });
+
+  describe('closure step files', () => {
+    const makeClosureStep = (overrides: Partial<NonAssignmentEntityStepProps> = {}) =>
+      makeStep({
+        nom: '',
+        statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
+        dateRealisation: null,
+        createdAt: '2026-05-12T10:00:00.000Z',
+        updatedAt: '2026-05-12T10:00:00.000Z',
+        clotureEffectiveDate: '2026-05-10',
+        ...overrides,
+      });
+
+    it('labels each closure file with its author', () => {
+      render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ fileName: 'courrier.pdf' })] })} />);
+
+      expect(screen.getByText(/Fichier ajouté le/)).toHaveTextContent(
+        /^\s*Fichier ajouté le 19\/05\/2026 par Jeanne Moulon$/,
+      );
+      expect(screen.getByText('courrier.pdf')).toBeInTheDocument();
+    });
+
+    it('dates a closure file with its upload date, not the closure dates', () => {
+      render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ createdAt: '2026-06-03T10:00:00.000Z' })] })} />);
+
+      expect(screen.getByText(/Fichier ajouté le/)).toHaveTextContent(/Fichier ajouté le 03\/06\/2026/);
+      expect(screen.getByText(/Fichier ajouté le/)).not.toHaveTextContent(/10\/05\/2026|12\/05\/2026/);
+    });
+
+    it('labels a closure file without an author with its date only, never as automatic', () => {
+      render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ uploadedBy: null })] })} />);
+
+      expect(screen.getByText(/Fichier ajouté le/)).toHaveTextContent(/^\s*Fichier ajouté le 19\/05\/2026$/);
+      expect(screen.queryByText(/automatiquement/)).not.toBeInTheDocument();
+    });
+
+    it('lets the owner delete a closure file from its card, after confirmation', () => {
+      canEditRequest = true;
+      render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ fileName: 'courrier.pdf' })] })} />);
+
+      const card = screen.getByText(/Fichier ajouté le/).parentElement as HTMLElement;
+      fireEvent.click(within(card).getByRole('button', { name: 'Supprimer le fichier courrier.pdf' }));
+
+      expect(
+        screen.getByText(
+          'Êtes-vous sûr de vouloir supprimer le fichier "courrier.pdf" ? Cette action est irréversible.',
+        ),
+      ).toBeInTheDocument();
+    });
   });
 
   it('derives the manual ACR subtitle from the AR file (Envoyé le … par …)', () => {

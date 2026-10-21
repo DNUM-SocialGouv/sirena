@@ -1,3 +1,6 @@
+import { fr } from '@codegouvfr/react-dsfr';
+import { Button } from '@codegouvfr/react-dsfr/Button';
+import { useCallback } from 'react';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
@@ -8,9 +11,41 @@ type StepFile = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data
 type StepFilesProps = {
   files: StepFile[];
   stepId: string;
+  /**
+   * How to label a file without an uploader.
+   * - `automatic` (default): the system added it, e.g. an automatic Accusé de réception.
+   * - `anonymous`: an agent added it but the account no longer exists, e.g. a closure file.
+   */
+  unknownUploader?: 'automatic' | 'anonymous';
+  /** When provided, each file card shows a delete button that calls it. The caller confirms and deletes. */
+  onRequestDelete?: (fileId: string, fileName: string) => void;
 };
 
-export const StepFiles = ({ files, stepId }: StepFilesProps) => {
+type StepFileDeleteButtonProps = {
+  fileId: string;
+  fileName: string;
+  onRequestDelete: (fileId: string, fileName: string) => void;
+};
+
+const StepFileDeleteButton = ({ fileId, fileName, onRequestDelete }: StepFileDeleteButtonProps) => {
+  const handleClick = useCallback(() => {
+    onRequestDelete(fileId, fileName);
+  }, [onRequestDelete, fileId, fileName]);
+
+  return (
+    <Button
+      aria-label={`Supprimer le fichier ${fileName}`}
+      title="Supprimer le fichier"
+      type="button"
+      className={fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')}
+      onClick={handleClick}
+    >
+      <span className={fr.cx('fr-sr-only')}>Supprimer le fichier</span>
+    </Button>
+  );
+};
+
+export const StepFiles = ({ files, stepId, unknownUploader = 'automatic', onRequestDelete }: StepFilesProps) => {
   if (files.length === 0) return null;
 
   return (
@@ -26,8 +61,10 @@ export const StepFiles = ({ files, stepId }: StepFilesProps) => {
                 <>
                   le {formatDate(file.createdAt)} par {formatAgent(author)}
                 </>
-              ) : (
+              ) : unknownUploader === 'automatic' ? (
                 <>automatiquement le {formatDate(file.createdAt)}</>
+              ) : (
+                <>le {formatDate(file.createdAt)}</>
               )}
             </p>
             <div className={styles['request-note__file']}>
@@ -41,6 +78,9 @@ export const StepFiles = ({ files, stepId }: StepFilesProps) => {
                 scanStatus={file.scanStatus}
                 sanitizeStatus={file.sanitizeStatus}
               />
+              {onRequestDelete ? (
+                <StepFileDeleteButton fileId={file.id} fileName={fileName} onRequestDelete={onRequestDelete} />
+              ) : null}
             </div>
           </div>
         );

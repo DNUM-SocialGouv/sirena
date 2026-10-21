@@ -1,4 +1,3 @@
-import { fr } from '@codegouvfr/react-dsfr';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import {
@@ -15,7 +14,6 @@ import { Toast } from '@sirena/ui';
 import { clsx } from 'clsx';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { EntiteTypeBadge } from '@/components/common/EntiteTypeBadge';
-import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { useDisableStepRappel } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useDeleteUploadedFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
@@ -189,47 +187,6 @@ const getStepSubtitle = ({
         </>
       ) : null}
     </>
-  );
-};
-
-type ClotureFileItemProps = {
-  file: StepType['uploadedFiles'][number];
-  stepId: string;
-  canEdit: boolean;
-  onRequestDelete: (fileId: string, fileName: string) => void;
-};
-
-const ClotureFileItem = ({ file, stepId, canEdit, onRequestDelete }: ClotureFileItemProps) => {
-  const fileName = file.fileName;
-
-  const handleDelete = useCallback(() => {
-    onRequestDelete(file.id, fileName);
-  }, [onRequestDelete, file.id, fileName]);
-
-  return (
-    <li className={styles['request-note__file']}>
-      <FileDownloadLink
-        href={`/api/requete-etapes/${stepId}/file/${file.id}`}
-        safeHref={`/api/requete-etapes/${stepId}/file/${file.id}/safe`}
-        fileName={fileName}
-        fileId={file.id}
-        fileSize={file.size}
-        status={file.status}
-        scanStatus={file.scanStatus}
-        sanitizeStatus={file.sanitizeStatus}
-      />
-      {canEdit ? (
-        <Button
-          aria-label={`Supprimer le fichier ${fileName}`}
-          title="Supprimer le fichier"
-          type="button"
-          className={fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')}
-          onClick={handleDelete}
-        >
-          <span className={fr.cx('fr-sr-only')}>Supprimer le fichier</span>
-        </Button>
-      ) : null}
-    </li>
   );
 };
 
@@ -550,21 +507,12 @@ const StepComponent = (stepProps: StepProps) => {
                 </div>
               ) : null}
             </div>
-            {step.uploadedFiles && step.uploadedFiles.filter((f) => !deletedFileIds.has(f.id)).length > 0 && (
-              <ul className={`fr-mt-1w ${styles['cloture-files']}`}>
-                {step.uploadedFiles
-                  .filter((f) => !deletedFileIds.has(f.id))
-                  .map((file: StepType['uploadedFiles'][number]) => (
-                    <ClotureFileItem
-                      key={file.id}
-                      file={file}
-                      stepId={id}
-                      canEdit={isOwner && canEdit}
-                      onRequestDelete={handleRequestDeleteClotureFile}
-                    />
-                  ))}
-              </ul>
-            )}
+            <StepFiles
+              files={step.uploadedFiles.filter((f) => !deletedFileIds.has(f.id))}
+              stepId={id}
+              unknownUploader="anonymous"
+              onRequestDelete={isOwner && canEdit ? handleRequestDeleteClotureFile : undefined}
+            />
           </>
         ) : (
           <>
