@@ -174,9 +174,13 @@ reste réelle (voir actions) mais elle n'était pas active.
   l'API, pour le teardown et les assertions.
 - `apps/frontend/tests/admin.spec.ts` :
   - les deux scénarios mutants passent dans un `test.describe` dédié et ne visent plus qu'un
-    **compte dédié**, jamais la première ligne de la liste : `pilotage@yopmail.com` (utilisateur
-    du seed) en cible locale, `user17@yopmail.com` (compte ProConnect dédié) sur l'integration.
-    La cible est nommée par la variable `E2E_TARGET_USER_EMAIL`, fournie par le workflow ;
+    **compte dédié**, jamais la première ligne de la liste : `user17@yopmail.com`, semé en cible
+    locale et provisionné à la main sur l'integration, nommé par la variable
+    `E2E_TARGET_USER_EMAIL`. Aucun autre test n'en dépend, et il ne détient aucun rôle dont le
+    seed n'a qu'un seul porteur ;
+  - l'habilitation d'origine est capturée **une seule fois** pour le fichier, jamais relue :
+    une restauration qui échoue laisse le compte modifié, et la relire prendrait cet état
+    pour l'original — le même piège que celui décrit au point 2 ;
   - la cible est résolue **avant toute écriture** : absente du périmètre du compte admin de test,
     le scénario échoue dans son `beforeEach` avec un message qui pointe le provisionnement, au
     lieu de se rabattre sur un autre compte ;

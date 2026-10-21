@@ -36,14 +36,15 @@ E2E tests use Playwright browser context persistence to skip repeated ProConnect
  * Prerequisites:
  * - At least 2 users with same entiteId in "Gestion des utilisateurs" table
  * - Authenticated user has ENTITY_ADMIN role
- * - `E2E_TARGET_USER_EMAIL` names an account of that user's perimeter: `pilotage@yopmail.com`
-   from the seed in local target, the `TEST_TARGET_USER_EMAIL` repository variable in CI. The
-   scenarios that change a habilitation rewrite its role and its statut, so it must be an
-   account nobody uses, and it must sit inside the authenticated user's entity or one of its
-   descendants — the perimeter is resolved downwards only, so a sibling entity is out of reach
-   for both reading and patching. On integration it is provisioned by hand like the
-   authenticated user: a SIRENA account only exists after a first ProConnect login, and CI
-   provisions nothing.
+ * - `E2E_TARGET_USER_EMAIL` names an account dedicated to the scenarios that change a
+   habilitation: `user17@yopmail.com`, seeded in local target, named by the
+   `TEST_TARGET_USER_EMAIL` repository variable in CI. Those scenarios rewrite its role and its
+   statut, so no other test may depend on it — in particular they must not target a role the
+   seed only has one holder of, such as `pilotage@yopmail.com` for `NATIONAL_STEERING`. It must
+   also sit inside the authenticated user's entity or one of its descendants: the perimeter is
+   resolved downwards only, so a sibling entity is out of reach for both reading and patching.
+   On integration it is provisioned by hand like the authenticated user — a SIRENA account only
+   exists after a first ProConnect login, and CI provisions nothing.
 
 #### Home Requetes
  * Prerequisites:

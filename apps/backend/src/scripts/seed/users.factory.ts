@@ -144,6 +144,18 @@ const defaultUserSpecs = (entites: ArsEntites): UserSpec[] => [
     entiteId: null,
     entiteLabel: null,
   },
+  {
+    // Cible des scénarios e2e qui modifient une habilitation (E2E_TARGET_USER_EMAIL) :
+    // son rôle et son statut sont réécrits à chaque run, aucun autre test ne doit en
+    // dépendre. Rattachée à l'ARS Île-de-France, le périmètre du compte admin de test.
+    email: 'user17@yopmail.com',
+    prenom: 'Cible',
+    nom: 'Habilitation',
+    role: ROLES.READER,
+    statut: STATUT_TYPES.ACTIF,
+    entiteId: entites.idf.id,
+    entiteLabel: entites.idf.nomComplet,
+  },
 ];
 
 /**

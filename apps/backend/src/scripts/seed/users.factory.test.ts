@@ -35,7 +35,7 @@ describe('fixed user ids', () => {
 
     const users = await seedUsers(entites, [], { [email]: fixedId });
 
-    expect(users).toHaveLength(7);
+    expect(users).toHaveLength(8);
     expect(users[0].email).toBe(email);
     expect(vi.mocked(prisma.user.upsert).mock.calls[0][0].update).not.toHaveProperty('id');
   });
@@ -43,7 +43,7 @@ describe('fixed user ids', () => {
   it('accepts existing ids when no fixed id is requested', async () => {
     vi.mocked(prisma.user.upsert).mockResolvedValue({ id: 'existing-user-id' } as never);
 
-    await expect(seedUsers(entites, [])).resolves.toHaveLength(7);
+    await expect(seedUsers(entites, [])).resolves.toHaveLength(8);
   });
 });
 

@@ -148,23 +148,26 @@ test.describe('Administration des utilisateurs', () => {
 
   test.describe("Modification d'une habilitation", () => {
     let targetUserId: string;
-    let initialHabilitation: UserHabilitation;
-    let snapshotTaken = false;
+    let pristineHabilitation: UserHabilitation;
+    let hasPristine = false;
 
     test.beforeEach(async () => {
-      snapshotTaken = false;
       targetUserId = await findUserIdByEmail(context.request, HABILITATION_TARGET_USER_EMAIL);
-      initialHabilitation = await getUserHabilitation(context.request, targetUserId);
-      snapshotTaken = true;
+      // Captured once for the whole file, never re-read: a restore that fails leaves the
+      // account modified, and re-reading would take that state for the original one.
+      if (!hasPristine) {
+        pristineHabilitation = await getUserHabilitation(context.request, targetUserId);
+        hasPristine = true;
+      }
       await openUserEditPage(page, targetUserId);
     });
 
     // Through the API and not the form, so an aborted assertion still restores.
     test.afterEach(async () => {
-      if (!snapshotTaken) {
+      if (!hasPristine) {
         return;
       }
-      await setUserHabilitation(context.request, targetUserId, initialHabilitation);
+      await setUserHabilitation(context.request, targetUserId, pristineHabilitation);
     });
 
     test("inverse le statut d'un utilisateur et le reflète dans le tableau", async () => {
@@ -172,7 +175,7 @@ test.describe('Administration des utilisateurs', () => {
       await expect(statutSelect).toBeVisible();
 
       const oppositeStatus =
-        initialHabilitation.statutId === STATUT_TYPES.ACTIF ? STATUT_TYPES.INACTIF : STATUT_TYPES.ACTIF;
+        pristineHabilitation.statutId === STATUT_TYPES.ACTIF ? STATUT_TYPES.INACTIF : STATUT_TYPES.ACTIF;
       await statutSelect.selectOption(oppositeStatus);
       await saveUserForm(page);
 
@@ -181,7 +184,7 @@ test.describe('Administration des utilisateurs', () => {
     });
 
     test("change le rôle d'un utilisateur et le reflète dans le tableau", async () => {
-      const otherRole = initialHabilitation.roleId === ROLES.READER ? ROLES.WRITER : ROLES.READER;
+      const otherRole = pristineHabilitation.roleId === ROLES.READER ? ROLES.WRITER : ROLES.READER;
       await page.getByTestId('user-role-select').selectOption(otherRole);
       await saveUserForm(page);
 
