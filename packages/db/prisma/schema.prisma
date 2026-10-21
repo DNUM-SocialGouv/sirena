@@ -113,6 +113,8 @@ model Entite {
   assignmentStepsReceived RequeteEtape[]  @relation("AssignedEntite")
   requeteMessages       RequeteMessage[]
   requeteMessageReads   RequeteMessageRead[]
+
+  @@index([entiteMereId])
 }
 
 model EntiteTypeEnum {
@@ -163,6 +165,8 @@ model Requete {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
 }
 
 model RequeteEntite {
@@ -180,6 +184,8 @@ model RequeteEntite {
   requeteEtape RequeteEtape[]
 
   @@id([requeteId, entiteId])
+  @@index([entiteId, statutId])
+  @@index([entiteId, prioriteId])
 }
 
 model RequeteStatusEnum {

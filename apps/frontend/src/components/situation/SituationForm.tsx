@@ -1,12 +1,11 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import type { ReceptionType } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useRef, useState } from 'react';
 import { MisEnCause } from '@/components/situation/sections/MisEnCause';
 import { useEntites } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
-import { BACK_LINK_ACTIVE_OPTIONS } from '@/utils/backLink';
 import { hasSituationContent } from '@/utils/situationHelpers';
 import { DescriptionFaits, type DescriptionFaitsRef } from './sections/DescriptionSituation';
 import { Identification } from './sections/Identification';
@@ -110,82 +109,71 @@ export function SituationForm({
     }
   }, [isTraitementDesFaitsValid, formData, faitFiles, handleCancel, mode, requestId, initialData, onSave]);
 
-  const backUrl = mode === 'create' && !requestId ? '/request/create' : requestId ? `/request/${requestId}` : '/home';
-
   return (
     <div>
-      <div className="fr-container fr-mt-4w">
-        <div className="fr-mb-3w">
-          <Link className="fr-link" to={backUrl} activeOptions={BACK_LINK_ACTIVE_OPTIONS}>
-            <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true" />
-            Détails de la requête
-          </Link>
-        </div>
+      <h1 className="fr-mb-2w" data-testid="situation-form-title">
+        Description de la situation
+      </h1>
+      <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
-        <h1 className="fr-mb-2w" data-testid="situation-form-title">
-          Description de la situation
-        </h1>
-        <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
+      <LieuSurvenu formData={formData} isSaving={isSaving} receptionType={receptionType} setFormData={setFormData} />
 
-        <LieuSurvenu formData={formData} isSaving={isSaving} receptionType={receptionType} setFormData={setFormData} />
+      <MisEnCause formData={formData} isSaving={isSaving} setFormData={setFormData} />
 
-        <MisEnCause formData={formData} isSaving={isSaving} setFormData={setFormData} />
+      <DescriptionFaits
+        ref={descriptionFaitsRef}
+        formData={formData}
+        setFormData={setFormData}
+        receptionType={receptionType}
+        initialData={initialData}
+      />
 
-        <DescriptionFaits
-          ref={descriptionFaitsRef}
-          formData={formData}
-          setFormData={setFormData}
-          receptionType={receptionType}
-          initialData={initialData}
-        />
+      <InformationsComplementaires
+        formData={formData}
+        setFormData={setFormData}
+        situationId={situationId}
+        requestId={requestId}
+        faitFiles={faitFiles}
+        setFaitFiles={setFaitFiles}
+        isSaving={isSaving}
+      />
 
-        <InformationsComplementaires
-          formData={formData}
-          setFormData={setFormData}
-          situationId={situationId}
-          requestId={requestId}
-          faitFiles={faitFiles}
-          setFaitFiles={setFaitFiles}
-          isSaving={isSaving}
-        />
+      <Identification
+        formData={formData}
+        isSaving={isSaving}
+        setFormData={setFormData}
+        isFromSirec={isFromSirec}
+        sirecDepartement={sirecDepartement}
+      />
 
-        <Identification
-          formData={formData}
-          isSaving={isSaving}
-          setFormData={setFormData}
-          isFromSirec={isFromSirec}
-          sirecDepartement={sirecDepartement}
-        />
+      <TraitementDesFaitsSection
+        ref={traitementDesFaitsRef}
+        entites={(entitesData?.data || []).map((e: { id: string; nomComplet: string }) => ({
+          id: e.id,
+          nomComplet: e.nomComplet,
+        }))}
+        userEntiteId={profile?.entiteId}
+        topEntiteId={profile?.topEntiteId}
+        initialEntites={formData.traitementDesFaits?.entites}
+        onChange={handleTraitementDesFaitsChange}
+        onValidationChange={setIsTraitementDesFaitsValid}
+        disabled={isSaving}
+        hasAttemptedSave={hasAttemptedSave}
+      />
 
-        <TraitementDesFaitsSection
-          ref={traitementDesFaitsRef}
-          entites={(entitesData?.data || []).map((e: { id: string; nomComplet: string }) => ({
-            id: e.id,
-            nomComplet: e.nomComplet,
-          }))}
-          userEntiteId={profile?.entiteId}
-          topEntiteId={profile?.topEntiteId}
-          initialEntites={formData.traitementDesFaits?.entites}
-          onChange={handleTraitementDesFaitsChange}
-          onValidationChange={setIsTraitementDesFaitsValid}
+      {/* Actions */}
+      <div className="fr-btns-group fr-btns-group--inline-md fr-mb-6w">
+        <Button priority="secondary" onClick={handleCancel} disabled={isSaving}>
+          Annuler
+        </Button>
+        <Button
+          ref={saveButtonRef}
+          onClick={handleSave}
           disabled={isSaving}
-          hasAttemptedSave={hasAttemptedSave}
-        />
-
-        {/* Actions */}
-        <div className="fr-btns-group fr-btns-group--inline-md fr-mb-6w">
-          <Button priority="secondary" onClick={handleCancel} disabled={isSaving}>
-            Annuler
-          </Button>
-          <Button
-            ref={saveButtonRef}
-            onClick={handleSave}
-            disabled={isSaving}
-            nativeButtonProps={{ ...{ 'data-testid': 'situation-save' } }}
-          >
-            Enregistrer
-          </Button>
-        </div>
+          nativeButtonProps={{ ...{ 'data-testid': 'situation-save' } }}
+        >
+          Enregistrer
+        </Button>
       </div>
     </div>
   );

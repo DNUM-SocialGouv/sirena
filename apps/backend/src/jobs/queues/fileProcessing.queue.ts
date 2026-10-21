@@ -11,10 +11,12 @@ export interface FileProcessingJobData {
 export const fileProcessingQueue = new Queue<FileProcessingJobData>('file-processing', {
   connection,
   defaultJobOptions: {
-    attempts: 3,
+    // ~2.5 min of retries (10+20+40+80s); past that the hourly queue-unprocessed-files cron
+    // requeues the file, and a longer delay would block it since jobId dedup skips queued files.
+    attempts: 5,
     backoff: {
       type: 'exponential',
-      delay: 5000,
+      delay: 10_000,
     },
     removeOnComplete: {
       age: 3600,

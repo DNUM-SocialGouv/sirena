@@ -91,13 +91,6 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
 
   return (
     <section>
-      <div className="fr-mb-3w">
-        <Link className="fr-link" to="/admin/directions-services" activeOptions={BACK_LINK_ACTIVE_OPTIONS}>
-          <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true" />
-          Directions et services
-        </Link>
-      </div>
-
       <h2>{title}</h2>
 
       <div className="fr-card fr-p-3w fr-mt-4w">

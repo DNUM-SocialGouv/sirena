@@ -2,7 +2,7 @@ import { ROLES } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Entite, prisma } from '../../libs/prisma.js';
 import { getUserEntiteContext } from '../users/users.service.js';
-import { entitesDescendantIdsCache, entitesHierarchyCache } from './entites.cache.js';
+import { entiteAscendanteInfoCache, entitesDescendantIdsCache, entitesHierarchyCache } from './entites.cache.js';
 import { DirectionOrServiceCreationForbiddenError } from './entites.error.js';
 import {
   buildEntitesTraitement,
@@ -2344,6 +2344,7 @@ describe("invalidation du cache du périmètre d'autorisation", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     entitesDescendantIdsCache.clear();
+    entiteAscendanteInfoCache.clear();
     entitesHierarchyCache.clear();
   });
 
@@ -2368,6 +2369,17 @@ describe("invalidation du cache du périmètre d'autorisation", () => {
     await run();
 
     expect(entitesDescendantIdsCache.has(agentEntiteId)).toBe(false);
+  });
+
+  it.each(mutations)('$name invalide le cache de la remontée hiérarchique après écriture', async ({ run }) => {
+    vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({ entiteMereId: null } as never);
+
+    await entiteAscendanteInfoCache.get(agentEntiteId);
+    expect(entiteAscendanteInfoCache.has(agentEntiteId)).toBe(true);
+
+    await run();
+
+    expect(entiteAscendanteInfoCache.has(agentEntiteId)).toBe(false);
   });
 
   it('ne remet pas en cache une hiérarchie chargée avant une invalidation concurrente', async () => {
@@ -2474,6 +2486,42 @@ describe("invalidation du cache du périmètre d'autorisation", () => {
       assignedEntiteId: 'root-b',
       entiteIds: ['root-b', 'svc-1'],
     });
+  });
+
+  it("recalcule l'entité racine d'un service déplacé sous une autre entité", async () => {
+    const mockEntiteMeres = (entiteMereIds: Record<string, string | null>) => {
+      vi.mocked(prisma.entite.findUnique).mockImplementation((async (args: { where: { id: string } }) =>
+        args.where.id in entiteMereIds ? { entiteMereId: entiteMereIds[args.where.id] } : null) as never);
+    };
+
+    mockEntiteMeres({ 'svc-1': 'root-a', 'root-a': null, 'root-b': null });
+    await expect(entiteAscendanteInfoCache.get('svc-1')).resolves.toEqual({ entiteId: 'root-a', level: 2 });
+
+    mockEntiteMeres({ 'svc-1': 'root-b', 'root-a': null, 'root-b': null });
+    await expect(entiteAscendanteInfoCache.get('svc-1')).resolves.toEqual({ entiteId: 'root-a', level: 2 });
+
+    vi.mocked(prisma.entite.update).mockResolvedValueOnce({ id: 'svc-1' } as never);
+    await editEntiteAdmin('svc-1', {
+      nomComplet: 'Service Autonomie',
+      label: 'SA',
+      email: 'service-autonomie@ars.fr',
+      emailContactUsager: '',
+      adresseContactUsager: '',
+      telContactUsager: '',
+      isActive: true,
+    });
+
+    await expect(entiteAscendanteInfoCache.get('svc-1')).resolves.toEqual({ entiteId: 'root-b', level: 2 });
+  });
+
+  it('ne met pas en cache une remontée hiérarchique qui détecte un cycle', async () => {
+    vi.mocked(prisma.entite.findUnique).mockResolvedValue({ entiteMereId: 'A' } as never);
+
+    await expect(entiteAscendanteInfoCache.get('A')).rejects.toThrow(/Possible cycle detected in entite hierarchy/);
+    expect(entiteAscendanteInfoCache.has('A')).toBe(false);
+
+    await expect(entiteAscendanteInfoCache.get('A')).rejects.toThrow(/Possible cycle detected in entite hierarchy/);
+    expect(prisma.entite.findUnique).toHaveBeenCalledTimes(12);
   });
 
   it('retire du périmètre une entité supprimée de la hiérarchie', async () => {

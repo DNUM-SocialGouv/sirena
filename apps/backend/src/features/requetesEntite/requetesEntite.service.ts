@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { Readable } from 'node:stream';
 import { helpers } from '@sirena/backend-utils';
 import { mappers } from '@sirena/common';
 import {
@@ -33,11 +34,14 @@ import { ZipArchive } from 'archiver';
 import type { z } from 'zod';
 import { getFileEncryptionParams, getOriginalFileName, getSafeFileEncryptionParams } from '../../helpers/file.js';
 import { collectDataKeys } from '../../helpers/object.js';
+import { createDefaultLogger } from '../../helpers/pino.js';
 import { sortObject } from '../../helpers/prisma/sort.js';
 import { createSearchConditionsForRequeteEntite } from '../../helpers/search.js';
 import { sseEventManager } from '../../helpers/sse.js';
 import { capitalizeFirst, formatDateFr, splitCsv } from '../../helpers/string.js';
-import { deleteFileFromMinio, getFileStream } from '../../libs/minio.js';
+import { loggerStorage } from '../../libs/asyncLocalStorage.js';
+import type { DecryptionParams } from '../../libs/encryption.js';
+import { deleteFileFromMinio, getFileStream, statMinioObject } from '../../libs/minio.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
@@ -48,6 +52,7 @@ import { generateRequeteId } from '../requetes/functionalId.service.js';
 import {
   deleteFaitFilesRemovedFromSituation,
   setFaitFiles,
+  setRequeteFile,
   UNATTACHED_FILE_RELATIONS,
 } from '../uploadedFiles/uploadedFiles.service.js';
 import { DEFAULT_REQUETES_LIMIT } from './requetesEntite.constants.js';
@@ -589,7 +594,33 @@ interface CreateRequeteInput {
   provenancePrecision?: string | null;
   declarant?: DeclarantInput;
   participant?: PersonneConcerneeInput;
+  fileIds?: string[];
 }
+
+interface PrismaUniqueConstraintError {
+  code: string;
+  meta?: {
+    modelName?: string;
+    target?: string[];
+    driverAdapterError?: {
+      cause?: { table?: string; constraint?: { index?: string; fields?: string[] } };
+    };
+  };
+}
+
+// With the pg driver adapter, P2002 carries the violated constraint in meta.driverAdapterError, not meta.target.
+const isRequeteIdConflict = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object' || !('code' in error)) return false;
+  const { code, meta } = error as PrismaUniqueConstraintError;
+  if (code !== 'P2002') return false;
+
+  const cause = meta?.driverAdapterError?.cause;
+  return (
+    (meta?.modelName === 'Requete' && meta.target?.includes('id') === true) ||
+    cause?.constraint?.index === 'Requete_pkey' ||
+    (cause?.table === 'Requete' && cause.constraint?.fields?.includes('id') === true)
+  );
+};
 
 export const createRequeteEntite = async (entiteId: string, data?: CreateRequeteInput, changedById?: string) => {
   const maxRetries = 5;
@@ -598,77 +629,94 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
 
   while (retryCount < maxRetries) {
     try {
+      // The id is reserved through a Redis lock before opening the transaction, so the transaction does not hold
+      // a pooled connection during Redis round trips. A rollback only skips a number in the sequence.
       const requeteId = await generateRequeteId('SIRENA');
 
-      const requete = await prisma.requete.create({
-        data: {
-          id: requeteId,
-          receptionDate: data?.receptionDate ? new Date(data.receptionDate) : null,
-          dateDemandeDeclarant: data?.dateDemandeDeclarant ? new Date(data.dateDemandeDeclarant) : null,
-          receptionTypeId: data?.receptionTypeId ?? null,
-          provenanceId: data?.provenanceId ?? null,
-          provenancePrecision: data?.provenancePrecision ?? null,
-          ...(data?.declarant && {
-            declarant: {
-              create: mapDeclarantToPrismaCreate(data.declarant),
+      // Retry on id collision wraps the transaction: a P2002 aborts it, so each attempt needs a fresh one.
+      return await prisma.$transaction(async (tx) => {
+        const requete = await tx.requete.create({
+          data: {
+            id: requeteId,
+            receptionDate: data?.receptionDate ? new Date(data.receptionDate) : null,
+            dateDemandeDeclarant: data?.dateDemandeDeclarant ? new Date(data.dateDemandeDeclarant) : null,
+            receptionTypeId: data?.receptionTypeId ?? null,
+            provenanceId: data?.provenanceId ?? null,
+            provenancePrecision: data?.provenancePrecision ?? null,
+            ...(data?.declarant && {
+              declarant: {
+                create: mapDeclarantToPrismaCreate(data.declarant),
+              },
+            }),
+            ...(data?.participant && {
+              participant: {
+                create: mapPersonneConcerneeToPrismaCreate(data.participant),
+              },
+            }),
+            requeteEntites: {
+              create: {
+                statutId: REQUETE_STATUT_TYPES.EN_COURS,
+                entiteId,
+              },
             },
-          }),
-          ...(data?.participant && {
-            participant: {
-              create: mapPersonneConcerneeToPrismaCreate(data.participant),
-            },
-          }),
-          requeteEntites: {
-            create: {
-              statutId: REQUETE_STATUT_TYPES.EN_COURS,
-              entiteId,
-            },
+            createdById: changedById,
           },
-          createdById: changedById,
-        },
-        include: {
-          requeteEntites: true,
-          declarant: data?.declarant
-            ? {
-                include: {
-                  identite: true,
-                  adresse: true,
-                },
-              }
-            : false,
-          participant: data?.participant
-            ? {
-                include: {
-                  identite: true,
-                  adresse: true,
-                },
-              }
-            : false,
-        },
-      });
-
-      // Create default processing steps for each entity
-      for (const entite of requete.requeteEntites) {
-        await createDefaultRequeteEtapes(requete.id, entite.entiteId, undefined, changedById);
-      }
-
-      if (data?.declarant?.estPersonneConcernee && requete.declarant) {
-        await prisma.personneConcernee.update({
-          where: { id: requete.declarant.id },
-          data: { participantDeId: requete.id },
+          include: {
+            requeteEntites: true,
+            declarant: data?.declarant
+              ? {
+                  include: {
+                    identite: true,
+                    adresse: true,
+                  },
+                }
+              : false,
+            participant: data?.participant
+              ? {
+                  include: {
+                    identite: true,
+                    adresse: true,
+                  },
+                }
+              : false,
+          },
         });
-      }
 
-      return requete;
-    } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'code' in error) {
-        const prismaError = error as { code: string; meta?: { target?: string[] }; message?: string };
-        if (prismaError.code === 'P2002' && prismaError.meta?.target?.includes('id')) {
-          lastError = new Error(prismaError.message || 'Unique constraint failed on id');
-          retryCount++;
-          await new Promise((resolve) => setTimeout(resolve, 100 * retryCount));
-          continue;
+        // The step changelogs share the transaction, so that a rolled back attempt (id collision retry included)
+        // leaves no audit of steps that never existed. Trade-off: an audit write failure now cancels the whole
+        // creation instead of being only logged. The Requete changelog stays outside: requeteChangelogMiddleware
+        // writes it once the controller returns, after the commit.
+        for (const entite of requete.requeteEntites) {
+          await createDefaultRequeteEtapes(requete.id, entite.entiteId, tx, changedById, {
+            transactionalAudit: true,
+          });
         }
+
+        if (data?.declarant?.estPersonneConcernee && requete.declarant) {
+          await tx.personneConcernee.update({
+            where: { id: requete.declarant.id },
+            data: { participantDeId: requete.id },
+          });
+        }
+
+        // Same guard as setEtapeFile, checked by the update itself: only files the author uploaded for this
+        // entite and not attached anywhere yet (none without an author).
+        if (data?.fileIds?.length) {
+          await setRequeteFile(requete.id, data.fileIds, entiteId, changedById, tx, {
+            uploadedById: changedById ?? null,
+            entiteId,
+            ...UNATTACHED_FILE_RELATIONS,
+          });
+        }
+
+        return requete;
+      });
+    } catch (error: unknown) {
+      if (isRequeteIdConflict(error)) {
+        lastError = new Error((error as { message?: string }).message || 'Unique constraint failed on id');
+        retryCount++;
+        await new Promise((resolve) => setTimeout(resolve, 100 * retryCount));
+        continue;
       }
       throw error;
     }
@@ -2208,6 +2256,27 @@ export const collectRequeteFiles = (requeteEntite: NonNullable<Awaited<ReturnTyp
   return { rootFiles, situationFiles };
 };
 
+const FILE_UNAVAILABLE_NOTICE = 'Fichier indisponible';
+
+/**
+ * Yields the file body on first read, not when the entry is appended. A file that turns out to be
+ * unreadable yields the same notice as an unavailable one: an error raised here would abort the
+ * whole archive.
+ */
+async function* readFileBody(filePath: string, decryptionParams?: DecryptionParams) {
+  let stream: Readable;
+  try {
+    ({ stream } = await getFileStream(filePath, decryptionParams));
+  } catch (err) {
+    const logger = loggerStorage.getStore() ?? createDefaultLogger();
+    logger.error({ err, filePath }, 'Failed to open an attachment while building the archive');
+    yield Buffer.from(FILE_UNAVAILABLE_NOTICE);
+    return;
+  }
+
+  yield* stream;
+}
+
 export const createRequeteFilesArchive = async (requeteId: string, entiteId: string, timeZone?: string) => {
   const requeteEntite = await getRequeteEntiteById(requeteId, entiteId);
   if (!requeteEntite) {
@@ -2227,12 +2296,20 @@ export const createRequeteFilesArchive = async (requeteId: string, entiteId: str
     const useSafeFile = isPdf(file) && file.safeFilePath;
     const filePath = useSafeFile ? (file.safeFilePath as string) : file.filePath;
     const decryptionParams = useSafeFile ? getSafeFileEncryptionParams(file) : getFileEncryptionParams(file);
+
     try {
-      const { stream } = await getFileStream(filePath, decryptionParams);
-      archive.append(stream, { name: entryName, date: toWallClockDate(file.createdAt, timeZone) });
+      await statMinioObject(filePath);
     } catch {
-      archive.append(Buffer.from('Fichier indisponible'), { name: `${entryName}.erreur.txt` });
+      archive.append(Buffer.from(FILE_UNAVAILABLE_NOTICE), { name: `${entryName}.erreur.txt` });
+      return;
     }
+
+    // The body is opened only once the archiver reaches this entry: opening every attachment up
+    // front held a storage slot per file, and nothing drains them before the response is piped.
+    archive.append(Readable.from(readFileBody(filePath, decryptionParams)), {
+      name: entryName,
+      date: toWallClockDate(file.createdAt, timeZone),
+    });
   };
 
   for (const file of rootFiles) {
