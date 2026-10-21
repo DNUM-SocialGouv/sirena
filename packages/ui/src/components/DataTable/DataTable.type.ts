@@ -33,9 +33,11 @@ export type Column<T extends Row> = {
   label: string;
   // Rendered next to the title, inside the header cell. The label stays a plain string so it
   // remains usable as the accessible name of the sort button, and as the name of the cell
-  // itself, which the header sets explicitly whenever a hint is present. Keep the hint light:
-  // its text would otherwise join the column name announced with every cell, and anything
-  // focusable in it adds a tab stop to the header row.
+  // itself, which the header sets explicitly whenever a hint is present — without that, the
+  // hint's text would join the column name announced with every cell.
+  // A focusable hint — the DSFR tooltip button this is written for — adds one tab stop to the
+  // header row, which is the price of reaching it with a keyboard. Anything heavier than a
+  // single control does not belong here.
   labelHint?: ReactNode;
   isFixedLeft?: boolean;
   isFixedRight?: boolean;
