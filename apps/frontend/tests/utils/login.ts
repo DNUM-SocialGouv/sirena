@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test';
-import { baseUrl, loginUrl } from './constants';
+import { isLoginLandingUrl } from './cgu';
+import { loginUrl } from './constants';
 
 type LoginWithProconnectParams = {
   password?: string;
@@ -56,6 +57,6 @@ export const loginWithProconnect = async (
 
   await expect(async () => {
     await locationSelector.click();
-    await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 5000 });
+    await expect(page).toHaveURL(isLoginLandingUrl, { timeout: 5000 });
   }).toPass({ timeout: 30000 });
 };

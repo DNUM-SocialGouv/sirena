@@ -14,6 +14,7 @@ import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as PublicRouteRouteImport } from './routes/_public/route'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthUserRouteRouteImport } from './routes/_auth/_user/route'
+import { Route as AuthAcceptationCguRouteImport } from './routes/_auth/acceptation-cgu'
 import { Route as AuthAdminRouteRouteImport } from './routes/_auth/admin/route'
 import { Route as AuthInactiveRouteRouteImport } from './routes/_auth/inactive/route'
 import { Route as AuthStatistiquesRouteImport } from './routes/_auth/statistiques'
@@ -75,6 +76,11 @@ const LoginRoute = LoginRouteImport.update({
 } as any)
 const AuthUserRouteRoute = AuthUserRouteRouteImport.update({
   id: '/_user',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthAcceptationCguRoute = AuthAcceptationCguRouteImport.update({
+  id: '/acceptation-cgu',
+  path: '/acceptation-cgu',
   getParentRoute: () => AuthRouteRoute,
 } as any)
 const AuthAdminRouteRoute = AuthAdminRouteRouteImport.update({
@@ -304,6 +310,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin': typeof AuthAdminRouteRouteWithChildren
   '/inactive': typeof AuthInactiveRouteRoute
+  '/acceptation-cgu': typeof AuthAcceptationCguRoute
   '/statistiques': typeof AuthStatistiquesRoute
   '/accessibilite': typeof PublicAccessibiliteRoute
   '/conditions-generales-utilisation': typeof PublicConditionsGeneralesUtilisationRoute
@@ -347,6 +354,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/inactive': typeof AuthInactiveRouteRoute
+  '/acceptation-cgu': typeof AuthAcceptationCguRoute
   '/statistiques': typeof AuthStatistiquesRoute
   '/accessibilite': typeof PublicAccessibiliteRoute
   '/conditions-generales-utilisation': typeof PublicConditionsGeneralesUtilisationRoute
@@ -389,6 +397,7 @@ export interface FileRoutesById {
   '/_auth/_user': typeof AuthUserRouteRouteWithChildren
   '/_auth/admin': typeof AuthAdminRouteRouteWithChildren
   '/_auth/inactive': typeof AuthInactiveRouteRoute
+  '/_auth/acceptation-cgu': typeof AuthAcceptationCguRoute
   '/_auth/statistiques': typeof AuthStatistiquesRoute
   '/_public/accessibilite': typeof PublicAccessibiliteRoute
   '/_public/conditions-generales-utilisation': typeof PublicConditionsGeneralesUtilisationRoute
@@ -435,6 +444,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin'
     | '/inactive'
+    | '/acceptation-cgu'
     | '/statistiques'
     | '/accessibilite'
     | '/conditions-generales-utilisation'
@@ -478,6 +488,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/inactive'
+    | '/acceptation-cgu'
     | '/statistiques'
     | '/accessibilite'
     | '/conditions-generales-utilisation'
@@ -519,6 +530,7 @@ export interface FileRouteTypes {
     | '/_auth/_user'
     | '/_auth/admin'
     | '/_auth/inactive'
+    | '/_auth/acceptation-cgu'
     | '/_auth/statistiques'
     | '/_public/accessibilite'
     | '/_public/conditions-generales-utilisation'
@@ -601,6 +613,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthUserRouteRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/acceptation-cgu': {
+      id: '/_auth/acceptation-cgu'
+      path: '/acceptation-cgu'
+      fullPath: '/acceptation-cgu'
+      preLoaderRoute: typeof AuthAcceptationCguRouteImport
       parentRoute: typeof AuthRouteRoute
     }
     '/_auth/admin': {
@@ -1050,6 +1069,7 @@ interface AuthRouteRouteChildren {
   AuthUserRouteRoute: typeof AuthUserRouteRouteWithChildren
   AuthAdminRouteRoute: typeof AuthAdminRouteRouteWithChildren
   AuthInactiveRouteRoute: typeof AuthInactiveRouteRoute
+  AuthAcceptationCguRoute: typeof AuthAcceptationCguRoute
   AuthStatistiquesRoute: typeof AuthStatistiquesRoute
 }
 
@@ -1057,6 +1077,7 @@ const AuthRouteRouteChildren: AuthRouteRouteChildren = {
   AuthUserRouteRoute: AuthUserRouteRouteWithChildren,
   AuthAdminRouteRoute: AuthAdminRouteRouteWithChildren,
   AuthInactiveRouteRoute: AuthInactiveRouteRoute,
+  AuthAcceptationCguRoute: AuthAcceptationCguRoute,
   AuthStatistiquesRoute: AuthStatistiquesRoute,
 }
 

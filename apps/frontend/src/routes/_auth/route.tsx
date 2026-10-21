@@ -1,16 +1,16 @@
-import { FEATURE_FLAGS } from '@sirena/common/constants';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
-import { CguAcceptanceGate } from '@/components/cgu/CguAcceptanceGate';
 import { AppError } from '@/components/layout/AppError';
 import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import { requireAuth } from '@/lib/auth-guards';
+import { requireCguAccepted } from '@/lib/cguGuard';
 import { queryClient } from '@/lib/queryClient';
 
 export const Route = createFileRoute('/_auth')({
   beforeLoad: async (params) => {
     requireAuth(params);
     await queryClient.ensureQueryData(profileQueryOptions());
+    await requireCguAccepted(params);
   },
   component: RouteComponent,
   errorComponent: (props) => (
@@ -30,14 +30,6 @@ export const Route = createFileRoute('/_auth')({
 });
 
 function RouteComponent() {
-  const featureFlags = useResolvedFeatureFlags();
-  const isCguAcceptanceEnabled = featureFlags.isPending
-    ? undefined
-    : featureFlags.data?.[FEATURE_FLAGS.CGU_ACCEPTANCE] === true;
-
-  return (
-    <CguAcceptanceGate isEnabled={isCguAcceptanceEnabled}>
-      <Outlet />
-    </CguAcceptanceGate>
-  );
+  useResolvedFeatureFlags();
+  return <Outlet />;
 }

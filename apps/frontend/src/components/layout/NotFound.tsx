@@ -1,8 +1,16 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import TechnicalError from '@codegouvfr/react-dsfr/picto/TechnicalError';
 import { Link } from '@tanstack/react-router';
+import { useCguAcceptanceRedirect } from '@/hooks/useCguAcceptanceRedirect';
 
-export const NotFound = () => (
+export const NotFound = () => {
+  const isCheckingCgu = useCguAcceptanceRedirect();
+  if (isCheckingCgu) return null;
+
+  return <NotFoundContent />;
+};
+
+const NotFoundContent = () => (
   <div
     className={fr.cx(
       'fr-my-7w',

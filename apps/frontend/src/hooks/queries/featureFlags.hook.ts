@@ -9,11 +9,15 @@ export const useFeatureFlags = () =>
     queryFn: fetchFeatureFlags,
   });
 
+export const resolvedFeatureFlagsQueryOptions = () => ({
+  queryKey: ['featureFlags', 'resolved'],
+  queryFn: fetchResolvedFeatureFlags,
+  staleTime: 5 * 60_000,
+});
+
 export const useResolvedFeatureFlags = () => {
   const query = useQuery({
-    queryKey: ['featureFlags', 'resolved'],
-    queryFn: fetchResolvedFeatureFlags,
-    staleTime: 5 * 60_000,
+    ...resolvedFeatureFlagsQueryOptions(),
     refetchOnWindowFocus: false,
   });
 
