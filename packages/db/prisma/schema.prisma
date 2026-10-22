@@ -66,6 +66,8 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([entiteId])
 }
 
 model Session {
@@ -111,6 +113,8 @@ model Entite {
   assignmentStepsReceived RequeteEtape[]  @relation("AssignedEntite")
   requeteMessages       RequeteMessage[]
   requeteMessageReads   RequeteMessageRead[]
+
+  @@index([entiteMereId])
 }
 
 model EntiteTypeEnum {
@@ -161,6 +165,8 @@ model Requete {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
 }
 
 model RequeteEntite {
@@ -178,6 +184,8 @@ model RequeteEntite {
   requeteEtape RequeteEtape[]
 
   @@id([requeteId, entiteId])
+  @@index([entiteId, statutId])
+  @@index([entiteId, prioriteId])
 }
 
 model RequeteStatusEnum {
@@ -373,6 +381,8 @@ model Situation {
   situationEntites SituationEntite[]
 
   updatedAt DateTime @updatedAt
+
+  @@index([requeteId])
 }
 
 model DomainesFonctionnelsEnum {
@@ -389,6 +399,7 @@ model SituationEntite {
   entite   Entite @relation(fields: [entiteId], references: [id])
 
   @@id([situationId, entiteId])
+  @@index([entiteId])
 }
 
 model LieuDeSurvenue {

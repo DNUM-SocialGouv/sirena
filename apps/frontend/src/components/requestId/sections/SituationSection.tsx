@@ -367,23 +367,27 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                 {getLieuPrecisionLabel(situation.lieuDeSurvenue.lieuType?.id, situation.lieuDeSurvenue.lieuPrecision)}
               </p>
             ) : null}
-            {(situation?.lieuDeSurvenue?.adresse?.label ||
-              (situation?.lieuDeSurvenue?.lieuTypeId === LIEU_TYPE.DOMICILE &&
-                situation?.lieuDeSurvenue?.adresse?.rue)) &&
+            {(situation?.lieuDeSurvenue?.adresse?.label || situation?.lieuDeSurvenue?.adresse?.rue) &&
               (ETABLISSEMENTS.includes(situation.lieuDeSurvenue.lieuTypeId || '') ? (
                 <>
-                  <p className={fr.cx('fr-mb-1w')}>
-                    <span>Nom de l'établissement :</span> {situation.lieuDeSurvenue.adresse.label}
-                  </p>
+                  {situation.lieuDeSurvenue.adresse.label ? (
+                    <p className={fr.cx('fr-mb-1w')}>
+                      <span>Nom de l'établissement :</span> {situation.lieuDeSurvenue.adresse.label}
+                    </p>
+                  ) : null}
                   {situation?.lieuDeSurvenue?.adresse?.rue ? (
                     <p className={fr.cx('fr-mb-1w')}>
-                      <span>Adresse :</span> {situation.lieuDeSurvenue.adresse.rue}
+                      <span>Rue :</span> {situation.lieuDeSurvenue.adresse.rue}
                     </p>
                   ) : null}
                 </>
               ) : (
                 <p className={fr.cx('fr-mb-1w')}>
-                  <span>Adresse :</span>{' '}
+                  <span>
+                    {situation.lieuDeSurvenue.lieuTypeId === LIEU_TYPE.TRAJET && situation.lieuDeSurvenue.adresse.rue
+                      ? 'Rue :'
+                      : 'Adresse :'}
+                  </span>{' '}
                   {situation.lieuDeSurvenue.adresse.rue || situation.lieuDeSurvenue.adresse.label}
                 </p>
               ))}

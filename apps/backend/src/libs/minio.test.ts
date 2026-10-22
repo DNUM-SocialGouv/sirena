@@ -1,7 +1,15 @@
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { deleteFileFromMinio, deleteFilesFromMinio, listMinioObjects, uploadFileToMinio } from './minio.js';
+import { recordDependencyCall } from '../features/monitoring/metrics.dependencies.js';
+import {
+  deleteFileFromMinio,
+  deleteFilesFromMinio,
+  getFileStream,
+  isStorageUnavailableError,
+  listMinioObjects,
+  uploadFileToMinio,
+} from './minio.js';
 
 vi.mock('../config/env.js', () => ({
   envVars: {
@@ -33,6 +41,13 @@ const { mockMinioClient, mockReadStream, mockUnlink, mockReadFile } = vi.hoisted
 
   return { mockMinioClient, mockReadStream, mockUnlink, mockReadFile };
 });
+
+// The guard reports a call once it is over: a recorded outcome is the observable proof that it
+// settled and gave its slot back.
+vi.mock('../features/monitoring/metrics.dependencies.js', () => ({
+  registerDependencyMetrics: vi.fn(),
+  recordDependencyCall: vi.fn(),
+}));
 
 vi.mock('minio', () => ({
   Client: function MockClient() {
@@ -205,6 +220,26 @@ describe('minio.ts', () => {
       }
     });
 
+    // A body that fails leaves minio's putObject promise pending for ever, and the guard slot with
+    // it: 32 aborted uploads would have frozen every S3 call for the 20 minutes of the body
+    // deadline.
+    it('should settle the guarded call instead of holding its slot when the source fails', async () => {
+      mockMinioClient.putObject.mockImplementationOnce(() => new Promise(() => {}));
+
+      const source = new PassThrough();
+      source.write(Buffer.from('partial content'));
+      const sourceError = new Error('File size exceeds the maximum allowed');
+
+      const upload = uploadFileToMinio(source, 'test-document.pdf', 'application/pdf');
+      source.destroy(sourceError);
+      await expect(upload).rejects.toBe(sourceError);
+
+      // An aborted body says nothing about S3's health, so it must not count against the circuit.
+      expect(recordDependencyCall).toHaveBeenCalledWith(
+        expect.objectContaining({ dependency: 's3', operation: 'putObject', outcome: 'business_error' }),
+      );
+    });
+
     it('should reject with a premature close instead of hanging when the client aborts the upload', async () => {
       const uncaughtErrors: unknown[] = [];
       const onUncaught = (err: unknown) => uncaughtErrors.push(err);
@@ -230,6 +265,46 @@ describe('minio.ts', () => {
       } finally {
         process.off('uncaughtException', onUncaught);
       }
+    });
+  });
+
+  describe('getFileStream', () => {
+    const recordedFor = (operation: string) =>
+      vi.mocked(recordDependencyCall).mock.calls.filter(([call]) => call.operation === operation);
+
+    beforeEach(() => {
+      mockMinioClient.statObject.mockResolvedValue({ metaData: { 'content-type': 'application/pdf' } });
+    });
+
+    // getObject resolves on the stream handoff: reporting the call there measured nothing and
+    // handed the slot back while the download was still running.
+    it('reports the call once the body has been transferred, not when the stream is handed over', async () => {
+      const body = new PassThrough();
+      mockMinioClient.getObject.mockResolvedValue(body);
+
+      const { stream } = await getFileStream('uploads/test.pdf');
+      expect(recordedFor('getObject')).toHaveLength(0);
+
+      body.end('payload');
+      const closed = new Promise((resolve) => stream.on('close', resolve));
+      stream.resume();
+      await closed;
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(recordedFor('getObject')).toEqual([[expect.objectContaining({ outcome: 'success' })]]);
+    });
+
+    it('reports a failure that happens while the body is being read', async () => {
+      const body = new PassThrough();
+      mockMinioClient.getObject.mockResolvedValue(body);
+
+      const { stream } = await getFileStream('uploads/test.pdf');
+      stream.on('error', () => {});
+      body.destroy(Object.assign(new Error('socket hang up'), { code: 'ECONNRESET' }));
+      await new Promise((resolve) => setImmediate(resolve));
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(recordedFor('getObject')).toEqual([[expect.objectContaining({ outcome: 'failure' })]]);
     });
   });
 
@@ -325,5 +400,48 @@ describe('minio.ts', () => {
       await promise2;
       expect(mockMinioClient.listObjectsV2).toHaveBeenCalledWith('test-bucket', 'uploads', true);
     });
+  });
+});
+
+describe('isStorageUnavailableError', () => {
+  it.each([
+    ['ECONNREFUSED', 'ECONNREFUSED'],
+    ['ETIMEDOUT', 'ETIMEDOUT'],
+    ['SlowDown', 'SlowDown'],
+    ['ServiceUnavailable', 'ServiceUnavailable'],
+  ])('detects the transient error code %s', (_label, code) => {
+    const err = Object.assign(new Error('nope'), { code });
+
+    expect(isStorageUnavailableError(err)).toBe(true);
+  });
+
+  it('detects the generic error minio wraps retried 5xx into', () => {
+    // Message captured in production during the 2026-10-07 incident.
+    const err = new Error('Request failed after 1 retries: Error: Retryable HTTP status: 500');
+
+    expect(isStorageUnavailableError(err)).toBe(true);
+  });
+
+  it('follows the cause chain', () => {
+    const err = new Error('upload failed', { cause: new Error('Retryable HTTP status: 503') });
+
+    expect(isStorageUnavailableError(err)).toBe(true);
+  });
+
+  it('does not overflow the stack on a cyclic cause chain', () => {
+    const first = new Error('wrapper');
+    const second = new Error('inner', { cause: first });
+    Object.defineProperty(first, 'cause', { value: second, configurable: true });
+
+    expect(isStorageUnavailableError(first)).toBe(false);
+  });
+
+  it.each([
+    ['a bucket policy error', Object.assign(new Error('denied'), { code: 'AccessDenied' })],
+    ['a missing object', Object.assign(new Error('nope'), { code: 'NoSuchKey' })],
+    ['a plain error', new Error('File name is not valid')],
+    ['a non-error value', 'boom'],
+  ])('does not treat %s as a storage outage', (_label, err) => {
+    expect(isStorageUnavailableError(err)).toBe(false);
   });
 });

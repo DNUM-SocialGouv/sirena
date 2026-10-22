@@ -11,11 +11,11 @@ describe('tabs', () => {
     ]);
   });
 
-  it('shows local Entités and Directions et services for root-level entity admins when the feature flag is enabled', () => {
+  it('shows local Entité and Directions et services for root-level entity admins when the feature flag is enabled', () => {
     expect(getTabs(ROLES.ENTITY_ADMIN, false, true, true).map((tab) => tab.label)).toEqual([
       "Demandes d'habilitation",
       'Utilisateurs',
-      'Entités',
+      'Entité',
       'Directions et services',
     ]);
     expect(getTabPaths(ROLES.ENTITY_ADMIN, false, true, true)).toEqual([

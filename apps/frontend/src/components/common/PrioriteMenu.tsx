@@ -1,5 +1,5 @@
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
-import { REQUETE_PRIORITE_TYPES, type RequetePrioriteType } from '@sirena/common/constants';
+import type { RequetePrioriteType } from '@sirena/common/constants';
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { useDisclosureMenu } from '@/hooks/useDisclosureMenu';
 import { requetePrioriteBadges } from '@/utils/requeteStatutBadge.constant';
@@ -12,12 +12,6 @@ type PrioriteMenuProps = {
   disabled?: boolean;
   onOpen?: () => void;
   onClose?: () => void;
-};
-
-const prioriteClassMap: Record<string, string> = {
-  [REQUETE_PRIORITE_TYPES.HAUTE]: prioriteStyles['priorite-haute'],
-  [REQUETE_PRIORITE_TYPES.MOYENNE]: prioriteStyles['priorite-moyenne'],
-  [REQUETE_PRIORITE_TYPES.BASSE]: prioriteStyles['priorite-basse'],
 };
 
 export function PrioriteMenu({ value, onChange, disabled, onOpen, onClose }: PrioriteMenuProps) {
@@ -46,7 +40,6 @@ export function PrioriteMenu({ value, onChange, disabled, onOpen, onClose }: Pri
     return [
       ...requetePrioriteBadges.map((badge) => ({
         label: badge.text,
-        className: prioriteClassMap[badge.value],
         nativeInputProps: {
           value: badge.value,
           checked: selectedValue === badge.value,

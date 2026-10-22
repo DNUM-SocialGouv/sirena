@@ -12,11 +12,11 @@ const mockWorker = vi.hoisted(() => ({
   closing: undefined as Promise<void> | undefined,
 }));
 
-vi.mock('bullmq', () => ({
+vi.mock('bullmq', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('bullmq')>()),
   Worker: vi.fn(function MockWorker() {
     return mockWorker;
   }),
-  UnrecoverableError: class extends Error {},
 }));
 
 vi.mock('../../config/redis.js', () => ({

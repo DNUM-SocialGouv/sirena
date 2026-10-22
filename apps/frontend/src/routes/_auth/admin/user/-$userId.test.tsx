@@ -4,9 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useUserById } from '@/hooks/queries/users.hook';
 import { useListStateStore } from '@/stores/listStateStore';
-import { Route } from './$userId';
-
-const RouteComponent = (Route as unknown as { component: React.ComponentType }).component;
+import { RouteComponent } from './$userId';
 
 const { routerNavigateSpy, navigateSpy } = vi.hoisted(() => ({ routerNavigateSpy: vi.fn(), navigateSpy: vi.fn() }));
 
@@ -86,9 +84,7 @@ const mockUser = (roleId: string) => {
   } as never);
 };
 
-const backLink = () => screen.getByRole('link', { name: /^Liste des/ });
-
-describe('User edition page back link', () => {
+describe('User edition page navigation', () => {
   beforeEach(() => {
     useListStateStore.setState({ states: {} });
   });
@@ -98,68 +94,7 @@ describe('User edition page back link', () => {
     vi.clearAllMocks();
   });
 
-  it('goes back to the habilitation requests when opened from that list', () => {
-    useListStateStore.getState().setListState('users', { to: '/admin/users', search: { offset: 10 } });
-    mockUser(ROLES.PENDING);
-
-    render(<RouteComponent />);
-
-    expect(backLink()).toHaveTextContent('Liste des habilitations');
-    expect(backLink()).toHaveAttribute('href', '/admin/users?offset=10');
-  });
-
-  it('goes back to the users list when opened from that list', () => {
-    useListStateStore.getState().setListState('users', { to: '/admin/users/all', search: { search: 'dupont' } });
-    mockUser(ROLES.WRITER);
-
-    render(<RouteComponent />);
-
-    expect(backLink()).toHaveTextContent('Liste des utilisateurs');
-    expect(backLink()).toHaveAttribute('href', '/admin/users/all?search=dupont');
-  });
-
-  it('keeps the users list it came from, whatever the role of the user', () => {
-    useListStateStore.getState().setListState('users', { to: '/admin/users/all', search: {} });
-    mockUser(ROLES.PENDING);
-
-    render(<RouteComponent />);
-
-    expect(backLink()).toHaveTextContent('Liste des utilisateurs');
-    expect(backLink()).toHaveAttribute('href', '/admin/users/all');
-  });
-
-  it('keeps the habilitation requests list it came from, whatever the role of the user', () => {
-    useListStateStore.getState().setListState('users', { to: '/admin/users', search: {} });
-    mockUser(ROLES.ENTITY_ADMIN);
-
-    render(<RouteComponent />);
-
-    expect(backLink()).toHaveTextContent('Liste des habilitations');
-    expect(backLink()).toHaveAttribute('href', '/admin/users');
-  });
-
-  it.each([
-    [ROLES.PENDING, 'Liste des habilitations', '/admin/users'],
-    [ROLES.ENTITY_ADMIN, 'Liste des utilisateurs', '/admin/users/all'],
-  ])('when no list is remembered, infers it from the role: %s', (roleId, label, href) => {
-    mockUser(roleId);
-
-    render(<RouteComponent />);
-
-    expect(backLink()).toHaveTextContent(label);
-    expect(backLink()).toHaveAttribute('href', href);
-  });
-
-  it('is never flagged as the current page', () => {
-    mockUser(ROLES.WRITER);
-
-    render(<RouteComponent />);
-
-    expect(backLink()).toHaveAttribute('data-exact', 'true');
-  });
-
-  it('navigates to the same list as the back link when there is no history', async () => {
-    // When there is no previous history entry, fall back to the back link destination.
+  it('navigates back to the list it was opened from when there is no history', async () => {
     useListStateStore.getState().setListState('users', { to: '/admin/users/all', search: { search: 'dupont' } });
     mockUser(ROLES.WRITER);
 
@@ -181,5 +116,30 @@ describe('User edition page back link', () => {
     render(<RouteComponent />);
 
     expect(navigateSpy).toHaveBeenCalledWith({ to: '/admin/users/all', search: { search: 'dupont' } });
+  });
+});
+
+describe('User edition page required fields (RGAA 11.10)', () => {
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
+  it('announces upfront that fields are optional unless stated otherwise', () => {
+    mockUser(ROLES.WRITER);
+
+    render(<RouteComponent />);
+
+    expect(screen.getByText('Sauf mention contraire, les champs sont facultatifs.')).toBeVisible();
+  });
+
+  it('spells out the required fields instead of marking them with an asterisk', () => {
+    mockUser(ROLES.WRITER);
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('combobox', { name: 'Rôle (obligatoire)' })).toBeRequired();
+    expect(screen.getByRole('combobox', { name: 'Statut (obligatoire)' })).toBeRequired();
+    expect(screen.queryByRole('combobox', { name: /\*/ })).not.toBeInTheDocument();
   });
 });

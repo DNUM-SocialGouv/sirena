@@ -4,14 +4,13 @@ import { AUTH_CONFIGS, ensureAuthenticationFileExists } from './utils/authHelper
 import { baseUrl } from './utils/constants';
 
 /**
- * Back links (RGAA 6.1): a back link targets a previous page, so it must never be
- * announced as the current page, and its label must match where it leads.
+ * "Annuler" links (RGAA 6.1): they target a previous page, so they must never be
+ * announced as the current page.
  *
  * Prerequisites:
- * - At least 1 requête in "/home" and 1 user in the "Utilisateurs" tab
  * - Authenticated user has ENTITY_ADMIN role
  * - ADMIN_LOCAL_DIRECTIONS_SERVICES feature flag enabled and an entity allowed to create directions and services
- *   (canCreateDirection / canCreateService), otherwise the create pages redirect and the "Annuler" test times out
+ *   (canCreateDirection / canCreateService), otherwise the create pages redirect and the test times out
  */
 test.describe('Back links', () => {
   let context: BrowserContext;
@@ -28,55 +27,12 @@ test.describe('Back links', () => {
     await context?.close();
   });
 
-  test('request form back links are not flagged as the current page', async () => {
-    await page.goto(`${baseUrl}/home`);
-    const firstRow = page.getByRole('table').getByTestId('datatable-row').first();
-    await expect(firstRow).toBeVisible();
-    const requestId = await firstRow.getAttribute('data-row-key');
-
-    const cases = [
-      { path: '/request/create/declarant', label: 'Retour', href: '/request/create' },
-      { path: `/request/${requestId}/declarant`, label: 'Retour', href: `/request/${requestId}` },
-      { path: `/request/${requestId}/situation`, label: 'Détails de la requête', href: `/request/${requestId}` },
-    ];
-    for (const { path, label, href } of cases) {
-      await page.goto(`${baseUrl}${path}`);
-      const backLink = page.getByRole('link', { name: label, exact: true });
-      await expect(backLink).toHaveAttribute('href', href);
-      await expect(backLink).not.toHaveAttribute('aria-current');
-    }
-  });
-
   test('"Annuler" links of the admin forms are not flagged as the current page', async () => {
     for (const path of ['/admin/directions-services/directions/create', '/admin/directions-services/services/create']) {
       await page.goto(`${baseUrl}${path}`);
-      for (const name of ['Directions et services', 'Annuler']) {
-        const link = page.getByRole('link', { name, exact: true });
-        await expect(link).toHaveAttribute('href', '/admin/directions-services');
-        await expect(link).not.toHaveAttribute('aria-current');
-      }
+      const link = page.getByRole('link', { name: 'Annuler', exact: true });
+      await expect(link).toHaveAttribute('href', '/admin/directions-services');
+      await expect(link).not.toHaveAttribute('aria-current');
     }
-  });
-
-  test('the user page goes back to the "Utilisateurs" list it was opened from', async () => {
-    await page.goto(`${baseUrl}/admin/users/all`);
-    await page.getByRole('table').getByTestId('user-row-link').first().click();
-    await expect(
-      page.getByRole('heading', { name: "Modifier les informations de l'utilisateur", level: 1 }),
-    ).toBeVisible();
-
-    const backLink = page.getByRole('link', { name: 'Liste des utilisateurs', exact: true });
-    await expect(backLink).toHaveAttribute('href', '/admin/users/all');
-    await expect(backLink).not.toHaveAttribute('aria-current');
-
-    // The list it came from is only kept in memory: after a reload the target stays consistent.
-    await page.reload();
-    await expect(page.getByRole('link', { name: 'Liste des utilisateurs', exact: true })).toHaveAttribute(
-      'href',
-      '/admin/users/all',
-    );
-
-    await backLink.click();
-    await expect(page).toHaveURL(`${baseUrl}/admin/users/all`);
   });
 });

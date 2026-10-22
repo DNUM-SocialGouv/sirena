@@ -1,15 +1,25 @@
 import { ROLES, type Role } from '@sirena/common/constants';
 import type { TabDescriptor } from '@sirena/ui';
 
+// Shared with the admin breadcrumb, so that tabs and crumbs keep the same wording
+export const ADMIN_TAB_LABELS = {
+  pending: "Demandes d'habilitation",
+  users: 'Utilisateurs',
+  entites: 'Entités',
+  // A root-level entity admin manages their own entity only
+  localEntite: 'Entité',
+  directionsServices: 'Directions et services',
+} as const;
+
 const baseTabs: TabDescriptor[] = [
   {
-    label: "Demandes d'habilitation",
+    label: ADMIN_TAB_LABELS.pending,
     tabPanelId: 'panel-pending',
     tabId: 'tab-pending',
     dataTestId: 'admin-tab-pending',
   },
   {
-    label: 'Utilisateurs',
+    label: ADMIN_TAB_LABELS.users,
     tabPanelId: 'panel-all',
     tabId: 'tab-all',
     dataTestId: 'admin-tab-all',
@@ -17,21 +27,21 @@ const baseTabs: TabDescriptor[] = [
 ];
 
 const entitesTab: TabDescriptor = {
-  label: 'Entités',
+  label: ADMIN_TAB_LABELS.entites,
   tabPanelId: 'panel-entites',
   tabId: 'tab-entites',
   dataTestId: 'admin-tab-entites',
 };
 
 const localEntitesTab: TabDescriptor = {
-  label: 'Entités',
+  label: ADMIN_TAB_LABELS.localEntite,
   tabPanelId: 'panel-local-entites',
   tabId: 'tab-local-entites',
   dataTestId: 'admin-tab-local-entites',
 };
 
 const localDirectionsServicesTab: TabDescriptor = {
-  label: 'Directions et services',
+  label: ADMIN_TAB_LABELS.directionsServices,
   tabPanelId: 'panel-local-directions-services',
   tabId: 'tab-local-directions-services',
   dataTestId: 'admin-tab-local-directions-services',

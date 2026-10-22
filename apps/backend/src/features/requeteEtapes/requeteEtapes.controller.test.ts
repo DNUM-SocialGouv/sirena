@@ -128,6 +128,7 @@ vi.mock('../../middlewares/changelog/changelog.requeteEtape.middleware.js', () =
   };
 });
 
+vi.mock('../../jobs/queues/fileProcessing.queue.js', () => ({ addFileProcessingJob: vi.fn() }));
 vi.mock('../../libs/minio.js', () => ({
   getFileStream: vi.fn(),
 }));

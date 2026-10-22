@@ -19,37 +19,54 @@ allowBuilds:
   # l'a remplacé par modern-tar.
   puppeteer: true
 catalog:
-  "@biomejs/biome": ^2.5.14
+  "@biomejs/biome": ^2.5.15
   "@codegouvfr/react-dsfr": ^1.35.0
   "@hono/standard-validator": ^0.4.0
   "@prisma/adapter-pg": ^7.10.0
   "@prisma/client": ^7.10.0
-  "@tanstack/react-router": ^1.170.40
+  "@tanstack/react-router": ^1.170.44
   "@testing-library/dom": ^10.4.2
   "@testing-library/jest-dom": ^7.0.1
   "@testing-library/react": ^16.3.3
-  "@testing-library/user-event": ^14.6.7
-  "@types/node": ^26.6.3
+  "@testing-library/user-event": ^14.6.8
+  "@types/node": ^26.6.5
   "@types/react": ^19.3.0
   "@types/react-dom": ^19.3.0
-  "@vitejs/plugin-react": ^6.1.1
-  "@vitest/browser": ^5.0.3
-  "@vitest/coverage-v8": ^5.0.3
+  "@vitejs/plugin-react": ^6.1.2
+  "@vitest/browser": ^5.0.5
+  "@vitest/coverage-v8": ^5.0.5
   clsx: ^2.1.1
-  dotenv: ^18.0.5
-  hono: ^4.13.10
-  hono-openapi: ^1.3.3
-  jsdom: ^30.1.1
+  dotenv: ^18.0.8
+  hono: ^4.13.13
+  hono-openapi: ^1.3.5
+  jsdom: ^30.1.2
   prisma: ^7.10.0
-  react: ^19.3.0
-  react-dom: ^19.3.0
+  react: ^19.3.1
+  react-dom: ^19.3.1
   tsx: ^4.23.15
   typescript: ~7.0.2
-  vite: ^8.3.1
-  vitest: ^5.0.3
-  zod: ^4.6.5
+  vite: ^8.3.4
+  vitest: ^5.0.5
+  zod: ^4.6.7
 enablePrePostScripts: true
 minimumReleaseAge: 10080
+# vitest 5.0.5 corrige GHSA-p458-7748-mcp3 (les serveurs appliquent mal
+# `server.fs.deny` et servent .env, clés privées, .git et le fichier de token).
+# Publiée le 2026-10-15, elle n'atteint les 7 jours de quarantaine qu'à 14:29Z
+# le 2026-10-22, ce qui laissait `pnpm audit --audit-level=moderate` rouge et
+# bloquait les merges. Exemption pinnée à cette seule version : la quarantaine
+# reste pleine pour tout le reste, 5.0.6 inclus. À retirer à la prochaine passe
+# de mise à jour, une fois 5.0.5 mûre.
+minimumReleaseAgeExclude:
+  - vitest@5.0.5
+  - "@vitest/browser@5.0.5"
+  - "@vitest/coverage-v8@5.0.5"
+  - "@vitest/expect@5.0.5"
+  - "@vitest/mocker@5.0.5"
+  - "@vitest/pretty-format@5.0.5"
+  - "@vitest/spy@5.0.5"
+  - "@vitest/ui@5.0.5"
+  - "@vitest/utils@5.0.5"
 overrides:
   # Planchers de sécurité sur des paquets tirés transitivement (@sentry/cli,
   # ajv via prisma/commitlint, minio) : leurs ranges parents résolvent aujourd'hui
@@ -86,11 +103,6 @@ overrides:
   # sections indexées d'une source map — GHSA-68fv-2mgg-jv7q. Tiré par postcss
   # (vite) et magicast (@prisma/config, @vitest/coverage-v8).
   "source-map-js@>=1.0.0 <1.2.2": "^1.2.2"
-  # @graphql-tools/utils <=12.0.0 : pollution de prototype dans `mergeDeep` —
-  # GHSA-7mx3-vvmw-hjmv. Seul graphql-config (via @graphql-codegen/cli) reste en
-  # ^11 ; la 12.0.1 est déjà résolue pour le reste de l'arbre codegen et n'est
-  # qu'additive face à la 11.2.2 (ajout de getDirectiveValues).
-  "@graphql-tools/utils@<=12.0.0": "^12.0.1"
 auditConfig:
   ignoreGhsas:
     # deepmerge-ts <8: stack exhaustion requires attacker-controlled cyclic
