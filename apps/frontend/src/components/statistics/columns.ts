@@ -23,6 +23,4 @@ export const isPercentColumn = (col: MetabaseColumn): boolean =>
   col.semantic_type === PERCENT_SEMANTIC_TYPE || (isNumericColumn(col) && isPercentByName(col));
 
 export const findPercentColumn = (cols: MetabaseColumn[]): MetabaseColumn | null =>
-  cols.find((col) => col.semantic_type === PERCENT_SEMANTIC_TYPE) ??
-  cols.find((col) => isNumericColumn(col) && isPercentByName(col)) ??
-  null;
+  cols.find((col) => col.semantic_type === PERCENT_SEMANTIC_TYPE) ?? cols.find(isPercentColumn) ?? null;
