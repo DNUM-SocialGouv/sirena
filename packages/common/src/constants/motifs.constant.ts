@@ -378,61 +378,16 @@ export const MOTIFS_HIERARCHICAL_DATA = [
     value: 'PROBLEMES_ENVIRONNEMENTAUX',
     children: [
       {
-        label: "Gestion des déchets d'activités de soins à risques infectieux (DASRI)",
-        value: 'GESTION_DECHETS_DASRI',
-      },
-      {
-        label: 'Situation exceptionnelle',
-        description: 'Canicule, innondations, etc.',
-        value: 'SITUATION_EXCEPTIONNELLE',
-      },
-      {
-        label: 'Habitat : Amiante',
-        value: 'HABITAT_AMIANTE',
-      },
-      {
-        label: 'Habitat : Radon',
-        value: 'HABITAT_RADON',
-      },
-      {
-        label: 'Habitat : Habitat insalubre',
-        value: 'HABITAT_INSALUBRE',
-      },
-      {
-        label: 'Habitat : Saturnisme',
-        value: 'HABITAT_SATURNISME',
-      },
-      {
-        label: "Habitat : Qualité de l'air intérieur",
-        value: 'HABITAT_QUALITE_AIR_INTERIEUR',
-      },
-      {
-        label: 'Habitat : Nuisances sonores',
-        value: 'HABITAT_NUISANCES_SONORES',
-      },
-      {
         label: 'Alimentation-nutrition : Sécurité sanitaire des aliments',
         value: 'ALIMENTATION_SECURITE',
-      },
-      {
-        label: 'Eaux : Protection de la ressource en eau',
-        value: 'EAUX_PROTECTION',
       },
       {
         label: "Eaux : Alimentation et qualité de l'eau potable",
         value: 'EAUX_QUALITE',
       },
       {
-        label: 'Eaux : Légionnelles',
-        value: 'EAUX_LEGIONNELLES',
-      },
-      {
         label: 'Eaux : Eaux conditionnées',
         value: 'EAUX_CONDITIONNEES',
-      },
-      {
-        label: 'Eaux : Eaux thermales',
-        value: 'EAUX_THERMALES',
       },
       {
         label: 'Eaux : Eaux de baignade',
@@ -443,12 +398,28 @@ export const MOTIFS_HIERARCHICAL_DATA = [
         value: 'EAUX_PISCINE',
       },
       {
+        label: 'Eaux : Eaux thermales',
+        value: 'EAUX_THERMALES',
+      },
+      {
         label: 'Eaux : Eaux usées',
         value: 'EAUX_USEES',
       },
       {
+        label: 'Eaux : Légionnelles',
+        value: 'EAUX_LEGIONNELLES',
+      },
+      {
+        label: 'Eaux : Protection de la ressource en eau',
+        value: 'EAUX_PROTECTION',
+      },
+      {
         label: "Eaux : Usages domestiques d'eau non potable",
         value: 'EAUX_NON_POTABLE',
+      },
+      {
+        label: 'Environnement extérieur : Lutte antivectorielle',
+        value: 'EXTERIEUR_LUTTE_ANTIVECTORIELLE',
       },
       {
         label: "Environnement extérieur : Qualité de l'air extérieur",
@@ -459,12 +430,41 @@ export const MOTIFS_HIERARCHICAL_DATA = [
         value: 'EXTERIEUR_RAYONNEMENTS_NON_IONISANTS',
       },
       {
-        label: 'Environnement extérieur : Lutte antivectorielle',
-        value: 'EXTERIEUR_LUTTE_ANTIVECTORIELLE',
+        label: "Gestion des déchets d'activités de soins à risques infectieux (DASRI)",
+        value: 'GESTION_DECHETS_DASRI',
+      },
+      {
+        label: 'Habitat : Amiante',
+        value: 'HABITAT_AMIANTE',
+      },
+      {
+        label: 'Habitat : Habitat insalubre',
+        value: 'HABITAT_INSALUBRE',
+      },
+      {
+        label: 'Habitat : Nuisances sonores',
+        value: 'HABITAT_NUISANCES_SONORES',
+      },
+      {
+        label: "Habitat : Qualité de l'air intérieur",
+        value: 'HABITAT_QUALITE_AIR_INTERIEUR',
+      },
+      {
+        label: 'Habitat : Radon',
+        value: 'HABITAT_RADON',
+      },
+      {
+        label: 'Habitat : Saturnisme',
+        value: 'HABITAT_SATURNISME',
       },
       {
         label: 'Règlement sanitaire international',
         value: 'REGLEMENT_INTERNATIONAL',
+      },
+      {
+        label: 'Situation exceptionnelle',
+        description: 'Canicule, innondations, etc.',
+        value: 'SITUATION_EXCEPTIONNELLE',
       },
       {
         label: 'Autres',
