@@ -71,9 +71,14 @@ export const DataTableHeaderComponent = <T extends RowWithId<string>>({
               }`}
               scope="col"
               aria-sort={column.isSortable ? getAriaSort() : undefined}
+              // A hint renders arbitrary content inside the cell: a DSFR tooltip, for instance,
+              // is a button plus the help text itself. Naming the cell explicitly keeps all of
+              // that out of the column name a screen reader repeats for every cell below.
+              aria-label={column.labelHint ? column.label : undefined}
             >
               <div className="fr-cell--sort">
                 <span className="fr-cell__title">{column.label}</span>
+                {column.labelHint}
 
                 {column.isSortable ? (
                   <SortButton<ColumnKey<T>>
