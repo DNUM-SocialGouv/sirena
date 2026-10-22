@@ -88,6 +88,19 @@ describe('StepFiles', () => {
     expect(screen.queryByRole('button', { name: /Supprimer le fichier/ })).not.toBeInTheDocument();
   });
 
+  it('shows no delete button on a file the server keeps (canDelete false)', () => {
+    render(
+      <StepFiles
+        stepId="s"
+        onRequestDelete={vi.fn()}
+        files={[makeFile({ id: 'ar', fileName: 'AR.pdf', canDelete: false }), makeFile({ id: 'b', fileName: 'b.pdf' })]}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Supprimer le fichier AR.pdf' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Supprimer le fichier b.pdf' })).toBeInTheDocument();
+  });
+
   it('requests the deletion of the clicked file', () => {
     const onRequestDelete = vi.fn();
     render(

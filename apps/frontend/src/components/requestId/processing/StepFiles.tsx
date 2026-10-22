@@ -72,7 +72,7 @@ export const StepFiles = ({ files, stepId, unknownUploader = 'automatic', onRequ
                 scanStatus={file.scanStatus}
                 sanitizeStatus={file.sanitizeStatus}
               />
-              {onRequestDelete ? (
+              {onRequestDelete && file.canDelete ? (
                 <StepFileDeleteButton fileId={file.id} fileName={fileName} onRequestDelete={onRequestDelete} />
               ) : null}
             </div>
