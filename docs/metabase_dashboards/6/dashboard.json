@@ -601,7 +601,7 @@
           }
         ],
         "public_uuid_prefix": null,
-        "query_average_duration": 744,
+        "query_average_duration": 632,
         "query_type": "native",
         "source_card_id": null,
         "table_id": null,
@@ -1269,7 +1269,7 @@
           }
         ],
         "public_uuid_prefix": null,
-        "query_average_duration": 1583,
+        "query_average_duration": 1356,
         "query_type": "native",
         "source_card_id": null,
         "table_id": null,
@@ -1828,7 +1828,7 @@
           }
         ],
         "public_uuid_prefix": null,
-        "query_average_duration": 619,
+        "query_average_duration": 858,
         "query_type": "native",
         "source_card_id": null,
         "table_id": null,
@@ -2387,7 +2387,7 @@
           }
         ],
         "public_uuid_prefix": null,
-        "query_average_duration": 2548,
+        "query_average_duration": 3020,
         "query_type": "native",
         "source_card_id": null,
         "table_id": null,
@@ -2498,7 +2498,7 @@
           "stages": [
             {
               "lib/type": "mbql.stage/native",
-              "native": "-- Carte : « Nombre de comptes actifs par entité »\n-- Comptes utilisateurs au statut ACTIF, regroupés par entité de rattachement.\nSELECT\n  COALESCE(NULLIF(e.\"nomComplet\", ''), e.label, 'Non rattaché à une entité') AS \"Entité\",\n  COUNT(*)                                                                   AS \"Nombre de comptes actifs\"\nFROM \"User\" u\nLEFT JOIN \"Entite\" e ON e.id = u.\"entiteId\"\nWHERE u.\"statutId\" = 'ACTIF'\n  [[ AND u.\"createdAt\" >= {{start_date}} ]]\n  [[ AND u.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\nGROUP BY COALESCE(NULLIF(e.\"nomComplet\", ''), e.label, 'Non rattaché à une entité')\nORDER BY COUNT(*) DESC, 1 ASC;",
+              "native": "-- Comptes utilisateurs au statut ACTIF, regroupés par entité de PREMIER NIVEAU :\n-- les comptes rattachés à une direction ou à un service sont comptés dans leur entité\n-- racine, et les deux colonnes « dont » lèvent l'ambiguïté signalée par la DGCS en\n-- explicitant la part rattachée directement à l'entité et la part issue de ses\n-- directions et services.\nWITH RECURSIVE remontee AS (\n  -- départ : chaque entité pointe sur elle-même\n  SELECT e.id AS entite_id, e.id AS ancetre_id, e.\"entiteMereId\" AS ancetre_mere_id\n  FROM \"Entite\" e\n\n  UNION ALL\n\n  -- on remonte d'un cran vers l'entité mère, autant de fois que nécessaire\n  SELECT r.entite_id, mere.id, mere.\"entiteMereId\"\n  FROM remontee r\n  JOIN \"Entite\" mere ON mere.id = r.ancetre_mere_id\n),\nracine AS (\n  -- l'ancêtre sans mère est l'entité de premier niveau\n  SELECT entite_id, ancetre_id AS racine_id\n  FROM remontee\n  WHERE ancetre_mere_id IS NULL\n)\nSELECT\n  COALESCE(NULLIF(rac.\"nomComplet\", ''), rac.label, 'Non rattaché à une entité') AS \"Entité\",\n  COUNT(*)                                                                        AS \"Nombre de comptes actifs\",\n  -- les comptes sans entité (NULL) ne tombent dans aucune des deux colonnes « dont »\n  COUNT(*) FILTER (WHERE u.\"entiteId\" = rac.id)                                   AS \"dont au niveau de l'entité\",\n  COUNT(*) FILTER (WHERE u.\"entiteId\" IS DISTINCT FROM rac.id)                    AS \"dont dans les directions et services\"\nFROM \"User\" u\nLEFT JOIN racine r     ON r.entite_id = u.\"entiteId\"\nLEFT JOIN \"Entite\" rac ON rac.id = COALESCE(r.racine_id, u.\"entiteId\")\nWHERE u.\"statutId\" = 'ACTIF'\n  [[ AND u.\"createdAt\" >= {{start_date}} ]]\n  [[ AND u.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]]\nGROUP BY COALESCE(NULLIF(rac.\"nomComplet\", ''), rac.label, 'Non rattaché à une entité')\nORDER BY COUNT(*) DESC, 1 ASC;\n",
               "template-tags": [
                 {
                   "display-name": "Start Date",
@@ -2562,12 +2562,15 @@
           }
         ],
         "public_uuid_prefix": null,
-        "query_average_duration": 140,
+        "query_average_duration": null,
         "query_type": "native",
         "source_card_id": null,
         "table_id": null,
         "type": "question",
-        "visualization_settings": {}
+        "visualization_settings": {
+          "table.cell_column": "Entité",
+          "table.pivot_column": "Nombre de comptes actifs"
+        }
       },
       "card_id": 106,
       "col": 0,
