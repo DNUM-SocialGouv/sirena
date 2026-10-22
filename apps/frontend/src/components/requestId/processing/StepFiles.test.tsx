@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { StepFiles } from './StepFiles';
 
@@ -67,5 +67,39 @@ describe('StepFiles', () => {
     );
 
     expect(screen.getByText(/Fichier ajouté automatiquement le 20\/05\/2026/)).toBeInTheDocument();
+  });
+
+  it('labels a file without an uploader with its date only when the uploader is anonymous', () => {
+    render(
+      <StepFiles
+        stepId="s"
+        unknownUploader="anonymous"
+        files={[makeFile({ createdAt: '2026-05-20T10:00:00.000Z', uploadedBy: null })]}
+      />,
+    );
+
+    expect(screen.getByText(/Fichier ajouté le/)).toHaveTextContent(/^\s*Fichier ajouté le 20\/05\/2026$/);
+    expect(screen.queryByText(/automatiquement/)).not.toBeInTheDocument();
+  });
+
+  it('shows no delete button without a delete action', () => {
+    render(<StepFiles stepId="s" files={[makeFile({ fileName: 'a.pdf' })]} />);
+
+    expect(screen.queryByRole('button', { name: /Supprimer le fichier/ })).not.toBeInTheDocument();
+  });
+
+  it('requests the deletion of the clicked file', () => {
+    const onRequestDelete = vi.fn();
+    render(
+      <StepFiles
+        stepId="s"
+        onRequestDelete={onRequestDelete}
+        files={[makeFile({ id: 'a', fileName: 'a.pdf' }), makeFile({ id: 'b', fileName: 'b.pdf' })]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer le fichier b.pdf' }));
+
+    expect(onRequestDelete).toHaveBeenCalledExactlyOnceWith('b', 'b.pdf');
   });
 });

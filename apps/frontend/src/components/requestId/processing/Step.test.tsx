@@ -652,6 +652,14 @@ describe('Step', () => {
       expect(screen.queryByText(/automatiquement/)).not.toBeInTheDocument();
     });
 
+    it('shows no delete button on its own closure files to an owner who cannot edit the request', () => {
+      canEditRequest = false;
+      render(<Step {...makeClosureStep({ isOwner: true, uploadedFiles: [makeFile({ fileName: 'courrier.pdf' })] })} />);
+
+      expect(screen.getByRole('link', { name: 'courrier.pdf' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Supprimer le fichier/ })).not.toBeInTheDocument();
+    });
+
     it('opens the confirmation from the delete button in the closure file card', () => {
       canEditRequest = true;
       render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ fileName: 'courrier.pdf' })] })} />);
