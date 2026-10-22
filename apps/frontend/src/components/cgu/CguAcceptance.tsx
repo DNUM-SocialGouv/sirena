@@ -24,12 +24,19 @@ const getErrorMessage = (error: Error) =>
     ? 'Une nouvelle version des conditions générales d’utilisation a été publiée. Rechargez la page pour la consulter.'
     : 'Votre acceptation n’a pas pu être enregistrée. Veuillez réessayer.';
 
-export function CguAcceptance() {
+type CguAcceptanceProps = {
+  onAccepted: () => void;
+};
+
+export function CguAcceptance({ onAccepted }: CguAcceptanceProps) {
   const queryClient = useQueryClient();
   const { mutate, isPending, error, reset } = useAcceptCgu();
   const acceptanceRef = useRef<CguAcceptanceData | null>(null);
   const reopenButtonRef = useRef<HTMLButtonElement>(null);
   const [refusalCount, setRefusalCount] = useState(0);
+  // Read at acceptance time: a new callback must not register the listener again, which would reopen the modal
+  const onAcceptedRef = useRef(onAccepted);
+  onAcceptedRef.current = onAccepted;
 
   useEffect(() => {
     const modalElement = document.getElementById(cguAcceptanceModal.id);
@@ -42,22 +49,27 @@ export function CguAcceptance() {
           profile ? { ...profile, ...acceptance } : profile,
         );
         useUserStore.getState().setCguAcceptedVersion(acceptance.cguAcceptedVersion);
+        onAcceptedRef.current();
         return;
       }
       reset();
+      useUserStore.getState().setHasRefusedCgu(true);
       setRefusalCount((count) => count + 1);
     };
 
     modalElement?.addEventListener('dsfr.conceal', handleConceal);
-    const openFrame = window.requestAnimationFrame(() => cguAcceptanceModal.open());
+    // Presented on its own at login only: after a refusal, the page offers to open it again
+    const openFrame = useUserStore.getState().hasRefusedCgu
+      ? null
+      : window.requestAnimationFrame(() => cguAcceptanceModal.open());
 
     return () => {
-      window.cancelAnimationFrame(openFrame);
+      if (openFrame !== null) window.cancelAnimationFrame(openFrame);
       modalElement?.removeEventListener('dsfr.conceal', handleConceal);
     };
   }, [queryClient, reset]);
 
-  // The modal opens on its own at login: without a trigger to return to, the focus goes to the reopening button
+  // An automatic opening has no trigger to return to: the focus goes to the reopening button
   useEffect(() => {
     if (refusalCount > 0) reopenButtonRef.current?.focus();
   }, [refusalCount]);
@@ -74,23 +86,21 @@ export function CguAcceptance() {
 
   return (
     <>
-      {refusalCount > 0 && (
-        <div className="fr-grid-row fr-grid-row--center fr-my-10w">
-          <div className="fr-col-12 fr-col-md-10 fr-col-lg-8">
-            {/* DSFR markup rather than <Alert />, which cannot title the page with its h1 */}
-            <div className="fr-alert fr-alert--warning">
-              <h1 className="fr-alert__title">Attention</h1>
-              <p>
-                Pour utiliser SIRENA vous devez obligatoirement prendre connaissance des conditions générales
-                d’utilisation et les accepter.
-              </p>
-              <Button ref={reopenButtonRef} className="fr-mt-2w" nativeButtonProps={cguAcceptanceModal.buttonProps}>
-                Voir les conditions générales d’utilisation
-              </Button>
-            </div>
+      <div className="fr-grid-row fr-grid-row--center fr-my-10w">
+        <div className="fr-col-12 fr-col-md-10 fr-col-lg-8">
+          {/* DSFR markup rather than <Alert />, which cannot title the page with its h1 */}
+          <div className="fr-alert fr-alert--warning">
+            <h1 className="fr-alert__title">Attention</h1>
+            <p>
+              Pour utiliser SIRENA vous devez obligatoirement prendre connaissance des conditions générales
+              d’utilisation et les accepter.
+            </p>
+            <Button ref={reopenButtonRef} className="fr-mt-2w" nativeButtonProps={cguAcceptanceModal.buttonProps}>
+              Voir les conditions générales d’utilisation
+            </Button>
           </div>
         </div>
-      )}
+      </div>
       <cguAcceptanceModal.Component
         size="large"
         concealingBackdrop={false}

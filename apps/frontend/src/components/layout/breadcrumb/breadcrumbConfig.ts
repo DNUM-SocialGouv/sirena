@@ -108,6 +108,7 @@ export const ROUTES_WITHOUT_BREADCRUMB = [
   '/',
   '/login',
   '/_auth/inactive',
+  '/_auth/acceptation-cgu',
   '/_auth/_user/home',
   '/_auth/admin/', // redirects to the users tab
   // Admin tabs are the home of the admin section: only their sub pages have a breadcrumb

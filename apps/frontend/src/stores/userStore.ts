@@ -7,10 +7,13 @@ export type UserState = {
   role: Role | null;
   statutId: StatutType | null;
   cguAcceptedVersion: string | null;
+  // Kept for the session only: a reload presents the CGU modal again, as a new login does
+  hasRefusedCgu: boolean;
   updateIsLogged: (isLogged: boolean) => void;
   setRole: (role: Role | null) => void;
   setStatutId: (statutId: StatutType | null) => void;
   setCguAcceptedVersion: (cguAcceptedVersion: string | null) => void;
+  setHasRefusedCgu: (hasRefusedCgu: boolean) => void;
   logout: () => void;
 };
 
@@ -23,9 +26,11 @@ export const useUserStore = create<UserState>((set) => {
     role: null,
     statutId: null,
     cguAcceptedVersion: null,
+    hasRefusedCgu: false,
     setRole: (role: Role | null) => set(() => ({ role })),
     setStatutId: (statutId: StatutType | null) => set(() => ({ statutId })),
     setCguAcceptedVersion: (cguAcceptedVersion: string | null) => set(() => ({ cguAcceptedVersion })),
+    setHasRefusedCgu: (hasRefusedCgu: boolean) => set(() => ({ hasRefusedCgu })),
     updateIsLogged: (isLogged: boolean) => set(() => ({ isLogged })),
     logout: () =>
       set(() => ({
@@ -33,6 +38,7 @@ export const useUserStore = create<UserState>((set) => {
         role: null,
         statutId: null,
         cguAcceptedVersion: null,
+        hasRefusedCgu: false,
       })),
   };
 });
