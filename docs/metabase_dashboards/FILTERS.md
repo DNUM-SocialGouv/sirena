@@ -599,7 +599,10 @@ L'option ne doit être proposée que **s'il existe** des données dont le champ 
 Cette information n'existe que là où le filtre dispose d'effectifs par valeur :
 
 - **Liste des requêtes** — l'endpoint `domaine-counts` reçoit la sentinelle comme une valeur de
-  plus et renvoie son effectif ; l'option est masquée quand il vaut `0`.
+  plus et renvoie son effectif ; l'option est masquée quand il vaut `0`, **sauf si elle est déjà
+  cochée**. Ces effectifs dépendent de la recherche et du périmètre : celui de la sentinelle peut
+  tomber à zéro alors qu'elle est sélectionnée, et masquer l'option retirerait alors la seule case
+  permettant de la décocher — le filtre resterait appliqué sans moyen de le lever.
 - **Tableau de bord Indicateurs** — les cartes Metabase ne remontent aucun effectif par valeur, et
   en obtenir un demanderait une carte dédiée. L'option y est donc **toujours** proposée : la
   masquer rendrait ces données définitivement inatteignables, alors que l'offrir au pire aboutit à

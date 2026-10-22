@@ -39,8 +39,9 @@ export function DomaineFilter({
             };
           }),
         counts,
+        selectedIds,
       ),
-    [counts],
+    [counts, selectedIds],
   );
 
   return (

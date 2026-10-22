@@ -41,6 +41,38 @@ describe('DomaineFilter — valeur « Non renseigné »', () => {
     expect(screen.queryByRole('checkbox', { name: /^Non renseigné/ })).not.toBeInTheDocument();
   });
 
+  // Une option masquée n'emporte pas la sélection avec elle : sans case à cocher, le filtre
+  // resterait appliqué sans aucun moyen de le retirer.
+  it('continue de proposer « Non renseigné » à effectif nul quand la valeur est sélectionnée', async () => {
+    render(
+      <DomaineFilter
+        selectedIds={[FILTRE_NON_RENSEIGNE]}
+        counts={{ ...countsForAll(3), [FILTRE_NON_RENSEIGNE]: 0 }}
+        onChange={vi.fn()}
+      />,
+    );
+
+    await openMenu();
+
+    expect(screen.getByRole('checkbox', { name: 'Non renseigné (0)' })).toBeChecked();
+  });
+
+  it('permet de décocher « Non renseigné » quand son effectif est tombé à zéro', async () => {
+    const onChange = vi.fn();
+    render(
+      <DomaineFilter
+        selectedIds={[FILTRE_NON_RENSEIGNE]}
+        counts={{ ...countsForAll(3), [FILTRE_NON_RENSEIGNE]: 0 }}
+        onChange={onChange}
+      />,
+    );
+
+    await openMenu();
+    await userEvent.click(nonRenseigneCheckbox());
+
+    expect(onChange).toHaveBeenCalledWith([]);
+  });
+
   it("propose « Non renseigné » dès qu'au moins une donnée a le champ vide", async () => {
     render(
       <DomaineFilter selectedIds={[]} counts={{ ...countsForAll(3), [FILTRE_NON_RENSEIGNE]: 7 }} onChange={vi.fn()} />,
