@@ -153,6 +153,10 @@ test.describe('Administration des utilisateurs', () => {
 
     test.beforeEach(async () => {
       targetUserId = await findUserIdByEmail(context.request, HABILITATION_TARGET_USER_EMAIL);
+      // Deactivating the signed-in admin makes userStatusMiddleware answer 403 to every
+      // later request, the restoring PATCH included: the account would stay locked out.
+      const currentUserId = await getCurrentUserId(context);
+      expect(targetUserId, `${HABILITATION_TARGET_USER_EMAIL} is the signed-in admin account`).not.toBe(currentUserId);
       // Captured once for the whole file, never re-read: a restore that fails leaves the
       // account modified, and re-reading would take that state for the original one.
       if (!hasPristine) {
