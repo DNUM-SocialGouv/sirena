@@ -10,6 +10,7 @@ const selectedValuesLabel = (count: number) =>
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.restoreAllMocks();
 });
 
 describe('DropdownCheckboxFilter', () => {
@@ -69,13 +70,9 @@ describe('DropdownCheckboxFilter', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Statut' }));
     expect(screen.getByText('parent: fermé')).toBeInTheDocument();
 
-    expect(consoleError).not.toHaveBeenCalledWith(
-      expect.stringContaining('Cannot update a component'),
-      expect.anything(),
-      expect.anything(),
-      expect.anything(),
+    const renderPhaseUpdateWarnings = consoleError.mock.calls.filter(([message]) =>
+      String(message).includes('Cannot update a component'),
     );
-
-    consoleError.mockRestore();
+    expect(renderPhaseUpdateWarnings).toEqual([]);
   });
 });
