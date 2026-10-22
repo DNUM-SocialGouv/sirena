@@ -384,7 +384,6 @@ const StepComponent = (stepProps: StepProps) => {
       });
     } finally {
       deleteClotureFileModal.close();
-      setFileToDelete(null);
     }
   };
 
@@ -571,7 +570,6 @@ const StepComponent = (stepProps: StepProps) => {
             children: 'Annuler',
             onClick: () => {
               deleteClotureFileModal.close();
-              setFileToDelete(null);
             },
           },
           {

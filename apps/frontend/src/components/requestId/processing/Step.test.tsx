@@ -17,7 +17,23 @@ vi.mock('@codegouvfr/react-dsfr/Modal', () => ({
     id: 'test-modal',
     open: vi.fn(),
     close: vi.fn(),
-    Component: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    Component: ({
+      children,
+      buttons = [],
+    }: {
+      children: React.ReactNode;
+      buttons?: { children: React.ReactNode; onClick?: () => void }[];
+    }) => (
+      <div>
+        {children}
+        {buttons.map((button, index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: static test double
+          <button key={index} type="button" onClick={button.onClick}>
+            {button.children}
+          </button>
+        ))}
+      </div>
+    ),
   }),
 }));
 
@@ -639,6 +655,17 @@ describe('Step', () => {
           'Êtes-vous sûr de vouloir supprimer le fichier "courrier.pdf" ? Cette action est irréversible.',
         ),
       ).toBeInTheDocument();
+    });
+
+    it('keeps the file name in the confirmation while the modal closes', () => {
+      canEditRequest = true;
+      render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ fileName: 'courrier.pdf' })] })} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Supprimer le fichier courrier.pdf' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+
+      // The DSFR modal fades out after close(): its text must not flash an empty file name.
+      expect(screen.getByText(/supprimer le fichier "courrier\.pdf"/)).toBeInTheDocument();
     });
   });
 

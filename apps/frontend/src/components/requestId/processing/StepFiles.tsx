@@ -11,13 +11,7 @@ type StepFile = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data
 type StepFilesProps = {
   files: StepFile[];
   stepId: string;
-  /**
-   * How to label a file without an uploader.
-   * - `automatic` (default): the system added it, e.g. an automatic Accusé de réception.
-   * - `anonymous`: an agent added it but the account no longer exists, e.g. a closure file.
-   */
   unknownUploader?: 'automatic' | 'anonymous';
-  /** When provided, each file card shows a delete button that calls it. The caller confirms and deletes. */
   onRequestDelete?: (fileId: string, fileName: string) => void;
 };
 
