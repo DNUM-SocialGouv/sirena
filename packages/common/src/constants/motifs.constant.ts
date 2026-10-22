@@ -1,3 +1,5 @@
+import type { MotifOption } from '../utils/motifs.utils.js';
+
 // Value used to identify the maltraitance motifs
 export const MALTRAITANCE_PARENT_VALUE = 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE';
 
@@ -635,11 +637,21 @@ export const MOTIFS_HIERARCHICAL_DATA = [
       },
     ],
   },
-];
+] as const satisfies readonly MotifOption[];
+
+type MotifIdOf<P> = P extends {
+  value: infer V extends string;
+  children: readonly { value: infer C extends string }[];
+}
+  ? `${V}/${C}`
+  : never;
+
+// Identifiant complet d'un motif ("PARENT/ENFANT"), dérivé de MOTIFS_HIERARCHICAL_DATA
+export type MotifId = MotifIdOf<(typeof MOTIFS_HIERARCHICAL_DATA)[number]>;
 
 export const MOTIFS_DATA = MOTIFS_HIERARCHICAL_DATA.flatMap((parent) =>
   parent.children.map((child) => ({
-    id: `${parent.value}/${child.value}`,
+    id: `${parent.value}/${child.value}` as MotifId,
     label: child.label,
     category: parent.label,
   })),

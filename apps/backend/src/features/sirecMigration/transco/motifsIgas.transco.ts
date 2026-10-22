@@ -1,17 +1,17 @@
-import { motifLabelsById } from '@sirena/common/constants';
+import type { MotifId } from '@sirena/common/constants';
 import { SirecDataError } from './sirecTransco.error.js';
 
 export const MOTIF_IGAS_A_RENSEIGNER = 155;
 export const MOTIF_IGAS_HORS_COMPETENCE = 184;
 
 interface MotifIgasTranscoEntry {
-  motifIds: string[];
+  motifIds: MotifId[];
   // id_igas du motif Igas parent. Quand un mis en cause porte à la fois ce motif et son parent,
   // le parent doit être ignoré lors de la migration (voir resolveMotifsIgas).
   parentMotifId?: number;
 }
 
-const MOTIFS_IGAS_TRANSCO: Record<number, MotifIgasTranscoEntry> = {
+export const MOTIFS_IGAS_TRANSCO: Partial<Record<number, MotifIgasTranscoEntry>> = {
   153: { motifIds: ['ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES/AUTRES'], parentMotifId: 19 },
   146: { motifIds: ['ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES/NON_RESPECT_REGLES'], parentMotifId: 19 },
   147: { motifIds: ['ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES/DEFAUT_DECLARATION_ACTIVITE'], parentMotifId: 19 },
@@ -232,17 +232,10 @@ const MOTIFS_IGAS_TRANSCO: Record<number, MotifIgasTranscoEntry> = {
   },
 };
 
-export function transcodeMotifIgas(idIgas: number): string[] {
+export function transcodeMotifIgas(idIgas: number): MotifId[] {
   const motifIds = MOTIFS_IGAS_TRANSCO[idIgas]?.motifIds;
   if (motifIds === undefined) {
     throw new SirecDataError(`Aucune correspondance SIRENA pour le motif IGAS id_igas=${idIgas}`);
-  }
-  for (const motifId of motifIds) {
-    if (motifLabelsById[motifId] === undefined) {
-      throw new SirecDataError(
-        `Le motif SIRENA "${motifId}" (id_igas=${idIgas}) n'a pas de libellé dans MOTIFS_HIERARCHICAL_DATA`,
-      );
-    }
   }
   return motifIds;
 }
