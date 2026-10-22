@@ -1,8 +1,14 @@
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, ROLES } from '@sirena/common/constants';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { forwardRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Step } from './Step';
+
+const { deleteFileMutateAsync, toastAdd, modalClose } = vi.hoisted(() => ({
+  deleteFileMutateAsync: vi.fn(),
+  toastAdd: vi.fn(),
+  modalClose: vi.fn(),
+}));
 
 vi.mock('./AddFilesClotureDrawer', () => ({
   AddFilesClotureDrawer: forwardRef(() => null),
@@ -16,7 +22,7 @@ vi.mock('@codegouvfr/react-dsfr/Modal', () => ({
   createModal: () => ({
     id: 'test-modal',
     open: vi.fn(),
-    close: vi.fn(),
+    close: modalClose,
     Component: ({
       children,
       buttons = [],
@@ -43,13 +49,13 @@ vi.mock('@sirena/ui', async (importOriginal) => {
     ...original,
     Toast: {
       ...original.Toast,
-      useToastManager: () => ({ add: vi.fn() }),
+      useToastManager: () => ({ add: toastAdd }),
     },
   };
 });
 
 vi.mock('@/hooks/mutations/updateUploadedFiles.hook', () => ({
-  useDeleteUploadedFile: () => ({ mutate: vi.fn(), isPending: false }),
+  useDeleteUploadedFile: () => ({ mutate: vi.fn(), mutateAsync: deleteFileMutateAsync, isPending: false }),
 }));
 
 vi.mock('@/hooks/mutations/updateProcessingStep.hook', () => ({
@@ -80,6 +86,9 @@ type StepFile = StepProps['uploadedFiles'][number];
 describe('Step', () => {
   beforeEach(() => {
     canEditRequest = false;
+    deleteFileMutateAsync.mockReset();
+    toastAdd.mockReset();
+    modalClose.mockReset();
   });
 
   it('displays a closed step using the Date de clôture instead of the technical creation date', () => {
@@ -643,7 +652,7 @@ describe('Step', () => {
       expect(screen.queryByText(/automatiquement/)).not.toBeInTheDocument();
     });
 
-    it('lets the owner delete a closure file from its card, after confirmation', () => {
+    it('opens the confirmation from the delete button in the closure file card', () => {
       canEditRequest = true;
       render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ fileName: 'courrier.pdf' })] })} />);
 
@@ -666,6 +675,33 @@ describe('Step', () => {
 
       // The DSFR modal fades out after close(): its text must not flash an empty file name.
       expect(screen.getByText(/supprimer le fichier "courrier\.pdf"/)).toBeInTheDocument();
+    });
+
+    it('removes a closure file from the step once its deletion is confirmed', async () => {
+      canEditRequest = true;
+      deleteFileMutateAsync.mockResolvedValueOnce(undefined);
+      render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ id: 'file-42', fileName: 'courrier.pdf' })] })} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Supprimer le fichier courrier.pdf' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Confirmer' }));
+
+      await waitFor(() => expect(screen.queryByRole('link', { name: 'courrier.pdf' })).not.toBeInTheDocument());
+      expect(deleteFileMutateAsync).toHaveBeenCalledWith('file-42');
+      expect(toastAdd).toHaveBeenCalledWith(expect.objectContaining({ title: 'Fichier supprimé avec succès' }));
+      expect(modalClose).toHaveBeenCalled();
+    });
+
+    it('keeps a closure file and shows an error when its deletion fails', async () => {
+      canEditRequest = true;
+      deleteFileMutateAsync.mockRejectedValueOnce(new Error('network'));
+      render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ fileName: 'courrier.pdf' })] })} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Supprimer le fichier courrier.pdf' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Confirmer' }));
+
+      await waitFor(() => expect(modalClose).toHaveBeenCalled());
+      expect(toastAdd).toHaveBeenCalledWith(expect.objectContaining({ title: 'Erreur' }));
+      expect(screen.getByRole('link', { name: 'courrier.pdf' })).toBeInTheDocument();
     });
   });
 
