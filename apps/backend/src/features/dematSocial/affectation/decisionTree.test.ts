@@ -628,10 +628,10 @@ describe('finessReferentielPlaceholderSubtree', () => {
       expect(result.sort()).toEqual(['DD']);
     });
 
-    it('should return ARS for S.A.A categCode 460 (referentiel)', async () => {
+    it('should return CD only for S.A.A categCode 460 (referentiel)', async () => {
       vi.mocked(prisma.autoriteCompetenteReferentiel.findUnique).mockResolvedValue({
         categCode: '460',
-        entiteTypeIds: ['ARS'],
+        entiteTypeIds: ['CD'],
       } as never);
 
       const ctx: SituationContext = {
@@ -643,7 +643,7 @@ describe('finessReferentielPlaceholderSubtree', () => {
 
       const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
-      expect(result.sort()).toEqual(['ARS']);
+      expect(result.sort()).toEqual(['CD']);
       expect(prisma.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
         where: { categCode: '460' },
       });
