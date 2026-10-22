@@ -1,3 +1,4 @@
+import { CGU_VERSION } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../libs/prisma.js';
 import type { ArsEntites } from './entites.js';
@@ -43,5 +44,19 @@ describe('fixed user ids', () => {
     vi.mocked(prisma.user.upsert).mockResolvedValue({ id: 'existing-user-id' } as never);
 
     await expect(seedUsers(entites, [])).resolves.toHaveLength(7);
+  });
+});
+
+describe('CGU acceptance', () => {
+  it('seeds users who already accepted the CGU in force', async () => {
+    vi.mocked(prisma.user.upsert).mockResolvedValue({ id: 'existing-user-id' } as never);
+
+    await seedUsers(entites, []);
+
+    for (const [args] of vi.mocked(prisma.user.upsert).mock.calls) {
+      for (const data of [args.create, args.update]) {
+        expect(data).toMatchObject({ cguAcceptedVersion: CGU_VERSION, cguAcceptedAt: expect.any(Date) });
+      }
+    }
   });
 });

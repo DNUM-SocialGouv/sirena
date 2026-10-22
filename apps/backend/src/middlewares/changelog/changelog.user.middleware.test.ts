@@ -33,6 +33,8 @@ describe('changelog.user.middleware.ts', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     pcData: {},
+    cguAcceptedVersion: null,
+    cguAcceptedAt: null,
     role: { id: 'role1', label: 'Test Role' },
   };
 

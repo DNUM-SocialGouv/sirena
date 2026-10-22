@@ -53,6 +53,9 @@ model User {
   entiteId String?
   entite   Entite? @relation(fields: [entiteId], references: [id])
 
+  cguAcceptedVersion String?
+  cguAcceptedAt      DateTime?
+
   sessions        Session[]
   changeLogs      ChangeLog[]
   accessLogs      AccessLog[]

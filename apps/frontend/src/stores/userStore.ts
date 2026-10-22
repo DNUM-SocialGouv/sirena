@@ -6,9 +6,11 @@ export type UserState = {
   isLogged: boolean;
   role: Role | null;
   statutId: StatutType | null;
+  cguAcceptedVersion: string | null;
   updateIsLogged: (isLogged: boolean) => void;
   setRole: (role: Role | null) => void;
   setStatutId: (statutId: StatutType | null) => void;
+  setCguAcceptedVersion: (cguAcceptedVersion: string | null) => void;
   logout: () => void;
 };
 
@@ -20,14 +22,17 @@ export const useUserStore = create<UserState>((set) => {
     isLogged: initialIsLogged,
     role: null,
     statutId: null,
+    cguAcceptedVersion: null,
     setRole: (role: Role | null) => set(() => ({ role })),
     setStatutId: (statutId: StatutType | null) => set(() => ({ statutId })),
+    setCguAcceptedVersion: (cguAcceptedVersion: string | null) => set(() => ({ cguAcceptedVersion })),
     updateIsLogged: (isLogged: boolean) => set(() => ({ isLogged })),
     logout: () =>
       set(() => ({
         isLogged: false,
         role: null,
         statutId: null,
+        cguAcceptedVersion: null,
       })),
   };
 });

@@ -79,6 +79,8 @@ const TEST_USER: TestUser = {
   statutId: 'statut-123',
   entiteId: 'entite-456',
   pcData: {},
+  cguAcceptedVersion: null,
+  cguAcceptedAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 } as const;

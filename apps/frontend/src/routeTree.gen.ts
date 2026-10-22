@@ -18,6 +18,7 @@ import { Route as AuthAdminRouteRouteImport } from './routes/_auth/admin/route'
 import { Route as AuthInactiveRouteRouteImport } from './routes/_auth/inactive/route'
 import { Route as AuthStatistiquesRouteImport } from './routes/_auth/statistiques'
 import { Route as PublicAccessibiliteRouteImport } from './routes/_public/accessibilite'
+import { Route as PublicConditionsGeneralesUtilisationRouteImport } from './routes/_public/conditions-generales-utilisation'
 import { Route as PublicDonneesPersonnellesRouteImport } from './routes/_public/donnees-personnelles'
 import { Route as PublicGestionCookiesRouteImport } from './routes/_public/gestion-cookies'
 import { Route as PublicMentionsLegalesRouteImport } from './routes/_public/mentions-legales'
@@ -96,6 +97,12 @@ const PublicAccessibiliteRoute = PublicAccessibiliteRouteImport.update({
   path: '/accessibilite',
   getParentRoute: () => PublicRouteRoute,
 } as any)
+const PublicConditionsGeneralesUtilisationRoute =
+  PublicConditionsGeneralesUtilisationRouteImport.update({
+    id: '/conditions-generales-utilisation',
+    path: '/conditions-generales-utilisation',
+    getParentRoute: () => PublicRouteRoute,
+  } as any)
 const PublicDonneesPersonnellesRoute =
   PublicDonneesPersonnellesRouteImport.update({
     id: '/donnees-personnelles',
@@ -299,6 +306,7 @@ export interface FileRoutesByFullPath {
   '/inactive': typeof AuthInactiveRouteRoute
   '/statistiques': typeof AuthStatistiquesRoute
   '/accessibilite': typeof PublicAccessibiliteRoute
+  '/conditions-generales-utilisation': typeof PublicConditionsGeneralesUtilisationRoute
   '/donnees-personnelles': typeof PublicDonneesPersonnellesRoute
   '/gestion-cookies': typeof PublicGestionCookiesRoute
   '/mentions-legales': typeof PublicMentionsLegalesRoute
@@ -341,6 +349,7 @@ export interface FileRoutesByTo {
   '/inactive': typeof AuthInactiveRouteRoute
   '/statistiques': typeof AuthStatistiquesRoute
   '/accessibilite': typeof PublicAccessibiliteRoute
+  '/conditions-generales-utilisation': typeof PublicConditionsGeneralesUtilisationRoute
   '/donnees-personnelles': typeof PublicDonneesPersonnellesRoute
   '/gestion-cookies': typeof PublicGestionCookiesRoute
   '/mentions-legales': typeof PublicMentionsLegalesRoute
@@ -382,6 +391,7 @@ export interface FileRoutesById {
   '/_auth/inactive': typeof AuthInactiveRouteRoute
   '/_auth/statistiques': typeof AuthStatistiquesRoute
   '/_public/accessibilite': typeof PublicAccessibiliteRoute
+  '/_public/conditions-generales-utilisation': typeof PublicConditionsGeneralesUtilisationRoute
   '/_public/donnees-personnelles': typeof PublicDonneesPersonnellesRoute
   '/_public/gestion-cookies': typeof PublicGestionCookiesRoute
   '/_public/mentions-legales': typeof PublicMentionsLegalesRoute
@@ -427,6 +437,7 @@ export interface FileRouteTypes {
     | '/inactive'
     | '/statistiques'
     | '/accessibilite'
+    | '/conditions-generales-utilisation'
     | '/donnees-personnelles'
     | '/gestion-cookies'
     | '/mentions-legales'
@@ -469,6 +480,7 @@ export interface FileRouteTypes {
     | '/inactive'
     | '/statistiques'
     | '/accessibilite'
+    | '/conditions-generales-utilisation'
     | '/donnees-personnelles'
     | '/gestion-cookies'
     | '/mentions-legales'
@@ -509,6 +521,7 @@ export interface FileRouteTypes {
     | '/_auth/inactive'
     | '/_auth/statistiques'
     | '/_public/accessibilite'
+    | '/_public/conditions-generales-utilisation'
     | '/_public/donnees-personnelles'
     | '/_public/gestion-cookies'
     | '/_public/mentions-legales'
@@ -616,6 +629,13 @@ declare module '@tanstack/react-router' {
       path: '/accessibilite'
       fullPath: '/accessibilite'
       preLoaderRoute: typeof PublicAccessibiliteRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/conditions-generales-utilisation': {
+      id: '/_public/conditions-generales-utilisation'
+      path: '/conditions-generales-utilisation'
+      fullPath: '/conditions-generales-utilisation'
+      preLoaderRoute: typeof PublicConditionsGeneralesUtilisationRouteImport
       parentRoute: typeof PublicRouteRoute
     }
     '/_public/donnees-personnelles': {
@@ -1046,6 +1066,7 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 
 interface PublicRouteRouteChildren {
   PublicAccessibiliteRoute: typeof PublicAccessibiliteRoute
+  PublicConditionsGeneralesUtilisationRoute: typeof PublicConditionsGeneralesUtilisationRoute
   PublicDonneesPersonnellesRoute: typeof PublicDonneesPersonnellesRoute
   PublicGestionCookiesRoute: typeof PublicGestionCookiesRoute
   PublicMentionsLegalesRoute: typeof PublicMentionsLegalesRoute
@@ -1053,6 +1074,8 @@ interface PublicRouteRouteChildren {
 
 const PublicRouteRouteChildren: PublicRouteRouteChildren = {
   PublicAccessibiliteRoute: PublicAccessibiliteRoute,
+  PublicConditionsGeneralesUtilisationRoute:
+    PublicConditionsGeneralesUtilisationRoute,
   PublicDonneesPersonnellesRoute: PublicDonneesPersonnellesRoute,
   PublicGestionCookiesRoute: PublicGestionCookiesRoute,
   PublicMentionsLegalesRoute: PublicMentionsLegalesRoute,
