@@ -664,8 +664,8 @@ describe('Step', () => {
       canEditRequest = true;
       render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ fileName: 'courrier.pdf' })] })} />);
 
-      const card = screen.getByText(/Fichier ajouté le/).parentElement as HTMLElement;
-      fireEvent.click(within(card).getByRole('button', { name: 'Supprimer le fichier courrier.pdf' }));
+      const fileItem = screen.getByRole('listitem');
+      fireEvent.click(within(fileItem).getByRole('button', { name: 'Supprimer le fichier courrier.pdf' }));
 
       expect(
         screen.getByText(

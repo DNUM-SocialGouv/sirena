@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { StepFiles } from './StepFiles';
 
@@ -33,6 +33,19 @@ describe('StepFiles', () => {
     expect(screen.getAllByText(/Fichier ajouté/)).toHaveLength(2);
     expect(screen.getByText('a.pdf')).toBeInTheDocument();
     expect(screen.getByText('b.pdf')).toBeInTheDocument();
+  });
+
+  it('lists the files so assistive technologies announce how many there are', () => {
+    render(
+      <StepFiles
+        stepId="s"
+        files={[makeFile({ id: 'a', fileName: 'a.pdf' }), makeFile({ id: 'b', fileName: 'b.pdf' })]}
+      />,
+    );
+
+    const items = within(screen.getByRole('list')).getAllByRole('listitem');
+    expect(items).toHaveLength(2);
+    expect(within(items[1]).getByText('b.pdf')).toBeInTheDocument();
   });
 
   it('labels a user-uploaded file with its author', () => {

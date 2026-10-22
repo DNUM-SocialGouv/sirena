@@ -1,5 +1,6 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { Button } from '@codegouvfr/react-dsfr/Button';
+import { clsx } from 'clsx';
 import { useCallback } from 'react';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
@@ -43,12 +44,12 @@ export const StepFiles = ({ files, stepId, unknownUploader = 'automatic', onRequ
   if (files.length === 0) return null;
 
   return (
-    <div className={styles['step-files']}>
+    <ul className={clsx(fr.cx('fr-raw-list'), styles['step-files'])}>
       {files.map((file) => {
         const fileName = file.fileName;
         const author = file.uploadedBy;
         return (
-          <div key={file.id} className={styles['step-file']}>
+          <li key={file.id} className={styles['step-file']}>
             <p className={styles['step-file__from']}>
               <span className="fr-icon-attachment-line fr-icon--xs" aria-hidden="true" /> Fichier ajouté{' '}
               {author ? (
@@ -76,9 +77,9 @@ export const StepFiles = ({ files, stepId, unknownUploader = 'automatic', onRequ
                 <StepFileDeleteButton fileId={file.id} fileName={fileName} onRequestDelete={onRequestDelete} />
               ) : null}
             </div>
-          </div>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 };
