@@ -5,5 +5,6 @@ export const Route = createFileRoute('/_auth/admin/')({
 });
 
 export function RouteComponent() {
-  return <Navigate to="/admin/users" />;
+  // Replace the history entry: the admin breadcrumb root links here, going back must not bounce on it
+  return <Navigate to="/admin/users" replace />;
 }
