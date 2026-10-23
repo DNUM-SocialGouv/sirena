@@ -37,4 +37,13 @@ describe('DeclarantForm', () => {
       expect(screen.getByLabelText(label).closest('[class*="alignedField"]')).not.toBeNull();
     }
   });
+
+  it('labels the lien precision field without a placeholder', () => {
+    renderForm({ initialData: { lienAvecPersonneConcernee: 'AUTRE' } });
+
+    const input = screen.getByLabelText('Précision du lien avec la personne concernée');
+
+    expect(input).toBeVisible();
+    expect(input).not.toHaveAttribute('placeholder');
+  });
 });
