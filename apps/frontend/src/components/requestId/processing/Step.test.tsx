@@ -63,6 +63,7 @@ vi.mock('@/hooks/mutations/updateProcessingStep.hook', () => ({
 }));
 
 let canEditRequest = false;
+let userRole: string = ROLES.WRITER;
 vi.mock('@/hooks/useCanEdit', () => ({
   useCanEdit: () => ({ canEdit: canEditRequest }),
 }));
@@ -72,7 +73,7 @@ vi.mock('@/hooks/useModalFocusRestore', () => ({
 }));
 
 vi.mock('@/stores/userStore', () => ({
-  useUserStore: (selector: (state: { role: string }) => string) => selector({ role: ROLES.WRITER }),
+  useUserStore: (selector: (state: { role: string }) => string) => selector({ role: userRole }),
 }));
 
 type StepProps = React.ComponentProps<typeof Step>;
@@ -86,6 +87,7 @@ type StepFile = StepProps['uploadedFiles'][number];
 describe('Step', () => {
   beforeEach(() => {
     canEditRequest = false;
+    userRole = ROLES.WRITER;
     deleteFileMutateAsync.mockReset();
     toastAdd.mockReset();
     modalClose.mockReset();
@@ -652,12 +654,44 @@ describe('Step', () => {
       expect(screen.queryByText(/automatiquement/)).not.toBeInTheDocument();
     });
 
-    it('shows no delete button on its own closure files to an owner who cannot edit the request', () => {
+    it('lets an owner with write access delete a closure file when the request cannot be edited', async () => {
       canEditRequest = false;
-      render(<Step {...makeClosureStep({ isOwner: true, uploadedFiles: [makeFile({ fileName: 'courrier.pdf' })] })} />);
+      deleteFileMutateAsync.mockResolvedValueOnce(undefined);
+      render(
+        <Step
+          {...makeClosureStep({
+            isOwner: true,
+            uploadedFiles: [makeFile({ id: 'file-42', fileName: 'courrier.pdf' })],
+          })}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Supprimer le fichier courrier.pdf' }));
+      expect(screen.getByText(/supprimer le fichier "courrier\.pdf"/)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Confirmer' }));
+
+      await waitFor(() => expect(screen.queryByRole('link', { name: 'courrier.pdf' })).not.toBeInTheDocument());
+      expect(deleteFileMutateAsync).toHaveBeenCalledWith('file-42');
+      expect(toastAdd).toHaveBeenCalledWith(expect.objectContaining({ title: 'Fichier supprimé avec succès' }));
+    });
+
+    it('keeps closure files readable but hides file mutation actions for a reader', () => {
+      userRole = ROLES.READER;
+      render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ fileName: 'courrier.pdf' })] })} />);
 
       expect(screen.getByRole('link', { name: 'courrier.pdf' })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /Supprimer le fichier/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Ajouter un fichier/ })).not.toBeInTheDocument();
+    });
+
+    it('keeps a protected closure file readable without a delete action for an owner with write access', () => {
+      render(
+        <Step {...makeClosureStep({ uploadedFiles: [makeFile({ fileName: 'courrier.pdf', canDelete: false })] })} />,
+      );
+
+      expect(screen.getByRole('link', { name: 'courrier.pdf' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Supprimer le fichier/ })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Ajouter un fichier/ })).toBeInTheDocument();
     });
 
     it('opens the confirmation from the delete button in the closure file card', () => {

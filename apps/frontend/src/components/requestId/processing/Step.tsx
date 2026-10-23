@@ -510,7 +510,7 @@ const StepComponent = (stepProps: StepProps) => {
               files={step.uploadedFiles.filter((f) => !deletedFileIds.has(f.id))}
               stepId={id}
               unknownUploader="anonymous"
-              onRequestDelete={isOwner && canEdit ? handleRequestDeleteClotureFile : undefined}
+              onRequestDelete={isOwner && canWrite ? handleRequestDeleteClotureFile : undefined}
             />
           </>
         ) : (
