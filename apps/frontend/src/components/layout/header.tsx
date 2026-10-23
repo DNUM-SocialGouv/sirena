@@ -2,6 +2,7 @@ import { Header } from '@codegouvfr/react-dsfr/Header';
 import { ROLES, ROLES_STATISTICS, type Role } from '@sirena/common/constants';
 import { Link, type LinkProps, useLocation } from '@tanstack/react-router';
 import { useId } from 'react';
+import { useIsCguAcceptancePending } from '@/hooks/useCguAcceptance';
 import { useUserStore } from '@/stores/userStore';
 import style from './header.module.css';
 import { UserMenu } from './userMenu';
@@ -22,7 +23,8 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
 
   const isSuperAdmin = userStore.role === ROLES.SUPER_ADMIN;
   const canAccessStatistics = userStore.role != null && (ROLES_STATISTICS as readonly Role[]).includes(userStore.role);
-  const showStatisticsLink = userStore.isLogged && canAccessStatistics;
+  const isCguAcceptancePending = useIsCguAcceptancePending();
+  const showStatisticsLink = userStore.isLogged && canAccessStatistics && !isCguAcceptancePending;
   const isOnStatistics = pathname === '/statistiques';
 
   // Lien retour : le super admin revient vers son espace ; les autres vers la liste des requêtes.

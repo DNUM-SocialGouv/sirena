@@ -21,3 +21,12 @@ export const ProfileSchema = UserSchema.extend({
 });
 
 export const GetProfileResponseSchema = ProfileSchema;
+
+export const CguAcceptanceBodySchema = z.object({
+  version: z.string().min(1),
+});
+
+export const CguAcceptanceResponseSchema = z.object({
+  cguAcceptedVersion: z.string(),
+  cguAcceptedAt: z.coerce.date(),
+});

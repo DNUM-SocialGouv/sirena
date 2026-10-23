@@ -26,6 +26,12 @@ export function AppFooter() {
           },
         },
         {
+          text: 'Conditions générales d’utilisation',
+          linkProps: {
+            to: '/conditions-generales-utilisation',
+          },
+        },
+        {
           text: 'Gestion des cookies',
           linkProps: {
             to: '/gestion-cookies',

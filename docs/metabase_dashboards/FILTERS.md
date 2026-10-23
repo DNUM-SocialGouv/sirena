@@ -502,6 +502,114 @@ cartes, visibilité d'embedding **Enabled**. Tant que le paramètre n'est pas d�
 dashboard, le backend n'envoie rien (découverte dynamique) : le filtre est un no-op côté
 Metabase et l'UI reste fonctionnelle.
 
+## 4 quinquies. La valeur « Non renseigné » des filtres multi-sélection
+
+Les filtres multi-sélection portent sur des colonnes **nullables** : `IN (…)` n'y retient jamais
+les lignes à `NULL`. Tant que seules les valeurs du référentiel étaient cochables, les requêtes
+dont le champ n'est pas renseigné étaient donc **inatteignables** : cocher *toutes* les valeurs
+affichait moins de données que ne cocher aucune, ce qui est incompréhensible à l'usage.
+
+Une valeur **« Non renseigné »** est désormais proposée **en tête** de chaque filtre
+multi-sélection. Elle est portée par une **sentinelle unique et partagée**,
+`FILTRE_NON_RENSEIGNE = 'NON_RENSEIGNE'` (`@sirena/common/constants`), qui voyage comme n'importe
+quelle autre valeur cochée :
+
+| Couche | Représentation |
+| --- | --- |
+| URL du front | une valeur de la liste CSV : `?domaineIds=SOCIAL,NON_RENSEIGNE` |
+| Query de l'API | idem, validée par `statistics.schema.ts` |
+| Paramètre Metabase | une valeur de plus du paramètre répété : `?domaine_fonctionnel=SOCIAL&domaine_fonctionnel=NON_RENSEIGNE` |
+| SQL de la carte | reconnue par un test explicite `'NON_RENSEIGNE' IN ({{param}})` |
+
+> La sentinelle doit rester **distincte de tout identifiant du référentiel filtré**, sans quoi une
+> valeur réelle serait interprétée comme « non renseigné ». Aucun identifiant de
+> `DOMAINES_FONCTIONNELS` ni de `LIEU_TYPE` ne s'appelle `NON_RENSEIGNE`, et un test de
+> `packages/common` verrouille cette propriété.
+
+### Le motif SQL : une alternative `OR` auto-neutralisante
+
+Le bloc existant devient une **alternative** entre « au moins une valeur cochée correspond » et
+« rien n'est renseigné, et la sentinelle est cochée ». Les deux membres restent dans le **même**
+bloc `[[ ]]` : le filtre entier disparaît quand aucune valeur n'est transmise (CA4).
+
+Quand la sentinelle **n'est pas** cochée, le second membre est faux (`'NON_RENSEIGNE'` n'est pas
+dans la liste) et le filtre se comporte exactement comme avant. Quand **tout** est coché, le
+premier membre couvre les lignes renseignées et le second les autres : le filtre devient
+non restrictif (CA2). Quand **seule** la sentinelle est cochée, le premier membre ne peut
+correspondre à rien — la sentinelle n'est l'identifiant d'aucune valeur du référentiel — et seules
+les lignes non renseignées sortent (CA3).
+
+#### Domaine fonctionnel
+
+```sql
+[[ AND (EXISTS (SELECT 1 FROM "Situation" s_df
+                WHERE s_df."requeteId" = r.id
+                  AND s_df."domainesFonctionnelsId" IN ({{domaine_fonctionnel}}))
+        OR (NOT EXISTS (SELECT 1 FROM "Situation" s_df_nr
+                        WHERE s_df_nr."requeteId" = r.id
+                          AND s_df_nr."domainesFonctionnelsId" IS NOT NULL)
+            AND 'NON_RENSEIGNE' IN ({{domaine_fonctionnel}}))) ]]
+```
+
+Le `NOT EXISTS` retient les requêtes dont **aucune** situation ne porte de domaine — y compris
+celles qui n'ont **aucune** situation. C'est la transposition exacte de la règle côté liste des
+requêtes (`situations: { none: { domainesFonctionnelsId: { not: null } } }` en Prisma), pour que
+les deux surfaces comptent la même chose.
+
+#### Type de lieu de survenue
+
+```sql
+[[ AND (EXISTS (SELECT 1 FROM "Situation" s_lieu
+                JOIN "LieuDeSurvenue" l_lieu ON l_lieu.id = s_lieu."lieuDeSurvenueId"
+                WHERE s_lieu."requeteId" = r.id
+                  AND (l_lieu."lieuTypeId" IN ({{lieu_de_survenue}})
+                       OR (l_lieu."lieuTypeId" || ':' || l_lieu."lieuPrecision") IN ({{lieu_de_survenue}})))
+        OR (NOT EXISTS (SELECT 1 FROM "Situation" s_lieu_nr
+                        JOIN "LieuDeSurvenue" l_lieu_nr ON l_lieu_nr.id = s_lieu_nr."lieuDeSurvenueId"
+                        WHERE s_lieu_nr."requeteId" = r.id
+                          AND l_lieu_nr."lieuTypeId" IS NOT NULL)
+            AND 'NON_RENSEIGNE' IN ({{lieu_de_survenue}}))) ]]
+```
+
+> ⚠️ Le « non renseigné » du lieu porte sur **`lieuTypeId`**, qui est nullable. `lieuPrecision`,
+> elle, est `NOT NULL` avec une valeur par défaut `''` : une précision vide n'est donc *pas* un
+> `NULL` et ne constitue pas une valeur « non renseigné » distincte — un lieu dont le type est
+> renseigné mais la précision vide reste atteignable en cochant le **type entier**, comme
+> aujourd'hui.
+
+Les alias `s_df_nr` / `s_lieu_nr` / `l_lieu_nr` sont distincts de ceux du premier membre : les deux
+sous-requêtes cohabitent dans la même carte.
+
+### Ce que l'option exige côté Metabase
+
+**Rien de plus.** La variable est déjà en « plusieurs valeurs » : la sentinelle n'est qu'une valeur
+de plus dans la liste. Seul le **SQL des cartes** doit être mis à jour pour passer du bloc simple à
+l'alternative ci-dessus. Tant que ce n'est pas fait, cocher « Non renseigné » n'a **aucun effet sur
+les chiffres** (la valeur est transmise, mais le `IN (…)` ne la reconnaît pas) : c'est le
+déploiement en deux temps habituel — code d'abord, configuration Metabase ensuite — et non une
+régression.
+
+> Si une **custom list** est configurée sur le paramètre pour le confort de recette dans Metabase,
+> y ajouter la ligne `NON_RENSEIGNE,Non renseigné`. Elle ne sert qu'au widget Metabase : SIRENA
+> n'affiche jamais celui-ci, ses cases à cocher viennent du référentiel applicatif.
+
+### Disponibilité de l'option (CA1)
+
+L'option ne doit être proposée que **s'il existe** des données dont le champ n'est pas renseigné.
+Cette information n'existe que là où le filtre dispose d'effectifs par valeur :
+
+- **Liste des requêtes** — l'endpoint `domaine-counts` reçoit la sentinelle comme une valeur de
+  plus et renvoie son effectif ; l'option est masquée quand il vaut `0`, **sauf si elle est déjà
+  cochée**. Ces effectifs dépendent de la recherche et du périmètre : celui de la sentinelle peut
+  tomber à zéro alors qu'elle est sélectionnée, et masquer l'option retirerait alors la seule case
+  permettant de la décocher — le filtre resterait appliqué sans moyen de le lever.
+- **Tableau de bord Indicateurs** — les cartes Metabase ne remontent aucun effectif par valeur, et
+  en obtenir un demanderait une carte dédiée. L'option y est donc **toujours** proposée : la
+  masquer rendrait ces données définitivement inatteignables, alors que l'offrir au pire aboutit à
+  une sélection vide, exactement comme une valeur de référentiel sans occurrence.
+
+---
+
 ## 5. Ajouter un nouveau filtre
 
 Le filtre de période sert de modèle. Pour un nouveau filtre (ex. un statut), répéter les mêmes
@@ -521,6 +629,11 @@ couches :
    Un filtre **multivalué** se règle sur « plusieurs valeurs », s'écrit `IN ({{mon_param}})` et se
    transmet en paramètre répété ; si la dimension filtrée est en relation 1-N avec la requête,
    l'appliquer via un `EXISTS` — cf. § 4 bis.
+6. **« Non renseigné »** — si la colonne filtrée est **nullable**, le filtre doit proposer la
+   valeur « Non renseigné ». Côté front, il suffit d'envelopper les options dans
+   `withNonRenseigneOption` (`components/common/filters/nonRenseigne.ts`) ; côté validation,
+   d'accepter la sentinelle ; côté SQL, d'écrire l'alternative du § 4 quinquies. Aucune des trois
+   couches n'est spécifique à un filtre donné.
 
 ---
 

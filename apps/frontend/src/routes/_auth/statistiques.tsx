@@ -16,6 +16,7 @@ import { type DashboardFilterKey, resolveAvailableFilters } from '@/components/s
 import { PERIOD_PRESETS, type PeriodSelection, resolveDateRange } from '@/components/statistics/period';
 import { StatChart } from '@/components/statistics/StatChart';
 import { StatTable } from '@/components/statistics/StatTable';
+import { parseTable } from '@/components/statistics/tableData';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useStatisticsDashboard } from '@/hooks/queries/statistics.hook';
 import type { StatisticsCard, StatisticsDashboard } from '@/lib/api/fetchStatistics';
@@ -93,7 +94,7 @@ function isKpiCard(card: StatisticsCard): boolean {
   return card.display === 'scalar' || getScalarValue(card) !== undefined;
 }
 
-// Grille Metabase : 24 colonnes. On respecte la position (col + size_x) et l'ordre (row, col).
+// Metabase grid: 24 columns. The position (col + size_x) and the order (row, col) are honoured.
 const GRID_COLUMNS = 24;
 
 function byGridPosition(a: StatisticsCard, b: StatisticsCard): number {
@@ -172,21 +173,29 @@ function DashboardContent({ dashboard, requestedTabId, onTabChange, renderFilter
   );
 }
 
-function ChartCard({ card }: { card: StatisticsCard }) {
-  const parsed = parseCard(card.data);
-  if (!parsed) {
-    return (
-      <>
-        <div className={styles['card-title']}>
-          <h2 className={fr.cx('fr-text--md', 'fr-text--bold', 'fr-mb-0')}>{card.name}</h2>
-          <CardHelp description={card.description} />
-        </div>
-        <p>Données non disponibles.</p>
-      </>
-    );
-  }
+function CardHeading({ card, action }: { card: StatisticsCard; action?: ReactNode }) {
+  return (
+    <div className={styles['card-title']}>
+      <h2 className={fr.cx('fr-text--md', 'fr-text--bold', 'fr-mb-0')}>{card.name}</h2>
+      <CardHelp description={card.description} />
+      {action}
+    </div>
+  );
+}
 
+function UnavailableCard({ card }: { card: StatisticsCard }) {
+  return (
+    <>
+      <CardHeading card={card} />
+      <p>Données non disponibles.</p>
+    </>
+  );
+}
+
+function ChartCard({ card }: { card: StatisticsCard }) {
   if (card.display === 'pie') {
+    const parsed = parseCard(card.data);
+    if (!parsed) return <UnavailableCard card={card} />;
     return (
       <StatChart
         name={card.name}
@@ -197,14 +206,14 @@ function ChartCard({ card }: { card: StatisticsCard }) {
     );
   }
 
+  // Outside pie charts, the card is rendered as Metabase returns it: every column included.
+  const table = parseTable(card.data);
+  if (!table) return <UnavailableCard card={card} />;
+
   return (
     <>
-      <div className={styles['card-title']}>
-        <h2 className={fr.cx('fr-text--md', 'fr-text--bold', 'fr-mb-0')}>{card.name}</h2>
-        <CardHelp description={card.description} />
-        <DownloadCsvButton card={card} />
-      </div>
-      <StatTable caption={card.name} parsed={parsed} hideCaption />
+      <CardHeading card={card} action={<DownloadCsvButton card={card} />} />
+      <StatTable caption={card.name} table={table} hideCaption />
     </>
   );
 }
@@ -214,8 +223,8 @@ export function RouteComponent() {
   const search = useSearch({ from: '/_auth/statistiques' });
   const navigate = useNavigate({ from: '/statistiques' });
 
-  // Super admin : périmètre national (pas de rattachement entité). Le backend bascule automatiquement
-  // sur le dashboard national ; côté UI on n'exige pas d'entité et on masque l'export (entité-scopé).
+  // Super admin: national scope, with no entity link. The backend switches to the national dashboard
+  // on its own; the UI requires no entity and hides the export, which is entity-scoped.
   const isSuperAdmin = profile?.role?.id === ROLES.SUPER_ADMIN;
   const hasEntityLink = profile?.entiteId != null;
   const canView = isSuperAdmin || hasEntityLink;

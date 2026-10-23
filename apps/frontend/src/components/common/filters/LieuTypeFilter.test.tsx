@@ -1,3 +1,4 @@
+import { FILTRE_NON_RENSEIGNE, LIEU_TYPE } from '@sirena/common/constants';
 import { lieuPrecisionLabelsByType } from '@sirena/common/utils';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -169,6 +170,96 @@ describe('LieuTypeFilter', () => {
     expect(screen.queryByRole('checkbox', { name: 'Chez un tiers' })).not.toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'CHU' })).toBeInTheDocument();
   });
+  describe('valeur « Non renseigné »', () => {
+    // CA1
+    it('propose « Non renseigné » en tête de la liste, avant les catégories', async () => {
+      render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);
+
+      await openMenu();
+      const [firstCheckbox] = screen.getAllByRole('checkbox');
+
+      expect(firstCheckbox).toHaveAttribute('value', FILTRE_NON_RENSEIGNE);
+    });
+
+    it('la propose comme une feuille, sans précision à déplier', async () => {
+      render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);
+
+      await openMenu();
+
+      expect(screen.getByRole('checkbox', { name: 'Non renseigné' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Non renseigné' })).not.toBeInTheDocument();
+    });
+
+    it('remonte la sentinelle comme un jeton ordinaire', async () => {
+      const onChange = vi.fn();
+      render(<LieuTypeFilter selectedTokens={[]} onChange={onChange} />);
+
+      await openMenu();
+      await userEvent.click(screen.getByRole('checkbox', { name: 'Non renseigné' }));
+
+      expect(onChange).toHaveBeenCalledWith([FILTRE_NON_RENSEIGNE]);
+    });
+
+    // CA3
+    it('laisse sélectionner « Non renseigné » seule', async () => {
+      render(<LieuTypeFilter selectedTokens={[FILTRE_NON_RENSEIGNE]} onChange={vi.fn()} />);
+
+      await openMenu();
+
+      expect(screen.getByRole('checkbox', { name: 'Non renseigné' })).toBeChecked();
+      expect(categoryCheckbox('Domicile')).not.toBeChecked();
+    });
+
+    it('la retire de la sélection quand on la décoche, en gardant les autres jetons', async () => {
+      const onChange = vi.fn();
+      render(<LieuTypeFilter selectedTokens={[FILTRE_NON_RENSEIGNE, 'DOMICILE']} onChange={onChange} />);
+
+      await openMenu();
+      await userEvent.click(screen.getByRole('checkbox', { name: 'Non renseigné' }));
+
+      expect(onChange).toHaveBeenCalledWith(['DOMICILE']);
+    });
+
+    // CA2
+    it('coche la sentinelle et toutes les catégories sans interférence', async () => {
+      const allTokens = [FILTRE_NON_RENSEIGNE, ...Object.values(LIEU_TYPE)];
+      render(<LieuTypeFilter selectedTokens={allTokens} onChange={vi.fn()} />);
+
+      await openMenu();
+
+      expect(screen.getByRole('checkbox', { name: 'Non renseigné' })).toBeChecked();
+      expect(categoryCheckbox('Domicile')).toBeChecked();
+      expect(categoryCheckbox('Établissements de santé')).toBeChecked();
+    });
+
+    it('compte la sentinelle comme une valeur dans le total annoncé', () => {
+      render(<LieuTypeFilter selectedTokens={[FILTRE_NON_RENSEIGNE, 'ETABLISSEMENT_SANTE:CHU']} onChange={vi.fn()} />);
+
+      const trigger = screen.getByRole('button', { name: /Type de lieu de survenue/ });
+
+      expect(trigger).toHaveTextContent('(2)');
+    });
+
+    // CA4
+    it("ne coche rien quand aucune valeur n'est sélectionnée", async () => {
+      render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);
+
+      await openMenu();
+
+      expect(screen.getByRole('checkbox', { name: 'Non renseigné' })).not.toBeChecked();
+    });
+
+    it("ne se mélange pas avec la sélection d'une catégorie entière", async () => {
+      const onChange = vi.fn();
+      render(<LieuTypeFilter selectedTokens={[FILTRE_NON_RENSEIGNE]} onChange={onChange} />);
+
+      await openMenu();
+      await userEvent.click(categoryCheckbox('Domicile'));
+
+      expect(onChange).toHaveBeenCalledWith([FILTRE_NON_RENSEIGNE, 'DOMICILE']);
+    });
+  });
+
   describe('accessibilité', () => {
     it('exposes the expanded state of each lieu type on its disclosure button', async () => {
       render(<LieuTypeFilter selectedTokens={[]} onChange={vi.fn()} />);

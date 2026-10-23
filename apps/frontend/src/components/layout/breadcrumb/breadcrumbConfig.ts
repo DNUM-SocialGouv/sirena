@@ -28,7 +28,8 @@ const requetesRoot = (ctx: BreadCrumbContext): Crumb => ({
   search: ctx.listStates.requetes?.search,
 });
 
-const adminRoot: Crumb = { text: 'Espace administrateur', to: '/admin/users' };
+// Points to the admin index rather than the first tab, so that this crumb never targets the current page
+const adminRoot: Crumb = { text: 'Espace administrateur', to: '/admin' };
 
 // The super admin has no request list: the admin area is their home
 const rootTrail: Trail = (ctx) => (ctx.role === ROLES.SUPER_ADMIN ? [adminRoot] : [requetesRoot(ctx)]);
@@ -108,15 +109,9 @@ export const ROUTES_WITHOUT_BREADCRUMB = [
   '/',
   '/login',
   '/_auth/inactive',
+  '/_auth/acceptation-cgu',
   '/_auth/_user/home',
   '/_auth/admin/', // redirects to the users tab
-  // Admin tabs are the home of the admin section: only their sub pages have a breadcrumb
-  '/_auth/admin/users/',
-  '/_auth/admin/users/all',
-  '/_auth/admin/entites/',
-  '/_auth/admin/entite/',
-  '/_auth/admin/directions-services/',
-  '/_auth/admin/sirec-migration',
 ] as const satisfies readonly (keyof FileRoutesById)[];
 
 type RouteWithBreadcrumb = Exclude<keyof FileRoutesById, (typeof ROUTES_WITHOUT_BREADCRUMB)[number]>;
@@ -158,6 +153,17 @@ const trails: Record<RouteWithBreadcrumb, Trail> = {
 
   '/_auth/statistiques': page(rootTrail, 'Indicateurs', '/statistiques'),
 
+  // Each admin tab has its own URL: the tab is the current page of the admin section
+  '/_auth/admin/users/': page(adminTrail, ADMIN_TAB_LABELS.pending, '/admin/users'),
+  '/_auth/admin/users/all': page(adminTrail, ADMIN_TAB_LABELS.users, '/admin/users/all'),
+  '/_auth/admin/entites/': page(adminTrail, ADMIN_TAB_LABELS.entites, '/admin/entites'),
+  '/_auth/admin/entite/': page(adminTrail, ADMIN_TAB_LABELS.localEntite, '/admin/entite'),
+  '/_auth/admin/directions-services/': page(
+    adminTrail,
+    ADMIN_TAB_LABELS.directionsServices,
+    '/admin/directions-services',
+  ),
+  '/_auth/admin/sirec-migration': page(adminTrail, ADMIN_TAB_LABELS.sirecMigration, '/admin/sirec-migration'),
   '/_auth/admin/feature-flags': page(adminTrail, 'Gestion des fonctionnalités', '/admin/feature-flags'),
   '/_auth/admin/user/$userId': page(usersTrail, 'Modifier l’utilisateur', (ctx) => `/admin/user/${ctx.params.userId}`),
   '/_auth/admin/entites/$entiteId/': editEntiteTrail,
@@ -186,6 +192,10 @@ const trails: Record<RouteWithBreadcrumb, Trail> = {
   '/_public/accessibilite': publicTrail('Accessibilité', '/accessibilite'),
   '/_public/mentions-legales': publicTrail('Mentions légales', '/mentions-legales'),
   '/_public/donnees-personnelles': publicTrail('Données personnelles', '/donnees-personnelles'),
+  '/_public/conditions-generales-utilisation': publicTrail(
+    'Conditions générales d’utilisation',
+    '/conditions-generales-utilisation',
+  ),
   '/_public/gestion-cookies': publicTrail('Gestion des cookies', '/gestion-cookies'),
 };
 

@@ -121,6 +121,8 @@ export const createTestUser = (overrides: Partial<TestUser> = {}): TestUser => (
   createdAt: new Date(),
   updatedAt: new Date(),
   pcData: {},
+  cguAcceptedVersion: null,
+  cguAcceptedAt: null,
   roleId: 'role-789',
   statutId: 'statut-123',
   entiteId: 'entite-456',

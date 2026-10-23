@@ -14,10 +14,12 @@ import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as PublicRouteRouteImport } from './routes/_public/route'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthUserRouteRouteImport } from './routes/_auth/_user/route'
+import { Route as AuthAcceptationCguRouteImport } from './routes/_auth/acceptation-cgu'
 import { Route as AuthAdminRouteRouteImport } from './routes/_auth/admin/route'
 import { Route as AuthInactiveRouteRouteImport } from './routes/_auth/inactive/route'
 import { Route as AuthStatistiquesRouteImport } from './routes/_auth/statistiques'
 import { Route as PublicAccessibiliteRouteImport } from './routes/_public/accessibilite'
+import { Route as PublicConditionsGeneralesUtilisationRouteImport } from './routes/_public/conditions-generales-utilisation'
 import { Route as PublicDonneesPersonnellesRouteImport } from './routes/_public/donnees-personnelles'
 import { Route as PublicGestionCookiesRouteImport } from './routes/_public/gestion-cookies'
 import { Route as PublicMentionsLegalesRouteImport } from './routes/_public/mentions-legales'
@@ -76,6 +78,11 @@ const AuthUserRouteRoute = AuthUserRouteRouteImport.update({
   id: '/_user',
   getParentRoute: () => AuthRouteRoute,
 } as any)
+const AuthAcceptationCguRoute = AuthAcceptationCguRouteImport.update({
+  id: '/acceptation-cgu',
+  path: '/acceptation-cgu',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
 const AuthAdminRouteRoute = AuthAdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -96,6 +103,12 @@ const PublicAccessibiliteRoute = PublicAccessibiliteRouteImport.update({
   path: '/accessibilite',
   getParentRoute: () => PublicRouteRoute,
 } as any)
+const PublicConditionsGeneralesUtilisationRoute =
+  PublicConditionsGeneralesUtilisationRouteImport.update({
+    id: '/conditions-generales-utilisation',
+    path: '/conditions-generales-utilisation',
+    getParentRoute: () => PublicRouteRoute,
+  } as any)
 const PublicDonneesPersonnellesRoute =
   PublicDonneesPersonnellesRouteImport.update({
     id: '/donnees-personnelles',
@@ -297,8 +310,10 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin': typeof AuthAdminRouteRouteWithChildren
   '/inactive': typeof AuthInactiveRouteRoute
+  '/acceptation-cgu': typeof AuthAcceptationCguRoute
   '/statistiques': typeof AuthStatistiquesRoute
   '/accessibilite': typeof PublicAccessibiliteRoute
+  '/conditions-generales-utilisation': typeof PublicConditionsGeneralesUtilisationRoute
   '/donnees-personnelles': typeof PublicDonneesPersonnellesRoute
   '/gestion-cookies': typeof PublicGestionCookiesRoute
   '/mentions-legales': typeof PublicMentionsLegalesRoute
@@ -339,8 +354,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/inactive': typeof AuthInactiveRouteRoute
+  '/acceptation-cgu': typeof AuthAcceptationCguRoute
   '/statistiques': typeof AuthStatistiquesRoute
   '/accessibilite': typeof PublicAccessibiliteRoute
+  '/conditions-generales-utilisation': typeof PublicConditionsGeneralesUtilisationRoute
   '/donnees-personnelles': typeof PublicDonneesPersonnellesRoute
   '/gestion-cookies': typeof PublicGestionCookiesRoute
   '/mentions-legales': typeof PublicMentionsLegalesRoute
@@ -380,8 +397,10 @@ export interface FileRoutesById {
   '/_auth/_user': typeof AuthUserRouteRouteWithChildren
   '/_auth/admin': typeof AuthAdminRouteRouteWithChildren
   '/_auth/inactive': typeof AuthInactiveRouteRoute
+  '/_auth/acceptation-cgu': typeof AuthAcceptationCguRoute
   '/_auth/statistiques': typeof AuthStatistiquesRoute
   '/_public/accessibilite': typeof PublicAccessibiliteRoute
+  '/_public/conditions-generales-utilisation': typeof PublicConditionsGeneralesUtilisationRoute
   '/_public/donnees-personnelles': typeof PublicDonneesPersonnellesRoute
   '/_public/gestion-cookies': typeof PublicGestionCookiesRoute
   '/_public/mentions-legales': typeof PublicMentionsLegalesRoute
@@ -425,8 +444,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin'
     | '/inactive'
+    | '/acceptation-cgu'
     | '/statistiques'
     | '/accessibilite'
+    | '/conditions-generales-utilisation'
     | '/donnees-personnelles'
     | '/gestion-cookies'
     | '/mentions-legales'
@@ -467,8 +488,10 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/inactive'
+    | '/acceptation-cgu'
     | '/statistiques'
     | '/accessibilite'
+    | '/conditions-generales-utilisation'
     | '/donnees-personnelles'
     | '/gestion-cookies'
     | '/mentions-legales'
@@ -507,8 +530,10 @@ export interface FileRouteTypes {
     | '/_auth/_user'
     | '/_auth/admin'
     | '/_auth/inactive'
+    | '/_auth/acceptation-cgu'
     | '/_auth/statistiques'
     | '/_public/accessibilite'
+    | '/_public/conditions-generales-utilisation'
     | '/_public/donnees-personnelles'
     | '/_public/gestion-cookies'
     | '/_public/mentions-legales'
@@ -590,6 +615,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthUserRouteRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/_auth/acceptation-cgu': {
+      id: '/_auth/acceptation-cgu'
+      path: '/acceptation-cgu'
+      fullPath: '/acceptation-cgu'
+      preLoaderRoute: typeof AuthAcceptationCguRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
     '/_auth/admin': {
       id: '/_auth/admin'
       path: '/admin'
@@ -616,6 +648,13 @@ declare module '@tanstack/react-router' {
       path: '/accessibilite'
       fullPath: '/accessibilite'
       preLoaderRoute: typeof PublicAccessibiliteRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/conditions-generales-utilisation': {
+      id: '/_public/conditions-generales-utilisation'
+      path: '/conditions-generales-utilisation'
+      fullPath: '/conditions-generales-utilisation'
+      preLoaderRoute: typeof PublicConditionsGeneralesUtilisationRouteImport
       parentRoute: typeof PublicRouteRoute
     }
     '/_public/donnees-personnelles': {
@@ -1030,6 +1069,7 @@ interface AuthRouteRouteChildren {
   AuthUserRouteRoute: typeof AuthUserRouteRouteWithChildren
   AuthAdminRouteRoute: typeof AuthAdminRouteRouteWithChildren
   AuthInactiveRouteRoute: typeof AuthInactiveRouteRoute
+  AuthAcceptationCguRoute: typeof AuthAcceptationCguRoute
   AuthStatistiquesRoute: typeof AuthStatistiquesRoute
 }
 
@@ -1037,6 +1077,7 @@ const AuthRouteRouteChildren: AuthRouteRouteChildren = {
   AuthUserRouteRoute: AuthUserRouteRouteWithChildren,
   AuthAdminRouteRoute: AuthAdminRouteRouteWithChildren,
   AuthInactiveRouteRoute: AuthInactiveRouteRoute,
+  AuthAcceptationCguRoute: AuthAcceptationCguRoute,
   AuthStatistiquesRoute: AuthStatistiquesRoute,
 }
 
@@ -1046,6 +1087,7 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 
 interface PublicRouteRouteChildren {
   PublicAccessibiliteRoute: typeof PublicAccessibiliteRoute
+  PublicConditionsGeneralesUtilisationRoute: typeof PublicConditionsGeneralesUtilisationRoute
   PublicDonneesPersonnellesRoute: typeof PublicDonneesPersonnellesRoute
   PublicGestionCookiesRoute: typeof PublicGestionCookiesRoute
   PublicMentionsLegalesRoute: typeof PublicMentionsLegalesRoute
@@ -1053,6 +1095,8 @@ interface PublicRouteRouteChildren {
 
 const PublicRouteRouteChildren: PublicRouteRouteChildren = {
   PublicAccessibiliteRoute: PublicAccessibiliteRoute,
+  PublicConditionsGeneralesUtilisationRoute:
+    PublicConditionsGeneralesUtilisationRoute,
   PublicDonneesPersonnellesRoute: PublicDonneesPersonnellesRoute,
   PublicGestionCookiesRoute: PublicGestionCookiesRoute,
   PublicMentionsLegalesRoute: PublicMentionsLegalesRoute,

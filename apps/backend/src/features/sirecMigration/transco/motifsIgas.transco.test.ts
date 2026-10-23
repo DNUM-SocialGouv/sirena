@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { getParentMotifIgasId, transcodeMotifIgas } from './motifsIgas.transco.js';
+import { getParentMotifIgasId, MOTIFS_IGAS_TRANSCO, transcodeMotifIgas } from './motifsIgas.transco.js';
+import { SirecDataError } from './sirecTransco.error.js';
 
 describe('motifsIgas.transco.ts', () => {
   it('should transcode a known id_igas to a single SIRENA motif id', () => {
@@ -33,23 +34,19 @@ describe('motifsIgas.transco.ts', () => {
     });
   });
 
-  // it('should throw SirecDataError for an unknown id_igas', () => {
-  //   expect(() => transcodeMotifIgas(99999)).toThrow(SirecDataError);
-  // });
-  //
-  // it('should include the unknown id_igas in the error message', () => {
-  //   expect(() => transcodeMotifIgas(99999)).toThrow(/99999/);
-  // });
-  //
-  // it('should throw SirecDataError when the resolved SIRENA motif has no label in MOTIFS_HIERARCHICAL_DATA', async () => {
-  //   vi.resetModules();
-  //   vi.doMock('@sirena/common/constants', () => ({ motifLabelsById: {} }));
-  //
-  //   const { transcodeMotifIgas: transcodeWithMissingLabels } = await import('./motifsIgas.transco.js');
-  //
-  //   expect(() => transcodeWithMissingLabels(153)).toThrow(/n'a pas de libellé/);
-  //
-  //   vi.doUnmock('@sirena/common/constants');
-  //   vi.resetModules();
-  // });
+  it('should throw SirecDataError for an unknown id_igas', () => {
+    expect(() => transcodeMotifIgas(99999)).toThrow(SirecDataError);
+  });
+
+  it('should include the unknown id_igas in the error message', () => {
+    expect(() => transcodeMotifIgas(99999)).toThrow(/99999/);
+  });
+
+  it('should only reference parent id_igas that exist in the transco table', () => {
+    const parentIds = Object.values(MOTIFS_IGAS_TRANSCO).flatMap((entry) =>
+      entry?.parentMotifId === undefined ? [] : [entry.parentMotifId],
+    );
+    const missingParentIds = parentIds.filter((parentId) => MOTIFS_IGAS_TRANSCO[parentId] === undefined);
+    expect(missingParentIds).toEqual([]);
+  });
 });

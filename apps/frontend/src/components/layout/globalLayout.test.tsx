@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GlobalLayout } from './globalLayout';
 
 const mockUseAppBreadCrumb = vi.fn();
+let mockPathname = '/request/create/declarant';
 const { breadcrumbProps } = vi.hoisted(() => ({ breadcrumbProps: vi.fn() }));
 
 vi.mock('@codegouvfr/react-dsfr/Breadcrumb', async (importOriginal) => {
@@ -19,7 +20,7 @@ vi.mock('@codegouvfr/react-dsfr/Breadcrumb', async (importOriginal) => {
 });
 
 vi.mock('@tanstack/react-router', () => ({
-  useLocation: () => ({ pathname: '/request/create/declarant' }),
+  useLocation: () => ({ pathname: mockPathname }),
   Link: ({ to, children, search: _search, ...props }: { to: string; search?: unknown; children: ReactNode }) => (
     <a href={to} {...props}>
       {children}
@@ -38,6 +39,7 @@ vi.mock('./UpdateBanner', () => ({ UpdateBanner: () => null }));
 
 describe('GlobalLayout breadcrumb', () => {
   beforeEach(() => {
+    mockPathname = '/request/create/declarant';
     mockUseAppBreadCrumb.mockReset();
     breadcrumbProps.mockReset();
   });
@@ -80,5 +82,39 @@ describe('GlobalLayout breadcrumb', () => {
     render(<GlobalLayout>Contenu</GlobalLayout>);
 
     expect(screen.queryByRole('navigation', { name: 'vous êtes ici :' })).not.toBeInTheDocument();
+  });
+
+  it('does not clip the focus ring of the request banner breadcrumb', () => {
+    mockPathname = '/request/RA-1';
+    mockUseAppBreadCrumb.mockReturnValue([
+      { text: 'Liste des requêtes', to: '/home', current: false },
+      { text: 'Requête RA-1', to: '/request/RA-1', current: true },
+    ]);
+
+    render(<GlobalLayout>Contenu</GlobalLayout>);
+
+    // fr-container--fluid sets overflow: hidden, which crops the focus ring of the first link
+    const clipping = ['fr-container--fluid'];
+    for (
+      let node: HTMLElement | null = screen.getByRole('navigation', { name: 'vous êtes ici :' });
+      node;
+      node = node.parentElement
+    ) {
+      expect(clipping.filter((className) => node?.classList.contains(className))).toEqual([]);
+    }
+  });
+
+  it('lines up the request sub pages with the full width header', () => {
+    mockPathname = '/request/RA-1/declarant';
+    mockUseAppBreadCrumb.mockReturnValue([
+      { text: 'Liste des requêtes', to: '/home', current: false },
+      { text: 'Requête RA-1', to: '/request/RA-1', current: false },
+      { text: 'Déclarant', to: '/request/RA-1/declarant', current: true },
+    ]);
+
+    render(<GlobalLayout>Contenu</GlobalLayout>);
+
+    expect(screen.getByRole('navigation', { name: 'vous êtes ici :' })).toHaveClass('app-container--wide');
+    expect(screen.getByText('Contenu')).toHaveClass('app-container--wide');
   });
 });

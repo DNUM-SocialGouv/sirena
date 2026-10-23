@@ -1,4 +1,4 @@
-import { ROLES, type Role, STATUT_TYPES } from '@sirena/common/constants';
+import { CGU_VERSION, ROLES, type Role, STATUT_TYPES } from '@sirena/common/constants';
 import { type Prisma, prisma } from '../../libs/prisma.js';
 import type { ArsEntites } from './entites.js';
 import { resolveArsByRegLib } from './entites.js';
@@ -39,6 +39,10 @@ const upsertUser = async (spec: UserSpec): Promise<SeededUser> => {
     usual_name: spec.nom,
   } satisfies Prisma.InputJsonObject;
 
+  // Seeded users have accepted the CGU in force: the acceptance modal would otherwise block every local
+  // session and e2e run. Replaying the seed after a new CGU version accepts it again.
+  const cguAcceptance = { cguAcceptedVersion: CGU_VERSION, cguAcceptedAt: new Date() };
+
   const user = await prisma.user.upsert({
     where: { email: spec.email },
     select: { id: true },
@@ -48,6 +52,7 @@ const upsertUser = async (spec: UserSpec): Promise<SeededUser> => {
       roleId: spec.role,
       statutId: spec.statut,
       entiteId: spec.entiteId,
+      ...cguAcceptance,
     },
     create: {
       ...(spec.id ? { id: spec.id } : {}),
@@ -60,6 +65,7 @@ const upsertUser = async (spec: UserSpec): Promise<SeededUser> => {
       roleId: spec.role,
       statutId: spec.statut,
       entiteId: spec.entiteId,
+      ...cguAcceptance,
     },
   });
 
@@ -137,6 +143,18 @@ const defaultUserSpecs = (entites: ArsEntites): UserSpec[] => [
     statut: STATUT_TYPES.NON_RENSEIGNE,
     entiteId: null,
     entiteLabel: null,
+  },
+  {
+    // Cible des scénarios e2e qui modifient une habilitation (E2E_TARGET_USER_EMAIL) :
+    // son rôle et son statut sont réécrits à chaque run, aucun autre test ne doit en
+    // dépendre. Rattachée à l'ARS Île-de-France, le périmètre du compte admin de test.
+    email: 'user17@yopmail.com',
+    prenom: 'Cible',
+    nom: 'Habilitation',
+    role: ROLES.READER,
+    statut: STATUT_TYPES.ACTIF,
+    entiteId: entites.idf.id,
+    entiteLabel: entites.idf.nomComplet,
   },
 ];
 

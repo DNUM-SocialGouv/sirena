@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { acceptCguIfAsked } from './utils/cgu';
 import { baseUrl, ENTITY_ADMIN_USER, isLocalTarget, loginUrl } from './utils/constants';
 import { loginWithProconnect } from './utils/login';
 
@@ -12,6 +13,7 @@ test('connexion via ProConnect', async ({ browser }) => {
     organisation: 'Commune de clamart - Mairie',
   });
 
+  await acceptCguIfAsked(page);
   await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 30000 });
   await expect(page.getByTestId('home-title')).toBeVisible({ timeout: 10000 });
   await page.goto(loginUrl);
