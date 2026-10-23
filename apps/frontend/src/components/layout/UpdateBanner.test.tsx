@@ -46,6 +46,14 @@ describe('UpdateBanner', () => {
     );
   });
 
+  it('renders the banner with the DSFR warning severity', () => {
+    mockedUseHasFeature.mockReturnValue(true);
+
+    render(<UpdateBanner />);
+
+    expect(screen.getByText('Nouvelle mise à jour').closest('.fr-notice')).toHaveClass('fr-notice--warning');
+  });
+
   it('does not render when the current version is already dismissed', () => {
     mockedUseHasFeature.mockReturnValue(true);
     window.localStorage.setItem(STORAGE_KEY, '1.2.3');
