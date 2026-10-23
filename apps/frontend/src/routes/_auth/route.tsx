@@ -3,12 +3,14 @@ import { AppError } from '@/components/layout/AppError';
 import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import { requireAuth } from '@/lib/auth-guards';
+import { requireCguAccepted } from '@/lib/cguGuard';
 import { queryClient } from '@/lib/queryClient';
 
 export const Route = createFileRoute('/_auth')({
   beforeLoad: async (params) => {
     requireAuth(params);
     await queryClient.ensureQueryData(profileQueryOptions());
+    await requireCguAccepted(params);
   },
   component: RouteComponent,
   errorComponent: (props) => (

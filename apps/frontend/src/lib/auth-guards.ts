@@ -24,7 +24,7 @@ export const checkAuth = (params: BeforeLoad, userStore: UserState) => {
   }
 };
 
-const getFallbackByRole = (role: string | null) => {
+export const getFallbackByRole = (role: string | null) => {
   if (role === ROLES.SUPER_ADMIN) {
     return '/admin/users';
   }

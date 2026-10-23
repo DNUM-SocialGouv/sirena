@@ -2,7 +2,7 @@ export interface AccordionMultiSelectOption {
   label: string;
   value: string;
   description?: string;
-  children?: AccordionMultiSelectOption[];
+  children?: readonly AccordionMultiSelectOption[];
 }
 
 export interface AccordionMultiSelectProps {
@@ -10,7 +10,7 @@ export interface AccordionMultiSelectProps {
   onChange: (values: string[]) => void;
   label?: string;
   hint?: string;
-  options: AccordionMultiSelectOption[];
+  options: readonly AccordionMultiSelectOption[];
   id?: string;
   readOnly?: boolean;
   state?: 'default' | 'error';

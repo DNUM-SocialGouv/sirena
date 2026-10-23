@@ -28,6 +28,7 @@ import {
   isReponseOuiNonRenseignee,
   negateReponseOuiNon,
   REPONSE_NON_RENSEIGNE_LABEL,
+  separerNonRenseigne,
   toWallClockDate,
 } from '@sirena/common/utils';
 import { ZipArchive } from 'archiver';
@@ -196,6 +197,28 @@ const buildDeptPostalFilter = async (deptCodes: string[]): Promise<Prisma.LieuDe
   return orConditions.length === 0 ? null : { OR: orConditions };
 };
 
+// Filtre multi-sélection sur le domaine fonctionnel, sentinelle « Non renseigné » comprise.
+//
+// Les valeurs cochées se combinent en OU : une requête est retenue si l'une de ses situations porte
+// un domaine coché, ou — si « Non renseigné » est coché — si aucune de ses situations ne porte de
+// domaine (`domainesFonctionnelsId` est nullable, et une requête peut n'avoir aucune situation ;
+// `none` couvre les deux cas). Tout coché, sentinelle incluse, couvre donc l'ensemble des requêtes
+// (CA2), et rien de coché ne pose aucune clause (CA4).
+const buildDomaineFilter = (values: string[]): Prisma.RequeteEntiteWhereInput | null => {
+  const { valeurs, nonRenseigne } = separerNonRenseigne(values);
+  const orConditions: Prisma.RequeteEntiteWhereInput[] = [];
+
+  if (valeurs.length > 0) {
+    orConditions.push({ requete: { situations: { some: { domainesFonctionnelsId: { in: valeurs } } } } });
+  }
+  if (nonRenseigne) {
+    orConditions.push({ requete: { situations: { none: { domainesFonctionnelsId: { not: null } } } } });
+  }
+
+  if (orConditions.length === 0) return null;
+  return orConditions.length === 1 ? orConditions[0] : { OR: orConditions };
+};
+
 const buildRequetesEntiteWhere = async (
   entiteIds: string[] | null,
   query: {
@@ -241,15 +264,9 @@ const buildRequetesEntiteWhere = async (
     }
   }
   if (domaineIds) {
-    const ids = splitCsv(domaineIds);
-    if (ids.length > 0) {
-      andFilters.push({
-        requete: {
-          situations: {
-            some: { domainesFonctionnelsId: { in: ids } },
-          },
-        },
-      });
+    const domaineFilter = buildDomaineFilter(splitCsv(domaineIds));
+    if (domaineFilter) {
+      andFilters.push(domaineFilter);
     }
   }
   if (statutIds) {

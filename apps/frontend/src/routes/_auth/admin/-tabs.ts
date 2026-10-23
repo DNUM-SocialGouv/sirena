@@ -9,6 +9,7 @@ export const ADMIN_TAB_LABELS = {
   // A root-level entity admin manages their own entity only
   localEntite: 'Entité',
   directionsServices: 'Directions et services',
+  sirecMigration: 'Migration SIREC',
 } as const;
 
 const baseTabs: TabDescriptor[] = [
@@ -48,7 +49,7 @@ const localDirectionsServicesTab: TabDescriptor = {
 };
 
 const sirecMigrationTab: TabDescriptor = {
-  label: 'Migration SIREC',
+  label: ADMIN_TAB_LABELS.sirecMigration,
   tabPanelId: 'panel-sirec-migration',
   tabId: 'tab-sirec-migration',
   dataTestId: 'admin-tab-sirec-migration',

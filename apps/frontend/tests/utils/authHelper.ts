@@ -1,5 +1,6 @@
 import { closeSync, existsSync, openSync, readFileSync, unlinkSync } from 'node:fs';
 import { type Browser, type BrowserContext, expect } from '@playwright/test';
+import { acceptCguIfAsked } from './cgu';
 import { authTokenName, baseUrl, E2E_TARGET, ENTITY_ADMIN_USER, isLocalTarget } from './constants';
 import { createLocalAuthFile } from './localAuth';
 import { loginWithProconnect } from './login';
@@ -119,7 +120,8 @@ export async function ensureAuthenticationFileExists(browser: Browser, config: A
           organisation: config.organisation || 'Commune de clamart - Mairie',
         });
 
-        await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 30000 });
+        await acceptCguIfAsked(page);
+        await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 10000 });
         await expect(page.getByRole('heading', { name: 'Liste des requêtes', level: 1 })).toBeVisible({
           timeout: 10000,
         });

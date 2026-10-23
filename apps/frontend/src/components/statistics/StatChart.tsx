@@ -12,6 +12,7 @@ import {
 } from './chartData';
 import { StatTable } from './StatTable';
 import styles from './statChart.module.css';
+import { tableFromParsedCard } from './tableData';
 
 type View = 'chart' | 'table';
 
@@ -33,6 +34,7 @@ export function StatChart({ name, description, parsed, action }: StatChartProps)
   const legendId = useId();
   const [view, setView] = useState<View>('chart');
   const { items, total } = parsed;
+  const table = useMemo(() => tableFromParsedCard(parsed), [parsed]);
 
   const slices = useMemo(() => {
     const visibleItems = items.filter((item) => item.value > 0);
@@ -141,7 +143,7 @@ export function StatChart({ name, description, parsed, action }: StatChartProps)
           </ul>
         </div>
       ) : (
-        <StatTable caption={name} parsed={parsed} hideCaption />
+        <StatTable caption={name} table={table} hideCaption />
       )}
     </figure>
   );

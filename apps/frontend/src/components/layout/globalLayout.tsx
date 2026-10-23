@@ -13,7 +13,8 @@ type GlobalLayoutProps = {
   children: ReactNode;
 };
 
-const WIDE_LAYOUT_PREFIXES = ['/home', '/statistiques', '/admin'];
+// Wide pages line up with the full width header, like the request overview banner
+const WIDE_LAYOUT_PREFIXES = ['/home', '/statistiques', '/admin', '/request'];
 
 const isRequestOverview = (pathname: string): boolean => {
   const segments = pathname.split('/').filter(Boolean);
@@ -23,11 +24,11 @@ const isRequestOverview = (pathname: string): boolean => {
 };
 
 const getContainerClassName = (pathname: string): string => {
-  if (WIDE_LAYOUT_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
-    return 'fr-container app-container--wide';
-  }
   if (isRequestOverview(pathname)) {
     return 'app-container--flush';
+  }
+  if (WIDE_LAYOUT_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
+    return 'fr-container app-container--wide';
   }
   return 'fr-container';
 };
@@ -49,7 +50,7 @@ const BreadCrumbBar = ({ pathname, items }: { pathname: string; items: BreadCrum
   if (isRequestOverview(pathname)) {
     return (
       <div className="bg-cumulus fr-pt-3w">
-        <AppBreadcrumb items={items} className="fr-container--fluid fr-pl-7w fr-pr-3w fr-mt-0 app-breadcrumb--banner" />
+        <AppBreadcrumb items={items} className="fr-pl-7w fr-pr-3w fr-mt-0 app-breadcrumb--banner" />
       </div>
     );
   }

@@ -7,7 +7,7 @@ import { E2E_TARGET, E2E_TARGETS, isE2ETarget } from './utils/constants';
  * - local: forged auth cookie, needs the token secret, the cookie names and a database
  *   to resolve the seeded user id (PG_URL). No ProConnect password required.
  */
-const COMMON_ENV_VARS = ['FRONTEND_URI', 'E2E_CI', 'E2E_ENTITY_ADMIN_USER_1_EMAIL'] as const;
+const COMMON_ENV_VARS = ['FRONTEND_URI', 'E2E_CI', 'E2E_ENTITY_ADMIN_USER_1_EMAIL', 'E2E_TARGET_USER_EMAIL'] as const;
 
 const INTEGRATION_ENV_VARS = ['E2E_ENTITY_ADMIN_USER_1_PASSWORD'] as const;
 

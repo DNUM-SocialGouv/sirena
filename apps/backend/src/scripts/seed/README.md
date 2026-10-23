@@ -58,6 +58,10 @@ A recap is shown before running, and a final summary lists the created users
 | `user19@yopmail.com` | ENTITY_ADMIN | ARS Île-de-France |
 | `reader@` / `writer@` / `pilotage@` / `pending@` | one per remaining role | ARS Normandie / — |
 
+Seeded users have already accepted the CGU in force, so the CGU modal does not
+block local sessions or E2E runs. To see it again, set `cguAcceptedVersion` back
+to `NULL` for that user.
+
 Users are upserted by email (idempotent). `user@yopmail.com` gets SUPER_ADMIN
 regardless of `SUPER_ADMIN_LIST_EMAIL` (the role is forced in DB).
 

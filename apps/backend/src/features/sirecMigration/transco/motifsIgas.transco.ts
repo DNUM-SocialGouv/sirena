@@ -1,19 +1,17 @@
-import { motifLabelsById } from '@sirena/common/constants';
-import { createDefaultLogger } from '../../../helpers/pino.js';
+import type { MotifId } from '@sirena/common/constants';
 import { SirecDataError } from './sirecTransco.error.js';
 
 export const MOTIF_IGAS_A_RENSEIGNER = 155;
 export const MOTIF_IGAS_HORS_COMPETENCE = 184;
 
 interface MotifIgasTranscoEntry {
-  motifIds: string[];
+  motifIds: MotifId[];
   // id_igas du motif Igas parent. Quand un mis en cause porte à la fois ce motif et son parent,
   // le parent doit être ignoré lors de la migration (voir resolveMotifsIgas).
   parentMotifId?: number;
 }
 
-// TODO : enlever les motifs en commentaire quand la correspondance aura été validée.
-const MOTIFS_IGAS_TRANSCO: Record<number, MotifIgasTranscoEntry> = {
+export const MOTIFS_IGAS_TRANSCO: Partial<Record<number, MotifIgasTranscoEntry>> = {
   153: { motifIds: ['ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES/AUTRES'], parentMotifId: 19 },
   146: { motifIds: ['ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES/NON_RESPECT_REGLES'], parentMotifId: 19 },
   147: { motifIds: ['ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES/DEFAUT_DECLARATION_ACTIVITE'], parentMotifId: 19 },
@@ -63,9 +61,9 @@ const MOTIFS_IGAS_TRANSCO: Record<number, MotifIgasTranscoEntry> = {
     motifIds: ['MAUVAISE_ATTITUDE_PROFESSIONNELS/REFUS_CONSULTATION_PROFESSIONNEL_LIBERAL'],
     parentMotifId: 16,
   },
-  102: { motifIds: ['INFORMATIONS_DROITS_USAGERS/AUTRES'], parentMotifId: 16 },
-  105: { motifIds: ['INFORMATIONS_DROITS_USAGERS/AUTRES'], parentMotifId: 16 },
-  108: { motifIds: ['INFORMATIONS_DROITS_USAGERS/AUTRES'], parentMotifId: 16 },
+  102: { motifIds: ['MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/NEGLIGENCES_PASSIVES'], parentMotifId: 16 },
+  105: { motifIds: ['INFORMATIONS_DROITS_USAGERS/INFO_PATIENT_EVENEMENT'], parentMotifId: 16 },
+  108: { motifIds: ['INFORMATIONS_DROITS_USAGERS/INFO_PATIENT_EVENEMENT'], parentMotifId: 16 },
   162: {
     motifIds: ['MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/EXPOSITION_ENVIRONNEMENT_VIOLENT'],
     parentMotifId: 158,
@@ -82,7 +80,7 @@ const MOTIFS_IGAS_TRANSCO: Record<number, MotifIgasTranscoEntry> = {
     parentMotifId: 158,
   },
   164: { motifIds: ['QUALITE_ACCOMPAGNEMENT_SERVICE/VIOLENCES_PHYSIQUES_ENTRE_USAGERS'], parentMotifId: 158 },
-  //166: { motifIds: ['MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/AUTRES'], parentMotifId: 158 },
+  166: { motifIds: ['MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/AUTRES'], parentMotifId: 158 },
   86: { motifIds: ['MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/NEGLIGENCES_ACTIVES'], parentMotifId: 15 },
   87: {
     motifIds: ['MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/PRIVATION_VIOLATION_DROITS_LIBERTES'],
@@ -125,8 +123,8 @@ const MOTIFS_IGAS_TRANSCO: Record<number, MotifIgasTranscoEntry> = {
     motifIds: ['QUALITE_ACCOMPAGNEMENT_SERVICE/PROBLEME_ACCOMPAGNEMENT_SUIVI_INDIVIDUEL'],
     parentMotifId: 11,
   },
-  196: { motifIds: ['QUALITE_ACCOMPAGNEMENT_SERVICE/AUTRES'], parentMotifId: 11 },
-  51: { motifIds: ['QUALITE_SOINS/DELAIS_PRISE_EN_CHARGE'], parentMotifId: 12 },
+  196: { motifIds: ['MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/NEGLIGENCES_PASSIVES'], parentMotifId: 11 },
+  51: { motifIds: ['QUALITE_SOINS/AIDE_MEDICALE_URGENTE_SAMU'], parentMotifId: 12 },
   53: { motifIds: ['MEDICAMENTS/PROBLEMATIQUE_CIRCUIT_MEDICAMENT'], parentMotifId: 12 },
   62: { motifIds: ['MEDICAMENTS/PROBLEMATIQUE_CIRCUIT_MEDICAMENT'], parentMotifId: 12 },
   58: { motifIds: ['QUALITE_SOINS/AFFECTIONS_IATROGENES'], parentMotifId: 12 },
@@ -174,29 +172,29 @@ const MOTIFS_IGAS_TRANSCO: Record<number, MotifIgasTranscoEntry> = {
   },
   75: { motifIds: ['DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE/AUTRES'], parentMotifId: 14 },
   76: { motifIds: ['MAUVAISE_ATTITUDE_PROFESSIONNELS/REFUS_INTERVENTION_DOMICILE'] },
-  // 123: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 124: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 125: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 126: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 127: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 128: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 129: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 130: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 131: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 132: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 133: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 134: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 135: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 136: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 137: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 138: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 139: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 140: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  141: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/GESTION_DECHETS_DASRI'] },
-  // 142: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 143: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 144: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
-  // 145: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
+  123: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/HABITAT_AMIANTE'], parentMotifId: 18 },
+  124: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/HABITAT_RADON'], parentMotifId: 18 },
+  125: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/HABITAT_INSALUBRE'], parentMotifId: 18 },
+  126: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/HABITAT_SATURNISME'], parentMotifId: 18 },
+  127: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/HABITAT_QUALITE_AIR_INTERIEUR'], parentMotifId: 18 },
+  128: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/HABITAT_NUISANCES_SONORES'], parentMotifId: 18 },
+  129: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/ALIMENTATION_SECURITE'], parentMotifId: 18 },
+  130: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/EAUX_PROTECTION'], parentMotifId: 18 },
+  131: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/EAUX_QUALITE'], parentMotifId: 18 },
+  132: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/EAUX_LEGIONNELLES'], parentMotifId: 18 },
+  133: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/EAUX_CONDITIONNEES'], parentMotifId: 18 },
+  134: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/EAUX_THERMALES'], parentMotifId: 18 },
+  135: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/EAUX_BAIGNADE'], parentMotifId: 18 },
+  136: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/EAUX_PISCINE'], parentMotifId: 18 },
+  137: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/EAUX_USEES'], parentMotifId: 18 },
+  138: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/EAUX_NON_POTABLE'], parentMotifId: 18 },
+  139: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/EXTERIEUR_QUALITE_AIR'], parentMotifId: 18 },
+  140: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/EXTERIEUR_RAYONNEMENTS_NON_IONISANTS'], parentMotifId: 18 },
+  141: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/GESTION_DECHETS_DASRI'], parentMotifId: 18 },
+  142: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/EXTERIEUR_LUTTE_ANTIVECTORIELLE'], parentMotifId: 18 },
+  143: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
+  144: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/REGLEMENT_INTERNATIONAL'], parentMotifId: 18 },
+  145: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'], parentMotifId: 18 },
   202: { motifIds: ['PROBLEMES_TRANSPORT_SANITAIRE/CONDITIONS_CONDUITE_VEHICULE'], parentMotifId: 168 },
   200: { motifIds: ['PROBLEMES_TRANSPORT_SANITAIRE/CONDITIONS_PRISE_EN_CHARGE_PATIENT'], parentMotifId: 168 },
   172: { motifIds: ['PROBLEMES_TRANSPORT_SANITAIRE/DEFAUT_GARDE'], parentMotifId: 168 },
@@ -207,50 +205,37 @@ const MOTIFS_IGAS_TRANSCO: Record<number, MotifIgasTranscoEntry> = {
   },
   174: { motifIds: ['PROBLEMES_TRANSPORT_SANITAIRE/TRANSFERT_ENTRE_ETABLISSEMENTS'], parentMotifId: 168 },
   198: {
-    motifIds: ['FACTURATIONS_HONORAIRES/PROBLEME_FACTURATION' /*, 'PROBLEMES_TRANSPORT_SANITAIRE/AUTRES'*/],
+    motifIds: ['FACTURATIONS_HONORAIRES/PROBLEME_FACTURATION', 'PROBLEMES_TRANSPORT_SANITAIRE/AUTRES'],
     parentMotifId: 168,
   },
   14: { motifIds: ['DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE/AUTRES'] },
   17: { motifIds: ['FACTURATIONS_HONORAIRES/AUTRES'] },
   10: { motifIds: ['HOTELLERIE_LOCAUX_RESTAURATION/AUTRES'] },
   16: { motifIds: ['INFORMATIONS_DROITS_USAGERS/AUTRES'] },
-  //11: { motifIds: ['PROBLEMES_ORGANISATION_RESSOURCES_HUMAINES/AUTRES'] },
-  //158: { motifIds: ['MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/AUTRES'] },
-  // 168: { motifIds: ['PROBLEMES_TRANSPORT_SANITAIRE/AUTRES'] },
+  11: { motifIds: ['PROBLEMES_ORGANISATION_RESSOURCES_HUMAINES/AUTRES'] },
+  158: { motifIds: ['MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/AUTRES'] },
+  168: { motifIds: ['PROBLEMES_TRANSPORT_SANITAIRE/AUTRES'] },
   15: { motifIds: ['MAUVAISE_ATTITUDE_PROFESSIONNELS/AUTRES'] },
   13: { motifIds: ['QUALITE_SOINS/ABSENCE_INSUFFISANCE_SOINS_PARAMEDICAUX'] },
   12: { motifIds: ['QUALITE_SOINS/AUTRES'] },
-  // 18: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'] },
+  18: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/AUTRES'] },
   19: { motifIds: ['ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES/AUTRES'] },
   156: { motifIds: ['PROBLEMES_ENVIRONNEMENTAUX/SITUATION_EXCEPTIONNELLE'] },
-  //176: { motifIds: ['PRATIQUE_NON_CONVENTIONNELLE/AUTRES'] },
-  22: { motifIds: ['QUALITE_ACCOMPAGNEMENT_SERVICE/AUTRES'] },
-  44: { motifIds: ['PROBLEMES_TRANSPORT_SANITAIRE/CONDITIONS_PRISE_EN_CHARGE_PATIENT'] },
-  45: { motifIds: ['PROBLEMES_TRANSPORT_SANITAIRE/CONDITIONS_CONDUITE_VEHICULE'] },
-  46: { motifIds: ['PROBLEMES_TRANSPORT_SANITAIRE/NON_RESPECT_DISPOSITIONS_REGLEMENTAIRES'] },
+  176: { motifIds: ['PRATIQUE_NON_CONVENTIONNELLE/AUTRES'] },
+  22: { motifIds: ['QUALITE_ACCOMPAGNEMENT_SERVICE/AUTRES'], parentMotifId: 10 },
+  44: { motifIds: ['PROBLEMES_TRANSPORT_SANITAIRE/CONDITIONS_PRISE_EN_CHARGE_PATIENT'], parentMotifId: 11 },
+  45: { motifIds: ['PROBLEMES_TRANSPORT_SANITAIRE/CONDITIONS_CONDUITE_VEHICULE'], parentMotifId: 11 },
+  46: { motifIds: ['PROBLEMES_TRANSPORT_SANITAIRE/NON_RESPECT_DISPOSITIONS_REGLEMENTAIRES'], parentMotifId: 11 },
   121: {
-    motifIds: ['FACTURATIONS_HONORAIRES/PROBLEME_FACTURATION' /*, 'PROBLEMES_TRANSPORT_SANITAIRE/AUTRES'*/],
+    motifIds: ['FACTURATIONS_HONORAIRES/PROBLEME_FACTURATION', 'PROBLEMES_TRANSPORT_SANITAIRE/AUTRES'],
+    parentMotifId: 17,
   },
 };
 
-const logger = createDefaultLogger();
-export function transcodeMotifIgas(idIgas: number): string[] {
-  // TODO Retirer le || [] et le log.warn lorsque la correspondance aura été établie
-  // Penser également à décommenter les 3 tests
-
-  const motifIds = MOTIFS_IGAS_TRANSCO[idIgas]?.motifIds || [];
-  if (motifIds.length === 0) {
-    logger.warn(`Aucune correspondance SIRENA pour le motif IGAS id_igas=${idIgas}`);
-  }
-  // if (motifIds === undefined) {
-  //   throw new SirecDataError(`Aucune correspondance SIRENA pour le motif IGAS id_igas=${idIgas}`);
-  // }
-  for (const motifId of motifIds) {
-    if (motifLabelsById[motifId] === undefined) {
-      throw new SirecDataError(
-        `Le motif SIRENA "${motifId}" (id_igas=${idIgas}) n'a pas de libellé dans MOTIFS_HIERARCHICAL_DATA`,
-      );
-    }
+export function transcodeMotifIgas(idIgas: number): MotifId[] {
+  const motifIds = MOTIFS_IGAS_TRANSCO[idIgas]?.motifIds;
+  if (motifIds === undefined) {
+    throw new SirecDataError(`Aucune correspondance SIRENA pour le motif IGAS id_igas=${idIgas}`);
   }
   return motifIds;
 }

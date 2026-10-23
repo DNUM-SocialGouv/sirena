@@ -13,6 +13,8 @@ export const FEATURE_FLAGS = {
   ETAPE_RAPPEL: 'ETAPE_RAPPEL',
   // Temporary FF for the cross-entity discussion thread on a requete
   REQUETE_DISCUSSION: 'REQUETE_DISCUSSION',
+  // Temporary FF to require the CGU acceptance at login, until the final CGU text is published
+  CGU_ACCEPTANCE: 'CGU_ACCEPTANCE',
 } as const;
 
 export type FeatureFlag = (typeof FEATURE_FLAGS)[keyof typeof FEATURE_FLAGS];

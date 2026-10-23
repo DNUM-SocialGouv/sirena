@@ -176,6 +176,7 @@ jobs:
           E2E_CI: true
           E2E_ENTITY_ADMIN_USER_1_EMAIL: ${{ vars.TEST_USER_EMAIL }}
           E2E_ENTITY_ADMIN_USER_1_PASSWORD: ${{ vars.TEST_USER_PASSWORD }}
+          E2E_TARGET_USER_EMAIL: ${{ vars.TEST_TARGET_USER_EMAIL }}
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
