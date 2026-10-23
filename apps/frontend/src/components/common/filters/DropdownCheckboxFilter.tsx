@@ -43,12 +43,16 @@ export function DropdownCheckboxFilter({
   }, [onClose]);
 
   const toggle = useCallback(() => {
-    setIsOpen((value) => {
-      const next = !value;
-      next ? onOpen?.() : onClose?.();
-      return next;
-    });
-  }, [onOpen, onClose]);
+    const next = !isOpen;
+
+    setIsOpen(next);
+
+    if (next) {
+      onOpen?.();
+    } else {
+      onClose?.();
+    }
+  }, [isOpen, onOpen, onClose]);
 
   const handleClickOutside = useCallback(
     (e: MouseEvent) => {

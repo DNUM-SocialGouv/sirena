@@ -1,8 +1,14 @@
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, ROLES } from '@sirena/common/constants';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { forwardRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Step } from './Step';
+
+const { deleteFileMutateAsync, toastAdd, modalClose } = vi.hoisted(() => ({
+  deleteFileMutateAsync: vi.fn(),
+  toastAdd: vi.fn(),
+  modalClose: vi.fn(),
+}));
 
 vi.mock('./AddFilesClotureDrawer', () => ({
   AddFilesClotureDrawer: forwardRef(() => null),
@@ -16,8 +22,24 @@ vi.mock('@codegouvfr/react-dsfr/Modal', () => ({
   createModal: () => ({
     id: 'test-modal',
     open: vi.fn(),
-    close: vi.fn(),
-    Component: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    close: modalClose,
+    Component: ({
+      children,
+      buttons = [],
+    }: {
+      children: React.ReactNode;
+      buttons?: { children: React.ReactNode; onClick?: () => void }[];
+    }) => (
+      <div>
+        {children}
+        {buttons.map((button, index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: static test double
+          <button key={index} type="button" onClick={button.onClick}>
+            {button.children}
+          </button>
+        ))}
+      </div>
+    ),
   }),
 }));
 
@@ -27,13 +49,13 @@ vi.mock('@sirena/ui', async (importOriginal) => {
     ...original,
     Toast: {
       ...original.Toast,
-      useToastManager: () => ({ add: vi.fn() }),
+      useToastManager: () => ({ add: toastAdd }),
     },
   };
 });
 
 vi.mock('@/hooks/mutations/updateUploadedFiles.hook', () => ({
-  useDeleteUploadedFile: () => ({ mutate: vi.fn(), isPending: false }),
+  useDeleteUploadedFile: () => ({ mutate: vi.fn(), mutateAsync: deleteFileMutateAsync, isPending: false }),
 }));
 
 vi.mock('@/hooks/mutations/updateProcessingStep.hook', () => ({
@@ -41,6 +63,7 @@ vi.mock('@/hooks/mutations/updateProcessingStep.hook', () => ({
 }));
 
 let canEditRequest = false;
+let userRole: string = ROLES.WRITER;
 vi.mock('@/hooks/useCanEdit', () => ({
   useCanEdit: () => ({ canEdit: canEditRequest }),
 }));
@@ -50,7 +73,7 @@ vi.mock('@/hooks/useModalFocusRestore', () => ({
 }));
 
 vi.mock('@/stores/userStore', () => ({
-  useUserStore: (selector: (state: { role: string }) => string) => selector({ role: ROLES.WRITER }),
+  useUserStore: (selector: (state: { role: string }) => string) => selector({ role: userRole }),
 }));
 
 type StepProps = React.ComponentProps<typeof Step>;
@@ -64,6 +87,10 @@ type StepFile = StepProps['uploadedFiles'][number];
 describe('Step', () => {
   beforeEach(() => {
     canEditRequest = false;
+    userRole = ROLES.WRITER;
+    deleteFileMutateAsync.mockReset();
+    toastAdd.mockReset();
+    modalClose.mockReset();
   });
 
   it('displays a closed step using the Date de clôture instead of the technical creation date', () => {
@@ -590,6 +617,134 @@ describe('Step', () => {
     expect(screen.getAllByText(/Fichier ajouté le 19\/05\/2026/)).toHaveLength(2);
     expect(screen.getByText('a.pdf')).toBeInTheDocument();
     expect(screen.getByText('b.pdf')).toBeInTheDocument();
+  });
+
+  describe('closure step files', () => {
+    const makeClosureStep = (overrides: Partial<NonAssignmentEntityStepProps> = {}) =>
+      makeStep({
+        nom: '',
+        statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
+        dateRealisation: null,
+        createdAt: '2026-05-12T10:00:00.000Z',
+        updatedAt: '2026-05-12T10:00:00.000Z',
+        clotureEffectiveDate: '2026-05-10',
+        ...overrides,
+      });
+
+    it('labels each closure file with its author', () => {
+      render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ fileName: 'courrier.pdf' })] })} />);
+
+      expect(screen.getByText(/Fichier ajouté le/)).toHaveTextContent(
+        /^\s*Fichier ajouté le 19\/05\/2026 par Jeanne Moulon$/,
+      );
+      expect(screen.getByText('courrier.pdf')).toBeInTheDocument();
+    });
+
+    it('dates a closure file with its upload date, not the closure dates', () => {
+      render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ createdAt: '2026-06-03T10:00:00.000Z' })] })} />);
+
+      expect(screen.getByText(/Fichier ajouté le/)).toHaveTextContent(/Fichier ajouté le 03\/06\/2026/);
+      expect(screen.getByText(/Fichier ajouté le/)).not.toHaveTextContent(/10\/05\/2026|12\/05\/2026/);
+    });
+
+    it('labels a closure file without an author with its date only, never as automatic', () => {
+      render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ uploadedBy: null })] })} />);
+
+      expect(screen.getByText(/Fichier ajouté le/)).toHaveTextContent(/^\s*Fichier ajouté le 19\/05\/2026$/);
+      expect(screen.queryByText(/automatiquement/)).not.toBeInTheDocument();
+    });
+
+    it('lets an owner with write access delete a closure file when the request cannot be edited', async () => {
+      canEditRequest = false;
+      deleteFileMutateAsync.mockResolvedValueOnce(undefined);
+      render(
+        <Step
+          {...makeClosureStep({
+            isOwner: true,
+            uploadedFiles: [makeFile({ id: 'file-42', fileName: 'courrier.pdf' })],
+          })}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Supprimer le fichier courrier.pdf' }));
+      expect(screen.getByText(/supprimer le fichier "courrier\.pdf"/)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Confirmer' }));
+
+      await waitFor(() => expect(screen.queryByRole('link', { name: 'courrier.pdf' })).not.toBeInTheDocument());
+      expect(deleteFileMutateAsync).toHaveBeenCalledWith('file-42');
+      expect(toastAdd).toHaveBeenCalledWith(expect.objectContaining({ title: 'Fichier supprimé avec succès' }));
+    });
+
+    it('keeps closure files readable but hides file mutation actions for a reader', () => {
+      userRole = ROLES.READER;
+      render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ fileName: 'courrier.pdf' })] })} />);
+
+      expect(screen.getByRole('link', { name: 'courrier.pdf' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Supprimer le fichier/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Ajouter un fichier/ })).not.toBeInTheDocument();
+    });
+
+    it('keeps a protected closure file readable without a delete action for an owner with write access', () => {
+      render(
+        <Step {...makeClosureStep({ uploadedFiles: [makeFile({ fileName: 'courrier.pdf', canDelete: false })] })} />,
+      );
+
+      expect(screen.getByRole('link', { name: 'courrier.pdf' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Supprimer le fichier/ })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Ajouter un fichier/ })).toBeInTheDocument();
+    });
+
+    it('opens the confirmation from the delete button in the closure file card', () => {
+      canEditRequest = true;
+      render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ fileName: 'courrier.pdf' })] })} />);
+
+      const fileItem = screen.getByRole('listitem');
+      fireEvent.click(within(fileItem).getByRole('button', { name: 'Supprimer le fichier courrier.pdf' }));
+
+      expect(
+        screen.getByText(
+          'Êtes-vous sûr de vouloir supprimer le fichier "courrier.pdf" ? Cette action est irréversible.',
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it('keeps the file name in the confirmation while the modal closes', () => {
+      canEditRequest = true;
+      render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ fileName: 'courrier.pdf' })] })} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Supprimer le fichier courrier.pdf' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+
+      // The DSFR modal fades out after close(): its text must not flash an empty file name.
+      expect(screen.getByText(/supprimer le fichier "courrier\.pdf"/)).toBeInTheDocument();
+    });
+
+    it('removes a closure file from the step once its deletion is confirmed', async () => {
+      canEditRequest = true;
+      deleteFileMutateAsync.mockResolvedValueOnce(undefined);
+      render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ id: 'file-42', fileName: 'courrier.pdf' })] })} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Supprimer le fichier courrier.pdf' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Confirmer' }));
+
+      await waitFor(() => expect(screen.queryByRole('link', { name: 'courrier.pdf' })).not.toBeInTheDocument());
+      expect(deleteFileMutateAsync).toHaveBeenCalledWith('file-42');
+      expect(toastAdd).toHaveBeenCalledWith(expect.objectContaining({ title: 'Fichier supprimé avec succès' }));
+      expect(modalClose).toHaveBeenCalled();
+    });
+
+    it('keeps a closure file and shows an error when its deletion fails', async () => {
+      canEditRequest = true;
+      deleteFileMutateAsync.mockRejectedValueOnce(new Error('network'));
+      render(<Step {...makeClosureStep({ uploadedFiles: [makeFile({ fileName: 'courrier.pdf' })] })} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Supprimer le fichier courrier.pdf' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Confirmer' }));
+
+      await waitFor(() => expect(modalClose).toHaveBeenCalled());
+      expect(toastAdd).toHaveBeenCalledWith(expect.objectContaining({ title: 'Erreur' }));
+      expect(screen.getByRole('link', { name: 'courrier.pdf' })).toBeInTheDocument();
+    });
   });
 
   it('derives the manual ACR subtitle from the AR file (Envoyé le … par …)', () => {
