@@ -22,4 +22,19 @@ describe('PersonneConcerneeSection', () => {
 
     expect(screen.getByText('Il/elle est en mesure de protection : mandataire judiciaire')).toBeInTheDocument();
   });
+
+  it('separates summary icons from their text with a spacing class', () => {
+    const sectionId = 'personne-concernee';
+
+    render(
+      <PersonneConcerneeSection
+        id={sectionId}
+        personne={{ identite: { nom: 'Dupont', prenom: 'Jean', email: 'jean.dupont@example.com' } } as PersonneProp}
+      />,
+    );
+
+    const emailIcon = screen.getByRole('img', { name: 'Courrier électronique' });
+
+    expect(emailIcon).toHaveClass('fr-mr-1v');
+  });
 });
