@@ -139,6 +139,17 @@ describe('getBreadCrumbItems', () => {
     expect(writerUser?.[1]).toMatchObject({ text: 'Utilisateurs', to: '/admin/users/all', search: {} });
   });
 
+  it('keeps the terms of use page under the site home and marks it as current', () => {
+    expect(getBreadCrumbItems('/_public/conditions-generales-utilisation', writer)).toEqual([
+      { text: 'Accueil', to: '/', current: false },
+      {
+        text: 'Conditions générales d’utilisation',
+        to: '/conditions-generales-utilisation',
+        current: true,
+      },
+    ]);
+  });
+
   it('keeps the public pages under the site home', () => {
     expect(texts('/_public/accessibilite', writer)).toEqual(['Accueil', 'Accessibilité']);
   });
