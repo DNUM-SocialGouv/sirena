@@ -197,11 +197,6 @@
   margin: 0 0 1rem 0;
 }
 
-.cloture-files {
-  padding-left: 0;
-  list-style-position: inside;
-}
-
 .request-notes {
   display: flex;
   flex-direction: column;
