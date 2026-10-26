@@ -96,12 +96,6 @@ overrides:
   # sections indexées d'une source map — GHSA-68fv-2mgg-jv7q. Tiré par postcss
   # (vite) et magicast (@prisma/config, @vitest/coverage-v8).
   "source-map-js@>=1.0.0 <1.2.2": "^1.2.2"
-  # @graphql-tools/utils <=12.0.1 : pollution de prototype dans `mergeDeep` et
-  # dans `mergeIncrementalResult` — GHSA-7mx3-vvmw-hjmv, GHSA-c4qx-w738-7hr3. Seul
-  # graphql-config (via @graphql-codegen/cli) reste en ^11 ; le reste de l'arbre
-  # codegen résout déjà la 12.0.3, et la 12 n'est qu'additive face à la 11.2.2
-  # (ajout de getDirectiveValues). Chemin codegen uniquement, jamais le runtime.
-  "@graphql-tools/utils@<=12.0.1": "^12.0.2"
   # dompurify <=3.4.16 : contournements de SAFE_FOR_TEMPLATES et de IN_PLACE, plus
   # le garde SMIL attributeName=href — GHSA-cg2g-xh64-v4q7, GHSA-mrv2-3pqr-j5jr,
   # GHSA-c6gr-qvv4-5v3f. Tiré par mermaid (@mermaid-js/mermaid-cli, pnpm db:erd).
