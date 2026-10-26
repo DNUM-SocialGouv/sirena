@@ -80,6 +80,9 @@
   background: transparent;
   cursor: pointer;
   color: var(--text-action-high-blue-france);
+  /* Hover tint goes through DSFR's --hover: its global `button:hover` rule outranks any class selector. */
+  --hover: var(--background-action-low-blue-france);
+  --active: var(--background-action-low-blue-france-active);
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
@@ -90,18 +93,9 @@
   margin-left: 0.25rem !important;
 }
 
-.data-table-sort-button:hover {
-  background-color: var(--background-action-low-blue-france);
-  color: var(--text-action-high-blue-france);
-}
-
 .data-table-sort-button:focus {
   outline: 2px solid var(--border-plain-blue-france);
   outline-offset: 2px;
-}
-
-.data-table-sort-button:active {
-  background-color: var(--background-action-low-blue-france-active);
 }
 
 .data-table-sort-button[aria-pressed="true"] {
