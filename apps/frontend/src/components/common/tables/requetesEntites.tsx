@@ -8,6 +8,7 @@ import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@si
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { HelpTooltip } from '@/components/common/HelpTooltip';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
 import { useHasFeature } from '@/hooks/useHasFeature';
@@ -24,6 +25,11 @@ type RequeteEntiteRow = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>
 };
 
 const DEFAULT_PAGE_SIZE = 10;
+
+// The column shows the postal code department, and falls back to the SIREC one when the
+// situation carries no postal code: the two sources need spelling out to the reader.
+const DEPARTEMENT_COLUMN_HELP =
+  'Département du lieu de survenue. À défaut, pour les requêtes SIREC, champ “Département en charge”';
 
 type SortDir = 'asc' | 'desc' | undefined;
 
@@ -209,65 +215,76 @@ export function RequetesEntite() {
     };
   }, [queries.sort, queries.order]);
 
-  const columns: Column<RequeteEntiteRow>[] = [
-    {
-      key: 'requete.id',
-      label: 'ID Requête',
-      isSortable: true,
-      sortLabels: {
-        asc: 'Trier par numéro de requête croissant',
-        desc: 'Trier par numéro de requête décroissant',
-        reset: 'Réinitialiser le tri de la requête',
+  // Rebuilt only when the ARS-only column appears or disappears: a fresh array on every render
+  // would defeat the memo on the table header.
+  const columns: Column<RequeteEntiteRow>[] = useMemo(
+    () => [
+      {
+        key: 'requete.id',
+        label: 'ID Requête',
+        isSortable: true,
+        sortLabels: {
+          asc: 'Trier par numéro de requête croissant',
+          desc: 'Trier par numéro de requête décroissant',
+          reset: 'Réinitialiser le tri de la requête',
+        },
       },
-    },
-    {
-      key: 'custom:statut',
-      label: 'Statut',
-      isSortable: true,
-      sortLabels: {
-        asc: 'Trier par statut',
-        desc: 'Trier par statut',
-        reset: 'Réinitialiser le tri du statut',
+      {
+        key: 'custom:statut',
+        label: 'Statut',
+        isSortable: true,
+        sortLabels: {
+          asc: 'Trier par statut',
+          desc: 'Trier par statut',
+          reset: 'Réinitialiser le tri du statut',
+        },
       },
-    },
-    {
-      key: 'requete.receptionDate',
-      label: 'Date de création',
-      isSortable: true,
-      sortLabels: {
-        asc: 'Trier par date de création du plus ancien au plus récent',
-        desc: 'Trier par date de création du plus récent au plus ancien',
-        reset: 'Réinitialiser le tri de la date de création',
+      {
+        key: 'requete.receptionDate',
+        label: 'Date de création',
+        isSortable: true,
+        sortLabels: {
+          asc: 'Trier par date de création du plus ancien au plus récent',
+          desc: 'Trier par date de création du plus récent au plus ancien',
+          reset: 'Réinitialiser le tri de la date de création',
+        },
       },
-    },
-    { key: 'custom:affectation', label: 'Affectation' },
-    ...(isTopEntiteARS
-      ? [{ key: 'custom:departement', label: 'Département lieu de survenue' } as Column<RequeteEntiteRow>]
-      : []),
-    { key: 'custom:domaine', label: 'Domaine fonctionnel' },
-    { key: 'custom:misEnCause', label: 'Mis en cause' },
-    { key: 'custom:motifs', label: 'Motifs' },
-    {
-      key: 'custom:personne',
-      label: 'Personne Concernée',
-      isSortable: true,
-      sortLabels: {
-        asc: 'Trier par nom de A à Z',
-        desc: 'Trier par nom de Z à A',
-        reset: 'Réinitialiser le tri de la personne concernée',
+      { key: 'custom:affectation', label: 'Affectation' },
+      ...(isTopEntiteARS
+        ? [
+            {
+              key: 'custom:departement',
+              label: 'Département',
+              labelHint: <HelpTooltip description={DEPARTEMENT_COLUMN_HELP} />,
+            } satisfies Column<RequeteEntiteRow>,
+          ]
+        : []),
+      { key: 'custom:domaine', label: 'Domaine fonctionnel' },
+      { key: 'custom:misEnCause', label: 'Mis en cause' },
+      { key: 'custom:motifs', label: 'Motifs' },
+      {
+        key: 'custom:personne',
+        label: 'Personne Concernée',
+        isSortable: true,
+        sortLabels: {
+          asc: 'Trier par nom de A à Z',
+          desc: 'Trier par nom de Z à A',
+          reset: 'Réinitialiser le tri de la personne concernée',
+        },
       },
-    },
-    {
-      key: 'custom:priorite',
-      label: 'Priorité',
-      isSortable: true,
-      sortLabels: {
-        asc: 'Trier par priorité de la plus haute à la plus basse',
-        desc: 'Trier par priorité de la plus basse à la plus haute',
-        reset: 'Réinitialiser le tri de la priorité',
+      {
+        key: 'custom:priorite',
+        label: 'Priorité',
+        isSortable: true,
+        sortLabels: {
+          asc: 'Trier par priorité de la plus haute à la plus basse',
+          desc: 'Trier par priorité de la plus basse à la plus haute',
+          reset: 'Réinitialiser le tri de la priorité',
+        },
       },
-    },
-  ];
+    ],
+    [isTopEntiteARS],
+  );
 
   const cells: Cells<RequeteEntiteRow> = {
     'requete.id': (row) => {
