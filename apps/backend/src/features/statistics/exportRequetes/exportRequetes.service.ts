@@ -178,19 +178,17 @@ async function collectDepartementSources(
 
   await forEachRequetePage(where, departementSourceSelect, (page) => {
     for (const requete of page) {
-      const candidates = [
-        requete.declarant?.adresse?.codePostal,
-        requete.participant?.adresse?.codePostal,
-        ...requete.situations.flatMap((situation) => [
-          situation.lieuDeSurvenue?.adresse?.codePostal || situation.lieuDeSurvenue?.codePostal,
-          situation.misEnCause?.codePostal,
-        ]),
-      ];
-      for (const codePostal of candidates) {
+      for (const codePostal of [requete.declarant?.adresse?.codePostal, requete.participant?.adresse?.codePostal]) {
         if (codePostal) codePostaux.add(codePostal);
       }
+
+      // Une seule passe sur les situations : le code postal du lieu sert deux fois — comme
+      // code postal à résoudre, et comme test de l'absence qui fait retomber sur le libellé
+      // SIREC — et le recalculer dans une seconde boucle laissait les deux dériver.
       for (const situation of requete.situations) {
         const codePostalLieu = situation.lieuDeSurvenue?.adresse?.codePostal || situation.lieuDeSurvenue?.codePostal;
+        if (codePostalLieu) codePostaux.add(codePostalLieu);
+        if (situation.misEnCause?.codePostal) codePostaux.add(situation.misEnCause.codePostal);
         if (!codePostalLieu && situation.sirecDepartement) sirecDepartementLibs.add(situation.sirecDepartement);
       }
     }
