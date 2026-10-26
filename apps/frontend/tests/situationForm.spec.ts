@@ -148,7 +148,10 @@ test.describe('Formulaire situation', () => {
 
     await saveForm(page, 'situation');
 
-    await expectFieldError(page.getByTestId('traitement-des-faits').getByRole('group'), MISSING_ENTITE_MESSAGE);
+    await expectFieldError(
+      page.getByTestId('traitement-des-faits').getByRole('group', { name: 'Traitement des faits' }),
+      MISSING_ENTITE_MESSAGE,
+    );
     await expect(entiteCombobox(page)).toBeFocused();
     await expect(page).toHaveURL(`${baseUrl}/request/create/situation`);
   });

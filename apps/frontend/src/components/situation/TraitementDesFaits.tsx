@@ -36,6 +36,7 @@ type TraitementDesFaitsRow = {
 
 interface TraitementDesFaitsRowProps {
   row: TraitementDesFaitsRow;
+  legend: string;
   entites: Array<{ id: string; nomComplet: string }>;
   onChange: (id: string, field: 'entiteId' | 'directionServiceIds', value: string | string[]) => void;
   onRemove?: (id: string) => void;
@@ -50,6 +51,7 @@ interface TraitementDesFaitsRowProps {
 
 function TraitementDesFaitsRowComponent({
   row,
+  legend,
   entites,
   onChange,
   onRemove,
@@ -81,83 +83,86 @@ function TraitementDesFaitsRowComponent({
   const handleRemove = useCallback(() => onRemove?.(row.id), [onRemove, row.id]);
 
   return (
-    <div className={`fr-grid-row fr-grid-row--gutters fr-mb-2w ${styles.row}`}>
-      {/* Entite */}
-      <div className={`fr-col-12 fr-col-md-6 ${styles.entiteContainer}`}>
-        <div className={styles.entiteWrapper}>
-          <div className={styles.entiteField}>
-            {isEntiteReadOnly ? (
+    <fieldset className={styles.entiteGroup}>
+      <legend className={`fr-text--md fr-text--bold fr-mb-1w ${styles.entiteGroupLegend}`}>{legend}</legend>
+      <div className={`fr-grid-row fr-grid-row--gutters fr-mb-2w ${styles.row}`}>
+        {/* Entite */}
+        <div className={`fr-col-12 fr-col-md-6 ${styles.entiteContainer}`}>
+          <div className={styles.entiteWrapper}>
+            <div className={styles.entiteField}>
+              {isEntiteReadOnly ? (
+                <ReadOnlyField
+                  id={`entite-readonly-${row.id}`}
+                  label="Entité administrative (obligatoire)"
+                  value={entiteLabel}
+                />
+              ) : (
+                <EntiteCombobox
+                  label="Entité administrative (obligatoire)"
+                  entites={availableEntites}
+                  value={row.entiteId}
+                  onChange={handleEntiteChange}
+                  disabled={disabled}
+                  state={showError ? 'error' : 'default'}
+                  stateRelatedMessage={showError ? errorMessage : undefined}
+                  required
+                />
+              )}
+            </div>
+            {showModifyButton ? (
+              <div className={styles.modifyButtonWrapper}>
+                <Button iconId="fr-icon-edit-line" priority="secondary" onClick={onEntiteEditClick} disabled={disabled}>
+                  Modifier <span className="fr-sr-only">l’entité administrative</span>
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Direction / service */}
+        {row.entiteId && (!disabled || (row.directionServiceIds && row.directionServiceIds.length > 0)) && (
+          <div className="fr-col-12 fr-col-md-6" style={alignSelectStyle}>
+            {disabled ? (
               <ReadOnlyField
-                id={`entite-readonly-${row.id}`}
-                label="Entité administrative (obligatoire)"
-                value={entiteLabel}
+                id={`direction-readonly-${row.id}`}
+                label="Direction ou Service"
+                value={
+                  row.directionServiceIds
+                    ?.map((id) => directionsServices.find((ds) => ds.id === id)?.nomComplet)
+                    .filter(Boolean)
+                    .join(', ') || ''
+                }
               />
             ) : (
-              <EntiteCombobox
-                label="Entité administrative (obligatoire)"
-                entites={availableEntites}
-                value={row.entiteId}
-                onChange={handleEntiteChange}
-                disabled={disabled}
-                state={showError ? 'error' : 'default'}
-                stateRelatedMessage={showError ? errorMessage : undefined}
-                required
+              <SelectWithChildren
+                value={row.directionServiceIds || []}
+                onChange={handleDirectionServiceChange}
+                options={directionsServices.map((entite) => ({
+                  label: entite.nomComplet,
+                  value: entite.id,
+                }))}
+                label="Direction ou Service"
+                hint={isEntiteReadOnly ? undefined : 'Sélectionnez dans la liste'}
               />
             )}
           </div>
-          {showModifyButton ? (
-            <div className={styles.modifyButtonWrapper}>
-              <Button iconId="fr-icon-edit-line" priority="secondary" onClick={onEntiteEditClick} disabled={disabled}>
-                Modifier <span className="fr-sr-only">l’entité administrative</span>
-              </Button>
-            </div>
-          ) : null}
-        </div>
+        )}
+
+        {onRemove ? (
+          <div className="fr-col-12">
+            <Button
+              iconId="fr-icon-delete-line"
+              priority="tertiary"
+              onClick={handleRemove}
+              disabled={disabled}
+              nativeButtonProps={{ ...{ 'data-testid': 'traitement-des-faits-remove-entite' } }}
+            >
+              Supprimer cette entité
+            </Button>
+          </div>
+        ) : null}
       </div>
-
-      {/* Direction / service */}
-      {row.entiteId && (!disabled || (row.directionServiceIds && row.directionServiceIds.length > 0)) && (
-        <div className="fr-col-12 fr-col-md-6" style={alignSelectStyle}>
-          {disabled ? (
-            <ReadOnlyField
-              id={`direction-readonly-${row.id}`}
-              label="Direction ou Service"
-              value={
-                row.directionServiceIds
-                  ?.map((id) => directionsServices.find((ds) => ds.id === id)?.nomComplet)
-                  .filter(Boolean)
-                  .join(', ') || ''
-              }
-            />
-          ) : (
-            <SelectWithChildren
-              value={row.directionServiceIds || []}
-              onChange={handleDirectionServiceChange}
-              options={directionsServices.map((entite) => ({
-                label: entite.nomComplet,
-                value: entite.id,
-              }))}
-              label="Direction ou Service"
-              hint={isEntiteReadOnly ? undefined : 'Sélectionnez dans la liste'}
-            />
-          )}
-        </div>
-      )}
-
-      {onRemove ? (
-        <div className="fr-col-12">
-          <Button
-            iconId="fr-icon-delete-line"
-            priority="tertiary"
-            onClick={handleRemove}
-            disabled={disabled}
-            nativeButtonProps={{ ...{ 'data-testid': 'traitement-des-faits-remove-entite' } }}
-          >
-            Supprimer cette entité
-          </Button>
-        </div>
-      ) : null}
-    </div>
+    </fieldset>
   );
 }
 
@@ -377,7 +382,7 @@ const TraitementDesFaitsSection = forwardRef<TraitementDesFaitsSectionRef, Trait
             </p>
           ) : null}
 
-          {rows.editableRows.length > 0 && <hr />}
+          {rows.editableRows.length > 0 && <div className={styles.separator} />}
 
           <div>
             {rows.editableRows.map((row, idx) => {
@@ -396,6 +401,7 @@ const TraitementDesFaitsSection = forwardRef<TraitementDesFaitsSectionRef, Trait
               return (
                 <div key={row.id}>
                   <TraitementDesFaitsRowComponent
+                    legend={`Entité en charge n°${idx + 1}`}
                     hasError={isFirstEmptyRow}
                     errorMessage="Veuillez sélectionner une entité administrative."
                     row={row}
@@ -413,9 +419,10 @@ const TraitementDesFaitsSection = forwardRef<TraitementDesFaitsSectionRef, Trait
             {rows.readOnlyRows.length > 0 && (
               <p className="fr-text--md fr-mb-2w fr-text--bold">Autres entités affectées au traitement</p>
             )}
-            {rows.readOnlyRows.map((row) => (
+            {rows.readOnlyRows.map((row, idx) => (
               <TraitementDesFaitsRowComponent
                 key={row.id}
+                legend={`Autre entité affectée n°${idx + 1}`}
                 row={row}
                 entites={entites}
                 onChange={handleRowChange}
