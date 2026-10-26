@@ -11,7 +11,7 @@ import { useSetRequeteFile } from '@/hooks/mutations/setRequeteFile.hook';
 import { useDeleteUploadedFile, useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
-import { formatFileSize, getOriginalFileName } from '@/utils/fileHelpers';
+import { getOriginalFileName } from '@/utils/fileHelpers';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 
 import styles from './RequeteFileUploadSection.module.css';
@@ -91,8 +91,6 @@ function UploadedFileCard({ file, requeteId, canEdit, onRequestDelete }: Uploade
     size: file.size,
     metadata: fileWithMetadata.metadata,
   });
-  const extension = originalName?.split('.').pop()?.toUpperCase();
-  const metaText = `${extension ? `${extension} – ` : ''}${formatFileSize(file.size)}`;
 
   const handleDeleteClick = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -127,7 +125,6 @@ function UploadedFileCard({ file, requeteId, canEdit, onRequestDelete }: Uploade
           </Button>
         ) : null}
       </div>
-      <p className={styles.fileMeta}>{metaText}</p>
     </li>
   );
 }
@@ -302,7 +299,7 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
   return (
     <div className={`${fr.cx('fr-mb-3w')} ${styles.requeteFileUploadSection}`}>
       {files.length > 0 && (
-        <div className={fr.cx('fr-mt-3w')} style={{ width: '100%' }}>
+        <div style={{ width: '100%' }}>
           <ul className={styles.fileList}>
             {files.map((file) => (
               <UploadedFileCard
