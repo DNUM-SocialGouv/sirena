@@ -31,6 +31,10 @@ const DEFAULT_PAGE_SIZE = 10;
 const DEPARTEMENT_COLUMN_HELP =
   'Département du lieu de survenue. À défaut, pour les requêtes SIREC, champ “Département en charge”';
 
+// Non-breaking spaces keep the guillemets attached to their words.
+const MOTIFS_COLUMN_HELP =
+  'Motifs renseignés par l’agent. À défaut, motifs déclarés sur le formulaire pour les requêtes automatiques et «\u00A0Non renseigné\u00A0» pour les requêtes manuelles.';
+
 type SortDir = 'asc' | 'desc' | undefined;
 
 const shouldInvertSortDirection = (columnKey: string) =>
@@ -261,7 +265,11 @@ export function RequetesEntite() {
         : []),
       { key: 'custom:domaine', label: 'Domaine fonctionnel' },
       { key: 'custom:misEnCause', label: 'Mis en cause' },
-      { key: 'custom:motifs', label: 'Motifs' },
+      {
+        key: 'custom:motifs',
+        label: 'Motifs',
+        labelHint: <HelpTooltip description={MOTIFS_COLUMN_HELP} />,
+      },
       {
         key: 'custom:personne',
         label: 'Personne Concernée',
