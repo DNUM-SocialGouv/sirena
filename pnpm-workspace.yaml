@@ -20,11 +20,11 @@ allowBuilds:
   puppeteer: true
 catalog:
   "@biomejs/biome": ^2.5.15
-  "@codegouvfr/react-dsfr": ^1.35.0
+  "@codegouvfr/react-dsfr": ^1.36.0
   "@hono/standard-validator": ^0.4.0
-  "@prisma/adapter-pg": ^7.10.0
-  "@prisma/client": ^7.10.0
-  "@tanstack/react-router": ^1.170.44
+  "@prisma/adapter-pg": ^7.10.1
+  "@prisma/client": ^7.10.1
+  "@tanstack/react-router": ^1.170.45
   "@testing-library/dom": ^10.4.2
   "@testing-library/jest-dom": ^7.0.1
   "@testing-library/react": ^16.3.3
@@ -38,9 +38,9 @@ catalog:
   clsx: ^2.1.1
   dotenv: ^18.0.8
   hono: ^4.13.13
-  hono-openapi: ^1.3.5
-  jsdom: ^30.1.2
-  prisma: ^7.10.0
+  hono-openapi: ^1.5.0
+  jsdom: ^30.1.3
+  prisma: ^7.10.1
   react: ^19.3.1
   react-dom: ^19.3.1
   tsx: ^4.23.15
@@ -50,40 +50,32 @@ catalog:
   zod: ^4.6.7
 enablePrePostScripts: true
 minimumReleaseAge: 10080
-# vitest 5.0.5 corrige GHSA-p458-7748-mcp3 (les serveurs appliquent mal
-# `server.fs.deny` et servent .env, clés privées, .git et le fichier de token).
-# Publiée le 2026-10-15, elle n'atteint les 7 jours de quarantaine qu'à 14:29Z
-# le 2026-10-22, ce qui laissait `pnpm audit --audit-level=moderate` rouge et
-# bloquait les merges. Exemption pinnée à cette seule version : la quarantaine
-# reste pleine pour tout le reste, 5.0.6 inclus. À retirer à la prochaine passe
-# de mise à jour, une fois 5.0.5 mûre.
+# fast-uri 3.1.9 corrige GHSA-w74x-v6f9-j3xg (usurpation de schéma d'URI via un
+# deux-points percent-encodé) et GHSA-wjr9-j795-jxcr (confusion d'hôte via la
+# canonicalisation WHATWG). Publiée le 2026-10-19 à 23:05Z, elle n'atteint les
+# 7 jours de quarantaine qu'à cette heure-là le 2026-10-26, ce qui laissait
+# `pnpm audit --audit-level=moderate` rouge et bloquait les merges. Exemption
+# pinnée à cette seule version : la quarantaine reste pleine pour tout le reste.
+# À retirer à la prochaine passe de mise à jour, une fois 3.1.9 mûre.
 minimumReleaseAgeExclude:
-  - vitest@5.0.5
-  - "@vitest/browser@5.0.5"
-  - "@vitest/coverage-v8@5.0.5"
-  - "@vitest/expect@5.0.5"
-  - "@vitest/mocker@5.0.5"
-  - "@vitest/pretty-format@5.0.5"
-  - "@vitest/spy@5.0.5"
-  - "@vitest/ui@5.0.5"
-  - "@vitest/utils@5.0.5"
-  - dompurify@3.4.17
+  - fast-uri@3.1.9
 overrides:
   # Planchers de sécurité sur des paquets tirés transitivement (@sentry/cli,
   # ajv via prisma/commitlint, minio) : leurs ranges parents résolvent aujourd'hui
   # une version saine, mais on garde le plancher pour que le nettoyage annuel des
   # ranges en amont ne réintroduise pas silencieusement la vuln.
-  "undici@>=6.25.0 <6.28.1": "6.28.1"
+  "undici@>=6.23.0 <6.29.1": "^6.29.1"
   "undici@>=8.1.0 <8.10.2": "8.10.2"
   # decode-uri-component <=0.4.2 : DoS via une entrée percent-encoded malformée — GHSA-vcc3-ghjq-m6fr.
   "decode-uri-component@<=0.4.2": ">=0.5.0"
   # fast-uri host confusion / SSRF via malformed URL normalization, pulled in
   # by ajv (prisma/commitlint) — GHSA-7p8r-x3mc-p8w7, GHSA-5jgf-p345-68v8,
-  # GHSA-f65p-4m7j-42xc, GHSA-fph4-wmhf-6fwf, GHSA-jqff-g426-hqxp.
+  # GHSA-f65p-4m7j-42xc, GHSA-fph4-wmhf-6fwf, GHSA-jqff-g426-hqxp,
+  # GHSA-w74x-v6f9-j3xg, GHSA-wjr9-j795-jxcr.
   # ajv demande ^3 : on reste en v3 (borne ^ indispensable, sinon la plage
   # ouverte résout la v4, vulnérable). Les sélecteurs pnpm matchent la plage
   # demandée par le parent, pas la version résolue.
-  "fast-uri@>=3.0.0 <3.1.5": "^3.1.5"
+  "fast-uri@>=3.0.0 <3.1.9": "^3.1.9"
   # brace-expansion (via minimatch) : DoS par récursion non bornée et expansion
   # quadratique — patché en 5.0.12.
   "brace-expansion@>=5.0.0 <5.0.12": "^5.0.12"
@@ -104,8 +96,10 @@ overrides:
   # sections indexées d'une source map — GHSA-68fv-2mgg-jv7q. Tiré par postcss
   # (vite) et magicast (@prisma/config, @vitest/coverage-v8).
   "source-map-js@>=1.0.0 <1.2.2": "^1.2.2"
-  dompurify@<=3.4.16: ^3.4.17
-  dompurify@>=3.4.4 <=3.4.16: ^3.4.17
+  # dompurify <=3.4.16 : contournements de SAFE_FOR_TEMPLATES et de IN_PLACE, plus
+  # le garde SMIL attributeName=href — GHSA-cg2g-xh64-v4q7, GHSA-mrv2-3pqr-j5jr,
+  # GHSA-c6gr-qvv4-5v3f. Tiré par mermaid (@mermaid-js/mermaid-cli, pnpm db:erd).
+  "dompurify@<=3.4.16": "^3.4.17"
 auditConfig:
   ignoreGhsas:
     # deepmerge-ts <8: stack exhaustion requires attacker-controlled cyclic
@@ -123,6 +117,15 @@ auditConfig:
     - GHSA-528h-pc64-c93x
     - GHSA-hqr4-qq8f-hg3x
     - GHSA-mjw6-4jj6-33hc
+    # zod <4.6.6 (GHSA-mrhx-c7xc-m3w5): memory exhaustion when validating oversized
+    # constrained collections. The fix only exists on the 4.x line, and the vulnerable
+    # zod 3.25.76 is requested as `^3` by @molt/command and alge, so no override can
+    # reach it without breaking them. Both are pulled by graffle, and only from
+    # `graffle/build/cli/index.js` — its codegen CLI. Our backend imports the client
+    # (`graffle.gql(...).send(...)`), never the CLI, so zod 3 is loaded on no request
+    # path: the schemas it validates are the CLI's own arguments. Our own code is on
+    # zod 4 (catalog). Remove once graffle drops @molt/command.
+    - GHSA-mrhx-c7xc-m3w5
     # braces <=3.0.3 (CVE-2026-93687): stack overflow in the recursive AST walkers.
     # No patched release exists yet (the advisory names 3.0.4, which is not published
     # on npm), so neither an override nor a bump can resolve it today. braces only
