@@ -9,6 +9,9 @@
   width: 100%;
   text-align: left;
   background-color: var(--background-contrast-grey);
+  /* Hover tint goes through DSFR's --hover: its global `button:hover` rule outranks any class selector. */
+  --hover: var(--background-contrast-grey-hover);
+  --active: var(--background-contrast-grey-active);
   cursor: pointer;
   border: none;
   padding: 0.5rem 1rem;
@@ -27,6 +30,8 @@
 
 .triggerReadOnly {
   cursor: default;
+  --hover: var(--background-contrast-grey);
+  --active: var(--background-contrast-grey);
 }
 
 .chevron {
@@ -56,6 +61,7 @@
   list-style: none;
   margin: 0;
   padding: 0;
+  --li-bottom: 0;
 }
 
 .categoryItem {
@@ -89,16 +95,10 @@
   font-weight: 500;
 }
 
-.categoryButton:not([aria-expanded="true"]):hover {
-  background-color: var(--background-default-grey-hover);
-}
-
 .categoryButton[aria-expanded="true"] {
   background-color: var(--background-open-blue-france);
-}
-
-.categoryButton[aria-expanded="true"]:hover {
-  background-color: var(--background-open-blue-france-hover);
+  --hover: var(--background-open-blue-france-hover);
+  --active: var(--background-open-blue-france-active);
 }
 
 .categoryButton [class*="fr-icon-"]::before {

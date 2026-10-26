@@ -83,7 +83,7 @@ export const declarantFieldMetadata: Record<string, FieldMetadata> = {
     format: formatFromLabels(lienVictimeLabels),
   },
   isTuteur: { label: 'Le déclarant est curateur ou tuteur de la personne concernée', type: 'checkbox' },
-  lienAvecPersonneConcerneePrecision: { label: 'Précision sur le lien', type: 'text' },
+  lienAvecPersonneConcerneePrecision: { label: 'Précision du lien avec la personne concernée', type: 'text' },
   adresseDomicile: { label: 'Adresse du domicile', type: 'text' },
   codePostal: { label: 'Code postal', type: 'text' },
   ville: { label: 'Ville', type: 'text' },

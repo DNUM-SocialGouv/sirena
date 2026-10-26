@@ -73,6 +73,8 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
   };
 
   const [showPCWarning, setShowPCWarning] = useState(false);
+  // The save prompt answers the user ticking the box, so it stays hidden on an already saved value.
+  const [hasCheckedPCInSession, setHasCheckedPCInSession] = useState(false);
 
   const estPersonneConcernee = formData.estPersonneConcernee ?? false;
 
@@ -162,6 +164,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                   onChange: (e) => {
                     const checked = e.target.checked;
                     setFormData((prev: DeclarantData) => ({ ...prev, estPersonneConcernee: checked }));
+                    setHasCheckedPCInSession(checked);
                     if (checked) {
                       const hasData = Object.entries(formData).some(
                         ([key, value]) =>
@@ -186,7 +189,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
               />
             </div>
           ) : null}
-          {estPersonneConcernee && !showPCWarning && (
+          {estPersonneConcernee && hasCheckedPCInSession && !showPCWarning && (
             <div className="fr-mt-2w" data-testid="declarant-personne-concernee-callout">
               <CallOut>Enregistrez puis complétez la section "Personne concernée".</CallOut>
             </div>
@@ -266,7 +269,6 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                       ...{ 'data-testid': 'declarant-lien-precision' },
                       value: formData.lienAvecPersonneConcerneePrecision || '',
                       onChange: handleInputChange('lienAvecPersonneConcerneePrecision'),
-                      placeholder: 'Précisez votre lien avec la personne concernée',
                     }}
                   />
                 </div>

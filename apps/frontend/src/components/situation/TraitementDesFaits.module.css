@@ -1,3 +1,21 @@
+.entiteGroup {
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-inline-size: auto;
+}
+
+.entiteGroupLegend {
+  padding: 0;
+  color: var(--text-title-grey);
+}
+
+.separator {
+  block-size: 1px;
+  margin-block: 1.5rem;
+  background-color: var(--border-default-grey);
+}
+
 .row {
   align-items: flex-start;
 }

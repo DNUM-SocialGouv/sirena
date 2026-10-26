@@ -221,7 +221,7 @@ export function RouteComponent() {
                     </div>
                   </fieldset>
                   <EntityHierarchySelector id={user.entiteId} setLevel={handleSetEntite} />
-                  <fieldset className="fr-fieldset">
+                  <div className="fr-fieldset">
                     <Select
                       className="fr-fieldset__content"
                       label="Rôle (obligatoire)"
@@ -251,9 +251,9 @@ export function RouteComponent() {
                         );
                       })}
                     </Select>
-                  </fieldset>
+                  </div>
                   {shouldShowStatut && (
-                    <fieldset className="fr-fieldset">
+                    <div className="fr-fieldset">
                       <Select
                         className="fr-fieldset__content"
                         label="Statut (obligatoire)"
@@ -289,7 +289,7 @@ export function RouteComponent() {
                             );
                           })}
                       </Select>
-                    </fieldset>
+                    </div>
                   )}
                   <div className="form-actions">
                     <Button priority="secondary" onClick={handleBack} type="button">

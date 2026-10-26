@@ -6,6 +6,9 @@
   width: 100%;
   text-align: left;
   background-color: var(--background-contrast-grey);
+  /* Hover tint goes through DSFR's --hover: its global `button:hover` rule outranks any class selector. */
+  --hover: var(--background-contrast-grey-hover);
+  --active: var(--background-contrast-grey-active);
   cursor: pointer;
   border: none;
   padding: 0.5rem 1rem;
@@ -31,10 +34,8 @@
 .selectButtonReadOnly {
   cursor: default;
   background-color: var(--background-contrast-grey);
-}
-
-.selectButtonReadOnly:hover {
-  background-color: var(--background-contrast-grey);
+  --hover: var(--background-contrast-grey);
+  --active: var(--background-contrast-grey);
 }
 
 .dropdown {
@@ -65,10 +66,8 @@
   align-items: center;
   color: var(--text-default-grey);
   font-size: 1rem;
-}
-
-.motifButton:hover {
-  background-color: var(--background-default-grey-hover);
+  --hover: var(--background-default-grey-hover);
+  --active: var(--background-default-grey-active);
 }
 
 .motifButton:focus {
@@ -97,10 +96,8 @@
   font-weight: bold;
   color: var(--text-default-grey);
   font-size: 1rem;
-}
-
-.backButton:hover {
-  background-color: var(--background-default-grey-hover);
+  --hover: var(--background-contrast-grey-hover);
+  --active: var(--background-contrast-grey-active);
 }
 
 .backButton:focus {

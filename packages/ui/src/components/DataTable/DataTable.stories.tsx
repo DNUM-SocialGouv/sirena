@@ -1,3 +1,4 @@
+import { Tooltip } from '@codegouvfr/react-dsfr/Tooltip';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { DataTable, type DataTableProps } from './DataTable';
@@ -296,6 +297,30 @@ export const Default: Story = {
     columns: mockColumns,
     data: mockData,
     cells: mockCells,
+  },
+};
+
+export const WithLabelHint: Story = {
+  render: (args) => <DataTable {...args} />,
+  args: {
+    title: 'A table whose column carries a hint',
+    id: 'my-hint-table',
+    rowId: 'id',
+    columns: [
+      { key: 'name', label: 'Name', isSortable: true },
+      {
+        key: 'custom:test',
+        label: 'Département',
+        labelHint: (
+          <Tooltip
+            kind="click"
+            title="Département du lieu de survenue. À défaut, pour les requêtes SIREC, champ “Département en charge”"
+          />
+        ),
+      },
+    ],
+    data: mockData,
+    cells: { 'custom:test': () => <span>14-Calvados</span> },
   },
 };
 

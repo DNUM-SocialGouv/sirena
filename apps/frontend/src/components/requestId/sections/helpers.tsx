@@ -50,7 +50,7 @@ export const ContactInfo = ({
 }) => (
   <div className="fr-col-auto">
     <p className={fr.cx('fr-mb-0')}>
-      <span className={`${icon} ${fr.cx('fr-icon--sm')}`} role="img" aria-label={ariaLabel} />
+      <span className={`${icon} ${fr.cx('fr-icon--sm', 'fr-mr-1v')}`} role="img" aria-label={ariaLabel} />
       {children}
     </p>
   </div>

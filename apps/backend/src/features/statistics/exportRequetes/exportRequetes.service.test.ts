@@ -15,7 +15,7 @@ vi.mock('../../../libs/prisma.js', () => ({
       findMany: vi.fn(),
     },
     commune: {
-      findMany: vi.fn(),
+      groupBy: vi.fn(),
     },
   },
 }));
@@ -237,7 +237,7 @@ describe('prepareExportRequetesCsv', () => {
         commune: { dptCodeActuel: '980' },
       },
     ] as unknown as Awaited<ReturnType<typeof prisma.inseePostal.findMany>>);
-    vi.mocked(prisma.commune.findMany).mockResolvedValueOnce([
+    vi.mocked(prisma.commune.groupBy).mockResolvedValueOnce([
       {
         dptCodeActuel: '75',
         dptLibActuel: 'Paris',
@@ -254,7 +254,7 @@ describe('prepareExportRequetesCsv', () => {
         dptCodeActuel: '980',
         dptLibActuel: 'Monaco',
       },
-    ] as unknown as Awaited<ReturnType<typeof prisma.commune.findMany>>);
+    ] as unknown as Awaited<ReturnType<typeof prisma.commune.groupBy>>);
 
     const csv = await generateExportRequetesCsv('root-entite');
 
@@ -263,10 +263,9 @@ describe('prepareExportRequetesCsv', () => {
       select: { codePostal: true, commune: { select: { dptCodeActuel: true } } },
       distinct: ['codePostal'],
     });
-    expect(prisma.commune.findMany).toHaveBeenCalledWith({
-      where: { dptCodeActuel: { in: ['75', '69', '63', '980'] } },
-      select: { dptCodeActuel: true, dptLibActuel: true },
-      distinct: ['dptCodeActuel'],
+    expect(prisma.commune.groupBy).toHaveBeenCalledWith({
+      by: ['dptCodeActuel', 'dptLibActuel'],
+      where: { OR: [{ dptCodeActuel: { in: ['75', '69', '63', '980'] } }] },
     });
     expect(csv).toContain('Paris (75)');
     expect(csv).toContain('Rhône (69)');
@@ -298,16 +297,49 @@ describe('prepareExportRequetesCsv', () => {
         commune: { dptCodeActuel: '2A' },
       },
     ] as unknown as Awaited<ReturnType<typeof prisma.inseePostal.findMany>>);
-    vi.mocked(prisma.commune.findMany).mockResolvedValueOnce([
+    vi.mocked(prisma.commune.groupBy).mockResolvedValueOnce([
       {
         dptCodeActuel: '2A',
         dptLibActuel: 'Corse-du-Sud',
       },
-    ] as unknown as Awaited<ReturnType<typeof prisma.commune.findMany>>);
+    ] as unknown as Awaited<ReturnType<typeof prisma.commune.groupBy>>);
 
     const csv = await generateExportRequetesCsv('root-entite');
 
     expect(csv).toContain('Corse-du-Sud (2A)');
+  });
+
+  it('exports the SIREC department of a situation that has no postal code', async () => {
+    vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
+    vi.mocked(prisma.requete.findMany).mockResolvedValue([
+      {
+        id: 'REQ-2026-0036',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        requeteEntites: [
+          {
+            entiteId: 'root-entite',
+            entite: { label: 'Agence régionale', entiteTypeId: 'ARS' },
+            statut: { label: 'En cours' },
+          },
+        ],
+        etapes: [],
+        // A SIREC request whose mis en cause is an RPPS: its lieu de survenue is empty.
+        situations: [{ sirecDepartement: 'Seine-Maritime', lieuDeSurvenue: { codePostal: '' }, misEnCause: {} }],
+      },
+    ] as unknown as Awaited<ReturnType<typeof prisma.requete.findMany>>);
+    vi.mocked(prisma.commune.groupBy).mockResolvedValueOnce([
+      { dptCodeActuel: '76', dptLibActuel: 'Seine-Maritime' },
+    ] as unknown as Awaited<ReturnType<typeof prisma.commune.groupBy>>);
+
+    const csv = await generateExportRequetesCsv('root-entite');
+
+    // No postal code to resolve, so the referential is queried on the SIREC label alone.
+    expect(prisma.inseePostal.findMany).not.toHaveBeenCalled();
+    expect(prisma.commune.groupBy).toHaveBeenCalledWith({
+      by: ['dptCodeActuel', 'dptLibActuel'],
+      where: { OR: [{ dptLibActuel: { in: ['Seine-Maritime'] } }] },
+    });
+    expect(csv).toContain('Seine-Maritime (76)');
   });
 
   it('passes the root entity scope to row building for root-scoped fields', async () => {

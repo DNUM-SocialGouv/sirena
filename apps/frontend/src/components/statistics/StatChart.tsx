@@ -1,7 +1,7 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { SegmentedControl } from '@codegouvfr/react-dsfr/SegmentedControl';
 import { type ReactNode, useId, useMemo, useState } from 'react';
-import { CardHelp } from './CardHelp';
+import { HelpTooltip } from '@/components/common/HelpTooltip';
 import {
   annularSectorPath,
   CHART_COLORS,
@@ -58,7 +58,7 @@ export function StatChart({ name, description, parsed, action }: StatChartProps)
           <h2 id={titleId} className={fr.cx('fr-text--md', 'fr-text--bold', 'fr-mb-0')}>
             {name}
           </h2>
-          <CardHelp description={description} />
+          <HelpTooltip description={description} />
           {action}
         </div>
         <p>Aucune donnée à afficher.</p>
@@ -75,7 +75,7 @@ export function StatChart({ name, description, parsed, action }: StatChartProps)
           <h2 id={titleId} className={fr.cx('fr-text--md', 'fr-text--bold', 'fr-mb-0')}>
             {name}
           </h2>
-          <CardHelp description={description} />
+          <HelpTooltip description={description} />
           {action}
         </div>
 
