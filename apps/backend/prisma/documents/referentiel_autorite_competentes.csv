@@ -209,7 +209,7 @@ categ_code;Libellé catégorie;Libéllé catégorie n2;Domaine;Autorité compét
 451;Service d'Aide aux Familles en Difficulté;Etablissements et Services Sociaux d'Aide à la Famille;;CD;;;
 452;Régie de Quartier;Etablissements et Services Sociaux d'Aide à la Famille;;Hors périmètre;;;Reste à renseigner
 453;Service de Réparation Pénale;Etab.et Serv.Sociaux Concourant à la Protection de l'Enfance;Social;PJJ;;;Reste à renseigner
-460;Service autonomie aide (SAA)/Antenne médico-social;Autres Etab. Accueil, Hébergement, Réadaptation et Services;Médico-social;ARS;;;
+460;Service autonomie aide (SAA)/Antenne médico-social;Autres Etab. Accueil, Hébergement, Réadaptation et Services;Médico-social;CD;;;
 461;Centres de Ressources S.A.I. (Sans Aucune Indication);Autres Etab. Accueil, Hébergement, Réadaptation et Services;Médico-social;ARS;;;
 462;Lieux de vie;Autres Etab. Accueil, Hébergement, Réadaptation et Services;Médico-social;CD;;si aide sociale à l'enfance;"""si aide sociale à l'enfance"" : quel champ du formulaire est concerné ? Nouvelle règle à inclure dans l'arbre ?"
 463;Centres Locaux Information Coordination P.A .(C.L.I.C.);Autres Etab. Accueil, Hébergement, Réadaptation et Services;Médico-social;CD;;;
