@@ -59,14 +59,37 @@ test.describe("Détail d'une requête", () => {
     await expect(page.getByRole('heading', { name: `Requête ${requestUuid}`, level: 1 })).toBeVisible();
   });
 
-  test('tient dans un écran de 320px sans défilement horizontal', async () => {
+  test('affiche tout son contenu dans un écran de 320px', async () => {
     await page.setViewportSize({ width: 320, height: 720 });
     await expect(page.getByTestId('request-title')).toBeVisible();
+    await expect(page.getByTestId('declarant-section')).toBeVisible();
+    await expect(page.getByTestId('situation-section').first()).toBeVisible();
 
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    );
-    expect(overflow).toBeLessThanOrEqual(0);
+    // Les conteneurs DSFR rognent le débordement : le document ne défile pas, le contenu est
+    // simplement coupé, d'où la mesure élément par élément.
+    const truncated = await page.evaluate(() => {
+      const viewportWidth = document.documentElement.clientWidth;
+      const main = document.querySelector('main');
+      if (!main) return ['<main> introuvable'];
+
+      const hasScrollableAncestor = (element: Element): boolean => {
+        for (let current = element.parentElement; current && current !== main; current = current.parentElement) {
+          const { overflowX } = getComputedStyle(current);
+          if (overflowX === 'auto' || overflowX === 'scroll') return true;
+        }
+        return false;
+      };
+
+      return Array.from(main.querySelectorAll('*'))
+        .filter((element) => {
+          const { width, height, right } = element.getBoundingClientRect();
+          if (width === 0 || height === 0) return false;
+          return right > viewportWidth + 1 && !hasScrollableAncestor(element);
+        })
+        .map((element) => `${element.tagName.toLowerCase()}.${element.className}`);
+    });
+
+    expect(truncated).toEqual([]);
   });
 
   test('garde la déconnexion atteignable dans le menu mobile', async () => {

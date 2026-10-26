@@ -35,7 +35,6 @@
 
 .request-left h1 {
   margin: 0;
-  /* The request number is a single unbreakable token, wider than a 320px viewport. */
   overflow-wrap: anywhere;
 }
 
