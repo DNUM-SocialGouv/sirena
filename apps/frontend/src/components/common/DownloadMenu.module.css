@@ -54,6 +54,9 @@
   text-align: left;
   white-space: normal;
   cursor: pointer;
+  /* Hover tint goes through DSFR's --hover: its global `button:hover` rule outranks any class selector. */
+  --hover: var(--background-action-low-blue-france-hover);
+  --active: var(--background-action-low-blue-france-active);
 }
 
 .item__label {
@@ -67,15 +70,9 @@
   color: var(--text-mention-grey);
 }
 
-.item:hover {
-  background-color: var(--background-action-low-blue-france-hover);
-}
-
 .item[aria-disabled="true"] {
   color: var(--text-mention-grey);
   cursor: not-allowed;
-}
-
-.item[aria-disabled="true"]:hover {
-  background-color: transparent;
+  --hover: transparent;
+  --active: transparent;
 }
