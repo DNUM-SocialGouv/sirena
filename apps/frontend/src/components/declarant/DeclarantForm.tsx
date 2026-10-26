@@ -269,7 +269,6 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                       ...{ 'data-testid': 'declarant-lien-precision' },
                       value: formData.lienAvecPersonneConcerneePrecision || '',
                       onChange: handleInputChange('lienAvecPersonneConcerneePrecision'),
-                      placeholder: 'Précisez votre lien avec la personne concernée',
                     }}
                   />
                 </div>
