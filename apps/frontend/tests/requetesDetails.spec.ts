@@ -58,4 +58,23 @@ test.describe("Détail d'une requête", () => {
   test("ouvre le détail d'une requête depuis le tableau", async () => {
     await expect(page.getByRole('heading', { name: `Requête ${requestUuid}`, level: 1 })).toBeVisible();
   });
+
+  test('tient dans un écran de 320px sans défilement horizontal', async () => {
+    await page.setViewportSize({ width: 320, height: 720 });
+    await expect(page.getByTestId('request-title')).toBeVisible();
+
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+
+  test('garde la déconnexion atteignable dans le menu mobile', async () => {
+    await page.setViewportSize({ width: 320, height: 720 });
+
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await page.getByRole('button', { name: 'Mon espace' }).click();
+
+    await expect(page.getByRole('button', { name: 'Se déconnecter', exact: true })).toBeInViewport();
+  });
 });
