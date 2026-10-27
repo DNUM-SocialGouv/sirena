@@ -46,7 +46,7 @@ createRoot(document.getElementById('root') as HTMLElement, {
 }).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <Toast.Provider limit={Infinity} toastManager={toastManager}>
+      <Toast.Provider limit={Infinity} timeout={0} toastManager={toastManager}>
         <AppUpdateNotice />
         <App />
         <Toast.Portal container={document.body}>
