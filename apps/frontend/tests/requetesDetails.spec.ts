@@ -2,6 +2,7 @@ import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 import { autoCloseAnnouncements } from './utils/announcements';
 import { AUTH_CONFIGS, ensureAuthenticationFileExists } from './utils/authHelper';
 import { baseUrl } from './utils/constants';
+import { elementsOverflowingViewport } from './utils/viewport';
 
 /**
  * Request Details E2E TESTS
@@ -65,29 +66,7 @@ test.describe("Détail d'une requête", () => {
     await expect(page.getByTestId('declarant-section')).toBeVisible();
     await expect(page.getByTestId('situation-section').first()).toBeVisible();
 
-    // Les conteneurs DSFR rognent le débordement : le document ne défile pas, le contenu est
-    // simplement coupé, d'où la mesure élément par élément.
-    const truncated = await page.evaluate(() => {
-      const viewportWidth = document.documentElement.clientWidth;
-      const main = document.querySelector('main');
-      if (!main) return ['<main> introuvable'];
-
-      const hasScrollableAncestor = (element: Element): boolean => {
-        for (let current = element.parentElement; current && current !== main; current = current.parentElement) {
-          const { overflowX } = getComputedStyle(current);
-          if (overflowX === 'auto' || overflowX === 'scroll') return true;
-        }
-        return false;
-      };
-
-      return Array.from(main.querySelectorAll('*'))
-        .filter((element) => {
-          const { width, height, right } = element.getBoundingClientRect();
-          if (width === 0 || height === 0) return false;
-          return right > viewportWidth + 1 && !hasScrollableAncestor(element);
-        })
-        .map((element) => `${element.tagName.toLowerCase()}.${element.className}`);
-    });
+    const truncated = await elementsOverflowingViewport(page);
 
     expect(truncated).toEqual([]);
   });

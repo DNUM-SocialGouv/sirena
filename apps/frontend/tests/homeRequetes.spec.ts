@@ -2,6 +2,7 @@ import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 import { autoCloseAnnouncements } from './utils/announcements';
 import { AUTH_CONFIGS, ensureAuthenticationFileExists } from './utils/authHelper';
 import { baseUrl } from './utils/constants';
+import { elementsOverflowingViewport } from './utils/viewport';
 
 /**
  * Home Requetes E2E TESTS
@@ -51,6 +52,15 @@ test.describe('Liste des requêtes', () => {
     const requetesRows = requetesTable.getByTestId('datatable-row');
     const count = await requetesRows.count();
     expect(count).toBeGreaterThanOrEqual(1);
+  });
+
+  test('déroule le filtre de domaine sans déborder dans un écran de 320px', async () => {
+    await page.setViewportSize({ width: 320, height: 720 });
+
+    await page.getByRole('button', { name: /Domaine fonctionnel/ }).click();
+    await expect(page.getByRole('group', { name: /Filtrer les requêtes par domaine fonctionnel/ })).toBeVisible();
+
+    expect(await elementsOverflowingViewport(page)).toEqual([]);
   });
 
   test("ouvre le détail d'une requête depuis son lien", async () => {

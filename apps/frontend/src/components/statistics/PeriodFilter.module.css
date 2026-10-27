@@ -24,6 +24,23 @@
   background-color: var(--background-default-grey);
 }
 
+@media (max-width: 36em) {
+  .period__bar {
+    width: 100%;
+  }
+
+  .period__trigger:global(.fr-btn) {
+    width: 100%;
+    white-space: normal;
+    text-align: left;
+  }
+
+  .period__panel {
+    min-width: 100%;
+    max-width: 100%;
+  }
+}
+
 .period__section {
   display: flex;
   flex-direction: column;
@@ -61,6 +78,7 @@
 
 .period__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 1rem;
 }

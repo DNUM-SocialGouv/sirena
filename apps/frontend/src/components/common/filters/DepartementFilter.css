@@ -18,6 +18,7 @@
   left: 0;
 
   min-width: 18rem;
+  max-width: min(32rem, calc(100vw - 2rem));
 
   border-top: none;
   border-radius: var(--radius-1);
@@ -29,4 +30,25 @@
 
 .departement-filter .fr-hint-text {
   white-space: nowrap;
+}
+
+@media (max-width: 36em) {
+  .departement-filter {
+    width: 100%;
+  }
+
+  .departement-filter__button.fr-btn {
+    width: 100%;
+    white-space: normal;
+    text-align: left;
+  }
+
+  .departement-filter__dropdown {
+    min-width: 100%;
+    max-width: 100%;
+  }
+
+  .departement-filter .fr-hint-text {
+    white-space: normal;
+  }
 }
