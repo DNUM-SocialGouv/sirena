@@ -227,3 +227,34 @@ export async function getPrometheusMetrics(): Promise<string> {
 export function getPrometheusContentType(): string {
   return register.contentType;
 }
+
+// Basis for alerts on unusual export activity; who exported what is in the AccessLog.
+export const documentExportsCounter = new Counter({
+  name: 'sirena_document_exports_total',
+  help: 'Document exports (e.g. the requêtes CSV) by outcome',
+  labelNames: ['status'],
+  registers: [register],
+});
+
+export const documentExportRowsCounter = new Counter({
+  name: 'sirena_document_export_rows_total',
+  help: 'Data rows written in generated document exports',
+  registers: [register],
+});
+
+export const documentExportDuration = new Histogram({
+  name: 'sirena_document_export_duration_seconds',
+  help: 'Duration of a document export generation, storage included',
+  buckets: [1, 5, 15, 30, 60, 120, 300, 600],
+  registers: [register],
+});
+
+export function recordDocumentExport(
+  result: { status: 'success'; rowCount: number; durationSeconds: number } | { status: 'error' },
+): void {
+  documentExportsCounter.inc({ status: result.status });
+  if (result.status === 'success') {
+    documentExportRowsCounter.inc(result.rowCount);
+    documentExportDuration.observe(result.durationSeconds);
+  }
+}
