@@ -11,7 +11,7 @@ import { parseCard } from '@/components/statistics/chartData';
 import { DashboardFilters } from '@/components/statistics/DashboardFilters';
 import { DownloadCsvButton } from '@/components/statistics/DownloadCsvButton';
 import { groupCardsByTab, resolveSelectedTab } from '@/components/statistics/dashboardTabs';
-import { ExportRequetesButton } from '@/components/statistics/ExportRequetesButton';
+import { ExportRequetesMenu } from '@/components/statistics/ExportRequetesMenu';
 import { type DashboardFilterKey, resolveAvailableFilters } from '@/components/statistics/filterAvailability';
 import { PERIOD_PRESETS, type PeriodSelection, resolveDateRange } from '@/components/statistics/period';
 import { StatChart } from '@/components/statistics/StatChart';
@@ -308,7 +308,7 @@ export function RouteComponent() {
       <div className={fr.cx('fr-mb-8w')}>
         <div className={styles['page-header']}>
           <h1 className="fr-mb-0">Indicateurs</h1>
-          {!isSuperAdmin && <ExportRequetesButton />}
+          {!isSuperAdmin && <ExportRequetesMenu />}
         </div>
         <p role="status" className="fr-sr-only" aria-live="polite">
           {statusMessage}
