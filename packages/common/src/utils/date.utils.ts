@@ -53,6 +53,20 @@ export const isSupportedTimeZone = (timeZone: string): boolean => {
 };
 
 /**
+ * UTC instant at which a calendar day (YYYY-MM-DD) starts in the given timezone, e.g. the lower
+ * bound of a date filter typed by a user in France.
+ */
+export const getStartOfDayInTimeZone = (isoDate: string, timeZone: string = DEFAULT_TIME_ZONE): Date => {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const utcMidnight = Date.UTC(year, month - 1, day);
+  const offsetAt = (instant: number) => toWallClockDate(new Date(instant), timeZone).getTime() - instant;
+  // The offset is read a second time at the first guess, in case a DST change lies in between.
+  const firstGuess = utcMidnight - offsetAt(utcMidnight);
+
+  return new Date(utcMidnight - offsetAt(firstGuess));
+};
+
+/**
  * ZIP entries store timestamps as timezone-less DOS date/time, read back by extractors as local wall clock.
  * Moving the wall clock of the reader's timezone into the UTC fields of the returned date makes archives
  * display the expected local time, whichever timezone the server runs in.
