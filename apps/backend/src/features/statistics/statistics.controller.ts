@@ -1,17 +1,31 @@
-import { throwHTTPException403Forbidden } from '@sirena/backend-utils/helpers';
-import { ERROR_KIND, ROLES_STATISTICS } from '@sirena/common/constants';
+import {
+  throwHTTPException400BadRequest,
+  throwHTTPException403Forbidden,
+  throwHTTPException409Conflict,
+} from '@sirena/backend-utils/helpers';
+import {
+  ERROR_KIND,
+  EXPORT_REQUETES_ERROR_CODES,
+  EXPORT_REQUETES_ERROR_MESSAGES,
+  ROLES_STATISTICS,
+} from '@sirena/common/constants';
+import { getDateTodayInParis, validateExportPeriod } from '@sirena/common/utils';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
-import { createTextStream, StreamCancelledError } from '../../helpers/stream.js';
 import { splitCsv } from '../../helpers/string.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
+import { DOCUMENT_EXPORT_TYPE, findActiveDocumentExport } from '../documentExports/documentExports.service.js';
 import { getEntiteById } from '../entites/entites.service.js';
-import { type ExportRequetesCsvWriter, prepareExportRequetesCsv } from './exportRequetes/exportRequetes.service.js';
-import { getExportRequetesRoute, getStatisticsDashboardRoute } from './statistics.route.js';
-import { StatisticsDashboardQuerySchema } from './statistics.schema.js';
+import { requestExportRequetes } from './exportRequetes/requestExportRequetes.service.js';
+import {
+  getExportRequetesStatusRoute,
+  getStatisticsDashboardRoute,
+  postExportRequetesRoute,
+} from './statistics.route.js';
+import { ExportRequetesBodySchema, StatisticsDashboardQuerySchema } from './statistics.schema.js';
 import { type DashboardFilterSlug, fetchDashboardData } from './statistics.service.js';
 
 const app = factoryWithLogs
@@ -33,10 +47,19 @@ const app = factoryWithLogs
     return next();
   })
 
-  .get('/export-requetes', getExportRequetesRoute, async (c) => {
+  .get('/requetes-export/status', getExportRequetesStatusRoute, async (c) => {
+    const activeExport = await findActiveDocumentExport(c.get('userId'), DOCUMENT_EXPORT_TYPE.REQUETES_CSV);
+
+    return c.json({ data: { inProgress: activeExport != null } });
+  })
+
+  .post('/requetes-export', postExportRequetesRoute, zValidator('json', ExportRequetesBodySchema), async (c) => {
     const logger = c.get('logger');
+    const userId = c.get('userId');
+    const user = c.get('user');
     const topEntiteId = c.get('topEntiteId');
 
+    // Exports are scoped to an entity: a super admin (national scope) has none.
     if (!topEntiteId) {
       throwHTTPException403Forbidden('User must be linked to an entity to export requêtes', {
         res: c.res,
@@ -44,49 +67,36 @@ const app = factoryWithLogs
       });
     }
 
-    const startedAt = Date.now();
-
-    let writeCsv: ExportRequetesCsvWriter;
-    try {
-      writeCsv = await prepareExportRequetesCsv(topEntiteId);
-    } catch (err) {
-      const durationMs = Date.now() - startedAt;
-      logger.error({ err, topEntiteId, durationMs }, '[statistics] export requêtes generation failed');
-      throw err;
+    const { startDate, endDate } = c.req.valid('json');
+    const periodError = validateExportPeriod({ startDate, endDate }, getDateTodayInParis());
+    if (periodError) {
+      throwHTTPException400BadRequest(EXPORT_REQUETES_ERROR_MESSAGES[periodError.code], {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+        cause: { code: periodError.code, field: periodError.field },
+      });
     }
 
-    const today = new Date().toISOString().slice(0, 10);
-    c.header('Content-Type', 'text/csv; charset=utf-8');
-    c.header('Content-Disposition', `attachment; filename="export-requetes-sirena-${today}.csv"`);
+    const result = await requestExportRequetes({
+      userId,
+      topEntiteId,
+      startDate,
+      endDate,
+      path: c.req.routePath,
+      requestId: c.req.header('x-request-id') ?? c.res.headers.get('x-request-id'),
+    });
 
-    let csvSizeBytes = 0;
+    if (!result.ok) {
+      const errorOptions = { res: c.res, kind: ERROR_KIND.BUSINESS, cause: { code: result.code } };
+      if (result.code === EXPORT_REQUETES_ERROR_CODES.EXPORT_IN_PROGRESS) {
+        throwHTTPException409Conflict(EXPORT_REQUETES_ERROR_MESSAGES[result.code], errorOptions);
+      }
+      throwHTTPException400BadRequest(EXPORT_REQUETES_ERROR_MESSAGES[result.code], errorOptions);
+    }
 
-    return c.body(
-      createTextStream(async (write) => {
-        try {
-          await writeCsv(async (chunk) => {
-            csvSizeBytes += Buffer.byteLength(chunk, 'utf8');
-            await write(chunk);
-          });
-          const durationMs = Date.now() - startedAt;
-          logger.info({ topEntiteId, durationMs, csvSizeBytes }, '[statistics] export requêtes generated successfully');
-        } catch (err) {
-          const durationMs = Date.now() - startedAt;
-          if (err instanceof StreamCancelledError) {
-            logger.info(
-              { topEntiteId, durationMs, csvSizeBytes },
-              '[statistics] export requêtes aborted by the client',
-            );
-          } else {
-            logger.error(
-              { err, topEntiteId, durationMs, csvSizeBytes },
-              '[statistics] export requêtes streaming failed',
-            );
-          }
-          throw err;
-        }
-      }),
-    );
+    logger.info({ documentExportId: result.documentExportId }, '[statistics] export requêtes queued');
+
+    return c.json({ data: { id: result.documentExportId, email: user.email } }, 202);
   })
 
   .get('/dashboard', getStatisticsDashboardRoute, zValidator('query', StatisticsDashboardQuerySchema), async (c) => {

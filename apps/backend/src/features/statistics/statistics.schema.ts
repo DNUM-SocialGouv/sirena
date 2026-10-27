@@ -99,3 +99,19 @@ export const StatisticsDashboardPayloadSchema = z.object({
   tabs: z.array(StatisticsDashboardTabSchema),
   cards: z.array(StatisticsDashboardCardSchema),
 });
+
+// Period bounds are checked by validateExportPeriod (@sirena/common), which carries the messages
+// shown to the user; the schema only bounds the input.
+export const ExportRequetesBodySchema = z.object({
+  startDate: z.string().max(10),
+  endDate: z.string().max(10),
+});
+
+export const ExportRequetesResponseSchema = z.object({
+  id: z.string(),
+  email: z.string(),
+});
+
+export const ExportRequetesStatusSchema = z.object({
+  inProgress: z.boolean(),
+});
