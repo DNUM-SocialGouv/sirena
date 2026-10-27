@@ -59,6 +59,7 @@ model User {
   sessions        Session[]
   changeLogs      ChangeLog[]
   accessLogs      AccessLog[]
+  documentExports DocumentExport[]
   uploads         UploadedFile[]
   notes           RequeteEtapeNote[]
   createdEtapes   RequeteEtape[]
@@ -759,12 +760,61 @@ model AccessLog {
   requestId   String?
   path        String
   dataKeys    String[] @default([])
+  // Parameters of the traced action, e.g. the period of a data export.
+  params      Json?
   createdAt   DateTime @default(now())
 
   @@index([entity, entityId])
   @@index([userId, createdAt])
   @@index([topEntiteId])
   @@index([createdAt])
+}
+
+enum DocumentExportType {
+  REQUETES_CSV
+}
+
+// PENDING -> PROCESSING -> READY (file stored) -> EXPIRED (file deleted), or FAILED.
+enum DocumentExportStatus {
+  PENDING
+  PROCESSING
+  READY
+  EXPIRED
+  FAILED
+}
+
+// A document generated on demand (e.g. the requêtes CSV export), stored encrypted in the object
+// storage until its download link expires.
+model DocumentExport {
+  id     String               @id @default(uuid())
+  type   DocumentExportType
+  status DocumentExportStatus @default(PENDING)
+  // Parameters the document was generated with, e.g. the period of a requêtes export.
+  params Json?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Acting entite (topEntiteId) the exported data was filtered by.
+  topEntiteId String
+
+  fileName String?
+  // Set while the file is stored, cleared once it is deleted at expiry.
+  filePath String? @unique
+  mimeType String?
+  size     Int?
+  rowCount Int?
+  // Same shape as UploadedFile.metadata: { encryption: { iv, authTag } }.
+  metadata Json?
+  error    String?
+
+  generatedAt DateTime?
+  expiresAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([expiresAt])
 }
 
 model Crons {
