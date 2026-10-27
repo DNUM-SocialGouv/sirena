@@ -136,7 +136,7 @@ export function RequestForm({ requestId, activeTab: activeTabProp = 0 }: Request
   return (
     <>
       <div className="bg-cumulus">
-        <div className="fr-py-2w fr-pl-7w fr-pr-3w">
+        <div className="fr-py-2w fr-pl-2w fr-pl-md-7w fr-pr-2w fr-pr-md-3w">
           <RequestInfos
             requestId={requestId}
             fullName={fullName}
