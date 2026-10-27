@@ -19,6 +19,7 @@ import { StatTable } from '@/components/statistics/StatTable';
 import { parseTable } from '@/components/statistics/tableData';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useStatisticsDashboard } from '@/hooks/queries/statistics.hook';
+import { useDebounce } from '@/hooks/useDebounce';
 import type { StatisticsCard, StatisticsDashboard } from '@/lib/api/fetchStatistics';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { splitCsv } from '@/utils/filters';
@@ -28,6 +29,10 @@ const numberFormatter = new Intl.NumberFormat('fr-FR');
 const dataDateFormatter = new Intl.DateTimeFormat('fr-FR');
 
 const PAGE_TITLE = 'Indicateurs - SIRENA';
+
+// One dashboard view costs a dozen Metabase requests: without this window a burst of filter clicks
+// fires one wave per click, and Metabase answers 503.
+const FILTERS_DEBOUNCE_MS = 300;
 
 function formatDataDate(reference: Date): string {
   const previousDay = new Date(reference);
@@ -238,10 +243,19 @@ export function RouteComponent() {
   const dataDate = formatDataDate(new Date());
   const selectedDomaines = useMemo(() => splitCsv(search.domaineIds), [search.domaineIds]);
   const selectedLieuTypes = useMemo(() => splitCsv(search.lieuTypes), [search.lieuTypes]);
-  const query = useStatisticsDashboard(
-    { ...range, domaineIds: search.domaineIds, includeEIG: search.includeEIG, lieuTypes: search.lieuTypes },
-    canView,
+
+  const filters = useMemo(
+    () => ({
+      startDate: range.startDate,
+      endDate: range.endDate,
+      domaineIds: search.domaineIds,
+      includeEIG: search.includeEIG,
+      lieuTypes: search.lieuTypes,
+    }),
+    [range.startDate, range.endDate, search.domaineIds, search.includeEIG, search.lieuTypes],
   );
+  const debouncedFilters = useDebounce(filters, FILTERS_DEBOUNCE_MS);
+  const query = useStatisticsDashboard(debouncedFilters, canView);
 
   const handlePeriodChange = useCallback(
     (next: PeriodSelection) => {
@@ -301,7 +315,10 @@ export function RouteComponent() {
     return <Navigate to={isSuperAdmin ? '/admin/users' : '/home'} />;
   }
 
-  const statusMessage = query.isFetching ? 'Mise à jour des indicateurs en cours…' : '';
+  // The request has not left yet during the debounce window: the busy state covers that wait too,
+  // otherwise it flickers between the click and the update.
+  const isUpdating = query.isFetching || debouncedFilters !== filters;
+  const statusMessage = isUpdating ? 'Mise à jour des indicateurs en cours…' : '';
 
   return (
     <AuthLayout>

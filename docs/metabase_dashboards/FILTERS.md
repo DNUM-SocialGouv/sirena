@@ -28,7 +28,7 @@ sequenceDiagram
     F->>C: GET /statistics/dashboard?startDate=…&endDate=…
     C->>C: 1. valide la query (Zod)
     C->>S: 2. params verrouillés (entity_label)<br/>+ filtres optionnels (dates)
-    S->>M: 3. JWT signé avec les SEULS params verrouillés
+    S->>M: 3. JWT signé avec les SEULS params verrouillés<br/>(seulement si la structure n'est pas en cache)
     M-->>S: metadata du dashboard (parameters)
     S->>S: 4. découvre les filtres DÉCLARÉS (slugs)
     S->>M: 5. GET …/dashcard/:id/card/:id/json?start_date=…&end_date=…<br/>(filtres déclarés en QUERY STRING, pas dans le token)
@@ -50,7 +50,16 @@ sequenceDiagram
 > (`extractDashboardParameterSlugs`) et ne passe en query string que les filtres optionnels que
 > le dashboard déclare réellement. Un filtre fourni mais non déclaré est **ignoré** au lieu de
 > provoquer une erreur Metabase « paramètre inconnu ». Ajouter un filtre côté Metabase suffit
-> donc à l'activer, sans redéploiement du backend.
+> donc à l'activer, sans redéploiement du backend — au plus tard après expiration du cache de
+> structure (voir ci-dessous).
+
+> **Cache de la structure du dashboard.** Onglets, dashcards et filtres déclarés ne dépendent que
+> de la configuration Metabase, jamais des filtres de l'utilisateur : le service les met en cache
+> 5 minutes par jeu de paramètres verrouillés (`dashboardStructureCache`). Changer un filtre ne
+> relit donc plus la metadata, ce qui retire le seul appel dont l'échec rendait la page entière
+> indisponible (les cartes, elles, échouent une à une et s'affichent vides). Contrepartie : une
+> modification du dashboard côté Metabase — carte ajoutée, filtre déclaré, onglet renommé — met
+> jusqu'à 5 minutes à apparaître, ou un redémarrage du backend.
 
 Les **`params`** signés dans le JWT alimentent les **paramètres** du dashboard Metabase, qui
 sont eux-mêmes câblés sur les **template tags** (`{{...}}`) des requêtes SQL des cartes.

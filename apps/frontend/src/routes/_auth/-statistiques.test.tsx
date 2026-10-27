@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
@@ -149,6 +149,27 @@ describe('Statistiques route — filtre Domaine fonctionnel', () => {
       { startDate: '2026-01-01', endDate: '2026-03-31', domaineIds: 'SOCIAL,SANITAIRE', includeEIG: undefined },
       true,
     );
+  });
+
+  it('lets a burst of clicks settle before querying the dashboard again', async () => {
+    vi.useFakeTimers();
+
+    try {
+      const { rerender } = render(<RouteComponent />);
+      searchState.current = { domaineIds: 'SOCIAL' };
+      rerender(<RouteComponent />);
+
+      expect(useStatisticsDashboard).toHaveBeenLastCalledWith(expect.objectContaining({ domaineIds: undefined }), true);
+      expect(screen.getByRole('status')).toHaveTextContent('Mise à jour des indicateurs en cours…');
+
+      await act(async () => {
+        vi.advanceTimersByTime(300);
+      });
+
+      expect(useStatisticsDashboard).toHaveBeenLastCalledWith(expect.objectContaining({ domaineIds: 'SOCIAL' }), true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('names what the page actually filters, at both grouping levels', async () => {

@@ -18,7 +18,8 @@ vi.mock('../../libs/asyncLocalStorage.js', () => ({
   getLoggerStore: vi.fn(() => logger),
 }));
 
-vi.mock('@sirena/backend-utils/helpers', () => ({
+vi.mock('@sirena/backend-utils/helpers', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@sirena/backend-utils/helpers')>()),
   throwHTTPException503ServiceUnavailable: vi.fn((msg?: string) => {
     throw new Error(`503:${msg ?? ''}`);
   }),
@@ -460,6 +461,60 @@ describe('statistics.service.ts', () => {
 
       const { fetchDashboardData } = await import('./statistics.service.js');
       await expect(fetchDashboardData()).rejects.toThrow(/^503:/);
+    });
+
+    it('reads the dashboard structure once, whatever the filters that follow', async () => {
+      const metadata = {
+        ok: true,
+        status: 200,
+        json: async () => ({ dashcards: [{ id: 100, card_id: 42, card: { id: 42, name: 'Total requêtes' } }] }),
+      };
+      const cardData = () => ({
+        ok: true,
+        status: 200,
+        json: async () => cardResult([{ name: 'total', base_type: 'type/Integer' }], [[123]]),
+      });
+      fetchMock.mockResolvedValueOnce(metadata).mockResolvedValueOnce(cardData()).mockResolvedValueOnce(cardData());
+
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await fetchDashboardData({}, { domaine_fonctionnel: ['SOCIAL'] });
+      await fetchDashboardData({}, { domaine_fonctionnel: ['NON_RENSEIGNE'] });
+
+      const metadataCalls = fetchMock.mock.calls.filter(([url]) => !String(url).includes('/dashcard/'));
+      expect(metadataCalls).toHaveLength(1);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    it('keeps the structure of one set of locked params out of another', async () => {
+      const metadata = () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ dashcards: [] }),
+      });
+      fetchMock.mockResolvedValueOnce(metadata()).mockResolvedValueOnce(metadata());
+
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await fetchDashboardData({ entity_label: 'ARS Bretagne' });
+      await fetchDashboardData({ entity_label: 'ARS Normandie' });
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('drops the card requests, without crying failure, when the client is already gone', async () => {
+      const aborted = AbortSignal.abort();
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ dashcards: [{ id: 100, card_id: 42, card: { id: 42, name: 'Total requêtes' } }] }),
+        })
+        .mockImplementationOnce((_url: string, init: RequestInit) => Promise.reject(init.signal?.reason));
+
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      const { cards } = await fetchDashboardData({}, {}, 'local', aborted);
+
+      expect(cards).toEqual([expect.objectContaining({ id: 42, dashcardId: 100, data: { cols: [], rows: [] } })]);
+      expect(logger.warn).not.toHaveBeenCalled();
     });
 
     it('signs the token for the national dashboard id when scope is "national"', async () => {

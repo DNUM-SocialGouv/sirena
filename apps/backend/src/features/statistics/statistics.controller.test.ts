@@ -245,6 +245,7 @@ describe('statistics.controller.ts', () => {
           lieu_de_survenue: [],
         },
         'national',
+        expect.any(AbortSignal),
       );
       expect(getEntiteById).not.toHaveBeenCalled();
     });
@@ -269,6 +270,8 @@ describe('statistics.controller.ts', () => {
           inclure_eig: undefined,
           lieu_de_survenue: [],
         },
+        'local',
+        expect.any(AbortSignal),
       );
     });
 
@@ -301,6 +304,8 @@ describe('statistics.controller.ts', () => {
           inclure_eig: undefined,
           lieu_de_survenue: [],
         },
+        'local',
+        expect.any(AbortSignal),
       );
     });
 
@@ -321,6 +326,8 @@ describe('statistics.controller.ts', () => {
           inclure_eig: 'false',
           lieu_de_survenue: [],
         },
+        'local',
+        expect.any(AbortSignal),
       );
     });
 
@@ -343,6 +350,7 @@ describe('statistics.controller.ts', () => {
           lieu_de_survenue: [],
         },
         'national',
+        expect.any(AbortSignal),
       );
     });
 
@@ -373,6 +381,8 @@ describe('statistics.controller.ts', () => {
           domaine_fonctionnel: [],
           lieu_de_survenue: ['ETABLISSEMENT_SANTE', 'DOMICILE:CHEZ_TIERS'],
         },
+        'local',
+        expect.any(AbortSignal),
       );
     });
 

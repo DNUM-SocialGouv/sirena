@@ -1,4 +1,4 @@
-import { throwHTTPException503ServiceUnavailable } from '@sirena/backend-utils/helpers';
+import { CacheEntity, throwHTTPException503ServiceUnavailable } from '@sirena/backend-utils/helpers';
 import jwt from 'jsonwebtoken';
 import { envVars } from '../../config/env.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
@@ -6,6 +6,7 @@ import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 const METABASE_TOKEN_EXPIRATION_SECONDS = 10 * 60;
 const METABASE_FETCH_TIMEOUT_MS = 30_000;
 const METABASE_ERROR_BODY_PREVIEW = 500;
+export const DASHBOARD_STRUCTURE_CACHE_TTL_MS = 5 * 60 * 1000;
 
 type MetabaseConfig = {
   siteUrl: string;
@@ -140,16 +141,23 @@ const safeReadErrorBody = async (response: Response): Promise<string> => {
   }
 };
 
-const fetchJson = async (url: string, logContext: Record<string, unknown>): Promise<unknown> => {
+const fetchJson = async (
+  url: string,
+  logContext: Record<string, unknown>,
+  clientSignal?: AbortSignal,
+): Promise<unknown> => {
   const logger = getLoggerStore();
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), METABASE_FETCH_TIMEOUT_MS);
+  const timeout = new AbortController();
+  const timeoutId = setTimeout(() => timeout.abort(), METABASE_FETCH_TIMEOUT_MS);
+  // The timeout keeps its own controller: Node aborts with a bare string reason, leaving no `name`
+  // on the error to tell a timeout from the client leaving.
+  const signal = clientSignal ? AbortSignal.any([timeout.signal, clientSignal]) : timeout.signal;
 
   try {
     const response = await fetch(url, {
       method: 'GET',
       headers: { Accept: 'application/json' },
-      signal: controller.signal,
+      signal,
     });
 
     if (!response.ok) {
@@ -165,7 +173,7 @@ const fetchJson = async (url: string, logContext: Record<string, unknown>): Prom
 
     return await response.json();
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
+    if (timeout.signal.aborted) {
       logger.error({ ...logContext, timeoutMs: METABASE_FETCH_TIMEOUT_MS }, '[statistics] Metabase request timed out');
       throwHTTPException503ServiceUnavailable('Metabase request timed out. Please try again later.');
     }
@@ -382,23 +390,26 @@ const applyColumnTitles = (data: CardData, titles: Map<string, string>): CardDat
   };
 };
 
-export const fetchDashboardData = async (
-  lockedParams: Record<string, unknown> = {},
-  optionalParams: Record<string, unknown> = {},
-  scope: DashboardScope = 'local',
-): Promise<DashboardData> => {
+type DashboardStructure = {
+  tabs: DashboardTab[];
+  dashcards: DashcardDescriptor[];
+  declaredSlugs: string[];
+};
+
+// The structure depends only on the Metabase dashboard configuration, never on the user filters,
+// and loading it is the one call whose failure makes the whole page unavailable.
+const loadDashboardStructure = async (dashboardId: number, lockedParamsKey: string): Promise<DashboardStructure> => {
   const logger = getLoggerStore();
-  const { siteUrl, secretKey, dashboardId } = ensureMetabaseDashboardConfigured(scope);
-
+  const { siteUrl, secretKey } = ensureMetabaseConfigured();
   const base = siteUrl.replace(/\/$/, '');
+  const token = signMetabaseDashboardToken(dashboardId, secretKey, JSON.parse(lockedParamsKey));
 
-  const token = signMetabaseDashboardToken(dashboardId, secretKey, lockedParams);
   const metadata = await fetchJson(`${base}/api/embed/dashboard/${token}`, { dashboardId, step: 'metadata' });
 
   const parameters = extractDashboardParameters(metadata);
-  const declaredSlugs = new Set(parameters.map((p) => p.slug));
+  const declaredSlugs = [...new Set(parameters.map((p) => p.slug))];
 
-  const unknownSlugs = [...declaredSlugs].filter((slug) => !KNOWN_DASHBOARD_FILTER_SLUG_SET.has(slug));
+  const unknownSlugs = declaredSlugs.filter((slug) => !KNOWN_DASHBOARD_FILTER_SLUG_SET.has(slug));
   if (unknownSlugs.length > 0) {
     logger.warn(
       { dashboardId, unknownSlugs, knownSlugs: [...KNOWN_DASHBOARD_FILTER_SLUGS] },
@@ -409,6 +420,38 @@ export const fetchDashboardData = async (
   const slugByParameterId = new Map(
     parameters.flatMap((p): Array<[string, string]> => (p.id === null ? [] : [[p.id, p.slug]])),
   );
+
+  return {
+    tabs: extractDashboardTabs(metadata),
+    dashcards: extractDashcards(metadata)
+      .map((raw) => toDashcardDescriptor(raw, slugByParameterId))
+      .filter((d): d is DashcardDescriptor => d !== null),
+    declaredSlugs,
+  };
+};
+
+export const dashboardStructureCache = new CacheEntity<DashboardStructure, [number, string]>({
+  ttlMs: DASHBOARD_STRUCTURE_CACHE_TTL_MS,
+  fetcher: loadDashboardStructure,
+});
+
+export const fetchDashboardData = async (
+  lockedParams: Record<string, unknown> = {},
+  optionalParams: Record<string, unknown> = {},
+  scope: DashboardScope = 'local',
+  clientSignal?: AbortSignal,
+): Promise<DashboardData> => {
+  const logger = getLoggerStore();
+  const { siteUrl, secretKey, dashboardId } = ensureMetabaseDashboardConfigured(scope);
+
+  const base = siteUrl.replace(/\/$/, '');
+
+  const structure = await dashboardStructureCache.get(dashboardId, JSON.stringify(lockedParams));
+  const { tabs, dashcards } = structure;
+  const declaredSlugs = new Set(structure.declaredSlugs);
+
+  const token = signMetabaseDashboardToken(dashboardId, secretKey, lockedParams);
+
   const appliedOptional = Object.entries(optionalParams).filter(
     ([slug, value]) => value != null && declaredSlugs.has(slug) && (!Array.isArray(value) || value.length > 0),
   );
@@ -426,12 +469,6 @@ export const fetchDashboardData = async (
   const filterQuery = filterSearch.toString();
   const filterSuffix = filterQuery ? `?${filterQuery}` : '';
 
-  const tabs = extractDashboardTabs(metadata);
-  const rawDashcards = extractDashcards(metadata);
-  const dashcards = rawDashcards
-    .map((raw) => toDashcardDescriptor(raw, slugByParameterId))
-    .filter((d): d is DashcardDescriptor => d !== null);
-
   if (dashcards.length === 0) {
     logger.warn({ dashboardId }, '[statistics] Metabase dashboard has no readable cards');
     return { tabs, cards: [] };
@@ -443,7 +480,7 @@ export const fetchDashboardData = async (
     dashcards.map(
       async ({ dashcardId, cardId, tabId, filterSlugs, name, description, display, layout, columnTitles }) => {
         const cardUrl = `${base}/api/embed/dashboard/${token}/dashcard/${dashcardId}/card/${cardId}${filterSuffix}`;
-        const payload = await fetchJson(cardUrl, { dashboardId, dashcardId, cardId, step: 'card-data' });
+        const payload = await fetchJson(cardUrl, { dashboardId, dashcardId, cardId, step: 'card-data' }, clientSignal);
         const data = applyColumnTitles(extractCardData(payload), columnTitles);
 
         if (data.cols.length === 0) {
@@ -462,15 +499,17 @@ export const fetchDashboardData = async (
     if (result.status === 'fulfilled') return result.value;
 
     const { dashcardId, cardId, tabId, filterSlugs, name, description, display, layout } = dashcards[index];
-    logger.warn(
-      {
-        dashboardId,
-        dashcardId,
-        cardId,
-        reason: result.reason instanceof Error ? result.reason.message : result.reason,
-      },
-      '[statistics] dashcard fetch failed, returning empty data',
-    );
+    if (!clientSignal?.aborted) {
+      logger.warn(
+        {
+          dashboardId,
+          dashcardId,
+          cardId,
+          reason: result.reason instanceof Error ? result.reason.message : result.reason,
+        },
+        '[statistics] dashcard fetch failed, returning empty data',
+      );
+    }
     return { id: cardId, dashcardId, tabId, filterSlugs, name, description, display, layout, data: EMPTY_CARD_DATA };
   });
 
