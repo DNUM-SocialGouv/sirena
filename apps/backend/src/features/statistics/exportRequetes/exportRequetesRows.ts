@@ -1,19 +1,27 @@
-import { demarcheEngageeLabels, MESURE_PROTECTION, MOTIFS_HIERARCHICAL_DATA } from '@sirena/common/constants';
-import type { ReponseOuiNonValue } from '@sirena/common/schemas';
 import {
-  type CsvValue,
-  getLieuPrecisionLabel,
-  getMesureProtectionShortLabel,
-  negateReponseOuiNon,
-} from '@sirena/common/utils';
+  demarcheEngageeLabels,
+  MESURE_PROTECTION,
+  MOTIFS_HIERARCHICAL_DATA,
+  REPONSE_OUI_NON,
+  REQUETE_ETAPE_STATUT_TYPES,
+  reponseOuiNonLabels,
+} from '@sirena/common/constants';
+import type { ReponseOuiNonValue } from '@sirena/common/schemas';
+import { type CsvValue, getLieuPrecisionLabel, negateReponseOuiNon } from '@sirena/common/utils';
+import { getOriginalFileName } from '../../../helpers/fileName.js';
+import type { UploadedFile } from '../../../libs/prisma.js';
+import { getEtapeTitle } from '../../requeteEtapes/requetesEtapes.title.js';
+import { formatRue } from '../../requetesEntite/requeteDisplay.formatters.js';
 import { EXPORT_REQUETES_COLUMNS, type ExportRequetesColumnKey } from './exportRequetesColumns.js';
 import {
   deriveDepartmentCodeFromPostalCode,
   formatExportBoolean,
   formatExportDate,
+  formatExportDateInParis,
   formatExportList,
   formatExportReponseOuiNon,
-  formatExportYear,
+  toSingleLineText,
+  truncateExportCell,
 } from './exportRequetesFormatters.js';
 
 export type ExportRequetesCsvRow = CsvValue[];
@@ -25,6 +33,10 @@ export type ExportRequeteRecord = {
   dateDemandeDeclarant?: Date | null;
   receptionType?: ExportLabelRecord | null;
   provenance?: ExportLabelRecord | null;
+  provenancePrecision?: string | null;
+  dematSocialId?: number | null;
+  sirecId?: number | null;
+  fichiersRequeteOriginale?: ExportFileRecord[];
   declarant?: ExportDeclarantRecord | null;
   participant?: ExportParticipantRecord | null;
   requeteEntites?: ExportRequeteEntiteRecord[];
@@ -36,6 +48,13 @@ type ExportLabelRecord = {
   label: string | null;
 };
 
+type ExportFileRecord = Pick<UploadedFile, 'fileName' | 'metadata'>;
+
+type ExportAgentRecord = {
+  prenom: string;
+  nom: string;
+};
+
 type ExportEntiteReferenceRecord = ExportLabelRecord & {
   nomComplet?: string | null;
   entiteTypeId?: string | null;
@@ -45,6 +64,17 @@ type ExportEntiteReferenceRecord = ExportLabelRecord & {
 type ExportAdresseRecord = {
   codePostal: string | null;
   ville?: string | null;
+  numero?: string | null;
+  rue?: string | null;
+  label?: string | null;
+};
+
+type ExportIdentiteRecord = {
+  civilite?: ExportLabelRecord | null;
+  nom?: string | null;
+  prenom?: string | null;
+  email?: string | null;
+  telephone?: string | null;
 };
 
 type ExportDeclarantRecord = {
@@ -52,22 +82,26 @@ type ExportDeclarantRecord = {
   lienVictime?: ExportLabelRecord | null;
   lienAutrePrecision?: string | null;
   isTuteur: boolean | null;
+  identite?: ExportIdentiteRecord | null;
   adresse?: ExportAdresseRecord | null;
   veutGarderAnonymat: ReponseOuiNonValue;
   estSignalementProfessionnel: ReponseOuiNonValue;
+  commentaire?: string | null;
 };
 
 type ExportParticipantRecord = {
-  identite?: { civilite?: ExportLabelRecord | null } | null;
+  identite?: ExportIdentiteRecord | null;
   age?: ExportLabelRecord | null;
   dateNaissance?: Date | null;
   adresse?: ExportAdresseRecord | null;
   veutGarderAnonymat: ReponseOuiNonValue;
   estVictimeInformee: ReponseOuiNonValue;
+  victimeInformeeCommentaire?: string | null;
   mesureProtection?: string | null;
   estHandicapee: ReponseOuiNonValue;
   aAutrePersonnes: ReponseOuiNonValue;
   autrePersonnes?: string | null;
+  commentaire?: string | null;
 };
 
 type ExportRequeteEntiteRecord = {
@@ -77,13 +111,24 @@ type ExportRequeteEntiteRecord = {
   priorite?: ExportLabelRecord | null;
 };
 
+type ExportEtapeNoteRecord = {
+  texte: string;
+  createdAt: Date;
+  author?: ExportAgentRecord | null;
+};
+
 type ExportRequeteEtapeRecord = {
   entiteId: string;
+  nom?: string | null;
   type?: string | null;
   statutId: string | null;
+  statut?: ExportLabelRecord | null;
   createdAt: Date;
+  dateRealisation?: Date | null;
   clotureEffectiveDate?: Date | null;
   clotureReason: ExportLabelRecord[];
+  uploadedFiles?: ExportFileRecord[];
+  notes?: ExportEtapeNoteRecord[];
 };
 
 type ExportLieuDeSurvenueRecord = {
@@ -93,20 +138,36 @@ type ExportLieuDeSurvenueRecord = {
   transportType?: ExportLabelRecord | null;
   codePostal?: string | null;
   adresse?: ExportAdresseRecord | null;
+  finess?: string | null;
+  societeTransport?: string | null;
+  categLib?: string | null;
 };
 
 type ExportMisEnCauseRecord = {
   misEnCauseType?: ExportLabelRecord | null;
   misEnCauseTypePrecision?: ExportLabelRecord | null;
+  civilite?: string | null;
+  nom?: string | null;
+  prenom?: string | null;
+  rpps?: string | null;
+  nomService?: string | null;
+  finess?: string | null;
   codePostal?: string | null;
+  ville?: string | null;
+  autrePrecision?: string | null;
+  commentaire?: string | null;
 };
 
 type ExportFaitRecord = {
   dateDebut?: Date | null;
   dateFin?: Date | null;
+  commentaire?: string | null;
+  autresPrecisions?: string | null;
   motifsDeclaratifs: Array<{ motifDeclaratif: ExportLabelRecord | null }>;
   motifs: Array<{ motifId?: string | null; motif: ExportLabelRecord | null }>;
   consequences: Array<{ consequence: ExportLabelRecord | null }>;
+  maltraitanceTypes?: Array<{ maltraitanceTypeId: string; maltraitanceType: ExportLabelRecord | null }>;
+  fichiers?: ExportFileRecord[];
 };
 
 type ExportDemarchesEngageesRecord = {
@@ -114,8 +175,10 @@ type ExportDemarchesEngageesRecord = {
   etablissementARepondu?: boolean | null;
   organisme?: string | null;
   datePlainte?: Date | null;
+  commentaire?: string | null;
   autoriteType?: ExportLabelRecord | null;
   demarches: ExportLabelRecord[];
+  etablissementReponse?: ExportFileRecord[];
 };
 
 type ExportSituationEntiteRecord = {
@@ -130,6 +193,8 @@ type ExportEntiteRecord = {
 
 type ExportSituationRecord = {
   sirecDepartement?: string | null;
+  estLieAuSignalement?: ReponseOuiNonValue;
+  numerosSignalement?: string | null;
   lieuDeSurvenue?: ExportLieuDeSurvenueRecord | null;
   misEnCause?: ExportMisEnCauseRecord | null;
   faits?: ExportFaitRecord[];
@@ -153,53 +218,63 @@ export type BuildExportRequetesRowsOptions = {
   departementCodesByName?: Map<string, string>;
 };
 
+// Mis en cause civilité is stored as a code (or the RPPS prefix): same display as the form.
+const MIS_EN_CAUSE_CIVILITE_LABELS: Record<string, string> = { M: 'M', MME: 'Mme' };
+const MALTRAITANCE_TYPE_NONE = 'NON';
+const ETAPE_FIELD_SEPARATOR = ' - ';
+const ETAPES_SEPARATOR = ' | ';
+
 export function buildExportRequetesRows(
   requetes: ExportRequeteRecord[],
   options: BuildExportRequetesRowsOptions = {},
 ): ExportRequetesCsvRow[] {
-  return requetes.flatMap((requete) => {
-    if (requete.situations.length === 0) {
-      return [buildExportRequeteRow(requete, null, options)];
-    }
-
-    return requete.situations.map((situation, index) => buildExportRequeteRow(requete, situation, options, index));
-  });
-}
-
-function buildExportRequeteRow(
-  requete: ExportRequeteRecord,
-  situation: ExportSituationRecord | null,
-  options: BuildExportRequetesRowsOptions,
-  situationIndex?: number,
-): ExportRequetesCsvRow {
-  const requeteEntiteRacine = getRequeteEntiteRacine(requete, options.topEntiteId);
-  const shouldExportDepartements = requeteEntiteRacine?.entite?.entiteTypeId === 'ARS';
-
-  const departmentReferences = {
+  const departmentReferences: DepartmentReferences = {
     codesByPostalCode: options.departmentCodesByPostalCode,
     namesByCode: options.departementNamesByCode,
     codesByName: options.departementCodesByName,
   };
 
-  return toExportRequetesCsvRow({
-    ...buildRequeteFields(requete),
-    ...buildDeclarantFields(requete.declarant, shouldExportDepartements, departmentReferences),
-    ...buildPersonneConcerneeFields(requete.participant, shouldExportDepartements, departmentReferences),
-    ...buildSituationFields(situation, situationIndex, shouldExportDepartements, departmentReferences),
-    ...buildFaitsFields(situation?.faits ?? []),
-    ...buildDemarchesFields(situation?.demarchesEngagees),
-    ...buildWorkflowFields(requete, options, requeteEntiteRacine),
+  return requetes.flatMap((requete) => {
+    const requeteEntiteRacine = getRequeteEntiteRacine(requete, options.topEntiteId);
+    const shouldExportDepartements = requeteEntiteRacine?.entite?.entiteTypeId === 'ARS';
+
+    // Requête-level cells are identical on every situation row: build them once.
+    const requeteFields: ExportRequeteKeyedRow = {
+      ...buildRequeteFields(requete),
+      ...buildDeclarantFields(requete.declarant, shouldExportDepartements, departmentReferences),
+      ...buildPersonneConcerneeFields(requete.participant, shouldExportDepartements, departmentReferences),
+      ...buildWorkflowFields(requete, options, requeteEntiteRacine),
+    };
+
+    const situations: Array<ExportSituationRecord | null> = requete.situations.length > 0 ? requete.situations : [null];
+
+    return situations.map((situation, index) =>
+      toExportRequetesCsvRow({
+        ...requeteFields,
+        ...buildSituationFields(situation, index, shouldExportDepartements, departmentReferences),
+        ...buildFaitsFields(situation?.faits ?? []),
+        ...buildDemarchesFields(situation?.demarchesEngagees),
+        piecesJointesSituation: formatFileNames([
+          ...(situation?.faits ?? []).flatMap((fait) => fait.fichiers ?? []),
+          ...(situation?.demarchesEngagees?.etablissementReponse ?? []),
+        ]),
+      }),
+    );
   });
 }
 
 function buildRequeteFields(requete: ExportRequeteRecord): ExportRequeteKeyedRow {
   return {
     numeroRequete: requete.id,
-    dateCreationRequeteSirena: formatExportDate(requete.createdAt),
+    dateCreationRequeteSirena: formatExportDateInParis(requete.createdAt),
     dateReception: formatExportDate(requete.receptionDate),
     modeReception: requete.receptionType?.label ?? '',
     dateDemandeDeclarant: formatExportDate(requete.dateDemandeDeclarant),
     provenance: requete.provenance?.label ?? '',
+    precisionProvenance: requete.provenancePrecision ?? '',
+    numeroDematSocial: requete.dematSocialId ?? '',
+    numeroSirec: requete.sirecId ?? '',
+    piecesJointesRequeteOriginale: formatFileNames(requete.fichiersRequeteOriginale ?? []),
   };
 }
 
@@ -217,6 +292,12 @@ function buildDeclarantFields(
     declarantEstPersonneConcernee: formatExportBoolean(declarant?.estVictime),
     lienPersonneConcernee: formatLienVictime(declarant),
     declarantEstTuteurCurateur: formatExportBoolean(declarant?.isTuteur),
+    civiliteDeclarant: declarant?.identite?.civilite?.label ?? '',
+    nomDeclarant: declarant?.identite?.nom ?? '',
+    prenomDeclarant: declarant?.identite?.prenom ?? '',
+    emailDeclarant: declarant?.identite?.email ?? '',
+    telephoneDeclarant: declarant?.identite?.telephone ?? '',
+    adresseDeclarant: formatRue(declarant?.adresse) ?? '',
     codePostalDeclarant,
     villeDeclarant: declarant?.adresse?.ville ?? '',
     departementDeclarant: shouldExportDepartements
@@ -224,6 +305,7 @@ function buildDeclarantFields(
       : '',
     declarantConsentIdentiteCommuniquee: formatConsentIdentite(declarant?.veutGarderAnonymat),
     declarantProfessionnelEig: formatExportReponseOuiNon(declarant?.estSignalementProfessionnel),
+    autresPrecisionsDeclarant: declarant?.commentaire ?? '',
   };
 }
 
@@ -239,8 +321,13 @@ function buildPersonneConcerneeFields(
 
   return {
     civilitePersonneConcernee: participant?.identite?.civilite?.label ?? '',
+    nomPersonneConcernee: participant?.identite?.nom ?? '',
+    prenomPersonneConcernee: participant?.identite?.prenom ?? '',
     trancheAgePersonneConcernee: participant?.age?.label ?? '',
-    anneeNaissancePersonneConcernee: participant?.age?.label ? '' : formatExportYear(participant?.dateNaissance),
+    dateNaissancePersonneConcernee: formatExportDate(participant?.dateNaissance),
+    emailPersonneConcernee: participant?.identite?.email ?? '',
+    telephonePersonneConcernee: participant?.identite?.telephone ?? '',
+    adressePersonneConcernee: formatRue(participant?.adresse) ?? '',
     codePostalPersonneConcernee,
     villePersonneConcernee: participant?.adresse?.ville ?? '',
     departementPersonneConcernee: shouldExportDepartements
@@ -248,9 +335,14 @@ function buildPersonneConcerneeFields(
       : '',
     personneConcerneeConsentIdentiteCommuniquee: formatConsentIdentite(participant?.veutGarderAnonymat),
     personneConcerneeInformeeDemarche: formatExportReponseOuiNon(participant?.estVictimeInformee),
-    mesureProtectionPersonneConcernee: formatMesureProtectionShortLabel(participant?.mesureProtection),
+    raisonPersonneConcerneeNonInformee: participant?.victimeInformeeCommentaire ?? '',
+    mesureProtectionPersonneConcernee: formatMesureProtection(participant?.mesureProtection),
     personneConcerneeHandicap: formatExportReponseOuiNon(participant?.estHandicapee),
     autrePersonneConcernee: formatExportReponseOuiNon(participant?.aAutrePersonnes),
+    // Same rule as the requête PDF: the free text only counts when the answer is "Oui".
+    precisionsAutresPersonnesConcernees:
+      participant?.aAutrePersonnes === REPONSE_OUI_NON.OUI ? (participant.autrePersonnes ?? '') : '',
+    autresPrecisionsPersonneConcernee: participant?.commentaire ?? '',
   };
 }
 
@@ -278,18 +370,35 @@ function buildSituationFields(
 
   return {
     numeroSituation: situation ? (situationIndex ?? 0) + 1 : '',
+    situationLieeSignalement: formatExportReponseOuiNon(situation?.estLieAuSignalement),
+    numerosSignalement:
+      situation?.estLieAuSignalement === REPONSE_OUI_NON.OUI ? (situation.numerosSignalement ?? '') : '',
     typeLieuSurvenue: lieuDeSurvenue?.lieuType?.label ?? '',
     precisionTypeLieuSurvenue: formatLieuSurvenuePrecision(lieuDeSurvenue),
+    nomEtablissementLieuSurvenue: lieuDeSurvenue?.adresse?.label || lieuDeSurvenue?.categLib || '',
+    finessLieuSurvenue: lieuDeSurvenue?.finess ?? '',
+    adresseLieuSurvenue: formatRue(lieuDeSurvenue?.adresse) ?? '',
     codePostalLieuSurvenue,
     villeLieuSurvenue,
     departementLieuSurvenue: shouldExportDepartements
       ? formatDepartementWithName(departementLieuSurvenue, departmentReferences.namesByCode)
       : '',
+    societeTransportLieuSurvenue: lieuDeSurvenue?.societeTransport ?? '',
     typeMisEnCause: misEnCause?.misEnCauseType?.label ?? '',
     precisionTypeMisEnCause: misEnCause?.misEnCauseTypePrecision?.label ?? '',
+    civiliteMisEnCause: formatMisEnCauseCivilite(misEnCause?.civilite),
+    nomMisEnCause: misEnCause?.nom ?? '',
+    prenomMisEnCause: misEnCause?.prenom ?? '',
+    rppsMisEnCause: misEnCause?.rpps ?? '',
+    nomServiceMisEnCause: misEnCause?.nomService ?? '',
+    finessMisEnCause: misEnCause?.finess ?? '',
+    codePostalMisEnCause,
+    villeMisEnCause: misEnCause?.ville ?? '',
     departementMisEnCause: shouldExportDepartements
       ? formatDepartementWithName(departementMisEnCause, departmentReferences.namesByCode)
       : '',
+    precisionsMisEnCause: misEnCause?.autrePrecision ?? '',
+    commentaireMisEnCause: misEnCause?.commentaire ?? '',
     domaineFonctionnel: situation?.domainesFonctionnels?.label ?? '',
     entitesAdministrativesSituation: formatSituationRootEntites(situation?.situationEntites),
     directionsSituation: formatSituationDirections(situation?.situationEntites),
@@ -302,12 +411,21 @@ function buildFaitsFields(faits: ExportFaitRecord[]): ExportRequeteKeyedRow {
     motifsDeclaratifs: formatUniqueLabels(
       faits.flatMap((fait) => fait.motifsDeclaratifs.map((motif) => motif.motifDeclaratif?.label)),
     ),
+    typesMaltraitance: formatUniqueLabels(
+      faits.flatMap((fait) =>
+        (fait.maltraitanceTypes ?? [])
+          .filter((maltraitance) => maltraitance.maltraitanceTypeId !== MALTRAITANCE_TYPE_NONE)
+          .map((maltraitance) => maltraitance.maltraitanceType?.label),
+      ),
+    ),
     motifsQualifies: formatUniqueLabels(faits.flatMap((fait) => fait.motifs.map(formatMotifQualifieLabel))),
     consequencesPersonneConcernee: formatUniqueLabels(
       faits.flatMap((fait) => fait.consequences.map((consequence) => consequence.consequence?.label)),
     ),
     dateDebutFaits: formatExportDate(getEarliestDate(faits.map((fait) => fait.dateDebut))),
     dateFinFaits: formatExportDate(getLatestDate(faits.map((fait) => fait.dateFin))),
+    explicationFaits: formatUniqueLabels(faits.map((fait) => fait.commentaire)),
+    autresPrecisionsFaits: formatUniqueLabels(faits.map((fait) => fait.autresPrecisions)),
   };
 }
 
@@ -337,6 +455,8 @@ function buildDemarchesFields(
     demarchesAutresOrganismes: demarchesEngagees
       ? formatExportBoolean(hasDemarchesAutresOrganismes(demarchesEngagees))
       : '',
+    organismeContacte: demarchesEngagees?.organisme ?? '',
+    commentaireDemarches: demarchesEngagees?.commentaire ?? '',
   };
 }
 
@@ -362,7 +482,78 @@ function buildWorkflowFields(
     raisonsClotureEntiteAdministrative: formatExportList(
       etapeCloturee?.clotureReason.map((reason) => reason.label) ?? [],
     ),
+    etapesTraitement: formatEtapes(requete, options.topEntiteId),
   };
+}
+
+/**
+ * All the processing steps the export receives, oldest first, in one cell. Steps of another
+ * entity only reach this point when they are shared with the user's entity; they carry that
+ * entity's name so they are not mistaken for the user's own steps.
+ */
+function formatEtapes(requete: ExportRequeteRecord, topEntiteId: string | undefined): string {
+  const entiteLabels = new Map(
+    (requete.requeteEntites ?? []).map((requeteEntite) => [
+      requeteEntite.entiteId,
+      requeteEntite.entite?.nomComplet || requeteEntite.entite?.label || '',
+    ]),
+  );
+
+  return (requete.etapes ?? [])
+    .toSorted((left, right) => left.createdAt.getTime() - right.createdAt.getTime())
+    .map((etape) => {
+      const otherEntiteLabel = topEntiteId && etape.entiteId !== topEntiteId ? entiteLabels.get(etape.entiteId) : null;
+
+      return formatEtape(etape, otherEntiteLabel);
+    })
+    .join(ETAPES_SEPARATOR);
+}
+
+function formatEtape(etape: ExportRequeteEtapeRecord, otherEntiteLabel: string | null | undefined): string {
+  const isCloture = etape.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE;
+  const date = formatExportDateInParis(isCloture ? (etape.clotureEffectiveDate ?? etape.createdAt) : etape.createdAt);
+  const title = getEtapeTitle(etape.type, etape.statutId, etape.nom ?? '');
+  const fileNames = formatFileNames(etape.uploadedFiles ?? []);
+
+  const parts = [
+    `${date} ${otherEntiteLabel ? `[${otherEntiteLabel}] ` : ''}${title}`,
+    etape.statut?.label ? `Statut : ${etape.statut.label}` : null,
+    etape.dateRealisation ? `Date de réalisation : ${formatExportDateInParis(etape.dateRealisation)}` : null,
+    isCloture && etape.clotureReason.length > 0
+      ? `Motif(s) de clôture : ${formatExportList(etape.clotureReason.map((reason) => reason.label))}`
+      : null,
+    fileNames ? `Pièces jointes : ${fileNames}` : null,
+    ...(etape.notes ?? [])
+      .toSorted((left, right) => left.createdAt.getTime() - right.createdAt.getTime())
+      .map(formatEtapeNote),
+  ];
+
+  return parts.filter((part): part is string => part != null && part !== '').join(ETAPE_FIELD_SEPARATOR);
+}
+
+function formatEtapeNote(note: ExportEtapeNoteRecord): string | null {
+  const texte = toSingleLineText(note.texte);
+  if (!texte) {
+    return null;
+  }
+
+  // Names as stored, like every other name of the export: re-casing them would break compound
+  // names (Île-de-France, Jean-Pierre). A note without author was written by the system.
+  const author = [note.author?.prenom, note.author?.nom].filter(Boolean).join(' ') || 'Système';
+
+  return `Note du ${formatExportDateInParis(note.createdAt)} par ${author} : ${texte}`;
+}
+
+function formatFileNames(files: ExportFileRecord[]): string {
+  return formatUniqueLabels(files.map(getOriginalFileName));
+}
+
+function formatMisEnCauseCivilite(civilite: string | null | undefined): string {
+  if (!civilite) {
+    return '';
+  }
+
+  return MIS_EN_CAUSE_CIVILITE_LABELS[civilite] ?? civilite;
 }
 
 function formatSituationRootEntites(situationEntites: ExportSituationEntiteRecord[] | undefined): string {
@@ -521,20 +712,20 @@ function getLatestEtapeCloturee(
   }
 
   return etapes
-    ?.filter((etape) => etape.entiteId === topEntiteId && etape.statutId === 'CLOTUREE')
+    ?.filter((etape) => etape.entiteId === topEntiteId && etape.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE)
     .toSorted((left, right) => right.createdAt.getTime() - left.createdAt.getTime())[0];
 }
 
-function formatMesureProtectionShortLabel(mesureProtection: string | null | undefined): string {
-  if (
-    mesureProtection !== MESURE_PROTECTION.MANDATAIRE_JUDICIAIRE &&
-    mesureProtection !== MESURE_PROTECTION.MANDATAIRE_FAMILIAL &&
-    mesureProtection !== MESURE_PROTECTION.NON
-  ) {
-    return '';
-  }
+// Same labels as the options of the personne concernée form.
+const MESURE_PROTECTION_LABELS: Record<string, string> = {
+  [MESURE_PROTECTION.MANDATAIRE_JUDICIAIRE]: 'Mandataire judiciaire',
+  [MESURE_PROTECTION.MANDATAIRE_FAMILIAL]: 'Mandataire familial',
+  [MESURE_PROTECTION.NON]: 'Non',
+  [MESURE_PROTECTION.NON_RENSEIGNE]: reponseOuiNonLabels.NON_RENSEIGNE,
+};
 
-  return getMesureProtectionShortLabel(mesureProtection) ?? '';
+function formatMesureProtection(mesureProtection: string | null | undefined): string {
+  return mesureProtection ? (MESURE_PROTECTION_LABELS[mesureProtection] ?? '') : '';
 }
 
 function formatLienVictime(declarant: ExportDeclarantRecord | null | undefined): string {
@@ -554,5 +745,9 @@ function formatConsentIdentite(veutGarderAnonymat: ReponseOuiNonValue): string {
 }
 
 function toExportRequetesCsvRow(row: ExportRequeteKeyedRow): ExportRequetesCsvRow {
-  return EXPORT_REQUETES_COLUMNS.map((column) => row[column.key] ?? '');
+  return EXPORT_REQUETES_COLUMNS.map((column) => {
+    const value = row[column.key] ?? '';
+
+    return typeof value === 'string' ? truncateExportCell(toSingleLineText(value)) : value;
+  });
 }
