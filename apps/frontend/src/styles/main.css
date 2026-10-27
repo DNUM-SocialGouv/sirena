@@ -52,6 +52,11 @@ dialog {
   }
 }
 
+/* A native select cannot wrap its value; the ellipsis at least signals that the text continues. */
+.fr-select {
+  text-overflow: ellipsis;
+}
+
 .center-icon-with-sr-only:before {
   margin: auto !important;
 }

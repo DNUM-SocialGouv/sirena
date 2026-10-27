@@ -154,7 +154,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
       <p className="fr-text--sm fr-mb-5w">Sauf mention contraire, les champs sont facultatifs.</p>
 
       <div
-        className="fr-p-4w fr-mb-4w"
+        className="fr-p-2w fr-p-md-4w fr-mb-4w"
         style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
       >
         <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
@@ -254,7 +254,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
       </div>
 
       <div
-        className="fr-p-4w fr-mb-4w"
+        className="fr-p-2w fr-p-md-4w fr-mb-4w"
         style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
       >
         <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
@@ -311,7 +311,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
       </div>
 
       <div
-        className="fr-p-4w fr-mb-4w"
+        className="fr-p-2w fr-p-md-4w fr-mb-4w"
         style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
       >
         <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
