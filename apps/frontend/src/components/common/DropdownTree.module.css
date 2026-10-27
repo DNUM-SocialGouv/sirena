@@ -43,6 +43,11 @@
   min-inline-size: auto;
 }
 
+.legend:global(.fr-fieldset__legend) {
+  padding: 0.75rem 1rem;
+  margin: 0;
+}
+
 .options[hidden] {
   display: none;
 }
@@ -117,6 +122,22 @@
   padding-block: 0.25rem;
   padding-inline: calc(1rem + min(var(--depth, 0), 3) * 1.5rem) 1rem;
   margin: 0;
+}
+
+.rootOption {
+  padding-block: 0.5rem;
+  border-bottom: 1px solid var(--border-default-grey);
+}
+
+.rootOption:hover {
+  background-color: var(--background-alt-grey-hover, #f6f6f6);
+}
+
+/* DSFR draws the checkbox as a `::before` on the label padding box: indenting with padding shifts
+   the text without moving the box. */
+.option.rootOption :global(input[type="checkbox"] + label) {
+  min-block-size: 2rem;
+  padding-inline-start: 0.5rem;
 }
 
 .dropdownTree input[type="checkbox"]:indeterminate + label::before {
