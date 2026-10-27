@@ -320,6 +320,7 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
         isUploading={isUploading}
         onFilesSelect={handleFileSelect}
         inputRef={uploadInputRef}
+        className={files.length > 0 ? undefined : styles.leadingDropZone}
         errorTextClassName={styles.errorText}
       />
 
