@@ -30,11 +30,15 @@ vi.mock('../../libs/prisma.js', () => ({
       findMany: vi.fn(),
       deleteMany: vi.fn(),
     },
+    documentExport: {
+      findMany: vi.fn(),
+    },
   },
 }));
 
 const mockedFindMany = vi.mocked(prisma.uploadedFile.findMany);
 const mockedDeleteMany = vi.mocked(prisma.uploadedFile.deleteMany);
+const mockedFindDocumentExports = vi.mocked(prisma.documentExport.findMany);
 const mockedListMinioObjects = vi.mocked(listMinioObjects);
 const mockedDeleteFilesFromMinio = vi.mocked(deleteFilesFromMinio);
 const mockedStatMinioObject = vi.mocked(statMinioObject);
@@ -132,6 +136,7 @@ describe('fileIntegrity.service.ts', () => {
     // By default, the dangling re-check confirms the object is missing from S3.
     mockedStatMinioObject.mockRejectedValue(s3NotFoundError());
     mockDbPages([]);
+    mockedFindDocumentExports.mockResolvedValue([] as never);
   });
 
   it('returns all zeros when DB and S3 are in sync', async () => {
@@ -330,6 +335,41 @@ describe('fileIntegrity.service.ts', () => {
     expect(result.s3FilesWithoutDbSize).toBe(30);
     expect(mockedDeleteFilesFromMinio).toHaveBeenCalledTimes(1);
     expect(mockedDeleteFilesFromMinio).toHaveBeenCalledWith(['uploads/ghost.pdf']);
+  });
+
+  it('does not report nor delete the stored file of a document export', async () => {
+    mockedListMinioObjects.mockResolvedValue(
+      s3Map([
+        { name: 'uploads/export.csv', size: 10 },
+        { name: 'uploads/ghost.pdf', size: 30 },
+      ]),
+    );
+    mockedFindDocumentExports.mockResolvedValueOnce([{ filePath: 'uploads/export.csv' }] as never);
+
+    const result = await runFileIntegrityCheck({ removeOrphans: true });
+
+    expect(mockedFindDocumentExports).toHaveBeenNthCalledWith(1, {
+      select: { filePath: true },
+      where: { filePath: { not: null } },
+    });
+    expect(result.s3FilesWithoutDb).toBe(1);
+    expect(mockedDeleteFilesFromMinio).toHaveBeenCalledWith(['uploads/ghost.pdf']);
+  });
+
+  it('does not report nor delete a document export stored after its table was read', async () => {
+    mockedListMinioObjects.mockResolvedValue(s3Map([{ name: 'uploads/late-export.csv', size: 10 }]));
+    mockedFindDocumentExports
+      .mockResolvedValueOnce([] as never) // scan: the export was not ready yet
+      .mockResolvedValueOnce([{ filePath: 'uploads/late-export.csv' }] as never); // re-check query
+
+    const result = await runFileIntegrityCheck({ removeOrphans: true });
+
+    expect(mockedFindDocumentExports).toHaveBeenNthCalledWith(2, {
+      select: { filePath: true },
+      where: { filePath: { in: ['uploads/late-export.csv'] } },
+    });
+    expect(result.s3FilesWithoutDb).toBe(0);
+    expect(mockedDeleteFilesFromMinio).not.toHaveBeenCalled();
   });
 
   it('keeps S3 orphan candidates when the DB re-check fails', async () => {

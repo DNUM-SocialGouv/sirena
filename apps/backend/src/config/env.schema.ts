@@ -358,6 +358,7 @@ export const CronEnvSchema = z.object({
   CRON_QUEUE_UNPROCESSED_FILES: z.string().optional().default('3600'),
   CRON_FILE_INTEGRITY_CHECK: z.string().optional().default('86400'),
   CRON_PURGE_ACCESS_LOGS: z.string().optional().default('86400'),
+  CRON_PURGE_DOCUMENT_EXPORTS: z.string().optional().default('300'),
   ACCESS_LOG_RETENTION_DAYS: z.coerce.number().int().min(1).default(365),
 });
 
