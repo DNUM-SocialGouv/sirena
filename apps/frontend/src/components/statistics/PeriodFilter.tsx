@@ -67,7 +67,8 @@ export function PeriodFilter({ value, onChange }: Props) {
     const panel = panelRef.current;
 
     const onFocusOut = (e: FocusEvent) => {
-      if (hasFocusLeftMenu(e.relatedTarget as Node | null, panel, triggerRef.current)) close();
+      // The focus already went to the next element: moving it back to the trigger would break the tab order.
+      if (hasFocusLeftMenu(e.relatedTarget as Node | null, panel, triggerRef.current)) close({ restoreFocus: false });
     };
     panel?.addEventListener('focusout', onFocusOut);
 
