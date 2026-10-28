@@ -43,6 +43,7 @@ describe('AccessLog Service', () => {
       id: 'accesslog-123',
       createdAt: new Date(),
       ...testData,
+      params: null,
     };
 
     mockedAccessLog.create.mockResolvedValue(expectedResult);
@@ -63,6 +64,34 @@ describe('AccessLog Service', () => {
     });
 
     expect(result).toEqual(expectedResult);
+  });
+
+  it('records the action parameters and writes through the given transaction client', async () => {
+    const txCreate = vi.fn().mockResolvedValue({ id: 'accesslog-456' });
+    const tx = { accessLog: { create: txCreate } } as unknown as Parameters<typeof createAccessLog>[1];
+
+    await createAccessLog(
+      {
+        entity: 'DocumentExport',
+        entityId: 'export-1',
+        action: AccessLogAction.EXPORT_REQUETES_CSV,
+        userId: 'user-456',
+        topEntiteId: 'entite-123',
+        requestId: null,
+        path: '/statistics/requetes-export',
+        dataKeys: [],
+        params: { startDate: '2026-09-26', endDate: '2026-10-26' },
+      },
+      tx,
+    );
+
+    expect(txCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: AccessLogAction.EXPORT_REQUETES_CSV,
+        params: { startDate: '2026-09-26', endDate: '2026-10-26' },
+      }),
+    });
+    expect(mockedAccessLog.create).not.toHaveBeenCalled();
   });
 
   it('should count all access logs', async () => {

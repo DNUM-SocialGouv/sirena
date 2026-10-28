@@ -26,8 +26,23 @@ export async function fetchStatisticsDashboard(filters: StatisticsDashboardFilte
   return data;
 }
 
-export async function fetchExportRequetesCsv(): Promise<Response> {
-  const res = await client.statistics['export-requetes'].$get();
+export type RequetesExportPeriod = {
+  startDate: string;
+  endDate: string;
+};
+
+// Business refusals (invalid period, no requête, export in progress) come back as an HttpError
+// whose data carries the code; the caller shows the matching message, so no toast here.
+export async function createRequetesExport(period: RequetesExportPeriod): Promise<{ id: string; email: string }> {
+  const res = await client.statistics['requetes-export'].$post({ json: period });
   await handleRequestErrors(res, { silentToastError: true });
-  return res;
+  const { data } = await res.json();
+  return data;
+}
+
+export async function fetchRequetesExportStatus(): Promise<{ inProgress: boolean }> {
+  const res = await client.statistics['requetes-export'].status.$get();
+  await handleRequestErrors(res, { silentToastError: true });
+  const { data } = await res.json();
+  return data;
 }

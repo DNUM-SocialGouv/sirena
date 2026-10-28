@@ -274,6 +274,13 @@ export async function runFileIntegrityCheck(options?: FileIntegrityOptions): Pro
       'Finished scanning uploaded files from database',
     );
 
+    // Generated documents (DocumentExport) share the bucket while their download link is valid.
+    // The purge cron deletes them at expiry, so this only ever loads a handful of rows.
+    throwIfAborted('document-export-scan');
+    const documentExportPaths = await findDocumentExportPaths();
+    for (const filePath of documentExportPaths) dbPaths.add(filePath);
+    logger.info({ count: documentExportPaths.length }, 'Listed stored document exports from database');
+
     // Phase 3: S3 objects with no matching DB row. Requires the full `dbPaths` set,
     // so it can only run after the DB scan above has completed.
     const s3OrphanCandidates: string[] = [];
@@ -445,10 +452,20 @@ async function confirmDangling(candidates: DbFile[], logger: ReturnType<typeof g
   return confirmed;
 }
 
+/** Paths of the generated documents still stored, optionally restricted to the given keys. */
+async function findDocumentExportPaths(keys?: string[]): Promise<string[]> {
+  const rows = await prisma.documentExport.findMany({
+    select: { filePath: true },
+    where: { filePath: keys ? { in: keys } : { not: null } },
+  });
+  return rows.flatMap((r) => (r.filePath ? [r.filePath] : []));
+}
+
 /**
- * Keeps only the S3 keys that no `uploadedFile` row references (as `filePath`
- * or `safeFilePath`) according to a fresh DB query. If a query fails, its
- * whole batch is dropped: when in doubt, the S3 object is kept.
+ * Keeps only the S3 keys that no `uploadedFile` row (as `filePath` or
+ * `safeFilePath`) nor `documentExport` row references, according to fresh DB
+ * queries. If a query fails, its whole batch is dropped: when in doubt, the S3
+ * object is kept.
  */
 async function confirmS3Orphans(
   keys: string[],
@@ -461,11 +478,14 @@ async function confirmS3Orphans(
   for (const batch of chunk(keys, batchSize)) {
     throwIfAborted('orphan-s3-recheck');
     try {
-      const rows = await prisma.uploadedFile.findMany({
-        select: { filePath: true, safeFilePath: true },
-        where: { OR: [{ filePath: { in: batch } }, { safeFilePath: { in: batch } }] },
-      });
-      const referenced = new Set<string>();
+      const [rows, documentExportPaths] = await Promise.all([
+        prisma.uploadedFile.findMany({
+          select: { filePath: true, safeFilePath: true },
+          where: { OR: [{ filePath: { in: batch } }, { safeFilePath: { in: batch } }] },
+        }),
+        findDocumentExportPaths(batch),
+      ]);
+      const referenced = new Set<string>(documentExportPaths);
       for (const r of rows) {
         referenced.add(r.filePath);
         if (r.safeFilePath) referenced.add(r.safeFilePath);

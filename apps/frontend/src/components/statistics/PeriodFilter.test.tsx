@@ -383,6 +383,26 @@ describe('PeriodFilter', () => {
     expect(screen.getByRole('radio', { name: 'Mois courant' })).toBeChecked();
   });
 
+  it('closes when the focus leaves the panel, without sending the focus back to the trigger', async () => {
+    render(
+      <>
+        <PeriodFilter value={{}} onChange={vi.fn()} />
+        <button type="button">Après le filtre</button>
+      </>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+    const firstRadio = screen.getByRole('radio', { name: 'Semaine courante' });
+    const next = screen.getByRole('button', { name: 'Après le filtre' });
+
+    next.focus();
+    fireEvent.focusOut(firstRadio, { relatedTarget: next });
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    expect(screen.queryByRole('radio', { name: 'Semaine courante' })).not.toBeInTheDocument();
+    expect(next).toHaveFocus();
+  });
+
   it('does not close via focusout when focus moves to the trigger', async () => {
     render(<PeriodFilter value={{}} onChange={vi.fn()} />);
 

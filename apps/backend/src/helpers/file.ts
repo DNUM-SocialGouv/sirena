@@ -8,6 +8,7 @@ import { MAX_FILE_SIZE } from '../config/files.constant.js';
 import type { DecryptionParams } from '../libs/encryption.js';
 import { getFileStream } from '../libs/minio.js';
 import type { Prisma, UploadedFile } from '../libs/prisma.js';
+import { getOriginalFileName } from './fileName.js';
 
 export const fileTypeParser = new FileTypeParser({ customDetectors: [detectCfbf, detectPdf] });
 
@@ -56,10 +57,7 @@ export const urlToStream = async (url: string, maxSize = MAX_FILE_SIZE) => {
   };
 };
 
-export const getOriginalFileName = (file: Pick<UploadedFile, 'fileName' | 'metadata'>): string => {
-  const metadata = file.metadata as Prisma.JsonObject | null;
-  return metadata?.originalName?.toString() || file.fileName;
-};
+export { getOriginalFileName };
 
 const extractEncryptionParams = (raw: unknown): DecryptionParams | undefined => {
   if (!raw || typeof raw !== 'object') return undefined;

@@ -17,6 +17,10 @@ export type JobDataMap = {
   'purge-access-logs': {
     retentionDays: number;
   };
+  'purge-document-exports': {
+    batchSize: number;
+    retentionDays: number;
+  };
 };
 
 export type JobName = keyof JobDataMap;

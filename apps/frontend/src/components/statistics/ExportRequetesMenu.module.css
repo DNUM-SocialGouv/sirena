@@ -1,0 +1,67 @@
+.export__bar {
+  position: relative;
+  /* Stays at the right edge even when it wraps under the title on a narrow screen, so the panel
+     anchored to its right side never runs off the left of the screen (320px). */
+  margin-left: auto;
+}
+
+.export__trigger:global(.fr-btn) {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.export__panel {
+  position: absolute;
+  top: calc(100% - 1px);
+  right: 0;
+  z-index: 1000;
+
+  width: min(22rem, calc(100vw - 2rem));
+
+  border-radius: var(--radius-1);
+  box-shadow: var(--shadow-overlap);
+  background-color: var(--background-default-grey);
+}
+
+.export__note {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: var(--text-mention-grey);
+}
+
+.export__section {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+
+.export__section > legend {
+  margin-inline: 0;
+  padding-inline: 0;
+  padding-block-end: 0.25rem;
+}
+
+.export__section :global(.fr-input-group) {
+  margin-bottom: 0;
+}
+
+.export__info {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0 0 1rem;
+  font-size: 0.75rem;
+  color: var(--text-default-info);
+}
+
+.export__actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+/* aria-disabled keeps the button focusable; it needs the DSFR disabled look explicitly. */
+.export__submit:global(.fr-btn)[aria-disabled="true"] {
+  background-color: var(--background-disabled-grey);
+  color: var(--text-disabled-grey);
+  cursor: not-allowed;
+}

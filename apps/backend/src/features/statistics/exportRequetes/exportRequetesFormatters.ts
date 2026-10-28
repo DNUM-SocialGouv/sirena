@@ -1,5 +1,10 @@
 import type { ReponseOuiNonValue } from '@sirena/common/schemas';
-import { formatReponseOuiNon } from '@sirena/common/utils';
+import { formatReponseOuiNon, toWallClockDate } from '@sirena/common/utils';
+
+// Excel stops a cell at 32 767 characters and spills the rest; keep a margin for the
+// formula-escaping quote the CSV serializer may add.
+export const EXPORT_CELL_MAX_LENGTH = 32_000;
+const TRUNCATED_SUFFIX = ' […] (texte tronqué)';
 
 export function deriveDepartmentCodeFromPostalCode(codePostal: string): string {
   if (!/^\d{5}$/.test(codePostal)) {
@@ -25,12 +30,32 @@ export function formatExportDate(date: Date | null | undefined): string {
   return `${day}/${month}/${year}`;
 }
 
-export function formatExportYear(date: Date | null | undefined): string {
+// For timestamps (creation dates, notes): the calendar day as seen in Paris, the same day the
+// export period filter uses. Date-only values stored at UTC midnight keep their day too.
+export function formatExportDateInParis(date: Date | null | undefined): string {
   if (!date) {
     return '';
   }
 
-  return String(date.getUTCFullYear());
+  return formatExportDate(toWallClockDate(date));
+}
+
+// Line breaks inside a quoted cell are valid CSV, but Power BI's default import splits the row
+// on them. Free text is therefore flattened to a single line.
+export function toSingleLineText(value: string | null | undefined): string {
+  if (!value) {
+    return '';
+  }
+
+  return value.replace(/\s*(?:\r\n|\r|\n|\u2028|\u2029)+\s*/g, ' ').trim();
+}
+
+export function truncateExportCell(value: string): string {
+  if (value.length <= EXPORT_CELL_MAX_LENGTH) {
+    return value;
+  }
+
+  return value.slice(0, EXPORT_CELL_MAX_LENGTH - TRUNCATED_SUFFIX.length) + TRUNCATED_SUFFIX;
 }
 
 export function formatExportBoolean(value: boolean | null | undefined): string {
