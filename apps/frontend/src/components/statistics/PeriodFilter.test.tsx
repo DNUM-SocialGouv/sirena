@@ -135,6 +135,23 @@ describe('PeriodFilter', () => {
     expect(screen.getByRole('radio', { name: 'Semaine courante' })).toHaveFocus();
   });
 
+  it('marks the periods as invalid when the submission finds none, and only while it lasts', async () => {
+    render(<PeriodFilter value={{}} onChange={vi.fn()} />);
+
+    await openPanelAndWaitForFocus();
+    const radio = screen.getByRole('radio', { name: 'Semaine courante' });
+    expect(radio).not.toHaveAttribute('aria-invalid');
+
+    await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+
+    expect(radio).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByRole('radio', { name: 'Mois courant' })).toHaveAttribute('aria-invalid', 'true');
+
+    await userEvent.click(radio);
+
+    expect(radio).not.toHaveAttribute('aria-invalid');
+  });
+
   it('does not apply an invalid range and moves focus to the end date field', async () => {
     const onChange = vi.fn();
     render(<PeriodFilter value={{}} onChange={onChange} />);
@@ -220,6 +237,38 @@ describe('PeriodFilter', () => {
 
       expect(screen.getByText(INVALID_END_MESSAGE)).toBeInTheDocument();
       expect(screen.queryByText('La date de fin doit être postérieure à la date de début.')).not.toBeInTheDocument();
+    });
+
+    it('marks the offending field as invalid, and only that one', async () => {
+      render(<PeriodFilter value={{}} onChange={vi.fn()} />);
+
+      await openPanelAndWaitForFocus();
+      const startInput = screen.getByLabelText(/Date de début/);
+      markAsBadInput(startInput);
+
+      await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+
+      expect(startInput).toHaveAttribute('aria-invalid', 'true');
+      expect(screen.getByLabelText(/Date de fin/)).not.toHaveAttribute('aria-invalid');
+
+      Object.defineProperty(startInput, 'validity', { value: { badInput: false }, configurable: true });
+      fireEvent.change(startInput, { target: { value: '2026-01-01' } });
+
+      expect(startInput).not.toHaveAttribute('aria-invalid');
+    });
+
+    it('marks the end date as invalid when the range is reversed', async () => {
+      render(<PeriodFilter value={{}} onChange={vi.fn()} />);
+
+      await openPanelAndWaitForFocus();
+      const endInput = screen.getByLabelText(/Date de fin/);
+      fireEvent.change(screen.getByLabelText(/Date de début/), { target: { value: '2026-02-01' } });
+      fireEvent.change(endInput, { target: { value: '2026-01-01' } });
+
+      await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+
+      expect(endInput).toHaveAttribute('aria-invalid', 'true');
+      expect(screen.getByLabelText(/Date de début/)).not.toHaveAttribute('aria-invalid');
     });
 
     it('clears the error once the field holds a parsable date again', async () => {
@@ -453,6 +502,24 @@ describe('PeriodFilter', () => {
       expect(onChange).not.toHaveBeenCalled();
       expect(screen.getByText('Renseignez une période personnalisée.')).toBeInTheDocument();
       expect(screen.getByLabelText(/Date de début/)).toHaveFocus();
+    });
+
+    it('marks both date fields as invalid and points them at the message', async () => {
+      render(<PeriodFilter value={{}} onChange={vi.fn()} />);
+
+      await openPanelAndWaitForFocus(() => screen.getByLabelText(/Date de début/));
+      await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+
+      const message = screen.getByText('Renseignez une période personnalisée.');
+      for (const field of [/Date de début/, /Date de fin/]) {
+        const input = screen.getByLabelText(field);
+        expect(input).toHaveAttribute('aria-invalid', 'true');
+        expect(input).toHaveAccessibleDescription(expect.stringContaining(message.textContent as string));
+      }
+
+      fireEvent.change(screen.getByLabelText(/Date de début/), { target: { value: '2026-01-01' } });
+
+      expect(screen.getByLabelText(/Date de début/)).not.toHaveAttribute('aria-invalid');
     });
   });
 });

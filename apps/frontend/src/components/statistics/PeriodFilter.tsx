@@ -167,6 +167,10 @@ export function PeriodFilter({ value, onChange }: Props) {
   }, [onChange, clearDateInputs]);
 
   const endErrorMessage = dateErrors.end ?? (isInvalid ? END_BEFORE_START_MESSAGE : undefined);
+  const customPeriodEmptyError = !showPresets && isEmptyError;
+  const customPeriodErrorId = customPeriodEmptyError ? `${menuId}-custom-period-error` : undefined;
+  const startInvalid = Boolean(dateErrors.start) || customPeriodEmptyError;
+  const endInvalid = Boolean(endErrorMessage) || customPeriodEmptyError;
 
   return (
     <div className={styles.period__bar}>
@@ -198,6 +202,7 @@ export function PeriodFilter({ value, onChange }: Props) {
                   nativeInputProps: {
                     value: preset,
                     checked: draftPeriod === preset,
+                    'aria-invalid': isEmptyError ? true : undefined,
                     onChange: () => selectPreset(preset),
                   },
                 }))}
@@ -218,6 +223,8 @@ export function PeriodFilter({ value, onChange }: Props) {
                   type: 'date',
                   value: start,
                   max: end || undefined,
+                  'aria-invalid': startInvalid ? true : undefined,
+                  'aria-describedby': customPeriodErrorId,
                   onChange: handleDateChange('start'),
                 }}
               />
@@ -231,11 +238,17 @@ export function PeriodFilter({ value, onChange }: Props) {
                   type: 'date',
                   value: end,
                   min: start || undefined,
+                  'aria-invalid': endInvalid ? true : undefined,
+                  'aria-describedby': customPeriodErrorId,
                   onChange: handleDateChange('end'),
                 }}
               />
             </fieldset>
-            {!showPresets && isEmptyError ? <p className={fr.cx('fr-error-text')}>{emptyErrorMessage}</p> : null}
+            {customPeriodEmptyError ? (
+              <p id={customPeriodErrorId} className={fr.cx('fr-error-text')}>
+                {emptyErrorMessage}
+              </p>
+            ) : null}
             <div className={styles.period__actions}>
               <Button type="submit" iconId="fr-icon-search-line">
                 Appliquer <span className="fr-sr-only">le filtre de période</span>
