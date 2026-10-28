@@ -517,6 +517,81 @@ describe('statistics.service.ts', () => {
       expect(logger.warn).not.toHaveBeenCalled();
     });
 
+    it("journalise quand même l'échec d'une carte qui n'est pas dû au départ du client", async () => {
+      const controller = new AbortController();
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            dashcards: [
+              { id: 100, card_id: 42, card: { id: 42, name: 'En panne' } },
+              { id: 101, card_id: 43, card: { id: 43, name: 'Abandonnée' } },
+            ],
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          statusText: 'Internal Server Error',
+          text: async () => 'boom',
+        })
+        .mockImplementationOnce((_url: string, init: RequestInit) => {
+          controller.abort();
+          return Promise.reject(init.signal?.reason);
+        });
+
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await fetchDashboardData({}, {}, 'local', controller.signal);
+
+      const failures = logger.warn.mock.calls.filter(
+        ([, message]) => message === '[statistics] dashcard fetch failed, returning empty data',
+      );
+      expect(failures).toHaveLength(1);
+      expect(failures[0][0]).toMatchObject({ dashcardId: 100, cardId: 42 });
+    });
+
+    it('ne garde pas en cache une structure vide renvoyée par Metabase', async () => {
+      const emptyMetadata = () => ({ ok: true, status: 200, json: async () => ({ dashcards: [] }) });
+      fetchMock.mockResolvedValueOnce(emptyMetadata()).mockResolvedValueOnce(emptyMetadata());
+
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await fetchDashboardData();
+      await fetchDashboardData();
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('sert la dernière structure connue quand Metabase échoue à la rafraîchir', async () => {
+      const metadata = () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ dashcards: [{ id: 100, card_id: 42, card: { id: 42, name: 'Total requêtes' } }] }),
+      });
+      const cardData = () => ({
+        ok: true,
+        status: 200,
+        json: async () => cardResult([{ name: 'total', base_type: 'type/Integer' }], [[123]]),
+      });
+      fetchMock
+        .mockResolvedValueOnce(metadata())
+        .mockResolvedValueOnce(cardData())
+        .mockResolvedValueOnce({ ok: false, status: 503, statusText: 'Service Unavailable', text: async () => 'down' })
+        .mockResolvedValueOnce(cardData());
+
+      const { dashboardStructureCache, fetchDashboardData } = await import('./statistics.service.js');
+      await fetchDashboardData();
+      dashboardStructureCache.delete(7, JSON.stringify({}));
+
+      const { cards } = await fetchDashboardData();
+
+      expect(cards).toEqual([expect.objectContaining({ id: 42, dashcardId: 100 })]);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({ dashboardId: 7 }),
+        '[statistics] structure refresh failed, serving the last known one',
+      );
+    });
+
     it('signs the token for the national dashboard id when scope is "national"', async () => {
       fetchMock
         .mockResolvedValueOnce({

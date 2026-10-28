@@ -56,10 +56,16 @@ sequenceDiagram
 > **Cache de la structure du dashboard.** Onglets, dashcards et filtres déclarés ne dépendent que
 > de la configuration Metabase, jamais des filtres de l'utilisateur : le service les met en cache
 > 5 minutes par jeu de paramètres verrouillés (`dashboardStructureCache`). Changer un filtre ne
-> relit donc plus la metadata, ce qui retire le seul appel dont l'échec rendait la page entière
-> indisponible (les cartes, elles, échouent une à une et s'affichent vides). Contrepartie : une
-> modification du dashboard côté Metabase — carte ajoutée, filtre déclaré, onglet renommé — met
-> jusqu'à 5 minutes à apparaître, ou un redémarrage du backend.
+> relit donc plus la metadata, ce qui raréfie le seul appel dont l'échec rendait la page entière
+> indisponible (les cartes, elles, échouent une à une et s'affichent vides) ; et si ce
+> rafraîchissement échoue, la dernière structure connue est servie plutôt que la page perdue.
+> Contrepartie : une modification du dashboard côté Metabase — carte ajoutée, filtre déclaré,
+> onglet renommé — met jusqu'à 5 minutes à apparaître. Le cache est enregistré sur le bus
+> d'invalidation (`metabase:dashboard`), qui propage une purge immédiate à tous les pods.
+>
+> Le nombre d'appels par affichage, lui, est inchangé : une requête ouvre toujours une connexion
+> Metabase par carte. Borner ce parallélisme, ou mettre les données de carte elles-mêmes en cache,
+> reste à arbitrer séparément.
 
 Les **`params`** signés dans le JWT alimentent les **paramètres** du dashboard Metabase, qui
 sont eux-mêmes câblés sur les **template tags** (`{{...}}`) des requêtes SQL des cartes.

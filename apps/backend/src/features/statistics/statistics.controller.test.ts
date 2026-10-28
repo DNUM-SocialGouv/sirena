@@ -275,6 +275,22 @@ describe('statistics.controller.ts', () => {
       );
     });
 
+    it('transmet le signal de la requête entrante, et non un signal de complaisance', async () => {
+      entitesMiddlewareState.topEntiteId = 'root-entite';
+      vi.mocked(getEntiteById).mockResolvedValueOnce({ label: 'ARS Île-de-France' } as never);
+      vi.mocked(fetchDashboardData).mockResolvedValueOnce({ tabs: [], cards: [] });
+      const controller = new AbortController();
+
+      await app.request('/dashboard', { signal: controller.signal });
+
+      const signal = vi.mocked(fetchDashboardData).mock.calls[0][3] as AbortSignal;
+      expect(signal.aborted).toBe(false);
+
+      controller.abort();
+
+      expect(signal.aborted).toBe(true);
+    });
+
     it('rejects a business role with no root entity', async () => {
       entitesMiddlewareState.entiteIds = ['root-entite'];
       entitesMiddlewareState.topEntiteId = null;
