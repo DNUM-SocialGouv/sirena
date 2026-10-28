@@ -20,20 +20,25 @@ const buildExportRequetesCsvFromRecords = (
 ) => buildExportRequetesCsv(buildExportRequetesRows(requetes, options));
 
 describe('buildExportRequetesCsv', () => {
-  it('exports the stable 55-column business header when there are no rows', () => {
+  it('exports the stable business header when there are no rows', () => {
     const csv = buildExportRequetesCsv([]);
     const header = csv.replace(/^\uFEFF/, '');
     const columns = header.split(';');
 
     expect(csv).toMatch(/^\uFEFF/);
     expect(header).not.toContain('\n');
-    expect(columns).toHaveLength(55);
+    expect(columns).toHaveLength(EXPORT_REQUETES_COLUMNS.length);
+    expect(columns.at(-1)).toBe('Étapes de traitement');
     expect(columns[0]).toBe('Numéro de requête');
     expect(headerCell(columns, 'statutRequeteEntiteAdministrative')).toBe(
       'Statut de la requête pour mon entité administrative',
     );
     expect(headerCell(columns, 'numeroRequete')).toBe('Numéro de requête');
     expect(headerCell(columns, 'dateDepotPlainte')).toBe('Date de dépôt de plainte');
+    expect(headerCell(columns, 'lieuDepotPlainte')).toBe('Lieu de dépôt de plainte');
+    expect(headerCell(columns, 'prioriteRequeteEntiteAdministrative')).toBe(
+      'Priorité de la requête pour mon entité administrative',
+    );
     expect(headerCell(columns, 'declarantRecuReponse')).toBe('Le déclarant a reçu une réponse');
     expect(headerCell(columns, 'mesureProtectionPersonneConcernee')).toBe(
       'Mesure de protection de la personne concernée',
@@ -52,8 +57,9 @@ describe('buildExportRequetesCsv', () => {
       'Ville lieu de survenue',
       'Département lieu de survenue',
     ]);
-    expect(columns.slice(columnIndex('precisionTypeMisEnCause'), columnIndex('departementMisEnCause') + 1)).toEqual([
-      'Précision type de mis en cause',
+    expect(columns.slice(columnIndex('codePostalMisEnCause'), columnIndex('departementMisEnCause') + 1)).toEqual([
+      'Code postal mis en cause',
+      'Ville mis en cause',
       'Département mis en cause',
     ]);
     expect(headerCell(columns, 'raisonsClotureEntiteAdministrative')).toBe(
@@ -103,7 +109,7 @@ describe('buildExportRequetesCsv', () => {
       .split('\n')[1]
       .split(';');
 
-    expect(row).toHaveLength(55);
+    expect(row).toHaveLength(EXPORT_REQUETES_COLUMNS.length);
     expect(csvCell(row, 'codePostalDeclarant')).toBe('75001');
     expect(csvCell(row, 'villeDeclarant')).toBe('');
     expect(csvCell(row, 'departementDeclarant')).toBe('');
@@ -116,7 +122,7 @@ describe('buildExportRequetesCsv', () => {
     expect(csvCell(row, 'departementMisEnCause')).toBe('');
   });
 
-  it('exports the corrected feedback contract as observable CSV output', () => {
+  it('exports the business contract, clear identity included, as observable CSV output', () => {
     const csv = buildExportRequetesCsvFromRecords(
       [
         {
@@ -135,7 +141,7 @@ describe('buildExportRequetesCsv', () => {
             estVictimeInformee: 'OUI',
             estHandicapee: 'NON',
             aAutrePersonnes: 'OUI',
-            autrePersonnes: 'Free text must not be exported',
+            autrePersonnes: 'Sa voisine',
           },
           requeteEntites: [
             {
@@ -177,10 +183,10 @@ describe('buildExportRequetesCsv', () => {
     const header = headerLine.split(';');
     const row = rowLine.split(';');
 
-    expect(header).not.toContain('RPPS mis en cause');
-    expect(header).not.toContain('Nom mis en cause');
-    expect(header).not.toContain('Code postal mis en cause');
-    expect(header).not.toContain('Catégorie professionnelle du RPPS mis en cause');
+    expect(header).toContain('N° RPPS mis en cause');
+    expect(header).toContain('Nom mis en cause');
+    expect(header).toContain('Code postal mis en cause');
+    expect(csvCell(row, 'precisionsAutresPersonnesConcernees')).toBe('Sa voisine');
     expect(headerCell(header, 'departementMisEnCause')).toBe('Département mis en cause');
     expect(csvCell(row, 'statutRequeteEntiteAdministrative')).toBe('Clôturée');
     expect(csvCell(row, 'departementDeclarant')).toBe('75');
@@ -196,6 +202,27 @@ describe('buildExportRequetesCsv', () => {
     expect(csvCell(row, 'demarchesAutresOrganismes')).toBe('Oui');
     expect(csvCell(row, 'motifsQualifies')).toBe('Délai de prise en charge (Qualité des soins)');
     expect(csvCell(row, 'departementMisEnCause')).toBe('980');
+  });
+
+  it('keeps every data row on a single CSV line so Excel and Power BI read one row per situation', () => {
+    const csv = buildExportRequetesCsvFromRecords([
+      {
+        id: 'REQ-2026-0020',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        declarant: {
+          estVictime: false,
+          isTuteur: false,
+          veutGarderAnonymat: 'NON',
+          estSignalementProfessionnel: 'NON',
+          commentaire: 'Première ligne\nDeuxième ligne; avec "guillemets"',
+        },
+        situations: [{}],
+      },
+    ]);
+    const lines = csv.replace(/^\uFEFF/, '').split('\n');
+
+    expect(lines).toHaveLength(2);
+    expect(lines[1]).toContain('"Première ligne Deuxième ligne; avec ""guillemets"""');
   });
 
   it('exports requête records as CSV data rows below the header', () => {

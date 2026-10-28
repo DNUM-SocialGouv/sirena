@@ -4,8 +4,9 @@ import { pinoLogger } from 'hono-pino';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
+import { findActiveDocumentExport } from '../documentExports/documentExports.service.js';
 import { getEntiteById } from '../entites/entites.service.js';
-import { prepareExportRequetesCsv } from './exportRequetes/exportRequetes.service.js';
+import { requestExportRequetes } from './exportRequetes/requestExportRequetes.service.js';
 import StatisticsController from './statistics.controller.js';
 import { fetchDashboardData } from './statistics.service.js';
 
@@ -31,8 +32,13 @@ vi.mock('hono-pino', () => ({
   },
 }));
 
-vi.mock('./exportRequetes/exportRequetes.service.js', () => ({
-  prepareExportRequetesCsv: vi.fn(),
+vi.mock('./exportRequetes/requestExportRequetes.service.js', () => ({
+  requestExportRequetes: vi.fn(),
+}));
+
+vi.mock('../documentExports/documentExports.service.js', () => ({
+  DOCUMENT_EXPORT_TYPE: { REQUETES_CSV: 'REQUETES_CSV' },
+  findActiveDocumentExport: vi.fn(),
 }));
 
 vi.mock('../entites/entites.service.js', () => ({
@@ -51,6 +57,7 @@ vi.mock('../../middlewares/auth.middleware.js', () => ({
   default: (c: Context, next: Next) => {
     c.set('userId', 'test-user-id');
     c.set('roleId', authMiddlewareState.roleId);
+    c.set('user', { id: 'test-user-id', email: 'agent@sante.gouv.fr' });
     return next();
   },
 }));
@@ -91,112 +98,130 @@ describe('statistics.controller.ts', () => {
     vi.useRealTimers();
   });
 
-  describe('GET /export-requetes', () => {
+  describe('POST /requetes-export', () => {
+    const TODAY = '2026-10-26';
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(`${TODAY}T10:00:00.000Z`));
+    });
+
+    const postExport = (json: { startDate: string; endDate: string }) => client['requetes-export'].$post({ json });
+
     it('rejects export for a role without statistics read access', async () => {
       authMiddlewareState.roleId = 'PENDING';
       entitesMiddlewareState.topEntiteId = 'root-entite';
 
-      const response = await client['export-requetes'].$get();
+      const response = await postExport({ startDate: '2026-09-26', endDate: TODAY });
 
       expect(response.status).toBe(403);
-      expect(prepareExportRequetesCsv).not.toHaveBeenCalled();
+      expect(requestExportRequetes).not.toHaveBeenCalled();
     });
 
-    it('rejects export when the user has no root entity', async () => {
-      const response = await client['export-requetes'].$get();
+    it('rejects export when the user has no root entity (super admin)', async () => {
+      authMiddlewareState.roleId = 'SUPER_ADMIN';
+      entitesMiddlewareState.entiteIds = null;
+
+      const response = await postExport({ startDate: '2026-09-26', endDate: TODAY });
 
       expect(response.status).toBe(403);
-      expect(prepareExportRequetesCsv).not.toHaveBeenCalled();
+      expect(requestExportRequetes).not.toHaveBeenCalled();
     });
 
-    it('streams the generated CSV as a dated attachment', async () => {
-      vi.useFakeTimers({ toFake: ['Date'] });
-      vi.setSystemTime(new Date('2026-06-18T12:00:00.000Z'));
+    it.each([
+      {
+        name: 'a start date after the end date (CA5)',
+        period: { startDate: '2026-10-10', endDate: '2026-10-01' },
+        code: 'START_AFTER_END',
+        message: 'La date de début doit être antérieure ou égale à la date de fin',
+      },
+      {
+        name: 'an end date after today (CA6)',
+        period: { startDate: '2026-10-01', endDate: '2026-10-27' },
+        code: 'END_DATE_IN_FUTURE',
+        message: 'La date de début doit être antérieure ou égale à la date de fin',
+      },
+      {
+        name: 'a period longer than 36 months (CA7)',
+        period: { startDate: '2023-10-25', endDate: TODAY },
+        code: 'PERIOD_TOO_LONG',
+        message: 'La période sélectionnée ne peut pas dépasser 36 mois.',
+      },
+      {
+        name: 'a missing date',
+        period: { startDate: '', endDate: TODAY },
+        code: 'START_DATE_REQUIRED',
+        message: "Renseignez la date de début de l'export. Format attendu : JJ/MM/AAAA",
+      },
+    ])('rejects $name without launching the export', async ({ period, code, message }) => {
       entitesMiddlewareState.topEntiteId = 'root-entite';
-      vi.mocked(prepareExportRequetesCsv).mockResolvedValueOnce(async (write) => {
-        await write('\uFEFFNuméro de requête');
-        await write('\nREQ-2026-0001');
-      });
 
-      const response = await client['export-requetes'].$get();
+      const response = await postExport(period);
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toMatchObject({ message, cause: { code } });
+      expect(requestExportRequetes).not.toHaveBeenCalled();
+    });
+
+    it('queues the export for a period of exactly 36 months and returns the recipient e-mail (CA8)', async () => {
+      entitesMiddlewareState.topEntiteId = 'root-entite';
+      vi.mocked(requestExportRequetes).mockResolvedValueOnce({ ok: true, documentExportId: 'export-1' });
+
+      const response = await postExport({ startDate: '2023-10-26', endDate: TODAY });
+
+      expect(response.status).toBe(202);
+      expect(await response.json()).toEqual({ data: { id: 'export-1', email: 'agent@sante.gouv.fr' } });
+      expect(requestExportRequetes).toHaveBeenCalledWith({
+        userId: 'test-user-id',
+        topEntiteId: 'root-entite',
+        startDate: '2023-10-26',
+        endDate: TODAY,
+        path: '/requetes-export',
+        requestId: null,
+      });
+    });
+
+    it('answers 400 with the ticket message when no requête matches the period (CA20)', async () => {
+      entitesMiddlewareState.topEntiteId = 'root-entite';
+      vi.mocked(requestExportRequetes).mockResolvedValueOnce({ ok: false, code: 'NO_REQUETE' });
+
+      const response = await postExport({ startDate: '2026-09-26', endDate: TODAY });
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toMatchObject({
+        message: 'Aucune requête ne correspond à la période sélectionnée',
+        cause: { code: 'NO_REQUETE' },
+      });
+    });
+
+    it('answers 409 when an export is already in progress for the user (CA17)', async () => {
+      entitesMiddlewareState.topEntiteId = 'root-entite';
+      vi.mocked(requestExportRequetes).mockResolvedValueOnce({ ok: false, code: 'EXPORT_IN_PROGRESS' });
+
+      const response = await postExport({ startDate: '2026-09-26', endDate: TODAY });
+
+      expect(response.status).toBe(409);
+      expect(await response.json()).toMatchObject({ cause: { code: 'EXPORT_IN_PROGRESS' } });
+    });
+  });
+
+  describe('GET /requetes-export/status', () => {
+    it("reports an export in progress for the user so the button stays disabled until it's done", async () => {
+      vi.mocked(findActiveDocumentExport).mockResolvedValueOnce({ id: 'export-1' });
+
+      const response = await client['requetes-export'].status.$get();
 
       expect(response.status).toBe(200);
-      expect(response.headers.get('content-type')).toContain('text/csv');
-      expect(response.headers.get('content-disposition')).toBe(
-        'attachment; filename="export-requetes-sirena-2026-06-18.csv"',
-      );
-      expect(await response.text()).toBe('Numéro de requête\nREQ-2026-0001');
-      expect(prepareExportRequetesCsv).toHaveBeenCalledWith('root-entite');
-      expect(logger.info).toHaveBeenCalledWith(
-        {
-          topEntiteId: 'root-entite',
-          durationMs: expect.any(Number),
-          csvSizeBytes: expect.any(Number),
-        },
-        '[statistics] export requêtes generated successfully',
-      );
+      expect(await response.json()).toEqual({ data: { inProgress: true } });
+      expect(findActiveDocumentExport).toHaveBeenCalledWith('test-user-id', 'REQUETES_CSV');
     });
 
-    it('logs export failures before propagating the error', async () => {
-      entitesMiddlewareState.topEntiteId = 'root-entite';
-      const error = new Error('export failed');
-      vi.mocked(prepareExportRequetesCsv).mockRejectedValueOnce(error);
+    it('reports no export in progress', async () => {
+      vi.mocked(findActiveDocumentExport).mockResolvedValueOnce(null);
 
-      const response = await client['export-requetes'].$get();
+      const response = await client['requetes-export'].status.$get();
 
-      expect(response.status).toBe(500);
-      expect(logger.error).toHaveBeenCalledWith(
-        {
-          err: error,
-          topEntiteId: 'root-entite',
-          durationMs: expect.any(Number),
-        },
-        '[statistics] export requêtes generation failed',
-      );
-    });
-
-    it('logs a client abort as a normal outcome, not an export failure', async () => {
-      entitesMiddlewareState.topEntiteId = 'root-entite';
-      vi.mocked(prepareExportRequetesCsv).mockResolvedValueOnce(async (write) => {
-        await write('\uFEFFNuméro de requête');
-        await write('\nREQ-2026-0001');
-      });
-
-      const response = await client['export-requetes'].$get();
-      await response.body?.cancel();
-
-      await vi.waitFor(() =>
-        expect(logger.info).toHaveBeenCalledWith(
-          { topEntiteId: 'root-entite', durationMs: expect.any(Number), csvSizeBytes: expect.any(Number) },
-          '[statistics] export requêtes aborted by the client',
-        ),
-      );
-      expect(logger.error).not.toHaveBeenCalled();
-    });
-
-    it('errors the body when the export fails after the response is committed, rather than truncating it', async () => {
-      entitesMiddlewareState.topEntiteId = 'root-entite';
-      const error = new Error('page read failed');
-      vi.mocked(prepareExportRequetesCsv).mockResolvedValueOnce(async (write) => {
-        await write('\uFEFFNuméro de requête');
-        throw error;
-      });
-
-      const response = await client['export-requetes'].$get();
-
-      // The status is already sent; erroring the stream is what lets the client tell a
-      // failed export from a complete one.
-      expect(response.status).toBe(200);
-      await expect(response.text()).rejects.toThrow('page read failed');
-      expect(logger.error).toHaveBeenCalledWith(
-        {
-          err: error,
-          topEntiteId: 'root-entite',
-          durationMs: expect.any(Number),
-          csvSizeBytes: expect.any(Number),
-        },
-        '[statistics] export requêtes streaming failed',
-      );
+      expect(await response.json()).toEqual({ data: { inProgress: false } });
     });
   });
 

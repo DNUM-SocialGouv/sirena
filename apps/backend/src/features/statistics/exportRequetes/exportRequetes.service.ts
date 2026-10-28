@@ -1,117 +1,190 @@
-import { CSV_BOM, CSV_LINE_SEPARATOR, serializeCsvRow } from '@sirena/common/utils';
+import {
+  addDaysToIsoDate,
+  CSV_BOM,
+  CSV_LINE_SEPARATOR,
+  getStartOfDayInTimeZone,
+  serializeCsvRow,
+} from '@sirena/common/utils';
 import type { ChunkWriter } from '../../../helpers/stream.js';
 import { type Prisma, prisma } from '../../../libs/prisma.js';
-import { getEntiteDescendantIds } from '../../entites/entites.service.js';
 import { EXPORT_REQUETES_HEADERS } from './exportRequetesColumns.js';
 import { deriveDepartmentCodeFromPostalCode } from './exportRequetesFormatters.js';
 import { buildExportRequetesRows, type ExportRequeteRecord } from './exportRequetesRows.js';
 
-const exportRequetesSelect = {
-  id: true,
-  createdAt: true,
-  receptionDate: true,
-  dateDemandeDeclarant: true,
-  declarant: {
-    select: {
-      estVictime: true,
-      lienVictime: { select: { label: true } },
-      lienAutrePrecision: true,
-      isTuteur: true,
-      adresse: { select: { codePostal: true, ville: true } },
-      veutGarderAnonymat: true,
-      estSignalementProfessionnel: true,
-    },
+export type ExportRequetesParams = {
+  topEntiteId: string;
+  // Calendar days (YYYY-MM-DD) in Europe/Paris, both included.
+  startDate: string;
+  endDate: string;
+  // Steps another entity shares with the user's entity, readable when the feature flag is on.
+  includeSharedEtapes?: boolean;
+};
+
+const fileNameSelect = { select: { fileName: true, metadata: true } } as const;
+
+const identiteSelect = {
+  select: {
+    civilite: { select: { label: true } },
+    nom: true,
+    prenom: true,
+    email: true,
+    telephone: true,
   },
-  participant: {
-    select: {
-      identite: { select: { civilite: { select: { label: true } } } },
-      age: { select: { label: true } },
-      dateNaissance: true,
-      adresse: { select: { codePostal: true, ville: true } },
-      veutGarderAnonymat: true,
-      estVictimeInformee: true,
-      mesureProtection: true,
-      estHandicapee: true,
-      aAutrePersonnes: true,
+} as const;
+
+const adresseSelect = { select: { codePostal: true, ville: true, numero: true, rue: true } } as const;
+
+const buildExportRequetesSelect = ({ topEntiteId, includeSharedEtapes }: ExportRequetesParams) =>
+  ({
+    id: true,
+    createdAt: true,
+    receptionDate: true,
+    dateDemandeDeclarant: true,
+    provenancePrecision: true,
+    dematSocialId: true,
+    sirecId: true,
+    fichiersRequeteOriginale: fileNameSelect,
+    declarant: {
+      select: {
+        estVictime: true,
+        lienVictime: { select: { label: true } },
+        lienAutrePrecision: true,
+        isTuteur: true,
+        identite: identiteSelect,
+        adresse: adresseSelect,
+        veutGarderAnonymat: true,
+        estSignalementProfessionnel: true,
+        commentaire: true,
+      },
     },
-  },
-  provenance: { select: { label: true } },
-  receptionType: { select: { label: true } },
-  etapes: {
-    select: {
-      entiteId: true,
-      statutId: true,
-      createdAt: true,
-      clotureEffectiveDate: true,
-      clotureReason: { select: { label: true } },
+    participant: {
+      select: {
+        identite: identiteSelect,
+        age: { select: { label: true } },
+        dateNaissance: true,
+        adresse: adresseSelect,
+        veutGarderAnonymat: true,
+        estVictimeInformee: true,
+        victimeInformeeCommentaire: true,
+        mesureProtection: true,
+        estHandicapee: true,
+        aAutrePersonnes: true,
+        autrePersonnes: true,
+        commentaire: true,
+      },
     },
-  },
-  requeteEntites: {
-    select: {
-      entiteId: true,
-      entite: {
-        select: {
-          label: true,
-          nomComplet: true,
-          entiteTypeId: true,
-          entiteMere: { select: { label: true } },
+    provenance: { select: { label: true } },
+    receptionType: { select: { label: true } },
+    etapes: {
+      // Same reading rule as the processing steps screen (requeteEtapeAuthorization.canRead).
+      where: includeSharedEtapes
+        ? { OR: [{ entiteId: topEntiteId }, { estPartagee: true }] }
+        : { entiteId: topEntiteId },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      select: {
+        entiteId: true,
+        nom: true,
+        type: true,
+        statutId: true,
+        statut: { select: { label: true } },
+        createdAt: true,
+        dateRealisation: true,
+        clotureEffectiveDate: true,
+        clotureReason: { select: { label: true } },
+        uploadedFiles: fileNameSelect,
+        notes: {
+          orderBy: { createdAt: 'asc' },
+          select: { texte: true, createdAt: true, author: { select: { prenom: true, nom: true } } },
         },
       },
-      priorite: { select: { label: true } },
-      statut: { select: { label: true } },
     },
-  },
-  situations: {
-    select: {
-      sirecDepartement: true,
-      lieuDeSurvenue: {
-        select: {
-          lieuTypeId: true,
-          lieuPrecision: true,
-          codePostal: true,
-          adresse: { select: { codePostal: true, ville: true } },
-          lieuType: { select: { label: true } },
-          transportType: { select: { label: true } },
+    requeteEntites: {
+      select: {
+        entiteId: true,
+        entite: {
+          select: {
+            label: true,
+            nomComplet: true,
+            entiteTypeId: true,
+            entiteMere: { select: { label: true } },
+          },
         },
+        priorite: { select: { label: true } },
+        statut: { select: { label: true } },
       },
-      misEnCause: {
-        select: {
-          codePostal: true,
-          misEnCauseType: { select: { label: true } },
-          misEnCauseTypePrecision: { select: { label: true } },
+    },
+    situations: {
+      select: {
+        sirecDepartement: true,
+        estLieAuSignalement: true,
+        numerosSignalement: true,
+        lieuDeSurvenue: {
+          select: {
+            lieuTypeId: true,
+            lieuPrecision: true,
+            codePostal: true,
+            finess: true,
+            societeTransport: true,
+            categLib: true,
+            adresse: { select: { codePostal: true, ville: true, numero: true, rue: true, label: true } },
+            lieuType: { select: { label: true } },
+            transportType: { select: { label: true } },
+          },
         },
-      },
-      faits: {
-        select: {
-          dateDebut: true,
-          dateFin: true,
-          motifs: { select: { motifId: true, motif: { select: { label: true } } } },
-          motifsDeclaratifs: { select: { motifDeclaratif: { select: { label: true } } } },
-          consequences: { select: { consequence: { select: { label: true } } } },
+        misEnCause: {
+          select: {
+            civilite: true,
+            nom: true,
+            prenom: true,
+            rpps: true,
+            nomService: true,
+            finess: true,
+            codePostal: true,
+            ville: true,
+            autrePrecision: true,
+            commentaire: true,
+            misEnCauseType: { select: { label: true } },
+            misEnCauseTypePrecision: { select: { label: true } },
+          },
         },
-      },
-      domainesFonctionnels: { select: { label: true } },
-      demarchesEngagees: {
-        select: {
-          dateContactEtablissement: true,
-          etablissementARepondu: true,
-          organisme: true,
-          datePlainte: true,
-          autoriteType: { select: { label: true } },
-          demarches: { select: { label: true } },
+        faits: {
+          select: {
+            dateDebut: true,
+            dateFin: true,
+            commentaire: true,
+            autresPrecisions: true,
+            motifs: { select: { motifId: true, motif: { select: { label: true } } } },
+            motifsDeclaratifs: { select: { motifDeclaratif: { select: { label: true } } } },
+            consequences: { select: { consequence: { select: { label: true } } } },
+            maltraitanceTypes: { select: { maltraitanceTypeId: true, maltraitanceType: { select: { label: true } } } },
+            fichiers: fileNameSelect,
+          },
         },
-      },
-      situationEntites: {
-        select: {
-          entite: {
-            select: {
-              label: true,
-              nomComplet: true,
-              entiteMere: {
-                select: {
-                  label: true,
-                  nomComplet: true,
-                  entiteMere: { select: { label: true, nomComplet: true } },
+        domainesFonctionnels: { select: { label: true } },
+        demarchesEngagees: {
+          select: {
+            dateContactEtablissement: true,
+            etablissementARepondu: true,
+            organisme: true,
+            datePlainte: true,
+            commentaire: true,
+            autoriteType: { select: { label: true } },
+            demarches: { select: { label: true } },
+            etablissementReponse: fileNameSelect,
+          },
+        },
+        situationEntites: {
+          select: {
+            entite: {
+              select: {
+                label: true,
+                nomComplet: true,
+                entiteMere: {
+                  select: {
+                    label: true,
+                    nomComplet: true,
+                    entiteMere: { select: { label: true, nomComplet: true } },
+                  },
                 },
               },
             },
@@ -119,16 +192,15 @@ const exportRequetesSelect = {
         },
       },
     },
-  },
-} satisfies Prisma.RequeteSelect;
+  }) satisfies Prisma.RequeteSelect;
 
 type ExportRequetePrismaPayload = Prisma.RequeteGetPayload<{
-  select: typeof exportRequetesSelect;
+  select: ReturnType<typeof buildExportRequetesSelect>;
 }>;
 
 const EXPORT_PAGE_SIZE = 500;
 
-export type ExportRequetesCsvWriter = (write: ChunkWriter) => Promise<void>;
+export type ExportRequetesCsvWriter = (write: ChunkWriter) => Promise<number>;
 
 const departementSourceSelect = {
   id: true,
@@ -153,12 +225,13 @@ async function forEachRequetePage<S extends Prisma.RequeteSelect & { id: true }>
   let cursor: string | undefined;
 
   do {
+    // Keyset on `id > cursor` rather than Prisma's `cursor` option, which returns an empty page
+    // when the cursor row has been deleted meanwhile and would silently cut the export short.
     const page = (await prisma.requete.findMany({
-      where,
+      where: cursor ? { AND: [where, { id: { gt: cursor } }] } : where,
       select,
       orderBy: { id: 'asc' },
       take: EXPORT_PAGE_SIZE,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     })) as RequetePage<S>;
 
     if (page.length === 0) return;
@@ -197,20 +270,50 @@ async function collectDepartementSources(
   return { codePostaux: Array.from(codePostaux), sirecDepartementLibs: Array.from(sirecDepartementLibs) };
 }
 
-export async function prepareExportRequetesCsv(topEntiteId: string): Promise<ExportRequetesCsvWriter> {
-  const entiteIds = (await getEntiteDescendantIds(topEntiteId)) ?? [];
-  const where: Prisma.RequeteWhereInput = { requeteEntites: { some: { entiteId: { in: entiteIds } } } };
+/**
+ * Requêtes assigned to the user's root entity and created during the period. Same perimeter as
+ * the requêtes list and hasAccessToRequete: the user can open every exported requête. Both bounds
+ * are calendar days in Paris and are included.
+ */
+function buildExportRequetesWhere({
+  topEntiteId,
+  startDate,
+  endDate,
+}: Pick<ExportRequetesParams, 'topEntiteId' | 'startDate' | 'endDate'>): Prisma.RequeteWhereInput {
+  return {
+    requeteEntites: { some: { entiteId: topEntiteId } },
+    createdAt: {
+      gte: getStartOfDayInTimeZone(startDate),
+      lt: getStartOfDayInTimeZone(addDaysToIsoDate(endDate, 1)),
+    },
+  };
+}
+
+export async function countExportRequetes(
+  params: Pick<ExportRequetesParams, 'topEntiteId' | 'startDate' | 'endDate'>,
+): Promise<number> {
+  return prisma.requete.count({ where: buildExportRequetesWhere(params) });
+}
+
+/** Returns a writer that streams the CSV document and resolves with the number of data rows. */
+export async function prepareExportRequetesCsv(params: ExportRequetesParams): Promise<ExportRequetesCsvWriter> {
+  const where = buildExportRequetesWhere(params);
+  const select = buildExportRequetesSelect(params);
 
   const departmentReferences = await getDepartmentReferences(await collectDepartementSources(where));
-  const options = { topEntiteId, ...departmentReferences };
+  const options = { topEntiteId: params.topEntiteId, ...departmentReferences };
 
   return async (write) => {
+    let rowCount = 0;
     await write(CSV_BOM + serializeCsvRow([...EXPORT_REQUETES_HEADERS]));
 
-    await forEachRequetePage(where, exportRequetesSelect, async (page) => {
+    await forEachRequetePage(where, select, async (page) => {
       const rows = buildExportRequetesRows(page.map(toExportRequeteRecord), options);
+      rowCount += rows.length;
       await write(CSV_LINE_SEPARATOR + rows.map(serializeCsvRow).join(CSV_LINE_SEPARATOR));
     });
+
+    return rowCount;
   };
 }
 
@@ -288,12 +391,18 @@ function toExportRequeteRecord(requete: ExportRequetePrismaPayload): ExportReque
     dateDemandeDeclarant: requete.dateDemandeDeclarant,
     receptionType: requete.receptionType,
     provenance: requete.provenance,
+    provenancePrecision: requete.provenancePrecision,
+    dematSocialId: requete.dematSocialId,
+    sirecId: requete.sirecId,
+    fichiersRequeteOriginale: requete.fichiersRequeteOriginale,
     declarant: requete.declarant,
     participant: requete.participant,
     requeteEntites: requete.requeteEntites,
     etapes: requete.etapes,
     situations: requete.situations.map((situation) => ({
       sirecDepartement: situation.sirecDepartement,
+      estLieAuSignalement: situation.estLieAuSignalement,
+      numerosSignalement: situation.numerosSignalement,
       lieuDeSurvenue: situation.lieuDeSurvenue,
       misEnCause: situation.misEnCause,
       faits: situation.faits,

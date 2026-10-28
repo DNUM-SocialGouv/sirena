@@ -56,6 +56,7 @@ vi.mock('../tasks/retryImportRequetes.task.js', () => ({ retryImportRequetes: vi
 vi.mock('../tasks/queueUnprocessedFiles.task.js', () => ({ queueUnprocessedFiles: vi.fn() }));
 vi.mock('../tasks/fileIntegrityCheck.task.js', () => ({ fileIntegrityCheck: vi.fn() }));
 vi.mock('../tasks/purgeAccessLogs.task.js', () => ({ purgeAccessLogs: vi.fn() }));
+vi.mock('../tasks/purgeDocumentExports.task.js', () => ({ purgeDocumentExports: vi.fn() }));
 
 const runOnStartNames = jobHandlers.filter((j) => j.runOnStart).map((j) => j.name);
 

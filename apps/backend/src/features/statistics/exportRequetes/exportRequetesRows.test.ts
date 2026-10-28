@@ -46,17 +46,37 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'declarantProfessionnelEig')).toBe('Oui');
     expect(cell(rows[0], 'civilitePersonneConcernee')).toBe('Madame');
     expect(cell(rows[0], 'trancheAgePersonneConcernee')).toBe('');
-    expect(cell(rows[0], 'anneeNaissancePersonneConcernee')).toBe('1980');
+    expect(cell(rows[0], 'dateNaissancePersonneConcernee')).toBe('12/04/1980');
     expect(cell(rows[0], 'codePostalPersonneConcernee')).toBe('69002');
     expect(cell(rows[0], 'personneConcerneeConsentIdentiteCommuniquee')).toBe('Non');
     expect(cell(rows[0], 'personneConcerneeInformeeDemarche')).toBe('Non');
-    expect(cell(rows[0], 'mesureProtectionPersonneConcernee')).toBe('mandataire familial');
+    expect(cell(rows[0], 'mesureProtectionPersonneConcernee')).toBe('Mandataire familial');
     expect(cell(rows[0], 'personneConcerneeHandicap')).toBe('Oui');
     expect(cell(rows[0], 'autrePersonneConcernee')).toBe('Oui');
+    expect(cell(rows[0], 'precisionsAutresPersonnesConcernees')).toBe('Sa sœur');
     expect(cell(rows[0], 'dateReception')).toBe('17/06/2026');
     expect(cell(rows[0], 'modeReception')).toBe('Téléphone');
     expect(cell(rows[0], 'dateDemandeDeclarant')).toBe('16/06/2026');
     expect(cell(rows[0], 'provenance')).toBe('Demat.social');
+  });
+
+  it.each([
+    ['MANDATAIRE_JUDICIAIRE', 'Mandataire judiciaire'],
+    ['MANDATAIRE_FAMILIAL', 'Mandataire familial'],
+    ['NON', 'Non'],
+    ['NON_RENSEIGNE', 'Non renseigné'],
+    [null, ''],
+  ])('exports the protection measure %s with the label of the form', (mesureProtection, label) => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0100',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        participant: { mesureProtection },
+        situations: [{}],
+      } as never,
+    ]);
+
+    expect(cell(rows[0], 'mesureProtectionPersonneConcernee')).toBe(label);
   });
 
   it('exports cities and authoritative departments for every allowed postal source', () => {
@@ -403,7 +423,7 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'villeLieuSurvenue')).toBe('Clermont-Ferrand');
   });
 
-  it('populates lieu de survenue and non-sensitive mis en cause fields', () => {
+  it('populates lieu de survenue and mis en cause type fields', () => {
     const rows = buildExportRequetesRows([
       {
         id: 'REQ-2026-0006',
@@ -691,6 +711,276 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'prioriteRequeteEntiteAdministrative')).toBe('Haute');
     expect(cell(rows[0], 'derniereDateClotureEntiteAdministrative')).toBe('18/06/2026');
     expect(cell(rows[0], 'raisonsClotureEntiteAdministrative')).toBe('Réponse apportée, Doublon');
+  });
+
+  it('exports the clear identity, contact details and comments of the declarant and the personne concernée', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0010',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        declarant: {
+          estVictime: false,
+          isTuteur: false,
+          identite: {
+            civilite: { label: 'Monsieur' },
+            nom: 'Martin',
+            prenom: 'Paul',
+            email: 'paul.martin@example.fr',
+            telephone: '0601020304',
+          },
+          adresse: { codePostal: '75001', ville: 'Paris', numero: '12', rue: 'rue de Rivoli' },
+          veutGarderAnonymat: 'OUI',
+          estSignalementProfessionnel: 'NON',
+          commentaire: 'Joignable le matin',
+        },
+        participant: {
+          identite: {
+            civilite: { label: 'Madame' },
+            nom: 'Martin',
+            prenom: 'Jeanne',
+            email: 'jeanne.martin@example.fr',
+            telephone: '0605060708',
+          },
+          adresse: { codePostal: '69002', ville: 'Lyon', numero: '', rue: 'quai Saint-Antoine' },
+          veutGarderAnonymat: 'NON',
+          estVictimeInformee: 'NON',
+          victimeInformeeCommentaire: 'Hospitalisée',
+          estHandicapee: 'NON',
+          aAutrePersonnes: 'NON',
+          autrePersonnes: 'Texte resté en base',
+          commentaire: 'Sous tutelle depuis 2024',
+        },
+        situations: [{}],
+      },
+    ]);
+
+    expect(cell(rows[0], 'civiliteDeclarant')).toBe('Monsieur');
+    expect(cell(rows[0], 'nomDeclarant')).toBe('Martin');
+    expect(cell(rows[0], 'prenomDeclarant')).toBe('Paul');
+    expect(cell(rows[0], 'emailDeclarant')).toBe('paul.martin@example.fr');
+    expect(cell(rows[0], 'telephoneDeclarant')).toBe('0601020304');
+    expect(cell(rows[0], 'adresseDeclarant')).toBe('12 rue de Rivoli');
+    expect(cell(rows[0], 'villeDeclarant')).toBe('Paris');
+    // The identity is exported even when the declarant asked to keep it from the mis en cause.
+    expect(cell(rows[0], 'declarantConsentIdentiteCommuniquee')).toBe('Non');
+    expect(cell(rows[0], 'autresPrecisionsDeclarant')).toBe('Joignable le matin');
+    expect(cell(rows[0], 'nomPersonneConcernee')).toBe('Martin');
+    expect(cell(rows[0], 'prenomPersonneConcernee')).toBe('Jeanne');
+    expect(cell(rows[0], 'emailPersonneConcernee')).toBe('jeanne.martin@example.fr');
+    expect(cell(rows[0], 'telephonePersonneConcernee')).toBe('0605060708');
+    expect(cell(rows[0], 'adressePersonneConcernee')).toBe('quai Saint-Antoine');
+    expect(cell(rows[0], 'raisonPersonneConcerneeNonInformee')).toBe('Hospitalisée');
+    // Same rule as the requête PDF: the free text only counts when the answer is "Oui".
+    expect(cell(rows[0], 'precisionsAutresPersonnesConcernees')).toBe('');
+    expect(cell(rows[0], 'autresPrecisionsPersonneConcernee')).toBe('Sous tutelle depuis 2024');
+  });
+
+  it('exports the clear mis en cause, place, facts and file names of a situation', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0011',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            estLieAuSignalement: 'OUI',
+            numerosSignalement: 'SIG-1, SIG-2',
+            lieuDeSurvenue: {
+              lieuType: { label: 'Établissement de santé' },
+              finess: '750000001',
+              societeTransport: '',
+              categLib: 'Centre hospitalier',
+              adresse: { codePostal: '75013', ville: 'Paris', numero: '47', rue: 'boulevard de l’Hôpital', label: '' },
+            },
+            misEnCause: {
+              misEnCauseType: { label: 'Professionnel de santé' },
+              civilite: 'MME',
+              nom: 'Durand',
+              prenom: 'Claire',
+              rpps: '10001234567',
+              nomService: 'Gériatrie',
+              finess: '750000002',
+              codePostal: '75013',
+              ville: 'Paris',
+              autrePrecision: 'Infirmière de nuit',
+              commentaire: 'Déjà signalée',
+            },
+            faits: [
+              {
+                commentaire: 'Chute non signalée',
+                autresPrecisions: 'Témoin présent',
+                motifsDeclaratifs: [],
+                motifs: [],
+                consequences: [],
+                maltraitanceTypes: [
+                  { maltraitanceTypeId: 'NEGLIGENCES', maltraitanceType: { label: 'Négligences' } },
+                  { maltraitanceTypeId: 'NON', maltraitanceType: { label: 'Non' } },
+                ],
+                fichiers: [
+                  { fileName: '3f2a.pdf', metadata: { originalName: 'certificat medical.pdf' } },
+                  { fileName: 'photo.jpg', metadata: null },
+                ],
+              },
+            ],
+            demarchesEngagees: {
+              organisme: 'Défenseur des droits',
+              commentaire: 'Courrier envoyé',
+              demarches: [],
+              etablissementReponse: [{ fileName: 'reponse.pdf', metadata: null }],
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'situationLieeSignalement')).toBe('Oui');
+    expect(cell(rows[0], 'numerosSignalement')).toBe('SIG-1, SIG-2');
+    expect(cell(rows[0], 'nomEtablissementLieuSurvenue')).toBe('Centre hospitalier');
+    expect(cell(rows[0], 'finessLieuSurvenue')).toBe('750000001');
+    expect(cell(rows[0], 'adresseLieuSurvenue')).toBe('47 boulevard de l’Hôpital');
+    expect(cell(rows[0], 'civiliteMisEnCause')).toBe('Mme');
+    expect(cell(rows[0], 'nomMisEnCause')).toBe('Durand');
+    expect(cell(rows[0], 'prenomMisEnCause')).toBe('Claire');
+    expect(cell(rows[0], 'rppsMisEnCause')).toBe('10001234567');
+    expect(cell(rows[0], 'nomServiceMisEnCause')).toBe('Gériatrie');
+    expect(cell(rows[0], 'finessMisEnCause')).toBe('750000002');
+    expect(cell(rows[0], 'codePostalMisEnCause')).toBe('75013');
+    expect(cell(rows[0], 'villeMisEnCause')).toBe('Paris');
+    expect(cell(rows[0], 'precisionsMisEnCause')).toBe('Infirmière de nuit');
+    expect(cell(rows[0], 'commentaireMisEnCause')).toBe('Déjà signalée');
+    expect(cell(rows[0], 'typesMaltraitance')).toBe('Négligences');
+    expect(cell(rows[0], 'explicationFaits')).toBe('Chute non signalée');
+    expect(cell(rows[0], 'autresPrecisionsFaits')).toBe('Témoin présent');
+    expect(cell(rows[0], 'organismeContacte')).toBe('Défenseur des droits');
+    expect(cell(rows[0], 'commentaireDemarches')).toBe('Courrier envoyé');
+    expect(cell(rows[0], 'piecesJointesSituation')).toBe('certificat medical.pdf, photo.jpg, reponse.pdf');
+  });
+
+  it('exports the requête original details and the names of its original files', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0012',
+        // 00:30 in Paris on 1 July: the creation day is the Paris one, like the period filter.
+        createdAt: new Date('2026-06-30T22:30:00.000Z'),
+        provenancePrecision: 'Mairie',
+        dematSocialId: 123456,
+        sirecId: null,
+        fichiersRequeteOriginale: [{ fileName: 'abc.pdf', metadata: { originalName: 'formulaire.pdf' } }],
+        situations: [{}],
+      },
+    ]);
+
+    expect(cell(rows[0], 'dateCreationRequeteSirena')).toBe('01/07/2026');
+    expect(cell(rows[0], 'precisionProvenance')).toBe('Mairie');
+    expect(cell(rows[0], 'numeroDematSocial')).toBe(123456);
+    expect(cell(rows[0], 'numeroSirec')).toBe('');
+    expect(cell(rows[0], 'piecesJointesRequeteOriginale')).toBe('formulaire.pdf');
+  });
+
+  it('exports the SIREC number of a migrated requête', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0013',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        sirecId: 98765,
+        situations: [{}],
+      },
+    ]);
+
+    expect(cell(rows[0], 'numeroSirec')).toBe(98765);
+  });
+
+  it('gathers every processing step in one cell, oldest first, with status, files, closure and notes', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0013',
+          createdAt: new Date('2026-06-01T08:00:00.000Z'),
+          requeteEntites: [
+            { entiteId: 'root-entite', entite: { label: 'ARS IDF' }, statut: { label: 'Clôturée' } },
+            {
+              entiteId: 'other-root',
+              entite: { label: 'CD 75', nomComplet: 'Conseil départemental de Paris' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          etapes: [
+            {
+              entiteId: 'root-entite',
+              type: 'MANUAL',
+              statutId: 'CLOTUREE',
+              statut: { label: 'Clôturée' },
+              nom: 'Clôture',
+              createdAt: new Date('2026-06-20T10:00:00.000Z'),
+              clotureEffectiveDate: new Date('2026-06-19T00:00:00.000Z'),
+              clotureReason: [{ label: 'Réponse apportée' }],
+              uploadedFiles: [{ fileName: 'x.pdf', metadata: { originalName: 'courrier de cloture.pdf' } }],
+              notes: [
+                {
+                  texte: 'Dossier clos\naprès réponse',
+                  createdAt: new Date('2026-06-20T10:00:00.000Z'),
+                  author: { prenom: 'Jean-Pierre', nom: 'de La Fontaine' },
+                },
+              ],
+            },
+            {
+              entiteId: 'root-entite',
+              type: 'CREATION',
+              statutId: 'FAIT',
+              statut: { label: 'Fait' },
+              nom: 'Création',
+              createdAt: new Date('2026-06-01T08:00:00.000Z'),
+              clotureReason: [],
+              notes: [],
+            },
+            {
+              entiteId: 'other-root',
+              type: 'MANUAL',
+              statutId: 'A_FAIRE',
+              statut: { label: 'À faire' },
+              nom: 'Visite sur place',
+              createdAt: new Date('2026-06-10T08:00:00.000Z'),
+              dateRealisation: new Date('2026-06-12T00:00:00.000Z'),
+              clotureReason: [],
+              notes: [{ texte: 'Note automatique', createdAt: new Date('2026-06-10T08:00:00.000Z'), author: null }],
+            },
+          ],
+          situations: [{}],
+        },
+      ],
+      { topEntiteId: 'root-entite' },
+    );
+
+    expect(cell(rows[0], 'etapesTraitement')).toBe(
+      [
+        '01/06/2026 Création de la requête - Statut : Fait',
+        '10/06/2026 [Conseil départemental de Paris] Visite sur place - Statut : À faire - Date de réalisation : 12/06/2026 - Note du 10/06/2026 par Système : Note automatique',
+        '19/06/2026 Clôture - Statut : Clôturée - Motif(s) de clôture : Réponse apportée - Pièces jointes : courrier de cloture.pdf - Note du 20/06/2026 par Jean-Pierre de La Fontaine : Dossier clos après réponse',
+      ].join(' | '),
+    );
+  });
+
+  it('flattens line breaks and cuts a cell before the Excel limit', () => {
+    const longComment = `Début\r\nsuite ${'x'.repeat(40_000)}`;
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0014',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        declarant: {
+          estVictime: false,
+          isTuteur: false,
+          veutGarderAnonymat: 'NON',
+          estSignalementProfessionnel: 'NON',
+          commentaire: longComment,
+        },
+        situations: [{}],
+      },
+    ]);
+
+    const value = String(cell(rows[0], 'autresPrecisionsDeclarant'));
+    expect(value.startsWith('Début suite x')).toBe(true);
+    expect(value).not.toMatch(/[\r\n]/);
+    expect(value.length).toBe(32_000);
+    expect(value.endsWith('(texte tronqué)')).toBe(true);
   });
 
   it('builds one CSV row per situation and repeats request-level fields', () => {
