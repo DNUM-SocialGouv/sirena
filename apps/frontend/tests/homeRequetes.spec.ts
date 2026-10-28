@@ -54,26 +54,31 @@ test.describe('Liste des requêtes', () => {
     expect(count).toBeGreaterThanOrEqual(1);
   });
 
-  test('déroule le filtre de domaine sans déborder dans un écran de 320px', async () => {
-    await page.setViewportSize({ width: 320, height: 720 });
+  // 320px is the criterion width; at 375px the bar leaves the Statut filter at the end of a row,
+  // the position that pushes its panel off-screen.
+  for (const width of [320, 375]) {
+    test(`déroule le filtre de statut sans déborder dans un écran de ${width}px`, async () => {
+      await page.setViewportSize({ width, height: 720 });
 
-    await page.getByRole('button', { name: /Domaine fonctionnel/ }).click();
-    const panel = page.getByRole('group', { name: /Filtrer les requêtes par domaine fonctionnel/ });
-    await expect(panel).toBeVisible();
-    // Counts are fetched on open and lengthen the labels: measuring before they arrive measures
-    // the narrowest state.
-    await expect(panel.getByText(/\(\d+\)/).first()).toBeVisible();
+      await page.getByRole('button', { name: /^Statut/ }).click();
+      const panel = page.getByRole('group', { name: /Filtrer les requêtes par statut/ });
+      await expect(panel).toBeVisible();
+      // Counts are fetched on open and lengthen the labels: measuring before they arrive measures
+      // the narrowest state.
+      await expect(panel.getByText(/\(\d+\)/).first()).toBeVisible();
 
-    expect(await elementsOverflowingViewport(page)).toEqual([]);
+      expect(await elementsOverflowingViewport(page)).toEqual([]);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
 
-    // The viewport measure does not see a panel that scrolls inside itself, where the labels get
-    // cut.
-    const scroll = await panel.evaluate((group) => {
-      const element = group.closest('.dropdown-checkbox-filter__dropdown') as HTMLElement;
-      return { scrollWidth: element.scrollWidth, clientWidth: element.clientWidth };
+      // The viewport measure does not see a panel that scrolls inside itself, where the labels get
+      // cut.
+      const scroll = await panel.evaluate((group) => {
+        const element = group.closest('.dropdown-checkbox-filter__dropdown') as HTMLElement;
+        return { scrollWidth: element.scrollWidth, clientWidth: element.clientWidth };
+      });
+      expect(scroll.scrollWidth).toBeLessThanOrEqual(scroll.clientWidth);
     });
-    expect(scroll.scrollWidth).toBeLessThanOrEqual(scroll.clientWidth);
-  });
+  }
 
   test("ouvre le détail d'une requête depuis son lien", async () => {
     const requetesTable = page.getByRole('table');

@@ -52,7 +52,8 @@ dialog {
   }
 }
 
-/* A native select cannot wrap its value; the ellipsis at least signals that the text continues. */
+/* A native select cannot wrap its value, so a long label is cut mid-character. Chromium and Gecko
+   honour the ellipsis here; WebKit ignores it on a select and keeps the hard cut. */
 select.fr-select {
   text-overflow: ellipsis;
 }
