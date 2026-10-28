@@ -84,6 +84,7 @@ describe('documentExport.worker', () => {
     vi.clearAllMocks();
     vi.mocked(getDocumentExportForProcessing).mockResolvedValue(pendingExport as never);
     vi.mocked(hasFeature).mockResolvedValue(false);
+    vi.mocked(markDocumentExportProcessing).mockResolvedValue(true);
     vi.mocked(generateExportRequetesDocument).mockResolvedValue({
       fileName: 'export-requetes-sirena_2026-09-26_2026-10-26.csv',
       mimeType: 'text/csv',
@@ -186,12 +187,40 @@ describe('documentExport.worker', () => {
     );
     expect(markDocumentExportFailed).not.toHaveBeenCalled();
 
-    vi.mocked(markDocumentExportFailed).mockResolvedValueOnce({} as never);
+    vi.mocked(markDocumentExportFailed).mockResolvedValueOnce(true);
     onFailed(
       { id: 'job-1', data: { documentExportId: 'export-1' }, attemptsMade: 3, opts: { attempts: 3 } },
       new Error('x'),
     );
     expect(markDocumentExportFailed).toHaveBeenCalledWith('export-1', 'x');
-    expect(recordDocumentExport).toHaveBeenCalledWith({ status: 'error' });
+    await vi.waitFor(() => expect(recordDocumentExport).toHaveBeenCalledWith({ status: 'error' }));
+  });
+
+  it('does not count an error when the export was settled before its last failure', async () => {
+    createDocumentExportWorker();
+    const worker = vi.mocked(Worker).mock.results.at(-1)?.value as { on: ReturnType<typeof vi.fn> };
+    const onFailed = worker.on.mock.calls.find(([event]) => event === 'failed')?.[1] as (
+      job: unknown,
+      err: Error,
+    ) => void;
+    vi.mocked(markDocumentExportFailed).mockResolvedValueOnce(false);
+
+    onFailed(
+      { id: 'job-1', data: { documentExportId: 'export-1' }, attemptsMade: 3, opts: { attempts: 3 } },
+      new Error('x'),
+    );
+
+    await vi.waitFor(() => expect(markDocumentExportFailed).toHaveBeenCalled());
+    await Promise.resolve();
+    expect(recordDocumentExport).not.toHaveBeenCalled();
+  });
+
+  it('does not generate an export that was settled meanwhile', async () => {
+    vi.mocked(markDocumentExportProcessing).mockResolvedValueOnce(false);
+
+    await processDocumentExport(job);
+
+    expect(generateExportRequetesDocument).not.toHaveBeenCalled();
+    expect(uploadFileToMinio).not.toHaveBeenCalled();
   });
 });

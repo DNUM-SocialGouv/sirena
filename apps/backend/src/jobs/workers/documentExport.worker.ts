@@ -73,7 +73,10 @@ export const processDocumentExport = async (job: Job<DocumentExportJobData>): Pr
         return;
       }
 
-      await markDocumentExportProcessing(documentExportId);
+      if (!(await markDocumentExportProcessing(documentExportId))) {
+        logger.info('[document-export] Export settled meanwhile, skipping');
+        return;
+      }
 
       const document = await generateDocument(documentExport);
       const upload = await uploadFileToMinio(document.stream, document.fileName, document.mimeType);
@@ -127,10 +130,16 @@ export const createDocumentExportWorker = (): Worker<DocumentExportJobData> => {
 
     const isLastAttempt = job != null && job.attemptsMade >= (job.opts.attempts ?? 1);
     if (documentExportId && isLastAttempt) {
-      recordDocumentExport({ status: 'error' });
-      markDocumentExportFailed(documentExportId, err.message).catch((markErr) => {
-        eventLogger.error({ documentExportId, err: markErr }, '[document-export] Failed to mark the export as failed');
-      });
+      markDocumentExportFailed(documentExportId, err.message)
+        .then((failed) => {
+          if (failed) recordDocumentExport({ status: 'error' });
+        })
+        .catch((markErr) => {
+          eventLogger.error(
+            { documentExportId, err: markErr },
+            '[document-export] Failed to mark the export as failed',
+          );
+        });
     }
   });
 

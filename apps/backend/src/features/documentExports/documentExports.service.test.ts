@@ -2,9 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../libs/prisma.js';
 import {
   createDocumentExport,
+  deleteDocumentExportsOlderThan,
+  failStaleDocumentExports,
   findActiveDocumentExport,
   findExpiredDocumentExportFiles,
   markDocumentExportFailed,
+  markDocumentExportProcessing,
   markDocumentExportReady,
   markDocumentExportsExpired,
 } from './documentExports.service.js';
@@ -17,6 +20,7 @@ vi.mock('../../libs/prisma.js', () => ({
       create: vi.fn(),
       update: vi.fn(),
       updateMany: vi.fn(),
+      deleteMany: vi.fn(),
     },
   },
 }));
@@ -81,12 +85,52 @@ describe('documentExports.service', () => {
     });
   });
 
-  it('records why an export failed', async () => {
-    await markDocumentExportFailed('export-1', 'boom');
+  it('records why an export failed, only while it is still pending or processing', async () => {
+    vi.mocked(prisma.documentExport.updateMany).mockResolvedValueOnce({ count: 1 });
 
-    expect(prisma.documentExport.update).toHaveBeenCalledWith({
-      where: { id: 'export-1' },
+    await expect(markDocumentExportFailed('export-1', 'boom')).resolves.toBe(true);
+
+    expect(prisma.documentExport.updateMany).toHaveBeenCalledWith({
+      where: { id: 'export-1', status: { in: ['PENDING', 'PROCESSING'] } },
       data: { status: 'FAILED', error: 'boom' },
+    });
+  });
+
+  it('leaves an export settled meanwhile untouched when a late failure arrives', async () => {
+    vi.mocked(prisma.documentExport.updateMany).mockResolvedValueOnce({ count: 0 });
+
+    await expect(markDocumentExportFailed('export-1', 'boom')).resolves.toBe(false);
+  });
+
+  it('starts the generation only of an export still pending or processing', async () => {
+    vi.mocked(prisma.documentExport.updateMany).mockResolvedValueOnce({ count: 0 });
+
+    await expect(markDocumentExportProcessing('export-1')).resolves.toBe(false);
+
+    expect(prisma.documentExport.updateMany).toHaveBeenCalledWith({
+      where: { id: 'export-1', status: { in: ['PENDING', 'PROCESSING'] } },
+      data: { status: 'PROCESSING', error: null },
+    });
+  });
+
+  it('fails the exports still pending or processing 30 minutes after they were asked for', async () => {
+    vi.mocked(prisma.documentExport.updateMany).mockResolvedValueOnce({ count: 2 });
+
+    await expect(failStaleDocumentExports(new Date('2026-10-26T10:00:00.000Z'))).resolves.toBe(2);
+
+    expect(prisma.documentExport.updateMany).toHaveBeenCalledWith({
+      where: { status: { in: ['PENDING', 'PROCESSING'] }, createdAt: { lte: new Date('2026-10-26T09:30:00.000Z') } },
+      data: { status: 'FAILED', error: 'The generation did not finish in time' },
+    });
+  });
+
+  it('deletes only the settled exports older than the retention cutoff', async () => {
+    vi.mocked(prisma.documentExport.deleteMany).mockResolvedValueOnce({ count: 3 });
+
+    await expect(deleteDocumentExportsOlderThan(new Date('2025-10-26T00:00:00.000Z'))).resolves.toBe(3);
+
+    expect(prisma.documentExport.deleteMany).toHaveBeenCalledWith({
+      where: { createdAt: { lt: new Date('2025-10-26T00:00:00.000Z') }, status: { in: ['EXPIRED', 'FAILED'] } },
     });
   });
 
