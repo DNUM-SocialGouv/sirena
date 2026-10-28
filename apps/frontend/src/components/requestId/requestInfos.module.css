@@ -35,6 +35,7 @@
 
 .request-left h1 {
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .download-menu-wrapper {

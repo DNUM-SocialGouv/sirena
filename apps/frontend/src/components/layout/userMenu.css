@@ -18,6 +18,8 @@
 .user-menu__wrapper .user-menu {
   position: static;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   margin: 0;
 
   border-top: 1px solid var(--border-default-grey);
@@ -42,6 +44,7 @@
 
 .user-menu__header {
   color: var(--text-label-grey);
+  overflow-wrap: anywhere;
 }
 
 .user-menu__header p {

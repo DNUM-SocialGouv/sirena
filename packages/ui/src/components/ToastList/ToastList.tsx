@@ -21,7 +21,7 @@ function ToastListComponent() {
     >
       <Toast.Title className="fr-alert__title" />
       <Toast.Description />
-      <Toast.Close className="fr-link--close fr-link" aria-label="Close"></Toast.Close>
+      <Toast.Close className="fr-link--close fr-link" aria-hidden={false} aria-label="Fermer la notification" />
     </Toast.Root>
   ));
 }

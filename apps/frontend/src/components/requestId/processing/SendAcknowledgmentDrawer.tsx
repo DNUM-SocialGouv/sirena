@@ -125,7 +125,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
             toastManager.add({
               title: 'Accusé de réception envoyé avec succès',
               description: "L'e-mail a bien été envoyé au déclarant.",
-              timeout: 5000,
+              timeout: 0,
               data: { icon: 'fr-alert--success' },
             });
           },

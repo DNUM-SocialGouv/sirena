@@ -3,6 +3,7 @@
   border-radius: 4px;
   background-color: var(--background-default-grey, var(--grey-1000-50, #ffffff));
   padding: 20px 24px 24px 24px;
+  overflow-wrap: anywhere;
   transition:
     background-color 0.3s ease,
     border-color 0.3s ease;
@@ -25,22 +26,27 @@ html[data-fr-theme="dark"] .section {
   }
 }
 
-.headerContent {
+.headerContent,
+.headerContentEmpty {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
+}
+
+.headerContent {
   margin-bottom: 1rem;
 }
 
 .headerContentEmpty {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 4px;
 }
 
 .titleGroup {
   display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
 }

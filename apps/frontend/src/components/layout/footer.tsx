@@ -1,9 +1,12 @@
 import { Footer } from '@codegouvfr/react-dsfr/Footer';
+import { FEATURE_FLAGS } from '@sirena/common/constants';
 import { APP_VERSION } from '@/config/version.constant';
 import { useVersion } from '@/hooks/queries/version.hook';
+import { useHasFeature } from '@/hooks/useHasFeature';
 
 export function AppFooter() {
   const { data } = useVersion();
+  const showCguLink = useHasFeature(FEATURE_FLAGS.CGU_ACCEPTANCE, false);
   const footerId = 'footer';
   return (
     <Footer
@@ -25,12 +28,16 @@ export function AppFooter() {
             to: '/donnees-personnelles',
           },
         },
-        {
-          text: 'Conditions générales d’utilisation',
-          linkProps: {
-            to: '/conditions-generales-utilisation',
-          },
-        },
+        ...(showCguLink
+          ? [
+              {
+                text: 'Conditions générales d’utilisation',
+                linkProps: {
+                  to: '/conditions-generales-utilisation' as const,
+                },
+              },
+            ]
+          : []),
         {
           text: 'Gestion des cookies',
           linkProps: {
