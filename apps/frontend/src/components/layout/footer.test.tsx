@@ -1,4 +1,5 @@
 import { setLink } from '@codegouvfr/react-dsfr/link';
+import { FEATURE_FLAGS } from '@sirena/common/constants';
 import {
   createMemoryHistory,
   createRootRoute,
@@ -8,7 +9,8 @@ import {
   RouterProvider,
 } from '@tanstack/react-router';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useFeatureFlagStore } from '@/stores/featureFlagStore';
 import { AppFooter } from './footer';
 import { HeaderMenu } from './header';
 
@@ -43,6 +45,31 @@ const renderFooterAt = async (initialPath: string) => {
 };
 
 describe('AppFooter', () => {
+  beforeEach(() => {
+    useFeatureFlagStore.getState().setFlags({ [FEATURE_FLAGS.CGU_ACCEPTANCE]: true });
+  });
+
+  afterEach(() => {
+    useFeatureFlagStore.getState().reset();
+  });
+
+  it.each([false, undefined])('hides only the CGU link when CGU_ACCEPTANCE is %s', async (enabled) => {
+    useFeatureFlagStore.getState().setFlags(enabled === undefined ? {} : { [FEATURE_FLAGS.CGU_ACCEPTANCE]: enabled });
+
+    await renderFooterAt('/');
+
+    expect(screen.queryByRole('link', { name: 'Conditions générales d’utilisation' })).not.toBeInTheDocument();
+
+    for (const name of [
+      'Accessibilité : partiellement conforme',
+      'Mentions légales',
+      'Données personnelles',
+      'Gestion des cookies',
+    ]) {
+      expect(screen.getByRole('link', { name })).toBeInTheDocument();
+    }
+  });
+
   it.each([
     ['Accessibilité : partiellement conforme', '/accessibilite'],
     ['Mentions légales', '/mentions-legales'],
