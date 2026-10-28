@@ -72,8 +72,9 @@
   border-bottom: 1px solid var(--border-default-grey);
 }
 
-.header:hover {
-  background-color: var(--background-alt-grey-hover, #f6f6f6);
+.header:hover,
+.header:focus-within {
+  background-color: var(--background-default-grey-hover);
 }
 
 .header[data-expanded="true"] {
@@ -124,20 +125,25 @@
   margin: 0;
 }
 
-.rootOption {
+.option.rootOption {
   padding-block: 0.5rem;
   border-bottom: 1px solid var(--border-default-grey);
 }
 
-.rootOption:hover {
-  background-color: var(--background-alt-grey-hover, #f6f6f6);
+.rootOption:hover,
+.rootOption:focus-within {
+  background-color: var(--background-default-grey-hover);
 }
 
-/* DSFR draws the checkbox as a `::before` on the label padding box: indenting with padding shifts
-   the text without moving the box. */
+/* DSFR draws the checkbox as a `::before` on the label padding box: padding indents the text
+   without moving the box, and line-height sets the row height, keeping the box on the first line. */
 .option.rootOption :global(input[type="checkbox"] + label) {
-  min-block-size: 2rem;
+  line-height: 2rem;
   padding-inline-start: 0.5rem;
+}
+
+.option.rootOption :global(input[type="checkbox"] + label::before) {
+  margin-block-start: 0.5rem;
 }
 
 .dropdownTree input[type="checkbox"]:indeterminate + label::before {
