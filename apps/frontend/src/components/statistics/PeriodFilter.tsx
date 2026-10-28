@@ -58,9 +58,9 @@ export function PeriodFilter({ value, onChange }: Props) {
 
   const { isOpen, toggle, close, triggerRef, panelRef } = useDisclosureMenu({ onOpen: syncDraft });
 
-  useEffect(() => setDraftPeriod(value.period), [value.period]);
-  useEffect(() => setStart(value.startDate ?? ''), [value.startDate]);
-  useEffect(() => setEnd(value.endDate ?? ''), [value.endDate]);
+  // An externally applied period (history navigation, tag dismissal) must clear the errors too, or
+  // fields the new values just made valid stay reported as invalid.
+  useEffect(syncDraft, [syncDraft]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -171,6 +171,9 @@ export function PeriodFilter({ value, onChange }: Props) {
   const customPeriodErrorId = customPeriodEmptyError ? `${menuId}-custom-period-error` : undefined;
   const startInvalid = Boolean(dateErrors.start) || customPeriodEmptyError;
   const endInvalid = Boolean(endErrorMessage) || customPeriodEmptyError;
+  // A reversed range puts the start date past its own `max`, which the browser exposes as invalid by
+  // itself; `aria-invalid="false"` is the only value that denies that native state.
+  const startAriaInvalid = startInvalid ? true : isInvalid ? false : undefined;
 
   return (
     <div className={styles.period__bar}>
@@ -223,7 +226,7 @@ export function PeriodFilter({ value, onChange }: Props) {
                   type: 'date',
                   value: start,
                   max: end || undefined,
-                  'aria-invalid': startInvalid ? true : undefined,
+                  'aria-invalid': startAriaInvalid,
                   'aria-describedby': customPeriodErrorId,
                   onChange: handleDateChange('start'),
                 }}

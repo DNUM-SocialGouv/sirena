@@ -172,6 +172,22 @@ describe('PeriodFilter', () => {
     expect(endInput).toHaveFocus();
   });
 
+  it('reports the reversed range on the end date, and says the start date is not the one at fault', async () => {
+    render(<PeriodFilter value={{}} onChange={vi.fn()} />);
+
+    await openPanelAndWaitForFocus();
+    const endInput = screen.getByLabelText(/Date de fin/);
+    fireEvent.change(screen.getByLabelText(/Date de début/), { target: { value: '2026-02-01' } });
+    fireEvent.change(endInput, { target: { value: '2026-01-01' } });
+
+    await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+
+    expect(endInput).toHaveAttribute('aria-invalid', 'true');
+    // The browser exposes the start date as invalid by itself, past its own `max`: only an explicit
+    // `false` denies that native state.
+    expect(screen.getByLabelText(/Date de début/)).toHaveAttribute('aria-invalid', 'false');
+  });
+
   describe('when a custom date cannot be parsed', () => {
     it('shows the DSFR error on the start date and does not apply', async () => {
       const onChange = vi.fn();
@@ -257,20 +273,6 @@ describe('PeriodFilter', () => {
       expect(startInput).not.toHaveAttribute('aria-invalid');
     });
 
-    it('marks the end date as invalid when the range is reversed', async () => {
-      render(<PeriodFilter value={{}} onChange={vi.fn()} />);
-
-      await openPanelAndWaitForFocus();
-      const endInput = screen.getByLabelText(/Date de fin/);
-      fireEvent.change(screen.getByLabelText(/Date de début/), { target: { value: '2026-02-01' } });
-      fireEvent.change(endInput, { target: { value: '2026-01-01' } });
-
-      await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
-
-      expect(endInput).toHaveAttribute('aria-invalid', 'true');
-      expect(screen.getByLabelText(/Date de début/)).not.toHaveAttribute('aria-invalid');
-    });
-
     it('clears the error once the field holds a parsable date again', async () => {
       const onChange = vi.fn();
       render(<PeriodFilter value={{}} onChange={onChange} />);
@@ -289,6 +291,34 @@ describe('PeriodFilter', () => {
       await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
 
       expect(onChange).toHaveBeenCalledWith({ period: undefined, startDate: '2026-01-01', endDate: undefined });
+    });
+
+    it('drops the error state when the period changes from outside the panel', async () => {
+      const { rerender } = render(<PeriodFilter value={{}} onChange={vi.fn()} />);
+
+      await openPanelAndWaitForFocus();
+      await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+      expect(screen.getByRole('radio', { name: 'Semaine courante' })).toHaveAttribute('aria-invalid', 'true');
+
+      rerender(<PeriodFilter value={{ period: 'current-month' }} onChange={vi.fn()} />);
+
+      expect(screen.getByRole('radio', { name: 'Mois courant' })).toBeChecked();
+      expect(screen.getByRole('radio', { name: 'Semaine courante' })).not.toHaveAttribute('aria-invalid');
+      expect(
+        screen.queryByText('Sélectionnez une période prédéfinie ou renseignez une période personnalisée.'),
+      ).not.toBeInTheDocument();
+    });
+
+    it('drops the error state when the panel is reset', async () => {
+      render(<PeriodFilter value={{}} onChange={vi.fn()} />);
+
+      await openPanelAndWaitForFocus();
+      await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+      expect(screen.getByRole('radio', { name: 'Semaine courante' })).toHaveAttribute('aria-invalid', 'true');
+
+      await userEvent.click(screen.getByRole('button', { name: /Réinitialiser/ }));
+
+      expect(screen.getByRole('radio', { name: 'Semaine courante' })).not.toHaveAttribute('aria-invalid');
     });
 
     it('empties the fields in the DOM on reset', async () => {
@@ -514,7 +544,7 @@ describe('PeriodFilter', () => {
       for (const field of [/Date de début/, /Date de fin/]) {
         const input = screen.getByLabelText(field);
         expect(input).toHaveAttribute('aria-invalid', 'true');
-        expect(input).toHaveAccessibleDescription(expect.stringContaining(message.textContent as string));
+        expect(input).toHaveAccessibleDescription(message.textContent as string);
       }
 
       fireEvent.change(screen.getByLabelText(/Date de début/), { target: { value: '2026-01-01' } });
