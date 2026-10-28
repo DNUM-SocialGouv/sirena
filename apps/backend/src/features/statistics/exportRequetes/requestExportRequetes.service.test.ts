@@ -15,7 +15,7 @@ import { type RequestExportRequetesInput, requestExportRequetes } from './reques
 const tx = vi.hoisted(() => ({ marker: 'transaction-client' }));
 
 vi.mock('../../../config/redis.js', () => ({
-  connection: { set: vi.fn(), get: vi.fn(), del: vi.fn() },
+  connection: { set: vi.fn(), eval: vi.fn() },
 }));
 
 vi.mock('../../../jobs/queues/documentExport.queue.js', () => ({
@@ -54,11 +54,7 @@ describe('requestExportRequetes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(connection.set).mockResolvedValue('OK');
-    // Echo the token the service stored, as Redis would.
-    vi.mocked(connection.get).mockImplementation(
-      async () => vi.mocked(connection.set).mock.calls.at(-1)?.[1] as string,
-    );
-    vi.mocked(connection.del).mockResolvedValue(1);
+    vi.mocked(connection.eval).mockResolvedValue(1);
     vi.mocked(findActiveDocumentExport).mockResolvedValue(null);
     vi.mocked(countExportRequetes).mockResolvedValue(12);
     vi.mocked(createDocumentExport).mockResolvedValue({ id: 'export-1' } as Awaited<
@@ -96,7 +92,12 @@ describe('requestExportRequetes', () => {
       tx,
     );
     expect(addDocumentExportJob).toHaveBeenCalledWith('export-1');
-    expect(connection.del).toHaveBeenCalledWith('document-export:create:user-1');
+    expect(connection.eval).toHaveBeenCalledWith(
+      expect.any(String),
+      1,
+      'document-export:create:user-1',
+      expect.any(String),
+    );
   });
 
   it('refuses a second export while the creation lock is held', async () => {
@@ -106,7 +107,7 @@ describe('requestExportRequetes', () => {
 
     expect(result).toEqual({ ok: false, code: 'EXPORT_IN_PROGRESS' });
     expect(createDocumentExport).not.toHaveBeenCalled();
-    expect(connection.del).not.toHaveBeenCalled();
+    expect(connection.eval).not.toHaveBeenCalled();
   });
 
   it('refuses a new export while one is still being generated for the user', async () => {
@@ -117,7 +118,12 @@ describe('requestExportRequetes', () => {
     expect(result).toEqual({ ok: false, code: 'EXPORT_IN_PROGRESS' });
     expect(findActiveDocumentExport).toHaveBeenCalledWith('user-1', 'REQUETES_CSV');
     expect(createDocumentExport).not.toHaveBeenCalled();
-    expect(connection.del).toHaveBeenCalledWith('document-export:create:user-1');
+    expect(connection.eval).toHaveBeenCalledWith(
+      expect.any(String),
+      1,
+      'document-export:create:user-1',
+      expect.any(String),
+    );
   });
 
   it('launches nothing, and traces nothing, when no requête matches the period', async () => {
@@ -135,12 +141,16 @@ describe('requestExportRequetes', () => {
     expect(createAccessLog).not.toHaveBeenCalled();
   });
 
-  it('does not release a lock that expired and was taken by another request', async () => {
-    vi.mocked(connection.get).mockResolvedValueOnce('another-token');
-
+  it('releases the lock in one atomic call that only deletes it while it still holds its own token', async () => {
     await requestExportRequetes(input);
 
-    expect(connection.del).not.toHaveBeenCalled();
+    const token = vi.mocked(connection.set).mock.calls[0]?.[1];
+    expect(connection.eval).toHaveBeenCalledWith(
+      "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) end return 0",
+      1,
+      'document-export:create:user-1',
+      token,
+    );
   });
 
   it('marks the export failed when the job cannot be queued, so it does not block the user', async () => {
@@ -149,6 +159,11 @@ describe('requestExportRequetes', () => {
 
     await expect(requestExportRequetes(input)).rejects.toThrow(error);
     expect(markDocumentExportFailed).toHaveBeenCalledWith('export-1', 'The generation job could not be queued');
-    expect(connection.del).toHaveBeenCalledWith('document-export:create:user-1');
+    expect(connection.eval).toHaveBeenCalledWith(
+      expect.any(String),
+      1,
+      'document-export:create:user-1',
+      expect.any(String),
+    );
   });
 });

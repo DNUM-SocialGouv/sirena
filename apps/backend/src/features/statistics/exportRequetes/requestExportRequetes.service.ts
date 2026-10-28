@@ -17,6 +17,10 @@ import { EXPORT_REQUETES_COLUMNS } from './exportRequetesColumns.js';
 
 // Only covers the check-then-create below; a crashed request releases it on its own.
 const CREATION_LOCK_TTL_SECONDS = 30;
+// Deletes the lock only while it still holds our token, in one atomic call: once expired, the lock
+// may belong to another request of the user.
+const RELEASE_LOCK_SCRIPT =
+  "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) end return 0";
 
 export type RequestExportRequetesInput = {
   userId: string;
@@ -94,9 +98,6 @@ export async function requestExportRequetes(input: RequestExportRequetesInput): 
 
     return { ok: true, documentExportId: documentExport.id };
   } finally {
-    // Only release our own lock: once expired, it may belong to another request of the user.
-    if ((await connection.get(lockKey)) === lockToken) {
-      await connection.del(lockKey);
-    }
+    await connection.eval(RELEASE_LOCK_SCRIPT, 1, lockKey, lockToken);
   }
 }
