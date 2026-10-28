@@ -367,7 +367,11 @@ const TraitementDesFaitsSection = forwardRef<TraitementDesFaitsSectionRef, Trait
     );
 
     return (
-      <div ref={containerRef} className={`fr-p-4w fr-mb-4w ${styles.container}`} data-testid="traitement-des-faits">
+      <div
+        ref={containerRef}
+        className={`fr-p-2w fr-p-md-4w fr-mb-4w ${styles.container}`}
+        data-testid="traitement-des-faits"
+      >
         <fieldset
           aria-describedby={hasGlobalError ? globalErrorId : undefined}
           style={{ border: 'none', padding: 0, margin: 0 }}

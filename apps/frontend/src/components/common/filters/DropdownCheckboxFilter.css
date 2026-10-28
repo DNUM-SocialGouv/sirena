@@ -31,28 +31,8 @@
   z-index: 1000;
 }
 
-.dropdown-checkbox-filter .fr-hint-text {
-  white-space: nowrap;
-}
-
-/* The panel's own 18rem min-width wins over any max-width, so it has to be overridden too. */
-@media (max-width: 36em) {
-  .dropdown-checkbox-filter {
-    width: 100%;
-  }
-
-  .dropdown-checkbox-filter__button.fr-btn {
-    width: 100%;
-    white-space: normal;
-    text-align: left;
-  }
-
-  .dropdown-checkbox-filter__dropdown {
-    min-width: 100%;
-    max-width: 100%;
-  }
-
+@media (min-width: 36em) {
   .dropdown-checkbox-filter .fr-hint-text {
-    white-space: normal;
+    white-space: nowrap;
   }
 }

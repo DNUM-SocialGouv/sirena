@@ -14,9 +14,6 @@
    legend instead of opening off-screen. */
 .admin-entites-filters__items {
   flex: 1 1 18rem;
-}
-
-.admin-entites-filters__items {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
