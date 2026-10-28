@@ -58,9 +58,21 @@ test.describe('Liste des requêtes', () => {
     await page.setViewportSize({ width: 320, height: 720 });
 
     await page.getByRole('button', { name: /Domaine fonctionnel/ }).click();
-    await expect(page.getByRole('group', { name: /Filtrer les requêtes par domaine fonctionnel/ })).toBeVisible();
+    const panel = page.getByRole('group', { name: /Filtrer les requêtes par domaine fonctionnel/ });
+    await expect(panel).toBeVisible();
+    // Counts are fetched on open and lengthen the labels: measuring before they arrive measures
+    // the narrowest state.
+    await expect(panel.getByText(/\(\d+\)/).first()).toBeVisible();
 
     expect(await elementsOverflowingViewport(page)).toEqual([]);
+
+    // The viewport measure does not see a panel that scrolls inside itself, where the labels get
+    // cut.
+    const scroll = await panel.evaluate((group) => {
+      const element = group.closest('.dropdown-checkbox-filter__dropdown') as HTMLElement;
+      return { scrollWidth: element.scrollWidth, clientWidth: element.clientWidth };
+    });
+    expect(scroll.scrollWidth).toBeLessThanOrEqual(scroll.clientWidth);
   });
 
   test("ouvre le détail d'une requête depuis son lien", async () => {
