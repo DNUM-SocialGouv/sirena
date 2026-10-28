@@ -62,7 +62,11 @@ const mockStatus = (inProgress: boolean) => {
   >);
 };
 
-const getDateInputs = () => screen.getAllByLabelText('Date au format jj/mm/aaaa') as HTMLInputElement[];
+const getDateInputs = () =>
+  [
+    screen.getByLabelText(/Date de début de l'export/),
+    screen.getByLabelText(/Date de fin de l'export/),
+  ] as HTMLInputElement[];
 
 const openPanel = async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Exporter les requêtes' }));
@@ -111,6 +115,78 @@ describe('ExportRequetesMenu', () => {
       "Vous recevrez un lien par e-mail pour télécharger l'export au format CSV.",
     );
     expect(screen.getByRole('button', { name: 'Annuler' })).toHaveAttribute('type', 'button');
+  });
+
+  it('names each date field after its role, with the expected format as a hint', async () => {
+    render(<ExportRequetesMenu />);
+    await openPanel();
+
+    const [startInput, endInput] = getDateInputs();
+    expect(startInput).toHaveAccessibleName("Date de début de l'export, Date au format jj/mm/aaaa");
+    expect(endInput).toHaveAccessibleName("Date de fin de l'export, Date au format jj/mm/aaaa");
+  });
+
+  it('says both dates are required and bounds the date pickers like the submit rules', async () => {
+    render(<ExportRequetesMenu />);
+    await openPanel();
+
+    expect(screen.getByText('Tous les champs sont obligatoires.')).toBeInTheDocument();
+    const [startInput, endInput] = getDateInputs();
+    expect(startInput).toBeRequired();
+    expect(endInput).toBeRequired();
+    expect(startInput).toHaveAttribute('max', '2026-03-31');
+    expect(endInput).toHaveAttribute('min', '2026-02-28');
+    expect(endInput).toHaveAttribute('max', '2026-03-31');
+
+    setDates('2026-01-10', '2026-02-15');
+
+    expect(startInput).toHaveAttribute('max', '2026-02-15');
+    expect(endInput).toHaveAttribute('min', '2026-01-10');
+  });
+
+  it('keeps the typed period when the panel is closed and opened again', async () => {
+    render(<ExportRequetesMenu />);
+    await openPanel();
+    setDates('2026-01-10', '2026-02-15');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+    await openPanel();
+
+    const [startInput, endInput] = getDateInputs();
+    expect(startInput).toHaveValue('2026-01-10');
+    expect(endInput).toHaveValue('2026-02-15');
+  });
+
+  it('starts again from the default period once an export has been sent', async () => {
+    mutate.mockImplementation((_period, options: MutateOptions) => options.onSuccess?.({ id: 'e1', email: 'a@b.fr' }));
+    render(<ExportRequetesMenu />);
+    await openPanel();
+    setDates('2026-01-10', '2026-02-15');
+    submit();
+
+    await openPanel();
+
+    const [startInput, endInput] = getDateInputs();
+    expect(startInput).toHaveValue('2026-02-28');
+    expect(endInput).toHaveValue('2026-03-31');
+  });
+
+  it('closes when the focus leaves the panel, without sending the focus back to the trigger', async () => {
+    render(
+      <>
+        <ExportRequetesMenu />
+        <button type="button">Après le menu</button>
+      </>,
+    );
+    await openPanel();
+    const next = screen.getByRole('button', { name: 'Après le menu' });
+
+    next.focus();
+    fireEvent.focusOut(screen.getByRole('button', { name: "Générer l'export" }), { relatedTarget: next });
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    expect(screen.queryByRole('button', { name: "Générer l'export" })).not.toBeInTheDocument();
+    expect(next).toHaveFocus();
   });
 
   it('defaults to today and the same day of the previous month, or its last day (CA2)', async () => {

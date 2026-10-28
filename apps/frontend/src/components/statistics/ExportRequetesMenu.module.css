@@ -1,5 +1,8 @@
 .export__bar {
   position: relative;
+  /* Stays at the right edge even when it wraps under the title on a narrow screen, so the panel
+     anchored to its right side never runs off the left of the screen (320px). */
+  margin-left: auto;
 }
 
 .export__trigger:global(.fr-btn) {

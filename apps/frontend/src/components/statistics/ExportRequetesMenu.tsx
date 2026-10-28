@@ -32,8 +32,15 @@ const FIELD_LEGENDS: Record<ExportPeriodField, string> = {
   endDate: "Fin de l'export",
 };
 
+// Read by assistive technologies only: the legend above already names the field on screen.
+const FIELD_ACCESSIBLE_LABELS: Record<ExportPeriodField, string> = {
+  startDate: "Date de début de l'export",
+  endDate: "Date de fin de l'export",
+};
+
 const DATE_HINT = 'Date au format jj/mm/aaaa';
 const CREATION_DATE_NOTE = 'Les dates prises en compte sont les dates de création des requêtes dans SIRENA.';
+const REQUIRED_FIELDS_NOTE = 'Tous les champs sont obligatoires.';
 const EMAIL_INFO = "Vous recevrez un lien par e-mail pour télécharger l'export au format CSV.";
 const UNEXPECTED_ERROR_MESSAGE = "Le lancement de l'export a échoué. Veuillez réessayer.";
 
@@ -67,15 +74,16 @@ export function ExportRequetesMenu() {
   const createExport = useCreateRequetesExport();
   const { registerTrigger } = useModalFocusRestore(CONFIRMATION_MODAL_IDS);
 
-  const resetForm = useCallback(() => {
+  // The period typed before the panel was closed is kept; it only starts over once an export is sent.
+  const prepareForm = useCallback(() => {
     const defaults = getDefaultExportPeriod(getDateTodayInParis());
-    setStartDate(defaults.startDate);
-    setEndDate(defaults.endDate);
+    setStartDate((current) => current || defaults.startDate);
+    setEndDate((current) => current || defaults.endDate);
     setFieldErrors({});
     setFormError(null);
   }, []);
 
-  const { isOpen, toggle, close, triggerRef, panelRef } = useDisclosureMenu({ onOpen: resetForm });
+  const { isOpen, toggle, close, triggerRef, panelRef } = useDisclosureMenu({ onOpen: prepareForm });
   const exportStatus = useRequetesExportStatus(isOpen);
 
   const isExportInProgress = exportStatus.data?.inProgress === true;
@@ -86,7 +94,8 @@ export function ExportRequetesMenu() {
     const panel = panelRef.current;
 
     const onFocusOut = (e: FocusEvent) => {
-      if (hasFocusLeftMenu(e.relatedTarget as Node | null, panel, triggerRef.current)) close();
+      // The focus already went to the next element: moving it back to the trigger would break the tab order.
+      if (hasFocusLeftMenu(e.relatedTarget as Node | null, panel, triggerRef.current)) close({ restoreFocus: false });
     };
     panel?.addEventListener('focusout', onFocusOut);
 
@@ -112,6 +121,8 @@ export function ExportRequetesMenu() {
 
   const openConfirmation = (email: string) => {
     setRecipientEmail(email);
+    setStartDate('');
+    setEndDate('');
     if (triggerRef.current) registerTrigger(triggerRef.current);
     close({ restoreFocus: false });
     confirmationModal.open();
@@ -163,17 +174,31 @@ export function ExportRequetesMenu() {
   const describedBy = [infoId, isExportInProgress ? formErrorId : null].filter(Boolean).join(' ');
   const statusMessage = isExportInProgress ? EXPORT_REQUETES_ERROR_MESSAGES.EXPORT_IN_PROGRESS : formError;
 
+  // Same bounds as the rules checked on submit, so the date picker greys out the impossible dates.
+  const today = getDateTodayInParis();
+  const dateBounds: Record<ExportPeriodField, { min?: string; max: string }> = {
+    startDate: { max: endDate || today },
+    endDate: { min: startDate || undefined, max: today },
+  };
+
   const renderDateSection = (field: ExportPeriodField, value: string) => (
     <fieldset className={styles.export__section}>
       <legend className={fr.cx('fr-fieldset__legend', 'fr-text--bold')}>{FIELD_LEGENDS[field]}</legend>
       <Input
-        label={<span className={fr.cx('fr-hint-text', 'fr-mt-0')}>{DATE_HINT}</span>}
+        label={
+          <>
+            <span className="fr-sr-only">{FIELD_ACCESSIBLE_LABELS[field]},</span>{' '}
+            <span className={fr.cx('fr-hint-text', 'fr-mt-0')}>{DATE_HINT}</span>
+          </>
+        }
         state={fieldErrors[field] ? 'error' : 'default'}
         stateRelatedMessage={fieldErrors[field]}
         nativeInputProps={{
           ref: inputRefs[field],
           type: 'date',
+          required: true,
           value,
+          ...dateBounds[field],
           onChange: handleDateChange(field),
         }}
       />
@@ -198,6 +223,7 @@ export function ExportRequetesMenu() {
           {/* `noValidate`: the browser would otherwise cancel the submit on an unparsable date, before the DSFR messages. */}
           <form onSubmit={submit} noValidate>
             <p className={styles.export__note}>{CREATION_DATE_NOTE}</p>
+            <p className={styles.export__note}>{REQUIRED_FIELDS_NOTE}</p>
             {renderDateSection('startDate', startDate)}
             {renderDateSection('endDate', endDate)}
             <p id={infoId} className={styles.export__info}>
