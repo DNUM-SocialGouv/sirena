@@ -33,7 +33,7 @@ export function AppFooter() {
               {
                 text: 'Conditions générales d’utilisation',
                 linkProps: {
-                  to: '/conditions-generales-utilisation',
+                  to: '/conditions-generales-utilisation' as const,
                 },
               },
             ]
