@@ -250,9 +250,9 @@ export const documentExportDuration = new Histogram({
 });
 
 export function recordDocumentExport(
-  result: { status: 'success'; rowCount: number; durationSeconds: number } | { status: 'error' },
+  result: { status: 'success'; rowCount: number; durationSeconds: number } | { status: 'error'; count?: number },
 ): void {
-  documentExportsCounter.inc({ status: result.status });
+  documentExportsCounter.inc({ status: result.status }, result.status === 'error' ? (result.count ?? 1) : 1);
   if (result.status === 'success') {
     documentExportRowsCounter.inc(result.rowCount);
     documentExportDuration.observe(result.durationSeconds);

@@ -67,6 +67,8 @@ export const jobHandlers = [
     data: {
       // At most one S3 DeleteObjects call (1000 keys) per run.
       batchSize: 500,
+      // Export rows go with their AccessLog trace.
+      retentionDays: envVars.ACCESS_LOG_RETENTION_DAYS,
     },
     runOnStart: true,
   },

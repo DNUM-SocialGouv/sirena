@@ -19,6 +19,7 @@ export type JobDataMap = {
   };
   'purge-document-exports': {
     batchSize: number;
+    retentionDays: number;
   };
 };
 
