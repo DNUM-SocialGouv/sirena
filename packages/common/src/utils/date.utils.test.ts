@@ -4,6 +4,7 @@ import {
   getOver90DaysCutoffDate,
   getStartOfDayInTimeZone,
   isCreatedOver90DaysAgo,
+  isDayReachedInParis,
   isSupportedTimeZone,
   toWallClockDate,
 } from './date.utils.js';
@@ -161,5 +162,34 @@ describe('getStartOfDayInTimeZone', () => {
 
   it('supports another timezone', () => {
     expect(getStartOfDayInTimeZone('2026-07-01', 'Indian/Reunion').toISOString()).toBe('2026-06-30T20:00:00.000Z');
+  });
+});
+
+describe('isDayReachedInParis', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const atInstant = (iso: string, day: string) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(iso));
+    return isDayReachedInParis(day);
+  };
+
+  it('treats the current Paris day as reached', () => {
+    expect(atInstant('2026-03-11T09:00:00.000Z', '2026-03-11T00:00:00.000Z')).toBe(true);
+  });
+
+  it('treats a later day as not reached', () => {
+    expect(atInstant('2026-03-11T09:00:00.000Z', '2026-03-12T00:00:00.000Z')).toBe(false);
+  });
+
+  it('treats an earlier day as reached', () => {
+    expect(atInstant('2026-03-11T09:00:00.000Z', '2026-02-28T00:00:00.000Z')).toBe(true);
+  });
+
+  // 23:30 UTC is already the next day in Paris, and that is the day the server compares against.
+  it('follows the Paris day, not the UTC one', () => {
+    expect(atInstant('2026-03-10T23:30:00.000Z', '2026-03-11T00:00:00.000Z')).toBe(true);
   });
 });
