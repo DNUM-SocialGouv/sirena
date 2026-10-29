@@ -11,6 +11,7 @@ import {
 import { createDefaultLogger } from './helpers/pino.js';
 import { closeQuietly, FATAL_EXIT_CODE, installProcessGuards, SHUTDOWN_WATCHDOG_MS } from './helpers/processGuards.js';
 import { cronWorker } from './jobs/worker/cron.worker.js';
+import { createDocumentExportWorker } from './jobs/workers/documentExport.worker.js';
 import { createFileProcessingWorker } from './jobs/workers/fileProcessing.worker.js';
 import { createSirecMigrationWorker } from './jobs/workers/sirecMigration.worker.js';
 
@@ -36,6 +37,9 @@ cronWorker.on('failed', (job, err) => {
 const fileProcessingWorker = createFileProcessingWorker();
 logger.info(`[worker] Starting file processing worker for queue "${fileProcessingWorker.name}"`);
 
+const documentExportWorker = createDocumentExportWorker();
+logger.info(`[worker] Starting document export worker for queue "${documentExportWorker.name}"`);
+
 const { MARIADB_SIREC_HOST, MARIADB_SIREC_DB, MARIADB_SIREC_USER, MARIADB_SIREC_PASSWORD } = envVars;
 const sirecMigrationWorker =
   MARIADB_SIREC_HOST && MARIADB_SIREC_DB && MARIADB_SIREC_USER && MARIADB_SIREC_PASSWORD
@@ -51,6 +55,7 @@ if (sirecMigrationWorker) {
 const checkLiveness = createLivenessCheck([
   { name: cronWorker.name, isRunning: () => cronWorker.isRunning() },
   { name: fileProcessingWorker.name, isRunning: () => fileProcessingWorker.isRunning() },
+  { name: documentExportWorker.name, isRunning: () => documentExportWorker.isRunning() },
   ...(sirecMigrationWorker
     ? [{ name: sirecMigrationWorker.name, isRunning: () => sirecMigrationWorker.isRunning() }]
     : []),
@@ -82,6 +87,7 @@ async function shutdown(exitCode = 0) {
   );
   await closeQuietly('Cron worker', logger, () => cronWorker.close());
   await closeQuietly('File processing worker', logger, () => fileProcessingWorker.close());
+  await closeQuietly('Document export worker', logger, () => documentExportWorker.close());
   if (sirecMigrationWorker) {
     await closeQuietly('SIREC migration worker', logger, () => sirecMigrationWorker.close());
   }

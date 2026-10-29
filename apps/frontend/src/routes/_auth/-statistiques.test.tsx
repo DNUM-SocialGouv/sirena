@@ -31,8 +31,8 @@ vi.mock('@/components/layout/auth/layout', () => ({
   AuthLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
-vi.mock('@/components/statistics/ExportRequetesButton', () => ({
-  ExportRequetesButton: () => null,
+vi.mock('@/components/statistics/ExportRequetesMenu', () => ({
+  ExportRequetesMenu: () => <div data-testid="export-requetes-menu" />,
 }));
 
 vi.mock('@/components/queryStateHandler/queryStateHandler', () => ({
@@ -84,6 +84,30 @@ const renderDashboard = (dashboard: Dashboard) => {
   mockDashboard(dashboard);
   return render(<RouteComponent />);
 };
+
+describe('Statistiques route — export des requêtes', () => {
+  it.each(['ENTITY_ADMIN', 'NATIONAL_STEERING', 'WRITER', 'READER'])('offers the export to a %s', (roleId) => {
+    vi.mocked(useProfile).mockReturnValue({
+      data: { role: { id: roleId }, entiteId: 'ent-1' },
+      isPending: false,
+    } as never);
+
+    render(<RouteComponent />);
+
+    expect(screen.getByTestId('export-requetes-menu')).toBeInTheDocument();
+  });
+
+  it('hides the export from the super admin, who has no entity to export', () => {
+    vi.mocked(useProfile).mockReturnValue({
+      data: { role: { id: 'SUPER_ADMIN' }, entiteId: null },
+      isPending: false,
+    } as never);
+
+    render(<RouteComponent />);
+
+    expect(screen.queryByTestId('export-requetes-menu')).not.toBeInTheDocument();
+  });
+});
 
 describe('Statistiques route — filtre Domaine fonctionnel', () => {
   it('displays the domaine filter next to the period filter', () => {

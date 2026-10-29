@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { getOver90DaysCutoffDate, isCreatedOver90DaysAgo, isSupportedTimeZone, toWallClockDate } from './date.utils.js';
+import {
+  getOver90DaysCutoffDate,
+  getStartOfDayInTimeZone,
+  isCreatedOver90DaysAgo,
+  isSupportedTimeZone,
+  toWallClockDate,
+} from './date.utils.js';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const NOW = new Date('2026-08-05T10:00:00.000Z');
@@ -136,5 +142,24 @@ describe('toWallClockDate', () => {
     const result = toWallClockDate(new Date('2026-04-20T16:03:12.000Z'), 'Mars/Olympus_Mons');
 
     expect(result.toISOString()).toBe('2026-04-20T18:03:12.000Z');
+  });
+});
+
+describe('getStartOfDayInTimeZone', () => {
+  it('returns midnight in Paris during winter time (UTC+1)', () => {
+    expect(getStartOfDayInTimeZone('2026-01-15').toISOString()).toBe('2026-01-14T23:00:00.000Z');
+  });
+
+  it('returns midnight in Paris during summer time (UTC+2)', () => {
+    expect(getStartOfDayInTimeZone('2026-07-01').toISOString()).toBe('2026-06-30T22:00:00.000Z');
+  });
+
+  it('handles the days of the DST changes', () => {
+    expect(getStartOfDayInTimeZone('2026-03-29').toISOString()).toBe('2026-03-28T23:00:00.000Z');
+    expect(getStartOfDayInTimeZone('2026-10-25').toISOString()).toBe('2026-10-24T22:00:00.000Z');
+  });
+
+  it('supports another timezone', () => {
+    expect(getStartOfDayInTimeZone('2026-07-01', 'Indian/Reunion').toISOString()).toBe('2026-06-30T20:00:00.000Z');
   });
 });

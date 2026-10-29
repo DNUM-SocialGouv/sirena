@@ -12,8 +12,6 @@ import {
   REQUETE_ETAPE_TYPES,
   REQUETE_STATUT_TYPES,
   REQUETE_UPDATE_FIELDS,
-  type RequeteEtapeStatutType,
-  type RequeteEtapeType,
   type RequetePrioriteType,
   type RequeteStatutType,
 } from '@sirena/common/constants';
@@ -39,7 +37,7 @@ import { createDefaultLogger } from '../../helpers/pino.js';
 import { sortObject } from '../../helpers/prisma/sort.js';
 import { createSearchConditionsForRequeteEntite } from '../../helpers/search.js';
 import { sseEventManager } from '../../helpers/sse.js';
-import { capitalizeFirst, formatDateFr, splitCsv } from '../../helpers/string.js';
+import { formatDateFr, splitCsv } from '../../helpers/string.js';
 import { loggerStorage } from '../../libs/asyncLocalStorage.js';
 import type { DecryptionParams } from '../../libs/encryption.js';
 import { deleteFileFromMinio, getFileStream, statMinioObject } from '../../libs/minio.js';
@@ -49,6 +47,7 @@ import { ChangeLogAction } from '../changelog/changelog.type.js';
 import { safeSyncRequetePriseEnChargeToDematSocial } from '../dematSocial/priseEnChargeSync/priseEnChargeSync.service.js';
 import { buildEntitesTraitement, getEntiteAscendanteInfo, getEntiteDescendantIds } from '../entites/entites.service.js';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service.js';
+import { getEtapeTitle } from '../requeteEtapes/requetesEtapes.title.js';
 import { generateRequeteId } from '../requetes/functionalId.service.js';
 import {
   deleteFaitFilesRemovedFromSituation,
@@ -56,6 +55,7 @@ import {
   setRequeteFile,
   UNATTACHED_FILE_RELATIONS,
 } from '../uploadedFiles/uploadedFiles.service.js';
+import { type DisplayAgent, formatAgentName, formatRue } from './requeteDisplay.formatters.js';
 import { DEFAULT_REQUETES_LIMIT } from './requetesEntite.constants.js';
 import {
   mapDeclarantToPrismaCreate,
@@ -2429,9 +2429,6 @@ export const createRequeteFilesArchive = async (requeteId: string, entiteId: str
   return { archive, requeteId: requeteEntite.requeteId };
 };
 
-const formatRue = (adresse: { numero: string | null; rue: string | null } | null) =>
-  adresse ? [adresse.numero, adresse.rue].filter(Boolean).join(' ') || null : null;
-
 const groupMotifsByParent = (motifs: { motifId: string }[]): { label: string; children: string[] }[] => {
   const grouped = new Map<string, { label: string; children: string[] }>();
 
@@ -2455,18 +2452,9 @@ const groupMotifsByParent = (motifs: { motifId: string }[]): { label: string; ch
   return Array.from(grouped.values());
 };
 
-const getEtapePdfTitle = (type: RequeteEtapeType, statutId: RequeteEtapeStatutType, nom: string): string => {
-  if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) return 'Clôture';
-  if (type === REQUETE_ETAPE_TYPES.CREATION) return 'Création de la requête';
-  if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) return "Envoi de l'accusé de réception";
-  if (type === REQUETE_ETAPE_TYPES.REOPEN) return 'Réouverture de la requête';
-  return nom;
-};
+type Agent = DisplayAgent;
 
-type Agent = { prenom: string; nom: string };
-
-const formatAgentPdf = (agent: Agent | null | undefined): string | null =>
-  agent ? `${capitalizeFirst(agent.prenom)} ${capitalizeFirst(agent.nom)}` : null;
+const formatAgentPdf = formatAgentName;
 
 type EtapePdfSubtitleInput = {
   type: string;
@@ -2895,11 +2883,7 @@ export const generateRequetePdfBuffer = async (
     };
 
     for (const etape of etapes) {
-      const etapeTitle = getEtapePdfTitle(
-        etape.type as RequeteEtapeType,
-        etape.statutId as RequeteEtapeStatutType,
-        etape.nom,
-      );
+      const etapeTitle = getEtapeTitle(etape.type, etape.statutId, etape.nom);
 
       const subtitle = getEtapePdfSubtitle(etape, requete);
 

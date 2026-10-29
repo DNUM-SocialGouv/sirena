@@ -20,6 +20,9 @@ backend:
       FRONTEND_REDIRECT_LOGIN_URI: https://sirena.integration.dev.atlas.fabrique.social.gouv.fr/login
       FRONTEND_URI: https://sirena.integration.dev.atlas.fabrique.social.gouv.fr
       CRON_DEMAT_SOCIAL: "300"
+      # Import every new demat.social dossier, not only "en construction" ones:
+      # another environment sharing the same demarche may already have moved it to "en instruction".
+      DEMAT_SOCIAL_FETCH_ALL_STATES: "true"
       REDIS_TLS: "false"
       TIPIMAIL_DISABLE_SENDING: "false"
       APP_ENV: integration

@@ -1,8 +1,7 @@
 import { serializeCsv } from '@sirena/common/utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../../libs/prisma.js';
-import { getEntiteDescendantIds } from '../../entites/entites.service.js';
-import { prepareExportRequetesCsv } from './exportRequetes.service.js';
+import { countExportRequetes, type ExportRequetesParams, prepareExportRequetesCsv } from './exportRequetes.service.js';
 import { EXPORT_REQUETES_HEADERS } from './exportRequetesColumns.js';
 import { buildExportRequetesRows } from './exportRequetesRows.js';
 
@@ -10,6 +9,7 @@ vi.mock('../../../libs/prisma.js', () => ({
   prisma: {
     requete: {
       findMany: vi.fn(),
+      count: vi.fn(),
     },
     inseePostal: {
       findMany: vi.fn(),
@@ -20,12 +20,19 @@ vi.mock('../../../libs/prisma.js', () => ({
   },
 }));
 
-vi.mock('../../entites/entites.service.js', () => ({
-  getEntiteDescendantIds: vi.fn(),
-}));
+const PERIOD = { startDate: '2026-06-01', endDate: '2026-06-30' };
 
-const generateExportRequetesCsv = async (topEntiteId: string): Promise<string> => {
-  const writeCsv = await prepareExportRequetesCsv(topEntiteId);
+const exportParams = (topEntiteId: string, overrides: Partial<ExportRequetesParams> = {}): ExportRequetesParams => ({
+  topEntiteId,
+  ...PERIOD,
+  ...overrides,
+});
+
+const generateExportRequetesCsv = async (
+  topEntiteId: string,
+  overrides: Partial<ExportRequetesParams> = {},
+): Promise<string> => {
+  const writeCsv = await prepareExportRequetesCsv(exportParams(topEntiteId, overrides));
   let csv = '';
   await writeCsv(async (chunk) => {
     csv += chunk;
@@ -38,8 +45,7 @@ describe('prepareExportRequetesCsv', () => {
     vi.clearAllMocks();
   });
 
-  it('exports requêtes scoped to the root entity and its descendants', async () => {
-    vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite', 'direction-1', 'service-1']);
+  it('exports requêtes assigned to the root entity itself, created during the period, bounds included in Paris time', async () => {
     vi.mocked(prisma.requete.findMany).mockResolvedValue([
       {
         id: 'REQ-2026-0001',
@@ -50,65 +56,123 @@ describe('prepareExportRequetesCsv', () => {
 
     const csv = await generateExportRequetesCsv('root-entite');
 
-    expect(getEntiteDescendantIds).toHaveBeenCalledWith('root-entite');
     expect(prisma.requete.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          requeteEntites: {
-            some: {
-              entiteId: { in: ['root-entite', 'direction-1', 'service-1'] },
-            },
+          // The exact root entity, like hasAccessToRequete: no requête the user cannot open.
+          requeteEntites: { some: { entiteId: 'root-entite' } },
+          // 1 June 00:00 and 1 July 00:00 in Paris (summer time, UTC+2).
+          createdAt: {
+            gte: new Date('2026-05-31T22:00:00.000Z'),
+            lt: new Date('2026-06-30T22:00:00.000Z'),
           },
         },
-      }),
-    );
-    expect(vi.mocked(prisma.requete.findMany).mock.calls.at(-1)?.[0]).toEqual(
-      expect.objectContaining({
-        select: expect.objectContaining({
-          id: true,
-          createdAt: true,
-          receptionDate: true,
-          dateDemandeDeclarant: true,
-          etapes: {
-            select: {
-              entiteId: true,
-              statutId: true,
-              createdAt: true,
-              clotureEffectiveDate: true,
-              clotureReason: { select: { label: true } },
-            },
-          },
-          situations: expect.objectContaining({
-            select: expect.objectContaining({
-              lieuDeSurvenue: {
-                select: {
-                  lieuTypeId: true,
-                  lieuPrecision: true,
-                  codePostal: true,
-                  adresse: { select: { codePostal: true, ville: true } },
-                  lieuType: { select: { label: true } },
-                  transportType: { select: { label: true } },
-                },
-              },
-              misEnCause: {
-                select: {
-                  codePostal: true,
-                  misEnCauseType: { select: { label: true } },
-                  misEnCauseTypePrecision: { select: { label: true } },
-                },
-              },
-            }),
-          }),
-        }),
       }),
     );
     expect(csv).toContain('REQ-2026-0001');
     expect(csv).toContain('18/06/2026');
   });
 
+  it('reads the clear identity, mis en cause and file names of each requête', async () => {
+    vi.mocked(prisma.requete.findMany).mockResolvedValue([]);
+
+    await generateExportRequetesCsv('root-entite');
+
+    const select = vi.mocked(prisma.requete.findMany).mock.calls.at(-1)?.[0]?.select as Record<string, unknown>;
+    expect(select).toMatchObject({
+      provenancePrecision: true,
+      dematSocialId: true,
+      sirecId: true,
+      fichiersRequeteOriginale: { select: { fileName: true, metadata: true } },
+      declarant: {
+        select: expect.objectContaining({
+          identite: {
+            select: { civilite: { select: { label: true } }, nom: true, prenom: true, email: true, telephone: true },
+          },
+          adresse: { select: { codePostal: true, ville: true, numero: true, rue: true } },
+          commentaire: true,
+        }),
+      },
+      participant: {
+        select: expect.objectContaining({
+          dateNaissance: true,
+          victimeInformeeCommentaire: true,
+          autrePersonnes: true,
+          commentaire: true,
+        }),
+      },
+      situations: {
+        select: expect.objectContaining({
+          estLieAuSignalement: true,
+          numerosSignalement: true,
+          misEnCause: {
+            select: expect.objectContaining({ nom: true, prenom: true, rpps: true, finess: true, commentaire: true }),
+          },
+          faits: {
+            select: expect.objectContaining({
+              commentaire: true,
+              autresPrecisions: true,
+              fichiers: { select: { fileName: true, metadata: true } },
+            }),
+          },
+        }),
+      },
+    });
+  });
+
+  it("reads only the user's entity steps when sharing is off, with their notes and files", async () => {
+    vi.mocked(prisma.requete.findMany).mockResolvedValue([]);
+
+    await generateExportRequetesCsv('root-entite');
+
+    const select = vi.mocked(prisma.requete.findMany).mock.calls.at(-1)?.[0]?.select as Record<string, unknown>;
+    expect(select.etapes).toMatchObject({
+      where: { entiteId: 'root-entite' },
+      select: expect.objectContaining({
+        notes: expect.objectContaining({ orderBy: { createdAt: 'asc' } }),
+        uploadedFiles: { select: { fileName: true, metadata: true } },
+      }),
+    });
+  });
+
+  it('also reads the steps other entities share when sharing is on', async () => {
+    vi.mocked(prisma.requete.findMany).mockResolvedValue([]);
+
+    await generateExportRequetesCsv('root-entite', { includeSharedEtapes: true });
+
+    const select = vi.mocked(prisma.requete.findMany).mock.calls.at(-1)?.[0]?.select as Record<string, unknown>;
+    expect(select.etapes).toMatchObject({
+      where: { OR: [{ entiteId: 'root-entite' }, { estPartagee: true }] },
+    });
+  });
+
+  it('resolves the writer with the number of data rows', async () => {
+    vi.mocked(prisma.requete.findMany).mockResolvedValue([
+      { id: 'REQ-2026-0001', createdAt: new Date('2026-06-18T10:00:00.000Z'), situations: [{}, {}] },
+    ] as unknown as Awaited<ReturnType<typeof prisma.requete.findMany>>);
+
+    const writeCsv = await prepareExportRequetesCsv(exportParams('root-entite'));
+
+    await expect(writeCsv(async () => {})).resolves.toBe(2);
+  });
+
+  it('counts the requêtes of the period with the same filter as the export', async () => {
+    vi.mocked(prisma.requete.count).mockResolvedValueOnce(3);
+
+    await expect(countExportRequetes(exportParams('root-entite'))).resolves.toBe(3);
+    expect(prisma.requete.count).toHaveBeenCalledWith({
+      where: {
+        requeteEntites: { some: { entiteId: 'root-entite' } },
+        createdAt: {
+          gte: new Date('2026-05-31T22:00:00.000Z'),
+          lt: new Date('2026-06-30T22:00:00.000Z'),
+        },
+      },
+    });
+  });
+
   it('produces the same document as the reference row and CSV builders', async () => {
     const requete = { id: 'REQ-2026-0007', createdAt: new Date('2026-06-18T10:00:00.000Z'), situations: [{}] };
-    vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
     vi.mocked(prisma.requete.findMany).mockResolvedValue([requete] as unknown as Awaited<
       ReturnType<typeof prisma.requete.findMany>
     >);
@@ -121,7 +185,6 @@ describe('prepareExportRequetesCsv', () => {
   });
 
   it('reads requêtes in two cursor-paginated passes: a light postal pass then the full pass', async () => {
-    vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
     vi.mocked(prisma.requete.findMany).mockResolvedValue([
       { id: 'REQ-2026-0001', createdAt: new Date('2026-06-18T10:00:00.000Z'), situations: [{}] },
     ] as unknown as Awaited<ReturnType<typeof prisma.requete.findMany>>);
@@ -142,46 +205,30 @@ describe('prepareExportRequetesCsv', () => {
     }
   });
 
-  it('selects only exported declarant and participant fields', async () => {
-    vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
-    vi.mocked(prisma.requete.findMany).mockResolvedValue([]);
+  it('reads the next page with an id keyset, so a requête deleted meanwhile cannot end the export early', async () => {
+    const fullPage = Array.from({ length: 500 }, (_, index) => ({
+      id: `REQ-2026-${String(index).padStart(4, '0')}`,
+      createdAt: new Date('2026-06-18T10:00:00.000Z'),
+      situations: [{}],
+    }));
+    vi.mocked(prisma.requete.findMany)
+      .mockResolvedValueOnce(fullPage as never)
+      .mockResolvedValueOnce([] as never)
+      .mockResolvedValue([] as never);
 
     await generateExportRequetesCsv('root-entite');
 
-    expect(vi.mocked(prisma.requete.findMany).mock.calls.at(-1)?.[0]).toEqual(
-      expect.objectContaining({
-        select: expect.objectContaining({
-          declarant: {
-            select: {
-              estVictime: true,
-              lienVictime: { select: { label: true } },
-              lienAutrePrecision: true,
-              isTuteur: true,
-              adresse: { select: { codePostal: true, ville: true } },
-              veutGarderAnonymat: true,
-              estSignalementProfessionnel: true,
-            },
-          },
-          participant: {
-            select: {
-              identite: { select: { civilite: { select: { label: true } } } },
-              age: { select: { label: true } },
-              dateNaissance: true,
-              adresse: { select: { codePostal: true, ville: true } },
-              veutGarderAnonymat: true,
-              estVictimeInformee: true,
-              mesureProtection: true,
-              estHandicapee: true,
-              aAutrePersonnes: true,
-            },
-          },
-        }),
-      }),
-    );
+    const secondCall = vi.mocked(prisma.requete.findMany).mock.calls[1]?.[0];
+    expect(secondCall).not.toHaveProperty('cursor');
+    expect(secondCall?.where).toEqual({
+      AND: [
+        expect.objectContaining({ requeteEntites: { some: { entiteId: 'root-entite' } } }),
+        { id: { gt: 'REQ-2026-0499' } },
+      ],
+    });
   });
 
   it('wires department names for all exported department sources', async () => {
-    vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
     vi.mocked(prisma.requete.findMany).mockResolvedValue([
       {
         id: 'REQ-2026-0021',
@@ -275,7 +322,6 @@ describe('prepareExportRequetesCsv', () => {
   });
 
   it('exports the authoritative department mapping for a lieu de survenue postal code', async () => {
-    vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
     vi.mocked(prisma.requete.findMany).mockResolvedValue([
       {
         id: 'REQ-2026-0035',
@@ -310,7 +356,6 @@ describe('prepareExportRequetesCsv', () => {
   });
 
   it('exports the SIREC department of a situation that has no postal code', async () => {
-    vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
     vi.mocked(prisma.requete.findMany).mockResolvedValue([
       {
         id: 'REQ-2026-0036',
@@ -343,7 +388,6 @@ describe('prepareExportRequetesCsv', () => {
   });
 
   it('passes the root entity scope to row building for root-scoped fields', async () => {
-    vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
     vi.mocked(prisma.requete.findMany).mockResolvedValue([
       {
         id: 'REQ-2026-0002',

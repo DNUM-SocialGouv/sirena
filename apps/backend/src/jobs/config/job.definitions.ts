@@ -2,6 +2,7 @@ import { envVars } from '../../config/env.js';
 import { fetchRequetes } from '../tasks/fetchRequetes.task.js';
 import { fileIntegrityCheck } from '../tasks/fileIntegrityCheck.task.js';
 import { purgeAccessLogs } from '../tasks/purgeAccessLogs.task.js';
+import { purgeDocumentExports } from '../tasks/purgeDocumentExports.task.js';
 import { queueUnprocessedFiles } from '../tasks/queueUnprocessedFiles.task.js';
 import { retryAffectation } from '../tasks/retryAffectation.task.js';
 import { retryImportRequetes } from '../tasks/retryImportRequetes.task.js';
@@ -55,6 +56,18 @@ export const jobHandlers = [
     task: purgeAccessLogs,
     repeatEveryMs: parseInt(envVars.CRON_PURGE_ACCESS_LOGS, 10) * 1000,
     data: {
+      retentionDays: envVars.ACCESS_LOG_RETENTION_DAYS,
+    },
+    runOnStart: true,
+  },
+  {
+    name: 'purge-document-exports',
+    task: purgeDocumentExports,
+    repeatEveryMs: parseInt(envVars.CRON_PURGE_DOCUMENT_EXPORTS, 10) * 1000,
+    data: {
+      // At most one S3 DeleteObjects call (1000 keys) per run.
+      batchSize: 500,
+      // Export rows go with their AccessLog trace.
       retentionDays: envVars.ACCESS_LOG_RETENTION_DAYS,
     },
     runOnStart: true,
