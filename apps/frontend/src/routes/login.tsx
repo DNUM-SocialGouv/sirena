@@ -4,6 +4,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { NotAuth } from '@/components/layout/notAuth/layout';
 import { requireNotAuth } from '@/lib/auth-guards';
+import { clearWarningBannerDismissal } from '@/lib/warningBannerDismissal';
 
 export const Route = createFileRoute('/login')({
   head: () => ({
@@ -19,7 +20,11 @@ export const Route = createFileRoute('/login')({
     state: z.string().optional(),
     error: z.string().optional(),
   }),
-  beforeLoad: requireNotAuth,
+  beforeLoad: (params) => {
+    requireNotAuth(params);
+    // Landing here means the previous sign-in session is over, so a banner dismissed then must show again.
+    clearWarningBannerDismissal();
+  },
   component: RouteComponent,
 });
 
