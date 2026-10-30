@@ -108,11 +108,22 @@ describe('documentExports.controller', () => {
         userId: 'user-1',
         topEntiteId: 'root-entite',
         requestId: null,
-        path: `/${EXPORT_ID}/access`,
+        path: '/:id/access',
         dataKeys: [],
         params: { reason },
       });
       expect(recordDocumentExportDownload).toHaveBeenCalledWith(outcome);
+    });
+
+    it('still answers with the refusal when the trace cannot be written', async () => {
+      vi.mocked(resolveDocumentExportAccess).mockResolvedValueOnce({ status: 'EXPIRED' } as never);
+      vi.mocked(createAccessLog).mockRejectedValueOnce(new Error('database unavailable'));
+
+      const res = await client[':id'].access.$get({ param: { id: EXPORT_ID } });
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ data: { status: 'EXPIRED', fileName: null, expiresAt: null } });
+      expect(logger.error).toHaveBeenCalled();
     });
 
     it('rejects a malformed link', async () => {
@@ -144,6 +155,23 @@ describe('documentExports.controller', () => {
       );
       expect(recordDocumentExportDownload).toHaveBeenCalledWith('downloaded');
       expect(streamDocumentExportResponse).toHaveBeenCalledWith(expect.anything(), readyExport);
+    });
+
+    it('serves the file even when the trace cannot be written', async () => {
+      vi.mocked(resolveDocumentExportAccess).mockResolvedValueOnce({
+        status: 'AVAILABLE',
+        documentExport: readyExport,
+      } as never);
+      vi.mocked(createAccessLog).mockRejectedValueOnce(new Error('database unavailable'));
+
+      const res = await client[':id'].download.$get({ param: { id: EXPORT_ID } });
+
+      expect(res.status).toBe(200);
+      expect(streamDocumentExportResponse).toHaveBeenCalledWith(expect.anything(), readyExport);
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ documentExportId: EXPORT_ID, action: 'DOWNLOAD_DOCUMENT_EXPORT' }),
+        'Failed to create the document export access log',
+      );
     });
 
     it.each(['DENIED', 'EXPIRED'])('refuses the file when the access is %s, and traces it', async (status) => {

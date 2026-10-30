@@ -43,23 +43,29 @@ const checkAccess = async (c: Context, documentExportId: string) => {
   return access;
 };
 
-const traceAccess = (
+/** The audit trace never decides whether the download works: a failure to write it is only logged. */
+const traceAccess = async (
   c: Context,
   documentExportId: string,
   action: AccessLogAction,
   params?: { reason: (typeof REFUSAL_REASONS)[keyof typeof REFUSAL_REASONS] },
-) =>
-  createAccessLog({
-    entity: 'DocumentExport',
-    entityId: documentExportId,
-    action,
-    userId: c.get('userId'),
-    topEntiteId: c.get('topEntiteId') ?? null,
-    requestId: c.req.header('x-request-id') ?? c.res.headers.get('x-request-id'),
-    path: c.req.path,
-    dataKeys: [],
-    params,
-  });
+) => {
+  try {
+    await createAccessLog({
+      entity: 'DocumentExport',
+      entityId: documentExportId,
+      action,
+      userId: c.get('userId'),
+      topEntiteId: c.get('topEntiteId') ?? null,
+      requestId: c.req.header('x-request-id') ?? c.res.headers.get('x-request-id'),
+      path: c.req.routePath,
+      dataKeys: [],
+      params,
+    });
+  } catch (error) {
+    c.get('logger').error({ err: error, documentExportId, action }, 'Failed to create the document export access log');
+  }
+};
 
 const app = factoryWithLogs
   .createApp()
