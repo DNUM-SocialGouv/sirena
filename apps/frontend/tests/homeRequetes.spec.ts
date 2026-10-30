@@ -49,8 +49,7 @@ test.describe('Liste des requêtes', () => {
     await expect(requetesTable).toBeVisible();
 
     const requetesRows = requetesTable.getByTestId('datatable-row');
-    const count = await requetesRows.count();
-    expect(count).toBeGreaterThanOrEqual(1);
+    await expect(requetesRows.first()).toBeVisible();
   });
 
   test("ouvre le détail d'une requête depuis son lien", async () => {
