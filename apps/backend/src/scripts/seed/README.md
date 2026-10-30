@@ -29,7 +29,6 @@ receive this variable. A custom email is created as an ENTITY_ADMIN on ARS
 Île-de-France and receives the fixed test user id. Default users are still seeded.
 
 **State produced**
-
 - the configured test user (`user19@yopmail.com` by default) — ENTITY_ADMIN, ARS Île-de-France, fixed id;
 - at least one more user on the same ARS (`pilotage@yopmail.com`);
 - the full family set of manual requests on both ARS, **plus 1–2 shared
@@ -51,11 +50,11 @@ A recap is shown before running, and a final summary lists the created users
 
 ## Default users
 
-| Email | Role | Entité |
-|-------|------|--------|
-| `user@yopmail.com` | SUPER_ADMIN | — |
-| `user18@yopmail.com` | ENTITY_ADMIN | ARS Normandie |
-| `user19@yopmail.com` | ENTITY_ADMIN | ARS Île-de-France |
+| Email                                            | Role                   | Entité            |
+| ------------------------------------------------ | ---------------------- | ----------------- |
+| `user@yopmail.com`                               | SUPER_ADMIN            | —                 |
+| `user18@yopmail.com`                             | ENTITY_ADMIN           | ARS Normandie     |
+| `user19@yopmail.com`                             | ENTITY_ADMIN           | ARS Île-de-France |
 | `reader@` / `writer@` / `pilotage@` / `pending@` | one per remaining role | ARS Normandie / — |
 
 Seeded users have already accepted the CGU in force, so the CGU modal does not
@@ -67,18 +66,18 @@ regardless of `SUPER_ADMIN_LIST_EMAIL` (the role is forced in DB).
 
 ## Architecture
 
-Recipes vs cook: **families** describe *what* a request is (plain data), the
+Recipes vs cook: **families** describe _what_ a request is (plain data), the
 **graph builder** is the only module that knows the Prisma schema.
 
-| File | Role |
-|------|------|
-| `prompts.ts` | interactive questions → `SeedConfig` |
-| `reset.ts` / `dematSocialImport.ts` | spawn existing pnpm scripts |
-| `users.factory.ts` / `featureFlags.factory.ts` | idempotent upserts |
-| `referentials.ts` | loads enum tables at runtime (no hardcoded ids) |
-| `families.ts` | the 11 case families (edit here to add a case) |
-| `graph.builder.ts` | the writer (edit here on a schema change) |
-| `requetes.factory.ts` | plans and writes requests (manual + DematSocial) |
+| File                                           | Role                                             |
+| ---------------------------------------------- | ------------------------------------------------ |
+| `prompts.ts`                                   | interactive questions → `SeedConfig`             |
+| `reset.ts` / `dematSocialImport.ts`            | spawn existing pnpm scripts                      |
+| `users.factory.ts` / `featureFlags.factory.ts` | idempotent upserts                               |
+| `referentials.ts`                              | loads enum tables at runtime (no hardcoded ids)  |
+| `families.ts`                                  | the 11 case families (edit here to add a case)   |
+| `graph.builder.ts`                             | the writer (edit here on a schema change)        |
+| `requetes.factory.ts`                          | plans and writes requests (manual + DematSocial) |
 
 ## Isolation
 

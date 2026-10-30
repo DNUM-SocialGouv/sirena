@@ -3,7 +3,6 @@
 ## Targets
 
 Tests run against one of two targets, selected with `E2E_TARGET`:
-
 - **`integration`** (default): tests hit the deployed environment and authenticate through the real ProConnect flow. This is what CI runs.
 - **`local`**: tests hit a local stack (`FRONTEND_URI=http://localhost:5173`) and authenticate by forging the `auth_token` cookie, without calling ProConnect. Useful to iterate quickly on component/selector changes.
 
@@ -18,6 +17,7 @@ The backend is never modified: the auth middleware already accepts any `auth_tok
    - `AUTH_TOKEN_SECRET_KEY`, `AUTH_TOKEN_NAME`, `IS_LOGGED_TOKEN_NAME` and `PG_URL`, with the same values as the local backend.
 3. Clear any cached auth state tied to another target: `rm -rf apps/frontend/playwright/.auth/`.
 4. Run:
+
    ```bash
    E2E_TARGET=local FRONTEND_URI=http://localhost:5173 PW_TEST_HTML_REPORT_OPEN=never \
      pnpm --filter @sirena/frontend exec playwright test --reporter=line
@@ -28,66 +28,73 @@ The seeded user id is resolved by email through Prisma (`PG_URL`), so it stays v
 ## E2E Authentication
 
 ### Overview
+
 E2E tests use Playwright browser context persistence to skip repeated ProConnect logins.
 
 ### Requirements
 
 #### Admin tests
- * Prerequisites:
- * - At least 2 users with same entiteId in "Gestion des utilisateurs" table
- * - Authenticated user has ENTITY_ADMIN role
- * - `E2E_TARGET_USER_EMAIL` names an account dedicated to the scenarios that change a
-   habilitation: `user17@yopmail.com`, seeded in local target, named by the
-   `TEST_TARGET_USER_EMAIL` repository variable in CI. Those scenarios rewrite its role and its
-   statut, so no other test may depend on it — in particular they must not target a role the
-   seed only has one holder of, such as `pilotage@yopmail.com` for `NATIONAL_STEERING`. It must
-   also sit inside the authenticated user's entity or one of its descendants: the perimeter is
-   resolved downwards only, so a sibling entity is out of reach for both reading and patching.
-   It must never be the authenticated user itself: deactivating one's own account makes the
-   backend answer 403 to every later request, the restoring one included.
-   On integration it is provisioned by hand like the authenticated user — a SIRENA account only
-   exists after a first ProConnect login, and CI provisions nothing.
+
+Prerequisites:
+- At least 2 users with same entiteId in "Gestion des utilisateurs" table
+- Authenticated user has ENTITY_ADMIN role
+- `E2E_TARGET_USER_EMAIL` names an account dedicated to the scenarios that change a
+  habilitation: `user17@yopmail.com`, seeded in local target, named by the
+  `TEST_TARGET_USER_EMAIL` repository variable in CI. Those scenarios rewrite its role and its
+  statut, so no other test may depend on it — in particular they must not target a role the
+  seed only has one holder of, such as `pilotage@yopmail.com` for `NATIONAL_STEERING`. It must
+  also sit inside the authenticated user's entity or one of its descendants: the perimeter is
+  resolved downwards only, so a sibling entity is out of reach for both reading and patching.
+  It must never be the authenticated user itself: deactivating one's own account makes the
+  backend answer 403 to every later request, the restoring one included.
+  On integration it is provisioned by hand like the authenticated user — a SIRENA account only
+  exists after a first ProConnect login, and CI provisions nothing.
 
 #### Home Requetes
- * Prerequisites:
- * - At least 1 requete in "/home" table
- * - Authenticated user has ENTITY_ADMIN role
+
+Prerequisites:
+- At least 1 requete in "/home" table
+- Authenticated user has ENTITY_ADMIN role
 
 #### Request Details E2E TESTS
- * Prerequisites:
- * - At least 1 requête exists in "/home"
- * - User has ENTITY_ADMIN role
+
+Prerequisites:
+- At least 1 requête exists in "/home"
+- User has ENTITY_ADMIN role
 
 #### Processing (Traitement) E2E TESTS
+
 Specs: `processingSteps`, `processingCloture`, `processingAccuseReception`, `processingMultiEntite`.
- * No seeded request is used nor modified: each spec creates its own manual request through the API (`utils/requeteApi.ts`) and closes it at the end (no API deletes a request). `processingSteps` also deletes the steps it adds after each test.
- * Authenticated user (`E2E_ENTITY_ADMIN_USER_1`) has ENTITY_ADMIN role and an entity.
- * `processingMultiEntite` runs in local target only: it also signs in as `user18@yopmail.com` (ENTITY_ADMIN, ARS Normandie) and `reader@yopmail.com` (READER, ARS Normandie) from the e2e seed, which have no ProConnect account.
- * Scenario 20 (sending the acknowledgment of receipt) is skipped when the backend answers 503, i.e. runs with `TIPIMAIL_DISABLE_SENDING=true` (usual local setup). On integration, the e-mail goes to a disposable `@yopmail.com` address.
- * Test files live in `tests/fixtures/` (a PDF, a PNG, and a ZIP for the rejected format case).
+- No seeded request is used nor modified: each spec creates its own manual request through the API (`utils/requeteApi.ts`) and closes it at the end (no API deletes a request). `processingSteps` also deletes the steps it adds after each test.
+- Authenticated user (`E2E_ENTITY_ADMIN_USER_1`) has ENTITY_ADMIN role and an entity.
+- `processingMultiEntite` runs in local target only: it also signs in as `user18@yopmail.com` (ENTITY_ADMIN, ARS Normandie) and `reader@yopmail.com` (READER, ARS Normandie) from the e2e seed, which have no ProConnect account.
+- Scenario 20 (sending the acknowledgment of receipt) is skipped when the backend answers 503, i.e. runs with `TIPIMAIL_DISABLE_SENDING=true` (usual local setup). On integration, the e-mail goes to a disposable `@yopmail.com` address.
+- Test files live in `tests/fixtures/` (a PDF, a PNG, and a ZIP for the rejected format case).
 
 ### How it works
 
 **Why:** ProConnect authentication is slow (~10-15s) and repetitive for each test. Instead of logging in every time, we save the browser state after the first login.
 
 **How:** Playwright saves browser context (cookies, localStorage, sessionStorage) to `.auth/${email}.json`. This file contains all authentication data needed to bypass the ProConnect flow.
-
 - First run: Login via ProConnect → Save context to `.auth/${email}.json`
 - Next runs: Load saved context → Skip login entirely
 - Rate limiting prevents "too many requests" errors
 
 ### Key Functions
+
 - `ensureAuthenticated()`: Reuse context or login if needed
 - `forceNewAuthentication()`: Force new login
 - `getCurrentUserId()`: Get user ID from context
 
 ### Usage Example
+
 ```typescript
 const authFile = await ensureAuthenticated(browser, AUTH_CONFIGS.ENTITY_ADMIN_USER_1);
 const context = await browser.newContext({ storageState: authFile });
 ```
 
 ### Environment Variables
+
 - `E2E_TARGET` (`integration` default, or `local`)
 - `FRONTEND_URI`
 - `E2E_CI`
@@ -96,6 +103,7 @@ const context = await browser.newContext({ storageState: authFile });
 - `AUTH_TOKEN_SECRET_KEY`, `AUTH_TOKEN_NAME`, `IS_LOGGED_TOKEN_NAME` + `PG_URL` (local target only)
 
 ### Troubleshooting
+
 ```bash
 rm -rf playwright/.auth/  # Clear auth cache if issues
-``` 
+```
