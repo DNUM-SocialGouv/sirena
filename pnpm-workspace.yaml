@@ -61,7 +61,7 @@ overrides:
   # (GHSA-vcc3-ghjq-m6fr), puis remplacement quadratique des suites
   # percent-encodées jusqu'en 0.5.0 inclus (GHSA-qr28-fpjm-wq7f). Tiré par
   # query-string (minio), qui demande ^0.2.2.
-  "decode-uri-component@<=0.4.2": ">=0.5.0"
+  "decode-uri-component@<=0.4.2": ">=0.5.1"
   # fast-uri host confusion / SSRF via malformed URL normalization, pulled in
   # by ajv (prisma/commitlint) — GHSA-7p8r-x3mc-p8w7, GHSA-5jgf-p345-68v8,
   # GHSA-f65p-4m7j-42xc, GHSA-fph4-wmhf-6fwf, GHSA-jqff-g426-hqxp,
