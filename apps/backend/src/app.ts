@@ -2,6 +2,7 @@ import { csrf } from 'hono/csrf';
 import { envVars } from './config/env.js';
 import AdresseController from './features/adresse/adresse.controller.js';
 import AuthController from './features/auth/auth.controller.js';
+import DocumentExportsController from './features/documentExports/documentExports.controller.js';
 import EntitesController from './features/entites/entites.controller.js';
 import EsanteController from './features/esante/esante.controller.js';
 import FeatureFlagsController from './features/featureFlags/featureFlags.controller.js';
@@ -49,6 +50,7 @@ export const app = baseApp
   .route('/sse', SSEController)
   .route('/sirec-migration', SirecMigrationController)
   .route('/statistics', StatisticsController)
+  .route('/document-exports', DocumentExportsController)
   .route('/health', HealthController)
   .route('/version', VersionController)
   .get('/sentry', () => {
