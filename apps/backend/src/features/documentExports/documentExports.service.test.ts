@@ -10,12 +10,14 @@ import {
   markDocumentExportProcessing,
   markDocumentExportReady,
   markDocumentExportsExpired,
+  resolveDocumentExportAccess,
 } from './documentExports.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     documentExport: {
       findFirst: vi.fn(),
+      findUnique: vi.fn(),
       findMany: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
@@ -165,5 +167,63 @@ describe('documentExports.service', () => {
     await expect(markDocumentExportsExpired([])).resolves.toBe(0);
 
     expect(prisma.documentExport.updateMany).not.toHaveBeenCalled();
+  });
+  describe('resolveDocumentExportAccess', () => {
+    const now = new Date('2026-10-26T10:00:00.000Z');
+    const readyExport = {
+      id: 'export-1',
+      userId: 'user-1',
+      status: 'READY',
+      fileName: 'export.csv',
+      filePath: 'exports/abc.csv',
+      mimeType: 'text/csv',
+      metadata: { encryption: { iv: 'iv', authTag: 'tag' } },
+      expiresAt: new Date('2026-10-26T10:20:00.000Z'),
+    };
+
+    it('gives the requester the file while the link is valid', async () => {
+      vi.mocked(prisma.documentExport.findUnique).mockResolvedValueOnce(readyExport as never);
+
+      const access = await resolveDocumentExportAccess('export-1', 'user-1', now);
+
+      expect(access).toEqual({ status: 'AVAILABLE', documentExport: readyExport });
+    });
+
+    it('denies anyone else, even before the link expires', async () => {
+      vi.mocked(prisma.documentExport.findUnique).mockResolvedValueOnce(readyExport as never);
+
+      await expect(resolveDocumentExportAccess('export-1', 'user-2', now)).resolves.toEqual({ status: 'DENIED' });
+    });
+
+    it('denies anyone else an expired link too, so they learn nothing about it', async () => {
+      vi.mocked(prisma.documentExport.findUnique).mockResolvedValueOnce({
+        ...readyExport,
+        status: 'EXPIRED',
+        filePath: null,
+      } as never);
+
+      await expect(resolveDocumentExportAccess('export-1', 'user-2', now)).resolves.toEqual({ status: 'DENIED' });
+    });
+
+    it('denies a link to no export', async () => {
+      vi.mocked(prisma.documentExport.findUnique).mockResolvedValueOnce(null);
+
+      await expect(resolveDocumentExportAccess('unknown', 'user-1', now)).resolves.toEqual({ status: 'DENIED' });
+    });
+
+    it('expires the link past its validity, before the purge has deleted the file', async () => {
+      vi.mocked(prisma.documentExport.findUnique).mockResolvedValueOnce({
+        ...readyExport,
+        expiresAt: new Date('2026-10-26T10:00:00.000Z'),
+      } as never);
+
+      await expect(resolveDocumentExportAccess('export-1', 'user-1', now)).resolves.toEqual({ status: 'EXPIRED' });
+    });
+
+    it.each(['EXPIRED', 'FAILED', 'PENDING', 'PROCESSING'])('gives no file for an export %s', async (status) => {
+      vi.mocked(prisma.documentExport.findUnique).mockResolvedValueOnce({ ...readyExport, status } as never);
+
+      await expect(resolveDocumentExportAccess('export-1', 'user-1', now)).resolves.toEqual({ status: 'EXPIRED' });
+    });
   });
 });
