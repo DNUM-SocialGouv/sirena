@@ -22,6 +22,7 @@ export const Route = createFileRoute('/')({
 
 function RouteComponent() {
   // TODO handle errors
+  const { redirect } = Route.useSearch();
 
   return (
     <NotAuth>
@@ -35,6 +36,7 @@ function RouteComponent() {
                   <h1>Se connecter avec ProConnect</h1>
                   <div className="fr-connect-group">
                     <form action="/api/auth/login" method="post">
+                      {redirect ? <input type="hidden" name="redirect" value={redirect} /> : null}
                       <button className="fr-btn fr-connect pro-connect" type="submit">
                         <span className="fr-connect__login">S’identifier avec</span>
                         <span className="fr-connect__brand">ProConnect</span>
