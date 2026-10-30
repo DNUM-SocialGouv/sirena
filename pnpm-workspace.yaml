@@ -19,12 +19,12 @@ allowBuilds:
   # l'a remplacé par modern-tar.
   puppeteer: true
 catalog:
-  "@biomejs/biome": ^2.5.15
+  "@biomejs/biome": ^2.6.2
   "@codegouvfr/react-dsfr": ^1.36.0
   "@hono/standard-validator": ^0.4.0
   "@prisma/adapter-pg": ^7.10.1
   "@prisma/client": ^7.10.1
-  "@tanstack/react-router": ^1.170.45
+  "@tanstack/react-router": ^1.170.46
   "@testing-library/dom": ^10.4.2
   "@testing-library/jest-dom": ^7.0.1
   "@testing-library/react": ^16.3.3
@@ -36,7 +36,7 @@ catalog:
   "@vitest/browser": ^5.0.5
   "@vitest/coverage-v8": ^5.0.5
   clsx: ^2.1.1
-  dotenv: ^18.0.8
+  dotenv: ^18.0.9
   hono: ^4.13.13
   hono-openapi: ^1.5.0
   jsdom: ^30.1.3
@@ -45,20 +45,11 @@ catalog:
   react-dom: ^19.3.1
   tsx: ^4.23.15
   typescript: ~7.0.2
-  vite: ^8.3.4
+  vite: ^8.3.5
   vitest: ^5.0.5
   zod: ^4.6.7
 enablePrePostScripts: true
 minimumReleaseAge: 10080
-# fast-uri 3.1.9 corrige GHSA-w74x-v6f9-j3xg (usurpation de schéma d'URI via un
-# deux-points percent-encodé) et GHSA-wjr9-j795-jxcr (confusion d'hôte via la
-# canonicalisation WHATWG). Publiée le 2026-10-19 à 23:05Z, elle n'atteint les
-# 7 jours de quarantaine qu'à cette heure-là le 2026-10-26, ce qui laissait
-# `pnpm audit --audit-level=moderate` rouge et bloquait les merges. Exemption
-# pinnée à cette seule version : la quarantaine reste pleine pour tout le reste.
-# À retirer à la prochaine passe de mise à jour, une fois 3.1.9 mûre.
-minimumReleaseAgeExclude:
-  - fast-uri@3.1.9
 overrides:
   # Planchers de sécurité sur des paquets tirés transitivement (@sentry/cli,
   # ajv via prisma/commitlint, minio) : leurs ranges parents résolvent aujourd'hui
@@ -66,7 +57,10 @@ overrides:
   # ranges en amont ne réintroduise pas silencieusement la vuln.
   "undici@>=6.23.0 <6.29.1": "^6.29.1"
   "undici@>=8.1.0 <8.10.2": "8.10.2"
-  # decode-uri-component <=0.4.2 : DoS via une entrée percent-encoded malformée — GHSA-vcc3-ghjq-m6fr.
+  # decode-uri-component : DoS via une entrée percent-encoded malformée
+  # (GHSA-vcc3-ghjq-m6fr), puis remplacement quadratique des suites
+  # percent-encodées jusqu'en 0.5.0 inclus (GHSA-qr28-fpjm-wq7f). Tiré par
+  # query-string (minio), qui demande ^0.2.2.
   "decode-uri-component@<=0.4.2": ">=0.5.0"
   # fast-uri host confusion / SSRF via malformed URL normalization, pulled in
   # by ajv (prisma/commitlint) — GHSA-7p8r-x3mc-p8w7, GHSA-5jgf-p345-68v8,
@@ -102,10 +96,6 @@ overrides:
   "dompurify@<=3.4.16": "^3.4.17"
 auditConfig:
   ignoreGhsas:
-    # deepmerge-ts <8: stack exhaustion requires attacker-controlled cyclic
-    # JavaScript object graphs. Current consumers use static configuration, and
-    # Prisma pins 7.1.5; remove when upstream supports deepmerge-ts >=8.
-    - GHSA-ggr8-5vv4-36mx
     # stream-json (MinIO, ^1.8.0): the three advisories below all target code paths
     # MinIO never reaches. `minio/notification` imports only `stream-json/jsonl/Parser.js`,
     # whose parse loop is a plain `JSON.parse` per line: no pick/ignore/filter/replace
