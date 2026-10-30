@@ -1,4 +1,4 @@
-import { DOCUMENT_EXPORT_LINK_VALIDITY_MINUTES } from '@sirena/common/constants';
+import { DOCUMENT_EXPORT_ACCESS_STATUS, DOCUMENT_EXPORT_LINK_VALIDITY_MINUTES } from '@sirena/common/constants';
 import { type DocumentExportStatus, type DocumentExportType, type Prisma, prisma } from '../../libs/prisma.js';
 
 // The download link stays valid for a fixed time after the document is generated.
@@ -147,6 +147,13 @@ export const findExpiredDocumentExportFiles = async (now: Date, limit: number) =
   return rows.filter((row): row is { id: string; filePath: string } => row.filePath !== null);
 };
 
+/** The stored file of an export, as long as its link is still valid or not yet purged. */
+export const getDocumentExportStoredFile = async (id: string) =>
+  prisma.documentExport.findUnique({
+    where: { id },
+    select: { id: true, filePath: true, expiresAt: true },
+  });
+
 /** To call once the files are deleted: the row stays, as the trace of the export and of its expiry. */
 export const markDocumentExportsExpired = async (ids: string[]): Promise<number> => {
   if (ids.length === 0) return 0;
@@ -156,4 +163,39 @@ export const markDocumentExportsExpired = async (ids: string[]): Promise<number>
     data: { status: DOCUMENT_EXPORT_STATUS.EXPIRED, filePath: null },
   });
   return count;
+};
+
+/**
+ * Decides what the download link of an export leads to for this user. Ownership comes first, so a
+ * third party learns nothing about the export, not even that it expired. Expiry is read from
+ * expiresAt: the purge may not have run yet.
+ */
+export const resolveDocumentExportAccess = async (id: string, userId: string, now: Date = new Date()) => {
+  const documentExport = await prisma.documentExport.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      userId: true,
+      status: true,
+      fileName: true,
+      filePath: true,
+      mimeType: true,
+      metadata: true,
+      expiresAt: true,
+    },
+  });
+
+  if (!documentExport || documentExport.userId !== userId) {
+    return { status: DOCUMENT_EXPORT_ACCESS_STATUS.DENIED } as const;
+  }
+
+  const { status, fileName, filePath, expiresAt } = documentExport;
+  if (status !== DOCUMENT_EXPORT_STATUS.READY || !fileName || !filePath || !expiresAt || expiresAt <= now) {
+    return { status: DOCUMENT_EXPORT_ACCESS_STATUS.EXPIRED } as const;
+  }
+
+  return {
+    status: DOCUMENT_EXPORT_ACCESS_STATUS.AVAILABLE,
+    documentExport: { ...documentExport, fileName, filePath, expiresAt },
+  } as const;
 };

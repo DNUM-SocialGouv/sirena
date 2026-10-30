@@ -3,6 +3,12 @@ import { connection } from '../../config/redis.js';
 
 export const DOCUMENT_EXPORT_QUEUE_NAME = 'document-export';
 
+export const DOCUMENT_EXPORT_JOB_NAMES = {
+  GENERATE: 'generate',
+  // Deletes the file once its download link expires.
+  EXPIRE: 'expire',
+} as const;
+
 export interface DocumentExportJobData {
   documentExportId: string;
 }
@@ -23,5 +29,17 @@ export const documentExportQueue = new Queue<DocumentExportJobData>(DOCUMENT_EXP
 });
 
 export const addDocumentExportJob = async (documentExportId: string): Promise<void> => {
-  await documentExportQueue.add('generate', { documentExportId }, { jobId: `document-export-${documentExportId}` });
+  await documentExportQueue.add(
+    DOCUMENT_EXPORT_JOB_NAMES.GENERATE,
+    { documentExportId },
+    { jobId: `document-export-${documentExportId}` },
+  );
+};
+
+export const addDocumentExportExpiryJob = async (documentExportId: string, delayMs: number): Promise<void> => {
+  await documentExportQueue.add(
+    DOCUMENT_EXPORT_JOB_NAMES.EXPIRE,
+    { documentExportId },
+    { jobId: `document-export-expire-${documentExportId}`, delay: delayMs },
+  );
 };

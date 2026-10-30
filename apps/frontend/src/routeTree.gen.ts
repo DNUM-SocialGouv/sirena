@@ -29,6 +29,7 @@ import { Route as AuthAdminEntiteRouteImport } from './routes/_auth/admin/entite
 import { Route as AuthAdminFeatureFlagsRouteImport } from './routes/_auth/admin/feature-flags'
 import { Route as AuthAdminSirecMigrationRouteImport } from './routes/_auth/admin/sirec-migration'
 import { Route as AuthAdminUsersRouteRouteImport } from './routes/_auth/admin/users/route'
+import { Route as AuthTelechargementDocumentExportIdRouteImport } from './routes/_auth/telechargement.$documentExportId'
 import { Route as AuthUserRequestRequestIdRouteImport } from './routes/_auth/_user/request.$requestId'
 import { Route as AuthUserRequestCreateRouteImport } from './routes/_auth/_user/request.create'
 import { Route as AuthAdminDirectionsServicesIndexRouteImport } from './routes/_auth/admin/directions-services/index'
@@ -155,6 +156,12 @@ const AuthAdminUsersRouteRoute = AuthAdminUsersRouteRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthAdminRouteRoute,
 } as any)
+const AuthTelechargementDocumentExportIdRoute =
+  AuthTelechargementDocumentExportIdRouteImport.update({
+    id: '/telechargement/$documentExportId',
+    path: '/telechargement/$documentExportId',
+    getParentRoute: () => AuthRouteRoute,
+  } as any)
 const AuthUserRequestRequestIdRoute =
   AuthUserRequestRequestIdRouteImport.update({
     id: '/request/$requestId',
@@ -322,6 +329,7 @@ export interface FileRoutesByFullPath {
   '/admin/entite': typeof AuthAdminEntiteRouteWithChildren
   '/admin/feature-flags': typeof AuthAdminFeatureFlagsRoute
   '/admin/sirec-migration': typeof AuthAdminSirecMigrationRoute
+  '/telechargement/$documentExportId': typeof AuthTelechargementDocumentExportIdRoute
   '/admin/': typeof AuthAdminIndexRoute
   '/request/$requestId': typeof AuthUserRequestRequestIdRouteWithChildren
   '/request/create': typeof AuthUserRequestCreateRouteWithChildren
@@ -364,6 +372,7 @@ export interface FileRoutesByTo {
   '/home': typeof AuthUserHomeRoute
   '/admin/feature-flags': typeof AuthAdminFeatureFlagsRoute
   '/admin/sirec-migration': typeof AuthAdminSirecMigrationRoute
+  '/telechargement/$documentExportId': typeof AuthTelechargementDocumentExportIdRoute
   '/admin': typeof AuthAdminIndexRoute
   '/admin/entite/edit': typeof AuthAdminEntiteEditRoute
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
@@ -409,6 +418,7 @@ export interface FileRoutesById {
   '/_auth/admin/entite': typeof AuthAdminEntiteRouteWithChildren
   '/_auth/admin/feature-flags': typeof AuthAdminFeatureFlagsRoute
   '/_auth/admin/sirec-migration': typeof AuthAdminSirecMigrationRoute
+  '/_auth/telechargement/$documentExportId': typeof AuthTelechargementDocumentExportIdRoute
   '/_auth/admin/': typeof AuthAdminIndexRoute
   '/_auth/_user/request/$requestId': typeof AuthUserRequestRequestIdRouteWithChildren
   '/_auth/_user/request/create': typeof AuthUserRequestCreateRouteWithChildren
@@ -456,6 +466,7 @@ export interface FileRouteTypes {
     | '/admin/entite'
     | '/admin/feature-flags'
     | '/admin/sirec-migration'
+    | '/telechargement/$documentExportId'
     | '/admin/'
     | '/request/$requestId'
     | '/request/create'
@@ -498,6 +509,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/admin/feature-flags'
     | '/admin/sirec-migration'
+    | '/telechargement/$documentExportId'
     | '/admin'
     | '/admin/entite/edit'
     | '/admin/user/$userId'
@@ -542,6 +554,7 @@ export interface FileRouteTypes {
     | '/_auth/admin/entite'
     | '/_auth/admin/feature-flags'
     | '/_auth/admin/sirec-migration'
+    | '/_auth/telechargement/$documentExportId'
     | '/_auth/admin/'
     | '/_auth/_user/request/$requestId'
     | '/_auth/_user/request/create'
@@ -719,6 +732,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/users'
       preLoaderRoute: typeof AuthAdminUsersRouteRouteImport
       parentRoute: typeof AuthAdminRouteRoute
+    }
+    '/_auth/telechargement/$documentExportId': {
+      id: '/_auth/telechargement/$documentExportId'
+      path: '/telechargement/$documentExportId'
+      fullPath: '/telechargement/$documentExportId'
+      preLoaderRoute: typeof AuthTelechargementDocumentExportIdRouteImport
+      parentRoute: typeof AuthRouteRoute
     }
     '/_auth/_user/request/$requestId': {
       id: '/_auth/_user/request/$requestId'
@@ -1071,6 +1091,7 @@ interface AuthRouteRouteChildren {
   AuthInactiveRouteRoute: typeof AuthInactiveRouteRoute
   AuthAcceptationCguRoute: typeof AuthAcceptationCguRoute
   AuthStatistiquesRoute: typeof AuthStatistiquesRoute
+  AuthTelechargementDocumentExportIdRoute: typeof AuthTelechargementDocumentExportIdRoute
 }
 
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
@@ -1079,6 +1100,8 @@ const AuthRouteRouteChildren: AuthRouteRouteChildren = {
   AuthInactiveRouteRoute: AuthInactiveRouteRoute,
   AuthAcceptationCguRoute: AuthAcceptationCguRoute,
   AuthStatistiquesRoute: AuthStatistiquesRoute,
+  AuthTelechargementDocumentExportIdRoute:
+    AuthTelechargementDocumentExportIdRoute,
 }
 
 const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(

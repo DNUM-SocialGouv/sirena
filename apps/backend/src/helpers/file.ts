@@ -84,6 +84,8 @@ interface StreamFileOptions {
   contentType: string;
   fileId: string;
   decryptionParams?: DecryptionParams;
+  // 'attachment' makes the browser save the file instead of displaying it.
+  disposition?: 'inline' | 'attachment';
 }
 
 const removeControlChars = (value: string) =>
@@ -120,7 +122,7 @@ const encodeRFC5987Value = (value: string) =>
     .replace(/['()*]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`)
     .replace(/%(7C|60|5E)/g, (sequence) => sequence.toLowerCase());
 
-export const createInlineContentDisposition = (rawFileName: string) => {
+export const createContentDisposition = (rawFileName: string, type: 'inline' | 'attachment') => {
   const cleaned =
     removeControlChars(rawFileName)
       .replace(/[\r\n]+/g, ' ')
@@ -128,21 +130,23 @@ export const createInlineContentDisposition = (rawFileName: string) => {
   const quoted = escapeQuotedString(cleaned);
 
   if (isLatin1(quoted)) {
-    return `inline; filename="${quoted}"`;
+    return `${type}; filename="${quoted}"`;
   }
 
   const asciiFallback = escapeQuotedString(toAsciiFallbackFilename(cleaned));
   const encodedUtf8Filename = encodeRFC5987Value(cleaned);
 
-  return `inline; filename="${asciiFallback}"; filename*=UTF-8''${encodedUtf8Filename}`;
+  return `${type}; filename="${asciiFallback}"; filename*=UTF-8''${encodedUtf8Filename}`;
 };
+
+export const createInlineContentDisposition = (rawFileName: string) => createContentDisposition(rawFileName, 'inline');
 
 const createFileStreamResponse = async (c: Context, options: StreamFileOptions) => {
   const logger = c.get('logger');
-  const { filePath, fileName, contentType, fileId, decryptionParams } = options;
+  const { filePath, fileName, contentType, fileId, decryptionParams, disposition = 'inline' } = options;
 
   c.header('Content-Type', contentType);
-  c.header('Content-Disposition', createInlineContentDisposition(fileName));
+  c.header('Content-Disposition', createContentDisposition(fileName, disposition));
 
   return honoStream(c, async (s) => {
     try {
@@ -192,3 +196,23 @@ export const streamSafeFileResponse = async (c: Context, file: UploadedFile) => 
     decryptionParams: getSafeFileEncryptionParams(file),
   });
 };
+
+/** Serves a generated document (e.g. a requêtes export) as a download. */
+export const streamDocumentExportResponse = async (
+  c: Context,
+  documentExport: {
+    id: string;
+    filePath: string;
+    fileName: string;
+    mimeType: string | null;
+    metadata: Prisma.JsonValue;
+  },
+) =>
+  createFileStreamResponse(c, {
+    filePath: documentExport.filePath,
+    fileName: documentExport.fileName,
+    contentType: documentExport.mimeType || 'application/octet-stream',
+    fileId: documentExport.id,
+    decryptionParams: getFileEncryptionParams(documentExport),
+    disposition: 'attachment',
+  });

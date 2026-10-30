@@ -6,3 +6,6 @@ export const NOTIFICATION_SITUATION_ENTITE_TEMPLATE_NAME = 'notification-situati
 
 /** Fallback email for assignment notifications when the DDETS entity has no email set. */
 export const DGCS_FALLBACK_EMAIL = 'dgcs-sirena@social.gouv.fr';
+
+/** Sent to the requester once a document export is ready, with its download link. */
+export const DOCUMENT_EXPORT_READY_TEMPLATE_NAME = 'telechargement-document';
