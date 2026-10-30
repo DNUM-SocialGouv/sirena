@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.2.3/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.6.2/schema.json",
   "vcs": {
     "enabled": false,
     "clientKind": "git",
@@ -40,7 +40,7 @@
       "a11y": {
         "noRedundantRoles": "off"
       },
-      "recommended": true,
+      "preset": "recommended",
       "complexity": {
         "noForEach": "off",
         "noImportantStyles": "off"
@@ -91,6 +91,16 @@
                 ]
               }
             }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.test.ts", "**/*.test.tsx"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noComponentHookFactories": "off"
           }
         }
       }
