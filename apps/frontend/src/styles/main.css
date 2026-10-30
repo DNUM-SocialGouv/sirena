@@ -52,6 +52,32 @@ dialog {
   }
 }
 
+/* A native select cannot wrap its value, so a long label is cut mid-character. Chromium and Gecko
+   honour the ellipsis here; WebKit ignores it on a select and keeps the hard cut. */
+select.fr-select {
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 36em) {
+  /* Element-qualified selectors: each filter's own rule has the same specificity, and the order of
+     the stylesheets in the bundle must not decide the winner. */
+  div.filter-dropdown {
+    width: 100%;
+  }
+
+  button.filter-dropdown__trigger.fr-btn {
+    width: 100%;
+    white-space: normal;
+    text-align: left;
+  }
+
+  /* A panel's own 18rem min-width wins over max-width, so it has to be overridden too. */
+  div.filter-dropdown__panel {
+    min-width: 100%;
+    max-width: 100%;
+  }
+}
+
 .center-icon-with-sr-only:before {
   margin: auto !important;
 }

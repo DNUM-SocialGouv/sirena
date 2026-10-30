@@ -2,7 +2,7 @@
   position: relative;
 }
 
-.period__trigger.fr-btn {
+.period__trigger:global(.fr-btn) {
   width: auto;
   justify-content: space-between;
   margin: 0;
@@ -61,6 +61,7 @@
 
 .period__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 1rem;
 }

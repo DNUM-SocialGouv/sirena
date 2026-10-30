@@ -186,7 +186,7 @@ export function RouteComponent() {
         ) : null}
       </div>
 
-      <div className="fr-p-4w fr-mb-4w fr-card">
+      <div className="fr-p-2w fr-p-md-4w fr-mb-4w fr-card">
         <form onSubmit={handleSubmit}>
           <p>Sauf mention contraire, les champs sont facultatifs.</p>
 

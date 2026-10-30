@@ -40,7 +40,7 @@ export function InformationsComplementaires({
   };
 
   return (
-    <fieldset className={`fr-p-4w fr-mb-4w ${styles.container}`}>
+    <fieldset className={`fr-p-2w fr-p-md-4w fr-mb-4w ${styles.container}`}>
       <legend className="fr-h6">Informations complémentaires</legend>
 
       <Select

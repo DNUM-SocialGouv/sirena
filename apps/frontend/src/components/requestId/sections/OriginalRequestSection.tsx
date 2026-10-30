@@ -288,7 +288,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
       </h2>
 
       <div
-        className={fr.cx('fr-p-4w', 'fr-mb-3w')}
+        className={fr.cx('fr-p-2w', 'fr-p-md-4w', 'fr-mb-3w')}
         style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
       >
         {isEdit ? (

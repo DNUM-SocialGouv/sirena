@@ -176,11 +176,11 @@ export function PeriodFilter({ value, onChange }: Props) {
   const startAriaInvalid = startInvalid ? true : isInvalid ? false : undefined;
 
   return (
-    <div className={styles.period__bar}>
+    <div className={`${styles.period__bar} filter-dropdown`}>
       <button
         ref={triggerRef}
         type="button"
-        className={`${styles.period__trigger} fr-btn fr-btn--tertiary fr-btn--icon-right ${isOpen ? 'fr-icon-arrow-up-s-line' : 'fr-icon-arrow-down-s-line'}`}
+        className={`${styles.period__trigger} filter-dropdown__trigger fr-btn fr-btn--tertiary fr-btn--icon-right ${isOpen ? 'fr-icon-arrow-up-s-line' : 'fr-icon-arrow-down-s-line'}`}
         aria-expanded={isOpen}
         aria-controls={menuId}
         onClick={toggle}
@@ -189,7 +189,11 @@ export function PeriodFilter({ value, onChange }: Props) {
       </button>
 
       {isOpen ? (
-        <div id={menuId} ref={panelRef} className={`${styles.period__panel} fr-card fr-px-3w fr-py-2w`}>
+        <div
+          id={menuId}
+          ref={panelRef}
+          className={`${styles.period__panel} filter-dropdown__panel fr-card fr-px-3w fr-py-2w`}
+        >
           {/* `noValidate`: without it the browser cancels the submit on an unparsable date and the DSFR messages below never render. */}
           <form onSubmit={apply} noValidate>
             <p className={styles.period__note}>{CREATION_DATE_NOTE}</p>
