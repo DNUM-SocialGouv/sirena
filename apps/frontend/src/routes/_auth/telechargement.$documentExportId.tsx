@@ -1,13 +1,14 @@
 import { DOCUMENT_EXPORT_ACCESS_STATUS } from '@sirena/common/constants';
 import { Loader } from '@sirena/ui';
 import { createFileRoute } from '@tanstack/react-router';
+import { useCallback } from 'react';
 import {
   DocumentExportAccessDenied,
+  DocumentExportCheckFailed,
   DocumentExportDownload,
   DocumentExportLinkExpired,
 } from '@/components/documentExports/DocumentExportPages';
 import { AuthLayout } from '@/components/layout/auth/layout';
-import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
 import { useDocumentExportAccess } from '@/hooks/queries/documentExports.hook';
 import { getDocumentExportDownloadUrl } from '@/lib/api/fetchDocumentExports';
 
@@ -23,13 +24,17 @@ export const Route = createFileRoute('/_auth/telechargement/$documentExportId')(
 function RouteComponent() {
   const { documentExportId } = Route.useParams();
   const access = useDocumentExportAccess(documentExportId);
+  const { refetch } = access;
+  const retry = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
   return (
     <AuthLayout>
-      {access.isPending ? (
+      {access.isPending || access.isFetching ? (
         <Loader />
       ) : access.isError ? (
-        <QueryErrorState message="Le lien de téléchargement n’a pas pu être vérifié. Réessayez dans quelques instants." />
+        <DocumentExportCheckFailed onRetry={retry} />
       ) : access.data.status === DOCUMENT_EXPORT_ACCESS_STATUS.AVAILABLE ? (
         <DocumentExportDownload
           downloadUrl={getDocumentExportDownloadUrl(documentExportId)}

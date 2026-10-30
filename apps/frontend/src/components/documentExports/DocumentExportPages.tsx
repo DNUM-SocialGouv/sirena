@@ -18,7 +18,8 @@ export const DocumentExportDownload = ({ downloadUrl, fileName, expiresAt }: Doc
   const linkRef = useRef<HTMLAnchorElement>(null);
   const started = useRef(false);
 
-  // The link of the e-mail starts the download by itself, once.
+  // The link of the e-mail starts the download by itself, once. The title is focused first (child
+  // effects run before this one), so the page is announced before the download starts.
   useEffect(() => {
     if (started.current) return;
     started.current = true;
@@ -44,7 +45,7 @@ export const DocumentExportDownload = ({ downloadUrl, fileName, expiresAt }: Doc
       }
     >
       <p className={fr.cx('fr-mb-0')}>
-        S’il ne démarre pas, utilisez le bouton ci-dessous.
+        S’il ne démarre pas, utilisez le lien « Télécharger le fichier ».
         {expiresAt ? <> Le lien reste valable jusqu’à {timeFormatter.format(new Date(expiresAt))}.</> : null}
       </p>
     </DocumentExportMessage>
@@ -82,5 +83,33 @@ export const DocumentExportLinkExpired = () => (
     }
   >
     <p className={fr.cx('fr-mb-0')}>Pour récupérer les données, relancez un export depuis la page Indicateurs.</p>
+  </DocumentExportMessage>
+);
+
+type DocumentExportCheckFailedProps = {
+  onRetry: () => void;
+};
+
+export const DocumentExportCheckFailed = ({ onRetry }: DocumentExportCheckFailedProps) => (
+  <DocumentExportMessage
+    title="Vérification impossible"
+    lead="Le lien de téléchargement n’a pas pu être vérifié."
+    picto={<TechnicalError fontSize="10rem" />}
+    actions={
+      <>
+        <li>
+          <button type="button" className={fr.cx('fr-btn')} onClick={onRetry}>
+            Réessayer
+          </button>
+        </li>
+        <li>
+          <Link className={fr.cx('fr-btn', 'fr-btn--secondary')} to="/">
+            Page d’accueil
+          </Link>
+        </li>
+      </>
+    }
+  >
+    <p className={fr.cx('fr-mb-0')}>Réessayez dans quelques instants. Si le problème persiste, relancez un export.</p>
   </DocumentExportMessage>
 );
