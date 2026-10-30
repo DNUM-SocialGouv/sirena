@@ -1,8 +1,13 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DocumentExportAccessDenied, DocumentExportDownload, DocumentExportLinkExpired } from './DocumentExportPages';
+import {
+  DocumentExportAccessDenied,
+  DocumentExportCheckFailed,
+  DocumentExportDownload,
+  DocumentExportLinkExpired,
+} from './DocumentExportPages';
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ to, children, ...props }: { to: string; children: ReactNode }) => (
@@ -50,6 +55,17 @@ describe('DocumentExportPages', () => {
       expect(link).toHaveAttribute('download');
       expect(screen.getByRole('heading', { level: 1, name: 'Téléchargement de votre export' })).toBeInTheDocument();
     });
+
+    it('focuses the title before the download starts, so it is announced', () => {
+      let focusedOnClick: Element | null = null;
+      click.mockImplementation(() => {
+        focusedOnClick = document.activeElement;
+      });
+
+      renderDownload();
+
+      expect(focusedOnClick).toBe(screen.getByRole('heading', { level: 1, name: 'Téléchargement de votre export' }));
+    });
   });
 
   it('explains that only the requester can download the file (CA5, CA6)', () => {
@@ -64,5 +80,18 @@ describe('DocumentExportPages', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'Ce lien n’est plus valide' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Relancer un export' })).toHaveAttribute('href', '/statistiques');
+  });
+
+  it('offers to check the link again when the check failed', () => {
+    const onRetry = vi.fn();
+    render(<DocumentExportCheckFailed onRetry={onRetry} />);
+
+    const title = screen.getByRole('heading', { level: 1, name: 'Vérification impossible' });
+    expect(title).toHaveFocus();
+    expect(screen.getByRole('link', { name: 'Page d’accueil' })).toHaveAttribute('href', '/');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
+
+    expect(onRetry).toHaveBeenCalledTimes(1);
   });
 });
