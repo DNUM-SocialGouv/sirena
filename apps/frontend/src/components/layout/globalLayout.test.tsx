@@ -36,6 +36,7 @@ vi.mock('./header', () => ({ HeaderMenu: () => <header>Header</header> }));
 vi.mock('./footer', () => ({ AppFooter: () => <footer>Footer</footer> }));
 vi.mock('./EnvironmentBanner', () => ({ EnvironmentBanner: () => null }));
 vi.mock('./UpdateBanner', () => ({ UpdateBanner: () => null }));
+vi.mock('./WarningBanner', () => ({ WarningBanner: () => null }));
 
 describe('GlobalLayout breadcrumb', () => {
   beforeEach(() => {
