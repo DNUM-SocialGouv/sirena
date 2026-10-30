@@ -8,7 +8,7 @@ import {
   ROLES,
   requeteEtapeStatutType,
 } from '@sirena/common/constants';
-import { isAutomaticRequest } from '@sirena/common/utils';
+import { isAutomaticRequest, isDayReachedInParis } from '@sirena/common/utils';
 import { Toast } from '@sirena/ui';
 
 import { clsx } from 'clsx';
@@ -216,18 +216,10 @@ const StepEditButton = ({ className, step, onEdit }: StepEditButtonProps) => {
 };
 
 // rappelDate holds a calendar day stored at UTC midnight. Read its Y/M/D in UTC and rebuild a local
-// Date so both the expiry check and the display stay on the intended day in every timezone.
+// Date so the displayed day stays the intended one in every timezone.
 const rappelCalendarDay = (rappelDate: string | Date): Date => {
   const d = new Date(rappelDate);
   return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
-};
-
-// A rappel is expired once its calendar day is today or earlier.
-const isRappelExpired = (rappelDate: string | Date): boolean => {
-  const target = rappelCalendarDay(rappelDate);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return target.getTime() <= today.getTime();
 };
 
 type StepRappelBadgeProps = {
@@ -246,7 +238,7 @@ const StepRappelBadge = ({
   onDeactivate,
 }: StepRappelBadgeProps) => {
   if (!rappelType || !rappelDate) return null;
-  const expired = isRappelExpired(rappelDate);
+  const expired = isDayReachedInParis(rappelDate);
   const dayLabel = formatDate(rappelCalendarDay(rappelDate));
 
   return (

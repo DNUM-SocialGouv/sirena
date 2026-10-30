@@ -314,7 +314,9 @@ describe('requetesEntite.service', () => {
             orderBy: { createdAt: 'desc' },
             take: 1,
           },
-          _count: { select: { requeteEtape: { where: { rappelType: { not: null } } } } },
+          _count: {
+            select: { requeteEtape: { where: { rappelType: { not: null }, rappelDate: { lte: expect.any(Date) } } } },
+          },
         },
       });
 
@@ -421,7 +423,9 @@ describe('requetesEntite.service', () => {
             orderBy: { createdAt: 'desc' },
             take: 1,
           },
-          _count: { select: { requeteEtape: { where: { rappelType: { not: null } } } } },
+          _count: {
+            select: { requeteEtape: { where: { rappelType: { not: null }, rappelDate: { lte: expect.any(Date) } } } },
+          },
         },
       });
 
@@ -527,7 +531,9 @@ describe('requetesEntite.service', () => {
             orderBy: { createdAt: 'desc' },
             take: 1,
           },
-          _count: { select: { requeteEtape: { where: { rappelType: { not: null } } } } },
+          _count: {
+            select: { requeteEtape: { where: { rappelType: { not: null }, rappelDate: { lte: expect.any(Date) } } } },
+          },
         },
       });
 
@@ -625,19 +631,49 @@ describe('requetesEntite.service', () => {
       );
     });
 
-    it('should filter by requêtes with at least one étape having a rappel when provided', async () => {
-      mockedRequeteEntite.findMany.mockResolvedValueOnce([mockRequeteEntite]);
-      mockedRequeteEntite.count.mockResolvedValueOnce(1);
+    describe('rappel arrivé à échéance', () => {
+      // 23:30 UTC is already the next day in Paris: the cutoff must follow the Paris calendar, not UTC.
+      const PARIS_NEXT_DAY = new Date('2026-03-10T23:30:00.000Z');
+      const DUE_RAPPEL = { rappelType: { not: null }, rappelDate: { lte: new Date('2026-03-11T00:00:00.000Z') } };
 
-      await getRequetesEntite(null, { rappel: 'true' });
+      beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(PARIS_NEXT_DAY);
+      });
 
-      expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: {
-            AND: [{ requeteEtape: { some: { rappelType: { not: null } } } }],
-          },
-        }),
-      );
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it('should only keep étapes whose rappel is due when filtering on rappel', async () => {
+        mockedRequeteEntite.findMany.mockResolvedValueOnce([mockRequeteEntite]);
+        mockedRequeteEntite.count.mockResolvedValueOnce(1);
+
+        await getRequetesEntite(null, { rappel: 'true' });
+
+        expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: {
+              AND: [{ requeteEtape: { some: DUE_RAPPEL } }],
+            },
+          }),
+        );
+      });
+
+      it('should only count étapes whose rappel is due', async () => {
+        mockedRequeteEntite.findMany.mockResolvedValueOnce([mockRequeteEntite]);
+        mockedRequeteEntite.count.mockResolvedValueOnce(1);
+
+        await getRequetesEntite(null, {});
+
+        expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            include: expect.objectContaining({
+              _count: { select: { requeteEtape: { where: DUE_RAPPEL } } },
+            }),
+          }),
+        );
+      });
     });
 
     it('should expose hasRappel based on the filtered étape count', async () => {

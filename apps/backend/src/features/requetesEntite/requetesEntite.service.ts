@@ -257,6 +257,12 @@ const buildDomaineFilter = (values: string[]): Prisma.RequeteEntiteWhereInput | 
   return orConditions.length === 1 ? orConditions[0] : { OR: orConditions };
 };
 
+// Reminders are stored at UTC midnight of their calendar day, so a request is flagged from that day on.
+const dueRappelEtapeFilter = (): Prisma.RequeteEtapeWhereInput => ({
+  rappelType: { not: null },
+  rappelDate: { lte: new Date(`${getDateTodayInParis()}T00:00:00.000Z`) },
+});
+
 const buildRequetesEntiteWhere = async (
   entiteIds: string[] | null,
   query: {
@@ -337,7 +343,7 @@ const buildRequetesEntiteWhere = async (
   }
   if (rappel) {
     andFilters.push({
-      requeteEtape: { some: { rappelType: { not: null } } },
+      requeteEtape: { some: dueRappelEtapeFilter() },
     });
   }
 
@@ -380,7 +386,7 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
           },
         },
         requeteEtape: { orderBy: { createdAt: 'desc' }, take: 1 },
-        _count: { select: { requeteEtape: { where: { rappelType: { not: null } } } } },
+        _count: { select: { requeteEtape: { where: dueRappelEtapeFilter() } } },
       },
     }),
     prisma.requeteEntite.count({
