@@ -5,11 +5,14 @@ import { connection } from '../../config/redis.js';
 import { notifyDocumentExportReady } from '../../features/documentExports/documentExports.notification.service.js';
 import {
   DOCUMENT_EXPORT_STATUS,
+  DOCUMENT_EXPORT_TTL_MS,
   DOCUMENT_EXPORT_TYPE,
   getDocumentExportForProcessing,
+  getDocumentExportStoredFile,
   markDocumentExportFailed,
   markDocumentExportProcessing,
   markDocumentExportReady,
+  markDocumentExportsExpired,
 } from '../../features/documentExports/documentExports.service.js';
 import { hasFeature } from '../../features/featureFlags/featureFlags.service.js';
 import { recordDocumentExport } from '../../features/monitoring/metrics.worker.js';
@@ -19,8 +22,13 @@ import {
 } from '../../features/statistics/exportRequetes/exportRequetesDocument.js';
 import { createDefaultLogger } from '../../helpers/pino.js';
 import { getLoggerStore, loggerStorage } from '../../libs/asyncLocalStorage.js';
-import { uploadFileToMinio } from '../../libs/minio.js';
-import { DOCUMENT_EXPORT_QUEUE_NAME, type DocumentExportJobData } from '../queues/documentExport.queue.js';
+import { deleteFilesFromMinio, uploadFileToMinio } from '../../libs/minio.js';
+import {
+  addDocumentExportExpiryJob,
+  DOCUMENT_EXPORT_JOB_NAMES,
+  DOCUMENT_EXPORT_QUEUE_NAME,
+  type DocumentExportJobData,
+} from '../queues/documentExport.queue.js';
 
 type DocumentExportToProcess = NonNullable<Awaited<ReturnType<typeof getDocumentExportForProcessing>>>;
 
@@ -106,6 +114,14 @@ export const processDocumentExport = async (job: Job<DocumentExportJobData>): Pr
       logger.info({ type: documentExport.type, rowCount, size, durationMs }, '[document-export] Document generated');
 
       try {
+        const expiresInMs = ready.expiresAt ? ready.expiresAt.getTime() - Date.now() : DOCUMENT_EXPORT_TTL_MS;
+        await addDocumentExportExpiryJob(documentExportId, Math.max(0, expiresInMs));
+      } catch (err) {
+        // The purge cron still deletes the file, only later than the link expiry.
+        logger.warn({ err }, '[document-export] Failed to schedule the file deletion at expiry');
+      }
+
+      try {
         await notifyDocumentExportReady({ ...ready, user: documentExport.user });
       } catch (err) {
         // The document is stored and stays READY: a notification failure must not regenerate it.
@@ -115,8 +131,44 @@ export const processDocumentExport = async (job: Job<DocumentExportJobData>): Pr
   );
 };
 
+/**
+ * Deletes the file as soon as its download link expires. A failure is retried by the queue, and
+ * the purge cron stays the safety net.
+ */
+export const processDocumentExportExpiry = async (job: Job<DocumentExportJobData>): Promise<void> => {
+  const { documentExportId } = job.data;
+
+  return loggerStorage.run(
+    createDefaultLogger().child({ context: 'document-export-worker', documentExportId, jobId: job.id }),
+    async () => {
+      const logger = getLoggerStore();
+
+      const stored = await getDocumentExportStoredFile(documentExportId);
+      if (!stored?.filePath) {
+        logger.info('[document-export] File already deleted, skipping');
+        return;
+      }
+      if (stored.expiresAt && stored.expiresAt > new Date()) {
+        logger.warn({ expiresAt: stored.expiresAt }, '[document-export] Link still valid, left to the purge cron');
+        return;
+      }
+
+      const [error] = await deleteFilesFromMinio([stored.filePath]);
+      if (error) {
+        throw new Error(`Failed to delete the expired document export file: ${error.message}`);
+      }
+
+      await markDocumentExportsExpired([documentExportId]);
+      logger.info('[document-export] Expired file deleted');
+    },
+  );
+};
+
+const processJob = (job: Job<DocumentExportJobData>) =>
+  job.name === DOCUMENT_EXPORT_JOB_NAMES.EXPIRE ? processDocumentExportExpiry(job) : processDocumentExport(job);
+
 export const createDocumentExportWorker = (): Worker<DocumentExportJobData> => {
-  const worker = new Worker<DocumentExportJobData>(DOCUMENT_EXPORT_QUEUE_NAME, processDocumentExport, {
+  const worker = new Worker<DocumentExportJobData>(DOCUMENT_EXPORT_QUEUE_NAME, processJob, {
     connection,
     // Each job streams a whole export: keep them few at a time to spare the database.
     concurrency: 2,
@@ -129,7 +181,9 @@ export const createDocumentExportWorker = (): Worker<DocumentExportJobData> => {
     eventLogger.error({ jobId: job?.id, documentExportId, err }, '[document-export] Job failed');
 
     const isLastAttempt = job != null && job.attemptsMade >= (job.opts.attempts ?? 1);
-    if (documentExportId && isLastAttempt) {
+    // A failed deletion at expiry is left to the purge cron: the document itself was delivered.
+    const isGeneration = job?.name !== DOCUMENT_EXPORT_JOB_NAMES.EXPIRE;
+    if (documentExportId && isLastAttempt && isGeneration) {
       markDocumentExportFailed(documentExportId, err.message)
         .then((failed) => {
           if (failed) recordDocumentExport({ status: 'error' });
