@@ -91,3 +91,15 @@
 .kpi-name {
   color: var(--text-title-grey);
 }
+
+/* While an update is in flight, the figures on screen are still the previous filters'. */
+.mb-grid--updating {
+  opacity: 0.55;
+  transition: opacity 300ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mb-grid--updating {
+    transition: none;
+  }
+}

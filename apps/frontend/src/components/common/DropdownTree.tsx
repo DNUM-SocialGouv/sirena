@@ -108,10 +108,11 @@ type NodeProps = LevelContext & {
 
 function Option({ node, depth, path, ancestors, idPrefix, selected, isAncestorSelected, onToggleValue }: NodeProps) {
   const optionId = `${idPrefix}-${path}`;
+  const rowClasses = [styles.option, depth === 0 ? styles.rootOption : null].filter(Boolean).join(' ');
 
   return (
     <div
-      className={`${styles.option} ${fr.cx('fr-checkbox-group', 'fr-checkbox-group--sm')}`}
+      className={`${rowClasses} ${fr.cx('fr-checkbox-group', 'fr-checkbox-group--sm')}`}
       style={{ '--depth': depth } as CSSProperties}
     >
       <input
@@ -362,7 +363,7 @@ export function DropdownTree({
       {isOpen ? (
         <div id={menuId} ref={panelRef} className={`${styles.dropdown} filter-dropdown__panel fr-card`}>
           <fieldset className={styles.fieldset}>
-            <legend className="fr-sr-only">{legend}</legend>
+            <legend className={`${styles.legend} ${fr.cx('fr-fieldset__legend', 'fr-text--regular')}`}>{legend}</legend>
             <Level
               nodes={nodes}
               depth={0}

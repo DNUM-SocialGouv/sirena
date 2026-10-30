@@ -1,12 +1,13 @@
 import { fr } from '@codegouvfr/react-dsfr';
+import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Tabs } from '@codegouvfr/react-dsfr/Tabs';
 import { ROLES, ROLES_STATISTICS } from '@sirena/common/constants';
 import { createFileRoute, Navigate, useNavigate, useSearch } from '@tanstack/react-router';
-import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo } from 'react';
+import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
 import { HelpTooltip } from '@/components/common/HelpTooltip';
 import { AuthLayout } from '@/components/layout/auth/layout';
-import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
+import { QueryErrorState, QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { parseCard } from '@/components/statistics/chartData';
 import { DashboardFilters } from '@/components/statistics/DashboardFilters';
 import { DownloadCsvButton } from '@/components/statistics/DownloadCsvButton';
@@ -19,6 +20,7 @@ import { StatTable } from '@/components/statistics/StatTable';
 import { parseTable } from '@/components/statistics/tableData';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useStatisticsDashboard } from '@/hooks/queries/statistics.hook';
+import { useDebounce } from '@/hooks/useDebounce';
 import type { StatisticsCard, StatisticsDashboard } from '@/lib/api/fetchStatistics';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { splitCsv } from '@/utils/filters';
@@ -28,6 +30,10 @@ const numberFormatter = new Intl.NumberFormat('fr-FR');
 const dataDateFormatter = new Intl.DateTimeFormat('fr-FR');
 
 const PAGE_TITLE = 'Indicateurs - SIRENA';
+
+// One dashboard view costs a dozen Metabase requests: without this window a burst of filter clicks
+// fires one wave per click, and Metabase answers 503.
+const FILTERS_DEBOUNCE_MS = 300;
 
 function formatDataDate(reference: Date): string {
   const previousDay = new Date(reference);
@@ -112,10 +118,13 @@ function CardContent({ card }: { card: StatisticsCard }) {
   return isKpiCard(card) ? <KpiCard card={card} /> : <ChartCard card={card} />;
 }
 
-function CardsGrid({ cards }: { cards: StatisticsCard[] }) {
+function CardsGrid({ cards, isUpdating }: { cards: StatisticsCard[]; isUpdating: boolean }) {
   const sortedCards = [...cards].sort(byGridPosition);
   return (
-    <div className={styles['mb-grid']}>
+    <div
+      className={`${styles['mb-grid']}${isUpdating ? ` ${styles['mb-grid--updating']}` : ''}`}
+      aria-busy={isUpdating}
+    >
       {sortedCards.map((card) => (
         <section key={`${card.dashcardId}-${card.id}`} className={styles['mb-cell']} style={cellStyle(card)}>
           <CardContent card={card} />
@@ -130,9 +139,16 @@ type DashboardContentProps = {
   requestedTabId: number | undefined;
   onTabChange: (tabId: string) => void;
   renderFilters: (available: ReadonlySet<DashboardFilterKey>) => ReactNode;
+  isUpdating: boolean;
 };
 
-function DashboardContent({ dashboard, requestedTabId, onTabChange, renderFilters }: DashboardContentProps) {
+function DashboardContent({
+  dashboard,
+  requestedTabId,
+  onTabChange,
+  renderFilters,
+  isUpdating,
+}: DashboardContentProps) {
   const cards = Array.isArray(dashboard.cards) ? dashboard.cards : [];
   const tabs = Array.isArray(dashboard.tabs) ? dashboard.tabs : [];
   const selectedTab = tabs.length > 1 ? resolveSelectedTab(tabs, requestedTabId) : null;
@@ -150,7 +166,7 @@ function DashboardContent({ dashboard, requestedTabId, onTabChange, renderFilter
     return (
       <>
         {renderFilters(resolveAvailableFilters(cards, cards))}
-        <CardsGrid cards={cards} />
+        <CardsGrid cards={cards} isUpdating={isUpdating} />
       </>
     );
   }
@@ -168,7 +184,11 @@ function DashboardContent({ dashboard, requestedTabId, onTabChange, renderFilter
       className={styles['dashboard-tabs']}
     >
       {renderFilters(resolveAvailableFilters(selectedCards, cards))}
-      {selectedCards.length > 0 ? <CardsGrid cards={selectedCards} /> : <p>Aucune carte dans cet onglet.</p>}
+      {selectedCards.length > 0 ? (
+        <CardsGrid cards={selectedCards} isUpdating={isUpdating} />
+      ) : (
+        <p>Aucune carte dans cet onglet.</p>
+      )}
     </Tabs>
   );
 }
@@ -238,10 +258,37 @@ export function RouteComponent() {
   const dataDate = formatDataDate(new Date());
   const selectedDomaines = useMemo(() => splitCsv(search.domaineIds), [search.domaineIds]);
   const selectedLieuTypes = useMemo(() => splitCsv(search.lieuTypes), [search.lieuTypes]);
-  const query = useStatisticsDashboard(
-    { ...range, domaineIds: search.domaineIds, includeEIG: search.includeEIG, lieuTypes: search.lieuTypes },
-    canView,
+
+  const filters = useMemo(
+    () => ({
+      startDate: range.startDate,
+      endDate: range.endDate,
+      domaineIds: search.domaineIds,
+      includeEIG: search.includeEIG,
+      lieuTypes: search.lieuTypes,
+    }),
+    [range.startDate, range.endDate, search.domaineIds, search.includeEIG, search.lieuTypes],
   );
+  const debouncedFilters = useDebounce(filters, FILTERS_DEBOUNCE_MS);
+  // Compared by value, not by reference: checking then unchecking inside the debounce window gives
+  // a new object with the same filters, and no update to wait for.
+  const filtersKey = useMemo(() => JSON.stringify(filters), [filters]);
+  const debouncedFiltersKey = useMemo(() => JSON.stringify(debouncedFilters), [debouncedFilters]);
+  const query = useStatisticsDashboard(debouncedFilters, canView);
+  const [hasRequestedUpdate, setHasRequestedUpdate] = useState(false);
+  // A failed update must not take the page down: that would remove the filter bar too, leaving no
+  // way back to the filter that caused the error.
+  const [lastDashboard, setLastDashboard] = useState<StatisticsDashboard | null>(null);
+
+  const isFetching = query.isFetching;
+  useEffect(() => {
+    if (isFetching) setHasRequestedUpdate(true);
+  }, [isFetching]);
+
+  const dashboard = query.data;
+  useEffect(() => {
+    if (dashboard) setLastDashboard(dashboard);
+  }, [dashboard]);
 
   const handlePeriodChange = useCallback(
     (next: PeriodSelection) => {
@@ -301,7 +348,16 @@ export function RouteComponent() {
     return <Navigate to={isSuperAdmin ? '/admin/users' : '/home'} />;
   }
 
-  const statusMessage = query.isFetching ? 'Mise à jour des indicateurs en cours…' : '';
+  // The request has not left yet during the debounce window: the busy state covers that wait too,
+  // otherwise it flickers between the click and the update.
+  const isUpdating = query.isFetching || debouncedFiltersKey !== filtersKey;
+  // A live region that only announces entering the wait leaves the user hanging: the exit is
+  // announced too, once, since the text does not change afterwards (RGAA 7.5).
+  const statusMessage = isUpdating
+    ? 'Mise à jour des indicateurs en cours…'
+    : hasRequestedUpdate
+      ? 'Indicateurs mis à jour.'
+      : '';
 
   return (
     <AuthLayout>
@@ -313,13 +369,38 @@ export function RouteComponent() {
         <p role="status" className="fr-sr-only" aria-live="polite">
           {statusMessage}
         </p>
-        <QueryStateHandler query={query} noDataComponent={<p>Aucune carte configurée dans le dashboard Metabase.</p>}>
+        <QueryStateHandler
+          query={query}
+          noDataComponent={<p>Aucune carte configurée dans le dashboard Metabase.</p>}
+          errorComponent={() =>
+            lastDashboard ? (
+              <>
+                <Alert
+                  severity="warning"
+                  small
+                  description="La mise à jour des indicateurs a échoué. Les chiffres affichés sont ceux de la dernière mise à jour réussie."
+                  className={fr.cx('fr-mb-3w')}
+                />
+                <DashboardContent
+                  dashboard={lastDashboard}
+                  requestedTabId={search.tab}
+                  onTabChange={handleTabChange}
+                  renderFilters={renderFilters}
+                  isUpdating={false}
+                />
+              </>
+            ) : (
+              <QueryErrorState />
+            )
+          }
+        >
           {({ data }) => (
             <DashboardContent
               dashboard={data}
               requestedTabId={search.tab}
               onTabChange={handleTabChange}
               renderFilters={renderFilters}
+              isUpdating={isUpdating}
             />
           )}
         </QueryStateHandler>

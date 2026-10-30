@@ -18,7 +18,8 @@ vi.mock('../../libs/asyncLocalStorage.js', () => ({
   getLoggerStore: vi.fn(() => logger),
 }));
 
-vi.mock('@sirena/backend-utils/helpers', () => ({
+vi.mock('@sirena/backend-utils/helpers', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@sirena/backend-utils/helpers')>()),
   throwHTTPException503ServiceUnavailable: vi.fn((msg?: string) => {
     throw new Error(`503:${msg ?? ''}`);
   }),
@@ -460,6 +461,135 @@ describe('statistics.service.ts', () => {
 
       const { fetchDashboardData } = await import('./statistics.service.js');
       await expect(fetchDashboardData()).rejects.toThrow(/^503:/);
+    });
+
+    it('reads the dashboard structure once, whatever the filters that follow', async () => {
+      const metadata = {
+        ok: true,
+        status: 200,
+        json: async () => ({ dashcards: [{ id: 100, card_id: 42, card: { id: 42, name: 'Total requêtes' } }] }),
+      };
+      const cardData = () => ({
+        ok: true,
+        status: 200,
+        json: async () => cardResult([{ name: 'total', base_type: 'type/Integer' }], [[123]]),
+      });
+      fetchMock.mockResolvedValueOnce(metadata).mockResolvedValueOnce(cardData()).mockResolvedValueOnce(cardData());
+
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await fetchDashboardData({}, { domaine_fonctionnel: ['SOCIAL'] });
+      await fetchDashboardData({}, { domaine_fonctionnel: ['NON_RENSEIGNE'] });
+
+      const metadataCalls = fetchMock.mock.calls.filter(([url]) => !String(url).includes('/dashcard/'));
+      expect(metadataCalls).toHaveLength(1);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    it('keeps the structure of one set of locked params out of another', async () => {
+      const metadata = () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ dashcards: [] }),
+      });
+      fetchMock.mockResolvedValueOnce(metadata()).mockResolvedValueOnce(metadata());
+
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await fetchDashboardData({ entity_label: 'ARS Bretagne' });
+      await fetchDashboardData({ entity_label: 'ARS Normandie' });
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('drops the card requests, without crying failure, when the client is already gone', async () => {
+      const aborted = AbortSignal.abort();
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ dashcards: [{ id: 100, card_id: 42, card: { id: 42, name: 'Total requêtes' } }] }),
+        })
+        .mockImplementationOnce((_url: string, init: RequestInit) => Promise.reject(init.signal?.reason));
+
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      const { cards } = await fetchDashboardData({}, {}, 'local', aborted);
+
+      expect(cards).toEqual([expect.objectContaining({ id: 42, dashcardId: 100, data: { cols: [], rows: [] } })]);
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it("journalise quand même l'échec d'une carte qui n'est pas dû au départ du client", async () => {
+      const controller = new AbortController();
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            dashcards: [
+              { id: 100, card_id: 42, card: { id: 42, name: 'En panne' } },
+              { id: 101, card_id: 43, card: { id: 43, name: 'Abandonnée' } },
+            ],
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          statusText: 'Internal Server Error',
+          text: async () => 'boom',
+        })
+        .mockImplementationOnce((_url: string, init: RequestInit) => {
+          controller.abort();
+          return Promise.reject(init.signal?.reason);
+        });
+
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await fetchDashboardData({}, {}, 'local', controller.signal);
+
+      const failures = logger.warn.mock.calls.filter(
+        ([, message]) => message === '[statistics] dashcard fetch failed, returning empty data',
+      );
+      expect(failures).toHaveLength(1);
+      expect(failures[0][0]).toMatchObject({ dashcardId: 100, cardId: 42 });
+    });
+
+    it('ne garde pas en cache une structure vide renvoyée par Metabase', async () => {
+      const emptyMetadata = () => ({ ok: true, status: 200, json: async () => ({ dashcards: [] }) });
+      fetchMock.mockResolvedValueOnce(emptyMetadata()).mockResolvedValueOnce(emptyMetadata());
+
+      const { fetchDashboardData } = await import('./statistics.service.js');
+      await fetchDashboardData();
+      await fetchDashboardData();
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('sert la dernière structure connue quand Metabase échoue à la rafraîchir', async () => {
+      const metadata = () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ dashcards: [{ id: 100, card_id: 42, card: { id: 42, name: 'Total requêtes' } }] }),
+      });
+      const cardData = () => ({
+        ok: true,
+        status: 200,
+        json: async () => cardResult([{ name: 'total', base_type: 'type/Integer' }], [[123]]),
+      });
+      fetchMock
+        .mockResolvedValueOnce(metadata())
+        .mockResolvedValueOnce(cardData())
+        .mockResolvedValueOnce({ ok: false, status: 503, statusText: 'Service Unavailable', text: async () => 'down' })
+        .mockResolvedValueOnce(cardData());
+
+      const { dashboardStructureCache, fetchDashboardData } = await import('./statistics.service.js');
+      await fetchDashboardData();
+      dashboardStructureCache.delete(7, JSON.stringify({}));
+
+      const { cards } = await fetchDashboardData();
+
+      expect(cards).toEqual([expect.objectContaining({ id: 42, dashcardId: 100 })]);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({ dashboardId: 7 }),
+        '[statistics] structure refresh failed, serving the last known one',
+      );
     });
 
     it('signs the token for the national dashboard id when scope is "national"', async () => {
