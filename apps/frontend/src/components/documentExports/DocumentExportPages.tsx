@@ -73,7 +73,7 @@ export const DocumentExportAccessDenied = () => (
     picto={<TechnicalError fontSize="10rem" />}
     actions={
       <Link className={fr.cx('fr-btn')} to="/">
-        Page d’accueil
+        Page d’accueil SIRENA
       </Link>
     }
   >
@@ -110,7 +110,7 @@ export const DocumentExportCheckFailed = ({ onRetry }: DocumentExportCheckFailed
         Réessayer
       </button>,
       <Link key="home" className={fr.cx('fr-btn', 'fr-btn--secondary')} to="/">
-        Page d’accueil
+        Page d’accueil SIRENA
       </Link>,
     ]}
   >

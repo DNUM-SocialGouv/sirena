@@ -79,7 +79,7 @@ describe('DocumentExportPages', () => {
     render(<DocumentExportAccessDenied />);
 
     expect(screen.getByRole('heading', { level: 1, name: 'Accès impossible' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Page d’accueil' })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: 'Page d’accueil SIRENA' })).toHaveAttribute('href', '/');
   });
 
   it('invites to run a new export once the link expired (CA8)', () => {
@@ -95,7 +95,7 @@ describe('DocumentExportPages', () => {
 
     const title = screen.getByRole('heading', { level: 1, name: 'Vérification impossible' });
     expect(title).toHaveFocus();
-    expect(screen.getByRole('link', { name: 'Page d’accueil' })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: 'Page d’accueil SIRENA' })).toHaveAttribute('href', '/');
 
     fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
 
