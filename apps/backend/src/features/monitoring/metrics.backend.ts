@@ -160,6 +160,17 @@ export function getPrometheusContentType(): string {
   return register.contentType;
 }
 
+export const documentExportDownloadsCounter = new Counter({
+  name: 'sirena_document_export_downloads_total',
+  help: 'Openings of a document download link, by outcome (downloaded, denied, expired)',
+  labelNames: ['outcome'],
+  registers: [register],
+});
+
+export function recordDocumentExportDownload(outcome: 'downloaded' | 'denied' | 'expired'): void {
+  documentExportDownloadsCounter.inc({ outcome });
+}
+
 export function recordRequestProcessing(status: string, operation: string, durationSeconds: number): void {
   requestsProcessedCounter.inc({ status });
   requestProcessingDuration.observe({ operation }, durationSeconds);

@@ -110,6 +110,7 @@ export const ROUTES_WITHOUT_BREADCRUMB = [
   '/login',
   '/_auth/inactive',
   '/_auth/acceptation-cgu',
+  '/_auth/telechargement/$documentExportId', // reached from an e-mail, outside the site hierarchy
   '/_auth/_user/home',
   '/_auth/admin/', // redirects to the users tab
 ] as const satisfies readonly (keyof FileRoutesById)[];

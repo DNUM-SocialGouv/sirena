@@ -4,16 +4,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { notifyDocumentExportReady } from '../../features/documentExports/documentExports.notification.service.js';
 import {
   getDocumentExportForProcessing,
+  getDocumentExportStoredFile,
   markDocumentExportFailed,
   markDocumentExportProcessing,
   markDocumentExportReady,
+  markDocumentExportsExpired,
 } from '../../features/documentExports/documentExports.service.js';
 import { hasFeature } from '../../features/featureFlags/featureFlags.service.js';
 import { recordDocumentExport } from '../../features/monitoring/metrics.worker.js';
 import { generateExportRequetesDocument } from '../../features/statistics/exportRequetes/exportRequetesDocument.js';
-import { uploadFileToMinio } from '../../libs/minio.js';
-import type { DocumentExportJobData } from '../queues/documentExport.queue.js';
-import { createDocumentExportWorker, processDocumentExport } from './documentExport.worker.js';
+import { deleteFilesFromMinio, uploadFileToMinio } from '../../libs/minio.js';
+import { addDocumentExportExpiryJob, type DocumentExportJobData } from '../queues/documentExport.queue.js';
+import {
+  createDocumentExportWorker,
+  processDocumentExport,
+  processDocumentExportExpiry,
+} from './documentExport.worker.js';
 
 vi.mock('bullmq', () => ({
   Worker: vi.fn(function MockWorker() {
@@ -27,6 +33,8 @@ vi.mock('../../config/redis.js', () => ({
 
 vi.mock('../queues/documentExport.queue.js', () => ({
   DOCUMENT_EXPORT_QUEUE_NAME: 'document-export',
+  DOCUMENT_EXPORT_JOB_NAMES: { GENERATE: 'generate', EXPIRE: 'expire' },
+  addDocumentExportExpiryJob: vi.fn(),
 }));
 
 vi.mock('../../features/monitoring/metrics.worker.js', () => ({
@@ -35,6 +43,7 @@ vi.mock('../../features/monitoring/metrics.worker.js', () => ({
 
 vi.mock('../../libs/minio.js', () => ({
   uploadFileToMinio: vi.fn(),
+  deleteFilesFromMinio: vi.fn(),
 }));
 
 vi.mock('../../features/featureFlags/featureFlags.service.js', () => ({
@@ -58,7 +67,10 @@ vi.mock('../../features/documentExports/documentExports.service.js', () => ({
     FAILED: 'FAILED',
   },
   DOCUMENT_EXPORT_TYPE: { REQUETES_CSV: 'REQUETES_CSV' },
+  DOCUMENT_EXPORT_TTL_MS: 30 * 60 * 1000,
   getDocumentExportForProcessing: vi.fn(),
+  getDocumentExportStoredFile: vi.fn(),
+  markDocumentExportsExpired: vi.fn(),
   markDocumentExportProcessing: vi.fn(),
   markDocumentExportReady: vi.fn(),
   markDocumentExportFailed: vi.fn(),
@@ -130,6 +142,7 @@ describe('documentExport.worker', () => {
       generatedAt: expect.any(Date),
     });
     expect(notifyDocumentExportReady).toHaveBeenCalledWith(expect.objectContaining({ id: 'export-1', user }));
+    expect(addDocumentExportExpiryJob).toHaveBeenCalledWith('export-1', expect.any(Number));
     expect(recordDocumentExport).toHaveBeenCalledWith({
       status: 'success',
       rowCount: 42,
@@ -222,5 +235,106 @@ describe('documentExport.worker', () => {
 
     expect(generateExportRequetesDocument).not.toHaveBeenCalled();
     expect(uploadFileToMinio).not.toHaveBeenCalled();
+  });
+  it('schedules the file deletion at the link expiry', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-26T10:00:00.000Z'));
+    try {
+      await processDocumentExport(job);
+    } finally {
+      vi.useRealTimers();
+    }
+
+    // markDocumentExportReady resolves expiresAt at 10:30.
+    expect(addDocumentExportExpiryJob).toHaveBeenCalledWith('export-1', 30 * 60 * 1000);
+  });
+
+  it('still notifies the requester when the deletion cannot be scheduled', async () => {
+    vi.mocked(addDocumentExportExpiryJob).mockRejectedValueOnce(new Error('redis down'));
+
+    await expect(processDocumentExport(job)).resolves.toBeUndefined();
+    expect(notifyDocumentExportReady).toHaveBeenCalled();
+  });
+
+  it('routes the expiry jobs to the deletion of the file', async () => {
+    createDocumentExportWorker();
+    const processor = vi.mocked(Worker).mock.calls.at(-1)?.[1] as (job: Job<DocumentExportJobData>) => Promise<void>;
+    vi.mocked(getDocumentExportStoredFile).mockResolvedValueOnce(null);
+
+    await processor({ ...job, name: 'expire' } as Job<DocumentExportJobData>);
+
+    expect(getDocumentExportStoredFile).toHaveBeenCalledWith('export-1');
+    expect(getDocumentExportForProcessing).not.toHaveBeenCalled();
+  });
+
+  it('does not fail the export when its expiry job fails', async () => {
+    createDocumentExportWorker();
+    const worker = vi.mocked(Worker).mock.results.at(-1)?.value as { on: ReturnType<typeof vi.fn> };
+    const onFailed = worker.on.mock.calls.find(([event]) => event === 'failed')?.[1] as (
+      job: unknown,
+      err: Error,
+    ) => void;
+
+    onFailed(
+      { id: 'job-2', name: 'expire', data: { documentExportId: 'export-1' }, attemptsMade: 3, opts: { attempts: 3 } },
+      new Error('x'),
+    );
+
+    expect(markDocumentExportFailed).not.toHaveBeenCalled();
+  });
+
+  describe('processDocumentExportExpiry', () => {
+    const expireJob = {
+      id: 'job-2',
+      name: 'expire',
+      data: { documentExportId: 'export-1' },
+    } as Job<DocumentExportJobData>;
+
+    it('deletes the expired file, then marks the export expired', async () => {
+      vi.mocked(getDocumentExportStoredFile).mockResolvedValueOnce({
+        id: 'export-1',
+        filePath: 'exports/abc.csv',
+        expiresAt: new Date(Date.now() - 1000),
+      });
+      vi.mocked(deleteFilesFromMinio).mockResolvedValueOnce([]);
+
+      await processDocumentExportExpiry(expireJob);
+
+      expect(deleteFilesFromMinio).toHaveBeenCalledWith(['exports/abc.csv']);
+      expect(markDocumentExportsExpired).toHaveBeenCalledWith(['export-1']);
+    });
+
+    it('does nothing when the purge already deleted the file', async () => {
+      vi.mocked(getDocumentExportStoredFile).mockResolvedValueOnce({ id: 'export-1', filePath: null, expiresAt: null });
+
+      await processDocumentExportExpiry(expireJob);
+
+      expect(deleteFilesFromMinio).not.toHaveBeenCalled();
+      expect(markDocumentExportsExpired).not.toHaveBeenCalled();
+    });
+
+    it('keeps a file whose link is still valid', async () => {
+      vi.mocked(getDocumentExportStoredFile).mockResolvedValueOnce({
+        id: 'export-1',
+        filePath: 'exports/abc.csv',
+        expiresAt: new Date(Date.now() + 60_000),
+      });
+
+      await processDocumentExportExpiry(expireJob);
+
+      expect(deleteFilesFromMinio).not.toHaveBeenCalled();
+    });
+
+    it('fails, to be retried, when the file cannot be deleted', async () => {
+      vi.mocked(getDocumentExportStoredFile).mockResolvedValueOnce({
+        id: 'export-1',
+        filePath: 'exports/abc.csv',
+        expiresAt: new Date(Date.now() - 1000),
+      });
+      vi.mocked(deleteFilesFromMinio).mockResolvedValueOnce([{ key: 'exports/abc.csv', message: 'AccessDenied' }]);
+
+      await expect(processDocumentExportExpiry(expireJob)).rejects.toThrow('AccessDenied');
+      expect(markDocumentExportsExpired).not.toHaveBeenCalled();
+    });
   });
 });
