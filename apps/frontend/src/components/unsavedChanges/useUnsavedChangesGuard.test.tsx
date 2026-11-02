@@ -29,6 +29,28 @@ const TestForm = () => {
 
 const renderForm = () => renderWithRouter(<TestForm />);
 
+const TestPanel = () => {
+  const [value, setValue] = useState('');
+  const [closeAnswer, setCloseAnswer] = useState('');
+  const { confirmLeave } = useUnsavedChangesGuard({ isDirty: value !== '' });
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => setValue(event.target.value);
+  const handleClose = async () => setCloseAnswer((await confirmLeave()) ? 'fermé' : 'resté ouvert');
+
+  return (
+    <>
+      <label>
+        Nom
+        <input value={value} onChange={handleChange} />
+      </label>
+      <button type="button" onClick={handleClose}>
+        Fermer le panneau
+      </button>
+      <output>{closeAnswer}</output>
+    </>
+  );
+};
+
 beforeEach(() => {
   mockDsfrModals();
 });
@@ -151,5 +173,41 @@ describe('useUnsavedChangesGuard', () => {
 
     expect(await screen.findByRole('heading', { name: OTHER_PAGE_HEADING })).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+});
+
+describe('confirmLeave', () => {
+  it('lets the user leave right away when nothing was changed', async () => {
+    const user = userEvent.setup();
+    await renderWithRouter(<TestPanel />);
+
+    await user.click(screen.getByRole('button', { name: 'Fermer le panneau' }));
+
+    expect(await screen.findByText('fermé')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'Données non enregistrées' })).not.toBeInTheDocument();
+  });
+
+  it('lets the user leave once they choose Quitter sans enregistrer', async () => {
+    const user = userEvent.setup();
+    await renderWithRouter(<TestPanel />);
+
+    await user.type(screen.getByLabelText('Nom'), 'Dupont');
+    await user.click(screen.getByRole('button', { name: 'Fermer le panneau' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Données non enregistrées' });
+    await user.click(within(dialog).getByRole('button', { name: 'Quitter sans enregistrer' }));
+
+    expect(await screen.findByText('fermé')).toBeInTheDocument();
+  });
+
+  it('keeps the user where they are when they choose Annuler', async () => {
+    const user = userEvent.setup();
+    await renderWithRouter(<TestPanel />);
+
+    await user.type(screen.getByLabelText('Nom'), 'Dupont');
+    await user.click(screen.getByRole('button', { name: 'Fermer le panneau' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Données non enregistrées' });
+    await user.click(within(dialog).getByRole('button', { name: 'Annuler' }));
+
+    expect(await screen.findByText('resté ouvert')).toBeInTheDocument();
   });
 });

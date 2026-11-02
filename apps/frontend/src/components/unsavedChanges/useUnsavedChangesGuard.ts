@@ -1,5 +1,5 @@
 import { useBlocker } from '@tanstack/react-router';
-import { useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { useUnsavedChangesStore } from '@/stores/unsavedChangesStore';
 
 // An expired session or an inactive account can no longer save: asking would only trap the user.
@@ -25,4 +25,12 @@ export const useUnsavedChangesGuard = ({ isDirty }: UnsavedChangesGuardOptions) 
     },
     enableBeforeUnload: false,
   });
+
+  const confirmLeave = useCallback(async () => {
+    if (!isDirtyRef.current) return true;
+
+    return useUnsavedChangesStore.getState().requestLeave();
+  }, []);
+
+  return { confirmLeave };
 };
