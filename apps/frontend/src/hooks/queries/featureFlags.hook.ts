@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { fetchFeatureFlags, fetchResolvedFeatureFlags } from '@/lib/api/fetchFeatureFlags';
+import { fetchFeatureFlags, fetchPublicFeatureFlags, fetchResolvedFeatureFlags } from '@/lib/api/fetchFeatureFlags';
 import { useFeatureFlagStore } from '@/stores/featureFlagStore';
 
 export const useFeatureFlags = () =>
@@ -13,6 +13,13 @@ export const resolvedFeatureFlagsQueryOptions = () => ({
   queryKey: ['featureFlags', 'resolved'],
   queryFn: fetchResolvedFeatureFlags,
   staleTime: 5 * 60_000,
+});
+
+export const publicFeatureFlagsQueryOptions = () => ({
+  queryKey: ['featureFlags', 'public'],
+  queryFn: fetchPublicFeatureFlags,
+  staleTime: 5 * 60_000,
+  refetchOnWindowFocus: false,
 });
 
 export const useResolvedFeatureFlags = () => {
