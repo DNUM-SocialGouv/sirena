@@ -214,6 +214,17 @@ describe('DropdownTree', () => {
     expect(onChange).toHaveBeenCalledWith(['OM']);
   });
 
+  it('names the filter above its options, for sighted users too', async () => {
+    renderTree([]);
+
+    await openMenu();
+    const panel = document.getElementById(menuId()) as HTMLElement;
+    const legend = panel.querySelector('legend') as HTMLElement;
+
+    expect(legend).toHaveTextContent('Filtrer par territoire');
+    expect(legend).not.toHaveClass('fr-sr-only');
+  });
+
   it('names each nested group after the node it details', async () => {
     renderTree([]);
 

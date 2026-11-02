@@ -115,7 +115,7 @@ const app = factoryWithLogs
     };
 
     if (entiteIds === null) {
-      const dashboard = await fetchDashboardData({}, optionalParams, 'national');
+      const dashboard = await fetchDashboardData({}, optionalParams, 'national', c.req.raw.signal);
       return c.json({ data: dashboard });
     }
 
@@ -139,7 +139,12 @@ const app = factoryWithLogs
     // Les bornes de date sont des filtres optionnels : le service ne les signe que si le dashboard
     // les déclare réellement, donc un dashboard sans filtre de date continue de fonctionner.
     // Voir docs/metabase_dashboards/FILTERS.md.
-    const dashboard = await fetchDashboardData({ entity_label: topEntite.label }, optionalParams);
+    const dashboard = await fetchDashboardData(
+      { entity_label: topEntite.label },
+      optionalParams,
+      'local',
+      c.req.raw.signal,
+    );
     return c.json({ data: dashboard });
   });
 

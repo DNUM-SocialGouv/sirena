@@ -1,5 +1,6 @@
 export const CACHE_INVALIDATION_SCOPES = {
   ENTITES_PERIMETRE: 'entites:perimetre',
+  METABASE_DASHBOARD: 'metabase:dashboard',
 } as const;
 
 export type CacheInvalidationScope = (typeof CACHE_INVALIDATION_SCOPES)[keyof typeof CACHE_INVALIDATION_SCOPES];

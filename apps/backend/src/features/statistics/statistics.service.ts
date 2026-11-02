@@ -1,11 +1,13 @@
-import { throwHTTPException503ServiceUnavailable } from '@sirena/backend-utils/helpers';
+import { CacheEntity, throwHTTPException503ServiceUnavailable } from '@sirena/backend-utils/helpers';
 import jwt from 'jsonwebtoken';
 import { envVars } from '../../config/env.js';
+import { CACHE_INVALIDATION_SCOPES, cacheInvalidationBus } from '../../helpers/cacheInvalidation.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 
 const METABASE_TOKEN_EXPIRATION_SECONDS = 10 * 60;
 const METABASE_FETCH_TIMEOUT_MS = 30_000;
 const METABASE_ERROR_BODY_PREVIEW = 500;
+export const DASHBOARD_STRUCTURE_CACHE_TTL_MS = 5 * 60 * 1000;
 
 type MetabaseConfig = {
   siteUrl: string;
@@ -19,6 +21,10 @@ type MetabaseDashboardConfig = MetabaseConfig & {
 // 'local' = dashboard entité-scopé des admins locaux/agents ; 'national' = dashboard national du super
 // admin (et, plus tard, du pilotage national). Mêmes clés Metabase, seul l'identifiant change.
 export type DashboardScope = 'local' | 'national';
+
+// Locked embedding params, signed into the JWT and never exposed to the client. The type stays
+// closed so the structure cache key, which serializes it, keeps a stable field order.
+export type LockedParams = { entity_label?: string };
 
 const DASHBOARD_ID_ENV: Record<DashboardScope, 'METABASE_DASHBOARD_ID' | 'METABASE_DASHBOARD_ID_ADMIN'> = {
   local: 'METABASE_DASHBOARD_ID',
@@ -131,6 +137,18 @@ export const signMetabaseDashboardToken = (
   params: Record<string, unknown> = {},
 ): string => signMetabaseToken({ dashboard: dashboardId }, secretKey, params);
 
+const metabaseBaseUrl = (siteUrl: string) => siteUrl.replace(/\/$/, '');
+
+const JWT_LIKE = /ey[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g;
+const redactTokens = (text: string) => text.replace(JWT_LIKE, '<token>');
+
+export class ClientGoneError extends Error {
+  constructor(options?: ErrorOptions) {
+    super('Client gone before the Metabase call completed', options);
+    this.name = 'ClientGoneError';
+  }
+}
+
 const safeReadErrorBody = async (response: Response): Promise<string> => {
   try {
     const text = await response.text();
@@ -140,22 +158,44 @@ const safeReadErrorBody = async (response: Response): Promise<string> => {
   }
 };
 
-const fetchJson = async (url: string, logContext: Record<string, unknown>): Promise<unknown> => {
+const fetchJson = async (
+  url: string,
+  logContext: Record<string, unknown>,
+  clientSignal?: AbortSignal,
+): Promise<unknown> => {
   const logger = getLoggerStore();
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), METABASE_FETCH_TIMEOUT_MS);
+  const timeout = new AbortController();
+  const timeoutId = setTimeout(() => timeout.abort(), METABASE_FETCH_TIMEOUT_MS);
+  // The timeout keeps its own controller: Node aborts with a bare string reason, leaving no `name`
+  // on the error to tell a timeout from the client leaving.
+  const signal = clientSignal ? AbortSignal.any([timeout.signal, clientSignal]) : timeout.signal;
 
   try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
-      signal: controller.signal,
-    });
+    let response: Response;
+
+    try {
+      response = await fetch(url, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        signal,
+      });
+    } catch (error) {
+      if (clientSignal?.aborted) throw new ClientGoneError({ cause: error });
+      if (timeout.signal.aborted) {
+        logger.error(
+          { ...logContext, timeoutMs: METABASE_FETCH_TIMEOUT_MS },
+          '[statistics] Metabase request timed out',
+        );
+        throwHTTPException503ServiceUnavailable('Metabase request timed out. Please try again later.');
+      }
+      throw error;
+    }
 
     if (!response.ok) {
-      // Sur 401/403, Metabase peut renvoyer le token signé dans le corps : on ne le loggue pas.
+      // Metabase echoes the URL-borne token in the body on 401/403, and a proxy can echo it on any
+      // status.
       const isAuthError = response.status === 401 || response.status === 403;
-      const body = isAuthError ? '<redacted>' : await safeReadErrorBody(response);
+      const body = isAuthError ? '<redacted>' : redactTokens(await safeReadErrorBody(response));
       logger.warn(
         { ...logContext, status: response.status, statusText: response.statusText, body },
         '[statistics] Metabase fetch returned non-2xx',
@@ -164,12 +204,6 @@ const fetchJson = async (url: string, logContext: Record<string, unknown>): Prom
     }
 
     return await response.json();
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      logger.error({ ...logContext, timeoutMs: METABASE_FETCH_TIMEOUT_MS }, '[statistics] Metabase request timed out');
-      throwHTTPException503ServiceUnavailable('Metabase request timed out. Please try again later.');
-    }
-    throw error;
   } finally {
     clearTimeout(timeoutId);
   }
@@ -382,23 +416,28 @@ const applyColumnTitles = (data: CardData, titles: Map<string, string>): CardDat
   };
 };
 
-export const fetchDashboardData = async (
-  lockedParams: Record<string, unknown> = {},
-  optionalParams: Record<string, unknown> = {},
-  scope: DashboardScope = 'local',
-): Promise<DashboardData> => {
+type DashboardStructure = {
+  readonly tabs: readonly DashboardTab[];
+  readonly dashcards: readonly DashcardDescriptor[];
+  readonly declaredSlugs: readonly string[];
+};
+
+// The structure depends only on the Metabase dashboard configuration, never on the user filters,
+// and loading it is the one call whose failure makes the whole page unavailable.
+const loadDashboardStructure = async (dashboardId: number, lockedParamsKey: string): Promise<DashboardStructure> => {
   const logger = getLoggerStore();
-  const { siteUrl, secretKey, dashboardId } = ensureMetabaseDashboardConfigured(scope);
+  const { siteUrl, secretKey } = ensureMetabaseConfigured();
+  const base = metabaseBaseUrl(siteUrl);
+  const token = signMetabaseDashboardToken(dashboardId, secretKey, JSON.parse(lockedParamsKey) as LockedParams);
 
-  const base = siteUrl.replace(/\/$/, '');
-
-  const token = signMetabaseDashboardToken(dashboardId, secretKey, lockedParams);
+  // No client signal: the cache shares this call, so one client leaving must not abort it for
+  // everyone else waiting on it.
   const metadata = await fetchJson(`${base}/api/embed/dashboard/${token}`, { dashboardId, step: 'metadata' });
 
   const parameters = extractDashboardParameters(metadata);
-  const declaredSlugs = new Set(parameters.map((p) => p.slug));
+  const declaredSlugs = [...new Set(parameters.map((p) => p.slug))];
 
-  const unknownSlugs = [...declaredSlugs].filter((slug) => !KNOWN_DASHBOARD_FILTER_SLUG_SET.has(slug));
+  const unknownSlugs = declaredSlugs.filter((slug) => !KNOWN_DASHBOARD_FILTER_SLUG_SET.has(slug));
   if (unknownSlugs.length > 0) {
     logger.warn(
       { dashboardId, unknownSlugs, knownSlugs: [...KNOWN_DASHBOARD_FILTER_SLUGS] },
@@ -409,6 +448,78 @@ export const fetchDashboardData = async (
   const slugByParameterId = new Map(
     parameters.flatMap((p): Array<[string, string]> => (p.id === null ? [] : [[p.id, p.slug]])),
   );
+
+  return {
+    tabs: extractDashboardTabs(metadata),
+    dashcards: extractDashcards(metadata)
+      .map((raw) => toDashcardDescriptor(raw, slugByParameterId))
+      .filter((d): d is DashcardDescriptor => d !== null),
+    declaredSlugs,
+  };
+};
+
+export const dashboardStructureCache = new CacheEntity<DashboardStructure, [number, string]>({
+  ttlMs: DASHBOARD_STRUCTURE_CACHE_TTL_MS,
+  fetcher: loadDashboardStructure,
+});
+
+cacheInvalidationBus.register(CACHE_INVALIDATION_SCOPES.METABASE_DASHBOARD, () => {
+  dashboardStructureCache.clear();
+});
+
+// The structure only changes when the dashboard is edited in Metabase, so serving a stale one beats
+// making the page unavailable.
+const lastKnownStructure = new Map<string, DashboardStructure>();
+
+const getDashboardStructure = async (
+  dashboardId: number,
+  lockedParamsKey: string,
+  logger: ReturnType<typeof getLoggerStore>,
+) => {
+  const memoryKey = `${dashboardId}|${lockedParamsKey}`;
+
+  try {
+    const structure = await dashboardStructureCache.get(dashboardId, lockedParamsKey);
+
+    if (structure.dashcards.length === 0) {
+      // Metabase answered with nothing usable: pinning that emptiness for the whole TTL would read
+      // as "no data" rather than as an outage.
+      dashboardStructureCache.delete(dashboardId, lockedParamsKey);
+      const stale = lastKnownStructure.get(memoryKey);
+      if (stale) {
+        logger.warn({ dashboardId }, '[statistics] Metabase returned an empty structure, serving the last known one');
+        return stale;
+      }
+      return structure;
+    }
+
+    lastKnownStructure.set(memoryKey, structure);
+    return structure;
+  } catch (error) {
+    const stale = lastKnownStructure.get(memoryKey);
+    if (!stale) throw error;
+    logger.warn({ dashboardId, err: error }, '[statistics] structure refresh failed, serving the last known one');
+    return stale;
+  }
+};
+
+export const fetchDashboardData = async (
+  lockedParams: LockedParams = {},
+  optionalParams: Record<string, unknown> = {},
+  scope: DashboardScope = 'local',
+  clientSignal?: AbortSignal,
+): Promise<DashboardData> => {
+  const logger = getLoggerStore();
+  const { siteUrl, secretKey, dashboardId } = ensureMetabaseDashboardConfigured(scope);
+
+  const base = metabaseBaseUrl(siteUrl);
+
+  const structure = await getDashboardStructure(dashboardId, JSON.stringify(lockedParams), logger);
+  const { tabs, dashcards } = structure;
+  const declaredSlugs = new Set(structure.declaredSlugs);
+
+  const token = signMetabaseDashboardToken(dashboardId, secretKey, lockedParams);
+
   const appliedOptional = Object.entries(optionalParams).filter(
     ([slug, value]) => value != null && declaredSlugs.has(slug) && (!Array.isArray(value) || value.length > 0),
   );
@@ -426,15 +537,9 @@ export const fetchDashboardData = async (
   const filterQuery = filterSearch.toString();
   const filterSuffix = filterQuery ? `?${filterQuery}` : '';
 
-  const tabs = extractDashboardTabs(metadata);
-  const rawDashcards = extractDashcards(metadata);
-  const dashcards = rawDashcards
-    .map((raw) => toDashcardDescriptor(raw, slugByParameterId))
-    .filter((d): d is DashcardDescriptor => d !== null);
-
   if (dashcards.length === 0) {
     logger.warn({ dashboardId }, '[statistics] Metabase dashboard has no readable cards');
-    return { tabs, cards: [] };
+    return { tabs: [...tabs], cards: [] };
   }
 
   // allSettled (et non all) : une dashcard en échec ne doit pas rendre tout le dashboard
@@ -443,7 +548,7 @@ export const fetchDashboardData = async (
     dashcards.map(
       async ({ dashcardId, cardId, tabId, filterSlugs, name, description, display, layout, columnTitles }) => {
         const cardUrl = `${base}/api/embed/dashboard/${token}/dashcard/${dashcardId}/card/${cardId}${filterSuffix}`;
-        const payload = await fetchJson(cardUrl, { dashboardId, dashcardId, cardId, step: 'card-data' });
+        const payload = await fetchJson(cardUrl, { dashboardId, dashcardId, cardId, step: 'card-data' }, clientSignal);
         const data = applyColumnTitles(extractCardData(payload), columnTitles);
 
         if (data.cols.length === 0) {
@@ -462,17 +567,20 @@ export const fetchDashboardData = async (
     if (result.status === 'fulfilled') return result.value;
 
     const { dashcardId, cardId, tabId, filterSlugs, name, description, display, layout } = dashcards[index];
-    logger.warn(
-      {
-        dashboardId,
-        dashcardId,
-        cardId,
-        reason: result.reason instanceof Error ? result.reason.message : result.reason,
-      },
-      '[statistics] dashcard fetch failed, returning empty data',
-    );
+    if (!(result.reason instanceof ClientGoneError)) {
+      logger.warn(
+        {
+          dashboardId,
+          dashcardId,
+          cardId,
+          reason: result.reason instanceof Error ? result.reason.message : result.reason,
+        },
+        '[statistics] dashcard fetch failed, returning empty data',
+      );
+    }
     return { id: cardId, dashcardId, tabId, filterSlugs, name, description, display, layout, data: EMPTY_CARD_DATA };
   });
 
-  return { tabs, cards };
+  // `tabs` comes from the shared cache: the response must not be able to mutate it.
+  return { tabs: [...tabs], cards };
 };

@@ -12,7 +12,10 @@ export type StatisticsDashboardFilters = {
   lieuTypes?: string;
 };
 
-export async function fetchStatisticsDashboard(filters: StatisticsDashboardFilters = {}): Promise<StatisticsDashboard> {
+export async function fetchStatisticsDashboard(
+  filters: StatisticsDashboardFilters = {},
+  signal?: AbortSignal,
+): Promise<StatisticsDashboard> {
   const query: Record<string, string> = {};
   if (filters.startDate) query.startDate = filters.startDate;
   if (filters.endDate) query.endDate = filters.endDate;
@@ -20,7 +23,7 @@ export async function fetchStatisticsDashboard(filters: StatisticsDashboardFilte
   if (filters.includeEIG === false) query.includeEIG = 'false';
   if (filters.lieuTypes) query.lieuTypes = filters.lieuTypes;
 
-  const res = await client.statistics.dashboard.$get({ query });
+  const res = await client.statistics.dashboard.$get({ query }, { init: { signal } });
   await handleRequestErrors(res);
   const { data } = await res.json();
   return data;

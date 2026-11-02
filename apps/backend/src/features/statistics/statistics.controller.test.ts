@@ -245,6 +245,7 @@ describe('statistics.controller.ts', () => {
           lieu_de_survenue: [],
         },
         'national',
+        expect.any(AbortSignal),
       );
       expect(getEntiteById).not.toHaveBeenCalled();
     });
@@ -269,7 +270,25 @@ describe('statistics.controller.ts', () => {
           inclure_eig: undefined,
           lieu_de_survenue: [],
         },
+        'local',
+        expect.any(AbortSignal),
       );
+    });
+
+    it('transmet le signal de la requête entrante, et non un signal de complaisance', async () => {
+      entitesMiddlewareState.topEntiteId = 'root-entite';
+      vi.mocked(getEntiteById).mockResolvedValueOnce({ label: 'ARS Île-de-France' } as never);
+      vi.mocked(fetchDashboardData).mockResolvedValueOnce({ tabs: [], cards: [] });
+      const controller = new AbortController();
+
+      await app.request('/dashboard', { signal: controller.signal });
+
+      const signal = vi.mocked(fetchDashboardData).mock.calls[0][3] as AbortSignal;
+      expect(signal.aborted).toBe(false);
+
+      controller.abort();
+
+      expect(signal.aborted).toBe(true);
     });
 
     it('rejects a business role with no root entity', async () => {
@@ -301,6 +320,8 @@ describe('statistics.controller.ts', () => {
           inclure_eig: undefined,
           lieu_de_survenue: [],
         },
+        'local',
+        expect.any(AbortSignal),
       );
     });
 
@@ -321,6 +342,8 @@ describe('statistics.controller.ts', () => {
           inclure_eig: 'false',
           lieu_de_survenue: [],
         },
+        'local',
+        expect.any(AbortSignal),
       );
     });
 
@@ -343,6 +366,7 @@ describe('statistics.controller.ts', () => {
           lieu_de_survenue: [],
         },
         'national',
+        expect.any(AbortSignal),
       );
     });
 
@@ -373,6 +397,8 @@ describe('statistics.controller.ts', () => {
           domaine_fonctionnel: [],
           lieu_de_survenue: ['ETABLISSEMENT_SANTE', 'DOMICILE:CHEZ_TIERS'],
         },
+        'local',
+        expect.any(AbortSignal),
       );
     });
 

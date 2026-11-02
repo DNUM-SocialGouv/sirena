@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
@@ -151,6 +151,60 @@ describe('Statistiques route — filtre Domaine fonctionnel', () => {
     );
   });
 
+  it('lets a burst of clicks settle before querying the dashboard again', async () => {
+    vi.useFakeTimers();
+
+    try {
+      const { rerender } = render(<RouteComponent />);
+      searchState.current = { domaineIds: 'SOCIAL' };
+      rerender(<RouteComponent />);
+
+      expect(useStatisticsDashboard).toHaveBeenLastCalledWith(expect.objectContaining({ domaineIds: undefined }), true);
+      expect(screen.getByRole('status')).toHaveTextContent('Mise à jour des indicateurs en cours…');
+
+      await act(async () => {
+        vi.advanceTimersByTime(150);
+      });
+      searchState.current = { domaineIds: 'SOCIAL,SANITAIRE' };
+      rerender(<RouteComponent />);
+
+      await act(async () => {
+        vi.advanceTimersByTime(300);
+      });
+
+      expect(useStatisticsDashboard).not.toHaveBeenCalledWith(expect.objectContaining({ domaineIds: 'SOCIAL' }), true);
+      expect(useStatisticsDashboard).toHaveBeenLastCalledWith(
+        expect.objectContaining({ domaineIds: 'SOCIAL,SANITAIRE' }),
+        true,
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('ne signale pas de mise à jour quand la rafale revient à son point de départ', async () => {
+    vi.useFakeTimers();
+
+    try {
+      searchState.current = { domaineIds: 'SOCIAL' };
+      const { rerender } = render(<RouteComponent />);
+      searchState.current = { domaineIds: 'SOCIAL,SANITAIRE' };
+      rerender(<RouteComponent />);
+      searchState.current = { domaineIds: 'SOCIAL' };
+      rerender(<RouteComponent />);
+
+      expect(screen.getByRole('status')).toBeEmptyDOMElement();
+
+      await act(async () => {
+        vi.advanceTimersByTime(300);
+      });
+
+      expect(useStatisticsDashboard).toHaveBeenLastCalledWith(expect.objectContaining({ domaineIds: 'SOCIAL' }), true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('names what the page actually filters, at both grouping levels', async () => {
     const user = userEvent.setup();
     render(<RouteComponent />);
@@ -161,6 +215,40 @@ describe('Statistiques route — filtre Domaine fonctionnel', () => {
 
     expect(screen.getByRole('group', { name: /Filtrer les indicateurs par domaine fonctionnel/ })).toBeInTheDocument();
     expect(screen.queryByText(/Filtrer les requêtes par domaine fonctionnel/)).not.toBeInTheDocument();
+  });
+});
+
+describe('Statistiques route — retour sur la mise à jour', () => {
+  it('annonce la fin de la mise à jour, pas seulement son début', () => {
+    vi.mocked(useStatisticsDashboard).mockReturnValue({ isFetching: true } as never);
+    const { rerender } = render(<RouteComponent />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('Mise à jour des indicateurs en cours…');
+
+    vi.mocked(useStatisticsDashboard).mockReturnValue({ isFetching: false } as never);
+    rerender(<RouteComponent />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('Indicateurs mis à jour.');
+  });
+
+  it('atténue les cartes et les marque occupées pendant la mise à jour', () => {
+    vi.mocked(useStatisticsDashboard).mockReturnValue({ isFetching: true } as never);
+    render(<RouteComponent />);
+
+    expect(screen.getByText('Total requêtes').closest('[aria-busy]')).toHaveAttribute('aria-busy', 'true');
+  });
+
+  it('garde le tableau de bord et ses filtres quand une mise à jour échoue', () => {
+    vi.mocked(useStatisticsDashboard).mockReturnValue({ isFetching: false, data: DEFAULT_DASHBOARD } as never);
+    const { rerender } = render(<RouteComponent />);
+
+    vi.mocked(QueryStateHandler).mockImplementation(
+      ({ errorComponent }) => errorComponent?.(new Error('503')) as never,
+    );
+    rerender(<RouteComponent />);
+
+    expect(screen.getByRole('button', { name: /Domaine fonctionnel/ })).toBeInTheDocument();
+    expect(screen.getByText(/La mise à jour des indicateurs a échoué/)).toBeInTheDocument();
   });
 });
 
