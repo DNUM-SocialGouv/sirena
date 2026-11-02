@@ -28,8 +28,8 @@ export const DocumentExportDownload = ({ downloadUrl, fileName, expiresAt }: Doc
 
   return (
     <DocumentExportMessage
-      title="Téléchargement de votre export"
-      lead={<>Le téléchargement de votre fichier{fileName ? <> {fileName}</> : null} démarre automatiquement.</>}
+      title="Téléchargement de votre document"
+      description={<>Le téléchargement de votre fichier{fileName ? <> {fileName}</> : null} démarre automatiquement.</>}
       picto={<DocumentDownload fontSize="10rem" />}
       actions={
         <a
@@ -53,7 +53,7 @@ export const DocumentExportDownload = ({ downloadUrl, fileName, expiresAt }: Doc
 export const DocumentExportAccessDenied = () => (
   <DocumentExportMessage
     title="Accès impossible"
-    lead="Vous n’avez pas accès à ce document."
+    description="Vous n’avez pas accès à ce document."
     picto={<TechnicalError fontSize="10rem" />}
     actions={
       <Link className={fr.cx('fr-btn')} to="/">
@@ -68,7 +68,7 @@ export const DocumentExportAccessDenied = () => (
 export const DocumentExportLinkExpired = () => (
   <DocumentExportMessage
     title="Ce lien n’est plus valide"
-    lead={`Le lien de téléchargement n’est valable que ${DOCUMENT_EXPORT_LINK_VALIDITY_MINUTES} minutes et le fichier a été supprimé.`}
+    description={`Le lien de téléchargement n’est valable que ${DOCUMENT_EXPORT_LINK_VALIDITY_MINUTES} minutes et le fichier a été supprimé.`}
     picto={<TechnicalError fontSize="10rem" />}
     actions={
       <Link className={fr.cx('fr-btn')} to="/statistiques">
@@ -87,7 +87,7 @@ type DocumentExportCheckFailedProps = {
 export const DocumentExportCheckFailed = ({ onRetry }: DocumentExportCheckFailedProps) => (
   <DocumentExportMessage
     title="Vérification impossible"
-    lead="Le lien de téléchargement n’a pas pu être vérifié."
+    description="Le lien de téléchargement n’a pas pu être vérifié."
     picto={<TechnicalError fontSize="10rem" />}
     actions={[
       <button key="retry" type="button" className={fr.cx('fr-btn')} onClick={onRetry}>

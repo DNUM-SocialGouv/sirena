@@ -3,8 +3,9 @@ import { Children, type ReactNode, useEffect, useRef } from 'react';
 
 type DocumentExportMessageProps = {
   title: string;
-  lead: ReactNode;
+  description: ReactNode;
   children?: ReactNode;
+  /** Decorative only: DSFR pictograms render with aria-hidden and carry no text. */
   picto: ReactNode;
   /** Each action becomes an item of the button group. */
   actions: ReactNode;
@@ -14,7 +15,7 @@ type DocumentExportMessageProps = {
  * Layout of the pages a download link leads to, on the model of the 404 page. The title takes the
  * focus when it appears, so a screen reader announces the outcome of the link it was opened from.
  */
-export const DocumentExportMessage = ({ title, lead, children, picto, actions }: DocumentExportMessageProps) => {
+export const DocumentExportMessage = ({ title, description, children, picto, actions }: DocumentExportMessageProps) => {
   const titleRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export const DocumentExportMessage = ({ title, lead, children, picto, actions }:
         <h1 ref={titleRef} tabIndex={-1}>
           {title}
         </h1>
-        <p className={fr.cx('fr-text--lead', 'fr-mb-3w')}>{lead}</p>
+        <p className={fr.cx('fr-text--lead', 'fr-mb-3w')}>{description}</p>
         {children}
         {/* --icon-left lets a button keep its label next to its icon inside the group. */}
         <ul className={fr.cx('fr-btns-group', 'fr-btns-group--inline-md', 'fr-btns-group--icon-left', 'fr-mt-5w')}>
