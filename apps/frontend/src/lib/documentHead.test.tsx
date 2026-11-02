@@ -6,6 +6,7 @@ import { Route as rootRoute } from '@/routes/__root';
 import { Route as donneesPersonnellesRoute } from '@/routes/_public/donnees-personnelles';
 import { Route as gestionCookiesRoute } from '@/routes/_public/gestion-cookies';
 import { Route as mentionsLegalesRoute } from '@/routes/_public/mentions-legales';
+import { Route as publicRoute } from '@/routes/_public/route';
 import indexHtml from '../../index.html?raw';
 
 vi.mock('@/components/layout/globalLayout', () => ({
@@ -27,24 +28,35 @@ const indicatorsRoute = createRoute({
   head: () => ({ meta: [{ title: 'Indicateurs - SIRENA' }] }),
   component: () => <h1>Indicateurs</h1>,
 });
+publicRoute.options = {
+  id: '/_public',
+  getParentRoute: () => rootRoute,
+  component: publicRoute.options.component,
+};
+
 const routeTree = rootRoute.addChildren([
   homeRoute,
   indicatorsRoute,
-  createRoute({
-    ...mentionsLegalesRoute.options,
-    getParentRoute: () => rootRoute,
-    path: '/mentions-legales',
-  }),
-  createRoute({
-    ...donneesPersonnellesRoute.options,
-    getParentRoute: () => rootRoute,
-    path: '/donnees-personnelles',
-  }),
-  createRoute({
-    ...gestionCookiesRoute.options,
-    getParentRoute: () => rootRoute,
-    path: '/gestion-cookies',
-  }),
+  publicRoute.addChildren([
+    createRoute({
+      head: mentionsLegalesRoute.options.head,
+      component: mentionsLegalesRoute.options.component,
+      getParentRoute: () => publicRoute,
+      path: '/mentions-legales',
+    }),
+    createRoute({
+      head: donneesPersonnellesRoute.options.head,
+      component: donneesPersonnellesRoute.options.component,
+      getParentRoute: () => publicRoute,
+      path: '/donnees-personnelles',
+    }),
+    createRoute({
+      head: gestionCookiesRoute.options.head,
+      component: gestionCookiesRoute.options.component,
+      getParentRoute: () => publicRoute,
+      path: '/gestion-cookies',
+    }),
+  ]),
 ]);
 
 const renderAt = async (path: string) => {
