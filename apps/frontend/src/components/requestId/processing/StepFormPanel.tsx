@@ -328,8 +328,9 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
     setIsLoading(false);
   };
 
-  const openCreate = () => {
+  const showNewStep = () => {
     resetForm();
+    setBaseline(null);
     setMode('create');
     setEditStepId(null);
     setCanOnlyEditNotes(false);
@@ -339,9 +340,9 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
     setIsOpen(true);
   };
 
-  const openEdit = (step: StepType) => {
-    if (!step.editable) return;
+  const showStep = (step: StepType) => {
     resetForm();
+    setBaseline(null);
     setMode('edit');
     setEditStepId(step.id);
     setEditStepNom(step.nom);
@@ -397,6 +398,14 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   const closeDrawer = () => {
     resetForm();
     setIsOpen(false);
+  };
+
+  const openCreate = () => leaveThen(showNewStep);
+
+  const openEdit = (step: StepType) => {
+    if (!step.editable) return;
+
+    leaveThen(() => showStep(step));
   };
 
   useImperativeHandle(ref, () => ({ openCreate, openEdit, closeDrawer }));
