@@ -24,7 +24,7 @@ export const Route = createFileRoute('/login')({
 });
 
 function RouteComponent() {
-  const { error } = Route.useSearch();
+  const { error, redirect } = Route.useSearch();
 
   const getErrorMessage = (errorCode: string) => {
     if (errorCode in AUTH_ERROR_CODES) {
@@ -53,6 +53,7 @@ function RouteComponent() {
                   <h1>Se connecter avec ProConnect</h1>
                   <div className="fr-connect-group">
                     <form action="/api/auth/login" method="post">
+                      {redirect ? <input type="hidden" name="redirect" value={redirect} /> : null}
                       <button className="fr-btn fr-connect pro-connect" type="submit">
                         <span className="fr-connect__login">S’identifier avec</span>
                         <span className="fr-connect__brand">ProConnect</span>

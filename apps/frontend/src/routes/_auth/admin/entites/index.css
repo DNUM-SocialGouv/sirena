@@ -5,11 +5,15 @@
 
 .admin-entites-filters__row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
 }
 
+/* Basis matches the dropdown panel's 18rem min-width: below that the filter wraps under the
+   legend instead of opening off-screen. */
 .admin-entites-filters__items {
+  flex: 1 1 18rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;

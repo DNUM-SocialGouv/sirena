@@ -296,12 +296,16 @@ export function RequetesEntite() {
 
   const cells: Cells<RequeteEntiteRow> = {
     'requete.id': (row) => {
+      const hasRappel = isRappelEnabled && row.hasRappel;
+      const rappelBadgeId = `requete-rappel-${row.requeteId}`;
       const link = (
         <Link
           to="/request/$requestId"
           className="fr-link"
           params={{ requestId: row.requeteId }}
           data-testid="requete-row-link"
+          // Browsing link by link skips the badge otherwise: the reminder is read with the link it qualifies.
+          aria-describedby={hasRappel ? rappelBadgeId : undefined}
         >
           Voir <span className="fr-sr-only">la requête</span> {row.requete.id}
         </Link>
@@ -312,11 +316,11 @@ export function RequetesEntite() {
       return (
         <div className="requetesEntitesTable__lien-cell">
           <span className="requetesEntitesTable__lien-cell-link">{link}</span>
-          {row.hasRappel ? (
-            <Badge severity="warning" noIcon small className="requetesEntitesTable__rappel-badge">
+          {hasRappel ? (
+            <Badge id={rappelBadgeId} severity="warning" noIcon small className="requetesEntitesTable__rappel-badge">
               <span className="fr-icon-notification-3-line fr-icon--sm" aria-hidden="true" />
               Rappel
-              <span className="fr-sr-only"> défini sur cette requête</span>
+              <span className="fr-sr-only"> arrivé à échéance sur cette requête</span>
             </Badge>
           ) : null}
         </div>

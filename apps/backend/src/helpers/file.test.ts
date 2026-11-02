@@ -1,6 +1,6 @@
 import { Readable } from 'node:stream';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createInlineContentDisposition, sanitizeFilename, urlToStream } from './file.js';
+import { createContentDisposition, createInlineContentDisposition, sanitizeFilename, urlToStream } from './file.js';
 
 vi.mock('../config/files.constant.js', () => ({ MAX_FILE_SIZE: 5 }));
 vi.mock('../libs/minio.js', () => ({
@@ -166,6 +166,14 @@ describe('file.ts', () => {
 
       expect(createInlineContentDisposition(decomposed)).toBe(
         'inline; filename="resume.pdf"; filename*=UTF-8\'\'resume%CC%80.pdf',
+      );
+    });
+  });
+
+  describe('createContentDisposition', () => {
+    it('asks the browser to save an attachment', () => {
+      expect(createContentDisposition('export_requêtes.csv', 'attachment')).toBe(
+        'attachment; filename="export_requêtes.csv"',
       );
     });
   });

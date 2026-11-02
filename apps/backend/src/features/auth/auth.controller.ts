@@ -9,6 +9,7 @@ import type { User } from '../../libs/prisma.js';
 import logoutMiddleware from '../../middlewares/logout.middleware.js';
 import { deleteSession, getSession } from '../sessions/sessions.service.js';
 import { authUser, createRedirectUrl } from './auth.helper.js';
+import { getPostLoginRedirectUrl, getSafeRedirectPath } from './auth.redirect.js';
 import { getCallbackRoute, postLoginRoute, postLogoutProconnectRoute, postLogoutRoute } from './auth.route.js';
 import {
   authorizationCodeGrant,
@@ -27,6 +28,9 @@ const OAUTH_STATE_COOKIE_OPTIONS = {
   sameSite: 'Lax',
   maxAge: OAUTH_COOKIE_MAX_AGE_SECONDS,
 } as const;
+
+// Page asked for before login, followed once the ProConnect round trip is over.
+const REDIRECT_COOKIE_NAME = 'redirect_after_login';
 
 const app = factoryWithLogs
   .createApp()
@@ -51,6 +55,15 @@ const app = factoryWithLogs
 
     setCookie(c, 'state', state, OAUTH_STATE_COOKIE_OPTIONS);
     setCookie(c, 'nonce', nonce, OAUTH_STATE_COOKIE_OPTIONS);
+
+    const body = await c.req.parseBody().catch(() => ({}) as Record<string, unknown>);
+    const redirectPath = getSafeRedirectPath(body.redirect);
+    if (redirectPath) {
+      setCookie(c, REDIRECT_COOKIE_NAME, redirectPath, OAUTH_STATE_COOKIE_OPTIONS);
+    } else if (getCookie(c, REDIRECT_COOKIE_NAME)) {
+      // Left by an unfinished login: this one asked for no page.
+      deleteCookie(c, REDIRECT_COOKIE_NAME);
+    }
     logger.info('OAuth state and nonce cookies set');
 
     return c.redirect(redirectTo.href, 302);
@@ -86,6 +99,9 @@ const app = factoryWithLogs
 
     deleteCookie(c, 'state');
     deleteCookie(c, 'nonce');
+
+    const redirectPath = getSafeRedirectPath(getCookie(c, REDIRECT_COOKIE_NAME));
+    deleteCookie(c, REDIRECT_COOKIE_NAME);
 
     let tokens: TokenEndpointResponse & TokenEndpointResponseHelpers;
 
@@ -158,7 +174,7 @@ const app = factoryWithLogs
     }
     logger.info({ userId: user.id }, 'User session created successfully');
 
-    return c.redirect(envVars.FRONTEND_REDIRECT_URI, 302);
+    return c.redirect(getPostLoginRedirectUrl(redirectPath), 302);
   })
 
   .use(logoutMiddleware)

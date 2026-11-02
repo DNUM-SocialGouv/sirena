@@ -35,8 +35,6 @@
   "license": "MIT",
   "packageManager": "pnpm@10.11.0",
   "dependencies": {
-    "@hono/standard-validator": "catalog:",
-    "@hono/zod-validator": "^0.9.1",
     "@sirena/common": "workspace:*",
     "hono": "catalog:",
     "hono-openapi": "catalog:",

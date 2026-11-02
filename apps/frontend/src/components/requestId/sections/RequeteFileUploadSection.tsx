@@ -299,7 +299,7 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
   return (
     <div className={`${fr.cx('fr-mb-3w')} ${styles.requeteFileUploadSection}`}>
       {files.length > 0 && (
-        <div style={{ width: '100%' }}>
+        <div className={styles.fileListWrapper}>
           <ul className={styles.fileList}>
             {files.map((file) => (
               <UploadedFileCard

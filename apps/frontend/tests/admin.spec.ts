@@ -163,7 +163,15 @@ test.describe('Administration des utilisateurs', () => {
         pristineHabilitation = await getUserHabilitation(context.request, targetUserId);
         hasPristine = true;
       }
+      // Both scenarios require an enabled account, even if the target is pending.
+      await setUserHabilitation(context.request, targetUserId, {
+        ...pristineHabilitation,
+        roleId: ROLES.READER,
+        statutId: STATUT_TYPES.ACTIF,
+      });
       await openUserEditPage(page, targetUserId);
+      await expect(page.getByTestId('user-role-select')).toHaveValue(ROLES.READER);
+      await expect(page.getByTestId('user-statut-select')).toHaveValue(STATUT_TYPES.ACTIF);
     });
 
     // Through the API and not the form, so an aborted assertion still restores.
@@ -178,22 +186,19 @@ test.describe('Administration des utilisateurs', () => {
       const statutSelect = page.getByTestId('user-statut-select');
       await expect(statutSelect).toBeVisible();
 
-      const oppositeStatus =
-        pristineHabilitation.statutId === STATUT_TYPES.ACTIF ? STATUT_TYPES.INACTIF : STATUT_TYPES.ACTIF;
-      await statutSelect.selectOption(oppositeStatus);
+      await statutSelect.selectOption(STATUT_TYPES.INACTIF);
       await saveUserForm(page);
 
       const saved = await getUserHabilitation(context.request, targetUserId);
-      expect(saved.statutId).toBe(oppositeStatus);
+      expect(saved.statutId).toBe(STATUT_TYPES.INACTIF);
     });
 
     test("change le rôle d'un utilisateur et le reflète dans le tableau", async () => {
-      const otherRole = pristineHabilitation.roleId === ROLES.READER ? ROLES.WRITER : ROLES.READER;
-      await page.getByTestId('user-role-select').selectOption(otherRole);
+      await page.getByTestId('user-role-select').selectOption(ROLES.WRITER);
       await saveUserForm(page);
 
       const saved = await getUserHabilitation(context.request, targetUserId);
-      expect(saved.roleId).toBe(otherRole);
+      expect(saved.roleId).toBe(ROLES.WRITER);
     });
   });
 });

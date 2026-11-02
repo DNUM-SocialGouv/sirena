@@ -106,11 +106,11 @@ export function DropdownCheckboxFilter({
   );
 
   return (
-    <div className="dropdown-checkbox-filter">
+    <div className="dropdown-checkbox-filter filter-dropdown">
       <button
         ref={triggerRef}
         type="button"
-        className={`dropdown-checkbox-filter__button fr-btn fr-btn--tertiary fr-btn--icon-right ${isOpen ? 'fr-icon-arrow-up-s-line' : 'fr-icon-arrow-down-s-line'}`}
+        className={`dropdown-checkbox-filter__button filter-dropdown__trigger fr-btn fr-btn--tertiary fr-btn--icon-right ${isOpen ? 'fr-icon-arrow-up-s-line' : 'fr-icon-arrow-down-s-line'}`}
         aria-expanded={isOpen}
         aria-controls={menuId}
         onClick={toggle}
@@ -127,7 +127,11 @@ export function DropdownCheckboxFilter({
       </button>
 
       {isOpen ? (
-        <div id={menuId} ref={panelRef} className="dropdown-checkbox-filter__dropdown fr-card fr-px-3w fr-py-2w">
+        <div
+          id={menuId}
+          ref={panelRef}
+          className="dropdown-checkbox-filter__dropdown filter-dropdown__panel fr-card fr-px-3w fr-py-2w"
+        >
           <Checkbox
             legend={legend}
             hintText={hintText}

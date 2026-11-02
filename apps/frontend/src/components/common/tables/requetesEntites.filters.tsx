@@ -205,7 +205,7 @@ export function RequetesEntiteQuickFilters() {
         />
 
         {isRappelEnabled && (
-          <CheckboxFilter label="Rappels" checked={quickFilters.isRappelOnly} onChange={handleRappelChange} />
+          <CheckboxFilter label="Rappels échus" checked={quickFilters.isRappelOnly} onChange={handleRappelChange} />
         )}
 
         {isTopEntiteARS && (

@@ -47,6 +47,7 @@ vi.mock('../../config/env.js', () => ({
     REFRESH_TOKEN_NAME: 'refreshToken',
     AUTH_TOKEN_NAME: 'authToken',
     IS_LOGGED_TOKEN_NAME: 'isLoggedIn',
+    FRONTEND_URI: 'https://frontend.example.com',
     FRONTEND_REDIRECT_URI: 'https://frontend.example.com/redirect',
     FRONTEND_REDIRECT_LOGIN_URI: 'https://frontend.example.com/login',
   },
@@ -105,6 +106,41 @@ describe('Auth endpoints: /auth', () => {
       expect(cookie).toMatch(/; HttpOnly(;|$)/);
       expect(cookie).toMatch(/; SameSite=Lax(;|$)/);
       expect(cookie).toMatch(/; Max-Age=[1-9][0-9]*(;|$)/);
+    });
+
+    it('keeps the page asked for before login in a short-lived cookie', async () => {
+      vi.mocked(buildAuthorizationUrl).mockResolvedValueOnce({
+        redirectTo: new URL('https://example.com/auth'),
+        nonce: 'fakeNonce',
+        state: 'fakeState',
+      });
+
+      const res = await app.request('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ redirect: '/telechargement/export-1' }),
+      });
+
+      expect(res.status).toBe(302);
+      expect(res.headers.getSetCookie()).toContain(
+        `redirect_after_login=${encodeURIComponent('/telechargement/export-1')}; Max-Age=600; Path=/; HttpOnly; Secure; SameSite=Lax`,
+      );
+    });
+
+    it('ignores a page asked for that is not part of the application', async () => {
+      vi.mocked(buildAuthorizationUrl).mockResolvedValueOnce({
+        redirectTo: new URL('https://example.com/auth'),
+        nonce: 'fakeNonce',
+        state: 'fakeState',
+      });
+
+      const res = await app.request('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ redirect: '//evil.example.com/phishing' }),
+      });
+
+      expect(res.headers.getSetCookie().some((cookie) => cookie.startsWith('redirect_after_login='))).toBe(false);
     });
 
     it('should redirect to error page when buildAuthorizationUrl fails', async () => {
@@ -354,6 +390,37 @@ describe('Auth endpoints: /auth', () => {
 
       expect(res.status).toBe(302);
       expect(res.headers.get('Location')).toBe(envVars.FRONTEND_REDIRECT_URI);
+    });
+
+    it('lands on the page asked for before login, once', async () => {
+      vi.mocked(authorizationCodeGrant).mockResolvedValueOnce({
+        access_token: 'validAccessToken123',
+        id_token: 'validIdToken123',
+        refresh_token: 'validRefreshToken123',
+        claims: () => ({ iss: 'a', sub: 'a', aud: 'a', iat: 1, exp: 1 }) as IDToken,
+      } as unknown as TokenEndpointResponse & TokenEndpointResponseHelpers);
+      vi.mocked(fetchUserInfo).mockResolvedValueOnce({
+        email: 'alice@example.com',
+        given_name: 'Alice',
+        usual_name: 'Smith',
+        sub: 'oidc-subject-xyz',
+        uid: 42,
+      });
+      vi.mocked(getOrCreateUser).mockResolvedValueOnce({ id: 'user-1', roleId: 'READER' } as never);
+      vi.mocked(authUser).mockResolvedValueOnce(undefined);
+
+      const res = await client.callback.$get(
+        { query: { code: 'validCode123', state: 'some-state' } },
+        {
+          headers: {
+            Cookie: `state=some-state; nonce=some-nonce; redirect_after_login=${encodeURIComponent('/telechargement/export-1')}`,
+          },
+        },
+      );
+
+      expect(res.status).toBe(302);
+      expect(res.headers.get('Location')).toBe('https://frontend.example.com/telechargement/export-1');
+      expect(res.headers.getSetCookie()).toContainEqual(expect.stringMatching(/^redirect_after_login=; Max-Age=0/));
     });
 
     it('should redirect to error page when error is present in the query params', async () => {

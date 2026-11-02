@@ -58,9 +58,9 @@ export function PeriodFilter({ value, onChange }: Props) {
 
   const { isOpen, toggle, close, triggerRef, panelRef } = useDisclosureMenu({ onOpen: syncDraft });
 
-  useEffect(() => setDraftPeriod(value.period), [value.period]);
-  useEffect(() => setStart(value.startDate ?? ''), [value.startDate]);
-  useEffect(() => setEnd(value.endDate ?? ''), [value.endDate]);
+  // An externally applied period (history navigation, tag dismissal) must clear the errors too, or
+  // fields the new values just made valid stay reported as invalid.
+  useEffect(syncDraft, [syncDraft]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -167,13 +167,20 @@ export function PeriodFilter({ value, onChange }: Props) {
   }, [onChange, clearDateInputs]);
 
   const endErrorMessage = dateErrors.end ?? (isInvalid ? END_BEFORE_START_MESSAGE : undefined);
+  const customPeriodEmptyError = !showPresets && isEmptyError;
+  const customPeriodErrorId = customPeriodEmptyError ? `${menuId}-custom-period-error` : undefined;
+  const startInvalid = Boolean(dateErrors.start) || customPeriodEmptyError;
+  const endInvalid = Boolean(endErrorMessage) || customPeriodEmptyError;
+  // A reversed range puts the start date past its own `max`, which the browser exposes as invalid by
+  // itself; `aria-invalid="false"` is the only value that denies that native state.
+  const startAriaInvalid = startInvalid ? true : isInvalid ? false : undefined;
 
   return (
-    <div className={styles.period__bar}>
+    <div className={`${styles.period__bar} filter-dropdown`}>
       <button
         ref={triggerRef}
         type="button"
-        className={`${styles.period__trigger} fr-btn fr-btn--tertiary fr-btn--icon-right ${isOpen ? 'fr-icon-arrow-up-s-line' : 'fr-icon-arrow-down-s-line'}`}
+        className={`${styles.period__trigger} filter-dropdown__trigger fr-btn fr-btn--tertiary fr-btn--icon-right ${isOpen ? 'fr-icon-arrow-up-s-line' : 'fr-icon-arrow-down-s-line'}`}
         aria-expanded={isOpen}
         aria-controls={menuId}
         onClick={toggle}
@@ -182,7 +189,11 @@ export function PeriodFilter({ value, onChange }: Props) {
       </button>
 
       {isOpen ? (
-        <div id={menuId} ref={panelRef} className={`${styles.period__panel} fr-card fr-px-3w fr-py-2w`}>
+        <div
+          id={menuId}
+          ref={panelRef}
+          className={`${styles.period__panel} filter-dropdown__panel fr-card fr-px-3w fr-py-2w`}
+        >
           {/* `noValidate`: without it the browser cancels the submit on an unparsable date and the DSFR messages below never render. */}
           <form onSubmit={apply} noValidate>
             <p className={styles.period__note}>{CREATION_DATE_NOTE}</p>
@@ -198,6 +209,7 @@ export function PeriodFilter({ value, onChange }: Props) {
                   nativeInputProps: {
                     value: preset,
                     checked: draftPeriod === preset,
+                    'aria-invalid': isEmptyError ? true : undefined,
                     onChange: () => selectPreset(preset),
                   },
                 }))}
@@ -218,6 +230,8 @@ export function PeriodFilter({ value, onChange }: Props) {
                   type: 'date',
                   value: start,
                   max: end || undefined,
+                  'aria-invalid': startAriaInvalid,
+                  'aria-describedby': customPeriodErrorId,
                   onChange: handleDateChange('start'),
                 }}
               />
@@ -231,11 +245,17 @@ export function PeriodFilter({ value, onChange }: Props) {
                   type: 'date',
                   value: end,
                   min: start || undefined,
+                  'aria-invalid': endInvalid ? true : undefined,
+                  'aria-describedby': customPeriodErrorId,
                   onChange: handleDateChange('end'),
                 }}
               />
             </fieldset>
-            {!showPresets && isEmptyError ? <p className={fr.cx('fr-error-text')}>{emptyErrorMessage}</p> : null}
+            {customPeriodEmptyError ? (
+              <p id={customPeriodErrorId} className={fr.cx('fr-error-text')}>
+                {emptyErrorMessage}
+              </p>
+            ) : null}
             <div className={styles.period__actions}>
               <Button type="submit" iconId="fr-icon-search-line">
                 Appliquer <span className="fr-sr-only">le filtre de période</span>

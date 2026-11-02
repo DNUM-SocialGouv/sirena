@@ -29,6 +29,15 @@ export const getDateTodayInParis = (): string => {
   return `${year}-${month}-${day}`;
 };
 
+// A rappel day is stored at UTC midnight. Comparing the two days as ISO strings keeps the answer
+// on the Paris calendar, which is the one the server uses, whatever timezone the browser sits in.
+export const isDayReachedInParis = (day: string | Date): boolean => {
+  const date = new Date(day);
+  const month = `${date.getUTCMonth() + 1}`.padStart(2, '0');
+  const dayOfMonth = `${date.getUTCDate()}`.padStart(2, '0');
+  return `${date.getUTCFullYear()}-${month}-${dayOfMonth}` <= getDateTodayInParis();
+};
+
 export const DEFAULT_TIME_ZONE = 'Europe/Paris';
 
 const buildWallClockFormatter = (timeZone: string): Intl.DateTimeFormat =>

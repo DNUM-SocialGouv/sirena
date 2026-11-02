@@ -339,11 +339,11 @@ export function DropdownTree({
   };
 
   return (
-    <div className={styles.dropdownTree}>
+    <div className={`${styles.dropdownTree} filter-dropdown`}>
       <button
         ref={triggerRef}
         type="button"
-        className={`${styles.button} fr-btn fr-btn--tertiary fr-btn--icon-right ${isOpen ? 'fr-icon-arrow-up-s-line' : 'fr-icon-arrow-down-s-line'}`}
+        className={`${styles.button} filter-dropdown__trigger fr-btn fr-btn--tertiary fr-btn--icon-right ${isOpen ? 'fr-icon-arrow-up-s-line' : 'fr-icon-arrow-down-s-line'}`}
         aria-expanded={isOpen}
         aria-controls={isOpen ? menuId : undefined}
         onClick={openOrClose}
@@ -360,7 +360,7 @@ export function DropdownTree({
       </button>
 
       {isOpen ? (
-        <div id={menuId} ref={panelRef} className={`${styles.dropdown} fr-card`}>
+        <div id={menuId} ref={panelRef} className={`${styles.dropdown} filter-dropdown__panel fr-card`}>
           <fieldset className={styles.fieldset}>
             <legend className="fr-sr-only">{legend}</legend>
             <Level
