@@ -1,6 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_public/gestion-cookies')({
+  head: () => ({
+    meta: [{ title: 'Gestion des cookies - SIRENA' }],
+  }),
   component: GestionCookiesPage,
 });
 

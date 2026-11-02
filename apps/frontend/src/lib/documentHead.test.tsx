@@ -1,8 +1,11 @@
 import { createMemoryHistory, createRoute, createRouter, RouterProvider } from '@tanstack/react-router';
-import { act, cleanup, render, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Route as rootRoute } from '@/routes/__root';
+import { Route as donneesPersonnellesRoute } from '@/routes/_public/donnees-personnelles';
+import { Route as gestionCookiesRoute } from '@/routes/_public/gestion-cookies';
+import { Route as mentionsLegalesRoute } from '@/routes/_public/mentions-legales';
 import indexHtml from '../../index.html?raw';
 
 vi.mock('@/components/layout/globalLayout', () => ({
@@ -24,7 +27,25 @@ const indicatorsRoute = createRoute({
   head: () => ({ meta: [{ title: 'Indicateurs - SIRENA' }] }),
   component: () => <h1>Indicateurs</h1>,
 });
-const routeTree = rootRoute.addChildren([homeRoute, indicatorsRoute]);
+const routeTree = rootRoute.addChildren([
+  homeRoute,
+  indicatorsRoute,
+  createRoute({
+    ...mentionsLegalesRoute.options,
+    getParentRoute: () => rootRoute,
+    path: '/mentions-legales',
+  }),
+  createRoute({
+    ...donneesPersonnellesRoute.options,
+    getParentRoute: () => rootRoute,
+    path: '/donnees-personnelles',
+  }),
+  createRoute({
+    ...gestionCookiesRoute.options,
+    getParentRoute: () => rootRoute,
+    path: '/gestion-cookies',
+  }),
+]);
 
 const renderAt = async (path: string) => {
   const router = createRouter({
@@ -53,6 +74,59 @@ afterEach(() => {
 });
 
 describe('document head', () => {
+  it('shows the legal notice page title on direct access', async () => {
+    await renderAt('/mentions-legales');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Mentions légales' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(document.head.querySelectorAll('title')).toHaveLength(1);
+      expect(document.title).toBe('Mentions légales - SIRENA');
+    });
+  });
+
+  it('shows the personal data page title on direct access', async () => {
+    await renderAt('/donnees-personnelles');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Données personnelles' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(document.head.querySelectorAll('title')).toHaveLength(1);
+      expect(document.title).toBe('Données personnelles - SIRENA');
+    });
+  });
+
+  it('shows the cookie management page title on direct access', async () => {
+    await renderAt('/gestion-cookies');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Gestion des cookies' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(document.head.querySelectorAll('title')).toHaveLength(1);
+      expect(document.title).toBe('Gestion des cookies - SIRENA');
+    });
+  });
+
+  it('updates a single title when navigating between public pages', async () => {
+    const router = await renderAt('/mentions-legales');
+    await waitFor(() => expect(document.title).toBe('Mentions légales - SIRENA'));
+
+    const pages = [
+      { path: '/donnees-personnelles', heading: 'Données personnelles', title: 'Données personnelles - SIRENA' },
+      { path: '/gestion-cookies', heading: 'Gestion des cookies', title: 'Gestion des cookies - SIRENA' },
+      { path: '/mentions-legales', heading: 'Mentions légales', title: 'Mentions légales - SIRENA' },
+    ] as const;
+
+    for (const { path, heading, title } of pages) {
+      await act(async () => {
+        await router.navigate({ to: path });
+      });
+
+      expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
+      await waitFor(() => {
+        expect(document.head.querySelectorAll('title')).toHaveLength(1);
+        expect(document.title).toBe(title);
+      });
+    }
+  });
+
   it('shows only the route title when the router mounts over the entry HTML', async () => {
     await renderAt('/indicateurs');
 

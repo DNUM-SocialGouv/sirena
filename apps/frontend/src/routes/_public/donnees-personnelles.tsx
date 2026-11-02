@@ -1,6 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_public/donnees-personnelles')({
+  head: () => ({
+    meta: [{ title: 'Données personnelles - SIRENA' }],
+  }),
   component: DonneesPersonnellesPage,
 });
 
