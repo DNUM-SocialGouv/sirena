@@ -31,6 +31,7 @@ interface SituationFormProps {
     initialFiles?: Array<{ id: string; entiteId?: string | null }>,
   ) => Promise<void>;
   saveButtonRef?: React.RefObject<HTMLButtonElement | null>;
+  savedVersion?: number;
 }
 
 export function SituationForm({
@@ -43,6 +44,7 @@ export function SituationForm({
   sirecDepartement,
   onSave,
   saveButtonRef: externalSaveButtonRef,
+  savedVersion = 0,
 }: SituationFormProps) {
   const navigate = useNavigate();
   const router = useRouter();
@@ -54,12 +56,23 @@ export function SituationForm({
   const [savedData, setSavedData] = useState<SituationData>(initialData || {});
   const [isSaving, setIsSaving] = useState(false);
   const [faitFiles, setFaitFiles] = useState<File[]>([]);
+  const [savedFaitFiles, setSavedFaitFiles] = useState<File[]>([]);
+  const [seenSavedVersion, setSeenSavedVersion] = useState(savedVersion);
   const [isTraitementDesFaitsValid, setIsTraitementDesFaitsValid] = useState(true);
   const [hasAttemptedSave, setHasAttemptedSave] = useState(false);
   const { data: entitesData } = useEntites(undefined);
   const { data: profile } = useProfile();
 
-  useUnsavedChangesGuard({ isDirty: faitFiles.length > 0 || hasUnsavedChanges(savedData, formData) });
+  if (savedVersion !== seenSavedVersion) {
+    setSeenSavedVersion(savedVersion);
+    setSavedData(formData);
+    setSavedFaitFiles(faitFiles);
+  }
+
+  const haveFaitFilesChanged =
+    faitFiles.length !== savedFaitFiles.length || faitFiles.some((file, index) => file !== savedFaitFiles[index]);
+
+  useUnsavedChangesGuard({ isDirty: haveFaitFilesChanged || hasUnsavedChanges(savedData, formData) });
 
   const handleTraitementDesFaitsChange = useCallback(
     (

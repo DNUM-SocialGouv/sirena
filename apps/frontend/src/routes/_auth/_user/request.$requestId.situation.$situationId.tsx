@@ -48,6 +48,7 @@ function RouteComponent() {
     }>;
   } | null>(null);
   const [formResetKey] = useState(0);
+  const [savedVersion, setSavedVersion] = useState(0);
 
   const situation = requestQuery.data?.requete?.situations?.find((s) => s.id === situationId);
   const formattedData = useMemo(() => formatSituationFromServer(situation), [situation]);
@@ -66,6 +67,7 @@ function RouteComponent() {
     onRefetch: () => requestQuery.refetch(),
     onSuccess: (result) => {
       if (result.shouldCloseRequeteStatus?.willUserBeUnassignedAfterSave) {
+        setSavedVersion((version) => version + 1);
         setShouldCloseRequeteStatus(result.shouldCloseRequeteStatus);
         closeRequeteModalRef.current?.openModal();
       } else {
@@ -111,6 +113,7 @@ function RouteComponent() {
                 sirecDepartement={situation?.sirecDepartement}
                 onSave={performSave}
                 saveButtonRef={saveButtonRef}
+                savedVersion={savedVersion}
               />
               <CloseRequeteModal
                 ref={closeRequeteModalRef}

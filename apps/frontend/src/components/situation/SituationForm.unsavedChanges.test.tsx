@@ -1,7 +1,7 @@
 import type { SituationData } from '@sirena/common/schemas';
-import { cleanup, screen, within } from '@testing-library/react';
+import { act, cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ComponentProps } from 'react';
+import { type ComponentProps, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockDsfrModals, OTHER_PAGE_HEADING, OTHER_PAGE_LINK, renderWithRouter } from '@/test-utils/renderWithRouter';
 import { SituationForm } from './SituationForm';
@@ -160,4 +160,58 @@ describe('SituationForm unsaved changes', () => {
       expect(router.state.location.pathname).toBe(destination);
     },
   );
+});
+
+// After a successful save the route may keep the agent on the form, when they close the close request modal.
+describe('SituationForm after a successful save that stays on the form', () => {
+  const renderWithSaves = async () => {
+    let markSaved: () => void = () => {};
+
+    const WithSaves = () => {
+      const [savedVersion, setSavedVersion] = useState(0);
+      markSaved = () => setSavedVersion((version) => version + 1);
+
+      return (
+        <SituationForm
+          mode="edit"
+          requestId="req-1"
+          situationId="sit-1"
+          initialData={SAVED_SITUATION}
+          savedVersion={savedVersion}
+          onSave={vi.fn()}
+        />
+      );
+    };
+
+    await renderWithRouter(<WithSaves />);
+
+    return () => act(() => markSaved());
+  };
+
+  it('lets the user leave without confirmation, uploaded files included', async () => {
+    const user = userEvent.setup();
+    const saveSucceeded = await renderWithSaves();
+
+    await user.type(screen.getByLabelText(/^Explication des faits par le déclarant/), ' grave');
+    await user.upload(
+      screen.getByLabelText(/^Ajouter des fichiers relatifs aux faits/),
+      new File(['x'], 'courrier.pdf', { type: 'application/pdf' }),
+    );
+    saveSucceeded();
+    await leave(user);
+
+    await expectLeftWithoutConfirmation();
+  });
+
+  it('asks for confirmation again after a later change', async () => {
+    const user = userEvent.setup();
+    const saveSucceeded = await renderWithSaves();
+
+    await user.type(screen.getByLabelText(/^Explication des faits par le déclarant/), ' grave');
+    saveSucceeded();
+    await user.type(screen.getByLabelText(/^Explication des faits par le déclarant/), ' et répétée');
+    await leave(user);
+
+    await expectConfirmation();
+  });
 });
