@@ -52,10 +52,11 @@ Prerequisites:
 #### Back links
 
 Prerequisites:
-- Authenticated user has ENTITY_ADMIN role, on an entity allowed to create a direction or a service.
-- Only the create pages the entity may open are checked. When it may create a direction but has none, the spec creates
-  `Direction e2e` once through the API, so the service create page is checked too. It is kept afterwards: no API deletes
-  an entity, and later runs reuse it.
+- Authenticated user is the ENTITY_ADMIN of an administrative entity (an ARS, a CD…), the only level allowed to create
+  both directions and services.
+- When that entity has no active direction, the spec creates `Direction e2e` through the API, since a service needs a
+  direction. A local admin can neither delete nor deactivate it, so it stays active in the entity and later runs create
+  nothing. Only a super admin deactivating it makes the next run create another one.
 
 #### Home Requetes
 

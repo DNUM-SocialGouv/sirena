@@ -11,9 +11,9 @@ import { type CreationCapabilities, ensureServiceCreationAllowed } from './utils
  * Prerequisites:
  * - Authenticated user has ENTITY_ADMIN role
  * - ADMIN_LOCAL_DIRECTIONS_SERVICES feature flag enabled
- * - An entity allowed to create a direction or a service. Only the create pages it is
- *   allowed to open are checked: the others redirect to the list. When it has no
- *   direction yet, the e2e direction is created so the service page can be checked too.
+ * - Authenticated user is the admin of an administrative entity (an ARS, a CD…), the
+ *   only level allowed to create both directions and services. When the entity has no
+ *   direction yet, the e2e direction is created so that services can be created too.
  */
 test.describe('Back links', () => {
   let context: BrowserContext;
@@ -33,13 +33,14 @@ test.describe('Back links', () => {
   });
 
   test('"Annuler" links of the admin forms are not flagged as the current page', async () => {
-    const paths = [
-      ...(capabilities.canCreateDirection ? ['/admin/directions-services/directions/create'] : []),
-      ...(capabilities.canCreateService ? ['/admin/directions-services/services/create'] : []),
-    ];
-    expect(paths, 'The admin entity can create neither a direction nor a service').not.toHaveLength(0);
+    // Both pages are always checked: a page the admin may not open redirects to the
+    // list, and a regression of these capabilities must fail here, not be skipped.
+    expect(
+      capabilities,
+      'The admin of an administrative entity must be able to create directions and services',
+    ).toEqual({ canCreateDirection: true, canCreateService: true });
 
-    for (const path of paths) {
+    for (const path of ['/admin/directions-services/directions/create', '/admin/directions-services/services/create']) {
       await page.goto(`${baseUrl}${path}`);
       const link = page.getByRole('link', { name: 'Annuler', exact: true });
       await expect(link).toHaveAttribute('href', '/admin/directions-services');

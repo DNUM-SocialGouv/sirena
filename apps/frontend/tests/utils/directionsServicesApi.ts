@@ -1,15 +1,7 @@
 import { type APIRequestContext, expect } from '@playwright/test';
-import { baseUrl } from './constants';
+import { apiUrl, originHeader } from './api';
 
-/**
- * API helpers for the local admin "Directions et services" pages. They go through
- * the frontend `/api` proxy with the browser context cookies, exactly like the app.
- */
-
-const apiUrl = (path: string) => `${baseUrl}/api${path}`;
-
-// The backend CSRF guard only accepts mutations that look same-origin.
-const originHeader = { origin: baseUrl, 'sec-fetch-site': 'same-origin' };
+/** API helpers for the local admin "Directions et services" pages. */
 
 /** Name of the direction the e2e tests create when the admin's entity has none. */
 export const E2E_DIRECTION = { nomComplet: 'Direction e2e', label: 'E2E' };
@@ -25,8 +17,8 @@ export async function getCreationCapabilities(request: APIRequestContext): Promi
 
 /**
  * A service can only be created under an active direction. When the admin's entity
- * has none yet, creates the e2e direction once: it is kept afterwards (no API deletes
- * an entity), so later runs find an active direction and create nothing.
+ * has none, creates the e2e direction. A local admin can neither delete nor deactivate
+ * it, so it stays active and later runs create nothing.
  */
 export async function ensureServiceCreationAllowed(request: APIRequestContext): Promise<CreationCapabilities> {
   const capabilities = await getCreationCapabilities(request);
@@ -39,5 +31,6 @@ export async function ensureServiceCreationAllowed(request: APIRequestContext): 
     data: { ...E2E_DIRECTION, email: '' },
   });
   expect(response.ok(), await response.text()).toBeTruthy();
-  return getCreationCapabilities(request);
+  // The new direction is active, which is all a service needs.
+  return { canCreateDirection: true, canCreateService: true };
 }
