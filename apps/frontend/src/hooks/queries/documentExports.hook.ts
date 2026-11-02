@@ -5,7 +5,7 @@ export const useDocumentExportAccess = (documentExportId: string) =>
   useQuery({
     queryKey: ['document-exports', documentExportId, 'access'],
     queryFn: () => fetchDocumentExportAccess(documentExportId),
-    // Each check is traced: only check again when the page is opened again.
+    // A refusal is traced on each check: only check again when the page is opened again.
     staleTime: Number.POSITIVE_INFINITY,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
