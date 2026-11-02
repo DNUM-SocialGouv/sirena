@@ -45,7 +45,9 @@ describe('GlobalLayout breadcrumb', () => {
     breadcrumbProps.mockReset();
   });
 
-  it('renders the breadcrumb between the header and the main content', () => {
+  // The skip link targets <main>, and the notices sitting at its top must not be bypassed, so the
+  // breadcrumb follows them inside <main> rather than preceding it.
+  it('renders the breadcrumb inside the main content, after the notices', () => {
     mockUseAppBreadCrumb.mockReturnValue([
       { text: 'Liste des requêtes', to: '/home', current: false },
       { text: 'Déclarant', to: '/request/create/declarant', current: true },
@@ -55,8 +57,13 @@ describe('GlobalLayout breadcrumb', () => {
 
     const breadcrumb = screen.getByRole('navigation', { name: 'vous êtes ici :' });
     const main = screen.getByRole('main');
-    expect(main).not.toContainElement(breadcrumb);
-    expect(breadcrumb.compareDocumentPosition(main) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const notices = screen.getByRole('status');
+    expect(main).toContainElement(breadcrumb);
+    expect(main).toContainElement(notices);
+    expect(notices.compareDocumentPosition(breadcrumb) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      breadcrumb.compareDocumentPosition(screen.getByText('Contenu')) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('never flags an ancestor as the current page', () => {
