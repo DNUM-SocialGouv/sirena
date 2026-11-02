@@ -1,11 +1,12 @@
 import { fr } from '@codegouvfr/react-dsfr';
-import { type ReactNode, useEffect, useRef } from 'react';
+import { Children, type ReactNode, useEffect, useRef } from 'react';
 
 type DocumentExportMessageProps = {
   title: string;
   lead: ReactNode;
   children?: ReactNode;
   picto: ReactNode;
+  /** Each action becomes an item of the button group. */
   actions: ReactNode;
 };
 
@@ -40,7 +41,9 @@ export const DocumentExportMessage = ({ title, lead, children, picto, actions }:
         {children}
         {/* --icon-left lets a button keep its label next to its icon inside the group. */}
         <ul className={fr.cx('fr-btns-group', 'fr-btns-group--inline-md', 'fr-btns-group--icon-left', 'fr-mt-5w')}>
-          {actions}
+          {Children.map(actions, (action) => (
+            <li>{action}</li>
+          ))}
         </ul>
       </div>
       <div className={fr.cx('fr-col-12', 'fr-col-md-3', 'fr-col-offset-md-1', 'fr-px-6w', 'fr-px-md-0', 'fr-py-0')}>

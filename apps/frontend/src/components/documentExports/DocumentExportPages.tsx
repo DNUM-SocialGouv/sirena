@@ -32,16 +32,14 @@ export const DocumentExportDownload = ({ downloadUrl, fileName, expiresAt }: Doc
       lead={<>Le téléchargement de votre fichier{fileName ? <> {fileName}</> : null} démarre automatiquement.</>}
       picto={<DocumentDownload fontSize="10rem" />}
       actions={
-        <li>
-          <a
-            ref={linkRef}
-            className={fr.cx('fr-btn', 'fr-btn--icon-left', 'fr-icon-download-line')}
-            href={downloadUrl}
-            download
-          >
-            Télécharger le fichier
-          </a>
-        </li>
+        <a
+          ref={linkRef}
+          className={fr.cx('fr-btn', 'fr-btn--icon-left', 'fr-icon-download-line')}
+          href={downloadUrl}
+          download
+        >
+          Télécharger le fichier
+        </a>
       }
     >
       <p className={fr.cx('fr-mb-0')}>
@@ -58,11 +56,9 @@ export const DocumentExportAccessDenied = () => (
     lead="Vous n’avez pas accès à ce document."
     picto={<TechnicalError fontSize="10rem" />}
     actions={
-      <li>
-        <Link className={fr.cx('fr-btn')} to="/">
-          Page d’accueil
-        </Link>
-      </li>
+      <Link className={fr.cx('fr-btn')} to="/">
+        Page d’accueil
+      </Link>
     }
   >
     <p className={fr.cx('fr-mb-0')}>Seule la personne qui a demandé l’export peut télécharger ce fichier.</p>
@@ -75,11 +71,9 @@ export const DocumentExportLinkExpired = () => (
     lead={`Le lien de téléchargement n’est valable que ${DOCUMENT_EXPORT_LINK_VALIDITY_MINUTES} minutes et le fichier a été supprimé.`}
     picto={<TechnicalError fontSize="10rem" />}
     actions={
-      <li>
-        <Link className={fr.cx('fr-btn')} to="/statistiques">
-          Relancer un export
-        </Link>
-      </li>
+      <Link className={fr.cx('fr-btn')} to="/statistiques">
+        Relancer un export
+      </Link>
     }
   >
     <p className={fr.cx('fr-mb-0')}>Pour récupérer les données, relancez un export depuis la page Indicateurs.</p>
@@ -95,20 +89,14 @@ export const DocumentExportCheckFailed = ({ onRetry }: DocumentExportCheckFailed
     title="Vérification impossible"
     lead="Le lien de téléchargement n’a pas pu être vérifié."
     picto={<TechnicalError fontSize="10rem" />}
-    actions={
-      <>
-        <li>
-          <button type="button" className={fr.cx('fr-btn')} onClick={onRetry}>
-            Réessayer
-          </button>
-        </li>
-        <li>
-          <Link className={fr.cx('fr-btn', 'fr-btn--secondary')} to="/">
-            Page d’accueil
-          </Link>
-        </li>
-      </>
-    }
+    actions={[
+      <button key="retry" type="button" className={fr.cx('fr-btn')} onClick={onRetry}>
+        Réessayer
+      </button>,
+      <Link key="home" className={fr.cx('fr-btn', 'fr-btn--secondary')} to="/">
+        Page d’accueil
+      </Link>,
+    ]}
   >
     <p className={fr.cx('fr-mb-0')}>Réessayez dans quelques instants. Si le problème persiste, relancez un export.</p>
   </DocumentExportMessage>
