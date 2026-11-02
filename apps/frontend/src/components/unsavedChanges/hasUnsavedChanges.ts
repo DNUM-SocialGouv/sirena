@@ -10,8 +10,10 @@ const normalize = (value: unknown): unknown => {
   if (typeof value === 'object') {
     const entries = Object.entries(value).flatMap(([key, entry]) => {
       const normalized = normalize(entry);
+
       return normalized === undefined ? [] : [[key, normalized] as const];
     });
+
     return Object.fromEntries(entries);
   }
 
@@ -27,8 +29,10 @@ const isSame = (a: unknown, b: unknown): boolean => {
 
   if (a && b && typeof a === 'object' && typeof b === 'object' && !Array.isArray(a) && !Array.isArray(b)) {
     if (a instanceof File || b instanceof File) return false;
+
     const aKeys = Object.keys(a);
     const bKeys = Object.keys(b);
+
     return (
       aKeys.length === bKeys.length &&
       aKeys.every((key) => isSame((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key]))

@@ -1,5 +1,5 @@
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useUnsavedChangesStore } from '@/stores/unsavedChangesStore';
 
 const unsavedChangesModal = createModal({ id: 'unsaved-changes-modal', isOpenedByDefault: false });
@@ -8,15 +8,35 @@ export function UnsavedChangesModal() {
   const isAsking = useUnsavedChangesStore((state) => state.pendingResolve !== null);
   const answer = useUnsavedChangesStore((state) => state.answer);
 
+  const triggerRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
-    if (isAsking) unsavedChangesModal.open();
+    if (!isAsking) return;
+    triggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    unsavedChangesModal.open();
   }, [isAsking]);
 
-  // Escape, backdrop and close btn are handled by the DSFR vanilla JS: every way out ends with this event.
+  // Escape, backdrop and ✕ are handled by the DSFR vanilla JS: every way out ends with this event.
   useEffect(() => {
     const element = document.getElementById(unsavedChangesModal.id);
-    const handleConceal = () => answer(false);
+    const handleConceal = () => {
+      const isStaying = useUnsavedChangesStore.getState().pendingResolve !== null;
+
+      answer(false);
+
+      const trigger = triggerRef.current;
+      triggerRef.current = null;
+
+      if (!isStaying) return;
+
+      // Deferred so the DSFR has finished moving the focus itself.
+      setTimeout(() => {
+        if (trigger?.isConnected) trigger.focus();
+      }, 0);
+    };
+
     element?.addEventListener('dsfr.conceal', handleConceal);
+
     return () => element?.removeEventListener('dsfr.conceal', handleConceal);
   }, [answer]);
 

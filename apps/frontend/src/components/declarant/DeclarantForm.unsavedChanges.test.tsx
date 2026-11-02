@@ -31,6 +31,19 @@ describe('DeclarantForm unsaved changes', () => {
     expect(await screen.findByRole('dialog', { name: 'Données non enregistrées' })).toBeInTheDocument();
   });
 
+  it('still asks for confirmation after a save that did not go through', async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    await renderForm({ onSave });
+
+    await user.type(screen.getByLabelText(/^Prénom/), 'Jean');
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect(onSave).toHaveBeenCalledOnce();
+    await user.click(screen.getByRole('link', { name: OTHER_PAGE_LINK }));
+
+    expect(await screen.findByRole('dialog', { name: 'Données non enregistrées' })).toBeInTheDocument();
+  });
+
   it('lets the user leave without confirmation when the values match the saved ones', async () => {
     const user = userEvent.setup();
     await renderForm();

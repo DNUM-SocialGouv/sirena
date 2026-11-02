@@ -1,8 +1,14 @@
-import { cleanup, screen, within } from '@testing-library/react';
+import { act, cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { type ChangeEvent, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mockDsfrModals, OTHER_PAGE_HEADING, OTHER_PAGE_LINK, renderWithRouter } from '@/test-utils/renderWithRouter';
+import {
+  closeDsfrModalNatively,
+  mockDsfrModals,
+  OTHER_PAGE_HEADING,
+  OTHER_PAGE_LINK,
+  renderWithRouter,
+} from '@/test-utils/renderWithRouter';
 import { useUnsavedChangesGuard } from './useUnsavedChangesGuard';
 
 const TestForm = () => {
@@ -64,6 +70,20 @@ describe('useUnsavedChangesGuard', () => {
     expect(screen.getByLabelText('Nom')).toHaveValue('Dupont');
   });
 
+  it('gives the focus back to the element the user activated when they stay on the form', async () => {
+    const user = userEvent.setup();
+    await renderForm();
+
+    await user.type(screen.getByLabelText('Nom'), 'Dupont');
+    const link = screen.getByRole('link', { name: OTHER_PAGE_LINK });
+    link.focus();
+    await user.keyboard('{Enter}');
+    const dialog = await screen.findByRole('dialog', { name: 'Données non enregistrées' });
+    await user.click(within(dialog).getByRole('button', { name: 'Annuler' }));
+
+    await waitFor(() => expect(link).toHaveFocus());
+  });
+
   it('completes the navigation when the user chooses Quitter sans enregistrer', async () => {
     const user = userEvent.setup();
     await renderForm();
@@ -75,6 +95,51 @@ describe('useUnsavedChangesGuard', () => {
 
     expect(await screen.findByRole('heading', { name: OTHER_PAGE_HEADING })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Formulaire' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  // Fermer, Escape and the backdrop are handled by the DSFR vanilla JS, which only reports the closing.
+  it('keeps the user on the form when the modal is closed with Fermer, Escape or the backdrop', async () => {
+    const user = userEvent.setup();
+    const router = await renderForm();
+
+    await user.type(screen.getByLabelText('Nom'), 'Dupont');
+    await user.click(screen.getByRole('link', { name: OTHER_PAGE_LINK }));
+    const dialog = await screen.findByRole('dialog', { name: 'Données non enregistrées' });
+    act(() => closeDsfrModalNatively(dialog));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(router.state.location.pathname).toBe('/');
+    expect(screen.getByLabelText('Nom')).toHaveValue('Dupont');
+
+    await user.click(screen.getByRole('link', { name: OTHER_PAGE_LINK }));
+    expect(await screen.findByRole('dialog', { name: 'Données non enregistrées' })).toBeInTheDocument();
+  });
+
+  it('asks for confirmation when the user goes back in the browser history with unsaved changes', async () => {
+    const user = userEvent.setup();
+    const router = await renderWithRouter(<TestForm />, { previousPath: '/home' });
+
+    await user.type(screen.getByLabelText('Nom'), 'Dupont');
+    act(() => router.history.back());
+
+    const dialog = await screen.findByRole('dialog', { name: 'Données non enregistrées' });
+    await user.click(within(dialog).getByRole('button', { name: 'Annuler' }));
+
+    await waitFor(() => expect(window.location.pathname).toBe('/'));
+    expect(router.state.location.pathname).toBe('/');
+    expect(screen.getByLabelText('Nom')).toHaveValue('Dupont');
+  });
+
+  // An expired session or an inactive account can no longer save: asking would only trap the user.
+  it.each(['/login', '/inactive'] as const)('lets SIRENA redirect to %s without confirmation', async (to) => {
+    const user = userEvent.setup();
+    const router = await renderForm();
+
+    await user.type(screen.getByLabelText('Nom'), 'Dupont');
+    await act(() => router.navigate({ to }));
+
+    expect(router.state.location.pathname).toBe(to);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 

@@ -14,12 +14,15 @@ export const useUnsavedChangesStore = create<UnsavedChangesState>((set, get) => 
     new Promise<boolean>((resolve) => {
       // A newer request supersedes an unanswered one: the older caller stays where it is.
       get().pendingResolve?.(false);
+
       set({ pendingResolve: resolve });
     }),
   answer: (canLeave) => {
     const resolve = get().pendingResolve;
     if (!resolve) return;
+
     set({ pendingResolve: null });
+
     resolve(canLeave);
   },
 }));
