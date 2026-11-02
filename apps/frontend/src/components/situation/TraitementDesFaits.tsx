@@ -16,7 +16,10 @@ interface TraitementDesFaitsSectionProps {
   userEntiteId?: string | null;
   topEntiteId?: string | null;
   initialEntites?: Array<{ entiteId: string; directionServiceId?: string }>;
-  onChange: (data: { entites: Array<{ entiteId: string; directionServiceId?: string }> }) => void;
+  onChange: (
+    data: { entites: Array<{ entiteId: string; directionServiceId?: string }> },
+    meta: { isUserChange: boolean },
+  ) => void;
   onValidationChange?: (isValid: boolean) => void;
   disabled?: boolean;
   hasAttemptedSave?: boolean;
@@ -197,6 +200,7 @@ const TraitementDesFaitsSection = forwardRef<TraitementDesFaitsSectionRef, Trait
     const [isFirstRowEditable, setIsFirstRowEditable] = useState(false);
     const [globalError, setGlobalError] = useState<string | undefined>();
     const initDoneRef = useRef(false);
+    const hasUserChangedRowsRef = useRef(false);
     const { data: topEntiteDescendants = [], isLoading: isLoadingDescendants } = useEntiteDescendants(
       topEntiteId ?? undefined,
     );
@@ -284,9 +288,7 @@ const TraitementDesFaitsSection = forwardRef<TraitementDesFaitsSectionRef, Trait
             });
           }
         });
-      onChange({
-        entites: entitesArray,
-      });
+      onChange({ entites: entitesArray }, { isUserChange: hasUserChangedRowsRef.current });
     }, [rows, onChange]);
 
     useEffect(() => {
@@ -313,6 +315,8 @@ const TraitementDesFaitsSection = forwardRef<TraitementDesFaitsSectionRef, Trait
     }, [hasAttemptedSave, rows]);
 
     const handleAddRow = useCallback(() => {
+      hasUserChangedRowsRef.current = true;
+
       setRows((prev) => ({
         editableRows: [
           ...prev.editableRows,
@@ -333,6 +337,8 @@ const TraitementDesFaitsSection = forwardRef<TraitementDesFaitsSectionRef, Trait
 
     const handleRemoveRow = useCallback(
       (id: string) => {
+        hasUserChangedRowsRef.current = true;
+
         setRows((prev) => ({
           editableRows: prev.editableRows.filter((row) => row.id !== id),
           readOnlyRows: prev.readOnlyRows.filter((row) => row.id !== id),
@@ -346,6 +352,8 @@ const TraitementDesFaitsSection = forwardRef<TraitementDesFaitsSectionRef, Trait
 
     const handleRowChange = useCallback(
       (id: string, field: 'entiteId' | 'directionServiceIds', value: string | string[]) => {
+        hasUserChangedRowsRef.current = true;
+
         setRows((prev) => ({
           readOnlyRows: prev.readOnlyRows,
           editableRows: prev.editableRows.map((row) =>

@@ -42,7 +42,7 @@ function RouteComponent() {
       if (result.shouldCloseRequeteStatus?.willUserBeUnassignedAfterSave) {
         setShouldCloseRequeteStatus(result.shouldCloseRequeteStatus);
       } else {
-        navigate({ to: '/request/$requestId', params: { requestId: requeteId } });
+        navigate({ to: '/request/$requestId', params: { requestId: requeteId }, ignoreBlocker: true });
       }
     },
   });
@@ -59,20 +59,20 @@ function RouteComponent() {
   const handleCloseModalCancel = useCallback(async () => {
     if (createdRequeteId) {
       setShouldCloseRequeteStatus(null);
-      navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId } });
+      navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId }, ignoreBlocker: true });
     }
   }, [createdRequeteId, navigate]);
 
   const handleBeforeClose = useCallback(async () => {
     if (createdRequeteId) {
-      navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId } });
+      navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId }, ignoreBlocker: true });
     }
   }, [createdRequeteId, navigate]);
 
   const handleCloseModalSuccess = useCallback(() => {
     if (createdRequeteId) {
       setShouldCloseRequeteStatus(null);
-      navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId } });
+      navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId }, ignoreBlocker: true });
     }
   }, [createdRequeteId, navigate]);
 

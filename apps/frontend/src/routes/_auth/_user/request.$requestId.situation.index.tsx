@@ -51,23 +51,23 @@ function RouteComponent() {
         setShouldCloseRequeteStatus(result.shouldCloseRequeteStatus);
         closeRequeteModalRef.current?.openModal();
       } else {
-        navigate({ to: '/request/$requestId', params: { requestId } });
+        navigate({ to: '/request/$requestId', params: { requestId }, ignoreBlocker: true });
       }
     },
   });
 
   const handleCloseModalCancel = useCallback(async () => {
     setShouldCloseRequeteStatus(null);
-    navigate({ to: '/request/$requestId', params: { requestId } });
+    navigate({ to: '/request/$requestId', params: { requestId }, ignoreBlocker: true });
   }, [navigate, requestId]);
 
   const handleBeforeClose = useCallback(async () => {
-    navigate({ to: '/request/$requestId', params: { requestId } });
+    navigate({ to: '/request/$requestId', params: { requestId }, ignoreBlocker: true });
   }, [navigate, requestId]);
 
   const handleCloseModalSuccess = useCallback(() => {
     setShouldCloseRequeteStatus(null);
-    navigate({ to: '/request/$requestId', params: { requestId } });
+    navigate({ to: '/request/$requestId', params: { requestId }, ignoreBlocker: true });
   }, [navigate, requestId]);
 
   const handleModalDismiss = useCallback(() => {
