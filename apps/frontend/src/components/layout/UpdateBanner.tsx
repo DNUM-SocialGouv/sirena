@@ -41,7 +41,7 @@ export function UpdateBanner() {
     <Notice
       title="Nouvelle mise à jour"
       description="Découvrez les dernières fonctionnalités disponibles sur SIRENA"
-      severity="warning"
+      severity="info"
       isClosable
       onClose={handleClose}
       link={{
