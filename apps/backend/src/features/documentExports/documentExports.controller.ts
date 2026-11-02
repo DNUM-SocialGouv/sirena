@@ -77,14 +77,14 @@ const app = factoryWithLogs
     const { id } = c.req.valid('param');
     const access = await checkAccess(c, id);
 
+    const available = access.status === DOCUMENT_EXPORT_ACCESS_STATUS.AVAILABLE ? access.documentExport : null;
+
     return c.json({
       data: {
         status: access.status,
-        fileName: access.status === DOCUMENT_EXPORT_ACCESS_STATUS.AVAILABLE ? access.documentExport.fileName : null,
-        expiresAt:
-          access.status === DOCUMENT_EXPORT_ACCESS_STATUS.AVAILABLE
-            ? access.documentExport.expiresAt.toISOString()
-            : null,
+        fileName: available?.fileName ?? null,
+        size: available?.size ?? null,
+        expiresAt: available?.expiresAt.toISOString() ?? null,
       },
     });
   })

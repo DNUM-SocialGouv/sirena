@@ -39,6 +39,7 @@ function RouteComponent() {
         <DocumentExportDownload
           downloadUrl={getDocumentExportDownloadUrl(documentExportId)}
           fileName={access.data.fileName}
+          size={access.data.size}
           expiresAt={access.data.expiresAt}
         />
       ) : access.data.status === DOCUMENT_EXPORT_ACCESS_STATUS.EXPIRED ? (

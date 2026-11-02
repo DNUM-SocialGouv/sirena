@@ -177,6 +177,7 @@ describe('documentExports.service', () => {
       fileName: 'export.csv',
       filePath: 'exports/abc.csv',
       mimeType: 'text/csv',
+      size: 1024,
       metadata: { encryption: { iv: 'iv', authTag: 'tag' } },
       expiresAt: new Date('2026-10-26T10:20:00.000Z'),
     };

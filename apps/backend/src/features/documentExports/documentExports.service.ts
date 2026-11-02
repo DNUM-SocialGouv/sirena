@@ -180,6 +180,7 @@ export const resolveDocumentExportAccess = async (id: string, userId: string, no
       fileName: true,
       filePath: true,
       mimeType: true,
+      size: true,
       metadata: true,
       expiresAt: true,
     },

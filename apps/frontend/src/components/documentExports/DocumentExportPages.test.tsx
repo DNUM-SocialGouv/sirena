@@ -36,6 +36,7 @@ describe('DocumentExportPages', () => {
           <DocumentExportDownload
             downloadUrl="/api/document-exports/export-1/download"
             fileName="export.csv"
+            size={12_636}
             expiresAt="2026-10-26T10:30:00.000Z"
           />
         </StrictMode>,
@@ -50,10 +51,16 @@ describe('DocumentExportPages', () => {
     it('offers to download the file again (CA7)', () => {
       renderDownload();
 
-      const link = screen.getByRole('link', { name: 'Télécharger le fichier' });
+      const link = screen.getByRole('link', { name: 'Télécharger votre export' });
       expect(link).toHaveAttribute('href', '/api/document-exports/export-1/download');
       expect(link).toHaveAttribute('download');
       expect(screen.getByRole('heading', { level: 1, name: 'Téléchargement de votre export' })).toBeInTheDocument();
+    });
+
+    it('gives the format and weight of the file, as for attachments', () => {
+      renderDownload();
+
+      expect(screen.getByText(/export\.csv \(CSV, 12\.34 Ko\)/)).toBeInTheDocument();
     });
 
     it('focuses the title before the download starts, so it is announced', () => {

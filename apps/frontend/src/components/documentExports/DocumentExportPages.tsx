@@ -4,6 +4,7 @@ import TechnicalError from '@codegouvfr/react-dsfr/picto/TechnicalError';
 import { DOCUMENT_EXPORT_LINK_VALIDITY_MINUTES } from '@sirena/common/constants';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
+import { formatFileSize } from '@/utils/fileHelpers';
 import { DocumentExportMessage } from './DocumentExportMessage';
 
 const timeFormatter = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });
@@ -11,10 +12,20 @@ const timeFormatter = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute
 type DocumentExportDownloadProps = {
   downloadUrl: string;
   fileName: string | null;
+  size: number | null;
   expiresAt: string | null;
 };
 
-export const DocumentExportDownload = ({ downloadUrl, fileName, expiresAt }: DocumentExportDownloadProps) => {
+// Format and weight of the file, as shown for attachments: "CSV, 12.34 Ko".
+const getFileDetail = (fileName: string | null, size: number | null) => {
+  const extension = fileName?.includes('.') ? fileName.split('.').pop()?.toUpperCase() : undefined;
+  const parts = [extension, size !== null ? formatFileSize(size) : undefined].filter(Boolean);
+  return parts.length > 0 ? parts.join(', ') : null;
+};
+
+export const DocumentExportDownload = ({ downloadUrl, fileName, size, expiresAt }: DocumentExportDownloadProps) => {
+  const fileDetail = getFileDetail(fileName, size);
+
   const linkRef = useRef<HTMLAnchorElement>(null);
   const started = useRef(false);
 
@@ -29,7 +40,12 @@ export const DocumentExportDownload = ({ downloadUrl, fileName, expiresAt }: Doc
   return (
     <DocumentExportMessage
       title="Téléchargement de votre export"
-      description={<>Le téléchargement de votre fichier{fileName ? <> {fileName}</> : null} démarre automatiquement.</>}
+      description={
+        <>
+          Le téléchargement de votre fichier{fileName ? <> {fileName}</> : null}
+          {fileDetail ? <> ({fileDetail})</> : null} démarre automatiquement.
+        </>
+      }
       picto={<DocumentDownload fontSize="10rem" />}
       actions={
         <a
@@ -38,12 +54,12 @@ export const DocumentExportDownload = ({ downloadUrl, fileName, expiresAt }: Doc
           href={downloadUrl}
           download
         >
-          Télécharger le fichier
+          Télécharger votre export
         </a>
       }
     >
       <p className={fr.cx('fr-mb-0')}>
-        S’il ne démarre pas, utilisez le lien « Télécharger le fichier ».
+        S’il ne démarre pas, utilisez le lien « Télécharger votre export ».
         {expiresAt ? <> Le lien reste valable jusqu’à {timeFormatter.format(new Date(expiresAt))}.</> : null}
       </p>
     </DocumentExportMessage>

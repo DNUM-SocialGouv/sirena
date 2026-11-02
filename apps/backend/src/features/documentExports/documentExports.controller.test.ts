@@ -62,6 +62,7 @@ const readyExport = {
   fileName: 'export.csv',
   filePath: 'exports/abc.csv',
   mimeType: 'text/csv',
+  size: 1024,
   metadata: { encryption: { iv: 'iv', authTag: 'tag' } },
   expiresAt: new Date('2026-10-26T10:30:00.000Z'),
 };
@@ -85,7 +86,7 @@ describe('documentExports.controller', () => {
 
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({
-        data: { status: 'AVAILABLE', fileName: 'export.csv', expiresAt: '2026-10-26T10:30:00.000Z' },
+        data: { status: 'AVAILABLE', fileName: 'export.csv', size: 1024, expiresAt: '2026-10-26T10:30:00.000Z' },
       });
       expect(resolveDocumentExportAccess).toHaveBeenCalledWith(EXPORT_ID, 'user-1');
       expect(createAccessLog).not.toHaveBeenCalled();
@@ -100,7 +101,7 @@ describe('documentExports.controller', () => {
       const res = await client[':id'].access.$get({ param: { id: EXPORT_ID } });
 
       expect(res.status).toBe(200);
-      expect(await res.json()).toEqual({ data: { status, fileName: null, expiresAt: null } });
+      expect(await res.json()).toEqual({ data: { status, fileName: null, size: null, expiresAt: null } });
       expect(createAccessLog).toHaveBeenCalledWith({
         entity: 'DocumentExport',
         entityId: EXPORT_ID,
@@ -122,7 +123,7 @@ describe('documentExports.controller', () => {
       const res = await client[':id'].access.$get({ param: { id: EXPORT_ID } });
 
       expect(res.status).toBe(200);
-      expect(await res.json()).toEqual({ data: { status: 'EXPIRED', fileName: null, expiresAt: null } });
+      expect(await res.json()).toEqual({ data: { status: 'EXPIRED', fileName: null, size: null, expiresAt: null } });
       expect(logger.error).toHaveBeenCalled();
     });
 
