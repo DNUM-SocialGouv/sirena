@@ -11,6 +11,7 @@ import {
   deleteFeatureFlagRoute,
   getFeatureFlagsRoute,
   patchFeatureFlagRoute,
+  publicFeatureFlagsRoute,
   resolveFeatureFlagsRoute,
 } from './featureFlags.route.js';
 import { CreateFeatureFlagSchema, PatchFeatureFlagSchema } from './featureFlags.schema.js';
@@ -21,7 +22,14 @@ import {
   getFeatureFlags,
   patchFeatureFlag,
   resolveFeatureFlags,
+  resolvePublicFeatureFlags,
 } from './featureFlags.service.js';
+
+// No auth middleware: the signed out pages need the warning banner flag before any login.
+const publicApp = factoryWithLogs.createApp().get('/', publicFeatureFlagsRoute, async (c) => {
+  const data = await resolvePublicFeatureFlags();
+  return c.json({ data });
+});
 
 const resolveApp = factoryWithLogs
   .createApp()
@@ -85,6 +93,6 @@ const adminApp = factoryWithLogs
     return c.body(null, 204);
   });
 
-const app = factoryWithLogs.createApp().route('/resolve', resolveApp).route('/', adminApp);
+const app = factoryWithLogs.createApp().route('/public', publicApp).route('/resolve', resolveApp).route('/', adminApp);
 
 export default app;

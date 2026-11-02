@@ -1,12 +1,12 @@
 import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useHasFeature } from '@/hooks/useHasFeature';
+import { useHasPublicFeature } from '@/hooks/useHasPublicFeature';
 import { clearWarningBannerDismissal } from '@/lib/warningBannerDismissal';
 import { WarningBanner } from './WarningBanner';
 
-vi.mock('@/hooks/useHasFeature', () => ({
-  useHasFeature: vi.fn(),
+vi.mock('@/hooks/useHasPublicFeature', () => ({
+  useHasPublicFeature: vi.fn(),
 }));
 
 vi.mock('./warningBannerContent', () => ({
@@ -17,7 +17,7 @@ vi.mock('./warningBannerContent', () => ({
   },
 }));
 
-const mockedUseHasFeature = vi.mocked(useHasFeature);
+const mockedUseHasFeature = vi.mocked(useHasPublicFeature);
 const STORAGE_KEY = 'sirena.warningBanner.dismissed';
 
 beforeEach(() => {

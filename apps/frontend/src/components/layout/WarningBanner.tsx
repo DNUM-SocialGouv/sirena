@@ -1,7 +1,7 @@
 import { Notice } from '@codegouvfr/react-dsfr/Notice';
 import { FEATURE_FLAGS } from '@sirena/common/constants';
 import { useCallback, useSyncExternalStore } from 'react';
-import { useHasFeature } from '@/hooks/useHasFeature';
+import { useHasPublicFeature } from '@/hooks/useHasPublicFeature';
 import {
   dismissWarningBanner,
   isWarningBannerDismissed,
@@ -10,7 +10,7 @@ import {
 import { WARNING_BANNER_CONTENT } from './warningBannerContent';
 
 export function WarningBanner() {
-  const isEnabled = useHasFeature(FEATURE_FLAGS.WARNING_BANNER, false);
+  const isEnabled = useHasPublicFeature(FEATURE_FLAGS.WARNING_BANNER, false);
   const isDismissed = useSyncExternalStore(subscribeToWarningBannerDismissal, isWarningBannerDismissed);
 
   const handleClose = useCallback(() => {

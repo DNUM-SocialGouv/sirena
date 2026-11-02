@@ -1,3 +1,4 @@
+import { PUBLIC_FEATURE_FLAGS } from '@sirena/common/constants';
 import { prisma } from '../../libs/prisma.js';
 import { getEntiteChain } from '../entites/entites.service.js';
 import type { CreateFeatureFlagDto, PatchFeatureFlagDto } from './featureFlags.type.js';
@@ -62,6 +63,22 @@ export const resolveFeatureFlags = async (
 
   for (const flag of flags) {
     resolved[flag.name] = resolveFlag(flag, userEmail, entiteChainIds);
+  }
+
+  return resolved;
+};
+
+// A signed out visitor matches no email and no entite, so a targeted flag stays off for them.
+export const resolvePublicFeatureFlags = async (): Promise<Record<string, boolean>> => {
+  const flags = await prisma.featureFlag.findMany({ where: { name: { in: [...PUBLIC_FEATURE_FLAGS] } } });
+  const resolved: Record<string, boolean> = {};
+
+  for (const name of PUBLIC_FEATURE_FLAGS) {
+    resolved[name] = false;
+  }
+
+  for (const flag of flags) {
+    resolved[flag.name] = resolveFlag(flag, '', []);
   }
 
   return resolved;

@@ -20,3 +20,7 @@ export const FEATURE_FLAGS = {
 } as const;
 
 export type FeatureFlag = (typeof FEATURE_FLAGS)[keyof typeof FEATURE_FLAGS];
+
+// Flags readable without authentication: they drive what a signed out visitor sees, so the API
+// exposes them on a public endpoint. Keep the list minimal, its values are world readable.
+export const PUBLIC_FEATURE_FLAGS: readonly FeatureFlag[] = [FEATURE_FLAGS.WARNING_BANNER];
