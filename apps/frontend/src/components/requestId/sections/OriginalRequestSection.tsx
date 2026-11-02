@@ -23,6 +23,8 @@ import {
   useRequeteDateTypeSave,
 } from '@/hooks/mutations/useRequeteDateTypeSave';
 import { useCanEdit } from '@/hooks/useCanEdit';
+import { notifySaveNetworkFailure } from '@/lib/api/saveError';
+import { HttpError } from '@/lib/api/tanstackQuery';
 import { requeteDateTypeFieldMetadata } from '@/lib/fieldMetadata';
 import style from './OriginalRequestSection.module.css';
 
@@ -280,6 +282,8 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
       }
 
       await handleSave(payload);
+    } catch (error) {
+      if (!requestId && !(error instanceof HttpError)) notifySaveNetworkFailure();
     } finally {
       setIsSaving(false);
     }

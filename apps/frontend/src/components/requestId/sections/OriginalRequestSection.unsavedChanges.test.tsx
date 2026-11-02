@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import type { ComponentProps } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { client } from '@/lib/api/hc';
+import { notifySaveNetworkFailure } from '@/lib/api/saveError';
 import { mockDsfrModals, OTHER_PAGE_HEADING, OTHER_PAGE_LINK, renderWithRouter } from '@/test-utils/renderWithRouter';
 import { OriginalRequestSection } from './OriginalRequestSection';
 
@@ -112,6 +113,34 @@ describe('OriginalRequestSection unsaved changes', () => {
     await user.click(screen.getByRole('link', { name: OTHER_PAGE_LINK }));
 
     expect(await screen.findByRole('dialog', { name: 'Données non enregistrées' })).toBeInTheDocument();
+  });
+
+  it('keeps the input after a Valider that failed', async () => {
+    const user = userEvent.setup();
+    patch.mockResolvedValueOnce(new Response(null, { status: 500 }) as never);
+    await renderSection();
+
+    await user.click(screen.getByRole('button', { name: 'Modifier' }));
+    await changeReceptionDate(user);
+    await user.click(screen.getByRole('button', { name: 'Valider' }));
+    expect(patch).toHaveBeenCalledOnce();
+    await user.click(screen.getByRole('link', { name: OTHER_PAGE_LINK }));
+
+    expect(await screen.findByRole('dialog', { name: 'Données non enregistrées' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Date de réception/)).toHaveValue('2026-02-03');
+  });
+
+  it('tells the user when the request could not be created for lack of network', async () => {
+    const user = userEvent.setup();
+    createRequete.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    await renderSection({ requestId: undefined, data: undefined });
+
+    await user.click(screen.getByRole('button', { name: 'Compléter' }));
+    await changeReceptionDate(user);
+    await user.click(screen.getByRole('button', { name: 'Valider' }));
+
+    expect(notifySaveNetworkFailure).toHaveBeenCalledOnce();
+    expect(screen.getByLabelText(/^Date de réception/)).toHaveValue('2026-02-03');
   });
 
   it('opens the created request without confirmation once Valider created it', async () => {
