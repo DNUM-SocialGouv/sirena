@@ -36,7 +36,6 @@ E2E tests use Playwright browser context persistence to skip repeated ProConnect
 #### Admin tests
 
 Prerequisites:
-- At least 2 users with same entiteId in "Gestion des utilisateurs" table
 - Authenticated user has ENTITY_ADMIN role
 - `E2E_TARGET_USER_EMAIL` names an account dedicated to the scenarios that change a
   habilitation: `user17@yopmail.com`, seeded in local target, named by the
@@ -49,6 +48,14 @@ Prerequisites:
   backend answer 403 to every later request, the restoring one included.
   On integration it is provisioned by hand like the authenticated user — a SIRENA account only
   exists after a first ProConnect login, and CI provisions nothing.
+
+#### Back links
+
+Prerequisites:
+- Authenticated user has ENTITY_ADMIN role, on an entity allowed to create a direction or a service.
+- Only the create pages the entity may open are checked. When it may create a direction but has none, the spec creates
+  `Direction e2e` once through the API, so the service create page is checked too. It is kept afterwards: no API deletes
+  an entity, and later runs reuse it.
 
 #### Home Requetes
 

@@ -8,43 +8,25 @@ import { findUserIdByEmail, getUserHabilitation, setUserHabilitation, type UserH
  * ADMIN E2E TESTS
  *
  * Prerequisites:
- * - At least 2 users in "Gestion des utilisateurs" table
  * - Authenticated user has ENTITY_ADMIN role
  * - `HABILITATION_TARGET_USER_EMAIL` provisioned in that user's perimeter (see tests/README.md)
  */
 
 /**
- * Helper function to navigate to a random user edit page (excluding the current user)
+ * Opens the edit form of a user through the "Gérer l'utilisateur" link of its row,
+ * filtering the list on its email so the row is on the first page.
  */
-async function navigateToUserEditPage(page: Page, context: BrowserContext): Promise<string> {
-  await page.goto(`${baseUrl}/admin/users/all`);
+async function navigateToUserEditPage(page: Page, userId: string, email: string): Promise<void> {
+  await page.goto(`${baseUrl}/admin/users/all?search=${encodeURIComponent(email)}`);
   const allUsersTable = page.getByRole('table');
   await expect(allUsersTable).toBeVisible();
 
-  // Find a user that is not the current user (can't update our own user)
-  const currentUserId = await getCurrentUserId(context);
-  const userRows = allUsersTable.getByTestId('datatable-row');
-  await expect(userRows.first()).toBeVisible();
+  const userRow = allUsersTable.getByTestId('datatable-row').and(page.locator(`[data-row-key="${userId}"]`));
+  await userRow.getByTestId('user-row-link').click();
 
-  const otherUserRows = userRows.and(page.locator(`:not([data-row-key="${currentUserId}"])`));
-  const otherUserCount = await otherUserRows.count();
-  expect(otherUserCount, 'Should have at least one other user besides current user').toBeGreaterThanOrEqual(1);
-
-  // Click on manage user link
-  const firstOtherUserRow = otherUserRows.first();
-  const targetUserId = await firstOtherUserRow.getAttribute('data-row-key');
-
-  if (!targetUserId) {
-    throw new Error('No target user ID found');
-  }
-
-  await firstOtherUserRow.getByTestId('user-row-link').click();
-
-  await page.waitForURL(`${baseUrl}/admin/user/${targetUserId}`);
+  await page.waitForURL(`${baseUrl}/admin/user/${userId}`);
   await expect(page.getByRole('heading', { name: 'Modifier les informations', level: 1 })).toBeVisible();
   await expect(page.getByTestId('user-role-select')).toBeVisible();
-
-  return targetUserId;
 }
 
 /** Opens the edit form of a named user, without going through the list. */
@@ -136,7 +118,9 @@ test.describe('Administration des utilisateurs', () => {
   });
 
   test("ouvre le formulaire « Modifier les informations » depuis le lien « Gérer l'utilisateur »", async () => {
-    await navigateToUserEditPage(page, context);
+    // The dedicated target rather than any other row: on integration, the other rows are real agents.
+    const targetUserId = await findUserIdByEmail(context.request, HABILITATION_TARGET_USER_EMAIL);
+    await navigateToUserEditPage(page, targetUserId, HABILITATION_TARGET_USER_EMAIL);
 
     const heading = page.getByRole('heading', {
       name: 'Modifier les informations',
