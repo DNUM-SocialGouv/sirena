@@ -16,6 +16,28 @@ interface BanData {
   banCount: number;
 }
 
+// The ban state lives in Redis only: when it cannot be read, requests go through unthrottled
+// (fail-open) so an unavailable cache never locks legitimate users out.
+const FAIL_OPEN_MESSAGE = 'Ban status unreadable, request allowed without rate limiting (fail-open)';
+
+const parseBanData = (raw: string): BanData | null => {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null) {
+      return null;
+    }
+
+    const { bannedUntil, banCount } = parsed as Partial<BanData>;
+    if (typeof bannedUntil !== 'number' || typeof banCount !== 'number') {
+      return null;
+    }
+
+    return { bannedUntil, banCount };
+  } catch {
+    return null;
+  }
+};
+
 export function rateLimiter(options: RateLimiterOptions = {}): MiddlewareHandler<AppBindings> {
   const maxAttempts = options.maxAttempts ?? 5;
   const baseBanTimeMinutes = options.baseBanTimeMinutes ?? 1;
@@ -41,10 +63,23 @@ export function rateLimiter(options: RateLimiterOptions = {}): MiddlewareHandler
       banDataStr = await redis.get(clientBanKey);
     } catch (error) {
       logger.error({ err: error, clientIP, traceId }, 'Error checking ban status');
+      logger.warn({ clientIP, traceId }, FAIL_OPEN_MESSAGE);
     }
 
-    if (banDataStr) {
-      const { bannedUntil, banCount } = JSON.parse(banDataStr) as BanData;
+    const banData = banDataStr ? parseBanData(banDataStr) : null;
+
+    if (banDataStr && !banData) {
+      logger.warn({ clientIP, traceId }, 'Corrupted ban data in cache, dropping the key');
+
+      try {
+        await redis.del(clientBanKey);
+      } catch (error) {
+        logger.error({ err: error, clientIP, traceId }, 'Error deleting corrupted ban key');
+      }
+    }
+
+    if (banData) {
+      const { bannedUntil, banCount } = banData;
       const now = Date.now();
 
       if (now < bannedUntil) {
