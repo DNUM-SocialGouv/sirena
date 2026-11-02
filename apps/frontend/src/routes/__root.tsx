@@ -1,6 +1,7 @@
 import { createRootRouteWithContext, HeadContent, Outlet } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import { GlobalLayout } from '@/components/layout/globalLayout';
+import { UnsavedChangesModal } from '@/components/unsavedChanges/UnsavedChangesModal';
 
 const TanStackRouterDevtools = import.meta.env.PROD
   ? () => null
@@ -20,6 +21,7 @@ export const Route = createRootRouteWithContext()({
       <GlobalLayout>
         <Outlet />
       </GlobalLayout>
+      <UnsavedChangesModal />
       <Suspense>
         <TanStackRouterDevtools />
       </Suspense>
