@@ -1,0 +1,129 @@
+import { cleanup, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import type { ComponentProps } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { client } from '@/lib/api/hc';
+import { mockDsfrModals, OTHER_PAGE_HEADING, OTHER_PAGE_LINK, renderWithRouter } from '@/test-utils/renderWithRouter';
+import { OriginalRequestSection } from './OriginalRequestSection';
+
+const createRequete = vi.hoisted(() => vi.fn());
+
+vi.mock('@/hooks/useCanEdit', () => ({ useCanEdit: () => ({ canEdit: true, hasEditRole: true }) }));
+vi.mock('@/hooks/mutations/createRequeteEntite.hook', () => ({
+  useCreateRequeteEntite: () => ({ mutateAsync: createRequete }),
+}));
+vi.mock('@/lib/api/hc', () => ({
+  client: { 'requetes-entite': { ':id': { 'date-type': { $patch: vi.fn() } } } },
+}));
+vi.mock('@/lib/api/tanstackQuery', () => ({
+  HttpError: class HttpError extends Error {},
+  handleRequestErrors: vi.fn(async (response: Response) => {
+    if (!response.ok) throw new Error('boom');
+  }),
+}));
+vi.mock('@/lib/api/saveError', () => ({
+  notifyAutoMerge: vi.fn(),
+  notifyConflictPersistent: vi.fn(),
+  notifyConflictRefreshed: vi.fn(),
+  notifyConflictUnusable: vi.fn(),
+  notifySaveFailure: vi.fn(),
+  notifySaveNetworkFailure: vi.fn(),
+}));
+
+const patch = vi.mocked(client['requetes-entite'][':id']['date-type'].$patch);
+
+const SAVED_DATA = { receptionDate: '2026-01-10T00:00:00.000Z', receptionTypeId: 'COURRIER' as const };
+
+const renderSection = (props: Partial<ComponentProps<typeof OriginalRequestSection>> = {}) =>
+  renderWithRouter(<OriginalRequestSection requestId="req-1" data={SAVED_DATA} {...props} />);
+
+const unsavedChangesDialog = () => screen.queryByRole('dialog', { name: 'Données non enregistrées' });
+
+const changeReceptionDate = async (user: ReturnType<typeof userEvent.setup>) => {
+  const input = screen.getByLabelText(/^Date de réception/);
+  await user.clear(input);
+  await user.type(input, '2026-02-03');
+};
+
+const expectLeftWithoutConfirmation = async () => {
+  expect(await screen.findByRole('heading', { name: OTHER_PAGE_HEADING })).toBeInTheDocument();
+  expect(unsavedChangesDialog()).not.toBeInTheDocument();
+};
+
+beforeEach(() => {
+  mockDsfrModals();
+});
+
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
+
+describe('OriginalRequestSection unsaved changes', () => {
+  it('asks for confirmation when the user leaves after changing a field', async () => {
+    const user = userEvent.setup();
+    await renderSection();
+
+    await user.click(screen.getByRole('button', { name: 'Modifier' }));
+    await changeReceptionDate(user);
+    await user.click(screen.getByRole('link', { name: OTHER_PAGE_LINK }));
+
+    expect(await screen.findByRole('dialog', { name: 'Données non enregistrées' })).toBeInTheDocument();
+  });
+
+  it('lets the user leave an opened form they did not change without confirmation', async () => {
+    const user = userEvent.setup();
+    await renderSection();
+
+    await user.click(screen.getByRole('button', { name: 'Modifier' }));
+    await user.click(screen.getByRole('link', { name: OTHER_PAGE_LINK }));
+
+    await expectLeftWithoutConfirmation();
+  });
+
+  // Valider reloads the request page the section sits on: the agent stays there with the form closed.
+  it('lets the user leave without confirmation once Valider saved the changes', async () => {
+    const user = userEvent.setup();
+    patch.mockResolvedValueOnce(new Response(JSON.stringify({ data: {} }), { status: 200 }) as never);
+    await renderWithRouter(<OriginalRequestSection requestId="req-1" data={SAVED_DATA} />, {
+      formPath: '/request/req-1',
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Modifier' }));
+    await changeReceptionDate(user);
+    await user.click(screen.getByRole('button', { name: 'Valider' }));
+    await screen.findByRole('button', { name: 'Modifier' });
+    await user.click(screen.getByRole('link', { name: OTHER_PAGE_LINK }));
+
+    await expectLeftWithoutConfirmation();
+  });
+
+  it('still asks for confirmation after a Valider that hit a conflict', async () => {
+    const user = userEvent.setup();
+    patch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ message: 'Conflict', cause: { kind: 'BUSINESS' } }), { status: 409 }) as never,
+    );
+    await renderSection();
+
+    await user.click(screen.getByRole('button', { name: 'Modifier' }));
+    await changeReceptionDate(user);
+    await user.click(screen.getByRole('button', { name: 'Valider' }));
+    expect(patch).toHaveBeenCalledOnce();
+    await user.click(screen.getByRole('link', { name: OTHER_PAGE_LINK }));
+
+    expect(await screen.findByRole('dialog', { name: 'Données non enregistrées' })).toBeInTheDocument();
+  });
+
+  it('opens the created request without confirmation once Valider created it', async () => {
+    const user = userEvent.setup();
+    createRequete.mockResolvedValueOnce({ id: 'req-9' });
+    const router = await renderSection({ requestId: undefined, data: undefined });
+
+    await user.click(screen.getByRole('button', { name: 'Compléter' }));
+    await changeReceptionDate(user);
+    await user.click(screen.getByRole('button', { name: 'Valider' }));
+
+    await expectLeftWithoutConfirmation();
+    expect(router.state.location.pathname).toBe('/request/req-9');
+  });
+});

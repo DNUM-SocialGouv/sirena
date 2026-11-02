@@ -109,7 +109,7 @@ export const useRequeteDateTypeSave = ({
       releaseEditSession();
       onRefetch();
       onSaved?.();
-      navigate({ to: '/request/$requestId', params: { requestId } });
+      navigate({ to: '/request/$requestId', params: { requestId }, ignoreBlocker: true });
     },
     onError: async (error: unknown) => {
       const err = error as { status?: number; body?: unknown };

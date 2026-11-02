@@ -18,12 +18,15 @@ export const OTHER_PAGE_LINK = 'Autre page';
 export const OTHER_PAGE_HEADING = 'Page suivante';
 
 /**
- * Renders `ui` on `/` inside a real in-memory router, with the global unsaved changes modal mounted.
- * A link named OTHER_PAGE_LINK leads to `/home`; every path other than `/` renders a heading named OTHER_PAGE_HEADING.
+ * Renders `ui` on `formPath` (`/` by default) inside a real in-memory router, with the global unsaved changes modal mounted.
+ * A link named OTHER_PAGE_LINK leads to `/home`; every other path renders a heading named OTHER_PAGE_HEADING.
  * With `previousPath`, the browser history holds that page before the form, so the user can go back to it.
  * It uses the jsdom browser history: the in-memory one never consults blockers on back and forward.
  */
-export const renderWithRouter = async (ui: ReactNode, { previousPath }: { previousPath?: string } = {}) => {
+export const renderWithRouter = async (
+  ui: ReactNode,
+  { previousPath, formPath = '/' }: { previousPath?: string; formPath?: string } = {},
+) => {
   useUnsavedChangesStore.setState({ pendingResolve: null });
 
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -38,7 +41,7 @@ export const renderWithRouter = async (ui: ReactNode, { previousPath }: { previo
     ),
   });
 
-  const formRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: () => ui });
+  const formRoute = createRoute({ getParentRoute: () => rootRoute, path: formPath, component: () => ui });
 
   const otherRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -48,7 +51,9 @@ export const renderWithRouter = async (ui: ReactNode, { previousPath }: { previo
 
   const router = createRouter({
     routeTree: rootRoute.addChildren([formRoute, otherRoute]),
-    history: previousPath ? createBrowserHistoryAfter(previousPath) : createMemoryHistory({ initialEntries: ['/'] }),
+    history: previousPath
+      ? createBrowserHistoryAfter(previousPath, formPath)
+      : createMemoryHistory({ initialEntries: [formPath] }),
   });
 
   await router.load();
@@ -65,10 +70,12 @@ export const renderWithRouter = async (ui: ReactNode, { previousPath }: { previo
 };
 
 // The router must push the entries itself: it tracks their position in their state to undo a blocked back.
-const createBrowserHistoryAfter = (previousPath: string) => {
+const createBrowserHistoryAfter = (previousPath: string, formPath: string) => {
   window.history.replaceState(null, '', previousPath);
+
   const history = createBrowserHistory();
-  history.push('/');
+  history.push(formPath);
+
   return history;
 };
 

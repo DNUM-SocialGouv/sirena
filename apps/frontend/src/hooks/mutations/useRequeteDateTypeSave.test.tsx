@@ -8,8 +8,10 @@ import { HttpError } from '@/lib/api/tanstackQuery';
 import { MAX_AUTO_MERGE_REPLAYS } from '@/lib/conflictResolution';
 import { type RequeteDateTypeData, useRequeteDateTypeSave } from './useRequeteDateTypeSave';
 
+const navigate = vi.hoisted(() => vi.fn());
+
 vi.mock('@tanstack/react-router', () => ({
-  useNavigate: () => vi.fn(),
+  useNavigate: () => navigate,
 }));
 
 vi.mock('@/lib/api/saveError', () => ({
@@ -116,6 +118,19 @@ describe('useRequeteDateTypeSave', () => {
     const { handleSave } = renderSave().current;
 
     await expect(handleSave({ receptionDate: '2026-02-02' })).resolves.toBeUndefined();
+  });
+
+  it('reloads the request without the unsaved changes confirmation once the save succeeded', async () => {
+    patch.mockResolvedValueOnce(new Response(JSON.stringify({ data: {} }), { status: 200 }) as never);
+
+    const { handleSave } = renderSave().current;
+    await handleSave({ receptionDate: '2026-02-02' });
+
+    expect(navigate).toHaveBeenCalledWith({
+      to: '/request/$requestId',
+      params: { requestId: 'req-1' },
+      ignoreBlocker: true,
+    });
   });
 
   it('hands a non-conflict failure to the save failure notifier', async () => {
