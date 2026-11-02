@@ -28,7 +28,7 @@ export const DocumentExportDownload = ({ downloadUrl, fileName, expiresAt }: Doc
 
   return (
     <DocumentExportMessage
-      title="Téléchargement de votre document"
+      title="Téléchargement de votre export"
       description={<>Le téléchargement de votre fichier{fileName ? <> {fileName}</> : null} démarre automatiquement.</>}
       picto={<DocumentDownload fontSize="10rem" />}
       actions={

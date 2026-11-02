@@ -53,7 +53,7 @@ describe('DocumentExportPages', () => {
       const link = screen.getByRole('link', { name: 'Télécharger le fichier' });
       expect(link).toHaveAttribute('href', '/api/document-exports/export-1/download');
       expect(link).toHaveAttribute('download');
-      expect(screen.getByRole('heading', { level: 1, name: 'Téléchargement de votre document' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'Téléchargement de votre export' })).toBeInTheDocument();
     });
 
     it('focuses the title before the download starts, so it is announced', () => {
@@ -64,7 +64,7 @@ describe('DocumentExportPages', () => {
 
       renderDownload();
 
-      expect(focusedOnClick).toBe(screen.getByRole('heading', { level: 1, name: 'Téléchargement de votre document' }));
+      expect(focusedOnClick).toBe(screen.getByRole('heading', { level: 1, name: 'Téléchargement de votre export' }));
     });
   });
 
