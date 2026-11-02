@@ -8,6 +8,13 @@ export async function fetchResolvedFeatureFlags() {
   return data;
 }
 
+export async function fetchPublicFeatureFlags() {
+  const res = await client['feature-flags'].public.$get();
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return data;
+}
+
 export async function fetchFeatureFlags() {
   const res = await client['feature-flags'].$get();
   await handleRequestErrors(res);

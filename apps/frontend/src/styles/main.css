@@ -193,6 +193,6 @@ select.fr-select {
   margin-top: 1.5rem;
 }
 
-.app-breadcrumb + main .admin-title {
+.app-breadcrumb + div .admin-title {
   margin-top: 0;
 }

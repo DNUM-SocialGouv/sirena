@@ -1,6 +1,8 @@
 export const FEATURE_FLAGS = {
   //definitive FF : will be used to disable/enable update banner following PO decisions
   UPDATE_BANNER: 'UPDATE_BANNER',
+  //definitive FF : will be used to raise the warning banner on an outage or a security alert
+  WARNING_BANNER: 'WARNING_BANNER',
   // temporary FF to enable/disable predefined periods in the statistics period filter
   STATISTICS_PERIOD_PRESETS: 'STATISTICS_PERIOD_PRESETS',
   // Email-targeted FF for the SIREC migration admin screen
@@ -18,3 +20,7 @@ export const FEATURE_FLAGS = {
 } as const;
 
 export type FeatureFlag = (typeof FEATURE_FLAGS)[keyof typeof FEATURE_FLAGS];
+
+// Flags readable without authentication: they drive what a signed out visitor sees, so the API
+// exposes them on a public endpoint. Keep the list minimal, its values are world readable.
+export const PUBLIC_FEATURE_FLAGS: readonly FeatureFlag[] = [FEATURE_FLAGS.WARNING_BANNER];

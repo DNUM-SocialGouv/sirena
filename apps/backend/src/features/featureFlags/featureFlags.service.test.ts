@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../libs/prisma.js';
 import { getEntiteChain } from '../entites/entites.service.js';
-import { hasFeature } from './featureFlags.service.js';
+import { hasFeature, resolvePublicFeatureFlags } from './featureFlags.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
@@ -66,5 +66,41 @@ describe('hasFeature', () => {
     await expect(hasFeature('SHARED_PROCESSING_STEPS', false, 'reader@example.test', 'reader-entite')).resolves.toBe(
       false,
     );
+  });
+});
+
+describe('resolvePublicFeatureFlags', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('reports a public flag as disabled when it does not exist yet', async () => {
+    vi.mocked(prisma.featureFlag.findMany).mockResolvedValueOnce([] as never);
+
+    await expect(resolvePublicFeatureFlags()).resolves.toEqual({ WARNING_BANNER: false });
+  });
+
+  it('exposes the global value of a public flag', async () => {
+    vi.mocked(prisma.featureFlag.findMany).mockResolvedValueOnce([
+      { name: 'WARNING_BANNER', enabled: true, userEmails: [], entiteIds: [] },
+    ] as never);
+
+    await expect(resolvePublicFeatureFlags()).resolves.toEqual({ WARNING_BANNER: true });
+  });
+
+  it('keeps a targeted flag off, since a signed out visitor matches no target', async () => {
+    vi.mocked(prisma.featureFlag.findMany).mockResolvedValueOnce([
+      { name: 'WARNING_BANNER', enabled: true, userEmails: ['author@example.test'], entiteIds: [] },
+    ] as never);
+
+    await expect(resolvePublicFeatureFlags()).resolves.toEqual({ WARNING_BANNER: false });
+  });
+
+  it('queries the allowlisted flags only', async () => {
+    vi.mocked(prisma.featureFlag.findMany).mockResolvedValueOnce([] as never);
+
+    await resolvePublicFeatureFlags();
+
+    expect(prisma.featureFlag.findMany).toHaveBeenCalledWith({ where: { name: { in: ['WARNING_BANNER'] } } });
   });
 });

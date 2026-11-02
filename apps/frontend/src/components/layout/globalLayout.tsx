@@ -8,6 +8,7 @@ import { EnvironmentBanner } from './EnvironmentBanner';
 import { AppFooter } from './footer';
 import { HeaderMenu } from './header';
 import { UpdateBanner } from './UpdateBanner';
+import { WarningBanner } from './WarningBanner';
 
 type GlobalLayoutProps = {
   children: ReactNode;
@@ -101,10 +102,17 @@ export const GlobalLayout = ({ children }: GlobalLayoutProps) => {
         </nav>
       </div>
       <HeaderMenu homeTo="/" />
-      <EnvironmentBanner />
-      <UpdateBanner />
-      {breadCrumbItems ? <BreadCrumbBar pathname={pathname} items={breadCrumbItems} /> : null}
-      <main id={mainId} role="main" className="main-content">
+      {/* The notices live inside <main>: the skip link must not bypass them, a user going straight
+          to the content has to be told about an outage too. */}
+      <main id={mainId} role="main" tabIndex={-1} className="main-content">
+        {/* The banner shows up once the feature flags resolve, i.e. after the first paint: a live
+            region mounted beforehand is what gets the announcement across. */}
+        <div role="status" aria-live="polite">
+          <WarningBanner />
+        </div>
+        <EnvironmentBanner />
+        <UpdateBanner />
+        {breadCrumbItems ? <BreadCrumbBar pathname={pathname} items={breadCrumbItems} /> : null}
         <div className={containerClassName}>{children}</div>
       </main>
       <AppFooter />

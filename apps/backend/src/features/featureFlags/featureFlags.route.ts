@@ -4,6 +4,7 @@ import {
   openApiResponse,
   openApiResponses,
 } from '@sirena/backend-utils/helpers';
+import { describeRoute } from 'hono-openapi';
 import { z } from 'zod';
 import { FeatureFlagSchema, ResolvedFeatureFlagsSchema } from './featureFlags.schema.js';
 
@@ -37,6 +38,13 @@ export const deleteFeatureFlagRoute = openApiProtectedRoute({
 
 export const resolveFeatureFlagsRoute = openApiProtectedRoute({
   description: 'Resolve feature flags for the current user',
+  responses: {
+    ...openApiResponse(ResolvedFeatureFlagsSchema),
+  },
+});
+
+export const publicFeatureFlagsRoute = describeRoute({
+  description: 'Resolve the feature flags readable without authentication',
   responses: {
     ...openApiResponse(ResolvedFeatureFlagsSchema),
   },
