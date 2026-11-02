@@ -11,6 +11,9 @@ const TanStackRouterDevtools = import.meta.env.PROD
     );
 
 export const Route = createRootRouteWithContext()({
+  head: () => ({
+    meta: [{ title: 'SIRENA' }],
+  }),
   component: () => (
     <>
       <HeadContent />
