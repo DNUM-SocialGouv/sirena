@@ -5,16 +5,21 @@ import { useUnsavedChangesStore } from '@/stores/unsavedChangesStore';
 const unsavedChangesModal = createModal({ id: 'unsaved-changes-modal', isOpenedByDefault: false });
 
 export function UnsavedChangesModal() {
-  const isAsking = useUnsavedChangesStore((state) => state.pendingResolve !== null);
+  const pendingResolve = useUnsavedChangesStore((state) => state.pendingResolve);
   const answer = useUnsavedChangesStore((state) => state.answer);
 
   const triggerRef = useRef<HTMLElement | null>(null);
 
+  // Keyed on each request, not on whether one is pending: an answer and a new request can land in one render.
   useEffect(() => {
-    if (!isAsking) return;
-    triggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (!pendingResolve) return;
+
+    const activeElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const isFocusInModal = document.getElementById(unsavedChangesModal.id)?.contains(activeElement) ?? false;
+    if (!isFocusInModal) triggerRef.current = activeElement;
+
     unsavedChangesModal.open();
-  }, [isAsking]);
+  }, [pendingResolve]);
 
   // Escape, backdrop and ✕ are handled by the DSFR vanilla JS: every way out ends with this event.
   useEffect(() => {
@@ -24,14 +29,14 @@ export function UnsavedChangesModal() {
 
       answer(false);
 
-      const trigger = triggerRef.current;
-      triggerRef.current = null;
-
       if (!isStaying) return;
 
-      // Deferred so the DSFR has finished moving the focus itself.
+      // Deferred so the DSFR has finished moving the focus itself. A request asked meanwhile keeps it in the modal.
       setTimeout(() => {
-        if (trigger?.isConnected) trigger.focus();
+        const trigger = triggerRef.current;
+        const isAskingAgain = useUnsavedChangesStore.getState().pendingResolve !== null;
+
+        if (!isAskingAgain && trigger?.isConnected) trigger.focus();
       }, 0);
     };
 

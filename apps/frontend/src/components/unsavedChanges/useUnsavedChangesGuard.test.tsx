@@ -1,4 +1,4 @@
-import { act, cleanup, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { type ChangeEvent, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -209,5 +209,28 @@ describe('confirmLeave', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Annuler' }));
 
     expect(await screen.findByText('resté ouvert')).toBeInTheDocument();
+  });
+
+  it('asks again when the event that closes the modal also asks to leave', async () => {
+    const user = userEvent.setup();
+    await renderWithRouter(<TestPanel />);
+
+    await user.type(screen.getByLabelText('Nom'), 'Dupont');
+    await user.click(screen.getByRole('button', { name: 'Fermer le panneau' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Données non enregistrées' });
+    const modalButton = within(dialog).getByRole('button', { name: 'Annuler' });
+    modalButton.focus();
+    act(() => {
+      closeDsfrModalNatively(dialog);
+      fireEvent.click(screen.getByRole('button', { name: 'Fermer le panneau', hidden: true }));
+    });
+
+    expect(await screen.findByRole('dialog', { name: 'Données non enregistrées' })).toBeInTheDocument();
+    await waitFor(() => expect(document.activeElement).toBe(modalButton));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(document.activeElement).toBe(modalButton);
+
+    await user.click(modalButton);
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Fermer le panneau' })));
   });
 });
