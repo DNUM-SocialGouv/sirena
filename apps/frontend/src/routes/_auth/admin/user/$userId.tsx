@@ -3,7 +3,7 @@ import Select from '@codegouvfr/react-dsfr/Select';
 import { ROLES, type Role, STATUT_TYPES, type StatutType, statutTypes } from '@sirena/common/constants';
 import { getAssignableRoles } from '@sirena/common/utils';
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
-import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
 import { usePatchUser } from '@/hooks/mutations/updateUser.hook';
 import { useUserById } from '@/hooks/queries/users.hook';
@@ -16,6 +16,8 @@ import { Toast } from '@sirena/ui';
 import { useQuery } from '@tanstack/react-query';
 import { ReadOnlyField } from '@/components/common/ReadOnlyField';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
+import { hasUnsavedChanges } from '@/components/unsavedChanges/hasUnsavedChanges';
+import { useUnsavedChangesGuard } from '@/components/unsavedChanges/useUnsavedChangesGuard';
 import { EntityHierarchySelector } from '@/components/userId/entityHierarchySelector';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 
@@ -91,7 +93,14 @@ export function RouteComponent() {
     statutId: STATUT_TYPES.NON_RENSEIGNE,
     entiteId: null,
   });
+  const [savedData, setSavedData] = useState<UserFormData | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const isDirty = savedData !== null && hasUnsavedChanges(savedData, formData);
+  useUnsavedChangesGuard({ isDirty });
+
+  const isDirtyRef = useRef(isDirty);
+  isDirtyRef.current = isDirty;
 
   // userStore.role should always be defined, but we provide a fallback to avoid TypeScript errors
   const userRole: Role = userStore.role || ROLES.PENDING;
@@ -104,13 +113,16 @@ export function RouteComponent() {
   }, [userQuery.error, navigate, usersList.to, usersList.search]);
 
   useEffect(() => {
-    if (userQuery.data) {
-      setFormData({
-        roleId: userQuery.data.roleId,
-        statutId: userQuery.data.statutId as StatutType,
-        entiteId: userQuery.data.entiteId,
-      });
-    }
+    if (!userQuery.data || isDirtyRef.current) return;
+
+    const serverData = {
+      roleId: userQuery.data.roleId,
+      statutId: userQuery.data.statutId as StatutType,
+      entiteId: userQuery.data.entiteId,
+    };
+
+    setFormData(serverData);
+    setSavedData(serverData);
   }, [userQuery.data]);
 
   useEffect(() => {
@@ -123,9 +135,9 @@ export function RouteComponent() {
 
   const handleBack = useCallback(() => {
     if (window.history.length > 1) {
-      router.history.back();
+      router.history.back({ ignoreBlocker: true });
     } else {
-      router.navigate({ to: usersList.to, search: usersList.search });
+      router.navigate({ to: usersList.to, search: usersList.search, ignoreBlocker: true });
     }
   }, [router, usersList.to, usersList.search]);
 

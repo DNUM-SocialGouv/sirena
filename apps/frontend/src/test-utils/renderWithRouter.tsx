@@ -22,14 +22,17 @@ export const OTHER_PAGE_HEADING = 'Page suivante';
  * A link named OTHER_PAGE_LINK leads to `/home`; every other path renders a heading named OTHER_PAGE_HEADING.
  * With `previousPath`, the browser history holds that page before the form, so the user can go back to it.
  * It uses the jsdom browser history: the in-memory one never consults blockers on back and forward.
+ * Pass a `queryClient` to seed or update the query data the form reads.
  */
 export const renderWithRouter = async (
   ui: ReactNode,
-  { previousPath, formPath = '/' }: { previousPath?: string; formPath?: string } = {},
+  {
+    previousPath,
+    formPath = '/',
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+  }: { previousPath?: string; formPath?: string; queryClient?: QueryClient } = {},
 ) => {
   useUnsavedChangesStore.setState({ pendingResolve: null });
-
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
   const rootRoute = createRootRoute({
     component: () => (
