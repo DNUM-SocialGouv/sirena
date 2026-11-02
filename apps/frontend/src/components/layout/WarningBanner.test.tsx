@@ -44,9 +44,18 @@ describe('WarningBanner', () => {
 
     const { container } = render(<WarningBanner />);
 
-    expect(screen.getByText('Migration technique')).toBeInTheDocument();
+    expect(screen.getByText(/Migration technique/)).toBeInTheDocument();
     expect(screen.getByText(/Merci d’anticiper cette interruption/)).toBeInTheDocument();
     expect(container.querySelector('.fr-notice--warning')).not.toBeNull();
+  });
+
+  // RGAA 3.1: without the prefix, only the colour and the icon carry the nature of the message
+  it('names the nature of the message in the title', () => {
+    mockedUseHasFeature.mockReturnValue(true);
+
+    render(<WarningBanner />);
+
+    expect(screen.getByText('Avertissement : Migration technique')).toBeInTheDocument();
   });
 
   it('opens the consultation link in a new tab and says so', () => {
@@ -76,7 +85,7 @@ describe('WarningBanner', () => {
     await userEvent.click(screen.getByRole('button', { name: /masquer le message/i }));
 
     expect(window.sessionStorage.getItem(STORAGE_KEY)).toBe('true');
-    expect(screen.queryByText('Migration technique')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Migration technique/)).not.toBeInTheDocument();
   });
 
   it('moves the focus to the main content when dismissed', async () => {
@@ -100,13 +109,13 @@ describe('WarningBanner', () => {
 
     render(<WarningBanner />);
     await userEvent.click(screen.getByRole('button', { name: /masquer le message/i }));
-    expect(screen.queryByText('Migration technique')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Migration technique/)).not.toBeInTheDocument();
 
     act(() => {
       clearWarningBannerDismissal();
     });
 
-    expect(screen.getByText('Migration technique')).toBeInTheDocument();
+    expect(screen.getByText(/Migration technique/)).toBeInTheDocument();
   });
 
   it('still renders when session storage reads throw (e.g. blocked storage)', () => {
@@ -117,7 +126,7 @@ describe('WarningBanner', () => {
 
     render(<WarningBanner />);
 
-    expect(screen.getByText('Migration technique')).toBeInTheDocument();
+    expect(screen.getByText(/Migration technique/)).toBeInTheDocument();
     getItemSpy.mockRestore();
   });
 
@@ -130,7 +139,7 @@ describe('WarningBanner', () => {
     render(<WarningBanner />);
     await userEvent.click(screen.getByRole('button', { name: /masquer le message/i }));
 
-    expect(screen.queryByText('Migration technique')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Migration technique/)).not.toBeInTheDocument();
     setItemSpy.mockRestore();
   });
 });

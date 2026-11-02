@@ -9,6 +9,9 @@ import {
 } from '@/lib/warningBannerDismissal';
 import { WARNING_BANNER_CONTENT } from './warningBannerContent';
 
+// RGAA 3.1: the nature of the message must not rest on the warning colour and icon alone.
+const TITLE_PREFIX = 'Avertissement : ';
+
 export function WarningBanner() {
   const isEnabled = useHasPublicFeature(FEATURE_FLAGS.WARNING_BANNER, false);
   const isDismissed = useSyncExternalStore(subscribeToWarningBannerDismissal, isWarningBannerDismissed);
@@ -27,7 +30,7 @@ export function WarningBanner() {
 
   return (
     <Notice
-      title={title}
+      title={`${TITLE_PREFIX}${title}`}
       description={description}
       severity="warning"
       isClosable
