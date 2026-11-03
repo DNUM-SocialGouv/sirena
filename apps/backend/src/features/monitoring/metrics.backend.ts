@@ -75,7 +75,7 @@ export const requestProcessingDuration = new Histogram({
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 const STALE_THRESHOLD_DAYS = 30;
 
-type RequeteMetricsRow = {
+export type RequeteMetricsRow = {
   total: number;
   unassigned: number;
   withoutSteps: number;
@@ -84,10 +84,13 @@ type RequeteMetricsRow = {
   oldestUnassignedDays: number;
 };
 
+/** Accepts a transaction client so the aggregate can be compared to a reference on one snapshot. */
+type RequeteMetricsClient = Pick<typeof prisma, '$queryRaw'>;
+
 // The three categories are mutually exclusive, and only unassigned requests feed the age gauges.
-// MATERIALIZED keeps the planner from re-running both EXISTS per aggregate filter, which costs ~30x.
-function aggregateRequeteMetrics(): Promise<RequeteMetricsRow[]> {
-  return prisma.$queryRaw<RequeteMetricsRow[]>`
+// MATERIALIZED stops the planner from re-running both EXISTS for every aggregate filter.
+export function aggregateRequeteMetrics(client: RequeteMetricsClient = prisma): Promise<RequeteMetricsRow[]> {
+  return client.$queryRaw<RequeteMetricsRow[]>`
     WITH classified AS MATERIALIZED (
       SELECT
         floor(
