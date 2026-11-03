@@ -3,7 +3,12 @@ const normalize = (value: unknown): unknown => {
 
   if (typeof value === 'string') return value.trim() === '' ? undefined : value.trim();
 
-  if (Array.isArray(value)) return value.map(normalize);
+  // An emptied collection reads like an absent one, so undoing the only input of a form clears it again.
+  if (Array.isArray(value)) {
+    const items = value.map(normalize);
+
+    return items.length === 0 ? undefined : items;
+  }
 
   if (value instanceof File) return value;
 
@@ -14,7 +19,7 @@ const normalize = (value: unknown): unknown => {
       return normalized === undefined ? [] : [[key, normalized] as const];
     });
 
-    return Object.fromEntries(entries);
+    return entries.length === 0 ? undefined : Object.fromEntries(entries);
   }
 
   return value;
