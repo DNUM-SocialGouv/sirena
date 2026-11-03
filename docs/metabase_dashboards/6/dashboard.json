@@ -601,7 +601,7 @@
           }
         ],
         "public_uuid_prefix": null,
-        "query_average_duration": 920,
+        "query_average_duration": 787,
         "query_type": "native",
         "source_card_id": null,
         "table_id": null,
@@ -1269,7 +1269,7 @@
           }
         ],
         "public_uuid_prefix": null,
-        "query_average_duration": 1589,
+        "query_average_duration": 1465,
         "query_type": "native",
         "source_card_id": null,
         "table_id": null,
@@ -1828,7 +1828,7 @@
           }
         ],
         "public_uuid_prefix": null,
-        "query_average_duration": 1094,
+        "query_average_duration": 824,
         "query_type": "native",
         "source_card_id": null,
         "table_id": null,
@@ -2387,7 +2387,7 @@
           }
         ],
         "public_uuid_prefix": null,
-        "query_average_duration": 3474,
+        "query_average_duration": 3193,
         "query_type": "native",
         "source_card_id": null,
         "table_id": null,
@@ -2562,7 +2562,7 @@
           }
         ],
         "public_uuid_prefix": null,
-        "query_average_duration": 424,
+        "query_average_duration": 365,
         "query_type": "native",
         "source_card_id": null,
         "table_id": null,

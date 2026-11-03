@@ -502,10 +502,10 @@ model Fait {
 }
 
 model MotifEnum {
-  id String @id
-  // Leaf label. The parent category is carried here rather than in a table of its own: every
-  // referential in this schema is a flat enum, and diff_enums already syncs it from MOTIFS_DATA.
+  id       String @id
   label    String
+  // Carried here rather than in a table of its own: every referential in this schema is a flat
+  // enum, and diff_enums already syncs it from MOTIFS_DATA.
   category String
 
   faits FaitMotif[]
