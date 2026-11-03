@@ -1,6 +1,6 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { ROLES, type Role } from '@sirena/common/constants';
-import { useMatches } from '@tanstack/react-router';
+import { Link, useMatches } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useProfile } from '@/hooks/queries/profile.hook';
@@ -162,14 +162,14 @@ export const UserMenu = () => {
             <>
               {isAdminRoute ? (
                 role === ROLES.ENTITY_ADMIN && (
-                  <a className="fr-btn--icon-left fr-icon-user-line fr-p-2w" href="/home">
+                  <Link className="fr-btn--icon-left fr-icon-user-line fr-p-2w" to="/home">
                     Liste des requêtes
-                  </a>
+                  </Link>
                 )
               ) : (
-                <a className="fr-btn--icon-left fr-icon-settings-5-line fr-p-2w" href="/admin/users">
+                <Link className="fr-btn--icon-left fr-icon-settings-5-line fr-p-2w" to="/admin/users">
                   Espace administrateur
-                </a>
+                </Link>
               )}
               {(!isAdminRoute || role === ROLES.ENTITY_ADMIN) && <div className="user-menu__separator" />}
             </>
