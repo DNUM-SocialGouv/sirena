@@ -164,6 +164,18 @@ describe('useUnsavedChangesGuard', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('lets a filter that only changes the search params through without confirmation', async () => {
+    const user = userEvent.setup();
+    const router = await renderWithRouter(<TestForm />, { formPath: '/home' });
+
+    await user.type(screen.getByLabelText('Nom'), 'Dupont');
+    await act(() => router.navigate({ to: '/home', search: { statutIds: 'CLOTURE' } }));
+
+    expect(router.state.location.searchStr).toBe('?statutIds=CLOTURE');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Nom')).toHaveValue('Dupont');
+  });
+
   it('lets the user leave without confirmation when nothing was changed', async () => {
     const user = userEvent.setup();
     await renderForm();

@@ -23,8 +23,10 @@ export const useUnsavedChangesGuard = ({ isDirty }: UnsavedChangesGuardOptions) 
   }, [guardId, isDirty]);
 
   useBlocker({
-    shouldBlockFn: async ({ next }) => {
+    shouldBlockFn: async ({ current, next }) => {
       if (!isDirtyRef.current) return false;
+      // A search-param navigation keeps the guarded form mounted, so nothing typed in it is lost.
+      if (current.pathname === next.pathname) return false;
       if (PATHS_LEFT_WITHOUT_CONFIRMATION.has(next.pathname)) return false;
 
       const canLeave = await useUnsavedChangesStore.getState().requestLeave();
