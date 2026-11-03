@@ -237,7 +237,7 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
 
         // Redirect to the created request (after upload success or failure in create mode)
         if (mode === 'create' && createdRequeteId) {
-          navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId } });
+          navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId }, ignoreBlocker: true });
         }
       } catch (createError) {
         console.error('Erreur lors de la création de la requête:', createError);
