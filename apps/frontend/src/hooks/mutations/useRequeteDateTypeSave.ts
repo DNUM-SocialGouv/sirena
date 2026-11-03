@@ -35,7 +35,8 @@ type UseRequeteDateTypeSaveProps = {
   onRefetch: () => void;
   /** Normalizes the server row into the submitted shape so the merge compares like for like. */
   formatFromServer?: (serverData: unknown) => RequeteDateTypeData;
-  onSaved?: () => void;
+  /** Receives what was actually persisted, which a conflict resolution or an auto-merge can have changed. */
+  onSaved?: (savedData: RequeteDateTypeData) => void;
 };
 
 export const useRequeteDateTypeSave = ({
@@ -103,12 +104,12 @@ export const useRequeteDateTypeSave = ({
       const result = await response.json();
       return result.data;
     },
-    onSuccess: () => {
+    onSuccess: (_result, savedData) => {
       serverUpdatedAtRef.current = null;
       autoMergeReplaysRef.current = 0;
       releaseEditSession();
       onRefetch();
-      onSaved?.();
+      onSaved?.(savedData);
       navigate({ to: '/request/$requestId', params: { requestId }, ignoreBlocker: true });
     },
     onError: async (error: unknown) => {

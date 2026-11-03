@@ -1,4 +1,4 @@
-import { act, cleanup, screen } from '@testing-library/react';
+import { act, cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { type ComponentProps, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -216,5 +216,37 @@ describe('OriginalRequestSection server data', () => {
     await user.click(screen.getByRole('button', { name: 'Valider' }));
 
     expect(await screen.findByText(/Reçue le 03\/02\/2026/)).toBeInTheDocument();
+  });
+
+  it('shows the arbitrated value once a conflict was resolved on the other user version', async () => {
+    const user = userEvent.setup();
+    patch
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            message: 'Conflict',
+            cause: {
+              kind: 'BUSINESS',
+              serverData: OTHER_USER_DATA,
+              serverUpdatedAt: '2026-01-01T11:00:00.000Z',
+            },
+          }),
+          { status: 409, headers: { 'Content-Type': 'application/json' } },
+        ) as never,
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: {} }), { status: 200 }) as never);
+    const deliverServerData = await renderWithServerData();
+
+    await user.click(screen.getByRole('button', { name: 'Modifier' }));
+    await changeReceptionDate(user);
+    // The other user's write reaches the section while the form is open, so the refetch is held back.
+    deliverServerData(OTHER_USER_DATA);
+    await user.click(screen.getByRole('button', { name: 'Valider' }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Résolution des conflits' });
+    await user.click(within(dialog).getByRole('radio', { name: /Modifications de l'autre utilisateur/ }));
+    await user.click(within(dialog).getByRole('button', { name: 'Résoudre et sauvegarder' }));
+
+    expect(await screen.findByText(/Reçue le 15\/03\/2026/)).toBeInTheDocument();
   });
 });

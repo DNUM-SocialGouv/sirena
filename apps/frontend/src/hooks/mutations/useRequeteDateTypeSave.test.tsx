@@ -179,6 +179,32 @@ describe('useRequeteDateTypeSave', () => {
     expect(patchedJson(1).receptionDate).toBe('2026-03-03');
   });
 
+  it('hands onSaved the arbitrated values, not the ones the user had submitted', async () => {
+    patch.mockResolvedValueOnce(conflictResponse()).mockResolvedValueOnce(okResponse());
+    const onSaved = vi.fn();
+
+    const result = renderHook(
+      () =>
+        useRequeteDateTypeSave({
+          requestId: 'req-1',
+          requeteUpdatedAt: LOADED_UPDATED_AT,
+          onRefetch: vi.fn(),
+          formatFromServer,
+          onSaved,
+        }),
+      { wrapper },
+    ).result;
+    result.current.originalDataRef.current = LOADED_DATA;
+
+    await result.current.handleSave({ ...LOADED_DATA, receptionDate: '2026-02-02' });
+    await waitFor(() => expect(result.current.showConflictDialog).toBe(true));
+
+    await result.current.handleConflictResolve({ receptionDate: 'server' });
+
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+    expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ receptionDate: '2026-03-03' }));
+  });
+
   it('keeps the changes only the other user made when a conflict is arbitrated', async () => {
     patch
       .mockResolvedValueOnce(

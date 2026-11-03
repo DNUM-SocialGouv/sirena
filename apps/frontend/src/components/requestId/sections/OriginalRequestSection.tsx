@@ -236,7 +236,18 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
       requeteUpdatedAt: updatedAt,
       formatFromServer: (serverData) =>
         toComparableFields(serverData as OriginalRequestSectionProps['data'], showProvenance),
-      onSaved: () => {
+      onSaved: (savedData) => {
+        // The read-only view keeps showing the local state, so it has to follow the values the save really wrote.
+        setDateValue(formatDateForInput(savedData.receptionDate));
+        setDateDemandeDeclarantValue(formatDateForInput(savedData.dateDemandeDeclarant));
+        setTypeValue(savedData.receptionTypeId ?? '');
+        if (savedData.provenanceId !== undefined) {
+          setProvenanceValue((savedData.provenanceId as RequeteProvenance | null) ?? '');
+        }
+        if (savedData.provenancePrecision !== undefined) {
+          setProvenancePrecisionValue(savedData.provenancePrecision ?? '');
+        }
+
         shouldRefocusEditRef.current = true;
         setIsEdit(false);
       },
