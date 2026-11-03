@@ -282,6 +282,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   };
 
   const [baseline, setBaseline] = useState<typeof editedValues | null>(null);
+
   if (isOpen && baseline === null) setBaseline(editedValues);
   if (!isOpen && baseline !== null) setBaseline(null);
 

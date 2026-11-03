@@ -56,6 +56,31 @@ describe('DeclarantForm unsaved changes', () => {
     expect(unsavedChangesDialog()).not.toBeInTheDocument();
   });
 
+  it('asks for confirmation when the user leaves a new declarant after ticking a box', async () => {
+    const user = userEvent.setup();
+    await renderForm({ mode: 'create', requestId: undefined, initialData: undefined });
+
+    await user.click(screen.getByLabelText('Le déclarant est curateur ou tuteur de la personne concernée'));
+    await user.click(screen.getByRole('link', { name: OTHER_PAGE_LINK }));
+
+    expect(await screen.findByRole('dialog', { name: 'Données non enregistrées' })).toBeInTheDocument();
+  });
+
+  it.each([
+    'Le déclarant est la personne concernée par les faits',
+    'Le déclarant est curateur ou tuteur de la personne concernée',
+  ])('lets the user leave a new declarant without confirmation after ticking then unticking « %s »', async (label) => {
+    const user = userEvent.setup();
+    await renderForm({ mode: 'create', requestId: undefined, initialData: undefined });
+
+    await user.click(screen.getByLabelText(label));
+    await user.click(screen.getByLabelText(label));
+    await user.click(screen.getByRole('link', { name: OTHER_PAGE_LINK }));
+
+    expect(await screen.findByRole('heading', { name: OTHER_PAGE_HEADING })).toBeInTheDocument();
+    expect(unsavedChangesDialog()).not.toBeInTheDocument();
+  });
+
   it.each([
     { mode: 'edit' as const, requestId: 'req-1', destination: '/request/req-1' },
     { mode: 'create' as const, requestId: undefined, destination: '/request/create' },

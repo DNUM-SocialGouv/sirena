@@ -88,7 +88,6 @@ export function SituationForm({
 
       setFormData((prev) => ({ ...prev, traitementDesFaits }));
 
-      // The entities the section prefills are not the user's input: leaving loses nothing.
       if (!isUserChange) setSavedData((prev) => ({ ...prev, traitementDesFaits }));
     },
     [],

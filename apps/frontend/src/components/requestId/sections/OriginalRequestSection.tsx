@@ -180,8 +180,10 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
   const [provenancePrecisionValue, setProvenancePrecisionValue] = useState<string>(data?.provenancePrecision ?? '');
   const [isSaving, setIsSaving] = useState(false);
   const [isEdit, setIsEdit] = useState<boolean>(false);
+
   const isEditRef = useRef(isEdit);
   isEditRef.current = isEdit;
+
   const [editBaseline, setEditBaseline] = useState<Record<string, string> | null>(null);
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const shouldRefocusEditRef = useRef(false);

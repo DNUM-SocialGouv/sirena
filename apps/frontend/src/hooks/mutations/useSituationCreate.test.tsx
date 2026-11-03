@@ -62,7 +62,6 @@ describe('useSituationCreate', () => {
     });
   });
 
-  // The request already exists: staying on the creation form would create a second one on the next save.
   it('opens the created request without the unsaved changes confirmation when its situation failed to save', async () => {
     createRequest.mockResolvedValueOnce(jsonResponse({ data: { id: 'req-1' } }));
     createSituation.mockResolvedValueOnce(jsonResponse({}, 500));

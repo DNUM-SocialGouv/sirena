@@ -25,12 +25,23 @@ interface DeclarantFormProps {
   onSave: (data: DeclarantData, shouldCreateRequest: boolean) => Promise<void>;
 }
 
+// The checkboxes show an absent value unticked.
+const withCheckboxDefaults = (data: DeclarantData): DeclarantData => ({
+  ...data,
+  estPersonneConcernee: data.estPersonneConcernee ?? false,
+  isTuteur: data.isTuteur ?? false,
+});
+
 export function DeclarantForm({ mode, requestId, initialData, onSave }: DeclarantFormProps) {
   const navigate = useNavigate();
   const router = useRouter();
   const [formData, setFormData] = useState<DeclarantData>(initialData || {});
   const [savedData] = useState<DeclarantData>(initialData || {});
-  useUnsavedChangesGuard({ isDirty: hasUnsavedChanges(savedData, formData) });
+
+  useUnsavedChangesGuard({
+    isDirty: hasUnsavedChanges(withCheckboxDefaults(savedData), withCheckboxDefaults(formData)),
+  });
+
   const [emailError, setEmailError] = useState<string | undefined>();
   const [phoneError, setPhoneError] = useState<string | undefined>();
   const [isSaving, setIsSaving] = useState(false);

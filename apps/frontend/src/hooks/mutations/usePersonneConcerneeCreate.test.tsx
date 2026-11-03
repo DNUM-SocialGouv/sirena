@@ -39,7 +39,6 @@ describe('usePersonneConcerneeCreate', () => {
     vi.clearAllMocks();
   });
 
-  // The data is saved: nothing is left to lose, so the redirect must not ask for confirmation.
   it('opens the created request without the unsaved changes confirmation', async () => {
     post.mockResolvedValueOnce(
       new Response(JSON.stringify({ data: { id: 'req-1' } }), {

@@ -153,7 +153,6 @@ describe('useUnsavedChangesGuard', () => {
     expect(screen.getByLabelText('Nom')).toHaveValue('Dupont');
   });
 
-  // An expired session or an inactive account can no longer save: asking would only trap the user.
   it.each(['/login', '/inactive'] as const)('lets SIRENA redirect to %s without confirmation', async (to) => {
     const user = userEvent.setup();
     const router = await renderForm();

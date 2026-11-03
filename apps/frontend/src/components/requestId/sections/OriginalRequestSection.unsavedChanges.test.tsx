@@ -82,7 +82,6 @@ describe('OriginalRequestSection unsaved changes', () => {
     await expectLeftWithoutConfirmation();
   });
 
-  // Valider reloads the request page the section sits on: the agent stays there with the form closed.
   it('lets the user leave without confirmation once Valider saved the changes', async () => {
     const user = userEvent.setup();
     patch.mockResolvedValueOnce(new Response(JSON.stringify({ data: {} }), { status: 200 }) as never);
