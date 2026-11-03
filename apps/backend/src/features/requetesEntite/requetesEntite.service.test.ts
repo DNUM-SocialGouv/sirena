@@ -27,6 +27,8 @@ import {
   getRequeteEntiteById,
   getRequeteEntiteStatutId,
   getRequetesCountsByDepartement,
+  getRequetesCountsByDomaine,
+  getRequetesCountsByStatut,
   getRequetesEntite,
   hasAccessToRequete,
   reopenRequeteForEntite,
@@ -122,6 +124,7 @@ vi.mock('../../libs/prisma.js', () => ({
     requeteEntite: {
       findMany: vi.fn(),
       count: vi.fn(),
+      groupBy: vi.fn(),
       findFirst: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
@@ -813,7 +816,9 @@ describe('requetesEntite.service', () => {
     });
 
     it('keeps resolving alphanumeric department codes through InseePostal', async () => {
-      vi.mocked(prisma.inseePostal.findMany).mockResolvedValue([{ codePostal: '20000' }] as never);
+      vi.mocked(prisma.inseePostal.findMany).mockResolvedValue([
+        { codePostal: '20000', commune: { dptCodeActuel: '2A' } },
+      ] as never);
       vi.mocked(prisma.commune.groupBy).mockResolvedValue([
         { dptCodeActuel: '2A', dptLibActuel: 'Corse-du-Sud' },
       ] as never);
@@ -829,64 +834,299 @@ describe('requetesEntite.service', () => {
       expect(situationFiltersOf()).toEqual([postalBranch({ startsWith: '76' })]);
     });
 
-    it('applies the same filter when counting requests per department', async () => {
-      vi.mocked(prisma.commune.groupBy).mockResolvedValue([
-        { dptCodeActuel: '76', dptLibActuel: 'Seine-Maritime' },
-      ] as never);
-      mockedRequeteEntite.count.mockResolvedValue(7);
-
-      const counts = await getRequetesCountsByDepartement(null, ['76'], {});
-
-      expect(counts).toEqual([{ code: '76', count: 7 }]);
-      expect(mockedRequeteEntite.count).toHaveBeenCalledWith({
-        where: {
-          AND: [
-            {
-              requete: {
-                situations: { some: { OR: [postalBranch({ startsWith: '76' }), sirecBranch(['Seine-Maritime'])] } },
-              },
-            },
-          ],
-        },
-      });
-    });
-
-    it('resolves the department labels once for the whole set of counted codes', async () => {
+    it('reads the candidate rows behind the filter of the whole counted set', async () => {
       vi.mocked(prisma.commune.groupBy).mockResolvedValue([
         { dptCodeActuel: '29', dptLibActuel: 'Finistère' },
         { dptCodeActuel: '76', dptLibActuel: 'Seine-Maritime' },
       ] as never);
-      mockedRequeteEntite.count.mockResolvedValue(0);
 
       await getRequetesCountsByDepartement(null, ['29', '76'], {});
 
-      // One lookup for the whole set, not one per code: the counters build a where clause per
-      // department and each of them used to re-read the labels.
+      // One lookup and one read for the whole set, not one per code.
       expect(prisma.commune.groupBy).toHaveBeenCalledTimes(1);
       expect(prisma.commune.groupBy).toHaveBeenCalledWith({
         by: ['dptCodeActuel', 'dptLibActuel'],
         where: { dptCodeActuel: { in: ['29', '76'] } },
       });
+      expect(situationFiltersOf()).toEqual([
+        postalBranch({ startsWith: '29' }, { startsWith: '76' }),
+        sirecBranch(['Finistère', 'Seine-Maritime']),
+      ]);
+    });
+  });
+
+  describe('aggregated filter counters', () => {
+    type SituationGeo = { codePostal?: string; adresseCodePostal?: string | null; sirecDepartement?: string | null };
+
+    const geoRow = (situations: SituationGeo[]) => ({
+      requete: {
+        situations: situations.map(({ codePostal = '', adresseCodePostal = null, sirecDepartement = null }) => ({
+          sirecDepartement,
+          lieuDeSurvenue: {
+            codePostal,
+            adresse: adresseCodePostal === null ? null : { codePostal: adresseCodePostal },
+          },
+        })),
+      },
     });
 
-    it('gives each counted code only its own department label', async () => {
-      vi.mocked(prisma.commune.groupBy).mockResolvedValue([
-        { dptCodeActuel: '29', dptLibActuel: 'Finistère' },
-        { dptCodeActuel: '76', dptLibActuel: 'Seine-Maritime' },
-      ] as never);
+    const domaineRow = (domaineIds: (string | null)[]) => ({
+      requete: { situations: domaineIds.map((domainesFonctionnelsId) => ({ domainesFonctionnelsId })) },
+    });
+
+    const emittedQueries = () =>
+      vi.mocked(prisma.requeteEntite.findMany).mock.calls.length +
+      vi.mocked(prisma.requeteEntite.count).mock.calls.length +
+      vi.mocked(prisma.requeteEntite.groupBy).mock.calls.length +
+      vi.mocked(prisma.commune.groupBy).mock.calls.length +
+      vi.mocked(prisma.inseePostal.findMany).mock.calls.length;
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      mockedRequeteEntite.findMany.mockResolvedValue([]);
       mockedRequeteEntite.count.mockResolvedValue(0);
+      vi.mocked(prisma.requeteEntite.groupBy).mockResolvedValue([] as never);
+      vi.mocked(prisma.commune.groupBy).mockResolvedValue([] as never);
+      vi.mocked(prisma.inseePostal.findMany).mockResolvedValue([] as never);
+    });
 
-      await getRequetesCountsByDepartement(null, ['29', '76'], {});
+    afterEach(() => {
+      mockedRequeteEntite.findMany.mockReset();
+      mockedRequeteEntite.count.mockReset();
+      vi.mocked(prisma.requeteEntite.groupBy).mockReset();
+      vi.mocked(prisma.commune.groupBy).mockReset();
+      vi.mocked(prisma.inseePostal.findMany).mockReset();
+    });
 
-      const sirecBranchOf = (call: number) => {
-        const { where } = vi.mocked(prisma.requeteEntite.count).mock.calls[call]?.[0] ?? {};
-        const branches = (where as { AND: { requete: { situations: { some: { OR: unknown[] } } } }[] }).AND[0].requete
-          .situations.some.OR;
-        return branches[1];
-      };
+    describe('getRequetesCountsByDepartement', () => {
+      it('stays within three reads for a hundred codes', async () => {
+        const codes = [...Array.from({ length: 98 }, (_, i) => String(i + 1).padStart(2, '0')), '2A', '2B'];
 
-      expect(sirecBranchOf(0)).toEqual(sirecBranch(['Finistère']));
-      expect(sirecBranchOf(1)).toEqual(sirecBranch(['Seine-Maritime']));
+        await getRequetesCountsByDepartement(null, codes, {});
+
+        // The point of the aggregation: the number of reads no longer follows the code count.
+        // Prisma expands the nested read into one statement per relation level, so the SQL
+        // statements are a small constant too, but not these three.
+        expect(codes).toHaveLength(100);
+        expect(emittedQueries()).toBeLessThanOrEqual(3);
+        expect(mockedRequeteEntite.count).not.toHaveBeenCalled();
+      });
+
+      it('counts each code from a single read, zero counters included', async () => {
+        mockedRequeteEntite.findMany.mockResolvedValue([
+          geoRow([{ codePostal: '76000' }]),
+          geoRow([{ codePostal: '76600' }]),
+          geoRow([{ codePostal: '29000' }]),
+        ] as never);
+
+        const counts = await getRequetesCountsByDepartement(null, ['76', '29', '14'], {});
+
+        expect(counts).toEqual([
+          { code: '76', count: 2 },
+          { code: '29', count: 1 },
+          { code: '14', count: 0 },
+        ]);
+        expect(mockedRequeteEntite.findMany).toHaveBeenCalledTimes(1);
+      });
+
+      it('keeps the requested order and the duplicates of the requested codes', async () => {
+        mockedRequeteEntite.findMany.mockResolvedValue([geoRow([{ codePostal: '76000' }])] as never);
+
+        const counts = await getRequetesCountsByDepartement(null, ['29', '76', '76'], {});
+
+        expect(counts).toEqual([
+          { code: '29', count: 0 },
+          { code: '76', count: 1 },
+          { code: '76', count: 1 },
+        ]);
+      });
+
+      it('counts a request once even when several of its situations match the code', async () => {
+        mockedRequeteEntite.findMany.mockResolvedValue([
+          geoRow([{ codePostal: '76000' }, { codePostal: '76600' }]),
+        ] as never);
+
+        const counts = await getRequetesCountsByDepartement(null, ['76'], {});
+
+        expect(counts).toEqual([{ code: '76', count: 1 }]);
+      });
+
+      it('matches the postal code of the lieu or the one of its adresse', async () => {
+        mockedRequeteEntite.findMany.mockResolvedValue([
+          geoRow([{ adresseCodePostal: '76000' }]),
+          geoRow([{ codePostal: '14000', adresseCodePostal: '76000' }]),
+        ] as never);
+
+        const counts = await getRequetesCountsByDepartement(null, ['76'], {});
+
+        expect(counts).toEqual([{ code: '76', count: 2 }]);
+      });
+
+      it('gives each corsican code only the postal codes of its own department', async () => {
+        vi.mocked(prisma.inseePostal.findMany).mockResolvedValue([
+          { codePostal: '20000', commune: { dptCodeActuel: '2A' } },
+          { codePostal: '20200', commune: { dptCodeActuel: '2B' } },
+        ] as never);
+        mockedRequeteEntite.findMany.mockResolvedValue([
+          geoRow([{ codePostal: '20000' }]),
+          geoRow([{ codePostal: '20200' }]),
+        ] as never);
+
+        const counts = await getRequetesCountsByDepartement(null, ['2A', '2B'], {});
+
+        // A prefix match would put both postal codes under both codes: 20000 and 20200 start
+        // with the same two digits, which is exactly why Corsica goes through InseePostal.
+        expect(counts).toEqual([
+          { code: '2A', count: 1 },
+          { code: '2B', count: 1 },
+        ]);
+        expect(prisma.inseePostal.findMany).toHaveBeenCalledTimes(1);
+      });
+
+      it('counts DOM requests under their three-digit code', async () => {
+        mockedRequeteEntite.findMany.mockResolvedValue([
+          geoRow([{ codePostal: '97100' }]),
+          geoRow([{ codePostal: '97400' }]),
+        ] as never);
+
+        const counts = await getRequetesCountsByDepartement(null, ['971', '974'], {});
+
+        expect(counts).toEqual([
+          { code: '971', count: 1 },
+          { code: '974', count: 1 },
+        ]);
+      });
+
+      it('counts a situation without postal code under its SIREC department', async () => {
+        vi.mocked(prisma.commune.groupBy).mockResolvedValue([
+          { dptCodeActuel: '29', dptLibActuel: 'Finistère' },
+          { dptCodeActuel: '76', dptLibActuel: 'Seine-Maritime' },
+        ] as never);
+        mockedRequeteEntite.findMany.mockResolvedValue([
+          geoRow([{ sirecDepartement: 'Finistère' }]),
+          geoRow([{ codePostal: '76000', sirecDepartement: 'Finistère' }]),
+        ] as never);
+
+        // The second row carries a postal code, so its SIREC department is never read: it
+        // belongs to 76 only, as the list filter puts it.
+        const counts = await getRequetesCountsByDepartement(null, ['29', '76'], {});
+
+        expect(counts).toEqual([
+          { code: '29', count: 1 },
+          { code: '76', count: 1 },
+        ]);
+      });
+
+      it('returns the unfiltered total for an alphanumeric code the referential does not know', async () => {
+        mockedRequeteEntite.findMany.mockResolvedValue([
+          geoRow([{ codePostal: '76000' }]),
+          geoRow([{ codePostal: '29000' }]),
+        ] as never);
+
+        const counts = await getRequetesCountsByDepartement(null, ['ZZ'], {});
+
+        // Historical behaviour: such a code resolves to no filter at all, so the count is the
+        // unfiltered total. Frozen here rather than fixed, the responses having to match.
+        expect(counts).toEqual([{ code: 'ZZ', count: 2 }]);
+      });
+
+      it('emits no query for an empty set of codes', async () => {
+        const counts = await getRequetesCountsByDepartement(null, [], {});
+
+        expect(counts).toEqual([]);
+        expect(emittedQueries()).toBe(0);
+      });
+    });
+
+    describe('getRequetesCountsByDomaine', () => {
+      it('counts each domaine from a single read, zero counters included', async () => {
+        mockedRequeteEntite.findMany.mockResolvedValue([
+          domaineRow(['SOCIAL']),
+          domaineRow(['SOCIAL', 'SANITAIRE']),
+        ] as never);
+
+        const counts = await getRequetesCountsByDomaine(null, ['SOCIAL', 'SANITAIRE', 'MEDICO_SOCIAL'], {});
+
+        expect(counts).toEqual([
+          { id: 'SOCIAL', count: 2 },
+          { id: 'SANITAIRE', count: 1 },
+          { id: 'MEDICO_SOCIAL', count: 0 },
+        ]);
+        expect(mockedRequeteEntite.findMany).toHaveBeenCalledTimes(1);
+        expect(mockedRequeteEntite.count).not.toHaveBeenCalled();
+      });
+
+      it('counts under « Non renseigné » the requests carrying no domaine', async () => {
+        mockedRequeteEntite.findMany.mockResolvedValue([
+          domaineRow([null]),
+          domaineRow([]),
+          domaineRow(['SOCIAL', null]),
+        ] as never);
+
+        const counts = await getRequetesCountsByDomaine(null, [FILTRE_NON_RENSEIGNE, 'SOCIAL'], {});
+
+        expect(counts).toEqual([
+          { id: FILTRE_NON_RENSEIGNE, count: 2 },
+          { id: 'SOCIAL', count: 1 },
+        ]);
+      });
+
+      it('reads the candidate rows behind the filter of the whole counted set', async () => {
+        await getRequetesCountsByDomaine(null, ['SOCIAL', 'SANITAIRE'], {});
+
+        expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: {
+              AND: [{ requete: { situations: { some: { domainesFonctionnelsId: { in: ['SOCIAL', 'SANITAIRE'] } } } } }],
+            },
+          }),
+        );
+      });
+
+      it('emits no query for an empty set of domaines', async () => {
+        const counts = await getRequetesCountsByDomaine(null, [], {});
+
+        expect(counts).toEqual([]);
+        expect(emittedQueries()).toBe(0);
+      });
+    });
+
+    describe('getRequetesCountsByStatut', () => {
+      it('counts every statut with a single groupBy, zero counters included', async () => {
+        vi.mocked(prisma.requeteEntite.groupBy).mockResolvedValue([
+          { statutId: REQUETE_STATUT_TYPES.EN_COURS, _count: { _all: 3 } },
+          { statutId: REQUETE_STATUT_TYPES.NOUVEAU, _count: { _all: 1 } },
+        ] as never);
+
+        const counts = await getRequetesCountsByStatut(
+          null,
+          [REQUETE_STATUT_TYPES.NOUVEAU, REQUETE_STATUT_TYPES.EN_COURS, REQUETE_STATUT_TYPES.CLOTUREE],
+          {},
+        );
+
+        expect(counts).toEqual([
+          { id: REQUETE_STATUT_TYPES.NOUVEAU, count: 1 },
+          { id: REQUETE_STATUT_TYPES.EN_COURS, count: 3 },
+          { id: REQUETE_STATUT_TYPES.CLOTUREE, count: 0 },
+        ]);
+        expect(prisma.requeteEntite.groupBy).toHaveBeenCalledTimes(1);
+        expect(mockedRequeteEntite.count).not.toHaveBeenCalled();
+      });
+
+      it('groups on the base filter, without any statut clause', async () => {
+        await getRequetesCountsByStatut(null, [REQUETE_STATUT_TYPES.NOUVEAU], { search: 'Dupont' });
+
+        const [call] = vi.mocked(prisma.requeteEntite.groupBy).mock.calls.at(-1) as [{ by: string[]; where: object }];
+        expect(call.by).toEqual(['statutId']);
+        expect(JSON.stringify(call.where)).not.toContain('statutId');
+      });
+
+      it('emits no query for an empty set of statuts', async () => {
+        const counts = await getRequetesCountsByStatut(null, [], {});
+
+        expect(counts).toEqual([]);
+        expect(emittedQueries()).toBe(0);
+      });
     });
   });
 
