@@ -171,17 +171,19 @@ describe('rateLimiter middleware', () => {
     expect(res.status).toBe(200);
   });
 
-  it('should warn explicitly about the fail-open when the ban status cannot be read', async () => {
+  it('should log the fail-open once, with the cause, when the ban status cannot be read', async () => {
     extractClientIp.mockReturnValue('192.168.1.1');
-    redis.get.mockRejectedValue(new Error('Redis connection failed'));
+    const cause = new Error('Redis connection failed');
+    redis.get.mockRejectedValue(cause);
 
     const res = await app.request('/test');
 
     expect(res.status).toBe(200);
-    expect(logger.warn).toHaveBeenCalledWith(
-      expect.objectContaining({ clientIP: '192.168.1.1', traceId: 'test-trace-id' }),
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ err: cause, clientIP: '192.168.1.1', traceId: 'test-trace-id' }),
       expect.stringContaining('fail-open'),
     );
+    expect(logger.warn).not.toHaveBeenCalled();
   });
 
   it('should drop a corrupted ban entry and let the request through', async () => {
@@ -206,5 +208,35 @@ describe('rateLimiter middleware', () => {
 
     expect(res.status).toBe(200);
     expect(redis.del).toHaveBeenCalledWith(banKey('192.168.1.1'));
+  });
+
+  it.each([
+    ['a ban lasting forever', JSON.stringify({ bannedUntil: Number.POSITIVE_INFINITY, banCount: 1 })],
+    ['a ban already in the past', JSON.stringify({ bannedUntil: -1, banCount: 1 })],
+    ['a ban count below one', JSON.stringify({ bannedUntil: Date.now() + 60_000, banCount: 0 })],
+    ['an empty entry', ''],
+  ])('should drop a ban entry describing %s', async (_label, cached) => {
+    extractClientIp.mockReturnValue('192.168.1.1');
+    redis.get.mockResolvedValue(cached);
+
+    const res = await app.request('/test');
+
+    expect(res.status).toBe(200);
+    expect(redis.del).toHaveBeenCalledWith(banKey('192.168.1.1'));
+  });
+
+  it('should let the request through when dropping the corrupted entry fails', async () => {
+    extractClientIp.mockReturnValue('192.168.1.1');
+    redis.get.mockResolvedValue('not-json-at-all');
+    const cause = new Error('Redis connection failed');
+    redis.del.mockRejectedValue(cause);
+
+    const res = await app.request('/test');
+
+    expect(res.status).toBe(200);
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ err: cause, clientIP: '192.168.1.1', traceId: 'test-trace-id' }),
+      expect.stringContaining('Error deleting corrupted ban key'),
+    );
   });
 });

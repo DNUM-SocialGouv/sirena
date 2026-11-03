@@ -32,6 +32,11 @@ const parseBanData = (raw: string): BanData | null => {
       return null;
     }
 
+    // Out-of-range bounds would either ban an IP forever or lift its ban instantly.
+    if (!Number.isFinite(bannedUntil) || bannedUntil < 0 || !Number.isInteger(banCount) || banCount < 1) {
+      return null;
+    }
+
     return { bannedUntil, banCount };
   } catch {
     return null;
@@ -62,13 +67,12 @@ export function rateLimiter(options: RateLimiterOptions = {}): MiddlewareHandler
     try {
       banDataStr = await redis.get(clientBanKey);
     } catch (error) {
-      logger.error({ err: error, clientIP, traceId }, 'Error checking ban status');
-      logger.warn({ clientIP, traceId }, FAIL_OPEN_MESSAGE);
+      logger.error({ err: error, clientIP, traceId }, FAIL_OPEN_MESSAGE);
     }
 
-    const banData = banDataStr ? parseBanData(banDataStr) : null;
+    const banData = banDataStr === null ? null : parseBanData(banDataStr);
 
-    if (banDataStr && !banData) {
+    if (banDataStr !== null && !banData) {
       logger.warn({ clientIP, traceId }, 'Corrupted ban data in cache, dropping the key');
 
       try {
