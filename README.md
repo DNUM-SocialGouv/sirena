@@ -209,7 +209,7 @@ openssl rand -hex 32
 
 Store the generated value in the secret store for the target environment. Changing it will invalidate all existing API keys, which then have to be re-issued.
 
-Stored hashes are prefixed with `hmac256$`. Hashes without that prefix were produced by the previous `scrypt` scheme; they are still accepted, and are rewritten to the current format the first time the key is used.
+Stored hashes are prefixed with `hmac256$`. Hashes without that prefix were produced by the previous `scrypt` scheme; they are still accepted, and are rewritten to the current format the first time the key authenticates successfully.
 
 ### API Key Format
 - Format: `sk_{hexadecimal characters}`

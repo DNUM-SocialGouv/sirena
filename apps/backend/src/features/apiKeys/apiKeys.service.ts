@@ -1,18 +1,12 @@
-import { API_KEY_HASH_PREFIX } from '../../libs/apiKey.js';
 import { type ApiKey, type Prisma, prisma } from '../../libs/prisma.js';
 
-export const findApiKeyByHash = (
-  keyHash: string,
-): Promise<Prisma.ApiKeyGetPayload<{ include: { account: true } }> | null> =>
-  prisma.apiKey.findUnique({
-    where: { keyHash },
+/** Every record a presented key could match, so one read is enough to decide. */
+export const findApiKeysByPrefix = (
+  keyPrefix: string,
+): Promise<Prisma.ApiKeyGetPayload<{ include: { account: true } }>[]> =>
+  prisma.apiKey.findMany({
+    where: { keyPrefix },
     include: { account: true },
-  });
-
-/** Keys still hashed with the legacy scrypt scheme; at zero the scrypt fallback is skipped entirely. */
-export const countLegacyApiKeyHashes = (): Promise<number> =>
-  prisma.apiKey.count({
-    where: { NOT: { keyHash: { startsWith: API_KEY_HASH_PREFIX } } },
   });
 
 export const updateApiKeyHash = (id: string, keyHash: string): Promise<ApiKey> =>

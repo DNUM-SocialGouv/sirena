@@ -1,8 +1,9 @@
-import { createHmac, randomBytes, scrypt } from 'node:crypto';
+import { createHmac, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { envVars } from '../config/env.js';
 
 const SCRYPT_KEY_LENGTH = 32;
+const KEY_PREFIX_LENGTH = 8;
 
 /** Marks hashes produced by the current scheme, so legacy scrypt ones stay recognizable. */
 export const API_KEY_HASH_PREFIX = 'hmac256$';
@@ -17,16 +18,17 @@ export function generateApiKey(): {
   const randomPart = randomBytes(32).toString('hex');
   const key = `sk_${randomPart}`;
   const hash = hashApiKey(key);
-  const prefix = key.substring(0, 8);
+  const prefix = apiKeyPrefix(key);
 
   return { key, hash, prefix };
 }
 
-/**
- * A key carries 256 bits of entropy from `randomBytes`, so it is not dictionary-attackable and a
- * slow KDF would only cost the server. Keying the HMAC with `API_KEY_HASH_SALT` keeps the hash
- * non-invertible and unforgeable without that secret.
- */
+/** Stored next to the hash, so a lookup can be narrowed without revealing the key. */
+export function apiKeyPrefix(key: string): string {
+  return key.substring(0, KEY_PREFIX_LENGTH);
+}
+
+/** HMAC: the key carries its own 256 bits of entropy, so a slow KDF would only cost us. */
 export function hashApiKey(key: string): string {
   const digest = createHmac('sha256', envVars.API_KEY_HASH_SALT).update(key).digest('hex');
   return `${API_KEY_HASH_PREFIX}${digest}`;
@@ -39,6 +41,14 @@ export function hashApiKey(key: string): string {
 export async function hashApiKeyLegacy(key: string): Promise<string> {
   const derivedKey = (await scryptAsync(key, envVars.API_KEY_HASH_SALT, SCRYPT_KEY_LENGTH)) as Buffer;
   return derivedKey.toString('hex');
+}
+
+/** Compares stored hashes in constant time, so a partial match leaks nothing through timing. */
+export function apiKeyHashEquals(left: string, right: string): boolean {
+  const leftBytes = Buffer.from(left);
+  const rightBytes = Buffer.from(right);
+
+  return leftBytes.length === rightBytes.length && timingSafeEqual(leftBytes, rightBytes);
 }
 
 /**
