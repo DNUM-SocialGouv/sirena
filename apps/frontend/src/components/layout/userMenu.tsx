@@ -4,7 +4,17 @@ import { Link, useMatches } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useProfile } from '@/hooks/queries/profile.hook';
+import { useUnsavedChangesStore } from '@/stores/unsavedChangesStore';
 import './userMenu.css';
+
+const handleLogoutSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  event.preventDefault();
+
+  const form = event.currentTarget;
+  const canLeave = await useUnsavedChangesStore.getState().confirmLeave();
+
+  if (canLeave) form.submit();
+};
 
 export const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -176,7 +186,7 @@ export const UserMenu = () => {
           )}
 
           <div className="user-menu__footer fr-p-2w">
-            <form action="/api/auth/logout" method="POST">
+            <form action="/api/auth/logout" method="POST" onSubmit={handleLogoutSubmit}>
               <Button
                 type="submit"
                 className="user-menu__btn"
@@ -188,7 +198,7 @@ export const UserMenu = () => {
               </Button>
             </form>
 
-            <form action="/api/auth/logout-proconnect" method="POST">
+            <form action="/api/auth/logout-proconnect" method="POST" onSubmit={handleLogoutSubmit}>
               <Button
                 type="submit"
                 className="user-menu__btn"

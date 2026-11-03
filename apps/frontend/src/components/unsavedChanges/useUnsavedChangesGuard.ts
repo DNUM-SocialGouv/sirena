@@ -1,5 +1,5 @@
 import { useBlocker } from '@tanstack/react-router';
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useId, useRef } from 'react';
 import { useUnsavedChangesStore } from '@/stores/unsavedChangesStore';
 
 // An expired session or an inactive account can no longer save: asking would only trap the user.
@@ -13,6 +13,15 @@ export const useUnsavedChangesGuard = ({ isDirty }: UnsavedChangesGuardOptions) 
   // The blocker reads the latest value when a navigation starts, not the one of its first render.
   const isDirtyRef = useRef(isDirty);
   isDirtyRef.current = isDirty;
+
+  const guardId = useId();
+
+  useEffect(() => {
+    const { setGuardDirty } = useUnsavedChangesStore.getState();
+    setGuardDirty(guardId, isDirty);
+
+    return () => setGuardDirty(guardId, false);
+  }, [guardId, isDirty]);
 
   useBlocker({
     shouldBlockFn: async ({ next }) => {

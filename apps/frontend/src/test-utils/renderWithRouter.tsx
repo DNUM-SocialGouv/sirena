@@ -32,7 +32,7 @@ export const renderWithRouter = async (
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
   }: { previousPath?: string; formPath?: string; queryClient?: QueryClient } = {},
 ) => {
-  useUnsavedChangesStore.setState({ pendingResolve: null });
+  useUnsavedChangesStore.setState({ pendingResolve: null, dirtyGuardIds: new Set() });
 
   const rootRoute = createRootRoute({
     component: () => (

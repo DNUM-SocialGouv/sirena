@@ -1,5 +1,5 @@
 import { ROLES } from '@sirena/common/constants';
-import { cleanup, screen } from '@testing-library/react';
+import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -27,19 +27,31 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
 type User = ReturnType<typeof userEvent.setup>;
 
 // Stands for any guarded form of the page the menu sits on.
-const PageWithForm = () => {
+const GuardedForm = () => {
   const [nom, setNom] = useState('');
   useUnsavedChangesGuard({ isDirty: nom !== '' });
 
   const handleNomChange = (event: React.ChangeEvent<HTMLInputElement>) => setNom(event.target.value);
 
   return (
+    <label>
+      Nom
+      <input value={nom} onChange={handleNomChange} />
+    </label>
+  );
+};
+
+const PageWithForm = () => {
+  const [isFormShown, setIsFormShown] = useState(true);
+  const handleHideForm = () => setIsFormShown(false);
+
+  return (
     <>
       <UserMenu />
-      <label>
-        Nom
-        <input value={nom} onChange={handleNomChange} />
-      </label>
+      {isFormShown ? <GuardedForm /> : null}
+      <button type="button" onClick={handleHideForm}>
+        Masquer le formulaire
+      </button>
     </>
   );
 };
@@ -52,8 +64,14 @@ const openMenu = (user: User) => user.click(screen.getByRole('button', { name: /
 
 const unsavedChangesDialog = () => screen.queryByRole('dialog', { name: 'Données non enregistrées' });
 
+const submittedForms: string[] = [];
+
 beforeEach(() => {
   mockDsfrModals();
+  submittedForms.length = 0;
+  vi.spyOn(HTMLFormElement.prototype, 'submit').mockImplementation(function (this: HTMLFormElement) {
+    submittedForms.push(this.getAttribute('action') ?? '');
+  });
   vi.mocked(useProfile).mockReturnValue({
     data: { nom: 'Jeanne', prenom: 'Dupont', email: 'jeanne.dupont@example.fr', role: { id: ROLES.ENTITY_ADMIN } },
   } as never);
@@ -61,6 +79,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
 });
 
 describe.each([
@@ -99,6 +118,66 @@ describe.each([
     await user.click(screen.getByRole('link', { name: link }));
 
     expect(await screen.findByRole('heading', { name: OTHER_PAGE_HEADING })).toBeInTheDocument();
+    expect(unsavedChangesDialog()).not.toBeInTheDocument();
+  });
+});
+
+describe.each([
+  { button: 'Se déconnecter', action: '/api/auth/logout' },
+  { button: 'Se déconnecter de ProConnect', action: '/api/auth/logout-proconnect' },
+])('UserMenu « $button » button', ({ button, action }) => {
+  it('logs out right away when nothing changed', async () => {
+    const user = userEvent.setup();
+    await renderPage('/request/req-1');
+
+    await openMenu(user);
+    await user.click(screen.getByRole('button', { name: button }));
+
+    await waitFor(() => expect(submittedForms).toEqual([action]));
+    expect(unsavedChangesDialog()).not.toBeInTheDocument();
+  });
+
+  it('logs out once the agent chooses Quitter sans enregistrer', async () => {
+    const user = userEvent.setup();
+    await renderPage('/request/req-1');
+
+    await user.type(screen.getByLabelText('Nom'), 'Dupont');
+    await openMenu(user);
+    await user.click(screen.getByRole('button', { name: button }));
+    const dialog = await screen.findByRole('dialog', { name: 'Données non enregistrées' });
+
+    expect(submittedForms).toEqual([]);
+    await user.click(within(dialog).getByRole('button', { name: 'Quitter sans enregistrer' }));
+    await waitFor(() => expect(submittedForms).toEqual([action]));
+  });
+
+  it('keeps the agent on the form when they choose Annuler', async () => {
+    const user = userEvent.setup();
+    await renderPage('/request/req-1');
+
+    await user.type(screen.getByLabelText('Nom'), 'Dupont');
+    await openMenu(user);
+    await user.click(screen.getByRole('button', { name: button }));
+    const dialog = await screen.findByRole('dialog', { name: 'Données non enregistrées' });
+    await user.click(within(dialog).getByRole('button', { name: 'Annuler' }));
+
+    await waitFor(() => expect(unsavedChangesDialog()).not.toBeInTheDocument());
+    expect(submittedForms).toEqual([]);
+    expect(screen.getByLabelText('Nom')).toHaveValue('Dupont');
+  });
+});
+
+describe('UserMenu logout after the form is gone', () => {
+  it('logs out right away once the form with unsaved changes has left the page', async () => {
+    const user = userEvent.setup();
+    await renderPage('/request/req-1');
+
+    await user.type(screen.getByLabelText('Nom'), 'Dupont');
+    await user.click(screen.getByRole('button', { name: 'Masquer le formulaire' }));
+    await openMenu(user);
+    await user.click(screen.getByRole('button', { name: 'Se déconnecter' }));
+
+    await waitFor(() => expect(submittedForms).toEqual(['/api/auth/logout']));
     expect(unsavedChangesDialog()).not.toBeInTheDocument();
   });
 });

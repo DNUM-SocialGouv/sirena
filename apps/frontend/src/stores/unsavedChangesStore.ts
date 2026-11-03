@@ -6,6 +6,9 @@ type UnsavedChangesState = {
   /** Asks the user whether they want to leave without saving. Resolves `true` when they do. */
   requestLeave: () => Promise<boolean>;
   answer: (canLeave: boolean) => void;
+  dirtyGuardIds: ReadonlySet<string>;
+  setGuardDirty: (guardId: string, isDirty: boolean) => void;
+  confirmLeave: () => Promise<boolean>;
 };
 
 export const useUnsavedChangesStore = create<UnsavedChangesState>((set, get) => ({
@@ -24,5 +27,21 @@ export const useUnsavedChangesStore = create<UnsavedChangesState>((set, get) => 
     set({ pendingResolve: null });
 
     resolve(canLeave);
+  },
+  dirtyGuardIds: new Set(),
+  setGuardDirty: (guardId, isDirty) => {
+    const dirtyGuardIds = get().dirtyGuardIds;
+    if (dirtyGuardIds.has(guardId) === isDirty) return;
+
+    const next = new Set(dirtyGuardIds);
+    if (isDirty) next.add(guardId);
+    else next.delete(guardId);
+
+    set({ dirtyGuardIds: next });
+  },
+  confirmLeave: async () => {
+    if (get().dirtyGuardIds.size === 0) return true;
+
+    return get().requestLeave();
   },
 }));
