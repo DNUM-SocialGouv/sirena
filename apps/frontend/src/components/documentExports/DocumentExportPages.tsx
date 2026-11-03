@@ -3,7 +3,6 @@ import DocumentDownload from '@codegouvfr/react-dsfr/picto/DocumentDownload';
 import TechnicalError from '@codegouvfr/react-dsfr/picto/TechnicalError';
 import { DOCUMENT_EXPORT_LINK_VALIDITY_MINUTES } from '@sirena/common/constants';
 import { Link } from '@tanstack/react-router';
-import { useEffect, useRef } from 'react';
 import { formatFileSize } from '@/utils/fileHelpers';
 import { DocumentExportMessage } from './DocumentExportMessage';
 
@@ -26,42 +25,25 @@ const getFileDetail = (fileName: string | null, size: number | null) => {
 export const DocumentExportDownload = ({ downloadUrl, fileName, size, expiresAt }: DocumentExportDownloadProps) => {
   const fileDetail = getFileDetail(fileName, size);
 
-  const linkRef = useRef<HTMLAnchorElement>(null);
-  const started = useRef(false);
-
-  // The link of the e-mail starts the download by itself, once. The title is focused first (child
-  // effects run before this one), so the page is announced before the download starts.
-  useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    linkRef.current?.click();
-  }, []);
-
   return (
     <DocumentExportMessage
       title="Téléchargement de votre export"
       description={
         <>
-          Le téléchargement de votre fichier{fileName ? <> {fileName}</> : null}
-          {fileDetail ? <> ({fileDetail})</> : null} démarre automatiquement.
+          Votre fichier{fileName ? <> {fileName}</> : null}
+          {fileDetail ? <> ({fileDetail})</> : null} est prêt.
         </>
       }
       picto={<DocumentDownload fontSize="10rem" />}
       actions={
-        <a
-          ref={linkRef}
-          className={fr.cx('fr-btn', 'fr-btn--icon-left', 'fr-icon-download-line')}
-          href={downloadUrl}
-          download
-        >
+        <a className={fr.cx('fr-btn', 'fr-btn--icon-left', 'fr-icon-download-line')} href={downloadUrl} download>
           Télécharger votre export
         </a>
       }
     >
-      <p className={fr.cx('fr-mb-0')}>
-        S’il ne démarre pas, utilisez le lien « Télécharger votre export ».
-        {expiresAt ? <> Le lien reste valable jusqu’à {timeFormatter.format(new Date(expiresAt))}.</> : null}
-      </p>
+      {expiresAt ? (
+        <p className={fr.cx('fr-mb-0')}>Le lien reste valable jusqu’à {timeFormatter.format(new Date(expiresAt))}.</p>
+      ) : null}
     </DocumentExportMessage>
   );
 };
