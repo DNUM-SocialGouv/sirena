@@ -1,14 +1,22 @@
 import type { PinoLogger } from 'hono-pino';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { findApiKeyByHash, markApiKeyAsExpired, updateApiKeyLastUsedAt } from '../features/apiKeys/apiKeys.service.js';
+import {
+  countLegacyApiKeyHashes,
+  findApiKeyByHash,
+  markApiKeyAsExpired,
+  updateApiKeyHash,
+  updateApiKeyLastUsedAt,
+} from '../features/apiKeys/apiKeys.service.js';
 import { errorHandler } from '../helpers/errors.js';
 import appWithLogs from '../helpers/factories/appWithLogs.js';
-import { hashApiKey } from '../libs/apiKey.js';
+import { hashApiKey, hashApiKeyLegacy } from '../libs/apiKey.js';
 import { apiKeyAuth } from './apiKey.middleware.js';
 
 vi.mock('../features/apiKeys/apiKeys.service.js', () => ({
+  countLegacyApiKeyHashes: vi.fn(),
   findApiKeyByHash: vi.fn(),
   markApiKeyAsExpired: vi.fn(),
+  updateApiKeyHash: vi.fn(),
   updateApiKeyLastUsedAt: vi.fn(),
 }));
 
@@ -71,6 +79,8 @@ describe('apiKey.middleware.ts', () => {
     vi.clearAllMocks();
     vi.mocked(updateApiKeyLastUsedAt).mockResolvedValue(buildApiKeyRecord());
     vi.mocked(markApiKeyAsExpired).mockResolvedValue(buildApiKeyRecord({ status: 'EXPIRED' }));
+    vi.mocked(updateApiKeyHash).mockResolvedValue(buildApiKeyRecord());
+    vi.mocked(countLegacyApiKeyHashes).mockResolvedValue(0);
 
     logger = {
       info: vi.fn(),
@@ -111,6 +121,60 @@ describe('apiKey.middleware.ts', () => {
     expect(await res.json()).toMatchObject({ message: 'Invalid API key.' });
     expect(findApiKeyByHash).toHaveBeenCalledWith(hashApiKey(VALID_KEY));
     expect(updateApiKeyLastUsedAt).not.toHaveBeenCalled();
+  });
+
+  it('should not compute the legacy hash when no legacy hash remains in database', async () => {
+    vi.mocked(findApiKeyByHash).mockResolvedValue(null);
+
+    const res = await request();
+
+    expect(res.status).toBe(401);
+    expect(findApiKeyByHash).toHaveBeenCalledExactlyOnceWith(hashApiKey(VALID_KEY));
+    expect(countLegacyApiKeyHashes).toHaveBeenCalledOnce();
+  });
+
+  it('should answer 401 when the key matches neither the current nor the legacy hash', async () => {
+    vi.mocked(countLegacyApiKeyHashes).mockResolvedValue(3);
+    vi.mocked(findApiKeyByHash).mockResolvedValue(null);
+
+    const res = await request();
+
+    expect(res.status).toBe(401);
+    expect(findApiKeyByHash).toHaveBeenNthCalledWith(1, hashApiKey(VALID_KEY));
+    expect(findApiKeyByHash).toHaveBeenNthCalledWith(2, await hashApiKeyLegacy(VALID_KEY));
+    expect(updateApiKeyHash).not.toHaveBeenCalled();
+  });
+
+  it('should let a key still stored with the legacy scrypt hash through, and rewrite it', async () => {
+    const legacyHash = await hashApiKeyLegacy(VALID_KEY);
+    const legacyRecord = buildApiKeyRecord({ keyHash: legacyHash });
+    vi.mocked(countLegacyApiKeyHashes).mockResolvedValue(1);
+    vi.mocked(findApiKeyByHash).mockImplementation(async (hash) => (hash === legacyHash ? legacyRecord : null));
+
+    const res = await request();
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ apiKeyId: 'api-key-id', accountId: 'account-id' });
+    expect(updateApiKeyHash).toHaveBeenCalledWith('api-key-id', hashApiKey(VALID_KEY));
+    expect(logger.error).not.toHaveBeenCalled();
+  });
+
+  it('should let a legacy key through and log the error when its hash cannot be rewritten', async () => {
+    const error = new Error('write conflict');
+    const legacyHash = await hashApiKeyLegacy(VALID_KEY);
+    vi.mocked(countLegacyApiKeyHashes).mockResolvedValue(1);
+    vi.mocked(findApiKeyByHash).mockImplementation(async (hash) =>
+      hash === legacyHash ? buildApiKeyRecord({ keyHash: legacyHash }) : null,
+    );
+    vi.mocked(updateApiKeyHash).mockRejectedValue(error);
+
+    const res = await request();
+
+    expect(res.status).toBe(200);
+    expect(logger.error).toHaveBeenCalledWith(
+      { err: error, apiKeyId: 'api-key-id' },
+      'Failed to migrate API key hash to HMAC format',
+    );
   });
 
   it('should answer 403 when the key is revoked', async () => {

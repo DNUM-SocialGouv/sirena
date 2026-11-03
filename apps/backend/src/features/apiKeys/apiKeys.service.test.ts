@@ -1,10 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { API_KEY_HASH_PREFIX } from '../../libs/apiKey.js';
 import { prisma } from '../../libs/prisma.js';
-import { findApiKeyByHash, markApiKeyAsExpired, updateApiKeyLastUsedAt } from './apiKeys.service.js';
+import {
+  countLegacyApiKeyHashes,
+  findApiKeyByHash,
+  markApiKeyAsExpired,
+  updateApiKeyHash,
+  updateApiKeyLastUsedAt,
+} from './apiKeys.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     apiKey: {
+      count: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
     },
@@ -62,6 +70,46 @@ describe('apiKeys.service.ts', () => {
       mockedApiKey.findUnique.mockResolvedValueOnce(null);
 
       await expect(findApiKeyByHash('unknown-hash')).resolves.toBeNull();
+    });
+  });
+
+  describe('countLegacyApiKeyHashes', () => {
+    it('should count the keys whose hash lacks the current prefix', async () => {
+      mockedApiKey.count.mockResolvedValueOnce(2);
+
+      const result = await countLegacyApiKeyHashes();
+
+      expect(mockedApiKey.count).toHaveBeenCalledWith({
+        where: { NOT: { keyHash: { startsWith: API_KEY_HASH_PREFIX } } },
+      });
+      expect(result).toBe(2);
+    });
+
+    it('should return zero once every hash uses the current prefix', async () => {
+      mockedApiKey.count.mockResolvedValueOnce(0);
+
+      await expect(countLegacyApiKeyHashes()).resolves.toBe(0);
+    });
+  });
+
+  describe('updateApiKeyHash', () => {
+    it('should rewrite the hash of the given id', async () => {
+      const keyHash = `${API_KEY_HASH_PREFIX}${'a'.repeat(64)}`;
+      mockedApiKey.update.mockResolvedValueOnce({ ...apiKeyRecord, keyHash });
+
+      const result = await updateApiKeyHash('api-key-id', keyHash);
+
+      expect(mockedApiKey.update).toHaveBeenCalledWith({
+        where: { id: 'api-key-id' },
+        data: { keyHash },
+      });
+      expect(result.keyHash).toBe(keyHash);
+    });
+
+    it('should propagate the prisma error', async () => {
+      mockedApiKey.update.mockRejectedValueOnce(new Error('unique constraint violation'));
+
+      await expect(updateApiKeyHash('api-key-id', 'hash')).rejects.toThrow('unique constraint violation');
     });
   });
 
