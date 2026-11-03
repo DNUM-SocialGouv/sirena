@@ -70,6 +70,9 @@ beforeEach(() => {
   mockDsfrModals();
   submittedForms.length = 0;
   vi.spyOn(HTMLFormElement.prototype, 'submit').mockImplementation(function (this: HTMLFormElement) {
+    // A disconnected form cannot navigate: the browser drops the POST without a word.
+    if (!this.isConnected) return;
+
     submittedForms.push(this.getAttribute('action') ?? '');
   });
   vi.mocked(useProfile).mockReturnValue({

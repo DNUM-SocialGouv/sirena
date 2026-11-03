@@ -48,6 +48,10 @@ export const UserMenu = () => {
   const isAdminRoute = matches.some((m) => m.routeId.startsWith('/_auth/admin/'));
 
   const closeMenu = useCallback(() => {
+    // The logout forms live in this popup, and `form.submit()` does nothing once disconnected:
+    // stay mounted while the confirmation raised from here is still waiting for an answer.
+    if (useUnsavedChangesStore.getState().pendingResolve !== null) return;
+
     setIsOpen(false);
     triggerRef.current?.focus();
   }, []);
