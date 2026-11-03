@@ -45,7 +45,8 @@ import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import { safeSyncRequetePriseEnChargeToDematSocial } from '../dematSocial/priseEnChargeSync/priseEnChargeSync.service.js';
-import { buildEntitesTraitement, getEntiteAscendanteInfo, getEntiteDescendantIds } from '../entites/entites.service.js';
+import { entitesDescendantIdsCache } from '../entites/entites.cache.js';
+import { buildEntitesTraitement, getEntiteAscendanteInfo } from '../entites/entites.service.js';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service.js';
 import { getEtapeTitle } from '../requeteEtapes/requetesEtapes.title.js';
 import { generateRequeteId } from '../requetes/functionalId.service.js';
@@ -287,7 +288,7 @@ const buildRequetesEntiteWhere = async (
     andFilters.push({ entiteId: { in: entiteIds } });
   }
   if (entiteId) {
-    const descendantIds = (await getEntiteDescendantIds(entiteId)) ?? [];
+    const descendantIds = (await entitesDescendantIdsCache.get(entiteId)) ?? [];
     const idsToInclude = [entiteId, ...descendantIds];
     andFilters.push({
       requete: {

@@ -70,6 +70,12 @@ vi.mock('../entites/entites.service.js', () => ({
   getEntiteAscendanteInfo: vi.fn(),
 }));
 
+vi.mock('../entites/entites.cache.js', () => ({
+  entitesDescendantIdsCache: {
+    get: vi.fn().mockResolvedValue([]),
+  },
+}));
+
 vi.mock('../../config/redis.js');
 vi.mock('../../libs/minio.js', () => ({
   deleteFileFromMinio: vi.fn(),
@@ -106,6 +112,7 @@ import { getFileStream, statMinioObject } from '../../libs/minio.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import { safeSyncRequetePriseEnChargeToDematSocial } from '../dematSocial/priseEnChargeSync/priseEnChargeSync.service.js';
+import { entitesDescendantIdsCache } from '../entites/entites.cache.js';
 import { buildEntitesTraitement, getEntiteAscendanteInfo } from '../entites/entites.service.js';
 import { RequetePdfBuilder } from './requetesEntite.pdf.builder.js';
 
@@ -684,6 +691,42 @@ describe('requetesEntite.service', () => {
       const { data } = await getRequetesEntite(null, {});
 
       expect(data[0].hasRappel).toBe(true);
+    });
+  });
+
+  describe('entite subtree filter', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      mockedRequeteEntite.findMany.mockResolvedValue([]);
+      mockedRequeteEntite.count.mockResolvedValue(0);
+    });
+
+    afterEach(() => {
+      mockedRequeteEntite.findMany.mockReset();
+      mockedRequeteEntite.count.mockReset();
+    });
+
+    it('resolves the entite subtree through the descendant ids cache', async () => {
+      vi.mocked(entitesDescendantIdsCache.get).mockResolvedValueOnce(['child-1']);
+
+      await getRequetesEntite(null, { entiteId: 'ent-1' });
+
+      // Walking the tree costs one query per node, and the filter is rebuilt for every counted
+      // value: the cache is what keeps that walk off the request path.
+      expect(entitesDescendantIdsCache.get).toHaveBeenCalledWith('ent-1');
+      expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            AND: [
+              {
+                requete: {
+                  situations: { some: { situationEntites: { some: { entiteId: { in: ['ent-1', 'child-1'] } } } } },
+                },
+              },
+            ],
+          },
+        }),
+      );
     });
   });
 
