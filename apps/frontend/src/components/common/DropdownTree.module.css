@@ -120,7 +120,7 @@
 }
 
 .option {
-  padding-block: 0.5rem;
+  padding-block: 0.75rem;
   padding-inline: calc(1rem + min(var(--depth, 0), 3) * 1.5rem) 1rem;
   margin: 0;
 }
