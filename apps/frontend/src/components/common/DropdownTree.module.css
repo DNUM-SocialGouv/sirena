@@ -120,7 +120,7 @@
 }
 
 .option {
-  padding-block: 0.25rem;
+  padding-block: 0.5rem;
   padding-inline: calc(1rem + min(var(--depth, 0), 3) * 1.5rem) 1rem;
   margin: 0;
 }
@@ -143,7 +143,7 @@
 }
 
 .option.rootOption :global(input[type="checkbox"] + label::before) {
-  margin-block-start: 0.5rem;
+  margin-block-start: 0.25rem;
 }
 
 .dropdownTree input[type="checkbox"]:indeterminate + label::before {

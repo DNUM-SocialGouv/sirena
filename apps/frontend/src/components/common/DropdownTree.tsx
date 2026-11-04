@@ -111,10 +111,7 @@ function Option({ node, depth, path, ancestors, idPrefix, selected, isAncestorSe
   const rowClasses = [styles.option, depth === 0 ? styles.rootOption : null].filter(Boolean).join(' ');
 
   return (
-    <div
-      className={`${rowClasses} ${fr.cx('fr-checkbox-group', 'fr-checkbox-group--sm')}`}
-      style={{ '--depth': depth } as CSSProperties}
-    >
+    <div className={`${rowClasses} ${fr.cx('fr-checkbox-group')}`} style={{ '--depth': depth } as CSSProperties}>
       <input
         type="checkbox"
         id={optionId}
@@ -169,7 +166,7 @@ function Category({
           {node.label}
         </button>
 
-        <div className={`${styles.selectAll} ${fr.cx('fr-checkbox-group', 'fr-checkbox-group--sm')}`}>
+        <div className={`${styles.selectAll} ${fr.cx('fr-checkbox-group')}`}>
           <input
             ref={inputRef}
             type="checkbox"
