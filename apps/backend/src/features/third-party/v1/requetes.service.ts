@@ -1,3 +1,4 @@
+import type { Readable } from 'node:stream';
 import { REPONSE_OUI_NON } from '@sirena/common/constants';
 import { booleanToReponseOuiNon } from '@sirena/common/utils';
 import { isPrismaUniqueConstraintError } from '../../../helpers/prisma.js';
@@ -262,10 +263,18 @@ export const createRequeteFromThirdParty = async ({
   );
 };
 
+export type ThirdPartyAttachment = {
+  stream: Readable;
+  fileName: string;
+  mimeType: string;
+  /** Number of bytes read from `stream`, only final once the stream has been fully consumed. */
+  getSize: () => number;
+};
+
 export const addAttachmentToRequete = async (
   requeteId: string,
   thirdPartyAccountId: string,
-  file: { buffer: Buffer; fileName: string; mimeType: string; size: number },
+  file: ThirdPartyAttachment,
 ) => {
   const logger = getLoggerStore();
 
@@ -275,6 +284,9 @@ export const addAttachmentToRequete = async (
   });
 
   if (!requete) {
+    // Drain the unused upload so the multipart parser can complete and release its resources.
+    // Errors (e.g. size limit exceeded) are irrelevant here and must not crash the process.
+    file.stream.on('error', () => {}).resume();
     return null;
   }
 
@@ -282,7 +294,7 @@ export const addAttachmentToRequete = async (
     objectPath,
     rollback: rollbackMinio,
     encryptionMetadata,
-  } = await uploadFileToMinio(file.buffer, file.fileName, file.mimeType);
+  } = await uploadFileToMinio(file.stream, file.fileName, file.mimeType);
 
   const pathParts = objectPath.split('/');
   const fileName = pathParts[pathParts.length - 1] || '';
@@ -295,7 +307,7 @@ export const addAttachmentToRequete = async (
         fileName,
         filePath: objectPath,
         mimeType: file.mimeType,
-        size: file.size,
+        size: file.getSize(),
         metadata: {
           originalName: file.fileName,
           ...(encryptionMetadata && { encryption: encryptionMetadata }),

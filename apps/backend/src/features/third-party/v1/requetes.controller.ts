@@ -1,9 +1,8 @@
 import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ERROR_KIND, RECEPTION_TYPE } from '@sirena/common/constants';
-import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '../../../config/files.constant.js';
 import factoryWithLogs from '../../../helpers/factories/appWithLogs.js';
-import { fileTypeParser, sanitizeFilename } from '../../../helpers/file.js';
 import { isPayloadDebugEnabled } from '../../../helpers/logs.js';
+import extractUploadedFileMiddleware from '../../../middlewares/upload.middleware.js';
 import { sendDeclarantAcknowledgmentEmail } from '../../declarants/declarants.notification.service.js';
 import { assignEntitesToRequeteTask } from '../../dematSocial/affectation/affectation.js';
 import { getRequiredApiKey } from '../thirdPartyFactory.js';
@@ -77,74 +76,56 @@ const app = factoryWithLogs
 
     return c.json(response, 200);
   })
-  .post('/:requeteId/attachments', postAttachmentRoute, postAttachmentParamsValidator, async (c) => {
-    const logger = c.get('logger');
-    const traceId = (logger.bindings() as { traceId?: string }).traceId ?? 'unknown';
-    const apiKey = getRequiredApiKey(c);
-    const { requeteId } = c.req.valid('param');
+  .post(
+    '/:requeteId/attachments',
+    postAttachmentRoute,
+    postAttachmentParamsValidator,
+    // Streams the file: multipart parsing, MIME sniffing on the first bytes and MAX_FILE_SIZE
+    // enforcement without ever buffering the whole body.
+    extractUploadedFileMiddleware,
+    async (c) => {
+      const logger = c.get('logger');
+      const traceId = (logger.bindings() as { traceId?: string }).traceId ?? 'unknown';
+      const apiKey = getRequiredApiKey(c);
+      const { requeteId } = c.req.valid('param');
 
-    const body = await c.req.parseBody();
-    const file = body.file;
+      const uploadedFile = c.get('uploadedFile');
+      if (!uploadedFile) {
+        throwHTTPException400BadRequest('No file uploaded. Send a file in the "file" field.', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
 
-    if (!(file instanceof File)) {
-      throwHTTPException400BadRequest('No file uploaded. Send a file in the "file" field.', {
-        res: c.res,
-        kind: ERROR_KIND.BUSINESS,
+      const { stream, fileName, contentType: mimeType, getReadBytes } = uploadedFile;
+
+      if (isPayloadDebugEnabled()) {
+        logger.info({ requeteId, fileName, mimeType }, 'Third-party incoming payload (POST /requetes/:id/attachments)');
+      }
+
+      const result = await addAttachmentToRequete(requeteId, apiKey.account.id, {
+        stream,
+        fileName,
+        mimeType,
+        getSize: getReadBytes,
       });
-    }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+      if (!result) {
+        throwHTTPException404NotFound('Requete not found or not owned by this account', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
 
-    if (buffer.length > MAX_FILE_SIZE) {
-      throwHTTPException400BadRequest('File size exceeds the maximum allowed', {
-        res: c.res,
-        kind: ERROR_KIND.BUSINESS,
-      });
-    }
+      logger.info({ requeteId, fileId: result.fileId }, 'Attachment added via third-party API');
 
-    const detectedType = await fileTypeParser.fromBuffer(buffer);
-    const mimeType = detectedType?.mime ?? file.type ?? 'application/octet-stream';
+      if (isPayloadDebugEnabled()) {
+        logger.info({ response: result }, 'Third-party outgoing response (POST /requetes/:id/attachments)');
+      }
 
-    if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
-      throwHTTPException400BadRequest(`File type "${mimeType}" is not allowed`, {
-        res: c.res,
-        kind: ERROR_KIND.BUSINESS,
-      });
-    }
-
-    const ext = detectedType?.ext ?? file.name.split('.').pop() ?? '';
-    const fileName = sanitizeFilename(file.name, ext);
-
-    if (isPayloadDebugEnabled()) {
-      logger.info(
-        { requeteId, fileName, mimeType, size: buffer.length },
-        'Third-party incoming payload (POST /requetes/:id/attachments)',
-      );
-    }
-
-    const result = await addAttachmentToRequete(requeteId, apiKey.account.id, {
-      buffer,
-      fileName,
-      mimeType,
-      size: buffer.length,
-    });
-
-    if (!result) {
-      throwHTTPException404NotFound('Requete not found or not owned by this account', {
-        res: c.res,
-        kind: ERROR_KIND.BUSINESS,
-      });
-    }
-
-    logger.info({ requeteId, fileId: result.fileId }, 'Attachment added via third-party API');
-
-    if (isPayloadDebugEnabled()) {
-      logger.info({ response: result }, 'Third-party outgoing response (POST /requetes/:id/attachments)');
-    }
-
-    c.header('x-trace-id', traceId);
-    return c.json(result, 200);
-  });
+      c.header('x-trace-id', traceId);
+      return c.json(result, 200);
+    },
+  );
 
 export default app;

@@ -3,15 +3,30 @@ import { type Readable, Transform } from 'node:stream';
 import { Busboy, type BusboyFileStream, type BusboyInstance } from '@fastify/busboy';
 import { throwHTTPException400BadRequest } from '@sirena/backend-utils/helpers';
 import { API_ERROR_CODES, ERROR_KIND } from '@sirena/common/constants';
+import { HTTPException } from 'hono/http-exception';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '../config/files.constant.js';
 import factoryWithUploadedFile, { type UploadedFileContext } from '../helpers/factories/appWithUploadedFile.js';
 import { fileTypeParser, sanitizeFilename } from '../helpers/file.js';
 
 const SNIFF_SIZE = 4096;
 
-class FileSizeExceededError extends Error {
+const FILE_SIZE_EXCEEDED_MESSAGE = 'File size exceeds the maximum allowed';
+
+/**
+ * Raised by the size limiter while the route handler consumes the stream (e.g. during the
+ * storage upload). Hono hands handler errors to the app error handler before the middleware
+ * below gets a chance to catch them, so the error is itself a 400 HTTPException.
+ */
+class FileSizeExceededError extends HTTPException {
   constructor() {
-    super('File size exceeds the maximum allowed');
+    const body = {
+      message: FILE_SIZE_EXCEEDED_MESSAGE,
+      cause: { name: API_ERROR_CODES.FILE_MAX_SIZE, kind: ERROR_KIND.BUSINESS },
+    };
+    super(400, {
+      message: FILE_SIZE_EXCEEDED_MESSAGE,
+      res: new Response(JSON.stringify(body), { status: 400, headers: { 'Content-Type': 'application/json' } }),
+    });
     this.name = 'FileSizeExceededError';
   }
 }
@@ -253,7 +268,7 @@ const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(a
     await next();
   } catch (err) {
     if (err instanceof FileSizeExceededError) {
-      throwHTTPException400BadRequest('File size exceeds the maximum allowed', {
+      throwHTTPException400BadRequest(FILE_SIZE_EXCEEDED_MESSAGE, {
         cause: { name: API_ERROR_CODES.FILE_MAX_SIZE },
         res: c.res,
         kind: ERROR_KIND.BUSINESS,

@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <tests purposes> */
+import { PassThrough, Readable } from 'node:stream';
 import { REPONSE_OUI_NON } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { addFileProcessingJob } from '../../../jobs/queues/fileProcessing.queue.js';
@@ -252,10 +253,15 @@ describe('third-party v1 requetes.service.ts', () => {
   });
 
   describe('addAttachmentToRequete', () => {
-    const file = { buffer: Buffer.from('%PDF'), fileName: 'rapport.pdf', mimeType: 'application/pdf', size: 4 };
+    const makeFile = (content = '%PDF') => {
+      const stream = Readable.from([Buffer.from(content)]);
+      return { stream, fileName: 'rapport.pdf', mimeType: 'application/pdf', getSize: vi.fn(() => content.length) };
+    };
+    let file: ReturnType<typeof makeFile>;
     const rollback = vi.fn();
 
     beforeEach(() => {
+      file = makeFile();
       vi.mocked(uploadFileToMinio).mockResolvedValue({
         objectPath: 'uploads/abc-123.pdf',
         rollback,
@@ -285,6 +291,19 @@ describe('third-party v1 requetes.service.ts', () => {
       expect(addFileProcessingJob).not.toHaveBeenCalled();
     });
 
+    it('drains the unused upload stream when the requete is not found, without crashing on stream errors', async () => {
+      prisma.requete.findFirst.mockResolvedValueOnce(null);
+      const stream = new PassThrough();
+      const unusedFile = { ...file, stream };
+
+      await addAttachmentToRequete('RT-OF-ANOTHER-ACCOUNT', ACCOUNT_ID, unusedFile);
+
+      expect(stream.readableFlowing).toBe(true);
+      expect(() => stream.destroy(new Error('File size exceeds the maximum allowed'))).not.toThrow();
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(stream.destroyed).toBe(true);
+    });
+
     it('uploads the file, records it as pending and queues its processing', async () => {
       prisma.requete.findFirst.mockResolvedValueOnce({ id: REQUETE_ID } as any);
       prisma.uploadedFile.create.mockResolvedValueOnce({
@@ -297,7 +316,8 @@ describe('third-party v1 requetes.service.ts', () => {
 
       const result = await addAttachmentToRequete(REQUETE_ID, ACCOUNT_ID, file);
 
-      expect(uploadFileToMinio).toHaveBeenCalledWith(file.buffer, 'rapport.pdf', 'application/pdf');
+      expect(uploadFileToMinio).toHaveBeenCalledWith(file.stream, 'rapport.pdf', 'application/pdf');
+      expect(prisma.uploadedFile.create.mock.calls[0][0].data.size).toBe(4);
       expect(prisma.uploadedFile.create.mock.calls[0][0].data).toMatchObject({
         id: 'abc-123',
         fileName: 'abc-123.pdf',
