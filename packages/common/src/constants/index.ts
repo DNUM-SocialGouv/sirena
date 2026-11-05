@@ -10,6 +10,7 @@ export * from './featureFlag.constant.js';
 export * from './filtreNonRenseigne.constant.js';
 export * from './mesureProtection.constant.js';
 export * from './motifs.constant.js';
+export * from './pagination.constant.js';
 export * from './reponseOuiNon.constant.js';
 export * from './requete.constant.js';
 export * from './requeteMessage.constant.js';
