@@ -3,6 +3,7 @@ import Button from '@codegouvfr/react-dsfr/Button';
 import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useCallback, useEffect } from 'react';
+import { useUnsavedChangesGuard } from '@/components/unsavedChanges/useUnsavedChangesGuard';
 import { useCreateDirectionAdminLocal } from '@/hooks/queries/entites.hook';
 import { BACK_LINK_ACTIVE_OPTIONS } from '@/utils/backLink';
 import { LocalEntiteFormFields } from '../-components/LocalEntiteFormFields';
@@ -19,6 +20,8 @@ export function RouteComponent() {
   const router = useRouter();
   const createDirectionAdminLocal = useCreateDirectionAdminLocal();
   const toastManager = Toast.useToastManager();
+
+  useUnsavedChangesGuard({ isDirty: form.isDirty });
 
   useEffect(() => {
     document.title = 'Ajouter une direction - Directions et services - SIRENA';
@@ -40,7 +43,7 @@ export function RouteComponent() {
           data: { icon: 'fr-alert--success' },
         });
 
-        await router.navigate({ to: '/admin/directions-services' });
+        await router.navigate({ to: '/admin/directions-services', ignoreBlocker: true });
       } catch {
         toastManager.add({
           title: 'Erreur',
@@ -68,6 +71,7 @@ export function RouteComponent() {
               className="fr-btn fr-btn--secondary"
               to="/admin/directions-services"
               activeOptions={BACK_LINK_ACTIVE_OPTIONS}
+              ignoreBlocker
             >
               Annuler
             </Link>

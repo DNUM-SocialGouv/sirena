@@ -3,6 +3,7 @@ import { helpers } from '@sirena/backend-utils';
 import {
   type EntiteType,
   ERROR_KIND,
+  PAGINATION_DEFAULT_LIMIT,
   RECEPTION_TYPE,
   REQUETE_STATUT_TYPES,
   REQUETE_UPDATE_FIELDS,
@@ -30,7 +31,6 @@ import {
   isFileBelongsToRequete,
   isUserOwner,
 } from '../uploadedFiles/uploadedFiles.service.js';
-import { DEFAULT_REQUETES_LIMIT } from './requetesEntite.constants.js';
 import RequetesEntiteController from './requetesEntite.controller.js';
 import {
   closeRequeteForEntite,
@@ -301,10 +301,10 @@ describe('RequetesEntite endpoints: /', () => {
       const json = await res.json();
       expect(json).toEqual({
         data: convertDatesToStrings(fakeData),
-        meta: { limit: DEFAULT_REQUETES_LIMIT, total: 1 },
+        meta: { limit: PAGINATION_DEFAULT_LIMIT, total: 1 },
       });
 
-      expect(getRequetesEntite).toHaveBeenCalledWith(['entiteId'], { limit: DEFAULT_REQUETES_LIMIT });
+      expect(getRequetesEntite).toHaveBeenCalledWith(['entiteId'], { limit: PAGINATION_DEFAULT_LIMIT });
     });
 
     it('should return meta with offset and limit', async () => {
@@ -347,9 +347,9 @@ describe('RequetesEntite endpoints: /', () => {
       const res = await client.index.$get({ query: { offset: String(offset) } });
 
       expect(res.status).toBe(200);
-      expect((await res.json()).meta).toEqual({ limit: DEFAULT_REQUETES_LIMIT, offset, total: 0 });
+      expect((await res.json()).meta).toEqual({ limit: PAGINATION_DEFAULT_LIMIT, offset, total: 0 });
       expect(getRequetesEntite).toHaveBeenCalledWith(['entiteId'], {
-        limit: DEFAULT_REQUETES_LIMIT,
+        limit: PAGINATION_DEFAULT_LIMIT,
         offset,
       });
     });

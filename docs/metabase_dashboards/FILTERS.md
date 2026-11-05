@@ -198,10 +198,10 @@ Points d'attention :
 Deux pièges hors filtres, mais qui se paient sur ces mêmes cartes :
 
 - **regrouper sur un identifiant, jamais sur un libellé.** `MotifEnum.label` n'est pas unique :
-  8 motifs différents s'appellent « Autres » (un par catégorie parente, l'id étant de la forme
-  `PARENT/ENFANT`). Un `GROUP BY label` fusionne donc des motifs sans rapport. Les libellés des
-  catégories parentes ne sont pas en base : ils vivent dans
-  `packages/common/src/constants/motifs.constant.ts`.
+  13 motifs différents s'appellent « Autres » (un par catégorie parente, l'id étant de la forme
+  `PARENT/ENFANT`). Un `GROUP BY label` fusionne donc des motifs sans rapport. Le libellé de la
+  catégorie parente est en base, dans `MotifEnum.category` : le lire depuis là plutôt que de
+  recopier le référentiel dans le SQL — cf. la carte 52.
 - **dimension multivaluée** (plusieurs motifs ou plusieurs motifs de clôture par requête) :
   dédoublonner par requête et calculer la part en SQL — cf. l'exemple 2 ci-dessous.
 

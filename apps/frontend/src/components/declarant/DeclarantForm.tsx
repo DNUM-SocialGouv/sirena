@@ -7,11 +7,13 @@ import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import { mappers } from '@sirena/common';
 import { optionalEmailSchema, optionalPhoneSchema, type ReponseOuiNon } from '@sirena/common/schemas';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useRouter } from '@tanstack/react-router';
 import { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
 import { DomicileFields } from '@/components/common/DomicileFields';
 import styles from '@/components/common/formGrid.module.css';
+import { hasUnsavedChanges } from '@/components/unsavedChanges/hasUnsavedChanges';
+import { useUnsavedChangesGuard } from '@/components/unsavedChanges/useUnsavedChangesGuard';
 import type { DeclarantData } from '@/lib/declarant';
 import { declarantFieldMetadata } from '@/lib/fieldMetadata';
 import { buildOuiNonOptions } from '@/lib/radioOptions';
@@ -23,9 +25,23 @@ interface DeclarantFormProps {
   onSave: (data: DeclarantData, shouldCreateRequest: boolean) => Promise<void>;
 }
 
+// The checkboxes show an absent value unticked.
+const withCheckboxDefaults = (data: DeclarantData): DeclarantData => ({
+  ...data,
+  estPersonneConcernee: data.estPersonneConcernee ?? false,
+  isTuteur: data.isTuteur ?? false,
+});
+
 export function DeclarantForm({ mode, requestId, initialData, onSave }: DeclarantFormProps) {
   const navigate = useNavigate();
+  const router = useRouter();
   const [formData, setFormData] = useState<DeclarantData>(initialData || {});
+  const [savedData] = useState<DeclarantData>(initialData || {});
+
+  useUnsavedChangesGuard({
+    isDirty: hasUnsavedChanges(withCheckboxDefaults(savedData), withCheckboxDefaults(formData)),
+  });
+
   const [emailError, setEmailError] = useState<string | undefined>();
   const [phoneError, setPhoneError] = useState<string | undefined>();
   const [isSaving, setIsSaving] = useState(false);
@@ -130,13 +146,13 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
 
   const handleCancel = useCallback(() => {
     if (mode === 'create' && !requestId) {
-      navigate({ to: '/request/create' });
+      navigate({ to: '/request/create', ignoreBlocker: true });
     } else if (requestId) {
-      navigate({ to: '/request/$requestId', params: { requestId } });
+      navigate({ to: '/request/$requestId', params: { requestId }, ignoreBlocker: true });
     } else {
-      window.history.back();
+      router.history.back({ ignoreBlocker: true });
     }
-  }, [mode, requestId, navigate]);
+  }, [mode, requestId, navigate, router]);
 
   return (
     <div>

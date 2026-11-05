@@ -14,6 +14,8 @@ import { useNavigate } from '@tanstack/react-router';
 import { clsx } from 'clsx';
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ConflictResolutionDialog } from '@/components/conflictDialog/ConflictResolutionDialog';
+import { hasUnsavedChanges } from '@/components/unsavedChanges/hasUnsavedChanges';
+import { useUnsavedChangesGuard } from '@/components/unsavedChanges/useUnsavedChangesGuard';
 import { useCreateRequeteEntite } from '@/hooks/mutations/createRequeteEntite.hook';
 import {
   type RequeteDateTypeData,
@@ -21,6 +23,8 @@ import {
   useRequeteDateTypeSave,
 } from '@/hooks/mutations/useRequeteDateTypeSave';
 import { useCanEdit } from '@/hooks/useCanEdit';
+import { notifySaveNetworkFailure } from '@/lib/api/saveError';
+import { HttpError } from '@/lib/api/tanstackQuery';
 import { requeteDateTypeFieldMetadata } from '@/lib/fieldMetadata';
 import style from './OriginalRequestSection.module.css';
 
@@ -176,9 +180,29 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
   const [provenancePrecisionValue, setProvenancePrecisionValue] = useState<string>(data?.provenancePrecision ?? '');
   const [isSaving, setIsSaving] = useState(false);
   const [isEdit, setIsEdit] = useState<boolean>(false);
+
+  const isEditRef = useRef(isEdit);
+  isEditRef.current = isEdit;
+
+  const [editBaseline, setEditBaseline] = useState<Record<string, string> | null>(null);
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const shouldRefocusEditRef = useRef(false);
   const navigate = useNavigate();
+
+  const editedValues = useMemo(
+    () => ({
+      receptionDate: dateValue,
+      dateDemandeDeclarant: dateDemandeDeclarantValue,
+      receptionTypeId: typeValue,
+      provenanceId: provenanceValue,
+      provenancePrecision: provenancePrecisionValue,
+    }),
+    [dateValue, dateDemandeDeclarantValue, typeValue, provenanceValue, provenancePrecisionValue],
+  );
+
+  useUnsavedChangesGuard({
+    isDirty: isEdit && editBaseline !== null && hasUnsavedChanges(editBaseline, editedValues),
+  });
 
   const showProvenance = data?.receptionTypeId !== RECEPTION_TYPE.FORMULAIRE;
   const showProvenancePrecision =
@@ -187,6 +211,8 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
     REQUETE_PROVENANCE_NEEDS_PRECISION.includes(provenanceValue as RequeteProvenance);
 
   useEffect(() => {
+    if (isEditRef.current) return;
+
     setDateValue(formatDateForInput(data?.receptionDate));
     setDateDemandeDeclarantValue(formatDateForInput(data?.dateDemandeDeclarant));
     setTypeValue(data?.receptionTypeId ?? '');
@@ -210,7 +236,18 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
       requeteUpdatedAt: updatedAt,
       formatFromServer: (serverData) =>
         toComparableFields(serverData as OriginalRequestSectionProps['data'], showProvenance),
-      onSaved: () => {
+      onSaved: (savedData) => {
+        // The read-only view keeps showing the local state, so it has to follow the values the save really wrote.
+        setDateValue(formatDateForInput(savedData.receptionDate));
+        setDateDemandeDeclarantValue(formatDateForInput(savedData.dateDemandeDeclarant));
+        setTypeValue(savedData.receptionTypeId ?? '');
+        if (savedData.provenanceId !== undefined) {
+          setProvenanceValue((savedData.provenanceId as RequeteProvenance | null) ?? '');
+        }
+        if (savedData.provenancePrecision !== undefined) {
+          setProvenancePrecisionValue(savedData.provenancePrecision ?? '');
+        }
+
         shouldRefocusEditRef.current = true;
         setIsEdit(false);
       },
@@ -254,7 +291,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
     try {
       if (!requestId) {
         const createdRequete = await createRequeteMutation.mutateAsync(payload);
-        navigate({ to: '/request/$requestId', params: { requestId: createdRequete.id } });
+        navigate({ to: '/request/$requestId', params: { requestId: createdRequete.id }, ignoreBlocker: true });
         setIsEdit(false);
         onEdit?.();
 
@@ -262,6 +299,8 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
       }
 
       await handleSave(payload);
+    } catch (error) {
+      if (!requestId && !(error instanceof HttpError)) notifySaveNetworkFailure();
     } finally {
       setIsSaving(false);
     }
@@ -275,8 +314,9 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
   const handleEditClick = useCallback(() => {
     // Freeze the version being edited here, so a background refetch cannot move the lock onto someone else's write.
     beginEditSession(toComparableFields(data, showProvenance));
+    setEditBaseline(editedValues);
     setIsEdit(true);
-  }, [beginEditSession, data, showProvenance]);
+  }, [beginEditSession, data, showProvenance, editedValues]);
 
   const hasRequestData = Boolean(dateValue || typeValue || provenanceValue || dateDemandeDeclarantValue);
 

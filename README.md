@@ -199,13 +199,17 @@ pnpm op:manage-api-keys key revoke <keyId>
 
 ### Generating the API Key Hash Salt
 
-API keys are hashed using `scrypt` with a salt provided via the `API_KEY_HASH_SALT` environment variable. Each environment must have its own unique salt. Generate one with:
+API keys are hashed using `HMAC-SHA256`, keyed by the `API_KEY_HASH_SALT` environment variable. An API key carries 256 bits of entropy (32 random bytes drawn from `crypto.randomBytes`), so it cannot be brute-forced or guessed from a dictionary: a slow KDF would only cost the server. What protects the stored hashes is the secret key itself, which an attacker holding a copy of the database does not have.
+
+Each environment must have its own unique secret. Generate one with:
 
 ```bash
 openssl rand -hex 32
 ```
 
-Store the generated value in the secret store for the target environment. Changing the salt will invalidate all existing API keys.
+Store the generated value in the secret store for the target environment. Changing it will invalidate all existing API keys, which then have to be re-issued.
+
+Stored hashes are prefixed with `hmac256$`. Hashes without that prefix were produced by the previous `scrypt` scheme; they are still accepted, and are rewritten to the current format the first time the key authenticates successfully.
 
 ### API Key Format
 - Format: `sk_{hexadecimal characters}`

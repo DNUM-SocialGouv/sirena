@@ -72,10 +72,48 @@ export const requestProcessingDuration = new Histogram({
   registers: [register],
 });
 
-function daysSince(date: Date): number {
-  const now = new Date();
-  const diffTime = Math.abs(now.getTime() - date.getTime());
-  return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+const STALE_THRESHOLD_DAYS = 30;
+
+export type RequeteMetricsRow = {
+  total: number;
+  unassigned: number;
+  withoutSteps: number;
+  stale: number;
+  totalDaysUnassigned: number;
+  oldestUnassignedDays: number;
+};
+
+/** Accepts a transaction client so the aggregate can be compared to a reference on one snapshot. */
+type RequeteMetricsClient = Pick<typeof prisma, '$queryRaw'>;
+
+// The three categories are mutually exclusive, and only unassigned requests feed the age gauges.
+// MATERIALIZED stops the planner from re-running both EXISTS for every aggregate filter.
+export function aggregateRequeteMetrics(client: RequeteMetricsClient = prisma): Promise<RequeteMetricsRow[]> {
+  return client.$queryRaw<RequeteMetricsRow[]>`
+    WITH classified AS MATERIALIZED (
+      SELECT
+        floor(
+          abs(extract(epoch FROM now()) - extract(epoch FROM r."createdAt")) * 1000 / ${MS_PER_DAY}
+        ) AS days,
+        EXISTS (SELECT 1 FROM "RequeteEntite" re WHERE re."requeteId" = r."id") AS has_entite,
+        EXISTS (
+          SELECT 1
+          FROM "RequeteEntite" re
+          JOIN "RequeteEtape" et ON et."requeteId" = re."requeteId" AND et."entiteId" = re."entiteId"
+          WHERE re."requeteId" = r."id"
+        ) AS has_etape
+      FROM "Requete" r
+    )
+    SELECT
+      count(*)::int AS "total",
+      (count(*) FILTER (WHERE NOT has_entite))::int AS "unassigned",
+      (count(*) FILTER (WHERE has_entite AND NOT has_etape))::int AS "withoutSteps",
+      (count(*) FILTER (WHERE has_entite AND has_etape AND days >= ${STALE_THRESHOLD_DAYS}))::int AS "stale",
+      coalesce(sum(days) FILTER (WHERE NOT has_entite), 0)::double precision AS "totalDaysUnassigned",
+      coalesce(max(days) FILTER (WHERE NOT has_entite), 0)::int AS "oldestUnassignedDays"
+    FROM classified
+  `;
 }
 
 export async function updateMetricsFromDatabase(): Promise<void> {
@@ -89,48 +127,20 @@ export async function updateMetricsFromDatabase(): Promise<void> {
 
   try {
     lastUpdateTime = now;
-    const allRequetes = await prisma.requete.findMany({
-      include: {
-        requeteEntites: {
-          include: {
-            requeteEtape: true,
-          },
-        },
-      },
-    });
+    const [metrics] = await aggregateRequeteMetrics();
 
-    let unassignedCount = 0;
-    let withoutStepsCount = 0;
-    let staleCount = 0;
-    let totalDaysUnassigned = 0;
-    let oldestUnassignedDays = 0;
-
-    for (const requete of allRequetes) {
-      const daysSinceCreated = daysSince(requete.createdAt);
-      const hasEntities = requete.requeteEntites.length > 0;
-      const hasSteps = requete.requeteEntites.some((re) => re.requeteEtape.length > 0);
-
-      if (!hasEntities) {
-        unassignedCount++;
-        totalDaysUnassigned += daysSinceCreated;
-        if (daysSinceCreated > oldestUnassignedDays) {
-          oldestUnassignedDays = daysSinceCreated;
-        }
-      } else if (!hasSteps) {
-        withoutStepsCount++;
-      } else if (daysSinceCreated >= 30) {
-        staleCount++;
-      }
+    if (!metrics) {
+      throw new Error('Requete metrics aggregate returned no row');
     }
 
-    totalRequestsGauge.set(allRequetes.length);
-    unassignedRequestsGauge.set(unassignedCount);
-    requestsWithoutStepsGauge.set(withoutStepsCount);
-    staleRequestsGauge.set(staleCount);
+    totalRequestsGauge.set(metrics.total);
+    unassignedRequestsGauge.set(metrics.unassigned);
+    requestsWithoutStepsGauge.set(metrics.withoutSteps);
+    staleRequestsGauge.set(metrics.stale);
 
-    if (unassignedCount > 0) {
-      averageDaysSinceCreationGauge.set(totalDaysUnassigned / unassignedCount);
-      oldestUnassignedRequestDaysGauge.set(oldestUnassignedDays);
+    if (metrics.unassigned > 0) {
+      averageDaysSinceCreationGauge.set(metrics.totalDaysUnassigned / metrics.unassigned);
+      oldestUnassignedRequestDaysGauge.set(metrics.oldestUnassignedDays);
     } else {
       averageDaysSinceCreationGauge.set(0);
       oldestUnassignedRequestDaysGauge.set(0);
@@ -138,10 +148,10 @@ export async function updateMetricsFromDatabase(): Promise<void> {
 
     logger.info(
       {
-        total: allRequetes.length,
-        unassigned: unassignedCount,
-        withoutSteps: withoutStepsCount,
-        stale: staleCount,
+        total: metrics.total,
+        unassigned: metrics.unassigned,
+        withoutSteps: metrics.withoutSteps,
+        stale: metrics.stale,
       },
       'Metrics updated from database',
     );

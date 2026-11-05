@@ -16,6 +16,7 @@ vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => options,
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
   redirect: vi.fn(),
+  useBlocker: vi.fn(),
   useRouter: () => ({ navigate: routerNavigateSpy }),
 }));
 vi.mock('@/hooks/queries/entites.hook', () => ({ useCreateDirectionAdminLocal: vi.fn() }));
@@ -132,7 +133,7 @@ describe('Admin local Direction create route', () => {
         email: 'reclamations@direction.fr',
       });
       expect(addToastSpy).toHaveBeenCalledWith(expect.objectContaining({ title: 'Direction créée avec succès' }));
-      expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services' });
+      expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services', ignoreBlocker: true });
     });
   });
 

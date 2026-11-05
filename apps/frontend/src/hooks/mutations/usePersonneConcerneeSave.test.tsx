@@ -9,8 +9,10 @@ import { MAX_AUTO_MERGE_REPLAYS } from '@/lib/conflictResolution';
 import { formatPersonneConcerneeFromServer } from '@/lib/personneConcernee';
 import { usePersonneConcerneeSave } from './usePersonneConcerneeSave';
 
+const navigate = vi.hoisted(() => vi.fn());
+
 vi.mock('@tanstack/react-router', () => ({
-  useNavigate: () => vi.fn(),
+  useNavigate: () => navigate,
 }));
 
 vi.mock('@/lib/api/saveError', () => ({
@@ -114,6 +116,33 @@ describe('usePersonneConcerneeSave', () => {
     const { handleSave } = renderSave().current;
 
     await expect(handleSave({ prenom: 'Ada' })).resolves.toBeUndefined();
+  });
+
+  it('returns to the request without the unsaved changes confirmation once the save succeeded', async () => {
+    patch.mockResolvedValueOnce(okResponse());
+
+    const { handleSave } = renderSave().current;
+    await handleSave({ prenom: 'Ada' });
+
+    expect(navigate).toHaveBeenCalledWith({
+      to: '/request/$requestId',
+      params: { requestId: 'req-1' },
+      ignoreBlocker: true,
+    });
+  });
+
+  it('returns to the request without the unsaved changes confirmation once a resolved conflict is saved', async () => {
+    patch.mockResolvedValueOnce(conflictResponse()).mockResolvedValueOnce(okResponse());
+
+    const result = renderSave(LOADED_UPDATED_AT);
+    result.current.originalDataRef.current = formatPersonneConcerneeFromServer(serverParticipant('Ada'));
+    await result.current.handleSave({ ...result.current.originalDataRef.current, prenom: 'Ida' });
+    await waitFor(() => expect(result.current.showConflictDialog).toBe(true));
+    expect(navigate).not.toHaveBeenCalled();
+
+    await result.current.handleConflictResolve({ prenom: 'current' });
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(expect.objectContaining({ ignoreBlocker: true })));
   });
 
   it('still rejects on a non-conflict failure', async () => {

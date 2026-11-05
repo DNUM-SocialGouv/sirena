@@ -16,6 +16,8 @@ import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { FileDropZone } from '@/components/common/FileDropZone';
 import { ReadOnlyField } from '@/components/common/ReadOnlyField';
 import { SelectedFilesList } from '@/components/common/SelectedFilesList';
+import { hasUnsavedChanges } from '@/components/unsavedChanges/hasUnsavedChanges';
+import { useUnsavedChangesGuard } from '@/components/unsavedChanges/useUnsavedChangesGuard';
 import {
   useAddProcessingStep,
   useDeleteProcessingStep,
@@ -267,6 +269,38 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
 
   const [isLoading, setIsLoading] = useState(false);
 
+  const editedValues = {
+    nom,
+    statutId,
+    dateRealisation,
+    estPartagee,
+    rappelType,
+    rappelDate,
+    notes: notes.filter((note) => note.texte.trim()).map((note) => ({ id: note.id, texte: note.texte })),
+    existingFileIds: existingFiles.map((file) => file.id),
+    filesToUpload,
+  };
+
+  const [baseline, setBaseline] = useState<typeof editedValues | null>(null);
+
+  if (isOpen && baseline === null) setBaseline(editedValues);
+  if (!isOpen && baseline !== null) setBaseline(null);
+
+  const isDirty = baseline !== null && hasUnsavedChanges(baseline, editedValues);
+  const { confirmLeave } = useUnsavedChangesGuard({ isDirty });
+
+  const leaveThen = (action: () => void) => {
+    if (!isDirty) {
+      action();
+
+      return;
+    }
+
+    confirmLeave().then((canLeave) => {
+      if (canLeave) action();
+    });
+  };
+
   const addStepMutation = useAddProcessingStep(requestId);
   const updateStepMutation = useUpdateProcessingStep(requestId);
   const deleteStepMutation = useDeleteProcessingStep(requestId);
@@ -295,8 +329,9 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
     setIsLoading(false);
   };
 
-  const openCreate = () => {
+  const showNewStep = () => {
     resetForm();
+    setBaseline(null);
     setMode('create');
     setEditStepId(null);
     setCanOnlyEditNotes(false);
@@ -306,9 +341,9 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
     setIsOpen(true);
   };
 
-  const openEdit = (step: StepType) => {
-    if (!step.editable) return;
+  const showStep = (step: StepType) => {
     resetForm();
+    setBaseline(null);
     setMode('edit');
     setEditStepId(step.id);
     setEditStepNom(step.nom);
@@ -366,6 +401,14 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
     setIsOpen(false);
   };
 
+  const openCreate = () => leaveThen(showNewStep);
+
+  const openEdit = (step: StepType) => {
+    if (!step.editable) return;
+
+    leaveThen(() => showStep(step));
+  };
+
   useImperativeHandle(ref, () => ({ openCreate, openEdit, closeDrawer }));
 
   useEffect(() => {
@@ -377,10 +420,15 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   }, [isOpen]);
 
   const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      resetForm();
+    if (open) {
+      setIsOpen(true);
+
+      return;
     }
-    setIsOpen(open);
+
+    if (document.activeElement?.closest('dialog')) return;
+
+    leaveThen(closeDrawer);
   };
 
   const isFait = statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT;
@@ -558,7 +606,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
     }
   };
 
-  const handleClose = useCallback(() => setIsOpen(false), []);
+  const handleClose = () => leaveThen(closeDrawer);
 
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -852,7 +900,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                         type="button"
                         priority="secondary"
                         size="small"
-                        onClick={handleClose}
+                        onClick={closeDrawer}
                         disabled={isLoading}
                       >
                         Annuler

@@ -1,10 +1,20 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { ROLES, type Role } from '@sirena/common/constants';
-import { useMatches } from '@tanstack/react-router';
+import { Link, useMatches } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useProfile } from '@/hooks/queries/profile.hook';
+import { useUnsavedChangesStore } from '@/stores/unsavedChangesStore';
 import './userMenu.css';
+
+const handleLogoutSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  event.preventDefault();
+
+  const form = event.currentTarget;
+  const canLeave = await useUnsavedChangesStore.getState().confirmLeave();
+
+  if (canLeave) form.submit();
+};
 
 export const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,6 +48,10 @@ export const UserMenu = () => {
   const isAdminRoute = matches.some((m) => m.routeId.startsWith('/_auth/admin/'));
 
   const closeMenu = useCallback(() => {
+    // The logout forms live in this popup, and `form.submit()` does nothing once disconnected:
+    // stay mounted while the confirmation raised from here is still waiting for an answer.
+    if (useUnsavedChangesStore.getState().pendingResolve !== null) return;
+
     setIsOpen(false);
     triggerRef.current?.focus();
   }, []);
@@ -162,21 +176,21 @@ export const UserMenu = () => {
             <>
               {isAdminRoute ? (
                 role === ROLES.ENTITY_ADMIN && (
-                  <a className="fr-btn--icon-left fr-icon-user-line fr-p-2w" href="/home">
+                  <Link className="fr-btn--icon-left fr-icon-user-line fr-p-2w" to="/home">
                     Liste des requêtes
-                  </a>
+                  </Link>
                 )
               ) : (
-                <a className="fr-btn--icon-left fr-icon-settings-5-line fr-p-2w" href="/admin/users">
+                <Link className="fr-btn--icon-left fr-icon-settings-5-line fr-p-2w" to="/admin/users">
                   Espace administrateur
-                </a>
+                </Link>
               )}
               {(!isAdminRoute || role === ROLES.ENTITY_ADMIN) && <div className="user-menu__separator" />}
             </>
           )}
 
           <div className="user-menu__footer fr-p-2w">
-            <form action="/api/auth/logout" method="POST">
+            <form action="/api/auth/logout" method="POST" onSubmit={handleLogoutSubmit}>
               <Button
                 type="submit"
                 className="user-menu__btn"
@@ -188,7 +202,7 @@ export const UserMenu = () => {
               </Button>
             </form>
 
-            <form action="/api/auth/logout-proconnect" method="POST">
+            <form action="/api/auth/logout-proconnect" method="POST" onSubmit={handleLogoutSubmit}>
               <Button
                 type="submit"
                 className="user-menu__btn"

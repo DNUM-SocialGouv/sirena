@@ -12,6 +12,11 @@ const uploadMutateAsync = vi.fn();
 const EST_PARTAGEE_REQUIRED_ERROR =
   'Le champ "Afficher l’étape pour les autres entités affectées" est obligatoire. Veuillez sélectionner une option pour ajouter une étape.';
 
+vi.mock('@tanstack/react-router', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tanstack/react-router')>()),
+  useBlocker: vi.fn(),
+}));
+
 vi.mock('@/hooks/mutations/updateProcessingStep.hook', () => ({
   useAddProcessingStep: () => ({ mutateAsync: addMutateAsync }),
   useUpdateProcessingStep: () => ({ mutateAsync: updateMutateAsync }),

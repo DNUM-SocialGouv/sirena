@@ -1,4 +1,4 @@
-import { ROLES, type Role, STATUT_TYPES } from '@sirena/common/constants';
+import { PAGINATION_DEFAULT_LIMIT, ROLES, type Role, STATUT_TYPES } from '@sirena/common/constants';
 import { envVars } from '../../config/env.js';
 import { sseEventManager } from '../../helpers/sse.js';
 import { type Prisma, prisma, type User } from '../../libs/prisma.js';
@@ -33,8 +33,8 @@ const getUserOrderBy = (sort: string, order: Prisma.SortOrder): Prisma.UserOrder
   return { [sort]: order };
 };
 
-export const getUsers = async (entiteIds: string[] | null, query: GetUsersQuery = {}) => {
-  const { offset = 0, limit, sort = 'nom', order = 'asc', roleId, statutId, search } = query;
+export const getUsers = async (entiteIds: string[] | null, query: Partial<GetUsersQuery> = {}) => {
+  const { offset = 0, limit = PAGINATION_DEFAULT_LIMIT, sort = 'nom', order = 'asc', roleId, statutId, search } = query;
 
   const entiteFilter = filterByEntities(entiteIds);
   const roleFilter = filterByRoles(roleId ?? null);
@@ -65,7 +65,7 @@ export const getUsers = async (entiteIds: string[] | null, query: GetUsersQuery 
     prisma.user.findMany({
       where,
       skip: offset,
-      ...(typeof limit === 'number' ? { take: limit } : {}),
+      take: limit,
       orderBy: getUserOrderBy(sort, order),
       include: {
         role: true,
