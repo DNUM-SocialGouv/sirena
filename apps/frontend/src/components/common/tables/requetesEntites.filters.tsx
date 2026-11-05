@@ -82,6 +82,8 @@ export function RequetesEntiteQuickFilters() {
     return Object.fromEntries(statutCountsData.map((s) => [s.id, s.count]));
   }, [statutCountsData]);
 
+  // Filters live in the URL: without resetScroll: false, the router scrolls back to the top
+  // of the page on every change.
   const handleAffectationChange = useCallback(
     (checked: boolean) => {
       navigate({
@@ -90,6 +92,7 @@ export function RequetesEntiteQuickFilters() {
           entiteId: checked ? quickFilters.affectation.targetEntiteId : undefined,
           offset: undefined,
         }),
+        resetScroll: false,
       });
     },
     [navigate, quickFilters.affectation.targetEntiteId],
@@ -103,6 +106,7 @@ export function RequetesEntiteQuickFilters() {
           prioriteId: checked ? REQUETE_PRIORITE_TYPES.HAUTE : undefined,
           offset: undefined,
         }),
+        resetScroll: false,
       });
     },
     [navigate],
@@ -116,6 +120,7 @@ export function RequetesEntiteQuickFilters() {
           over90Days: checked ? true : undefined,
           offset: undefined,
         }),
+        resetScroll: false,
       });
     },
     [navigate],
@@ -129,6 +134,7 @@ export function RequetesEntiteQuickFilters() {
           rappel: checked ? true : undefined,
           offset: undefined,
         }),
+        resetScroll: false,
       });
     },
     [navigate],
@@ -142,6 +148,7 @@ export function RequetesEntiteQuickFilters() {
           departementCodes: codes.length > 0 ? codes.join(',') : undefined,
           offset: undefined,
         }),
+        resetScroll: false,
       });
     },
     [navigate],
@@ -155,6 +162,7 @@ export function RequetesEntiteQuickFilters() {
           domaineIds: ids.length > 0 ? ids.join(',') : undefined,
           offset: undefined,
         }),
+        resetScroll: false,
       });
     },
     [navigate],
@@ -168,6 +176,7 @@ export function RequetesEntiteQuickFilters() {
           statutIds: ids.length > 0 ? ids.join(',') : undefined,
           offset: undefined,
         }),
+        resetScroll: false,
       });
     },
     [navigate],
