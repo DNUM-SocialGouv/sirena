@@ -78,6 +78,25 @@ describe('useUnsavedChangesGuard', () => {
     expect(screen.getByRole('heading', { name: 'Formulaire' })).toBeInTheDocument();
   });
 
+  it('gives the modal the heading level, paragraph and button types accessibility requires', async () => {
+    const user = userEvent.setup();
+    await renderForm();
+
+    await user.type(screen.getByLabelText('Nom'), 'Dupont');
+    await user.click(screen.getByRole('link', { name: OTHER_PAGE_LINK }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Données non enregistrées' });
+
+    expect(within(dialog).getByRole('heading', { level: 1 })).toHaveTextContent('Données non enregistrées');
+    expect(
+      within(dialog).getByText(
+        'Si vous quittez ce formulaire sans enregistrer, les informations saisies seront effacées.',
+      ).tagName,
+    ).toBe('P');
+    expect(within(dialog).getByRole('button', { name: 'Annuler' })).toHaveAttribute('type', 'button');
+    expect(within(dialog).getByRole('button', { name: 'Quitter sans enregistrer' })).toHaveAttribute('type', 'button');
+  });
+
   it('keeps the user on the form with their input when they choose Annuler', async () => {
     const user = userEvent.setup();
     const router = await renderForm();

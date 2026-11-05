@@ -53,16 +53,18 @@ export function UnsavedChangesModal() {
   return (
     <unsavedChangesModal.Component
       title="Données non enregistrées"
-      titleAs="h2"
+      titleAs="h1"
       buttons={[
         {
           doClosesModal: false,
+          type: 'button',
           priority: 'secondary',
           children: 'Annuler',
           onClick: () => unsavedChangesModal.close(),
         },
         {
           doClosesModal: false,
+          type: 'button',
           children: 'Quitter sans enregistrer',
           onClick: handleLeave,
         },
