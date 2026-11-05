@@ -83,7 +83,7 @@ export const handleRequestErrors = async (res: Response, options: RequestErrorOp
   }
 
   if (await isAccountInactiveError(res)) {
-    await queryClient.invalidateQueries({ queryKey: ['profileKey'] });
+    await queryClient.invalidateQueries({ queryKey: profileQueryOptions().queryKey });
     await queryClient.fetchQuery(profileQueryOptions());
     router.navigate({ to: '/inactive', search: { redirect: window.location.pathname } });
     errorFound = true;
