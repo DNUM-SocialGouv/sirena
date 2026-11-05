@@ -1,6 +1,11 @@
 import { type Job, Worker } from 'bullmq';
 import type { Logger } from 'pino';
 import { envVars } from '../../config/env.js';
+import {
+  FILE_PROCESSING_CONCURRENCY,
+  MAX_PDF_SANITIZATION_SIZE,
+  PDF_SANITIZATION_FACTOR,
+} from '../../config/files.constant.js';
 import { connection } from '../../config/redis.js';
 import {
   recordClamavError,
@@ -19,11 +24,11 @@ import { getFileEncryptionParams } from '../../helpers/file.js';
 import { createDefaultLogger } from '../../helpers/pino.js';
 import { getLoggerStore, loggerStorage } from '../../libs/asyncLocalStorage.js';
 import {
+  type ClamAvScanResult,
   categorizeClamAvError,
   checkClamAvHealth,
   getDetectedViruses,
   isFileInfected,
-  scanBuffer,
   scanStream,
 } from '../../libs/clamav.js';
 import type { DecryptionParams } from '../../libs/encryption.js';
@@ -48,6 +53,18 @@ class TransientScanError extends Error {
     this.name = 'TransientScanError';
   }
 }
+
+const toMegabytes = (bytes: number): string => (bytes / (1024 * 1024)).toFixed(1);
+
+/**
+ * Sanitization is bounded by memory, not by policy: pdf-lib needs the whole file in a Buffer and
+ * peaks at roughly PDF_SANITIZATION_FACTOR times its size, so a pod running
+ * FILE_PROCESSING_CONCURRENCY jobs cannot afford arbitrarily large PDFs.
+ */
+const buildOversizedPdfReason = (fileSize: number): string =>
+  `PDF sanitization skipped: file is ${toMegabytes(fileSize)}MB, above the ${toMegabytes(
+    MAX_PDF_SANITIZATION_SIZE,
+  )}MB limit (pdf-lib needs the whole file in memory, ~${PDF_SANITIZATION_FACTOR}x its size, for ${FILE_PROCESSING_CONCURRENCY} concurrent jobs)`;
 
 const ensureClamAvReachable = async (): Promise<void> => {
   const health = await checkClamAvHealth();
@@ -150,7 +167,11 @@ const processNonPdfFile = async (
 };
 
 /**
- * Process PDF files - requires buffer for sanitization (pdf-lib limitation)
+ * Process PDF files.
+ *
+ * The scan is streamed, so the file size never enters the scan memory budget. Only sanitization
+ * needs a Buffer (pdf-lib limitation), so the file is downloaded afterwards and only when it fits
+ * under MAX_PDF_SANITIZATION_SIZE.
  */
 const processPdfFile = async (
   fileId: string,
@@ -161,30 +182,36 @@ const processPdfFile = async (
   decryptionParams: DecryptionParams | undefined,
   logger: Logger,
 ): Promise<ProcessingResult> => {
-  let fileBuffer: Buffer;
   let scanStatus = 'SKIPPED';
-
-  try {
-    fileBuffer = await getFileBuffer(filePath, decryptionParams);
-  } catch (err) {
-    if (isTransientDependencyError(err)) {
-      throw err;
-    }
-    logger.error({ error: err }, 'Failed to download file from storage');
-    await updateFileProcessingStatus(fileId, {
-      scanStatus: 'ERROR',
-      sanitizeStatus: 'ERROR',
-      processingError: 'Failed to download file from storage',
-      status: 'FAILED',
-    });
-    return { scanStatus: 'ERROR', sanitizeStatus: 'ERROR' };
-  }
 
   if (isClamAvEnabled()) {
     await ensureClamAvReachable();
 
     const scanStartTime = Date.now();
-    const scanResult = await scanBuffer(fileBuffer, fileName);
+    let scanResult: ClamAvScanResult;
+
+    try {
+      const { stream } = await getFileStream(filePath, decryptionParams);
+      scanResult = await scanStream(stream, fileName, fileSize);
+    } catch (err) {
+      // Transient failures belong to the caller, which requeues the file: writing a definitive
+      // state here would retire the file over a mere outage.
+      if (err instanceof TransientScanError || isTransientDependencyError(err)) {
+        throw err;
+      }
+      logger.error({ error: err }, 'Failed to scan file');
+      recordClamavError(categorizeClamAvError(err));
+      recordClamavScanDuration('pdf', 'ERROR', (Date.now() - scanStartTime) / 1000);
+      recordFileScanSize('ERROR', fileSize);
+      await updateFileProcessingStatus(fileId, {
+        scanStatus: 'ERROR',
+        sanitizeStatus: 'SKIPPED',
+        processingError: 'Failed to scan file',
+        status: 'FAILED',
+      });
+      return { scanStatus: 'ERROR', sanitizeStatus: 'SKIPPED' };
+    }
+
     const scanDurationSeconds = (Date.now() - scanStartTime) / 1000;
 
     if (!scanResult.success) {
@@ -236,9 +263,35 @@ const processPdfFile = async (
     });
   }
 
+  if (fileSize > MAX_PDF_SANITIZATION_SIZE) {
+    logger.warn({ fileSize, maxSize: MAX_PDF_SANITIZATION_SIZE }, 'PDF too large to sanitize, skipping sanitization');
+    await updateFileProcessingStatus(fileId, {
+      sanitizeStatus: 'SKIPPED',
+      processingError: buildOversizedPdfReason(fileSize),
+      status: 'COMPLETED',
+    });
+    return { scanStatus, sanitizeStatus: 'SKIPPED' };
+  }
+
   await updateFileProcessingStatus(fileId, {
     sanitizeStatus: 'SANITIZING',
   });
+
+  let fileBuffer: Buffer;
+  try {
+    fileBuffer = await getFileBuffer(filePath, decryptionParams);
+  } catch (err) {
+    if (isTransientDependencyError(err)) {
+      throw err;
+    }
+    logger.error({ error: err }, 'Failed to download file from storage');
+    await updateFileProcessingStatus(fileId, {
+      sanitizeStatus: 'ERROR',
+      processingError: 'Failed to download file from storage',
+      status: 'COMPLETED',
+    });
+    return { scanStatus, sanitizeStatus: 'ERROR' };
+  }
 
   try {
     const sanitizedBuffer = await sanitizePdf(fileBuffer);
@@ -347,7 +400,7 @@ const processFile = async (job: Job<FileProcessingJobData>): Promise<void> => {
 export const createFileProcessingWorker = (): Worker<FileProcessingJobData> => {
   const worker = new Worker<FileProcessingJobData>('file-processing', processFile, {
     connection,
-    concurrency: 5,
+    concurrency: FILE_PROCESSING_CONCURRENCY,
   });
 
   const eventLogger = createDefaultLogger().child({ context: 'file-processing-worker' });

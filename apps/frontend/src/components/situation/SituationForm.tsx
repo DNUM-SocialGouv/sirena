@@ -1,9 +1,11 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import type { ReceptionType } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useRouter } from '@tanstack/react-router';
 import { useCallback, useRef, useState } from 'react';
 import { MisEnCause } from '@/components/situation/sections/MisEnCause';
+import { hasUnsavedChanges } from '@/components/unsavedChanges/hasUnsavedChanges';
+import { useUnsavedChangesGuard } from '@/components/unsavedChanges/useUnsavedChangesGuard';
 import { useEntites } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { hasSituationContent } from '@/utils/situationHelpers';
@@ -29,6 +31,7 @@ interface SituationFormProps {
     initialFiles?: Array<{ id: string; entiteId?: string | null }>,
   ) => Promise<void>;
   saveButtonRef?: React.RefObject<HTMLButtonElement | null>;
+  savedVersion?: number;
 }
 
 export function SituationForm({
@@ -41,43 +44,63 @@ export function SituationForm({
   sirecDepartement,
   onSave,
   saveButtonRef: externalSaveButtonRef,
+  savedVersion = 0,
 }: SituationFormProps) {
   const navigate = useNavigate();
+  const router = useRouter();
   const internalSaveButtonRef = useRef<HTMLButtonElement>(null);
   const saveButtonRef = externalSaveButtonRef || internalSaveButtonRef;
   const descriptionFaitsRef = useRef<DescriptionFaitsRef>(null);
   const traitementDesFaitsRef = useRef<TraitementDesFaitsSectionRef>(null);
   const [formData, setFormData] = useState<SituationData>(initialData || {});
+  const [savedData, setSavedData] = useState<SituationData>(initialData || {});
   const [isSaving, setIsSaving] = useState(false);
   const [faitFiles, setFaitFiles] = useState<File[]>([]);
+  const [savedFaitFiles, setSavedFaitFiles] = useState<File[]>([]);
+  const [seenSavedVersion, setSeenSavedVersion] = useState(savedVersion);
   const [isTraitementDesFaitsValid, setIsTraitementDesFaitsValid] = useState(true);
   const [hasAttemptedSave, setHasAttemptedSave] = useState(false);
   const { data: entitesData } = useEntites(undefined);
   const { data: profile } = useProfile();
 
+  if (savedVersion !== seenSavedVersion) {
+    setSeenSavedVersion(savedVersion);
+    setSavedData(formData);
+    setSavedFaitFiles(faitFiles);
+  }
+
+  const haveFaitFilesChanged =
+    faitFiles.length !== savedFaitFiles.length || faitFiles.some((file, index) => file !== savedFaitFiles[index]);
+
+  useUnsavedChangesGuard({ isDirty: haveFaitFilesChanged || hasUnsavedChanges(savedData, formData) });
+
   const handleTraitementDesFaitsChange = useCallback(
-    (data: { entites: Array<{ entiteId: string; directionServiceId?: string }> }) => {
-      setFormData((prev) => ({
-        ...prev,
-        traitementDesFaits: {
-          entites: data.entites.map((e) => ({
-            entiteId: e.entiteId,
-            directionServiceId: e.directionServiceId,
-          })),
-        },
-      }));
+    (
+      data: { entites: Array<{ entiteId: string; directionServiceId?: string }> },
+      { isUserChange }: { isUserChange: boolean },
+    ) => {
+      const traitementDesFaits = {
+        entites: data.entites.map((e) => ({
+          entiteId: e.entiteId,
+          directionServiceId: e.directionServiceId,
+        })),
+      };
+
+      setFormData((prev) => ({ ...prev, traitementDesFaits }));
+
+      if (!isUserChange) setSavedData((prev) => ({ ...prev, traitementDesFaits }));
     },
     [],
   );
   const handleCancel = useCallback(() => {
     if (mode === 'create' && !requestId) {
-      navigate({ to: '/request/create' });
+      navigate({ to: '/request/create', ignoreBlocker: true });
     } else if (requestId) {
-      navigate({ to: '/request/$requestId', params: { requestId } });
+      navigate({ to: '/request/$requestId', params: { requestId }, ignoreBlocker: true });
     } else {
-      window.history.back();
+      router.history.back({ ignoreBlocker: true });
     }
-  }, [mode, requestId, navigate]);
+  }, [mode, requestId, navigate, router]);
 
   const handleSave = useCallback(async () => {
     setHasAttemptedSave(true);

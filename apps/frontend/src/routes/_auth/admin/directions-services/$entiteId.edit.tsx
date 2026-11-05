@@ -4,6 +4,7 @@ import { Loader, Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useCallback, useEffect } from 'react';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
+import { useUnsavedChangesGuard } from '@/components/unsavedChanges/useUnsavedChangesGuard';
 import { useDirectionServiceAdminLocal, useEditDirectionServiceAdminLocal } from '@/hooks/queries/entites.hook';
 import { BACK_LINK_ACTIVE_OPTIONS } from '@/utils/backLink';
 import { requireAdminLocalAccess } from '../-admin-local-route-guard';
@@ -55,6 +56,8 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
     email: target.email,
   });
 
+  useUnsavedChangesGuard({ isDirty: form.isDirty });
+
   useEffect(() => {
     document.title = `${title} - Directions et services - SIRENA`;
   }, [title]);
@@ -76,7 +79,7 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
           timeout: 0,
           data: { icon: 'fr-alert--success' },
         });
-        await router.navigate({ to: '/admin/directions-services' });
+        await router.navigate({ to: '/admin/directions-services', ignoreBlocker: true });
       } catch {
         toastManager.add({
           title: 'Erreur',
@@ -124,6 +127,7 @@ function LocalEditForm({ target }: { target: LocalEditTarget }) {
               className="fr-btn fr-btn--secondary"
               to="/admin/directions-services"
               activeOptions={BACK_LINK_ACTIVE_OPTIONS}
+              ignoreBlocker
             >
               Annuler
             </Link>

@@ -130,7 +130,7 @@ async function checkEnum(
       dbFields = new Set(Object.keys(existingItems[0]));
     } else {
       // Fallback: only include standard enum fields
-      dbFields = new Set(['id', 'label', 'misEnCauseTypeId', 'sortOrder']);
+      dbFields = new Set(['id', 'label', 'category', 'misEnCauseTypeId', 'sortOrder']);
     }
 
     if (isInvert) {

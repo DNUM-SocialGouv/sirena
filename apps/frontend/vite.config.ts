@@ -68,7 +68,7 @@ export default defineConfig({
     ...(process.env.SENTRY_ENABLED === 'true' ?
       [sentryVitePlugin({
         org: "incubateur",
-        project: "psn-sirena-frontend",
+        project: "psn-sirena-frontend-m2",
         release: { name: process.env.APP_VERSION ?? 'unknown' },
         authToken: process.env.SENTRY_AUTH_TOKEN,
         url: "https://sentry2.fabrique.social.gouv.fr/"

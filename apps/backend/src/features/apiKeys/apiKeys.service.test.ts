@@ -1,11 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { API_KEY_HASH_PREFIX } from '../../libs/apiKey.js';
 import { prisma } from '../../libs/prisma.js';
-import { findApiKeyByHash, markApiKeyAsExpired, updateApiKeyLastUsedAt } from './apiKeys.service.js';
+import {
+  findApiKeysByPrefix,
+  markApiKeyAsExpired,
+  updateApiKeyHash,
+  updateApiKeyLastUsedAt,
+} from './apiKeys.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     apiKey: {
-      findUnique: vi.fn(),
+      findMany: vi.fn(),
       update: vi.fn(),
     },
   },
@@ -15,7 +21,7 @@ const mockedApiKey = vi.mocked(prisma.apiKey);
 
 const EPOCH = new Date(0);
 
-type ApiKeyRecord = NonNullable<Awaited<ReturnType<typeof findApiKeyByHash>>>;
+type ApiKeyRecord = Awaited<ReturnType<typeof findApiKeysByPrefix>>[number];
 
 const apiKeyRecord: ApiKeyRecord = {
   id: 'api-key-id',
@@ -45,23 +51,44 @@ describe('apiKeys.service.ts', () => {
     vi.useRealTimers();
   });
 
-  describe('findApiKeyByHash', () => {
-    it('should look the key up by its hash and include the account', async () => {
-      mockedApiKey.findUnique.mockResolvedValueOnce(apiKeyRecord);
+  describe('findApiKeysByPrefix', () => {
+    it('should look the records up by prefix and include the account', async () => {
+      mockedApiKey.findMany.mockResolvedValueOnce([apiKeyRecord]);
 
-      const result = await findApiKeyByHash('hash');
+      const result = await findApiKeysByPrefix('sk_aaaaa');
 
-      expect(mockedApiKey.findUnique).toHaveBeenCalledWith({
-        where: { keyHash: 'hash' },
+      expect(mockedApiKey.findMany).toHaveBeenCalledWith({
+        where: { keyPrefix: 'sk_aaaaa' },
         include: { account: true },
       });
-      expect(result).toEqual(apiKeyRecord);
+      expect(result).toEqual([apiKeyRecord]);
     });
 
-    it('should return null when no key matches the hash', async () => {
-      mockedApiKey.findUnique.mockResolvedValueOnce(null);
+    it('should return an empty list when no record shares the prefix', async () => {
+      mockedApiKey.findMany.mockResolvedValueOnce([]);
 
-      await expect(findApiKeyByHash('unknown-hash')).resolves.toBeNull();
+      await expect(findApiKeysByPrefix('sk_zzzzz')).resolves.toEqual([]);
+    });
+  });
+
+  describe('updateApiKeyHash', () => {
+    it('should rewrite the hash of the given id', async () => {
+      const keyHash = `${API_KEY_HASH_PREFIX}${'a'.repeat(64)}`;
+      mockedApiKey.update.mockResolvedValueOnce({ ...apiKeyRecord, keyHash });
+
+      const result = await updateApiKeyHash('api-key-id', keyHash);
+
+      expect(mockedApiKey.update).toHaveBeenCalledWith({
+        where: { id: 'api-key-id' },
+        data: { keyHash },
+      });
+      expect(result.keyHash).toBe(keyHash);
+    });
+
+    it('should propagate the prisma error', async () => {
+      mockedApiKey.update.mockRejectedValueOnce(new Error('unique constraint violation'));
+
+      await expect(updateApiKeyHash('api-key-id', 'hash')).rejects.toThrow('unique constraint violation');
     });
   });
 

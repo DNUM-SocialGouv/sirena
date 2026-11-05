@@ -10,11 +10,13 @@ import {
   optionalPhoneSchema,
   type ReponseOuiNon,
 } from '@sirena/common/schemas';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useRouter } from '@tanstack/react-router';
 import { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
 import { DomicileFields } from '@/components/common/DomicileFields';
 import styles from '@/components/common/formGrid.module.css';
+import { hasUnsavedChanges } from '@/components/unsavedChanges/hasUnsavedChanges';
+import { useUnsavedChangesGuard } from '@/components/unsavedChanges/useUnsavedChangesGuard';
 import { personneConcerneeFieldMetadata } from '@/lib/fieldMetadata';
 import type { PersonneConcerneeData } from '@/lib/personneConcernee';
 import { buildNonRenseigneOption, buildOuiNonOptions } from '@/lib/radioOptions';
@@ -30,7 +32,9 @@ const INVALID_DATE_NAISSANCE_MESSAGE = 'Le champ “Date de naissance” n’est
 
 export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: PersonneConcerneeFormProps) {
   const navigate = useNavigate();
+  const router = useRouter();
   const [formData, setFormData] = useState<PersonneConcerneeData>(initialData || {});
+  const [savedData] = useState<PersonneConcerneeData>(initialData || {});
   const [emailError, setEmailError] = useState<string | undefined>();
   const [phoneError, setPhoneError] = useState<string | undefined>();
   const [dateNaissanceError, setDateNaissanceError] = useState<string | undefined>();
@@ -39,6 +43,8 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
   const phoneInputRef = useRef<HTMLInputElement>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const dateNaissanceInputRef = useRef<HTMLInputElement>(null);
+
+  useUnsavedChangesGuard({ isDirty: hasUnsavedChanges(savedData, formData) });
 
   const handleInputChange =
     (field: keyof PersonneConcerneeData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -138,13 +144,13 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
 
   const handleCancel = useCallback(() => {
     if (mode === 'create' && !requestId) {
-      navigate({ to: '/request/create' });
+      navigate({ to: '/request/create', ignoreBlocker: true });
     } else if (requestId) {
-      navigate({ to: '/request/$requestId', params: { requestId } });
+      navigate({ to: '/request/$requestId', params: { requestId }, ignoreBlocker: true });
     } else {
-      window.history.back();
+      router.history.back({ ignoreBlocker: true });
     }
-  }, [mode, requestId, navigate]);
+  }, [mode, requestId, navigate, router]);
 
   return (
     <div>
