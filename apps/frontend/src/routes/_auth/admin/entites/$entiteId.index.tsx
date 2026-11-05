@@ -6,7 +6,11 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { type SubmitEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
+import { hasUnsavedChanges } from '@/components/unsavedChanges/hasUnsavedChanges';
+import { useUnsavedChangesGuard } from '@/components/unsavedChanges/useUnsavedChangesGuard';
 import { useEditEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
+import { notifySaveNetworkFailure } from '@/lib/api/saveError';
+import { HttpError } from '@/lib/api/tanstackQuery';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 import { useListStateStore } from '@/stores/listStateStore';
@@ -22,6 +26,26 @@ const EditEntiteFormSchema = z.object({
   adresseContactUsager: z.string().trim(),
   telContactUsager: optionalPhoneSchema,
   isActive: z.enum(['oui', 'non'], 'Le statut actif dans SIRENA est obligatoire. Veuillez sélectionner une option.'),
+});
+
+type EntiteFormData = {
+  nomComplet: string;
+  label: string;
+  email: string;
+  emailContactUsager: string;
+  adresseContactUsager: string;
+  telContactUsager: string;
+  isActive: string;
+};
+
+const toFormData = (entite: NonNullable<ReturnType<typeof useEntiteByIdAdmin>['data']>): EntiteFormData => ({
+  nomComplet: entite.nomComplet,
+  label: entite.label,
+  email: entite.email ?? '',
+  emailContactUsager: entite.emailContactUsager ?? '',
+  adresseContactUsager: entite.adresseContactUsager ?? '',
+  telContactUsager: entite.telContactUsager ?? '',
+  isActive: entite.isActive ? 'oui' : 'non',
 });
 
 export const Route = createFileRoute('/_auth/admin/entites/$entiteId/')({
@@ -47,7 +71,7 @@ export function RouteComponent() {
   const isSubmittingRef = useRef(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<EntiteFormData>({
     nomComplet: '',
     label: '',
     email: '',
@@ -56,6 +80,13 @@ export function RouteComponent() {
     telContactUsager: '',
     isActive: '',
   });
+  const [savedData, setSavedData] = useState<EntiteFormData | null>(null);
+
+  const isDirty = savedData !== null && hasUnsavedChanges(savedData, formData);
+  useUnsavedChangesGuard({ isDirty });
+
+  const isDirtyRef = useRef(isDirty);
+  isDirtyRef.current = isDirty;
 
   useEffect(() => {
     if (!entiteQuery.data) return;
@@ -64,17 +95,12 @@ export function RouteComponent() {
   }, [entiteQuery.data]);
 
   useEffect(() => {
-    if (!entiteQuery.data) return;
+    if (!entiteQuery.data || isDirtyRef.current) return;
 
-    setFormData({
-      nomComplet: entiteQuery.data.nomComplet,
-      label: entiteQuery.data.label,
-      email: entiteQuery.data.email ?? '',
-      emailContactUsager: entiteQuery.data.emailContactUsager ?? '',
-      adresseContactUsager: entiteQuery.data.adresseContactUsager ?? '',
-      telContactUsager: entiteQuery.data.telContactUsager ?? '',
-      isActive: entiteQuery.data.isActive ? 'oui' : 'non',
-    });
+    const serverData = toFormData(entiteQuery.data);
+
+    setFormData(serverData);
+    setSavedData(serverData);
   }, [entiteQuery.data]);
 
   const handleInputChange = useCallback(
@@ -130,7 +156,7 @@ export function RouteComponent() {
       isSubmittingRef.current = true;
 
       try {
-        await editEntiteAdmin.mutateAsync({
+        const savedEntite = await editEntiteAdmin.mutateAsync({
           id: entiteId,
           input: {
             ...result.data,
@@ -141,12 +167,17 @@ export function RouteComponent() {
           },
         });
 
+        setFormData(toFormData(savedEntite));
+        setSavedData(toFormData(savedEntite));
+
         toastManager.add({
           title: 'Entité modifiée avec succès',
           description: 'Les modifications ont bien été enregistrées.',
           timeout: 0,
           data: { icon: 'fr-alert--success' },
         });
+      } catch (error) {
+        if (!(error instanceof HttpError)) notifySaveNetworkFailure();
       } finally {
         isSubmittingRef.current = false;
       }
@@ -203,6 +234,7 @@ export function RouteComponent() {
               to="/admin/entites"
               search={entitesListSearch ?? {}}
               activeOptions={BACK_LINK_ACTIVE_OPTIONS}
+              ignoreBlocker
             >
               Annuler
             </Link>

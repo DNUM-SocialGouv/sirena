@@ -42,10 +42,10 @@ describe('DocumentExportPages', () => {
         </StrictMode>,
       );
 
-    it('starts the download once when the page opens (CA3)', () => {
+    it('waits for the user to start the download', () => {
       renderDownload();
 
-      expect(click).toHaveBeenCalledTimes(1);
+      expect(click).not.toHaveBeenCalled();
     });
 
     it('offers to download the file again (CA7)', () => {
@@ -60,18 +60,13 @@ describe('DocumentExportPages', () => {
     it('gives the format and weight of the file, as for attachments', () => {
       renderDownload();
 
-      expect(screen.getByText(/export\.csv \(CSV, 12\.34 Ko\)/)).toBeInTheDocument();
+      expect(screen.getByText(/Votre fichier export\.csv \(CSV, 12\.34 Ko\) est prêt\./)).toBeInTheDocument();
     });
 
-    it('focuses the title before the download starts, so it is announced', () => {
-      let focusedOnClick: Element | null = null;
-      click.mockImplementation(() => {
-        focusedOnClick = document.activeElement;
-      });
-
+    it('focuses the title when the page opens, so it is announced', () => {
       renderDownload();
 
-      expect(focusedOnClick).toBe(screen.getByRole('heading', { level: 1, name: 'Téléchargement de votre export' }));
+      expect(screen.getByRole('heading', { level: 1, name: 'Téléchargement de votre export' })).toHaveFocus();
     });
   });
 

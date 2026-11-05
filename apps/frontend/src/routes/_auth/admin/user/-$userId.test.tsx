@@ -33,6 +33,7 @@ vi.mock('@tanstack/react-router', async (importOriginal) => ({
       {children}
     </a>
   ),
+  useBlocker: vi.fn(),
   useNavigate: () => navigateSpy,
   useRouter: () => ({ navigate: routerNavigateSpy, history: { back: vi.fn() } }),
 }));
@@ -101,7 +102,11 @@ describe('User edition page navigation', () => {
     render(<RouteComponent />);
     await userEvent.click(screen.getByRole('button', { name: 'Annuler les modifications' }));
 
-    expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/users/all', search: { search: 'dupont' } });
+    expect(routerNavigateSpy).toHaveBeenCalledWith({
+      to: '/admin/users/all',
+      search: { search: 'dupont' },
+      ignoreBlocker: true,
+    });
   });
 
   it('redirects an unknown user to the list it was opened from', () => {

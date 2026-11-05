@@ -13,6 +13,7 @@ const { addToastSpy, routerNavigateSpy, serviceCreationGuardSpy } = vi.hoisted((
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => options,
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
+  useBlocker: vi.fn(),
   useRouter: () => ({ navigate: routerNavigateSpy }),
 }));
 vi.mock('@/hooks/queries/entites.hook', () => ({
@@ -103,7 +104,7 @@ describe('Admin local Service create route', () => {
         email: 'service@ars.fr',
       });
       expect(addToastSpy).toHaveBeenCalledWith(expect.objectContaining({ title: 'Service créé avec succès' }));
-      expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services' });
+      expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services', ignoreBlocker: true });
     });
   });
 

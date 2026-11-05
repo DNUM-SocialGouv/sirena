@@ -16,6 +16,7 @@ vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => options,
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
   Outlet: () => null,
+  useBlocker: vi.fn(),
   useRouter: () => ({ navigate: routerNavigateSpy }),
 }));
 
@@ -179,7 +180,7 @@ describe('Admin local Entité edit route', () => {
         data: { icon: 'fr-alert--success' },
       }),
     );
-    expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/entite' });
+    expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/entite', ignoreBlocker: true });
   });
 
   it('shows an error, retains input, stays on the form, and allows retry after a failed save', async () => {
@@ -213,7 +214,7 @@ describe('Admin local Entité edit route', () => {
     await user.click(screen.getByRole('button', { name: 'Valider les modifications' }));
 
     await waitFor(() => expect(editMutateAsyncSpy).toHaveBeenCalledTimes(2));
-    expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/entite' });
+    expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/entite', ignoreBlocker: true });
   });
 
   it('prevents duplicate submission while the update is pending', async () => {
@@ -283,7 +284,7 @@ describe('Admin local Entité edit route', () => {
         adresseContactUsager: '2 rue de Paris',
       }),
     );
-    expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/entite' });
+    expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/entite', ignoreBlocker: true });
   });
 
   it('prevents submission after clearing an existing notification e-mail', async () => {

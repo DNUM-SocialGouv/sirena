@@ -8,8 +8,10 @@ import { HttpError } from '@/lib/api/tanstackQuery';
 import { MAX_AUTO_MERGE_REPLAYS } from '@/lib/conflictResolution';
 import { type RequeteDateTypeData, useRequeteDateTypeSave } from './useRequeteDateTypeSave';
 
+const navigate = vi.hoisted(() => vi.fn());
+
 vi.mock('@tanstack/react-router', () => ({
-  useNavigate: () => vi.fn(),
+  useNavigate: () => navigate,
 }));
 
 vi.mock('@/lib/api/saveError', () => ({
@@ -118,6 +120,19 @@ describe('useRequeteDateTypeSave', () => {
     await expect(handleSave({ receptionDate: '2026-02-02' })).resolves.toBeUndefined();
   });
 
+  it('reloads the request without the unsaved changes confirmation once the save succeeded', async () => {
+    patch.mockResolvedValueOnce(new Response(JSON.stringify({ data: {} }), { status: 200 }) as never);
+
+    const { handleSave } = renderSave().current;
+    await handleSave({ receptionDate: '2026-02-02' });
+
+    expect(navigate).toHaveBeenCalledWith({
+      to: '/request/$requestId',
+      params: { requestId: 'req-1' },
+      ignoreBlocker: true,
+    });
+  });
+
   it('hands a non-conflict failure to the save failure notifier', async () => {
     patch.mockResolvedValue(new Response(null, { status: 400 }) as never);
 
@@ -162,6 +177,32 @@ describe('useRequeteDateTypeSave', () => {
     await waitFor(() => expect(patch).toHaveBeenCalledTimes(2));
     expect(patchedJson(1).controls).toEqual({ updatedAt: SERVER_UPDATED_AT });
     expect(patchedJson(1).receptionDate).toBe('2026-03-03');
+  });
+
+  it('hands onSaved the arbitrated values, not the ones the user had submitted', async () => {
+    patch.mockResolvedValueOnce(conflictResponse()).mockResolvedValueOnce(okResponse());
+    const onSaved = vi.fn();
+
+    const result = renderHook(
+      () =>
+        useRequeteDateTypeSave({
+          requestId: 'req-1',
+          requeteUpdatedAt: LOADED_UPDATED_AT,
+          onRefetch: vi.fn(),
+          formatFromServer,
+          onSaved,
+        }),
+      { wrapper },
+    ).result;
+    result.current.originalDataRef.current = LOADED_DATA;
+
+    await result.current.handleSave({ ...LOADED_DATA, receptionDate: '2026-02-02' });
+    await waitFor(() => expect(result.current.showConflictDialog).toBe(true));
+
+    await result.current.handleConflictResolve({ receptionDate: 'server' });
+
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+    expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ receptionDate: '2026-03-03' }));
   });
 
   it('keeps the changes only the other user made when a conflict is arbitrated', async () => {

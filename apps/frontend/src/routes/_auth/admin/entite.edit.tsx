@@ -3,6 +3,7 @@ import { Loader, Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useCallback, useEffect } from 'react';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
+import { useUnsavedChangesGuard } from '@/components/unsavedChanges/useUnsavedChangesGuard';
 import { useEditEntiteAdministrativeAdminLocal, useEntiteAdministrativeAdminLocal } from '@/hooks/queries/entites.hook';
 import { BACK_LINK_ACTIVE_OPTIONS } from '@/utils/backLink';
 import { LocalEntiteFormFields } from './-components/LocalEntiteFormFields';
@@ -42,6 +43,8 @@ function EntiteAdministrativeEditForm({ entite }: { entite: AssignedEntite }) {
     adresseContactUsager: entite.adresseContactUsager,
   });
 
+  useUnsavedChangesGuard({ isDirty: form.isDirty });
+
   useEffect(() => {
     document.title = `${title} - Espace administrateur - SIRENA`;
   }, [title]);
@@ -60,7 +63,7 @@ function EntiteAdministrativeEditForm({ entite }: { entite: AssignedEntite }) {
           timeout: 0,
           data: { icon: 'fr-alert--success' },
         });
-        await router.navigate({ to: '/admin/entite' });
+        await router.navigate({ to: '/admin/entite', ignoreBlocker: true });
       } catch {
         toastManager.add({
           title: 'Erreur',
@@ -84,7 +87,12 @@ function EntiteAdministrativeEditForm({ entite }: { entite: AssignedEntite }) {
           <LocalEntiteFormFields form={form} />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
-            <Link className="fr-btn fr-btn--secondary" to="/admin/entite" activeOptions={BACK_LINK_ACTIVE_OPTIONS}>
+            <Link
+              className="fr-btn fr-btn--secondary"
+              to="/admin/entite"
+              activeOptions={BACK_LINK_ACTIVE_OPTIONS}
+              ignoreBlocker
+            >
               Annuler
             </Link>
             <Button type="submit" disabled={editEntite.isPending}>

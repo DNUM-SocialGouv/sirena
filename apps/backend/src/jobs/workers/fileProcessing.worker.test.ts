@@ -3,6 +3,7 @@ import type { Job } from 'bullmq';
 import { Worker } from 'bullmq';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { envVars } from '../../config/env.js';
+import { MAX_PDF_SANITIZATION_SIZE } from '../../config/files.constant.js';
 import { recordFileProcessing } from '../../features/monitoring/metrics.worker.js';
 import { checkClamAvHealth, scanBuffer, scanStream } from '../../libs/clamav.js';
 import { getFileBuffer, getFileStream, uploadFileToMinio } from '../../libs/minio.js';
@@ -227,13 +228,28 @@ describe('fileProcessing.worker.ts', () => {
   });
 
   it('never sanitizes nor stores an infected PDF', async () => {
-    vi.mocked(scanBuffer).mockResolvedValue(INFECTED_SCAN as never);
+    vi.mocked(scanStream).mockResolvedValue(INFECTED_SCAN as never);
 
     await runJob('application/pdf');
 
     expect(row).toMatchObject({ status: 'FAILED', scanStatus: 'INFECTED', safeFilePath: null });
     expect(sanitizePdf).not.toHaveBeenCalled();
     expect(uploadFileToMinio).not.toHaveBeenCalled();
+  });
+
+  it('never buffers a PDF for its scan', async () => {
+    await runJob('application/pdf');
+
+    expect(scanStream).toHaveBeenCalledWith(expect.anything(), 'test.txt', 1024);
+    expect(scanBuffer).not.toHaveBeenCalled();
+  });
+
+  it('does not download an infected PDF at all', async () => {
+    vi.mocked(scanStream).mockResolvedValue(INFECTED_SCAN as never);
+
+    await runJob('application/pdf');
+
+    expect(getFileBuffer).not.toHaveBeenCalled();
   });
 
   it('stores the sanitized copy of a clean PDF and records its path and encryption', async () => {
@@ -297,29 +313,37 @@ describe('fileProcessing.worker.ts', () => {
 
   it('scans and sanitizes the decrypted content of an encrypted PDF', async () => {
     row = { ...row, metadata: ENCRYPTED_METADATA };
+    const decryptedStream = Readable.from(['%PDF-1.4 clear']);
     const decrypted = Buffer.from('%PDF-1.4 clear');
+    vi.mocked(getFileStream).mockImplementationOnce((async (_path: string, params?: unknown) => ({
+      stream: params ? decryptedStream : Readable.from(['cipher text']),
+    })) as never);
     vi.mocked(getFileBuffer).mockImplementationOnce((async (_path: string, params?: unknown) =>
       params ? decrypted : Buffer.from('cipher')) as never);
 
     await runJob('application/pdf');
 
+    expect(getFileStream).toHaveBeenCalledWith('uploads/test.txt', ENCRYPTED_METADATA.encryption);
+    expect(scanStream).toHaveBeenCalledWith(decryptedStream, 'test.txt', 1024);
     expect(getFileBuffer).toHaveBeenCalledWith('uploads/test.txt', ENCRYPTED_METADATA.encryption);
-    expect(scanBuffer).toHaveBeenCalledWith(decrypted, 'test.txt');
     expect(sanitizePdf).toHaveBeenCalledWith(decrypted);
   });
 
-  it('marks the PDF FAILED when it cannot be downloaded from MinIO', async () => {
+  // The scan reads the file as a stream, so a download failure now only concerns the sanitized
+  // copy: the scan verdict already stands and must not be overwritten.
+  it('keeps the scan verdict of a PDF that cannot be downloaded for sanitization', async () => {
     vi.mocked(getFileBuffer).mockRejectedValueOnce(new Error('NoSuchKey'));
 
     await runJob('application/pdf');
 
     expect(row).toMatchObject({
-      status: 'FAILED',
-      scanStatus: 'ERROR',
+      status: 'COMPLETED',
+      scanStatus: 'CLEAN',
       sanitizeStatus: 'ERROR',
+      safeFilePath: null,
       processingError: 'Failed to download file from storage',
     });
-    expect(scanBuffer).not.toHaveBeenCalled();
+    expect(sanitizePdf).not.toHaveBeenCalled();
   });
 
   it('marks the file FAILED when ClamAV rejects the scan for a non transient reason', async () => {
@@ -445,5 +469,54 @@ describe('fileProcessing.worker.ts', () => {
 
     expect(row.status).toBe('COMPLETED');
     expect(row.sanitizeStatus).toBe('ERROR');
+  });
+
+  describe('PDF sanitization threshold', () => {
+    it('sanitizes a PDF sitting exactly on the threshold', async () => {
+      row = { ...row, size: MAX_PDF_SANITIZATION_SIZE };
+
+      await runJob('application/pdf');
+
+      expect(sanitizePdf).toHaveBeenCalled();
+      expect(row).toMatchObject({
+        status: 'COMPLETED',
+        sanitizeStatus: 'COMPLETED',
+        safeFilePath: 'safe/path.pdf',
+      });
+    });
+
+    it('skips sanitization with an explicit reason past the threshold, without buffering the file', async () => {
+      row = { ...row, size: MAX_PDF_SANITIZATION_SIZE + 1 };
+
+      await runJob('application/pdf');
+
+      expect(getFileBuffer).not.toHaveBeenCalled();
+      expect(sanitizePdf).not.toHaveBeenCalled();
+      expect(uploadFileToMinio).not.toHaveBeenCalled();
+      expect(row).toMatchObject({ status: 'COMPLETED', scanStatus: 'CLEAN', sanitizeStatus: 'SKIPPED' });
+      expect(row.processingError).toMatch(/PDF sanitization skipped/);
+      expect(row.processingError).toMatch(/25\.0MB limit/);
+    });
+
+    it('still scans an oversized PDF, and leaves it in a final state', async () => {
+      row = { ...row, size: 200 * 1024 * 1024 };
+
+      await runJob('application/pdf');
+
+      expect(scanStream).toHaveBeenCalledWith(expect.anything(), 'test.txt', 200 * 1024 * 1024);
+      // COMPLETED with a scanStatus outside PENDING/ERROR is final for buildProcessableFileFilter,
+      // so an oversized PDF is never requeued forever.
+      expect(row).toMatchObject({ status: 'COMPLETED', scanStatus: 'CLEAN' });
+    });
+
+    it('reports an oversized infected PDF as infected, not as skipped', async () => {
+      row = { ...row, size: 200 * 1024 * 1024 };
+      vi.mocked(scanStream).mockResolvedValue(INFECTED_SCAN as never);
+
+      await runJob('application/pdf');
+
+      expect(row).toMatchObject({ status: 'FAILED', scanStatus: 'INFECTED', sanitizeStatus: 'SKIPPED' });
+      expect(row.processingError).toBe('Virus detected: Eicar-Test-Signature');
+    });
   });
 });

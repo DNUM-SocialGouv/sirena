@@ -1,7 +1,10 @@
+import { createHmac, scryptSync } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { generateApiKey, hashApiKey, isValidApiKeyFormat } from './apiKey.js';
+import { API_KEY_HASH_PREFIX, generateApiKey, hashApiKey, hashApiKeyLegacy, isValidApiKeyFormat } from './apiKey.js';
 
 const VALID_KEY = `sk_${'a'.repeat(64)}`;
+const TEST_SALT = 'test-salt';
+const SCRYPT_KEY_LENGTH = 32;
 
 describe('apiKey.ts', () => {
   describe('generateApiKey', () => {
@@ -38,8 +41,17 @@ describe('apiKey.ts', () => {
       expect(hashApiKey(VALID_KEY)).toBe(hashApiKey(VALID_KEY));
     });
 
-    it('should return a 64 character hexadecimal digest', () => {
-      expect(hashApiKey(VALID_KEY)).toMatch(/^[a-f0-9]{64}$/);
+    it('should return the current prefix followed by a 64 character hexadecimal digest', () => {
+      const hash = hashApiKey(VALID_KEY);
+
+      expect(hash.startsWith(API_KEY_HASH_PREFIX)).toBe(true);
+      expect(hash.slice(API_KEY_HASH_PREFIX.length)).toMatch(/^[a-f0-9]{64}$/);
+    });
+
+    it('should return the HMAC-SHA256 digest keyed by the hash salt', () => {
+      const expected = createHmac('sha256', TEST_SALT).update(VALID_KEY).digest('hex');
+
+      expect(hashApiKey(VALID_KEY)).toBe(`${API_KEY_HASH_PREFIX}${expected}`);
     });
 
     it('should return different digests for keys differing by one character', () => {
@@ -50,6 +62,21 @@ describe('apiKey.ts', () => {
 
     it('should not return the key itself', () => {
       expect(hashApiKey(VALID_KEY)).not.toContain(VALID_KEY);
+    });
+  });
+
+  describe('hashApiKeyLegacy', () => {
+    it('should reproduce the digest the previous scrypt scheme stored', async () => {
+      const expected = scryptSync(VALID_KEY, TEST_SALT, SCRYPT_KEY_LENGTH).toString('hex');
+
+      await expect(hashApiKeyLegacy(VALID_KEY)).resolves.toBe(expected);
+    });
+
+    it('should return a digest without the current prefix, so both formats stay distinguishable', async () => {
+      const legacyHash = await hashApiKeyLegacy(VALID_KEY);
+
+      expect(legacyHash.startsWith(API_KEY_HASH_PREFIX)).toBe(false);
+      expect(hashApiKey(VALID_KEY).startsWith(API_KEY_HASH_PREFIX)).toBe(true);
     });
   });
 

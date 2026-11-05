@@ -1,6 +1,7 @@
 import { emailSchema, optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { useMemo, useState } from 'react';
 import { z } from 'zod';
+import { hasUnsavedChanges } from '@/components/unsavedChanges/hasUnsavedChanges';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 
 export type LocalEntiteFormType = 'entite-administrative' | 'direction' | 'service';
@@ -67,6 +68,7 @@ type LocalEntiteForm<ValidatedValues> = {
   entiteType: LocalEntiteFormType;
   mode: LocalEntiteFormMode;
   values: LocalEntiteFormValues;
+  isDirty: boolean;
   validationErrors: Record<string, string>;
   onChange: (
     field: keyof LocalEntiteFormValues,
@@ -99,7 +101,8 @@ export function useLocalEntiteForm(
     () => (mode === 'edit' ? editFormSchema(entiteType) : createFormSchema(entiteType as LocalEntiteCreateFormType)),
     [entiteType, mode],
   );
-  const [values, setValues] = useState({ ...emptyLocalEntiteForm, ...initialValues });
+  const [savedValues] = useState({ ...emptyLocalEntiteForm, ...initialValues });
+  const [values, setValues] = useState(savedValues);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
@@ -153,5 +156,7 @@ export function useLocalEntiteForm(
     return result.data;
   };
 
-  return { entiteType, mode, values, validationErrors, onChange, clearError, validate };
+  const isDirty = hasUnsavedChanges(savedValues, values);
+
+  return { entiteType, mode, values, isDirty, validationErrors, onChange, clearError, validate };
 }

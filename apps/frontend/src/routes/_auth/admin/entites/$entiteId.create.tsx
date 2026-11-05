@@ -6,7 +6,11 @@ import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
+import { hasUnsavedChanges } from '@/components/unsavedChanges/hasUnsavedChanges';
+import { useUnsavedChangesGuard } from '@/components/unsavedChanges/useUnsavedChangesGuard';
 import { useCreateDirectionOrServiceAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
+import { notifySaveNetworkFailure } from '@/lib/api/saveError';
+import { HttpError } from '@/lib/api/tanstackQuery';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 import { EntiteAdminFormFields } from './-components/EntiteAdminFormFields';
@@ -21,6 +25,16 @@ const CreateDirectionOrServiceFormSchema = z.object({
   telContactUsager: optionalPhoneSchema,
   isActive: z.enum(['oui', 'non'], 'Le statut actif dans SIRENA est obligatoire. Veuillez sélectionner une option.'),
 });
+
+const EMPTY_FORM = {
+  nomComplet: '',
+  label: '',
+  email: '',
+  emailContactUsager: '',
+  adresseContactUsager: '',
+  telContactUsager: '',
+  isActive: '',
+};
 
 export const Route = createFileRoute('/_auth/admin/entites/$entiteId/create')({
   beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN]),
@@ -41,15 +55,9 @@ export function RouteComponent() {
 
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
-  const [formData, setFormData] = useState({
-    nomComplet: '',
-    label: '',
-    email: '',
-    emailContactUsager: '',
-    adresseContactUsager: '',
-    telContactUsager: '',
-    isActive: '',
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
+
+  useUnsavedChangesGuard({ isDirty: hasUnsavedChanges(EMPTY_FORM, formData) });
 
   useEffect(() => {
     document.title = `${getCreateEntiteTitle(entiteDepth)}`;
@@ -144,7 +152,10 @@ export function RouteComponent() {
         await router.navigate({
           to: '/admin/entites/$entiteId',
           params: { entiteId: createdEntite.id },
+          ignoreBlocker: true,
         });
+      } catch (error) {
+        if (!(error instanceof HttpError)) notifySaveNetworkFailure();
       } finally {
         isSubmittingRef.current = false;
       }

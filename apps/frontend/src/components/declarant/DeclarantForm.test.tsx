@@ -9,6 +9,7 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
   return {
     ...original,
     useNavigate: () => vi.fn(),
+    useBlocker: vi.fn(),
     Link: ({ children }: { children: React.ReactNode }) => <a href="/">{children}</a>,
   };
 });

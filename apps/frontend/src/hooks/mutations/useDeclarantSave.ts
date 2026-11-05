@@ -94,7 +94,7 @@ export const useDeclarantSave = ({ requestId, identiteUpdatedAt, loadedData, onR
       autoMergeReplaysRef.current = 0;
       releaseEditSession();
       onRefetch();
-      navigate({ to: '/request/$requestId', params: { requestId } });
+      navigate({ to: '/request/$requestId', params: { requestId }, ignoreBlocker: true });
     },
     onError: async (error: unknown) => {
       const err = error as { status?: number; body?: unknown };

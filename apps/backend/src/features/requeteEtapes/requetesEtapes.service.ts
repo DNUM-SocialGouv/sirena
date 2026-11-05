@@ -531,7 +531,7 @@ export const addClotureEtapeFiles = async (
 export const getRequeteEtapes = async (
   requeteId: string,
   entiteId: string | null,
-  query: GetRequeteEtapesQuery,
+  query: Partial<GetRequeteEtapesQuery>,
   estPartageeEnabled = false,
 ) => {
   if (!entiteId) {

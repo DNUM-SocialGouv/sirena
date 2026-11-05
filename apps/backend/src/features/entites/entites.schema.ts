@@ -1,4 +1,4 @@
-import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
+import { optionalPaginationQueryParamsSchema, paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
 import { emailSchema, phoneSchema } from '@sirena/common/schemas';
 import { z } from 'zod';
 import { Prisma } from '../../libs/prisma.js';
@@ -47,7 +47,8 @@ const columns = [
   Prisma.EntiteScalarFieldEnum.adresseContactUsager,
 ] as const;
 
-export const GetEntitiesQuerySchema = paginationQueryParamsSchema(columns).extend({
+// The entity selects consume the whole list: this route keeps an opt-in pagination.
+export const GetEntitiesQuerySchema = optionalPaginationQueryParamsSchema(columns).extend({
   rootEntiteIds: z
     .string()
     .transform((val) =>
