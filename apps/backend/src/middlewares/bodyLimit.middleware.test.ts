@@ -1,8 +1,8 @@
-import { ERROR_KIND } from '@sirena/common/constants';
+import { API_ERROR_CODES, ERROR_KIND } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { errorHandler } from '../helpers/errors.js';
 import factoryWithLogs from '../helpers/factories/appWithLogs.js';
-import { streamSafeBodyLimit } from './bodyLimit.middleware.js';
+import { formatMaxSize, streamSafeBodyLimit } from './bodyLimit.middleware.js';
 
 const MB = 1024 * 1024;
 const MULTIPART_MAX_SIZE = 4 * MB;
@@ -24,11 +24,11 @@ const streamOf = (size: number) =>
     },
   });
 
-const expectPayloadTooLarge = async (res: Response, maxSizeInMo: number) => {
+const expectPayloadTooLarge = async (res: Response, maxSize: string) => {
   expect(res.status).toBe(413);
   expect(await res.json()).toEqual({
-    message: `La requête dépasse la taille maximale autorisée (${maxSizeInMo} Mo)`,
-    cause: { kind: ERROR_KIND.BUSINESS },
+    message: `Request body exceeds the maximum allowed size (${maxSize})`,
+    cause: { name: API_ERROR_CODES.BODY_MAX_SIZE, kind: ERROR_KIND.BUSINESS },
   });
   expect(handler).not.toHaveBeenCalled();
 };
@@ -36,6 +36,18 @@ const expectPayloadTooLarge = async (res: Response, maxSizeInMo: number) => {
 describe('bodyLimit.middleware.ts', () => {
   beforeEach(() => {
     handler.mockClear();
+  });
+
+  describe('formatMaxSize', () => {
+    it.each([
+      [200 * MB, '200 Mo'],
+      [1 * MB, '1 Mo'],
+      [1.5 * MB, '1 Mo'],
+      [512 * 1024, '512 Ko'],
+      [1000, '1 Ko'],
+    ])('formats %i bytes as %s', (bytes, expected) => {
+      expect(formatMaxSize(bytes)).toBe(expected);
+    });
   });
 
   describe('non multipart bodies', () => {
@@ -57,7 +69,7 @@ describe('bodyLimit.middleware.ts', () => {
         body: JSON.stringify({ data: 'x'.repeat(2 * MB) }),
       });
 
-      await expectPayloadTooLarge(res, 1);
+      await expectPayloadTooLarge(res, '1 Mo');
     });
 
     it('rejects a chunked JSON body over the limit with 413', async () => {
@@ -68,7 +80,7 @@ describe('bodyLimit.middleware.ts', () => {
         duplex: 'half',
       } as RequestInit);
 
-      await expectPayloadTooLarge(res, 1);
+      await expectPayloadTooLarge(res, '1 Mo');
     });
   });
 
@@ -84,7 +96,18 @@ describe('bodyLimit.middleware.ts', () => {
         duplex: 'half',
       } as RequestInit);
 
-      await expectPayloadTooLarge(res, 4);
+      await expectPayloadTooLarge(res, '4 Mo');
+    });
+
+    it('rejects a multipart body whose Content-Length header is not a number', async () => {
+      const res = await app.request('/', {
+        method: 'POST',
+        headers: { 'content-type': 'multipart/form-data; boundary=x', 'content-length': 'abc' },
+        body: streamOf(10),
+        duplex: 'half',
+      } as RequestInit);
+
+      await expectPayloadTooLarge(res, '4 Mo');
     });
 
     it('lets a multipart body over the JSON limit but under its own limit through', async () => {

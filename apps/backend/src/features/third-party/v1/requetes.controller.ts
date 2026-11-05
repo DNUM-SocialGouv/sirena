@@ -1,11 +1,18 @@
-import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
-import { ERROR_KIND, RECEPTION_TYPE } from '@sirena/common/constants';
+import {
+  throwHTTPException400BadRequest,
+  throwHTTPException404NotFound,
+  throwHTTPException503ServiceUnavailable,
+} from '@sirena/backend-utils/helpers';
+import { API_ERROR_CODES, ERROR_KIND, RECEPTION_TYPE } from '@sirena/common/constants';
+import { isHTTPException } from '../../../helpers/errors.js';
 import factoryWithLogs from '../../../helpers/factories/appWithLogs.js';
 import { isPayloadDebugEnabled } from '../../../helpers/logs.js';
+import { isRequestBodyInterrupted } from '../../../helpers/request.js';
 import extractUploadedFileMiddleware from '../../../middlewares/upload.middleware.js';
 import { sendDeclarantAcknowledgmentEmail } from '../../declarants/declarants.notification.service.js';
 import { assignEntitesToRequeteTask } from '../../dematSocial/affectation/affectation.js';
 import { getRequiredApiKey } from '../thirdPartyFactory.js';
+import { AttachmentStorageUnavailableError } from './requetes.errors.js';
 import {
   postAttachmentParamsValidator,
   postAttachmentRoute,
@@ -103,12 +110,38 @@ const app = factoryWithLogs
         logger.info({ requeteId, fileName, mimeType }, 'Third-party incoming payload (POST /requetes/:id/attachments)');
       }
 
-      const result = await addAttachmentToRequete(requeteId, apiKey.account.id, {
-        stream,
-        fileName,
-        mimeType,
-        getSize: getReadBytes,
-      });
+      let result: Awaited<ReturnType<typeof addAttachmentToRequete>>;
+      try {
+        result = await addAttachmentToRequete(requeteId, apiKey.account.id, {
+          stream,
+          fileName,
+          mimeType,
+          getSize: getReadBytes,
+        });
+      } catch (err) {
+        // Already a response (e.g. file too large while streaming).
+        if (isHTTPException(err)) throw err;
+
+        // Checked first: a client reset (ECONNRESET) would otherwise read as a storage failure.
+        if (isRequestBodyInterrupted(c)) {
+          logger.warn({ err, requeteId }, 'Third-party attachment upload interrupted by the client');
+          throwHTTPException400BadRequest('Upload interrupted before the file was fully received', {
+            res: c.res,
+            kind: ERROR_KIND.BUSINESS,
+          });
+        }
+
+        if (err instanceof AttachmentStorageUnavailableError) {
+          logger.error({ err: err.cause, requeteId }, 'Storage unavailable while uploading third-party attachment');
+          throwHTTPException503ServiceUnavailable('Attachment storage is temporarily unavailable, retry later', {
+            res: c.res,
+            kind: ERROR_KIND.SYSTEM,
+            cause: { name: API_ERROR_CODES.STORAGE_UNAVAILABLE },
+          });
+        }
+
+        throw err;
+      }
 
       if (!result) {
         throwHTTPException404NotFound('Requete not found or not owned by this account', {

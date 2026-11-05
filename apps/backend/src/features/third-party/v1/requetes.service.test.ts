@@ -8,6 +8,7 @@ import { uploadFileToMinio } from '../../../libs/minio.js';
 import { Prisma } from '../../../libs/prisma.js';
 import { getLieuxType, getResponsable } from '../../dematSocial/dematSocial.adapter.js';
 import { generateRequeteId } from '../../requetes/functionalId.service.js';
+import { AttachmentStorageUnavailableError } from './requetes.errors.js';
 import { addAttachmentToRequete, createRequeteFromThirdParty } from './requetes.service.js';
 import type { CreateRequeteFromThirdPartyDto } from './requetes.type.js';
 
@@ -24,6 +25,7 @@ vi.mock('../../../jobs/queues/fileProcessing.queue.js', () => ({
 }));
 vi.mock('../../../libs/minio.js', () => ({
   uploadFileToMinio: vi.fn(),
+  isStorageUnavailableError: vi.fn((err: { code?: string }) => err?.code === 'DEPENDENCY_UNAVAILABLE'),
 }));
 vi.mock('../../../libs/asyncLocalStorage.js', () => ({
   getLoggerStore: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -342,6 +344,28 @@ describe('third-party v1 requetes.service.ts', () => {
       await expect(addAttachmentToRequete(REQUETE_ID, ACCOUNT_ID, file)).rejects.toThrow('insert failed');
       expect(rollback).toHaveBeenCalledTimes(1);
       expect(addFileProcessingJob).not.toHaveBeenCalled();
+    });
+
+    it('flags a storage outage during the upload as retryable', async () => {
+      prisma.requete.findFirst.mockResolvedValueOnce({ id: REQUETE_ID } as any);
+      const s3Error = Object.assign(new Error('s3 is unavailable'), { code: 'DEPENDENCY_UNAVAILABLE' });
+      vi.mocked(uploadFileToMinio).mockRejectedValueOnce(s3Error);
+
+      const error = await addAttachmentToRequete(REQUETE_ID, ACCOUNT_ID, file).catch((err) => err);
+
+      expect(error).toBeInstanceOf(AttachmentStorageUnavailableError);
+      expect(error.cause).toBe(s3Error);
+      expect(prisma.uploadedFile.create).not.toHaveBeenCalled();
+    });
+
+    // The file row exists by then: a 503 would make the client retry and attach the file twice.
+    it('does not flag a transient failure after the file is recorded as retryable', async () => {
+      prisma.requete.findFirst.mockResolvedValueOnce({ id: REQUETE_ID } as any);
+      prisma.uploadedFile.create.mockResolvedValueOnce({ id: 'abc-123' } as any);
+      const queueError = Object.assign(new Error('redis is unavailable'), { code: 'DEPENDENCY_UNAVAILABLE' });
+      vi.mocked(addFileProcessingJob).mockRejectedValueOnce(queueError);
+
+      await expect(addAttachmentToRequete(REQUETE_ID, ACCOUNT_ID, file)).rejects.toBe(queueError);
     });
   });
 });

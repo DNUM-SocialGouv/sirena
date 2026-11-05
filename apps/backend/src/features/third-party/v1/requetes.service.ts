@@ -5,10 +5,11 @@ import { isPrismaUniqueConstraintError } from '../../../helpers/prisma.js';
 import { retryWithBackoff } from '../../../helpers/retry.js';
 import { addFileProcessingJob } from '../../../jobs/queues/fileProcessing.queue.js';
 import { getLoggerStore } from '../../../libs/asyncLocalStorage.js';
-import { uploadFileToMinio } from '../../../libs/minio.js';
+import { isStorageUnavailableError, uploadFileToMinio } from '../../../libs/minio.js';
 import { prisma } from '../../../libs/prisma.js';
 import { getLieuxType, getResponsable } from '../../dematSocial/dematSocial.adapter.js';
 import { generateRequeteId } from '../../requetes/functionalId.service.js';
+import { AttachmentStorageUnavailableError } from './requetes.errors.js';
 import type { CreateRequeteFromThirdPartyDto } from './requetes.type.js';
 
 const MAX_CREATE_REQUETE_RETRIES = 5;
@@ -294,7 +295,10 @@ export const addAttachmentToRequete = async (
     objectPath,
     rollback: rollbackMinio,
     encryptionMetadata,
-  } = await uploadFileToMinio(file.stream, file.fileName, file.mimeType);
+  } = await uploadFileToMinio(file.stream, file.fileName, file.mimeType).catch((err) => {
+    // Only this step is flagged: once the file row exists, a retry would attach the file twice.
+    throw isStorageUnavailableError(err) ? new AttachmentStorageUnavailableError(err) : err;
+  });
 
   const pathParts = objectPath.split('/');
   const fileName = pathParts[pathParts.length - 1] || '';

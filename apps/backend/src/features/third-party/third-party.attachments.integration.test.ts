@@ -28,7 +28,9 @@ vi.mock('../../libs/prisma.js', async (importOriginal) => {
 vi.mock('../../libs/minio.js', async () => {
   const { Writable } = await import('node:stream');
   const { pipeline } = await import('node:stream/promises');
+  const { isTransientDependencyError } = await import('../../libs/resilience.js');
   return {
+    isStorageUnavailableError: isTransientDependencyError,
     uploadFileToMinio: vi.fn(async (input: Readable) => {
       await pipeline(
         input,
@@ -88,6 +90,8 @@ const app = factoryWithLogs
   .createApp()
   .use((c: Context, next: Next) => {
     c.set('logger', logger);
+    // Like the pino middleware: set before any response exists, must survive error responses too.
+    c.header('x-trace-id', TRACE_ID);
     return loggerStorage.run(logger as any, () => next());
   })
   .route('/third-party', ThirdPartyApp)
@@ -260,18 +264,19 @@ describe('third-party attachments upload (integration, real HTTP server)', () =>
       `/third-party/v1/requetes/${REQUETE_ID}/attachments`,
       `multipart/form-data; boundary=${BOUNDARY}`,
       MAX_FILE_SIZE,
-      200,
+      '200 Mo',
     ],
-    ['JSON requete creation', '/third-party/v1/requetes', 'application/json', MAX_JSON_BODY_SIZE, 1],
+    ['JSON requete creation', '/third-party/v1/requetes', 'application/json', MAX_JSON_BODY_SIZE, '1 Mo'],
   ])(
     'rejects a %s announcing its limit + 1 bytes with 413 before reading the body',
-    async (_, path, contentType, maxSize, maxSizeInMo) => {
+    async (_, path, contentType, maxSize, formattedMaxSize) => {
       const res = await sendHeadersOnly(path, contentType, maxSize + 1);
 
       expect(res.status).toBe(413);
+      expect(res.headers['x-trace-id']).toBe(TRACE_ID);
       expect(res.body).toEqual({
-        message: `La requête dépasse la taille maximale autorisée (${maxSizeInMo} Mo)`,
-        cause: { kind: ERROR_KIND.BUSINESS },
+        message: `Request body exceeds the maximum allowed size (${formattedMaxSize})`,
+        cause: { name: API_ERROR_CODES.BODY_MAX_SIZE, kind: ERROR_KIND.BUSINESS },
       });
       expect(uploadFileToMinio).not.toHaveBeenCalled();
     },
@@ -301,7 +306,7 @@ describe('third-party attachments upload (integration, real HTTP server)', () =>
       });
 
       expect(res.status).toBe(413);
-      expect(res.body.message).toBe('La requête dépasse la taille maximale autorisée (1 Mo)');
+      expect(res.body.message).toBe('Request body exceeds the maximum allowed size (1 Mo)');
       expect(apiKeyAuthHandler).not.toHaveBeenCalled();
     },
     TEST_TIMEOUT_MS,
@@ -316,12 +321,60 @@ describe('third-party attachments upload (integration, real HTTP server)', () =>
       const { heapUsedGrowth } = stopTracking();
 
       expect(res.status).toBe(400);
+      expect(res.headers['x-trace-id']).toBe(TRACE_ID);
       expect(res.body).toEqual({
         message: 'File size exceeds the maximum allowed',
         cause: { name: API_ERROR_CODES.FILE_MAX_SIZE, kind: ERROR_KIND.BUSINESS },
       });
       expect(prisma.uploadedFile.create).not.toHaveBeenCalled();
       expect(heapUsedGrowth).toBeLessThan(50 * MB);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  it(
+    'fails the storage upload right away when the client cuts the connection mid-file',
+    async () => {
+      // Without this, the storage would wait for the rest of the file until its own timeout.
+      let storageError: unknown;
+      vi.mocked(uploadFileToMinio).mockImplementationOnce(async (input) => {
+        const { Writable } = await import('node:stream');
+        const { pipeline } = await import('node:stream/promises');
+        try {
+          await pipeline(input as Readable, new Writable({ write: (_chunk, _encoding, callback) => callback() }));
+        } catch (err) {
+          storageError = err;
+          throw err;
+        }
+        throw new Error('the upload should not complete');
+      });
+
+      const req = http.request({
+        host: '127.0.0.1',
+        port,
+        method: 'POST',
+        path: `/third-party/v1/requetes/${REQUETE_ID}/attachments`,
+        headers: {
+          'content-type': `multipart/form-data; boundary=${BOUNDARY}`,
+          'content-length': multipartLength(8 * MB),
+        },
+      });
+      req.on('error', () => {});
+      req.write(Buffer.concat([MULTIPART_HEAD, PDF_HEAD, Buffer.alloc(MB, 0x61)]));
+      await vi.waitFor(() => expect(uploadFileToMinio).toHaveBeenCalled());
+
+      req.destroy();
+
+      await vi.waitFor(() => expect(storageError).toBeDefined(), { timeout: 2000 });
+      // An interrupted upload is the client's doing: no internal error (and no Sentry event).
+      await vi.waitFor(() =>
+        expect(logger.warn).toHaveBeenCalledWith(
+          expect.anything(),
+          'Third-party attachment upload interrupted by the client',
+        ),
+      );
+      expect(logger.error).not.toHaveBeenCalled();
+      expect(prisma.uploadedFile.create).not.toHaveBeenCalled();
     },
     TEST_TIMEOUT_MS,
   );

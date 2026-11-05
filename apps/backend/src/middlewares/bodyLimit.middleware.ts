@@ -1,26 +1,27 @@
-import { ERROR_KIND } from '@sirena/common/constants';
+import { throwHTTPException413PayloadTooLarge } from '@sirena/backend-utils/helpers';
+import { API_ERROR_CODES, ERROR_KIND } from '@sirena/common/constants';
 import type { Context } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
-import { HTTPException } from 'hono/http-exception';
 import factoryWithLogs from '../helpers/factories/appWithLogs.js';
 
 const MULTIPART_CONTENT_TYPE = /^multipart\/form-data/i;
 
-const throwPayloadTooLarge = (c: Context, maxSize: number): never => {
-  const maxSizeInMo = Math.floor(maxSize / (1024 * 1024));
-  const body = {
-    message: `La requête dépasse la taille maximale autorisée (${maxSizeInMo} Mo)`,
-    cause: { kind: ERROR_KIND.BUSINESS },
-  };
-  const res = new Response(JSON.stringify(body), {
-    status: 413,
-    headers: { ...Object.fromEntries(c.res.headers), 'Content-Type': 'application/json' },
+const KO = 1024;
+const MO = 1024 * KO;
+
+/** Human readable size limit, shared by the error message and the OpenAPI documentation. */
+export const formatMaxSize = (bytes: number) =>
+  bytes >= MO ? `${Math.floor(bytes / MO)} Mo` : `${Math.ceil(bytes / KO)} Ko`;
+
+const throwPayloadTooLarge = (c: Context, maxSize: number): never =>
+  throwHTTPException413PayloadTooLarge(`Request body exceeds the maximum allowed size (${formatMaxSize(maxSize)})`, {
+    res: c.res,
+    kind: ERROR_KIND.BUSINESS,
+    cause: { name: API_ERROR_CODES.BODY_MAX_SIZE },
   });
-  throw new HTTPException(413, { message: body.message, res });
-};
 
 type StreamSafeBodyLimitOptions = {
-  /** Limit for multipart bodies (file uploads). */
+  /** Limit for multipart bodies (file uploads), checked on the Content-Length header only. */
   multipartMaxSize: number;
   /** Limit for every other body (JSON). Keep it small: see below. */
   otherMaxSize: number;
@@ -34,8 +35,10 @@ type StreamSafeBodyLimitOptions = {
  * busboy (see upload.middleware.ts) and hangs them.
  *
  * So multipart bodies are only checked on their Content-Length header here (rejected before any
- * byte of the body is read). Chunked multipart uploads are bounded by the streaming size limiter
- * of `extractUploadedFileMiddleware`.
+ * byte of the body is read). A multipart body without Content-Length (chunked transfer) is NOT
+ * bounded by this middleware: `extractUploadedFileMiddleware` only bounds its first file part
+ * (MAX_FILE_SIZE), the other parts are read and discarded. The total size of such a body is only
+ * bounded by the ingress (`proxy-body-size`, see the backend Helm chart).
  *
  * Every other body goes through Hono's `bodyLimit`, which buffers a chunked body (no
  * Content-Length) in memory until `otherMaxSize` is reached. This runs before authentication, so
@@ -51,7 +54,9 @@ export const streamSafeBodyLimit = ({ multipartMaxSize, otherMaxSize }: StreamSa
 
     const contentLength = c.req.header('content-length');
     if (contentLength !== undefined && !c.req.header('transfer-encoding')) {
-      if (Number.parseInt(contentLength, 10) > multipartMaxSize) {
+      const announcedSize = Number(contentLength);
+      // Fail closed on a malformed header (Node's HTTP parser should already have rejected it).
+      if (!Number.isSafeInteger(announcedSize) || announcedSize > multipartMaxSize) {
         throwPayloadTooLarge(c, multipartMaxSize);
       }
     }

@@ -102,6 +102,39 @@ export interface UploadResult {
 }
 
 /**
+ * Without a size, putObject always goes through an S3 multipart upload. When the upload fails
+ * midway, the parts already sent are not an object: they stay in the bucket, out of reach of the
+ * application purges, until a lifecycle rule (if any) removes them. Abort them instead.
+ *
+ * Best effort, outside s3Guard on purpose: a successful abort would count as a success for the
+ * circuit and reset its failure count, so an S3 refusing parts but answering LIST/DELETE would
+ * never open it. Skipped while the circuit is not closed: S3 is already known to be failing.
+ */
+const abortIncompleteUpload = async (objectPath: string): Promise<void> => {
+  if (!minioClient || s3Guard.getState() !== 'closed') return;
+  const client = minioClient;
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    await Promise.race([
+      (async () => {
+        const uploadId = await client.findUploadId(S3_BUCKET_NAME, objectPath);
+        if (uploadId) {
+          await client.abortMultipartUpload(S3_BUCKET_NAME, objectPath, uploadId);
+        }
+      })(),
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => reject(new Error('Abort of incomplete S3 upload timed out')), S3_METADATA_TIMEOUT_MS);
+      }),
+    ]);
+  } catch (err) {
+    const logger = loggerStorage.getStore() ?? createDefaultLogger();
+    logger.warn({ err, objectPath }, 'Failed to abort incomplete S3 multipart upload');
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+};
+
+/**
  * Streams the input through AES-GCM encryption directly into MinIO without
  * materializing the encrypted output in memory.
  *
@@ -142,6 +175,9 @@ export const uploadFileToMinio = async (
 
   // pipeline() avoids an uncaught stream error (process crash) when the source or putObject fails.
   const encryption = pipeline(sourceStream, encryptStream);
+  // Its handler below is only attached once the guard runs the call. When the guard rejects first
+  // (circuit open, queue full), destroying encryptStream would reject it unhandled: process exit.
+  void encryption.catch(() => {});
 
   const resolvedContentType = contentType || 'application/octet-stream';
   const baseHeaders: Record<string, string> = {
@@ -151,23 +187,32 @@ export const uploadFileToMinio = async (
     'x-amz-meta-encrypted': 'true',
   };
 
+  // Set once the guard lets the call through: before that, putObject never ran (circuit open,
+  // queue full or queue timeout) and there is nothing to clean up.
+  let putObjectStarted = false;
   try {
     // The pipeline is awaited inside the guarded call, not alongside it: minio ignores body
     // errors and never settles, so a source failure would hold a slot for the whole body timeout.
     await s3Guard.run(
       'putObject',
-      () =>
-        Promise.all([
+      () => {
+        putObjectStarted = true;
+        return Promise.all([
           minioClient.putObject(S3_BUCKET_NAME, objectPath, encryptStream, size, baseHeaders),
           encryption.catch((err) => {
             throw new UploadBodyError(err);
           }),
-        ]),
+        ]);
+      },
       S3_BODY_TIMEOUT_MS,
     );
   } catch (err) {
     const cause = err instanceof UploadBodyError ? err.bodyError : err;
     encryptStream.destroy(cause as Error);
+    if (putObjectStarted) {
+      // Not awaited: the caller gets its error now, the cleanup is best effort.
+      void abortIncompleteUpload(objectPath);
+    }
     throw cause;
   }
 
