@@ -11,6 +11,11 @@ vi.mock('@/hooks/queries/profile.hook', () => ({
 }));
 
 vi.mock('@tanstack/react-router', () => ({
+  Link: ({ to, className, children }: { to: string; className?: string; children: React.ReactNode }) => (
+    <a href={to} className={className}>
+      {children}
+    </a>
+  ),
   useMatches: vi.fn(),
 }));
 

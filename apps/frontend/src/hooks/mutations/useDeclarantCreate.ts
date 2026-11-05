@@ -20,7 +20,7 @@ export const useDeclarantCreate = () => {
     },
     onSuccess: (result) => {
       if (result?.id) {
-        navigate({ to: '/request/$requestId', params: { requestId: result.id } });
+        navigate({ to: '/request/$requestId', params: { requestId: result.id }, ignoreBlocker: true });
       }
     },
     onError: (error: unknown) => {
@@ -35,7 +35,7 @@ export const useDeclarantCreate = () => {
     if (shouldCreateRequest) {
       await saveMutation.mutateAsync(data);
     } else {
-      navigate({ to: '/request/create' });
+      navigate({ to: '/request/create', ignoreBlocker: true });
     }
   };
 

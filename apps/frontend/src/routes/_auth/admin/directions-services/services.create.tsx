@@ -4,6 +4,7 @@ import Select from '@codegouvfr/react-dsfr/Select';
 import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useCallback, useEffect, useState } from 'react';
+import { useUnsavedChangesGuard } from '@/components/unsavedChanges/useUnsavedChangesGuard';
 import { useCreateServiceAdminLocal, useDirectionsServicesList } from '@/hooks/queries/entites.hook';
 import { BACK_LINK_ACTIVE_OPTIONS } from '@/utils/backLink';
 import { LocalEntiteFormFields } from '../-components/LocalEntiteFormFields';
@@ -27,6 +28,8 @@ export function RouteComponent() {
   const canCreateService = capabilities?.canCreateService ?? false;
   const router = useRouter();
   const toastManager = Toast.useToastManager();
+
+  useUnsavedChangesGuard({ isDirty: form.isDirty || directionId !== '' });
 
   useEffect(() => {
     document.title = 'Ajouter un service - Directions et services - SIRENA';
@@ -54,7 +57,7 @@ export function RouteComponent() {
           timeout: 0,
           data: { icon: 'fr-alert--success' },
         });
-        await router.navigate({ to: '/admin/directions-services' });
+        await router.navigate({ to: '/admin/directions-services', ignoreBlocker: true });
       } catch {
         toastManager.add({
           title: 'Erreur',
@@ -128,6 +131,7 @@ export function RouteComponent() {
               className="fr-btn fr-btn--secondary"
               to="/admin/directions-services"
               activeOptions={BACK_LINK_ACTIVE_OPTIONS}
+              ignoreBlocker
             >
               Annuler
             </Link>

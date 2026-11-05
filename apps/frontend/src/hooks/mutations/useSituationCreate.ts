@@ -76,13 +76,13 @@ export const useSituationCreate = (options?: { onSuccess?: (result: SituationCre
       if (options?.onSuccess) {
         options.onSuccess(result);
       } else {
-        navigate({ to: '/request/$requestId', params: { requestId: requeteId } });
+        navigate({ to: '/request/$requestId', params: { requestId: requeteId }, ignoreBlocker: true });
       }
     },
     onError: (error) => {
       const requeteId = (error as ErrorWithRequeteId).requeteId;
       if (requeteId) {
-        navigate({ to: '/request/$requestId', params: { requestId: requeteId } });
+        navigate({ to: '/request/$requestId', params: { requestId: requeteId }, ignoreBlocker: true });
       }
       if (!(error instanceof HttpError)) {
         notifySaveNetworkFailure();
@@ -94,7 +94,7 @@ export const useSituationCreate = (options?: { onSuccess?: (result: SituationCre
     if (shouldCreateRequest) {
       await saveMutation.mutateAsync({ data, faitFiles });
     } else {
-      navigate({ to: '/request/create' });
+      navigate({ to: '/request/create', ignoreBlocker: true });
     }
   };
 

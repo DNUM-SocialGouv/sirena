@@ -11,6 +11,7 @@ import { useSetRequeteFile } from '@/hooks/mutations/setRequeteFile.hook';
 import { useDeleteUploadedFile, useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
+import { useUnsavedChangesStore } from '@/stores/unsavedChangesStore';
 import { getOriginalFileName } from '@/utils/fileHelpers';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 
@@ -181,6 +182,14 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
         return;
       }
 
+      // Creating the request opens it, which drops whatever another form of this page still holds unsaved.
+      if (mode === 'create' && !(await useUnsavedChangesStore.getState().confirmLeave())) {
+        setSelectedFiles([]);
+        if (uploadInputRef.current) uploadInputRef.current.value = '';
+
+        return;
+      }
+
       setIsUploading(true);
       let createdRequeteId = requeteId;
 
@@ -237,7 +246,7 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
 
         // Redirect to the created request (after upload success or failure in create mode)
         if (mode === 'create' && createdRequeteId) {
-          navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId } });
+          navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId }, ignoreBlocker: true });
         }
       } catch (createError) {
         console.error('Erreur lors de la création de la requête:', createError);

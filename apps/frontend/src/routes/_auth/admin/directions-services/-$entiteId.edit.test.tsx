@@ -18,6 +18,7 @@ vi.mock('@tanstack/react-router', () => ({
   }),
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
   redirect: vi.fn(),
+  useBlocker: vi.fn(),
   useRouter: () => ({ navigate: routerNavigateSpy }),
 }));
 
@@ -146,7 +147,7 @@ it('saves only the editable Direction notification e-mail before returning to th
     }),
   );
   expect(addToastSpy).toHaveBeenCalledWith(expect.objectContaining({ title: 'Direction modifiée avec succès' }));
-  expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services' });
+  expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/directions-services', ignoreBlocker: true });
 });
 
 it('renders a Service with its current Direction and identity read-only', () => {

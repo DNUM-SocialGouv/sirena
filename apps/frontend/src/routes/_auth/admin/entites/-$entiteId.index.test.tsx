@@ -19,7 +19,11 @@ vi.mock('@tanstack/react-router', () => ({
   Link: ({ to, params, children }: { to: string; params?: { entiteId?: string }; children: React.ReactNode }) => (
     <a href={to.replace('$entiteId', params?.entiteId ?? '')}>{children}</a>
   ),
+  useBlocker: vi.fn(),
 }));
+
+vi.mock('@/lib/api/tanstackQuery', () => ({ HttpError: class HttpError extends Error {} }));
+vi.mock('@/lib/api/saveError', () => ({ notifySaveNetworkFailure: vi.fn() }));
 
 vi.mock('@/hooks/queries/entites.hook', () => ({
   useEntiteByIdAdmin: vi.fn(),

@@ -23,6 +23,7 @@ function RouteComponent() {
   const closeRequeteModalRef = useRef<CloseRequeteModalRef>(null);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
   const [createdRequeteId, setCreatedRequeteId] = useState<string | null>(null);
+  const [savedVersion, setSavedVersion] = useState(0);
   const [shouldCloseRequeteStatus, setShouldCloseRequeteStatus] = useState<{
     willUserBeUnassignedAfterSave: boolean;
     otherEntitiesAffected: Array<{
@@ -40,9 +41,10 @@ function RouteComponent() {
       setCreatedRequeteId(requeteId);
 
       if (result.shouldCloseRequeteStatus?.willUserBeUnassignedAfterSave) {
+        setSavedVersion((version) => version + 1);
         setShouldCloseRequeteStatus(result.shouldCloseRequeteStatus);
       } else {
-        navigate({ to: '/request/$requestId', params: { requestId: requeteId } });
+        navigate({ to: '/request/$requestId', params: { requestId: requeteId }, ignoreBlocker: true });
       }
     },
   });
@@ -59,20 +61,20 @@ function RouteComponent() {
   const handleCloseModalCancel = useCallback(async () => {
     if (createdRequeteId) {
       setShouldCloseRequeteStatus(null);
-      navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId } });
+      navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId }, ignoreBlocker: true });
     }
   }, [createdRequeteId, navigate]);
 
   const handleBeforeClose = useCallback(async () => {
     if (createdRequeteId) {
-      navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId } });
+      navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId }, ignoreBlocker: true });
     }
   }, [createdRequeteId, navigate]);
 
   const handleCloseModalSuccess = useCallback(() => {
     if (createdRequeteId) {
       setShouldCloseRequeteStatus(null);
-      navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId } });
+      navigate({ to: '/request/$requestId', params: { requestId: createdRequeteId }, ignoreBlocker: true });
     }
   }, [createdRequeteId, navigate]);
 
@@ -83,7 +85,7 @@ function RouteComponent() {
   const showModal = createdRequeteId && shouldCloseRequeteStatus;
   return (
     <>
-      <SituationForm mode="create" onSave={handleSave} saveButtonRef={saveButtonRef} />
+      <SituationForm mode="create" onSave={handleSave} saveButtonRef={saveButtonRef} savedVersion={savedVersion} />
       {showModal ? (
         <CloseRequeteModal
           ref={closeRequeteModalRef}
