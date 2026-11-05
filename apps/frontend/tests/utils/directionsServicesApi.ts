@@ -31,6 +31,6 @@ export async function ensureServiceCreationAllowed(request: APIRequestContext): 
     data: { ...E2E_DIRECTION, email: '' },
   });
   expect(response.ok(), await response.text()).toBeTruthy();
-  // The new direction is active, which is all a service needs.
-  return { canCreateDirection: true, canCreateService: true };
+  // Re-read rather than assumed, so that the spec checks what the backend now allows.
+  return getCreationCapabilities(request);
 }

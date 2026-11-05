@@ -54,6 +54,8 @@ Prerequisites:
 Prerequisites:
 - Authenticated user is the ENTITY_ADMIN of an administrative entity (an ARS, a CD…), the only level allowed to create
   both directions and services.
+- `ADMIN_LOCAL_DIRECTIONS_SERVICES` feature flag enabled for that user: both the route guard and the API reject the
+  directions/services admin pages without it.
 - When that entity has no active direction, the spec creates `Direction e2e` through the API, since a service needs a
   direction. A local admin can neither delete nor deactivate it, so it stays active in the entity and later runs create
   nothing. Only a super admin deactivating it makes the next run create another one.

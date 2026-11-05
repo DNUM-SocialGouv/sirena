@@ -35,13 +35,15 @@ async function navigateToTargetEditPage(page: Page, targetUserId: string): Promi
   await expect(userRows.first()).toBeVisible();
 
   const search = page.getByRole('search');
-  await search.getByRole('searchbox').fill(HABILITATION_TARGET_USER_EMAIL);
+  await search
+    .getByRole('searchbox', { name: 'Rechercher un utilisateur par nom, prénom ou e-mail', exact: true })
+    .fill(HABILITATION_TARGET_USER_EMAIL);
   await search.getByRole('button', { name: 'Rechercher', exact: true }).click();
   await expect(page).toHaveURL(/[?&]search=/);
 
   await userRows
     .and(page.locator(`[data-row-key="${targetUserId}"]`))
-    .getByTestId('user-row-link')
+    .getByRole('link', { name: "Gérer l'utilisateur", exact: true })
     .click();
 
   await page.waitForURL(`${baseUrl}/admin/user/${targetUserId}`);
