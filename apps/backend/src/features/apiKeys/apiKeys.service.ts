@@ -1,11 +1,18 @@
 import { type ApiKey, type Prisma, prisma } from '../../libs/prisma.js';
 
-export const findApiKeyByHash = (
-  keyHash: string,
-): Promise<Prisma.ApiKeyGetPayload<{ include: { account: true } }> | null> =>
-  prisma.apiKey.findUnique({
-    where: { keyHash },
+/** Every record a presented key could match, so one read is enough to decide. */
+export const findApiKeysByPrefix = (
+  keyPrefix: string,
+): Promise<Prisma.ApiKeyGetPayload<{ include: { account: true } }>[]> =>
+  prisma.apiKey.findMany({
+    where: { keyPrefix },
     include: { account: true },
+  });
+
+export const updateApiKeyHash = (id: string, keyHash: string): Promise<ApiKey> =>
+  prisma.apiKey.update({
+    where: { id },
+    data: { keyHash },
   });
 
 export const markApiKeyAsExpired = (id: string): Promise<ApiKey> =>
