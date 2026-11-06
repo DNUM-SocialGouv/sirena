@@ -358,7 +358,12 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
             </p>
             {situation?.lieuDeSurvenue.codePostal ? (
               <p className={fr.cx('fr-mb-1w')}>
-                <span>Code postal renseigné par le déclarant :</span> {situation.lieuDeSurvenue.codePostal}
+                <span>
+                  {receptionType === RECEPTION_TYPE.FORMULAIRE
+                    ? 'Code postal renseigné par le déclarant :'
+                    : 'Code postal :'}
+                </span>{' '}
+                {situation.lieuDeSurvenue.codePostal}
               </p>
             ) : null}
             {situation?.lieuDeSurvenue?.lieuPrecision ? (

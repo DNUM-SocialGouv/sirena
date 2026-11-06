@@ -5168,6 +5168,44 @@ describe('requetesEntite.service', () => {
       expect(fieldSpy).toHaveBeenCalledWith('Il/elle est en mesure de protection', 'mandataire familial');
     });
 
+    it.each([
+      { receptionTypeId: 'FORMULAIRE', label: 'Code postal renseigné par le déclarant' },
+      { receptionTypeId: 'TELEPHONE', label: 'Code postal' },
+    ])(
+      'labels the postal code according to the $receptionTypeId reception type',
+      async ({ receptionTypeId, label }) => {
+        const fieldSpy = vi.spyOn(RequetePdfBuilder.prototype, 'field');
+        vi.spyOn(RequetePdfBuilder.prototype, 'toBuffer').mockResolvedValue(Buffer.from('%PDF-test'));
+        vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce({
+          ...mockRequeteEntite,
+          statut: { id: 'EN_COURS', label: 'En cours' },
+          priorite: null,
+          requete: {
+            ...mockRequeteEntite.requete,
+            receptionTypeId,
+            receptionType: null,
+            provenance: null,
+            declarant: null,
+            participant: null,
+            fichiersRequeteOriginale: [],
+            situations: [
+              {
+                id: 'situation123',
+                lieuDeSurvenue: { lieuType: { id: 'TRAJET', label: 'Trajet' }, codePostal: '75000', adresse: null },
+                misEnCause: null,
+                faits: [],
+                situationEntites: [],
+              },
+            ],
+          },
+        } as unknown as Awaited<ReturnType<typeof prisma.requeteEntite.findFirst>>);
+
+        await generateRequetePdfBuffer('req123', 'ent123');
+
+        expect(fieldSpy).toHaveBeenCalledWith(label, '75000');
+      },
+    );
+
     it('returns the buffer and the dataKeys of the loaded data for the RGPD access journal', async () => {
       vi.spyOn(RequetePdfBuilder.prototype, 'toBuffer').mockResolvedValue(Buffer.from('%PDF-test'));
       vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce({

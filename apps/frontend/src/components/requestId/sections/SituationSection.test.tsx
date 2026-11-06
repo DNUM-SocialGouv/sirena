@@ -1,4 +1,4 @@
-import { LIEU_TYPE } from '@sirena/common/constants';
+import { LIEU_TYPE, RECEPTION_TYPE } from '@sirena/common/constants';
 import { render, screen } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -100,5 +100,31 @@ describe('SituationSection', () => {
 
     expect(screen.getByText('Type de lieu :')).toBeInTheDocument();
     expect(getAddressLines()).toEqual(lines);
+  });
+
+  it.each([
+    { receptionType: RECEPTION_TYPE.FORMULAIRE, label: 'Code postal renseigné par le déclarant :' },
+    { receptionType: RECEPTION_TYPE.TELEPHONE, label: 'Code postal :' },
+  ])('labels the postal code according to the $receptionType reception type', ({ receptionType, label }) => {
+    render(
+      <SituationSection
+        id={sectionId}
+        receptionType={receptionType}
+        situation={
+          {
+            id: 'situation-1',
+            faits: [],
+            lieuDeSurvenue: {
+              lieuTypeId: LIEU_TYPE.TRAJET,
+              lieuType: { id: LIEU_TYPE.TRAJET, label: LIEU_TYPE.TRAJET },
+              codePostal: '75000',
+              adresse: null,
+            },
+          } as unknown as SituationProp
+        }
+      />,
+    );
+
+    expect(screen.getByText(label)).toBeInTheDocument();
   });
 });
