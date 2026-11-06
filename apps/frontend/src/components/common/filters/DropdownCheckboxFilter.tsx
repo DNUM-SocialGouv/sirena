@@ -38,7 +38,8 @@ export function DropdownCheckboxFilter({
 
   const close = useCallback(() => {
     setIsOpen(false);
-    triggerRef.current?.focus();
+    // The trigger may be out of view after scrolling the page: bringing focus back must not move it.
+    triggerRef.current?.focus({ preventScroll: true });
     onClose?.();
   }, [onClose]);
 
@@ -86,7 +87,7 @@ export function DropdownCheckboxFilter({
 
     requestAnimationFrame(() => {
       const first = panelRef.current?.querySelector<HTMLInputElement>('input:not([disabled])');
-      first?.focus();
+      first?.focus({ preventScroll: true });
     });
 
     return () => {

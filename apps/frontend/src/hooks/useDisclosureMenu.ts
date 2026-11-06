@@ -41,8 +41,9 @@ export function useDisclosureMenu({ onOpen, onClose }: useDisclosureMenuOptions 
 
       if (!restoreFocus) return;
 
+      // The trigger sits right above the panel: moving focus back to it must not scroll the page.
       requestAnimationFrame(() => {
-        triggerRef.current?.focus();
+        triggerRef.current?.focus({ preventScroll: true });
       });
     },
     [onClose, setOpenState],

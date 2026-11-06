@@ -75,7 +75,7 @@ export function PeriodFilter({ value, onChange }: Props) {
     requestAnimationFrame(() => {
       const checked = panel?.querySelector<HTMLInputElement>('input[type="radio"]:checked');
       const target = checked ?? panel?.querySelector<HTMLInputElement>('input[type="radio"], input[type="date"]');
-      target?.focus();
+      target?.focus({ preventScroll: true });
     });
 
     return () => panel?.removeEventListener('focusout', onFocusOut);
