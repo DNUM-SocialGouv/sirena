@@ -9,6 +9,7 @@ import {
   FILTRE_NON_RENSEIGNE,
   MOTIFS_HIERARCHICAL_DATA,
   PAGINATION_DEFAULT_LIMIT,
+  RECEPTION_TYPE,
   REPONSE_OUI_NON,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_ETAPE_TYPES,
@@ -2865,7 +2866,12 @@ export const generateRequetePdfBuffer = async (
         .field('Type de lieu', lieu.lieuType?.label || null)
         .field('Précision du lieu', getLieuPrecisionLabel(lieu.lieuType?.id, lieu.lieuPrecision) || null)
         .field('Rue', formatRue(lieu.adresse))
-        .field('Code postal renseigné par le déclarant', lieu.codePostal || null)
+        .field(
+          requete.receptionTypeId === RECEPTION_TYPE.FORMULAIRE
+            ? 'Code postal renseigné par le déclarant'
+            : 'Code postal',
+          lieu.codePostal || null,
+        )
         .field("Nom de l'établissement", lieu.adresse?.label || lieu.categLib || null)
         .field('Ville', `${lieu.adresse?.codePostal || ''} ${lieu.adresse?.ville || ''}`.trim() || null)
         .field('Numéro FINESS', lieu.finess || null)
