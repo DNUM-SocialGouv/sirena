@@ -1,7 +1,7 @@
 import type { IncomingMessage } from 'node:http';
-import { type Readable, Transform } from 'node:stream';
+import { type Readable, Transform, type Writable } from 'node:stream';
 import { Busboy, type BusboyFileStream, type BusboyInstance } from '@fastify/busboy';
-import { throwHTTPException400BadRequest } from '@sirena/backend-utils/helpers';
+import { createHTTPException, throwHTTPException400BadRequest } from '@sirena/backend-utils/helpers';
 import { API_ERROR_CODES, ERROR_KIND } from '@sirena/common/constants';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '../config/files.constant.js';
 import factoryWithUploadedFile, { type UploadedFileContext } from '../helpers/factories/appWithUploadedFile.js';
@@ -9,20 +9,36 @@ import { fileTypeParser, sanitizeFilename } from '../helpers/file.js';
 
 const SNIFF_SIZE = 4096;
 
-class FileSizeExceededError extends Error {
+// Only the "file" part is expected. Parts beyond these limits are still read (and discarded) by
+// busboy, so they bound the parser's work and memory, not the size of the body.
+const MULTIPART_LIMITS = { files: 1, fields: 10, parts: 11, fieldSize: 16 * 1024 };
+
+/**
+ * Raised by the size limiter while the route handler consumes the stream (e.g. during the
+ * storage upload). Hono hands handler errors to the app error handler, so the error is itself
+ * the 400 response. It is built from the context response to keep its headers (x-trace-id).
+ */
+const fileSizeExceededError = (res: Response) =>
+  createHTTPException(400, 'File size exceeds the maximum allowed', {
+    res,
+    kind: ERROR_KIND.BUSINESS,
+    cause: { name: API_ERROR_CODES.FILE_MAX_SIZE },
+  });
+
+class NoFilePartError extends Error {
   constructor() {
-    super('File size exceeds the maximum allowed');
-    this.name = 'FileSizeExceededError';
+    super('No file part in the request body');
+    this.name = 'NoFilePartError';
   }
 }
 
-const createSizeLimiter = (maxSize: number) => {
+const createSizeLimiter = (maxSize: number, res: Response) => {
   let total = 0;
   const transform = new Transform({
     transform(chunk: Buffer, _enc, cb) {
       total += chunk.length;
       if (total > maxSize) {
-        cb(new FileSizeExceededError());
+        cb(fileSizeExceededError(res));
         return;
       }
       cb(null, chunk);
@@ -30,6 +46,25 @@ const createSizeLimiter = (maxSize: number) => {
   });
   return Object.assign(transform, { getBytesRead: () => total });
 };
+
+/** Resolves on 'drain', rejects if the stream is closed first (a destroyed stream never drains). */
+const waitForDrain = (stream: Writable) =>
+  new Promise<void>((resolve, reject) => {
+    if (stream.destroyed) {
+      reject(stream.errored ?? new Error('Stream destroyed before drain'));
+      return;
+    }
+    const onDrain = () => {
+      stream.off('close', onClose);
+      resolve();
+    };
+    const onClose = () => {
+      stream.off('drain', onDrain);
+      reject(stream.errored ?? new Error('Stream closed before drain'));
+    };
+    stream.once('drain', onDrain);
+    stream.once('close', onClose);
+  });
 
 interface ParsedFilePart {
   fileStream: BusboyFileStream;
@@ -41,6 +76,10 @@ interface ParsedFilePart {
  * Pipes the incoming request into busboy and resolves with the first file
  * part as soon as busboy emits it. Subsequent file parts (if any) are
  * drained to keep busboy unblocked.
+ *
+ * `pipe()` does not forward a request aborted by the client to busboy, so the
+ * file stream is destroyed here: otherwise its consumer (the storage upload)
+ * would wait for the rest of the file until its own timeout.
  */
 const parseFirstFile = (req: IncomingMessage): Promise<ParsedFilePart> =>
   new Promise((resolve, reject) => {
@@ -51,7 +90,7 @@ const parseFirstFile = (req: IncomingMessage): Promise<ParsedFilePart> =>
       // surfaces as a Transform error rather than a silent truncation.
       bb = Busboy({
         headers: req.headers as { 'content-type': string } & typeof req.headers,
-        limits: { fileSize: MAX_FILE_SIZE + 1, files: 1 },
+        limits: { ...MULTIPART_LIMITS, fileSize: MAX_FILE_SIZE + 1 },
       });
     } catch (err) {
       reject(err as Error);
@@ -59,6 +98,7 @@ const parseFirstFile = (req: IncomingMessage): Promise<ParsedFilePart> =>
     }
 
     let settled = false;
+    let firstFile: BusboyFileStream | undefined;
 
     bb.on('file', (_fieldname, fileStream, filename, _encoding, mimeType) => {
       if (settled) {
@@ -66,6 +106,7 @@ const parseFirstFile = (req: IncomingMessage): Promise<ParsedFilePart> =>
         return;
       }
       settled = true;
+      firstFile = fileStream;
       resolve({ fileStream, filename, mimeType });
     });
 
@@ -78,13 +119,25 @@ const parseFirstFile = (req: IncomingMessage): Promise<ParsedFilePart> =>
     bb.on('finish', () => {
       if (settled) return;
       settled = true;
-      reject(new Error('No file part in multipart body'));
+      reject(new NoFilePartError());
     });
 
-    req.on('error', (err) => {
-      if (settled) return;
-      settled = true;
-      reject(err);
+    const onRequestAborted = (err: Error) => {
+      if (!settled) {
+        settled = true;
+        reject(err);
+        return;
+      }
+      if (firstFile && !firstFile.readableEnded && !firstFile.destroyed) {
+        firstFile.destroy(err);
+      }
+    };
+
+    req.on('error', onRequestAborted);
+    req.on('close', () => {
+      if (!req.readableEnded) {
+        onRequestAborted(req.errored ?? new Error('Request aborted before its body was fully received'));
+      }
     });
 
     req.pipe(bb);
@@ -125,9 +178,15 @@ const sampleHead = async (source: Readable, sniffSize: number) => {
     }
   }
 
+  // Stops reading `source` and frees busboy's file stream, e.g. once its consumer has failed.
+  const release = async () => {
+    await iter.return?.();
+    source.destroy();
+  };
+
   // We intentionally don't materialise `reassemble()` as a Readable here —
   // the caller wraps it with the size limiter pipeline.
-  return { head, remainderIterator: reassemble() };
+  return { head, remainderIterator: reassemble(), release };
 };
 
 const resolveMimeType = async (
@@ -195,6 +254,13 @@ const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(a
   try {
     filePart = await parseFirstFile(incoming);
   } catch (err) {
+    if (err instanceof NoFilePartError) {
+      throwHTTPException400BadRequest('No file uploaded. Send a file in the "file" field.', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
+      return;
+    }
     if (err instanceof Error && /boundary|multipart/i.test(err.message)) {
       throwHTTPException400BadRequest('Invalid multipart body', { res: c.res });
       return;
@@ -204,7 +270,7 @@ const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(a
   }
 
   const { fileStream, filename, mimeType } = filePart;
-  const { head, remainderIterator } = await sampleHead(fileStream, SNIFF_SIZE);
+  const { head, remainderIterator, release } = await sampleHead(fileStream, SNIFF_SIZE);
 
   const detectedType = await resolveMimeType(head, filename, mimeType);
 
@@ -220,23 +286,31 @@ const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(a
   }
 
   const sanitizedFilename = sanitizeFilename(filename, detectedType.ext);
-  const sizeLimiter = createSizeLimiter(MAX_FILE_SIZE);
+  const sizeLimiter = createSizeLimiter(MAX_FILE_SIZE, c.res);
 
-  // Feed the limiter from the reassembled (head + remainder) stream.
+  // Feed the limiter from the reassembled (head + remainder) stream. This must always settle:
+  // when the limiter is destroyed (size exceeded, storage failure), stop and free busboy's stream.
   (async () => {
     try {
       for await (const chunk of remainderIterator) {
+        if (sizeLimiter.destroyed) break;
         if (!sizeLimiter.write(chunk)) {
-          await new Promise<void>((resolve) => sizeLimiter.once('drain', () => resolve()));
+          await waitForDrain(sizeLimiter);
         }
       }
+      if (sizeLimiter.destroyed) {
+        await release();
+        return;
+      }
       if (fileStream.truncated) {
-        sizeLimiter.destroy(new FileSizeExceededError());
+        sizeLimiter.destroy(fileSizeExceededError(c.res));
+        await release();
         return;
       }
       sizeLimiter.end();
     } catch (err) {
-      sizeLimiter.destroy(err as Error);
+      if (!sizeLimiter.destroyed) sizeLimiter.destroy(err as Error);
+      await release().catch(() => {});
     }
   })();
 
@@ -249,18 +323,9 @@ const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(a
 
   c.set('uploadedFile', uploadedFile);
 
-  try {
-    await next();
-  } catch (err) {
-    if (err instanceof FileSizeExceededError) {
-      throwHTTPException400BadRequest('File size exceeds the maximum allowed', {
-        cause: { name: API_ERROR_CODES.FILE_MAX_SIZE },
-        res: c.res,
-        kind: ERROR_KIND.BUSINESS,
-      });
-    }
-    throw err;
-  }
+  // Errors raised while the handler consumes the stream never come back here: Hono hands them to
+  // the app error handler first, hence the size error being a ready-made 400 response.
+  await next();
 });
 
 export default extractUploadedFileMiddleware;

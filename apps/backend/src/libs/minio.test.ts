@@ -33,6 +33,8 @@ const { mockMinioClient, mockReadStream, mockUnlink, mockReadFile } = vi.hoisted
     statObject: vi.fn(),
     getObject: vi.fn(),
     listObjectsV2: vi.fn(),
+    findUploadId: vi.fn(),
+    abortMultipartUpload: vi.fn(),
   };
 
   const mockReadStream = vi.fn();
@@ -104,6 +106,8 @@ describe('minio.ts', () => {
       }
     });
     mockMinioClient.copyObject.mockResolvedValue(undefined);
+    mockMinioClient.findUploadId.mockResolvedValue(undefined);
+    mockMinioClient.abortMultipartUpload.mockResolvedValue(undefined);
     mockMinioClient.presignedUrl.mockResolvedValue('https://test-signed-url.com');
     mockReadStream.mockReturnValue({});
     mockUnlink.mockResolvedValue(undefined);
@@ -238,6 +242,99 @@ describe('minio.ts', () => {
       expect(recordDependencyCall).toHaveBeenCalledWith(
         expect.objectContaining({ dependency: 's3', operation: 'putObject', outcome: 'business_error' }),
       );
+    });
+
+    it('should abort the incomplete multipart upload when the upload fails midway', async () => {
+      mockMinioClient.putObject.mockImplementationOnce(() => new Promise(() => {}));
+      mockMinioClient.findUploadId.mockResolvedValueOnce('upload-1');
+
+      const source = new PassThrough();
+      source.write(Buffer.from('partial content'));
+      const sourceError = new Error('File size exceeds the maximum allowed');
+
+      const upload = uploadFileToMinio(source, 'test-document.pdf', 'application/pdf');
+      source.destroy(sourceError);
+      await expect(upload).rejects.toBe(sourceError);
+
+      // The parts already sent are no object: without this they would stay in the bucket.
+      await vi.waitFor(() =>
+        expect(mockMinioClient.abortMultipartUpload).toHaveBeenCalledWith(
+          'test-bucket',
+          'uploads/test-uuid.pdf',
+          'upload-1',
+        ),
+      );
+    });
+
+    it('should still reject with the upload error when aborting the incomplete upload fails', async () => {
+      const s3Error = new Error('Request failed after 1 retries: Error: Retryable HTTP status: 503');
+      mockMinioClient.putObject.mockRejectedValueOnce(s3Error);
+      mockMinioClient.findUploadId.mockRejectedValueOnce(new Error('S3 still down'));
+
+      const source = new PassThrough();
+      source.write(Buffer.from('partial content'));
+
+      await expect(uploadFileToMinio(source, 'test-document.pdf', 'application/pdf')).rejects.toBe(s3Error);
+      await vi.waitFor(() => expect(mockMinioClient.findUploadId).toHaveBeenCalled());
+      expect(mockMinioClient.abortMultipartUpload).not.toHaveBeenCalled();
+    });
+
+    // Seen with MinIO stopped: a small file is fully encrypted before S3 refuses the connection.
+    it('should reject without crashing when S3 fails after the whole file went through encryption', async () => {
+      const s3Error = Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' });
+      mockMinioClient.putObject.mockImplementationOnce(
+        () => new Promise((_resolve, reject) => setTimeout(() => reject(s3Error), 20)),
+      );
+
+      const uncaught: unknown[] = [];
+      const onUncaught = (err: unknown) => uncaught.push(err);
+      process.on('uncaughtException', onUncaught);
+      try {
+        await expect(uploadFileToMinio(Buffer.from('small file'), 'test-document.pdf', 'application/pdf')).rejects.toBe(
+          s3Error,
+        );
+        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(uncaught).toEqual([]);
+      } finally {
+        process.off('uncaughtException', onUncaught);
+      }
+    });
+
+    // Fresh module: the circuit opened here must not leak into the other tests.
+    it('should reject without crashing nor cleaning up when the S3 circuit is open', async () => {
+      vi.resetModules();
+      const { uploadFileToMinio: upload } = await import('./minio.js');
+      const s3Error = Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' });
+      mockMinioClient.putObject.mockRejectedValue(s3Error);
+      for (let i = 0; i < 5; i += 1) {
+        await expect(upload(Buffer.from('content'), 'test-document.pdf', 'application/pdf')).rejects.toBe(s3Error);
+      }
+      await new Promise((resolve) => setImmediate(resolve));
+      mockMinioClient.putObject.mockClear();
+      mockMinioClient.findUploadId.mockClear();
+
+      const unhandled: unknown[] = [];
+      const onUnhandled = (reason: unknown) => unhandled.push(reason);
+      process.on('unhandledRejection', onUnhandled);
+      try {
+        const source = new PassThrough();
+        source.write(Buffer.from('partial content'));
+
+        await expect(upload(source, 'test-document.pdf', 'application/pdf')).rejects.toMatchObject({
+          code: 'DEPENDENCY_UNAVAILABLE',
+        });
+        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(unhandled).toEqual([]);
+        expect(mockMinioClient.putObject).not.toHaveBeenCalled();
+        // putObject never ran: there is no multipart upload to abort.
+        expect(mockMinioClient.findUploadId).not.toHaveBeenCalled();
+      } finally {
+        process.off('unhandledRejection', onUnhandled);
+      }
     });
 
     it('should reject with a premature close instead of hanging when the client aborts the upload', async () => {

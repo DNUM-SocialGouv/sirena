@@ -6,6 +6,7 @@ import {
 import { API_ERROR_CODES, API_ERROR_MESSAGES, ERROR_KIND, ROLES_READ, ROLES_WRITE } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
+import { isRequestBodyInterrupted } from '../../helpers/request.js';
 import { addFileProcessingJob } from '../../jobs/queues/fileProcessing.queue.js';
 import {
   deleteFileFromMinio,
@@ -71,6 +72,14 @@ const app = factoryWithLogs
       try {
         upload = await uploadFileToMinio(uploadedFile.stream, uploadedFile.fileName, uploadedFile.contentType);
       } catch (err) {
+        // Checked first: a closed tab resets the connection (ECONNRESET), which reads as a storage failure.
+        if (isRequestBodyInterrupted(c)) {
+          logger.warn({ err }, 'File upload interrupted by the client');
+          throwHTTPException400BadRequest('Upload interrupted before the file was fully received', {
+            res: c.res,
+            kind: ERROR_KIND.BUSINESS,
+          });
+        }
         if (isStorageUnavailableError(err)) {
           logger.error({ err }, 'Storage unavailable while uploading file');
           throwHTTPException503ServiceUnavailable(API_ERROR_MESSAGES.STORAGE_UNAVAILABLE, {

@@ -1,4 +1,5 @@
 export const API_ERROR_CODES = {
+  BODY_MAX_SIZE: 'BODY_MAX_SIZE',
   FILE_MAX_SIZE: 'FILE_MAX_SIZE',
   FILE_TYPE: 'FILE_TYPE',
   STORAGE_UNAVAILABLE: 'STORAGE_UNAVAILABLE',
@@ -7,6 +8,7 @@ export const API_ERROR_CODES = {
 export type ApiErrorCodes = keyof typeof API_ERROR_CODES;
 
 export const API_ERROR_MESSAGES: Record<keyof typeof API_ERROR_CODES, string> = {
+  BODY_MAX_SIZE: 'La requête dépasse la taille maximale autorisée',
   FILE_MAX_SIZE: 'Le fichier dépasse la taille maximale',
   FILE_TYPE: "Le type de fichier n'est pas accepté",
   STORAGE_UNAVAILABLE:

@@ -1,6 +1,9 @@
 import { resolver } from 'hono-openapi';
 import { z } from 'zod';
 
+// A requete payload weighs a few Ko. This limit is checked before authentication.
+export const MAX_JSON_BODY_SIZE = 1024 * 1024;
+
 export const traceIdHeader = {
   'x-trace-id': {
     description: 'Request trace ID for debugging and support',

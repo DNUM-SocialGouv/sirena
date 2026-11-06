@@ -799,12 +799,68 @@
                         "code",
                         "message",
                         "traceId"
-                      ]
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
                     "error"
-                  ]
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body larger than 1 Mo (`BODY_MAX_SIZE`). When a Content-Length header is sent, the request is rejected before its body is read.",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "retryAfter": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "traceId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -1510,7 +1566,7 @@
             }
           },
           "400": {
-            "description": "Invalid file or missing file",
+            "description": "Invalid multipart body, missing file, file type not allowed (`FILE_TYPE`) or file larger than 200 Mo (`FILE_MAX_SIZE`). The size check is done while streaming: when the request has no Content-Length (chunked transfer), the upload is cut as soon as the limit is exceeded.",
             "headers": {
               "x-trace-id": {
                 "description": "Request trace ID for debugging and support",
@@ -1551,12 +1607,14 @@
                         "code",
                         "message",
                         "traceId"
-                      ]
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
                     "error"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -1717,6 +1775,60 @@
               }
             }
           },
+          "413": {
+            "description": "Request body larger than 200 Mo (`BODY_MAX_SIZE`). When a Content-Length header is sent, the request is rejected before its body is read.",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "retryAfter": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "traceId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
           "429": {
             "description": "Too many requests",
             "headers": {
@@ -1771,6 +1883,58 @@
           },
           "500": {
             "description": "Internal server error",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "retryAfter": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "traceId"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Attachment storage temporarily unavailable (`STORAGE_UNAVAILABLE`), retry later",
             "headers": {
               "x-trace-id": {
                 "description": "Request trace ID for debugging and support",

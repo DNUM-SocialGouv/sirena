@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <tests purposes> */
+import { PassThrough, Readable } from 'node:stream';
 import { REPONSE_OUI_NON } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { addFileProcessingJob } from '../../../jobs/queues/fileProcessing.queue.js';
@@ -7,6 +8,7 @@ import { uploadFileToMinio } from '../../../libs/minio.js';
 import { Prisma } from '../../../libs/prisma.js';
 import { getLieuxType, getResponsable } from '../../dematSocial/dematSocial.adapter.js';
 import { generateRequeteId } from '../../requetes/functionalId.service.js';
+import { AttachmentStorageUnavailableError } from './requetes.errors.js';
 import { addAttachmentToRequete, createRequeteFromThirdParty } from './requetes.service.js';
 import type { CreateRequeteFromThirdPartyDto } from './requetes.type.js';
 
@@ -23,6 +25,7 @@ vi.mock('../../../jobs/queues/fileProcessing.queue.js', () => ({
 }));
 vi.mock('../../../libs/minio.js', () => ({
   uploadFileToMinio: vi.fn(),
+  isStorageUnavailableError: vi.fn((err: { code?: string }) => err?.code === 'DEPENDENCY_UNAVAILABLE'),
 }));
 vi.mock('../../../libs/asyncLocalStorage.js', () => ({
   getLoggerStore: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -252,10 +255,15 @@ describe('third-party v1 requetes.service.ts', () => {
   });
 
   describe('addAttachmentToRequete', () => {
-    const file = { buffer: Buffer.from('%PDF'), fileName: 'rapport.pdf', mimeType: 'application/pdf', size: 4 };
+    const makeFile = (content = '%PDF') => {
+      const stream = Readable.from([Buffer.from(content)]);
+      return { stream, fileName: 'rapport.pdf', mimeType: 'application/pdf', getSize: vi.fn(() => content.length) };
+    };
+    let file: ReturnType<typeof makeFile>;
     const rollback = vi.fn();
 
     beforeEach(() => {
+      file = makeFile();
       vi.mocked(uploadFileToMinio).mockResolvedValue({
         objectPath: 'uploads/abc-123.pdf',
         rollback,
@@ -285,6 +293,19 @@ describe('third-party v1 requetes.service.ts', () => {
       expect(addFileProcessingJob).not.toHaveBeenCalled();
     });
 
+    it('drains the unused upload stream when the requete is not found, without crashing on stream errors', async () => {
+      prisma.requete.findFirst.mockResolvedValueOnce(null);
+      const stream = new PassThrough();
+      const unusedFile = { ...file, stream };
+
+      await addAttachmentToRequete('RT-OF-ANOTHER-ACCOUNT', ACCOUNT_ID, unusedFile);
+
+      expect(stream.readableFlowing).toBe(true);
+      expect(() => stream.destroy(new Error('File size exceeds the maximum allowed'))).not.toThrow();
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(stream.destroyed).toBe(true);
+    });
+
     it('uploads the file, records it as pending and queues its processing', async () => {
       prisma.requete.findFirst.mockResolvedValueOnce({ id: REQUETE_ID } as any);
       prisma.uploadedFile.create.mockResolvedValueOnce({
@@ -297,7 +318,8 @@ describe('third-party v1 requetes.service.ts', () => {
 
       const result = await addAttachmentToRequete(REQUETE_ID, ACCOUNT_ID, file);
 
-      expect(uploadFileToMinio).toHaveBeenCalledWith(file.buffer, 'rapport.pdf', 'application/pdf');
+      expect(uploadFileToMinio).toHaveBeenCalledWith(file.stream, 'rapport.pdf', 'application/pdf');
+      expect(prisma.uploadedFile.create.mock.calls[0][0].data.size).toBe(4);
       expect(prisma.uploadedFile.create.mock.calls[0][0].data).toMatchObject({
         id: 'abc-123',
         fileName: 'abc-123.pdf',
@@ -322,6 +344,28 @@ describe('third-party v1 requetes.service.ts', () => {
       await expect(addAttachmentToRequete(REQUETE_ID, ACCOUNT_ID, file)).rejects.toThrow('insert failed');
       expect(rollback).toHaveBeenCalledTimes(1);
       expect(addFileProcessingJob).not.toHaveBeenCalled();
+    });
+
+    it('flags a storage outage during the upload as retryable', async () => {
+      prisma.requete.findFirst.mockResolvedValueOnce({ id: REQUETE_ID } as any);
+      const s3Error = Object.assign(new Error('s3 is unavailable'), { code: 'DEPENDENCY_UNAVAILABLE' });
+      vi.mocked(uploadFileToMinio).mockRejectedValueOnce(s3Error);
+
+      const error = await addAttachmentToRequete(REQUETE_ID, ACCOUNT_ID, file).catch((err) => err);
+
+      expect(error).toBeInstanceOf(AttachmentStorageUnavailableError);
+      expect(error.cause).toBe(s3Error);
+      expect(prisma.uploadedFile.create).not.toHaveBeenCalled();
+    });
+
+    // The file row exists by then: a 503 would make the client retry and attach the file twice.
+    it('does not flag a transient failure after the file is recorded as retryable', async () => {
+      prisma.requete.findFirst.mockResolvedValueOnce({ id: REQUETE_ID } as any);
+      prisma.uploadedFile.create.mockResolvedValueOnce({ id: 'abc-123' } as any);
+      const queueError = Object.assign(new Error('redis is unavailable'), { code: 'DEPENDENCY_UNAVAILABLE' });
+      vi.mocked(addFileProcessingJob).mockRejectedValueOnce(queueError);
+
+      await expect(addAttachmentToRequete(REQUETE_ID, ACCOUNT_ID, file)).rejects.toBe(queueError);
     });
   });
 });

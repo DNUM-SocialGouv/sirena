@@ -43,7 +43,7 @@ const buildMockIncoming = (args: BuildMultipartArgs) => {
 
 interface UploadMockContextOverrides {
   incoming?: Readable & { headers: Record<string, string> };
-  res?: Record<string, unknown>;
+  res?: Response;
   logger?: ReturnType<typeof createMockPinoLogger>;
   get?: (key: string) => unknown;
 }
@@ -55,7 +55,7 @@ const createUploadMockContext = (overrides: UploadMockContextOverrides = {}) => 
   return {
     req: {},
     env: incoming ? { incoming } : undefined,
-    res: overrides.res ?? {},
+    res: overrides.res ?? new Response(null, { headers: { 'x-trace-id': 'trace-1' } }),
     set: vi.fn(),
     get: vi.fn().mockImplementation((key: string) => {
       if (key === 'logger') {
@@ -82,7 +82,8 @@ const { mockFromBuffer, mockThrowHTTPException400BadRequest } = vi.hoisted(() =>
   mockThrowHTTPException400BadRequest: vi.fn(),
 }));
 
-vi.mock('@sirena/backend-utils/helpers', () => ({
+vi.mock('@sirena/backend-utils/helpers', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@sirena/backend-utils/helpers')>()),
   throwHTTPException400BadRequest: mockThrowHTTPException400BadRequest,
 }));
 
@@ -262,29 +263,79 @@ describe('upload.middleware.ts', () => {
       expect(next).toHaveBeenCalled();
     });
 
-    it('should throw an error if the file is too large', async () => {
+    it('should fail the stream with a ready-made 400 response if the file is too large', async () => {
       mockFromBuffer.mockResolvedValue({ mime: 'application/pdf', ext: 'pdf' });
-      mockThrowHTTPException400BadRequest.mockImplementation((msg: string) => {
-        throw new HTTPException(400, { message: msg });
-      });
 
       const oversized = Buffer.alloc(MAX_FILE_SIZE + 1024);
       const mockContext = createUploadMockContext({
         incoming: buildMockIncoming({ content: oversized, filename: 'big.pdf', mimeType: 'application/pdf' }),
       });
 
+      // Hono hands handler errors to the app error handler: the error must be the response itself.
       const next = vi.fn(async () => {
         await drainUploadedFileStream(mockContext);
       });
 
-      await expect(extractUploadedFileMiddleware(mockContext as unknown as Context<AppBindings>, next)).rejects.toThrow(
-        'File size exceeds the maximum allowed',
+      const error = await extractUploadedFileMiddleware(mockContext as unknown as Context<AppBindings>, next).catch(
+        (err: unknown) => err,
       );
-      expect(mockThrowHTTPException400BadRequest).toHaveBeenCalledWith('File size exceeds the maximum allowed', {
-        cause: { name: 'FILE_MAX_SIZE' },
-        res: mockContext.res,
-        kind: ERROR_KIND.BUSINESS,
+
+      expect(error).toBeInstanceOf(HTTPException);
+      const res = (error as HTTPException).getResponse();
+      expect(res.status).toBe(400);
+      expect(res.headers.get('x-trace-id')).toBe('trace-1');
+      expect(await res.json()).toEqual({
+        message: 'File size exceeds the maximum allowed',
+        cause: { name: 'FILE_MAX_SIZE', kind: ERROR_KIND.BUSINESS },
       });
+    });
+
+    it('should stop feeding the stream instead of waiting for ever when the consumer destroys it', async () => {
+      mockFromBuffer.mockResolvedValue({ mime: 'application/pdf', ext: 'pdf' });
+
+      const mockContext = createUploadMockContext({
+        incoming: buildMockIncoming({
+          content: Buffer.alloc(1024 * 1024, 0x61),
+          filename: 'doc.pdf',
+          mimeType: 'application/pdf',
+        }),
+      });
+
+      await extractUploadedFileMiddleware(mockContext as unknown as Context<AppBindings>, vi.fn());
+      const setCall = vi.mocked(mockContext.set).mock.calls.find(([key]) => key === 'uploadedFile');
+      expect(setCall).toBeDefined();
+      const { stream } = (setCall as [string, UploadedFileContext])[1];
+
+      // Nothing reads the stream yet: the feeder is held by backpressure, waiting for 'drain'.
+      await vi.waitFor(() => expect(stream.listenerCount('drain')).toBe(1));
+
+      // Like a failed storage upload. A destroyed stream never emits 'drain'.
+      stream.on('error', () => {});
+      stream.destroy(new Error('storage failed'));
+
+      await vi.waitFor(() => expect(stream.listenerCount('drain')).toBe(0));
+    });
+
+    it('should answer the documented 400 when the body has no file part', async () => {
+      mockThrowHTTPException400BadRequest.mockImplementation((msg: string) => {
+        throw new HTTPException(400, { message: msg });
+      });
+      const boundary = '----BoundaryNoFile';
+      const body = Buffer.from(
+        `--${boundary}\r\nContent-Disposition: form-data; name="comment"\r\n\r\nhello\r\n--${boundary}--\r\n`,
+      );
+      const incoming = Object.assign(Readable.from([body]), {
+        headers: { 'content-type': `multipart/form-data; boundary=${boundary}`, 'content-length': String(body.length) },
+      });
+      const mockContext = createUploadMockContext({ incoming });
+
+      await expect(
+        extractUploadedFileMiddleware(mockContext as unknown as Context<AppBindings>, vi.fn()),
+      ).rejects.toThrow();
+      expect(mockThrowHTTPException400BadRequest).toHaveBeenCalledWith(
+        'No file uploaded. Send a file in the "file" field.',
+        { res: mockContext.res, kind: ERROR_KIND.BUSINESS },
+      );
     });
 
     it('should throw an error when detected mime is not allowed', async () => {

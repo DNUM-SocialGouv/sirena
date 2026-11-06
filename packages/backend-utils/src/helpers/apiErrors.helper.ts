@@ -1,6 +1,7 @@
 import type { ErrorKind } from '@sirena/common/constants';
 import type { Cause } from '@sirena/common/types';
 import { HTTPException } from 'hono/http-exception';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import type { ResolverReturnType } from 'hono-openapi';
 import { resolver } from 'hono-openapi';
 import { ErrorSchema, ZodSafeParseErrorSchema } from '../schemas/apiErrors.schema.js';
@@ -18,6 +19,7 @@ const MESSAGES = {
   FORBIDDEN: 'Forbidden',
   NOT_FOUND: 'Not found',
   CONFLICT: 'Conflict',
+  PAYLOAD_TOO_LARGE: 'Payload too large',
   TOO_MANY_REQUESTS: 'Too many requests',
   ZOD_ERROR: 'Zod error',
   SERVICE_NOT_AVAILABLE: 'Service not available',
@@ -57,6 +59,13 @@ const getParamsOptions = (status: number, message: string, options?: ErrorOption
   return { ...params, res };
 };
 
+/**
+ * Builds the HTTPException without throwing it, for errors that must be handed over as values
+ * (e.g. a stream callback). Same response format as the throwHTTPException* helpers.
+ */
+export const createHTTPException = (status: ContentfulStatusCode, msg: string, options?: ErrorOptions) =>
+  new HTTPException(status, getParamsOptions(status, msg, options));
+
 export const throwHTTPException400BadRequest = (msg = MESSAGES.BAD_REQUEST, options?: ErrorOptions) => {
   const status = 400;
   const params = getParamsOptions(status, msg, options);
@@ -85,6 +94,13 @@ export const throwHTTPException409Conflict = (msg = MESSAGES.CONFLICT, options?:
   const status = 409;
   const params = getParamsOptions(status, msg, options);
   throw new HTTPException(status, params);
+};
+
+export const throwHTTPException413PayloadTooLarge = (
+  msg = MESSAGES.PAYLOAD_TOO_LARGE,
+  options?: ErrorOptions,
+): never => {
+  throw createHTTPException(413, msg, options);
 };
 
 export const throwHTTPException429TooManyRequests = (
