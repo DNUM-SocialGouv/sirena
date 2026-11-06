@@ -279,6 +279,29 @@ describe('minio.ts', () => {
       expect(mockMinioClient.abortMultipartUpload).not.toHaveBeenCalled();
     });
 
+    // Seen with MinIO stopped: a small file is fully encrypted before S3 refuses the connection.
+    it('should reject without crashing when S3 fails after the whole file went through encryption', async () => {
+      const s3Error = Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' });
+      mockMinioClient.putObject.mockImplementationOnce(
+        () => new Promise((_resolve, reject) => setTimeout(() => reject(s3Error), 20)),
+      );
+
+      const uncaught: unknown[] = [];
+      const onUncaught = (err: unknown) => uncaught.push(err);
+      process.on('uncaughtException', onUncaught);
+      try {
+        await expect(uploadFileToMinio(Buffer.from('small file'), 'test-document.pdf', 'application/pdf')).rejects.toBe(
+          s3Error,
+        );
+        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise((resolve) => setImmediate(resolve));
+
+        expect(uncaught).toEqual([]);
+      } finally {
+        process.off('uncaughtException', onUncaught);
+      }
+    });
+
     // Fresh module: the circuit opened here must not leak into the other tests.
     it('should reject without crashing nor cleaning up when the S3 circuit is open', async () => {
       vi.resetModules();

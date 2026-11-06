@@ -178,6 +178,10 @@ export const uploadFileToMinio = async (
   // Its handler below is only attached once the guard runs the call. When the guard rejects first
   // (circuit open, queue full), destroying encryptStream would reject it unhandled: process exit.
   void encryption.catch(() => {});
+  // A small file goes through the pipeline before S3 answers, and the finished pipeline stops
+  // listening: destroying encryptStream with the S3 error below would then throw it uncaught.
+  // The error still reaches the caller through putObject.
+  encryptStream.on('error', () => {});
 
   const resolvedContentType = contentType || 'application/octet-stream';
   const baseHeaders: Record<string, string> = {
