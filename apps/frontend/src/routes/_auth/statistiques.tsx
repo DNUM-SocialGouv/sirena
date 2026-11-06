@@ -290,10 +290,13 @@ export function RouteComponent() {
     if (dashboard) setLastDashboard(dashboard);
   }, [dashboard]);
 
+  // Filters and tabs live in the URL: without resetScroll: false, the router scrolls back to the top
+  // of the page on every change.
   const handlePeriodChange = useCallback(
     (next: PeriodSelection) => {
       navigate({
         search: (prev) => ({ ...prev, period: next.period, startDate: next.startDate, endDate: next.endDate }),
+        resetScroll: false,
       });
     },
     [navigate],
@@ -301,28 +304,34 @@ export function RouteComponent() {
 
   const handleDomaineChange = useCallback(
     (ids: string[]) => {
-      navigate({ search: (prev) => ({ ...prev, domaineIds: ids.length > 0 ? ids.join(',') : undefined }) });
+      navigate({
+        search: (prev) => ({ ...prev, domaineIds: ids.length > 0 ? ids.join(',') : undefined }),
+        resetScroll: false,
+      });
     },
     [navigate],
   );
 
   const handleIncludeEIGChange = useCallback(
     (checked: boolean) => {
-      navigate({ search: (prev) => ({ ...prev, includeEIG: checked ? undefined : false }) });
+      navigate({ search: (prev) => ({ ...prev, includeEIG: checked ? undefined : false }), resetScroll: false });
     },
     [navigate],
   );
 
   const handleLieuTypeChange = useCallback(
     (tokens: string[]) => {
-      navigate({ search: (prev) => ({ ...prev, lieuTypes: tokens.length > 0 ? tokens.join(',') : undefined }) });
+      navigate({
+        search: (prev) => ({ ...prev, lieuTypes: tokens.length > 0 ? tokens.join(',') : undefined }),
+        resetScroll: false,
+      });
     },
     [navigate],
   );
 
   const handleTabChange = useCallback(
     (tabId: string) => {
-      navigate({ search: (prev) => ({ ...prev, tab: Number(tabId) }) });
+      navigate({ search: (prev) => ({ ...prev, tab: Number(tabId) }), resetScroll: false });
     },
     [navigate],
   );
