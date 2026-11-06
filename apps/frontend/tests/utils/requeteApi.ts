@@ -1,19 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { type APIRequestContext, expect } from '@playwright/test';
+import { apiUrl, originHeader } from './api';
 import { baseUrl } from './constants';
 
 /**
  * API helpers used to set up (and tear down) dedicated requests for the e2e
- * scenarios, so tests never depend on nor alter seeded data. They go through
- * the frontend `/api` proxy with the browser context cookies, exactly like the app.
+ * scenarios, so tests never depend on nor alter seeded data.
  */
-
-const apiUrl = (path: string) => `${baseUrl}/api${path}`;
-
-// The backend CSRF guard rejects body-less mutations (e.g. DELETE) unless they
-// look same-origin. A browser always sends these headers, the Playwright request
-// context does not.
-const originHeader = { origin: baseUrl, 'sec-fetch-site': 'same-origin' };
 
 export type DedicatedRequete = { id: string; declarantEmail: string | null };
 

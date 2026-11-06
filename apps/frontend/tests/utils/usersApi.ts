@@ -1,18 +1,10 @@
 import { type APIRequestContext, expect } from '@playwright/test';
-import { baseUrl } from './constants';
+import { apiUrl, originHeader } from './api';
 
 /**
  * API helpers used to snapshot and restore the target of the admin scenarios that
- * change a habilitation. They go through the frontend `/api` proxy with the
- * browser context cookies, exactly like the app.
+ * change a habilitation.
  */
-
-const apiUrl = (path: string) => `${baseUrl}/api${path}`;
-
-// The backend CSRF guard (hono/csrf, apps/backend/src/app.ts) only accepts
-// mutations that look same-origin. A browser always sends these headers, the
-// Playwright request context does not.
-const originHeader = { origin: baseUrl, 'sec-fetch-site': 'same-origin' };
 
 /** The three habilitation fields the admin form submits as one payload. */
 export type UserHabilitation = {

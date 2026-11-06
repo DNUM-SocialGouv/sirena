@@ -8,43 +8,47 @@ import { findUserIdByEmail, getUserHabilitation, setUserHabilitation, type UserH
  * ADMIN E2E TESTS
  *
  * Prerequisites:
- * - At least 2 users in "Gestion des utilisateurs" table
  * - Authenticated user has ENTITY_ADMIN role
  * - `HABILITATION_TARGET_USER_EMAIL` provisioned in that user's perimeter (see tests/README.md)
  */
 
 /**
- * Helper function to navigate to a random user edit page (excluding the current user)
+ * Id of the account the habilitation scenarios open and modify. Never the signed-in
+ * admin: deactivating it makes userStatusMiddleware answer 403 to every later request,
+ * the restoring PATCH included, so the account would stay locked out.
  */
-async function navigateToUserEditPage(page: Page, context: BrowserContext): Promise<string> {
-  await page.goto(`${baseUrl}/admin/users/all`);
-  const allUsersTable = page.getByRole('table');
-  await expect(allUsersTable).toBeVisible();
-
-  // Find a user that is not the current user (can't update our own user)
+async function findHabilitationTargetId(context: BrowserContext): Promise<string> {
+  const targetUserId = await findUserIdByEmail(context.request, HABILITATION_TARGET_USER_EMAIL);
   const currentUserId = await getCurrentUserId(context);
-  const userRows = allUsersTable.getByTestId('datatable-row');
+  expect(targetUserId, `${HABILITATION_TARGET_USER_EMAIL} is the signed-in admin account`).not.toBe(currentUserId);
+  return targetUserId;
+}
+
+/**
+ * Opens the edit form of the habilitation target from the users list: the default list
+ * must show rows, then its search narrows the list to the target, so that its row is on
+ * the first page whatever the size of the perimeter.
+ */
+async function navigateToTargetEditPage(page: Page, targetUserId: string): Promise<void> {
+  await page.goto(`${baseUrl}/admin/users/all`);
+  const userRows = page.getByRole('table').getByTestId('datatable-row');
   await expect(userRows.first()).toBeVisible();
 
-  const otherUserRows = userRows.and(page.locator(`:not([data-row-key="${currentUserId}"])`));
-  const otherUserCount = await otherUserRows.count();
-  expect(otherUserCount, 'Should have at least one other user besides current user').toBeGreaterThanOrEqual(1);
+  const search = page.getByRole('search');
+  await search
+    .getByRole('searchbox', { name: 'Rechercher un utilisateur par nom, prénom ou e-mail', exact: true })
+    .fill(HABILITATION_TARGET_USER_EMAIL);
+  await search.getByRole('button', { name: 'Rechercher', exact: true }).click();
+  await expect(page).toHaveURL(/[?&]search=/);
 
-  // Click on manage user link
-  const firstOtherUserRow = otherUserRows.first();
-  const targetUserId = await firstOtherUserRow.getAttribute('data-row-key');
-
-  if (!targetUserId) {
-    throw new Error('No target user ID found');
-  }
-
-  await firstOtherUserRow.getByTestId('user-row-link').click();
+  await userRows
+    .and(page.locator(`[data-row-key="${targetUserId}"]`))
+    .getByRole('link', { name: "Gérer l'utilisateur", exact: true })
+    .click();
 
   await page.waitForURL(`${baseUrl}/admin/user/${targetUserId}`);
   await expect(page.getByRole('heading', { name: 'Modifier les informations', level: 1 })).toBeVisible();
   await expect(page.getByTestId('user-role-select')).toBeVisible();
-
-  return targetUserId;
 }
 
 /** Opens the edit form of a named user, without going through the list. */
@@ -136,7 +140,8 @@ test.describe('Administration des utilisateurs', () => {
   });
 
   test("ouvre le formulaire « Modifier les informations » depuis le lien « Gérer l'utilisateur »", async () => {
-    await navigateToUserEditPage(page, context);
+    // The dedicated target rather than any other row: on integration, the other rows are real agents.
+    await navigateToTargetEditPage(page, await findHabilitationTargetId(context));
 
     const heading = page.getByRole('heading', {
       name: 'Modifier les informations',
@@ -152,11 +157,7 @@ test.describe('Administration des utilisateurs', () => {
     let hasPristine = false;
 
     test.beforeEach(async () => {
-      targetUserId = await findUserIdByEmail(context.request, HABILITATION_TARGET_USER_EMAIL);
-      // Deactivating the signed-in admin makes userStatusMiddleware answer 403 to every
-      // later request, the restoring PATCH included: the account would stay locked out.
-      const currentUserId = await getCurrentUserId(context);
-      expect(targetUserId, `${HABILITATION_TARGET_USER_EMAIL} is the signed-in admin account`).not.toBe(currentUserId);
+      targetUserId = await findHabilitationTargetId(context);
       // Captured once for the whole file, never re-read: a restore that fails leaves the
       // account modified, and re-reading would take that state for the original one.
       if (!hasPristine) {
