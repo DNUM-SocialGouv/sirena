@@ -22,6 +22,8 @@
   max-width: min(32rem, calc(100vw - 2rem));
   max-height: min(24rem, 60vh);
   overflow-y: auto;
+  /* Scrolling past the end of the list must not scroll the page behind it. */
+  overscroll-behavior: contain;
 
   padding-inline: 0;
   padding-block: 2px;

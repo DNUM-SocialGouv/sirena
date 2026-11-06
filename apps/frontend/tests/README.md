@@ -36,7 +36,6 @@ E2E tests use Playwright browser context persistence to skip repeated ProConnect
 #### Admin tests
 
 Prerequisites:
-- At least 2 users with same entiteId in "Gestion des utilisateurs" table
 - Authenticated user has ENTITY_ADMIN role
 - `E2E_TARGET_USER_EMAIL` names an account dedicated to the scenarios that change a
   habilitation: `user17@yopmail.com`, seeded in local target, named by the
@@ -49,6 +48,17 @@ Prerequisites:
   backend answer 403 to every later request, the restoring one included.
   On integration it is provisioned by hand like the authenticated user — a SIRENA account only
   exists after a first ProConnect login, and CI provisions nothing.
+
+#### Back links
+
+Prerequisites:
+- Authenticated user is the ENTITY_ADMIN of an administrative entity (an ARS, a CD…), the only level allowed to create
+  both directions and services.
+- `ADMIN_LOCAL_DIRECTIONS_SERVICES` feature flag enabled for that user: both the route guard and the API reject the
+  directions/services admin pages without it.
+- When that entity has no active direction, the spec creates `Direction e2e` through the API, since a service needs a
+  direction. A local admin can neither delete nor deactivate it, so it stays active in the entity and later runs create
+  nothing. Only a super admin deactivating it makes the next run create another one.
 
 #### Home Requetes
 
